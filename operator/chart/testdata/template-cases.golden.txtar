@@ -273,6 +273,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -283,6 +284,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -293,6 +295,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -970,6 +973,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -980,6 +984,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -990,6 +995,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -1723,6 +1729,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -1733,6 +1740,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -1743,6 +1751,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -2436,6 +2445,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -2446,6 +2456,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -2456,6 +2467,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -3161,6 +3173,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -3171,6 +3184,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -3181,6 +3195,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -3902,6 +3917,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -3912,6 +3928,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -3922,6 +3939,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -4627,6 +4645,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -4637,6 +4656,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -4647,6 +4667,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -5371,6 +5392,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -5381,6 +5403,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -5391,6 +5414,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -6317,6 +6341,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -6327,6 +6352,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -6337,6 +6363,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -7066,6 +7093,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -7076,6 +7104,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -7086,6 +7115,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -7792,6 +7822,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -7802,6 +7833,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -7812,6 +7844,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -8567,6 +8600,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -8577,6 +8611,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -8587,6 +8622,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -9285,6 +9321,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -9295,6 +9332,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -9305,6 +9343,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -10043,6 +10082,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -10053,6 +10093,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -10063,6 +10104,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -11010,6 +11052,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -11020,6 +11063,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -11030,6 +11074,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -11904,6 +11949,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -11914,6 +11960,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -11924,6 +11971,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -12764,6 +12812,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -12774,6 +12823,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -12784,6 +12834,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -13548,6 +13599,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -13558,6 +13610,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -13568,6 +13621,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -14307,6 +14361,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -14317,6 +14372,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -14327,6 +14383,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -15205,6 +15262,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -15215,6 +15273,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -15225,6 +15284,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -15954,6 +16014,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -15964,6 +16025,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -15974,6 +16036,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -16869,6 +16932,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -16879,6 +16943,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -16889,6 +16954,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -17853,6 +17919,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -17863,6 +17930,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -17873,6 +17941,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -19236,6 +19305,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -19246,6 +19316,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -19256,6 +19327,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -20211,6 +20283,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -20221,6 +20294,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -20231,6 +20305,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -21484,6 +21559,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -21494,6 +21570,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -21504,6 +21581,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -22934,6 +23012,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -22944,6 +23023,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -22954,6 +23034,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -24399,6 +24480,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -24409,6 +24491,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -24419,6 +24502,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -27459,6 +27543,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -27469,6 +27554,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -27479,6 +27565,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -29322,6 +29409,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -29332,6 +29420,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -29342,6 +29431,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -30349,6 +30439,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -30359,6 +30450,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -30369,6 +30461,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -32088,6 +32181,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -32098,6 +32192,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -32108,6 +32203,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -34234,6 +34330,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -34244,6 +34341,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -34254,6 +34352,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -35266,6 +35365,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -35276,6 +35376,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -35286,6 +35387,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -36161,6 +36263,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -36171,6 +36274,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -36181,6 +36285,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -37258,6 +37363,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -37268,6 +37374,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -37278,6 +37385,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -38103,6 +38211,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -38113,6 +38222,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -38123,6 +38233,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -38963,6 +39074,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -38973,6 +39085,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -38983,6 +39096,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -39829,6 +39943,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -39839,6 +39954,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -39849,6 +39965,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -40699,6 +40816,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -40709,6 +40827,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -40719,6 +40838,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -41578,6 +41698,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -41588,6 +41709,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -41598,6 +41720,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -43269,6 +43392,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -43279,6 +43403,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -43289,6 +43414,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -44148,6 +44274,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -44158,6 +44285,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -44168,6 +44296,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -45035,6 +45164,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -45045,6 +45175,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -45055,6 +45186,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -45903,6 +46035,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -45913,6 +46046,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -45923,6 +46057,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -46817,6 +46952,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -46827,6 +46963,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -46837,6 +46974,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -47679,6 +47817,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -47689,6 +47828,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -47699,6 +47839,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -48695,6 +48836,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -48705,6 +48847,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -48715,6 +48858,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -50609,6 +50753,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -50619,6 +50764,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -50629,6 +50775,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -52887,6 +53034,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -52897,6 +53045,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -52907,6 +53056,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -54228,6 +54378,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -54238,6 +54389,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -54248,6 +54400,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -57659,6 +57812,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -57669,6 +57823,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -57679,6 +57834,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -58808,6 +58964,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -58818,6 +58975,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -58828,6 +58986,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -60206,6 +60365,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -60216,6 +60376,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -60226,6 +60387,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -61459,6 +61621,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -61469,6 +61632,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -61479,6 +61643,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -63437,6 +63602,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -63447,6 +63613,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -63457,6 +63624,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -64497,6 +64665,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -64507,6 +64676,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -64517,6 +64687,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -66323,6 +66494,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -66333,6 +66505,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -66343,6 +66516,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -67430,6 +67604,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -67440,6 +67615,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -67450,6 +67626,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -68682,6 +68859,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -68692,6 +68870,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -68702,6 +68881,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -70365,6 +70545,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -70375,6 +70556,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -70385,6 +70567,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -71337,6 +71520,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -71347,6 +71531,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -71357,6 +71542,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -73253,6 +73439,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -73263,6 +73450,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -73273,6 +73461,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -74489,6 +74678,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -74499,6 +74689,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -74509,6 +74700,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -76414,6 +76606,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -76424,6 +76617,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -76434,6 +76628,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -77438,6 +77633,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -77448,6 +77644,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -77458,6 +77655,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -78461,6 +78659,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -78471,6 +78670,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -78481,6 +78681,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -80365,6 +80566,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -80375,6 +80577,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -80385,6 +80588,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -82390,6 +82594,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -82400,6 +82605,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -82410,6 +82616,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -83536,6 +83743,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -83546,6 +83754,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -83556,6 +83765,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -84369,6 +84579,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -84379,6 +84590,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -84389,6 +84601,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -85201,6 +85414,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -85211,6 +85425,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -85221,6 +85436,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -85894,6 +86110,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -85904,6 +86121,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -85914,6 +86132,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -86604,6 +86823,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -86614,6 +86834,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -86624,6 +86845,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -87297,6 +87519,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -87307,6 +87530,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -87317,6 +87541,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -87990,6 +88215,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -88000,6 +88226,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -88010,6 +88237,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
@@ -88819,6 +89047,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - topics/finalizers
   - users/finalizers
@@ -88829,6 +89058,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - topics/status
   - users/status
@@ -88839,6 +89069,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - topics
   - users
