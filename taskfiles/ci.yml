@@ -153,7 +153,7 @@ tasks:
       - task: publish:nightly:helm:chart
         vars: {REPO: redpanda-operator-nightly, CHART: operator, DIR: "operator/chart", VERSION: "{{ .OPERATOR_VERSION }}"}
       - task: publish:nightly:helm:chart
-        vars: {REPO: console-unstable, CHART: console, VERSION: "{{ .CONSOLE_CHART_VERSION }}"}
+        vars: {REPO: console-unstable, CHART: console, DIR: "charts/console/chart", VERSION: "{{ .CONSOLE_CHART_VERSION }}"}
 
   publish:nightly:helm:chart:
     run: 'always'
