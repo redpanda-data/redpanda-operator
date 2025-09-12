@@ -53,7 +53,7 @@ func NewPki(
 	scheme *runtime.Scheme,
 	logger logr.Logger,
 ) (*PkiReconciler, error) {
-	cc, err := NewClusterCertificates(ctx, pandaCluster, keyStoreKey(pandaCluster), client, fqdn, clusterFQDN, scheme, logger)
+	cc, err := NewClusterCertificates(ctx, pandaCluster, KeyStoreKey(pandaCluster), client, fqdn, clusterFQDN, scheme, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func NewPki(
 	}, nil
 }
 
-func keyStoreKey(pandaCluster *vectorizedv1alpha1.Cluster) types.NamespacedName {
+func KeyStoreKey(pandaCluster *vectorizedv1alpha1.Cluster) types.NamespacedName {
 	return types.NamespacedName{Name: keystoreName(pandaCluster.Name), Namespace: pandaCluster.Namespace}
 }
 
@@ -71,7 +71,7 @@ func keyStoreKey(pandaCluster *vectorizedv1alpha1.Cluster) types.NamespacedName 
 func (r *PkiReconciler) Ensure(ctx context.Context) error {
 	toApply := []resources.Resource{}
 
-	keystoreSecret := NewKeystoreSecretResource(r.Client, r.scheme, r.pandaCluster, keyStoreKey(r.pandaCluster), r.logger)
+	keystoreSecret := NewKeystoreSecretResource(r.Client, r.scheme, r.pandaCluster, KeyStoreKey(r.pandaCluster), r.logger)
 
 	toApply = append(toApply, keystoreSecret)
 	res, err := r.clusterCertificates.Resources(ctx)
@@ -93,7 +93,7 @@ func (r *PkiReconciler) Ensure(ctx context.Context) error {
 }
 
 func (r *PkiReconciler) Key() types.NamespacedName {
-	return keyStoreKey(r.pandaCluster)
+	return KeyStoreKey(r.pandaCluster)
 }
 
 // StatefulSetVolumeProvider returns volume provider for all TLS certificates
