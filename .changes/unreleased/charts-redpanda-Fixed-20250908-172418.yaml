@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: '`statefulset.podTemplate.spec.volumes` can now be used to override chart generated volumes.'
+time: 2025-09-08T17:24:18.8483-04:00
