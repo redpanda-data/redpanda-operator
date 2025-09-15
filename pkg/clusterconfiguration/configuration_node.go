@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 func NewNodeCfg(p *PodContext) *nodeCfg {

@@ -20,8 +20,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	// rpkcfg "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 // Check that additionalConfiguration gets routed to the right place
@@ -77,7 +76,7 @@ func TestDeleteProperties(t *testing.T) {
 	config := clusterconfiguration.NewConfig("namespace", nil, nil)
 	config.Cluster.SetAdditionalConfiguration("a1", "x")
 	config.Cluster.SetAdditionalConfiguration("a2", "y")
-	config.Cluster.Set("a1", vectorizedv1alpha1.ClusterConfigValue{})
+	config.Cluster.Set("a1", clusterconfiguration.ClusterConfigValue{})
 
 	concreteCfg, err := config.ReifyClusterConfiguration(context.TODO(), nil)
 	require.NoError(t, err)
@@ -107,7 +106,7 @@ func TestStringSliceProperties(t *testing.T) {
 
 	// Can't append to a non-array
 	config = clusterconfiguration.NewConfig("namespace", nil, nil)
-	config.Cluster.Set("superusers", vectorizedv1alpha1.ClusterConfigValue{Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(`"nonarrray"`))})
+	config.Cluster.Set("superusers", clusterconfiguration.ClusterConfigValue{Repr: ptr.To(clusterconfiguration.YAMLRepresentation(`"nonarrray"`))})
 	config.Cluster.AddFixup("superusers", clusterconfiguration.CELAppendYamlStringArray+`(it, "a")`)
 	_, err = config.ReifyClusterConfiguration(context.TODO(), schema)
 	assert.Error(t, err)

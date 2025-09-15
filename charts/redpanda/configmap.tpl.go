@@ -18,7 +18,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 func ConfigMaps(state *RenderState) []*corev1.ConfigMap {

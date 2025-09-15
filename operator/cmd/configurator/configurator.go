@@ -34,11 +34,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 const (

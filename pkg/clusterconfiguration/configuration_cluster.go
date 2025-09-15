@@ -14,8 +14,7 @@ import (
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 func NewClusterCfg(p *PodContext) *clusterCfg {
@@ -41,8 +40,8 @@ func (c *clusterCfg) Error() error {
 	return errors.Join(c.errs...)
 }
 
-func (c *clusterCfg) Set(k string, v vectorizedv1alpha1.ClusterConfigValue) {
-	if v == (vectorizedv1alpha1.ClusterConfigValue{}) {
+func (c *clusterCfg) Set(k string, v ClusterConfigValue) {
+	if v == (ClusterConfigValue{}) {
 		delete(c.templated, k)
 		return
 	}
@@ -54,8 +53,8 @@ func (c *clusterCfg) Set(k string, v vectorizedv1alpha1.ClusterConfigValue) {
 // SetAdditionalConfiguration offers legacy support for the additionalConfiguration
 // attribute of the CR.
 func (c *clusterCfg) SetAdditionalConfiguration(k, repr string) {
-	c.Set(k, vectorizedv1alpha1.ClusterConfigValue{
-		Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(repr)),
+	c.Set(k, ClusterConfigValue{
+		Repr: ptr.To(YAMLRepresentation(repr)),
 	})
 }
 
@@ -90,8 +89,8 @@ func (c *clusterCfg) SetValue(k string, v any) error {
 		c.errs = append(c.errs, err)
 		return err
 	}
-	c.Set(k, vectorizedv1alpha1.ClusterConfigValue{
-		Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(buf)),
+	c.Set(k, ClusterConfigValue{
+		Repr: ptr.To(YAMLRepresentation(buf)),
 	})
 	return nil
 }
@@ -103,7 +102,7 @@ func (c *clusterCfg) AddFixup(field, cel string) {
 	})
 }
 
-func (c *clusterCfg) compile(k string, v vectorizedv1alpha1.ClusterConfigValue) *string {
+func (c *clusterCfg) compile(k string, v ClusterConfigValue) *string {
 	if c.fixups == nil {
 		c.fixups = []Fixup{}
 	}
@@ -156,7 +155,7 @@ func (c *clusterCfg) compile(k string, v vectorizedv1alpha1.ClusterConfigValue) 
 		}
 		return ptr.To(``)
 	case v.ExternalSecretRef != nil: // nolint:staticcheck // ignore deprecation for now
-		v.ExternalSecretRefSelector = &vectorizedv1alpha1.ExternalSecretKeySelector{
+		v.ExternalSecretRefSelector = &ExternalSecretKeySelector{
 			Name: *v.ExternalSecretRef, // nolint:staticcheck // ignore deprecation for now
 		}
 		fallthrough

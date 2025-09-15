@@ -39,12 +39,12 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 const (

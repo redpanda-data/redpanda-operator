@@ -28,9 +28,9 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 func TestEnsureConfigMap(t *testing.T) {

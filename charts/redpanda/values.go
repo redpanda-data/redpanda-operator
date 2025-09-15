@@ -29,7 +29,7 @@ import (
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 const (

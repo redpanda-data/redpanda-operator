@@ -23,8 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 const (

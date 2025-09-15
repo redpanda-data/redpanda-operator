@@ -17,8 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 func NewConfig(namespace string, reader k8sclient.Reader, cloudExpander *pkgsecrets.CloudExpander) *CombinedCfg {
@@ -149,7 +148,7 @@ func (p *PodContext) Error() error {
 func (c *CombinedCfg) SetAdditionalFlatProperty(key, repr string) error {
 	if nodeProp := isKnownNodeProperty(key); !nodeProp && strings.HasPrefix(key, redpandaPropertyPrefix) {
 		newKey := strings.TrimPrefix(key, redpandaPropertyPrefix)
-		c.Cluster.Set(newKey, vectorizedv1alpha1.ClusterConfigValue{Repr: ptr.To(vectorizedv1alpha1.YAMLRepresentation(repr))})
+		c.Cluster.Set(newKey, ClusterConfigValue{Repr: ptr.To(YAMLRepresentation(repr))})
 		return nil
 	}
 	return c.Node.SetAdditionalConfiguration(key, repr)

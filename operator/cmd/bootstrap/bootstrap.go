@@ -21,8 +21,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 func Command() *cobra.Command {

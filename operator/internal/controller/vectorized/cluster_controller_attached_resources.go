@@ -20,11 +20,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 type attachedResources struct {

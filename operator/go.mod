@@ -13,7 +13,6 @@ require (
 	github.com/fluxcd/pkg/runtime v0.43.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-logr/logr v1.4.2
-	github.com/google/cel-go v0.23.2
 	github.com/google/gofuzz v1.2.0
 	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/json-iterator/go v1.1.12
@@ -26,7 +25,6 @@ require (
 	github.com/prometheus/common v0.64.0
 	github.com/redpanda-data/common-go/net v0.1.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.14
-	github.com/redpanda-data/common-go/secrets v0.1.3
 	github.com/redpanda-data/console/backend v0.0.0-20240303221210-05d5d9e85f20
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250718150737-e01f8476d560
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0
@@ -165,6 +163,7 @@ require (
 	github.com/gonvenience/wrap v1.2.0 // indirect
 	github.com/gonvenience/ytbx v1.4.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
+	github.com/google/cel-go v0.23.2 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db // indirect
@@ -247,6 +246,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
+	github.com/redpanda-data/common-go/secrets v0.1.3 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect

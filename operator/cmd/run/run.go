@@ -56,9 +56,9 @@ import (
 	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	pkglabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
 	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 type Controller string
