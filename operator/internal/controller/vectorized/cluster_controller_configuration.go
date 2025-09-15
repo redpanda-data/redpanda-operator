@@ -24,10 +24,10 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 const (

@@ -12,7 +12,7 @@ import (
 	"github.com/google/cel-go/common/types/ref"
 	"sigs.k8s.io/yaml"
 
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 // These are provided in case any external code wants to construct CEL expressions.

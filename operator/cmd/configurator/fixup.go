@@ -9,8 +9,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 func applyFixups[T any](ctx context.Context, config T, fn string, cloudExpander *secrets.CloudExpander) (T, error) {

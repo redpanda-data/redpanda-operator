@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 func TestListeners_TrustStoreVolumes(t *testing.T) {
