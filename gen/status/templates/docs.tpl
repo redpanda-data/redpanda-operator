@@ -13,7 +13,7 @@ package {{ $.Package }}
 
 {{ range $status := $.Statuses -}}{{/* Type Declarations */}}
 {{- range $condition := $status.Conditions }}
-{{ $condition.NamelessComment }}
+{{ $condition.TypedNamelessComment }}
 // +statusType
 type {{ $condition.GoConditionName }} string
 {{- end }}

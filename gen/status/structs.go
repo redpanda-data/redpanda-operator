@@ -229,11 +229,11 @@ func (c *conditionType) Comment() string {
 	return writeComment(c.GoName(), c.Description)
 }
 
-func (c *conditionType) NamelessComment() string {
+func (c *conditionType) TypedNamelessComment() string {
 	if c.Description == "" {
 		return ""
 	}
-	return writeComment("", c.Description)
+	return writeComment(fmt.Sprintf("%q", c.Name), c.Description)
 }
 
 func (c *conditionType) GoName() string {
