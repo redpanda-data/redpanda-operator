@@ -38,6 +38,7 @@ import (
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -138,6 +139,7 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 			AdminAPIClientFactory: admin.NewNodePoolInternalAdminAPI,
 			Dialer:                dialer.DialContext,
 			Scheme:                scheme,
+			LifecycleClient:       lifecycle.NewResourceClient(mgr, lifecycle.V1ResourceManagers()),
 		}
 
 		// TODO: this is not optimal, we're using hardcoded docker image name, tag
