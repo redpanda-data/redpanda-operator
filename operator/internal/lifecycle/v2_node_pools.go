@@ -53,10 +53,6 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 		spec.Statefulset = &redpandav1alpha2.Statefulset{}
 	}
 
-	if spec.Statefulset.InitContainerImage == nil {
-		spec.Statefulset.InitContainerImage = &redpandav1alpha2.InitContainerImage{}
-	}
-
 	if spec.Statefulset.SideCars == nil {
 		spec.Statefulset.SideCars = &redpandav1alpha2.SideCars{}
 	}
@@ -93,14 +89,6 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 
 	if spec.Statefulset.SideCars.Controllers.Image.Repository == nil {
 		spec.Statefulset.SideCars.Controllers.Image.Repository = &m.image.Repository
-	}
-
-	if spec.Statefulset.InitContainerImage.Tag == nil {
-		spec.Statefulset.InitContainerImage.Tag = &m.image.Tag
-	}
-
-	if spec.Statefulset.InitContainerImage.Repository == nil {
-		spec.Statefulset.InitContainerImage.Repository = &m.image.Repository
 	}
 
 	// If not explicitly specified, set the initContainer flags for the bootstrap

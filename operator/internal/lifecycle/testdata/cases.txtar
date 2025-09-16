@@ -1,1 +1,9 @@
 -- basic-test --
+
+-- chown-datadir --
+spec:
+  clusterSpec:
+    statefulSet:
+      initContainers:
+        setDataDirOwnership:
+          enabled: true
