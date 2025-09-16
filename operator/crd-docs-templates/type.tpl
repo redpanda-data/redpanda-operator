@@ -17,7 +17,7 @@
 {{- end }}
 
 {{ if (and $type.EnumValues $type.Markers.statusType) -}} 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 {{ range $type.EnumValues -}}

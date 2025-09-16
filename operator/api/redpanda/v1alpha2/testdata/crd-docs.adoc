@@ -528,7 +528,7 @@ be set by a controller when it subsequently reconciles a cluster.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Applied` | ClusterConfigurationAppliedReasonApplied - This reason is used with the +
@@ -570,7 +570,7 @@ must be set by a controller when it subsequently reconciles a cluster.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Healthy` | ClusterHealthyReasonHealthy - This reason is used with the "Healthy" +
@@ -611,7 +611,7 @@ must be set by a controller when it subsequently reconciles a cluster.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Valid` | ClusterLicenseValidReasonValid - This reason is used with the "LicenseValid" +
@@ -655,7 +655,7 @@ be set by a controller when it subsequently reconciles a cluster.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Quiesced` | ClusterQuiescedReasonQuiesced - This reason is used with the "Quiesced" +
@@ -689,7 +689,7 @@ must be set by a controller when it subsequently reconciles a cluster.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Ready` | ClusterReadyReasonReady - This reason is used with the "Ready" condition when +
@@ -757,7 +757,7 @@ be set by a controller when it subsequently reconciles a cluster.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Synced` | ClusterResourcesSyncedReasonSynced - This reason is used with the +
@@ -826,7 +826,7 @@ be set by a controller when it subsequently reconciles a cluster.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Stable` | ClusterStableReasonStable - This reason is used with the "Stable" condition +
@@ -2108,7 +2108,7 @@ must be set by a controller when it subsequently reconciles a node pool.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Bound` | NodePoolBoundReasonBound - This reason is used with the "Bound" condition +
@@ -2143,7 +2143,7 @@ must be set by a controller when it subsequently reconciles a node pool.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Deployed` | NodePoolDeployedReasonDeployed - This reason is used with the "Deployed" +
@@ -2184,7 +2184,7 @@ be set by a controller when it subsequently reconciles a node pool.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Quiesced` | NodePoolQuiescedReasonQuiesced - This reason is used with the "Quiesced" +
@@ -2243,7 +2243,7 @@ be set by a controller when it subsequently reconciles a node pool.
 
 
 
-[cols="20a,50a,15a,15a", options="header"]
+[cols="20a,80a", options="header"]
 |===
 | Field | Description |
 | `Stable` | NodePoolStableReasonStable - This reason is used with the "Stable" condition +
