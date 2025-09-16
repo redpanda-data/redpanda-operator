@@ -11,92 +11,88 @@ package v1alpha2
 
 // GENERATED from ./statuses.yaml, DO NOT EDIT DIRECTLY
 
-// ClusterReadyCondition - This condition indicates whether a cluster is ready
-// to serve any traffic. This can happen, for example if a cluster is partially
-// degraded but still can process requests.
+// This condition indicates whether a cluster is ready to serve any traffic.
+// This can happen, for example if a cluster is partially degraded but still can
+// process requests.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a cluster.
 // +statusType
 type ClusterReadyCondition string
 
-// ClusterHealthyCondition - This condition indicates whether a cluster is
-// healthy as defined by the Redpanda Admin API's cluster health endpoint.
+// This condition indicates whether a cluster is healthy as defined by the
+// Redpanda Admin API's cluster health endpoint.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a cluster.
 // +statusType
 type ClusterHealthyCondition string
 
-// ClusterLicenseValidCondition - This condition indicates whether a cluster has
-// a valid license.
+// This condition indicates whether a cluster has a valid license.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a cluster.
 // +statusType
 type ClusterLicenseValidCondition string
 
-// ClusterResourcesSyncedCondition - This condition indicates whether the
-// Kubernetes resources for a cluster have been synchronized.
+// This condition indicates whether the Kubernetes resources for a cluster have
+// been synchronized.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a cluster.
 // +statusType
 type ClusterResourcesSyncedCondition string
 
-// ClusterConfigurationAppliedCondition - This condition indicates whether
-// cluster configuration parameters have currently been applied to a cluster for
-// the given generation.
+// This condition indicates whether cluster configuration parameters have
+// currently been applied to a cluster for the given generation.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a cluster.
 // +statusType
 type ClusterConfigurationAppliedCondition string
 
-// ClusterQuiescedCondition - This condition is used as to indicate that the
-// cluster is no longer reconciling due to it being in a finalized state for the
-// current generation.
+// This condition is used as to indicate that the cluster is no longer
+// reconciling due to it being in a finalized state for the current generation.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a cluster.
 // +statusType
 type ClusterQuiescedCondition string
 
-// ClusterStableCondition - This condition is used as a roll-up status for any
-// sort of automation such as terraform.
+// This condition is used as a roll-up status for any sort of automation such as
+// terraform.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a cluster.
 // +statusType
 type ClusterStableCondition string
 
-// NodePoolBoundCondition - This condition indicates whether a node pool is
-// bound to a known Redpanda cluster.
+// This condition indicates whether a node pool is bound to a known Redpanda
+// cluster.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a node pool.
 // +statusType
 type NodePoolBoundCondition string
 
-// NodePoolDeployedCondition - This condition indicates whether a node pool has
-// been deployed for a known Redpanda cluster.
+// This condition indicates whether a node pool has been deployed for a known
+// Redpanda cluster.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a node pool.
 // +statusType
 type NodePoolDeployedCondition string
 
-// NodePoolQuiescedCondition - This condition is used as to indicate that the
-// node pool is no longer reconciling due to it being in a finalized state for
-// the current generation.
+// This condition is used as to indicate that the node pool is no longer
+// reconciling due to it being in a finalized state for the current generation.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a node pool.
 // +statusType
 type NodePoolQuiescedCondition string
 
-// NodePoolStableCondition - This condition is used as a roll-up status for any
-// sort of automation such as terraform.
+// This condition is used as a roll-up status for any sort of automation such as
+// terraform.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a node pool.

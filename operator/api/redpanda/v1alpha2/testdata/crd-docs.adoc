@@ -518,9 +518,8 @@ _Underlying type:_ _ClusterConfiguration_
 
 _Underlying type:_ _string_
 
-ClusterConfigurationAppliedCondition - This condition indicates whether
-cluster configuration parameters have currently been applied to a cluster for
-the given generation.
+This condition indicates whether cluster configuration parameters have
+currently been applied to a cluster for the given generation.
 
 
 This condition defaults to "False" with a reason of "NotReconciled" and must
@@ -562,8 +561,8 @@ when a terminal error occurs, the "Quiesced" status should be set to True. +
 
 _Underlying type:_ _string_
 
-ClusterHealthyCondition - This condition indicates whether a cluster is
-healthy as defined by the Redpanda Admin API's cluster health endpoint.
+This condition indicates whether a cluster is healthy as defined by the
+Redpanda Admin API's cluster health endpoint.
 
 
 This condition defaults to "Unknown" with a reason of "NotReconciled" and
@@ -603,8 +602,7 @@ when a terminal error occurs, the "Quiesced" status should be set to True. +
 
 _Underlying type:_ _string_
 
-ClusterLicenseValidCondition - This condition indicates whether a cluster has
-a valid license.
+This condition indicates whether a cluster has a valid license.
 
 
 This condition defaults to "Unknown" with a reason of "NotReconciled" and
@@ -647,9 +645,8 @@ when a terminal error occurs, the "Quiesced" status should be set to True. +
 
 _Underlying type:_ _string_
 
-ClusterQuiescedCondition - This condition is used as to indicate that the
-cluster is no longer reconciling due to it being in a finalized state for the
-current generation.
+This condition is used as to indicate that the cluster is no longer
+reconciling due to it being in a finalized state for the current generation.
 
 
 This condition defaults to "False" with a reason of "NotReconciled" and must
@@ -682,9 +679,9 @@ operation or a non-terminal error has been encountered during reconciliation. +
 
 _Underlying type:_ _string_
 
-ClusterReadyCondition - This condition indicates whether a cluster is ready
-to serve any traffic. This can happen, for example if a cluster is partially
-degraded but still can process requests.
+This condition indicates whether a cluster is ready to serve any traffic.
+This can happen, for example if a cluster is partially degraded but still can
+process requests.
 
 
 This condition defaults to "Unknown" with a reason of "NotReconciled" and
@@ -753,8 +750,8 @@ ClusterRef represents a reference to a cluster that is being targeted.
 
 _Underlying type:_ _string_
 
-ClusterResourcesSyncedCondition - This condition indicates whether the
-Kubernetes resources for a cluster have been synchronized.
+This condition indicates whether the Kubernetes resources for a cluster have
+been synchronized.
 
 
 This condition defaults to "False" with a reason of "NotReconciled" and must
@@ -822,8 +819,8 @@ This takes precedence over StaticConfigurationSource. + |  |
 
 _Underlying type:_ _string_
 
-ClusterStableCondition - This condition is used as a roll-up status for any
-sort of automation such as terraform.
+This condition is used as a roll-up status for any sort of automation such as
+terraform.
 
 
 This condition defaults to "False" with a reason of "NotReconciled" and must
@@ -2104,8 +2101,8 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 
 _Underlying type:_ _string_
 
-NodePoolBoundCondition - This condition indicates whether a node pool is
-bound to a known Redpanda cluster.
+This condition indicates whether a node pool is bound to a known Redpanda
+cluster.
 
 
 This condition defaults to "Unknown" with a reason of "NotReconciled" and
@@ -2143,8 +2140,8 @@ applying the desired node pool state. +
 
 _Underlying type:_ _string_
 
-NodePoolDeployedCondition - This condition indicates whether a node pool has
-been deployed for a known Redpanda cluster.
+This condition indicates whether a node pool has been deployed for a known
+Redpanda cluster.
 
 
 This condition defaults to "Unknown" with a reason of "NotReconciled" and
@@ -2185,9 +2182,8 @@ applying the desired node pool state. +
 
 _Underlying type:_ _string_
 
-NodePoolQuiescedCondition - This condition is used as to indicate that the
-node pool is no longer reconciling due to it being in a finalized state for
-the current generation.
+This condition is used as to indicate that the node pool is no longer
+reconciling due to it being in a finalized state for the current generation.
 
 
 This condition defaults to "False" with a reason of "NotReconciled" and must
@@ -2247,8 +2243,8 @@ override the defaults.
 
 _Underlying type:_ _string_
 
-NodePoolStableCondition - This condition is used as a roll-up status for any
-sort of automation such as terraform.
+This condition is used as a roll-up status for any sort of automation such as
+terraform.
 
 
 This condition defaults to "False" with a reason of "NotReconciled" and must
