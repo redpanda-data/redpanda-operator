@@ -108,6 +108,9 @@ func convertInitContainer(state *redpanda.RenderState, values *redpanda.Values, 
 	}
 
 	container := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, name)
+	if container.Resources == nil {
+		container.Resources = &applycorev1.ResourceRequirementsApplyConfiguration{}
+	}
 	if err := convertJSONNotNil(spec.GetResources(), container.Resources); err != nil {
 		return err
 	}
