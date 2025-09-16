@@ -261,8 +261,6 @@ func objectLabels(obj metav1.Object) (labels.CommonLabels, error) {
 	switch o := obj.(type) {
 	case *vectorizedv1alpha1.Cluster:
 		objLabels = labels.ForCluster(o)
-	case *vectorizedv1alpha1.Console:
-		objLabels = labels.ForConsole(o)
 	default:
 		return nil, fmt.Errorf("expected object to be Cluster or Console") //nolint:goerr113 // no need to declare new error type
 	}

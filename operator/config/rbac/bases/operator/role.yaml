@@ -26,11 +26,7 @@ rules:
   - events
   verbs:
   - create
-  - get
-  - list
   - patch
-  - update
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -264,7 +260,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters
-  - consoles
   verbs:
   - create
   - delete
@@ -277,7 +272,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/finalizers
-  - consoles/finalizers
   verbs:
   - patch
   - update
@@ -285,7 +279,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/status
-  - consoles/status
   verbs:
   - get
   - patch
