@@ -142,6 +142,7 @@ tasks:
     generates:
     - ./internal/statuses/*.go
     cmds:
+    - gen status --output-directory ./api/redpanda/v1alpha2 --output-package v1alpha2 --statuses-file ./statuses.yaml --generate-crd-docs
     - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --rewrite-comments
     deps:
     - task: :build:gen

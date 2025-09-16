@@ -22,12 +22,16 @@
 
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-acloperation"]
 ==== ACLOperation
 
 _Underlying type:_ _string_
 
 ACLOperation specifies the type of operation for an ACL.
+
+
 
 
 
@@ -38,12 +42,16 @@ ACLOperation specifies the type of operation for an ACL.
 
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec"]
 ==== ACLResourceSpec
 
 
 
 ACLResourceSpec indicates the resource for which given ACL rule applies.
+
+
 
 
 
@@ -74,6 +82,8 @@ a prefix. Prefixed patterns can only be specified when using types `topic`, `gro
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule"]
 ==== ACLRule
 
@@ -83,6 +93,8 @@ ACLRule defines an ACL rule applied to the given user.
 
 
 Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
+
+
 
 
 
@@ -118,6 +130,8 @@ MinItems: 1 +
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-acltype"]
 ==== ACLType
 
@@ -128,10 +142,14 @@ ACLType specifies the type, either allow or deny of an ACL rule.
 .Validation:
 - Enum: [allow deny]
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$]
 ****
+
+
 
 
 
@@ -141,6 +159,8 @@ ACLType specifies the type, either allow or deny of an ACL rule.
 
 
 Admin configures settings for the Admin API listeners.
+
+
 
 
 
@@ -168,12 +188,16 @@ on internal listeners. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminapispec"]
 ==== AdminAPISpec
 
 
 
 AdminAPISpec defines client configuration for connecting to Redpanda's admin API.
+
+
 
 
 
@@ -191,12 +215,16 @@ AdminAPISpec defines client configuration for connecting to Redpanda's admin API
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl"]
 ==== AdminSASL
 
 
 
 AdminSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+
+
 
 
 
@@ -215,12 +243,16 @@ AdminSASL configures credentials to connect to Redpanda cluster that has authent
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auditlogging"]
 ==== AuditLogging
 
 
 
 AuditLogging configures how to perform audit logging for a redpanda cluster
+
+
 
 
 
@@ -248,12 +280,16 @@ Redpanda will use the `internal_topic_replication_factor` cluster config value. 
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auth"]
 ==== Auth
 
 
 
 Auth configures authentication in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/security/authentication/sasl-kubernetes/.
+
+
 
 
 
@@ -269,6 +305,8 @@ Auth configures authentication in the Helm values. See https://docs.redpanda.com
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authorizationtype"]
 ==== AuthorizationType
 
@@ -279,10 +317,14 @@ AuthorizationType specifies the type of authorization to use in creating a user.
 .Validation:
 - Enum: [simple]
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec[$$UserAuthorizationSpec$$]
 ****
+
+
 
 
 
@@ -294,6 +336,8 @@ AuthorizationType specifies the type of authorization to use in creating a user.
 
 
 BootstrapUser configures the user used to bootstrap Redpanda when SASL is enabled.
+
+
 
 
 
@@ -313,12 +357,16 @@ password will be read from. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-budget"]
 ==== Budget
 
 
 
 Budget configures the management of disruptions affecting the Pods in the StatefulSet.
+
+
 
 
 
@@ -334,12 +382,16 @@ Budget configures the management of disruptions affecting the Pods in the Statef
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-cpu"]
 ==== CPU
 
 
 
 CPU configures CPU resources for containers. See https://docs.redpanda.com/current/manage/kubernetes/manage-resources/.
+
+
 
 
 
@@ -356,12 +408,16 @@ CPU configures CPU resources for containers. See https://docs.redpanda.com/curre
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-certificate"]
 ==== Certificate
 
 
 
 Certificate configures TLS certificates.
+
+
 
 
 
@@ -383,8 +439,12 @@ Certificate configures TLS certificates.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-chartref"]
 ==== ChartRef
+
+
 
 
 
@@ -431,10 +491,14 @@ References: +
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterconfiguration"]
 ==== ClusterConfiguration
 
 _Underlying type:_ _ClusterConfiguration_
+
+
 
 
 
@@ -447,12 +511,217 @@ _Underlying type:_ _ClusterConfiguration_
 
 
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterconfigurationappliedcondition"]
+==== ClusterConfigurationAppliedCondition
+
+_Underlying type:_ _string_
+
+ClusterConfigurationAppliedCondition - This condition indicates whether
+cluster configuration parameters have currently been applied to a cluster for
+the given generation.
+
+
+This condition defaults to "False" with a reason of "NotReconciled" and must
+be set by a controller when it subsequently reconciles a cluster.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Applied` | ClusterConfigurationAppliedReasonApplied - This reason is used with the +
+"ConfigurationApplied" condition when it evaluates to True because a cluster +
+has had its cluster configuration parameters applied. +
+ || `NotApplied` | ClusterConfigurationAppliedReasonNotApplied - This reason is used with the +
+"ConfigurationApplied" condition when it evaluates to False due to some +
+implementation-specific condition, such as when no brokers have been created +
+and thus we can't attempt a configuration. +
+ || `Error` | ClusterConfigurationAppliedReasonError - This reason is used when a cluster +
+has only been partially reconciled and we have early returned due to a +
+retryable error occurring prior to applying the desired cluster state. If it +
+is set on any non-final condition, then the condition "Quiesced" will be +
+False with a reason of "SillReconciling". +
+ || `TerminalError` | ClusterConfigurationAppliedReasonTerminalError - This reason is used when a +
+cluster has only been partially reconciled and we have early returned due to +
+a known terminal error occurring prior to applying the desired cluster state. +
+Because the cluster should no longer be reconciled when a terminal error +
+occurs, the "Quiesced" status should be set to True. +
+ |
+
+
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterhealthycondition"]
+==== ClusterHealthyCondition
+
+_Underlying type:_ _string_
+
+ClusterHealthyCondition - This condition indicates whether a cluster is
+healthy as defined by the Redpanda Admin API's cluster health endpoint.
+
+
+This condition defaults to "Unknown" with a reason of "NotReconciled" and
+must be set by a controller when it subsequently reconciles a cluster.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Healthy` | ClusterHealthyReasonHealthy - This reason is used with the "Healthy" +
+condition when it evaluates to True because a cluster's health endpoint says +
+the cluster is healthy. +
+ || `NotHealthy` | ClusterHealthyReasonNotHealthy - This reason is used with the "Healthy" +
+condition when it evaluates to False because a cluster's health endpoint says +
+the cluster is not healthy. +
+ || `Error` | ClusterHealthyReasonError - This reason is used when a cluster has only been +
+partially reconciled and we have early returned due to a retryable error +
+occurring prior to applying the desired cluster state. If it is set on any +
+non-final condition, then the condition "Quiesced" will be False with a +
+reason of "SillReconciling". +
+ || `TerminalError` | ClusterHealthyReasonTerminalError - This reason is used when a cluster has +
+only been partially reconciled and we have early returned due to a known +
+terminal error occurring prior to applying the desired cluster state. Because +
+the cluster should no longer be reconciled when a terminal error occurs, the +
+"Quiesced" status should be set to True. +
+ |
+
+
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterlicensevalidcondition"]
+==== ClusterLicenseValidCondition
+
+_Underlying type:_ _string_
+
+ClusterLicenseValidCondition - This condition indicates whether a cluster has
+a valid license.
+
+
+This condition defaults to "Unknown" with a reason of "NotReconciled" and
+must be set by a controller when it subsequently reconciles a cluster.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Valid` | ClusterLicenseValidReasonValid - This reason is used with the "LicenseValid" +
+condition when it evaluates to True because a cluster has a valid license. +
+ || `Expired` | ClusterLicenseValidReasonExpired - This reason is used with the +
+"LicenseValid" condition when it evaluates to False because a cluster has an +
+expired license. +
+ || `NotPresent` | ClusterLicenseValidReasonNotPresent - This reason is used with the +
+"LicenseValid" condition when it evaluates to False because a cluster has no +
+license. +
+ || `Error` | ClusterLicenseValidReasonError - This reason is used when a cluster has only +
+been partially reconciled and we have early returned due to a retryable error +
+occurring prior to applying the desired cluster state. If it is set on any +
+non-final condition, then the condition "Quiesced" will be False with a +
+reason of "SillReconciling". +
+ || `TerminalError` | ClusterLicenseValidReasonTerminalError - This reason is used when a cluster +
+has only been partially reconciled and we have early returned due to a known +
+terminal error occurring prior to applying the desired cluster state. Because +
+the cluster should no longer be reconciled when a terminal error occurs, the +
+"Quiesced" status should be set to True. +
+ |
+
+
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterquiescedcondition"]
+==== ClusterQuiescedCondition
+
+_Underlying type:_ _string_
+
+ClusterQuiescedCondition - This condition is used as to indicate that the
+cluster is no longer reconciling due to it being in a finalized state for the
+current generation.
+
+
+This condition defaults to "False" with a reason of "NotReconciled" and must
+be set by a controller when it subsequently reconciles a cluster.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Quiesced` | ClusterQuiescedReasonQuiesced - This reason is used with the "Quiesced" +
+condition when it evaluates to True because the operator has finished +
+reconciling the cluster at its current generation. +
+ || `StillReconciling` | ClusterQuiescedReasonStillReconciling - This reason is used with the +
+"Quiesced" condition when it evaluates to False because the operator has not +
+finished reconciling the cluster at its current generation. This can happen +
+when, for example, we're doing a cluster scaling operation or a non-terminal +
+error has been encountered during reconciliation. +
+ |
+
+
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterreadycondition"]
+==== ClusterReadyCondition
+
+_Underlying type:_ _string_
+
+ClusterReadyCondition - This condition indicates whether a cluster is ready
+to serve any traffic. This can happen, for example if a cluster is partially
+degraded but still can process requests.
+
+
+This condition defaults to "Unknown" with a reason of "NotReconciled" and
+must be set by a controller when it subsequently reconciles a cluster.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Ready` | ClusterReadyReasonReady - This reason is used with the "Ready" condition when +
+it evaluates to True because a cluster can service traffic. +
+ || `NotReady` | ClusterReadyReasonNotReady - This reason is used with the "Ready" condition +
+when it evaluates to False because a cluster is not ready to service traffic. +
+ || `Error` | ClusterReadyReasonError - This reason is used when a cluster has only been +
+partially reconciled and we have early returned due to a retryable error +
+occurring prior to applying the desired cluster state. If it is set on any +
+non-final condition, then the condition "Quiesced" will be False with a +
+reason of "SillReconciling". +
+ || `TerminalError` | ClusterReadyReasonTerminalError - This reason is used when a cluster has only +
+been partially reconciled and we have early returned due to a known terminal +
+error occurring prior to applying the desired cluster state. Because the +
+cluster should no longer be reconciled when a terminal error occurs, the +
+"Quiesced" status should be set to True. +
+ |
+
+
+
+
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref"]
 ==== ClusterRef
 
 
 
 ClusterRef represents a reference to a cluster that is being targeted.
+
+
 
 
 
@@ -472,12 +741,54 @@ ClusterRef represents a reference to a cluster that is being targeted.
 
 
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterresourcessyncedcondition"]
+==== ClusterResourcesSyncedCondition
+
+_Underlying type:_ _string_
+
+ClusterResourcesSyncedCondition - This condition indicates whether the
+Kubernetes resources for a cluster have been synchronized.
+
+
+This condition defaults to "False" with a reason of "NotReconciled" and must
+be set by a controller when it subsequently reconciles a cluster.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Synced` | ClusterResourcesSyncedReasonSynced - This reason is used with the +
+"ResourcesSynced" condition when it evaluates to True because a cluster has +
+had all of its Kubernetes resources synced. +
+ || `Error` | ClusterResourcesSyncedReasonError - This reason is used when a cluster has +
+only been partially reconciled and we have early returned due to a retryable +
+error occurring prior to applying the desired cluster state. If it is set on +
+any non-final condition, then the condition "Quiesced" will be False with a +
+reason of "SillReconciling". +
+ || `TerminalError` | ClusterResourcesSyncedReasonTerminalError - This reason is used when a +
+cluster has only been partially reconciled and we have early returned due to +
+a known terminal error occurring prior to applying the desired cluster state. +
+Because the cluster should no longer be reconciled when a terminal error +
+occurs, the "Quiesced" status should be set to True. +
+ |
+
+
+
+
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource"]
 ==== ClusterSource
 
 
 
 ClusterSource defines how to connect to a particular Redpanda cluster.
+
+
 
 
 
@@ -499,12 +810,47 @@ This takes precedence over StaticConfigurationSource. + |  |
 |===
 
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterstablecondition"]
+==== ClusterStableCondition
+
+_Underlying type:_ _string_
+
+ClusterStableCondition - This condition is used as a roll-up status for any
+sort of automation such as terraform.
+
+
+This condition defaults to "False" with a reason of "NotReconciled" and must
+be set by a controller when it subsequently reconciles a cluster.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Stable` | ClusterStableReasonStable - This reason is used with the "Stable" condition +
+when it evaluates to True because all dependent conditions also evaluate to +
+True. +
+ || `Unstable` | ClusterStableReasonUnstable - This reason is used with the "Stable" condition +
+when it evaluates to True because at least one dependent condition evaluates +
+to False. +
+ |
+
+
+
+
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls"]
 ==== CommonTLS
 
 
 
 CommonTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
+
+
 
 
 
@@ -525,6 +871,8 @@ CommonTLS specifies TLS configuration settings for Redpanda clusters that have a
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-compatibilitylevel"]
 ==== CompatibilityLevel
 
@@ -535,10 +883,14 @@ _Underlying type:_ _string_
 .Validation:
 - Enum: [None Backward BackwardTransitive Forward ForwardTransitive Full FullTransitive]
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
 ****
+
+
 
 
 
@@ -548,6 +900,8 @@ _Underlying type:_ _string_
 
 
 Config configures Redpanda config properties supported by Redpanda that may not work correctly in a Kubernetes cluster. Changing these values from the defaults comes with some risk. Use these properties to customize various Redpanda configurations that are not available in the `RedpandaClusterSpec`. These values have no impact on the configuration or behavior of the Kubernetes objects deployed by Helm, and therefore should not be modified for the purpose of configuring those objects. Instead, these settings get passed directly to the Redpanda binary at startup.
+
+
 
 
 
@@ -571,12 +925,16 @@ exposed as Kubernetes configmaps. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configsynonyms"]
 ==== ConfigSynonyms
 
 
 
 ConfigSynonyms was copied from https://github.com/twmb/franz-go/blob/01651affd204d4a3577a341e748c5d09b52587f8/pkg/kmsg/generated.go#L24569-L24578
+
+
 
 
 
@@ -595,12 +953,16 @@ ConfigSynonyms was copied from https://github.com/twmb/franz-go/blob/01651affd20
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher"]
 ==== ConfigWatcher
 
 
 
 ConfigWatcher configures a sidecar that watches for changes to the Secret in `auth.sasl.secretRef` and applies the changes to the Redpanda cluster.
+
+
 
 
 
@@ -622,12 +984,16 @@ DEPRECATED: Use sideCars.securityContext + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configuration"]
 ==== Configuration
 
 
 
 Configuration was copied from https://github.com/twmb/franz-go/blob/01651affd204d4a3577a341e748c5d09b52587f8/pkg/kmsg/generated.go#L24593-L24634
+
+
 
 
 
@@ -665,8 +1031,12 @@ the dynamic configuration, while its "synonym" will be the default. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configurator"]
 ==== Configurator
+
+
 
 
 
@@ -688,12 +1058,16 @@ the dynamic configuration, while its "synonym" will be the default. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectormonitoring"]
 ==== ConnectorMonitoring
 
 
 
 ConnectorMonitoring configures monitoring resources for Connectors. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
+
+
 
 
 
@@ -713,12 +1087,16 @@ ConnectorMonitoring configures monitoring resources for Connectors. See https://
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectorscreateobj"]
 ==== ConnectorsCreateObj
 
 
 
 ConnectorsCreateObj configures Kubernetes resources for Redpanda Connectors.
+
+
 
 
 
@@ -736,12 +1114,16 @@ never used. Prefer Create. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolecreateobj"]
 ==== ConsoleCreateObj
 
 
 
 ConsoleCreateObj represents configuration options for creating Kubernetes objects such as ConfigMaps, Secrets, and Deployments.
+
+
 
 
 
@@ -757,12 +1139,16 @@ ConsoleCreateObj represents configuration options for creating Kubernetes object
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-containerresources"]
 ==== ContainerResources
 
 
 
 ContainerResources defines resource limits for containers.
+
+
 
 
 
@@ -779,12 +1165,16 @@ ContainerResources defines resource limits for containers.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-credentialsecretref"]
 ==== CredentialSecretRef
 
 
 
 CredentialSecretRef can be used to set cloud_storage_secret_key from referenced Kubernetes Secret
+
+
 
 
 
@@ -801,12 +1191,16 @@ CredentialSecretRef can be used to set cloud_storage_secret_key from referenced 
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolstatus"]
 ==== EmbeddedNodePoolStatus
 
 
 
 EmbeddedNodePoolStatus defines the observed state of any node pools tied to this cluster
+
+
 
 
 
@@ -841,8 +1235,12 @@ state. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enablable"]
 ==== Enablable
+
+
 
 
 
@@ -863,12 +1261,16 @@ state. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise"]
 ==== Enterprise
 
 
 
 Enterprise configures an Enterprise license key to enable Redpanda Enterprise features. Requires the post-install job to be enabled (default). See https://docs.redpanda.com/current/get-started/licenses/.
+
+
 
 
 
@@ -885,12 +1287,16 @@ Enterprise configures an Enterprise license key to enable Redpanda Enterprise fe
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterpriselicensesecretref"]
 ==== EnterpriseLicenseSecretRef
 
 
 
 EnterpriseLicenseSecretRef configures a reference to a Secret resource that contains the Enterprise license key.
+
+
 
 
 
@@ -907,12 +1313,16 @@ EnterpriseLicenseSecretRef configures a reference to a Secret resource that cont
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external"]
 ==== External
 
 
 
 External defines external connectivity settings in the Helm values.
+
+
 
 
 
@@ -936,12 +1346,16 @@ External defines external connectivity settings in the Helm values.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externaldns"]
 ==== ExternalDNS
 
 
 
 ExternalDNS configures externalDNS.
+
+
 
 
 
@@ -957,12 +1371,16 @@ ExternalDNS configures externalDNS.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externallistener"]
 ==== ExternalListener
 
 
 
 ExternalListener configures settings for the external listeners.
+
+
 
 
 
@@ -994,12 +1412,16 @@ on internal listeners. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalservice"]
 ==== ExternalService
 
 
 
 ExternalService allows you to enable or disable the creation of an external Service type.
+
+
 
 
 
@@ -1015,8 +1437,12 @@ ExternalService allows you to enable or disable the creation of an external Serv
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-fsvalidator"]
 ==== FsValidator
+
+
 
 
 
@@ -1039,12 +1465,16 @@ ExternalService allows you to enable or disable the creation of an external Serv
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-http"]
 ==== HTTP
 
 
 
 HTTP configures settings for the HTTP Proxy listeners.
+
+
 
 
 
@@ -1074,12 +1504,16 @@ deprecated and not respected. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage"]
 ==== InitContainerImage
 
 
 
 InitContainerImage configures the init container image used to perform initial setup tasks before the main containers start.
+
+
 
 
 
@@ -1096,12 +1530,16 @@ InitContainerImage configures the init container image used to perform initial s
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainers"]
 ==== InitContainers
 
 
 
 InitContainers configures the init container used to perform initial setup tasks before the main containers start.
+
+
 
 
 
@@ -1122,12 +1560,16 @@ InitContainers configures the init container used to perform initial setup tasks
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-issuerref"]
 ==== IssuerRef
 
 
 
 IssuerRef configures the Issuer or ClusterIssuer resource to use to generate certificates. Requires cert-manager. See https://cert-manager.io/v1.1-docs.
+
+
 
 
 
@@ -1145,12 +1587,16 @@ IssuerRef configures the Issuer or ClusterIssuer resource to use to generate cer
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafka"]
 ==== Kafka
 
 
 
 Kafka configures settings for the Kafka API listeners.
+
+
 
 
 
@@ -1178,12 +1624,16 @@ on internal listeners. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkaapispec"]
 ==== KafkaAPISpec
 
 
 
 KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
+
+
 
 
 
@@ -1206,12 +1656,16 @@ KafkaAPISpec configures client configuration settings for connecting to Redpanda
 
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl"]
 ==== KafkaSASL
 
 
 
 KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+
+
 
 
 
@@ -1232,6 +1686,8 @@ KafkaSASL configures credentials to connect to Redpanda cluster that has authent
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam"]
 ==== KafkaSASLAWSMskIam
 
@@ -1239,6 +1695,8 @@ KafkaSASL configures credentials to connect to Redpanda cluster that has authent
 
 KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
 see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+
+
 
 
 
@@ -1264,12 +1722,16 @@ https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-ke
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi"]
 ==== KafkaSASLGSSAPI
 
 
 
 KafkaSASLGSSAPI represents the Kafka Kerberos config.
+
+
 
 
 
@@ -1294,12 +1756,16 @@ FAST provides increased resistance to passive password guessing attacks. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer"]
 ==== KafkaSASLOAuthBearer
 
 
 
 KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
+
+
 
 
 
@@ -1315,12 +1781,16 @@ KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-licensesecretref"]
 ==== LicenseSecretRef
 
 
 
 LicenseSecretRef is deprecated. Use `EnterpriseLicenseSecretRef` instead.
+
+
 
 
 
@@ -1337,8 +1807,12 @@ LicenseSecretRef is deprecated. Use `EnterpriseLicenseSecretRef` instead.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listener"]
 ==== Listener
+
+
 
 
 
@@ -1373,12 +1847,16 @@ on internal listeners. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls"]
 ==== ListenerTLS
 
 
 
 ListenerTLS configures TLS configuration for each listener in the Helm values.
+
+
 
 
 
@@ -1411,12 +1889,16 @@ MinProperties: 1 +
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listeners"]
 ==== Listeners
 
 
 
 Listeners configures settings for listeners, including HTTP Proxy, Schema Registry, the Admin API and the Kafka API. See https://docs.redpanda.com/current/manage/kubernetes/networking/configure-listeners/.
+
+
 
 
 
@@ -1436,12 +1918,16 @@ Listeners configures settings for listeners, including HTTP Proxy, Schema Regist
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-livenessprobe"]
 ==== LivenessProbe
 
 
 
 LivenessProbe configures liveness probes to monitor the health of the Pods and restart them if necessary.
+
+
 
 
 
@@ -1462,12 +1948,16 @@ LivenessProbe configures liveness probes to monitor the health of the Pods and r
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-logging"]
 ==== Logging
 
 
 
 Logging configures logging settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/troubleshooting/troubleshoot/.
+
+
 
 
 
@@ -1484,12 +1974,16 @@ Logging configures logging settings in the Helm values. See https://docs.redpand
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-memory"]
 ==== Memory
 
 
 
 Memory configures memory resources.
+
+
 
 
 
@@ -1507,12 +2001,16 @@ Memory configures memory resources.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-metadatatemplate"]
 ==== MetadataTemplate
 
 
 
 MetadataTemplate defines additional metadata to associate with a resource.
+
+
 
 
 
@@ -1529,12 +2027,16 @@ MetadataTemplate defines additional metadata to associate with a resource.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring"]
 ==== Monitoring
 
 
 
 Monitoring configures monitoring resources for Redpanda. See https://docs.redpanda.com/current/manage/kubernetes/monitoring/monitor-redpanda/.
+
+
 
 
 
@@ -1554,8 +2056,12 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool"]
 ==== NodePool
+
+
 
 
 
@@ -1586,6 +2092,115 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolboundcondition"]
+==== NodePoolBoundCondition
+
+_Underlying type:_ _string_
+
+NodePoolBoundCondition - This condition indicates whether a node pool is
+bound to a known Redpanda cluster.
+
+
+This condition defaults to "Unknown" with a reason of "NotReconciled" and
+must be set by a controller when it subsequently reconciles a node pool.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Bound` | NodePoolBoundReasonBound - This reason is used with the "Bound" condition +
+when it evaluates to True because a node pool is bound to a cluster. +
+ || `NotBound` | NodePoolBoundReasonNotBound - This reason is used with the "Bound" condition +
+when it evaluates to False because a node pool is not bound to a cluster. +
+ || `Error` | NodePoolBoundReasonError - This reason is used when a node pool has only been +
+partially reconciled and we have early returned due to a retryable error +
+occurring prior to applying the desired node pool state. +
+ || `TerminalError` | NodePoolBoundReasonTerminalError - This reason is used when a node pool has +
+only been partially reconciled and we have early returned due to a known +
+terminal error occurring prior to applying the desired node pool state. +
+ |
+
+
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepooldeployedcondition"]
+==== NodePoolDeployedCondition
+
+_Underlying type:_ _string_
+
+NodePoolDeployedCondition - This condition indicates whether a node pool has
+been deployed for a known Redpanda cluster.
+
+
+This condition defaults to "Unknown" with a reason of "NotReconciled" and
+must be set by a controller when it subsequently reconciles a node pool.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Deployed` | NodePoolDeployedReasonDeployed - This reason is used with the "Deployed" +
+condition when it evaluates to True because a node pool has been fully +
+deployed for a cluster. +
+ || `Scaling` | NodePoolDeployedReasonScaling - This reason is used with the "Deployed" +
+condition when it evaluates to False because a node pool has not yet been +
+fully deployed for a cluster. +
+ || `NotDeployed` | NodePoolDeployedReasonNotDeployed - This reason is used with the "Deployed" +
+condition when it evaluates to False because a node pool has not started to +
+deploy for a cluster. +
+ || `Error` | NodePoolDeployedReasonError - This reason is used when a node pool has only +
+been partially reconciled and we have early returned due to a retryable error +
+occurring prior to applying the desired node pool state. +
+ || `TerminalError` | NodePoolDeployedReasonTerminalError - This reason is used when a node pool +
+has only been partially reconciled and we have early returned due to a known +
+terminal error occurring prior to applying the desired node pool state. +
+ |
+
+
+
+
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolquiescedcondition"]
+==== NodePoolQuiescedCondition
+
+_Underlying type:_ _string_
+
+NodePoolQuiescedCondition - This condition is used as to indicate that the
+node pool is no longer reconciling due to it being in a finalized state for
+the current generation.
+
+
+This condition defaults to "False" with a reason of "NotReconciled" and must
+be set by a controller when it subsequently reconciles a node pool.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Quiesced` | NodePoolQuiescedReasonQuiesced - This reason is used with the "Quiesced" +
+condition when it evaluates to True because the operator has finished +
+reconciling the node pool at its current generation. +
+ || `StillReconciling` | NodePoolQuiescedReasonStillReconciling - This reason is used with the +
+"Quiesced" condition when it evaluates to False because the operator has not +
+finished reconciling the node pool at its current generation. +
+ |
+
+
+
+
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec"]
 ==== NodePoolSpec
 
@@ -1595,6 +2210,8 @@ NodePoolSpec contains the node pool spec for the given node pool.
 Note that the defaulting behavior comes from the underlying Redpanda
 chart renderer, the attributes specified here will get merged in and
 override the defaults.
+
+
 
 
 
@@ -1610,12 +2227,47 @@ override the defaults.
 |===
 
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstablecondition"]
+==== NodePoolStableCondition
+
+_Underlying type:_ _string_
+
+NodePoolStableCondition - This condition is used as a roll-up status for any
+sort of automation such as terraform.
+
+
+This condition defaults to "False" with a reason of "NotReconciled" and must
+be set by a controller when it subsequently reconciles a node pool.
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description |
+| `Stable` | NodePoolStableReasonStable - This reason is used with the "Stable" condition +
+when it evaluates to True because all dependent conditions also evaluate to +
+True. +
+ || `Unstable` | NodePoolStableReasonUnstable - This reason is used with the "Stable" +
+condition when it evaluates to True because at least one dependent condition +
+evaluates to False. +
+ |
+
+
+
+
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus"]
 ==== NodePoolStatus
 
 
 
 NodePoolStatus defines the observed state of any node pools tied to this cluster
+
+
 
 
 
@@ -1652,12 +2304,16 @@ deployed as a StatefulSet + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password"]
 ==== Password
 
 
 
 Password specifies a password for the user.
+
+
 
 
 
@@ -1676,12 +2332,16 @@ In production, use ValueFrom. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource"]
 ==== PasswordSource
 
 
 
 PasswordSource contains the source for a password.
+
+
 
 
 
@@ -1700,6 +2360,8 @@ stored based on this configuration. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-patterntype"]
 ==== PatternType
 
@@ -1710,10 +2372,14 @@ PatternType specifies the type of pattern applied for ACL resource matching.
 .Validation:
 - Enum: [literal prefixed]
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec[$$ACLResourceSpec$$]
 ****
+
+
 
 
 
@@ -1723,6 +2389,8 @@ PatternType specifies the type of pattern applied for ACL resource matching.
 
 
 PersistentVolume configures configurations for a PersistentVolumeClaim to use to store the Redpanda data directory.
+
+
 
 
 
@@ -1744,12 +2412,16 @@ PersistentVolume configures configurations for a PersistentVolumeClaim to use to
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podantiaffinity"]
 ==== PodAntiAffinity
 
 
 
 PodAntiAffinity configures Pod anti-affinity rules to prevent Pods from being scheduled together on the same node.
+
+
 
 
 
@@ -1768,6 +2440,8 @@ PodAntiAffinity configures Pod anti-affinity rules to prevent Pods from being sc
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podspecapplyconfiguration"]
 ==== PodSpecApplyConfiguration
 
@@ -1778,10 +2452,14 @@ PodSpecApplyConfiguration is a wrapper around
 
 
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]
 ****
+
+
 
 
 
@@ -1791,6 +2469,8 @@ PodSpecApplyConfiguration is a wrapper around
 
 
 PodTemplate will pass label and annotation to Statefulset Pod template.
+
+
 
 
 
@@ -1810,8 +2490,12 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolconfigurator"]
 ==== PoolConfigurator
+
+
 
 
 
@@ -1831,8 +2515,12 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolfsvalidator"]
 ==== PoolFSValidator
+
+
 
 
 
@@ -1855,8 +2543,12 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolsetdatadirownership"]
 ==== PoolSetDataDirOwnership
+
+
 
 
 
@@ -1876,12 +2568,16 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postinstalljob"]
 ==== PostInstallJob
 
 
 
 PostInstallJob configures configurations for the post-install job that run after installation of the Helm chart.
+
+
 
 
 
@@ -1906,12 +2602,16 @@ into this Job's PodTemplate. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postupgradejob"]
 ==== PostUpgradeJob
 
 
 
 PostUpgradeJob configures configurations for the post-upgrade job that run after each upgrade of the Helm chart.
+
+
 
 
 
@@ -1939,12 +2639,16 @@ into this Job's PodTemplate. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac"]
 ==== RBAC
 
 
 
 RBAC configures role-based access control (RBAC).
+
+
 
 
 
@@ -1962,12 +2666,16 @@ RBAC configures role-based access control (RBAC).
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpc"]
 ==== RPC
 
 
 
 RPC configures settings for the RPC API listeners.
+
+
 
 
 
@@ -1984,12 +2692,16 @@ RPC configures settings for the RPC API listeners.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers"]
 ==== RPControllers
 
 
 
 RPControllers configures additional controllers that can be deployed as sidecars in rp helm
+
+
 
 
 
@@ -2015,12 +2727,16 @@ DEPRECATED: Use sideCars.securityContext + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness"]
 ==== RackAwareness
 
 
 
 RackAwareness configures rack awareness in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/kubernetes-rack-awareness/.
+
+
 
 
 
@@ -2037,12 +2753,16 @@ RackAwareness configures rack awareness in the Helm values. See https://docs.red
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-readinessprobe"]
 ==== ReadinessProbe
 
 
 
 ReadinessProbe configures readiness probes to determine when a Pod is ready to handle traffic.
+
+
 
 
 
@@ -2063,12 +2783,16 @@ ReadinessProbe configures readiness probes to determine when a Pod is ready to h
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda"]
 ==== Redpanda
 
 
 
 Redpanda defines the CRD for Redpanda clusters.
+
+
 
 
 
@@ -2095,12 +2819,16 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec"]
 ==== RedpandaClusterSpec
 
 
 
 RedpandaClusterSpec defines the desired state of a Redpanda cluster. These settings are the same as those defined in the Redpanda Helm chart. The values in these settings are passed to the Redpanda Helm chart through Flux. For all default values and links to more documentation, see https://docs.redpanda.com/current/reference/redpanda-helm-spec/.
+
+
 
 
 
@@ -2153,12 +2881,16 @@ documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-po
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors"]
 ==== RedpandaConnectors
 
 
 
 RedpandaConnectors configures Redpanda Connectors. Redpanda Connectors is a package that includes Kafka Connect and built-in connectors, sometimes known as plugins. See https://docs.redpanda.com/current/deploy/deployment-option/self-hosted/kubernetes/k-deploy-connectors/.
+
+
 
 
 
@@ -2190,6 +2922,8 @@ RedpandaConnectors configures Redpanda Connectors. Redpanda Connectors is a pack
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole"]
 ==== RedpandaConsole
 
@@ -2199,6 +2933,8 @@ RedpandaConsole is the union of console.PartialValues (earlier or equal to
 v0.7.31 Console version) and consolev3.PartialValues (after v0.7.31 Console version).
 Use these settings to configure the subchart. For more details on each setting,
 see the Helm values for the Redpanda Console chart: https://artifacthub.io/packages/helm/redpanda-data/console?modal=values
+
+
 
 
 
@@ -2261,12 +2997,16 @@ Please consider use Enterprise in RedpandaClusterSpec type. +
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage"]
 ==== RedpandaImage
 
 
 
 RedpandaImage configures the Redpanda container image settings in the Helm values.
+
+
 
 
 
@@ -2287,8 +3027,12 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus"]
 ==== RedpandaLicenseStatus
+
+
 
 
 
@@ -2313,6 +3057,8 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandamemory"]
 ==== RedpandaMemory
 
@@ -2333,6 +3079,8 @@ Defined by the `--reserve-memory` parameter. Represents the memory available for
 
 
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-memory[$$Memory$$]
@@ -2346,12 +3094,16 @@ Defined by the `--reserve-memory` parameter. Represents the memory available for
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec"]
 ==== RedpandaSpec
 
 
 
 RedpandaSpec defines the desired state of the Redpanda cluster.
+
+
 
 
 
@@ -2368,12 +3120,16 @@ RedpandaSpec defines the desired state of the Redpanda cluster.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus"]
 ==== RedpandaStatus
 
 
 
 RedpandaStatus defines the observed state of Redpanda
+
+
 
 
 
@@ -2417,12 +3173,16 @@ deprecated + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetemplate"]
 ==== ResourceTemplate
 
 
 
 ResourceTemplate specifies additional configuration for a resource.
+
+
 
 
 
@@ -2439,6 +3199,8 @@ ResourceTemplate specifies additional configuration for a resource.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetype"]
 ==== ResourceType
 
@@ -2449,10 +3211,14 @@ ResourceType specifies the type of resource an ACL is applied to.
 .Validation:
 - Enum: [topic group cluster transactionalId]
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec[$$ACLResourceSpec$$]
 ****
+
+
 
 
 
@@ -2488,6 +3254,8 @@ and `Requests`.
 
 
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
@@ -2503,12 +3271,16 @@ and `Requests`.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-role"]
 ==== Role
 
 
 
 Role defines the CRD for a Redpanda role.
+
+
 
 
 
@@ -2535,12 +3307,16 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec"]
 ==== RoleAuthorizationSpec
 
 
 
 RoleAuthorizationSpec defines authorization rules for this role.
+
+
 
 
 
@@ -2557,12 +3333,16 @@ RoleAuthorizationSpec defines authorization rules for this role.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec"]
 ==== RoleSpec
 
 
 
 RoleSpec defines the configuration of a Redpanda role.
+
+
 
 
 
@@ -2584,12 +3364,16 @@ If omitted, ACLs should be managed separately using Redpanda's ACL management. +
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolestatus"]
 ==== RoleStatus
 
 
 
 RoleStatus defines the observed state of a Redpanda role
+
+
 
 
 
@@ -2610,12 +3394,16 @@ to be cleaned up. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sasl"]
 ==== SASL
 
 
 
 SASL configures SASL authentication in the Helm values.
+
+
 
 
 
@@ -2635,12 +3423,16 @@ SASL configures SASL authentication in the Helm values.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism"]
 ==== SASLMechanism
 
 _Underlying type:_ _string_
 
 SASLMechanism specifies a SASL auth mechanism.
+
+
 
 
 
@@ -2654,12 +3446,16 @@ SASLMechanism specifies a SASL auth mechanism.
 
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema"]
 ==== Schema
 
 
 
 Schema defines the CRD for a Redpanda schema.
+
+
 
 
 
@@ -2686,6 +3482,8 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemareference"]
 ==== SchemaReference
 
@@ -2695,6 +3493,8 @@ SchemaReference is a way for a one schema to reference another. The
 details for how referencing is done are type specific; for example,
 JSON objects that use the key "$ref" can refer to another schema via
 URL.
+
+
 
 
 
@@ -2712,12 +3512,16 @@ URL.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistry"]
 ==== SchemaRegistry
 
 
 
 SchemaRegistry configures settings for the Schema Registry listeners.
+
+
 
 
 
@@ -2747,12 +3551,16 @@ deprecated and not respected. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl"]
 ==== SchemaRegistrySASL
 
 
 
 SchemaRegistrySASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+
+
 
 
 
@@ -2771,12 +3579,16 @@ SchemaRegistrySASL configures credentials to connect to Redpanda cluster that ha
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistryspec"]
 ==== SchemaRegistrySpec
 
 
 
 SchemaRegistrySpec defines client configuration for connecting to Redpanda's admin API.
+
+
 
 
 
@@ -2794,12 +3606,16 @@ SchemaRegistrySpec defines client configuration for connecting to Redpanda's adm
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec"]
 ==== SchemaSpec
 
 
 
 SchemaSpec defines the configuration of a Redpanda schema.
+
+
 
 
 
@@ -2823,12 +3639,16 @@ docs on SchemaReference for more details. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemastatus"]
 ==== SchemaStatus
 
 
 
 SchemaStatus defines the observed state of a Redpanda schema.
+
+
 
 
 
@@ -2847,6 +3667,8 @@ SchemaStatus defines the observed state of a Redpanda schema.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schematype"]
 ==== SchemaType
 
@@ -2857,10 +3679,14 @@ SchemaType specifies the type of the given schema.
 .Validation:
 - Enum: [avro protobuf json]
 
+
+
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
 ****
+
+
 
 
 
@@ -2871,6 +3697,8 @@ SchemaType specifies the type of the given schema.
 
 SecretKeyRef contains enough information to inspect or modify the referred Secret data
 See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+
+
 
 
 
@@ -2894,12 +3722,16 @@ More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/nam
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretref"]
 ==== SecretRef
 
 
 
 SecretRef configures the Secret resource that contains existing TLS certificates.
+
+
 
 
 
@@ -2915,8 +3747,12 @@ SecretRef configures the Secret resource that contains existing TLS certificates
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield"]
 ==== SecretWithConfigField
+
+
 
 
 
@@ -2938,8 +3774,12 @@ SecretRef configures the Secret resource that contains existing TLS certificates
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-service"]
 ==== Service
+
+
 
 
 
@@ -2960,12 +3800,16 @@ SecretRef configures the Secret resource that contains existing TLS certificates
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount"]
 ==== ServiceAccount
 
 
 
 ServiceAccount configures Service Accounts.
+
+
 
 
 
@@ -2984,8 +3828,12 @@ ServiceAccount configures Service Accounts.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceinternal"]
 ==== ServiceInternal
+
+
 
 
 
@@ -3005,12 +3853,16 @@ ServiceAccount configures Service Accounts.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-setdatadirownership"]
 ==== SetDataDirOwnership
 
 
 
 SetDataDirOwnership defines the settings related to ownership of the Redpanda data directory in environments where root access is restricted.
+
+
 
 
 
@@ -3028,12 +3880,16 @@ SetDataDirOwnership defines the settings related to ownership of the Redpanda da
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-settieredstoragecachedirownership"]
 ==== SetTieredStorageCacheDirOwnership
 
 
 
 SetTieredStorageCacheDirOwnership configures the settings related to ownership of the Tiered Storage cache in environments where root access is restricted.
+
+
 
 
 
@@ -3050,12 +3906,16 @@ SetTieredStorageCacheDirOwnership configures the settings related to ownership o
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj"]
 ==== SideCarObj
 
 
 
 SideCarObj represents a generic sidecar object. This is a placeholder for now.
+
+
 
 
 
@@ -3075,12 +3935,16 @@ DEPRECATED: Use sideCars.securityContext + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars"]
 ==== SideCars
 
 
 
 SideCars configures the additional sidecar containers that run alongside the main Redpanda container in the Pod.
+
+
 
 
 
@@ -3103,12 +3967,16 @@ SideCars configures the additional sidecar containers that run alongside the mai
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-startupprobe"]
 ==== StartupProbe
 
 
 
 StartupProbe configures the startup probe to determine when the Redpanda application within the Pod has started successfully.
+
+
 
 
 
@@ -3128,12 +3996,16 @@ StartupProbe configures the startup probe to determine when the Redpanda applica
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset"]
 ==== Statefulset
 
 
 
 Statefulset defines configurations for the StatefulSet in Helm values.
+
+
 
 
 
@@ -3174,6 +4046,8 @@ into this StatefulSet's PodTemplate. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-staticconfigurationsource"]
 ==== StaticConfigurationSource
 
@@ -3181,6 +4055,8 @@ into this StatefulSet's PodTemplate. + |  |
 
 StaticConfigurationSource configures connections to a Redpanda cluster via hard-coded
 connection strings and manually configured TLS and authentication parameters.
+
+
 
 
 
@@ -3201,12 +4077,16 @@ API of a Redpanda cluster where the object should be created. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-storage"]
 ==== Storage
 
 
 
 Storage configures storage-related settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/storage/.
+
+
 
 
 
@@ -3224,12 +4104,16 @@ Storage configures storage-related settings in the Helm values. See https://docs
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls"]
 ==== TLS
 
 
 
 TLS configures TLS in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/security/tls/.
+
+
 
 
 
@@ -3246,12 +4130,16 @@ TLS configures TLS in the Helm values. See https://docs.redpanda.com/current/man
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered"]
 ==== Tiered
 
 
 
 Tiered configures storage for the Tiered Storage cache. See https://docs.redpanda.com/current/manage/kubernetes/tiered-storage-kubernetes/.
+
+
 
 
 
@@ -3277,12 +4165,16 @@ Tiered configures storage for the Tiered Storage cache. See https://docs.redpand
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tieredconfig"]
 ==== TieredConfig
 
 
 
 TieredConfig configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.
+
+
 
 
 
@@ -3328,12 +4220,16 @@ TieredConfig configures Tiered Storage, which requires an Enterprise license con
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic"]
 ==== Topic
 
 
 
 Topic defines the CRD for Topic resources. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
+
+
 
 
 
@@ -3360,12 +4256,16 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec"]
 ==== TopicSpec
 
 
 
 TopicSpec defines the desired state of the topic. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
+
+
 
 
 
@@ -3412,12 +4312,16 @@ Type: string +
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicstatus"]
 ==== TopicStatus
 
 
 
 TopicStatus defines the observed state of the Topic resource.
+
+
 
 
 
@@ -3435,12 +4339,16 @@ TopicStatus defines the observed state of the Topic resource.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topologyspreadconstraints"]
 ==== TopologySpreadConstraints
 
 
 
 TopologySpreadConstraints configures topology spread constraints to control how Pods are spread across different topology domains.
+
+
 
 
 
@@ -3458,6 +4366,8 @@ TopologySpreadConstraints configures topology spread constraints to control how 
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-truststore"]
 ==== TrustStore
 
@@ -3469,6 +4379,8 @@ TrustStore is a mapping from a value on either a Secret or ConfigMap to the
 .Validation:
 - MaxProperties: 1
 - MinProperties: 1
+
+
 
 .Appears In:
 ****
@@ -3483,12 +4395,16 @@ TrustStore is a mapping from a value on either a Secret or ConfigMap to the
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tuning"]
 ==== Tuning
 
 
 
 Tuning configures settings for the autotuner tool in Redpanda. The autotuner identifies the hardware configuration in the container and optimizes the Linux kernel to give you the best performance.
+
+
 
 
 
@@ -3512,12 +4428,16 @@ Tuning configures settings for the autotuner tool in Redpanda. The autotuner ide
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-updatestrategy"]
 ==== UpdateStrategy
 
 
 
 UpdateStrategy configures the update strategy for the StatefulSet to manage how updates are rolled out to the Pods.
+
+
 
 
 
@@ -3533,12 +4453,16 @@ UpdateStrategy configures the update strategy for the StatefulSet to manage how 
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usagestats"]
 ==== UsageStats
 
 
 
 UsageStats configures the reporting of usage statistics. Redpanda Data uses these metrics to learn how the software is used, which can guide future improvements.
+
+
 
 
 
@@ -3558,12 +4482,16 @@ and will be removed in a future version. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user"]
 ==== User
 
 
 
 User defines the CRD for a Redpanda user.
+
+
 
 
 
@@ -3590,12 +4518,16 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthenticationspec"]
 ==== UserAuthenticationSpec
 
 
 
 UserAuthenticationSpec defines the authentication mechanism enabled for this Redpanda user.
+
+
 
 
 
@@ -3615,12 +4547,16 @@ UserAuthenticationSpec defines the authentication mechanism enabled for this Red
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec"]
 ==== UserAuthorizationSpec
 
 
 
 UserAuthorizationSpec defines authorization rules for this user.
+
+
 
 
 
@@ -3640,12 +4576,16 @@ UserAuthorizationSpec defines authorization rules for this user.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec"]
 ==== UserSpec
 
 
 
 UserSpec defines the configuration of a Redpanda user.
+
+
 
 
 
@@ -3667,12 +4607,16 @@ This is useful when wanting to manage ACLs for an already-existing user. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userstatus"]
 ==== UserStatus
 
 
 
 UserStatus defines the observed state of a Redpanda user
+
+
 
 
 
@@ -3693,6 +4637,8 @@ to be cleaned up. + |  |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usertemplatespec"]
 ==== UserTemplateSpec
 
@@ -3700,6 +4646,8 @@ to be cleaned up. + |  |
 
 UserTemplateSpec defines the template metadata (labels and annotations)
 for any subresources, such as Secrets, created by a User object.
+
+
 
 
 
@@ -3715,12 +4663,16 @@ for any subresources, such as Secrets, created by a User object.
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usersitems"]
 ==== UsersItems
 
 
 
 UsersItems configures a list of superusers in the Helm values.
+
+
 
 
 
