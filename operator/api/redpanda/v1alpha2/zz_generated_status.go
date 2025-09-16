@@ -100,13 +100,6 @@ type NodePoolQuiescedCondition string
 type NodePoolStableCondition string
 
 const (
-	// This condition indicates whether a cluster is ready to serve any traffic.
-	// This can happen, for example if a cluster is partially degraded but still can
-	// process requests.
-	//
-	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
-	// must be set by a controller when it subsequently reconciles a cluster.
-	ClusterReady = "Ready"
 	// This reason is used with the "Ready" condition when it evaluates to True
 	// because a cluster can service traffic.
 	ClusterReadyReasonReady ClusterReadyCondition = "Ready"
@@ -124,12 +117,6 @@ const (
 	// when a terminal error occurs, the "Quiesced" status should be set to True.
 	ClusterReadyReasonTerminalError ClusterReadyCondition = "TerminalError"
 
-	// This condition indicates whether a cluster is healthy as defined by the
-	// Redpanda Admin API's cluster health endpoint.
-	//
-	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
-	// must be set by a controller when it subsequently reconciles a cluster.
-	ClusterHealthy = "Healthy"
 	// This reason is used with the "Healthy" condition when it evaluates to True
 	// because a cluster's health endpoint says the cluster is healthy.
 	ClusterHealthyReasonHealthy ClusterHealthyCondition = "Healthy"
@@ -147,11 +134,6 @@ const (
 	// when a terminal error occurs, the "Quiesced" status should be set to True.
 	ClusterHealthyReasonTerminalError ClusterHealthyCondition = "TerminalError"
 
-	// This condition indicates whether a cluster has a valid license.
-	//
-	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
-	// must be set by a controller when it subsequently reconciles a cluster.
-	ClusterLicenseValid = "LicenseValid"
 	// This reason is used with the "LicenseValid" condition when it evaluates to
 	// True because a cluster has a valid license.
 	ClusterLicenseValidReasonValid ClusterLicenseValidCondition = "Valid"
@@ -172,12 +154,6 @@ const (
 	// when a terminal error occurs, the "Quiesced" status should be set to True.
 	ClusterLicenseValidReasonTerminalError ClusterLicenseValidCondition = "TerminalError"
 
-	// This condition indicates whether the Kubernetes resources for a cluster have
-	// been synchronized.
-	//
-	// This condition defaults to "False" with a reason of "NotReconciled" and must
-	// be set by a controller when it subsequently reconciles a cluster.
-	ClusterResourcesSynced = "ResourcesSynced"
 	// This reason is used with the "ResourcesSynced" condition when it evaluates to
 	// True because a cluster has had all of its Kubernetes resources synced.
 	ClusterResourcesSyncedReasonSynced ClusterResourcesSyncedCondition = "Synced"
@@ -192,12 +168,6 @@ const (
 	// when a terminal error occurs, the "Quiesced" status should be set to True.
 	ClusterResourcesSyncedReasonTerminalError ClusterResourcesSyncedCondition = "TerminalError"
 
-	// This condition indicates whether cluster configuration parameters have
-	// currently been applied to a cluster for the given generation.
-	//
-	// This condition defaults to "False" with a reason of "NotReconciled" and must
-	// be set by a controller when it subsequently reconciles a cluster.
-	ClusterConfigurationApplied = "ConfigurationApplied"
 	// This reason is used with the "ConfigurationApplied" condition when it
 	// evaluates to True because a cluster has had its cluster configuration
 	// parameters applied.
@@ -217,12 +187,6 @@ const (
 	// when a terminal error occurs, the "Quiesced" status should be set to True.
 	ClusterConfigurationAppliedReasonTerminalError ClusterConfigurationAppliedCondition = "TerminalError"
 
-	// This condition is used as to indicate that the cluster is no longer
-	// reconciling due to it being in a finalized state for the current generation.
-	//
-	// This condition defaults to "False" with a reason of "NotReconciled" and must
-	// be set by a controller when it subsequently reconciles a cluster.
-	ClusterQuiesced = "Quiesced"
 	// This reason is used with the "Quiesced" condition when it evaluates to True
 	// because the operator has finished reconciling the cluster at its current
 	// generation.
@@ -233,24 +197,12 @@ const (
 	// operation or a non-terminal error has been encountered during reconciliation.
 	ClusterQuiescedReasonStillReconciling ClusterQuiescedCondition = "StillReconciling"
 
-	// This condition is used as a roll-up status for any sort of automation such as
-	// terraform.
-	//
-	// This condition defaults to "False" with a reason of "NotReconciled" and must
-	// be set by a controller when it subsequently reconciles a cluster.
-	ClusterStable = "Stable"
 	// This reason is used with the "Stable" condition when it evaluates to True
 	// because all dependent conditions also evaluate to True.
 	ClusterStableReasonStable ClusterStableCondition = "Stable"
 	// This reason is used with the "Stable" condition when it evaluates to True
 	// because at least one dependent condition evaluates to False.
 	ClusterStableReasonUnstable ClusterStableCondition = "Unstable"
-	// This condition indicates whether a node pool is bound to a known Redpanda
-	// cluster.
-	//
-	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
-	// must be set by a controller when it subsequently reconciles a node pool.
-	NodePoolBound = "Bound"
 	// This reason is used with the "Bound" condition when it evaluates to True
 	// because a node pool is bound to a cluster.
 	NodePoolBoundReasonBound NodePoolBoundCondition = "Bound"
@@ -266,12 +218,6 @@ const (
 	// applying the desired node pool state.
 	NodePoolBoundReasonTerminalError NodePoolBoundCondition = "TerminalError"
 
-	// This condition indicates whether a node pool has been deployed for a known
-	// Redpanda cluster.
-	//
-	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
-	// must be set by a controller when it subsequently reconciles a node pool.
-	NodePoolDeployed = "Deployed"
 	// This reason is used with the "Deployed" condition when it evaluates to True
 	// because a node pool has been fully deployed for a cluster.
 	NodePoolDeployedReasonDeployed NodePoolDeployedCondition = "Deployed"
@@ -290,12 +236,6 @@ const (
 	// applying the desired node pool state.
 	NodePoolDeployedReasonTerminalError NodePoolDeployedCondition = "TerminalError"
 
-	// This condition is used as to indicate that the node pool is no longer
-	// reconciling due to it being in a finalized state for the current generation.
-	//
-	// This condition defaults to "False" with a reason of "NotReconciled" and must
-	// be set by a controller when it subsequently reconciles a node pool.
-	NodePoolQuiesced = "Quiesced"
 	// This reason is used with the "Quiesced" condition when it evaluates to True
 	// because the operator has finished reconciling the node pool at its current
 	// generation.
@@ -305,12 +245,6 @@ const (
 	// current generation.
 	NodePoolQuiescedReasonStillReconciling NodePoolQuiescedCondition = "StillReconciling"
 
-	// This condition is used as a roll-up status for any sort of automation such as
-	// terraform.
-	//
-	// This condition defaults to "False" with a reason of "NotReconciled" and must
-	// be set by a controller when it subsequently reconciles a node pool.
-	NodePoolStable = "Stable"
 	// This reason is used with the "Stable" condition when it evaluates to True
 	// because all dependent conditions also evaluate to True.
 	NodePoolStableReasonStable NodePoolStableCondition = "Stable"
