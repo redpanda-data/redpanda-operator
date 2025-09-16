@@ -19,6 +19,11 @@ spec:
   clusterSpec:
     statefulset:
       replicas: 0
+      sideCars:
+        resources:
+          requests:
+            cpu: 16m
+            memory: 256Mi
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool

@@ -182,6 +182,16 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds = ptr.To(int64(*spec.TerminationGracePeriodSeconds))
 	}
 
+	if redpandaContainer.LivenessProbe == nil {
+		redpandaContainer.LivenessProbe = &applycorev1.ProbeApplyConfiguration{}
+	}
+	if redpandaContainer.StartupProbe == nil {
+		redpandaContainer.StartupProbe = &applycorev1.ProbeApplyConfiguration{}
+	}
+	if sidecarContainer.ReadinessProbe == nil {
+		sidecarContainer.ReadinessProbe = &applycorev1.ProbeApplyConfiguration{}
+	}
+
 	if err := convertJSONNotNil(spec.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
 		return err
 	}
@@ -191,12 +201,14 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 	if err := convertJSONNotNil(spec.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
 		return err
 	}
+
 	if err := convertAndAppendJSONNotNil(spec.Tolerations, &values.Statefulset.PodTemplate.Spec.Tolerations); err != nil {
 		return err
 	}
 	if err := convertAndAppendJSONNotNil(spec.TopologySpreadConstraints, &values.Statefulset.PodTemplate.Spec.TopologySpreadConstraints); err != nil {
 		return err
 	}
+
 	if values.Statefulset.PodTemplate.Spec.Affinity == nil {
 		values.Statefulset.PodTemplate.Spec.Affinity = &applycorev1.AffinityApplyConfiguration{}
 	}
@@ -277,6 +289,14 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 	if err := convertAndAppendYAMLNotNil(state, spec.ExtraVolumeMounts, &sidecarContainer.VolumeMounts); err != nil {
 		return err
 	}
+
+	if sidecarContainer.Resources == nil {
+		sidecarContainer.Resources = &applycorev1.ResourceRequirementsApplyConfiguration{}
+	}
+	if sidecarContainer.SecurityContext == nil {
+		sidecarContainer.SecurityContext = &applycorev1.SecurityContextApplyConfiguration{}
+	}
+
 	if err := convertJSONNotNil(spec.Resources, sidecarContainer.Resources); err != nil {
 		return err
 	}
