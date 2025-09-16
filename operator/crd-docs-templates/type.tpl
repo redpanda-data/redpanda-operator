@@ -19,10 +19,10 @@
 {{ if (and $type.EnumValues $type.Markers.statusType) -}} 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
+| Reason | Description |
 {{ range $type.EnumValues -}}
 | `{{ .Name }}` | {{ asciidocRenderFieldDoc .Doc }} |
-{{- end }}
+{{ end }}
 {{- end }}
 
 {{ if $type.References -}}

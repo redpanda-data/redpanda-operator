@@ -229,6 +229,13 @@ func (c *conditionType) Comment() string {
 	return writeComment(c.GoName(), c.Description)
 }
 
+func (c *conditionType) NamelessComment() string {
+	if c.Description == "" {
+		return ""
+	}
+	return writeComment("", c.Description)
+}
+
 func (c *conditionType) GoName() string {
 	return fmt.Sprintf("%s%s", c.kind, c.Name)
 }
@@ -349,6 +356,13 @@ func (r *reasonType) Comment() string {
 		return ""
 	}
 	return writeComment(r.GoName(), r.Description)
+}
+
+func (r *reasonType) NamelessComment() string {
+	if r.Description == "" {
+		return ""
+	}
+	return writeComment("", r.Description)
 }
 
 func (r *reasonType) GoName() string {

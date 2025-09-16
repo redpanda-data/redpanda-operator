@@ -25,10 +25,10 @@ const (
     {{- if ne $i 0}}
     {{/* break */}}
     {{- end }}
-    {{ $condition.Comment }}
+    {{ $condition.NamelessComment }}
 	{{ $condition.GoName }} = "{{ $condition.Name }}"
 	{{- range $reason := $condition.Reasons }}
-    {{ $reason.Comment }}
+    {{ $reason.NamelessComment }}
 	{{ $reason.GoName }} {{ $condition.GoConditionName }} = "{{ $reason.Name }}"
     {{- end }}
 {{- end }}

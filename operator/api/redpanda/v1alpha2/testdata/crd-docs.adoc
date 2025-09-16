@@ -530,25 +530,26 @@ be set by a controller when it subsequently reconciles a cluster.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Applied` | ClusterConfigurationAppliedReasonApplied - This reason is used with the +
-"ConfigurationApplied" condition when it evaluates to True because a cluster +
-has had its cluster configuration parameters applied. +
- || `NotApplied` | ClusterConfigurationAppliedReasonNotApplied - This reason is used with the +
-"ConfigurationApplied" condition when it evaluates to False due to some +
-implementation-specific condition, such as when no brokers have been created +
-and thus we can't attempt a configuration. +
- || `Error` | ClusterConfigurationAppliedReasonError - This reason is used when a cluster +
-has only been partially reconciled and we have early returned due to a +
-retryable error occurring prior to applying the desired cluster state. If it +
-is set on any non-final condition, then the condition "Quiesced" will be +
-False with a reason of "SillReconciling". +
- || `TerminalError` | ClusterConfigurationAppliedReasonTerminalError - This reason is used when a +
-cluster has only been partially reconciled and we have early returned due to +
-a known terminal error occurring prior to applying the desired cluster state. +
-Because the cluster should no longer be reconciled when a terminal error +
-occurs, the "Quiesced" status should be set to True. +
+| Reason | Description |
+| `Applied` | This reason is used with the "ConfigurationApplied" condition when it +
+evaluates to True because a cluster has had its cluster configuration +
+parameters applied. +
  |
+| `NotApplied` | This reason is used with the "ConfigurationApplied" condition when it +
+evaluates to False due to some implementation-specific condition, such as +
+when no brokers have been created and thus we can't attempt a configuration. +
+ |
+| `Error` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a retryable error occurring prior to applying the +
+desired cluster state. If it is set on any non-final condition, then the +
+condition "Quiesced" will be False with a reason of "SillReconciling". +
+ |
+| `TerminalError` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a known terminal error occurring prior to applying +
+the desired cluster state. Because the cluster should no longer be reconciled +
+when a terminal error occurs, the "Quiesced" status should be set to True. +
+ |
+
 
 
 
@@ -572,24 +573,24 @@ must be set by a controller when it subsequently reconciles a cluster.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Healthy` | ClusterHealthyReasonHealthy - This reason is used with the "Healthy" +
-condition when it evaluates to True because a cluster's health endpoint says +
-the cluster is healthy. +
- || `NotHealthy` | ClusterHealthyReasonNotHealthy - This reason is used with the "Healthy" +
-condition when it evaluates to False because a cluster's health endpoint says +
-the cluster is not healthy. +
- || `Error` | ClusterHealthyReasonError - This reason is used when a cluster has only been +
-partially reconciled and we have early returned due to a retryable error +
-occurring prior to applying the desired cluster state. If it is set on any +
-non-final condition, then the condition "Quiesced" will be False with a +
-reason of "SillReconciling". +
- || `TerminalError` | ClusterHealthyReasonTerminalError - This reason is used when a cluster has +
-only been partially reconciled and we have early returned due to a known +
-terminal error occurring prior to applying the desired cluster state. Because +
-the cluster should no longer be reconciled when a terminal error occurs, the +
-"Quiesced" status should be set to True. +
+| Reason | Description |
+| `Healthy` | This reason is used with the "Healthy" condition when it evaluates to True +
+because a cluster's health endpoint says the cluster is healthy. +
  |
+| `NotHealthy` | This reason is used with the "Healthy" condition when it evaluates to False +
+because a cluster's health endpoint says the cluster is not healthy. +
+ |
+| `Error` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a retryable error occurring prior to applying the +
+desired cluster state. If it is set on any non-final condition, then the +
+condition "Quiesced" will be False with a reason of "SillReconciling". +
+ |
+| `TerminalError` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a known terminal error occurring prior to applying +
+the desired cluster state. Because the cluster should no longer be reconciled +
+when a terminal error occurs, the "Quiesced" status should be set to True. +
+ |
+
 
 
 
@@ -613,26 +614,27 @@ must be set by a controller when it subsequently reconciles a cluster.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Valid` | ClusterLicenseValidReasonValid - This reason is used with the "LicenseValid" +
-condition when it evaluates to True because a cluster has a valid license. +
- || `Expired` | ClusterLicenseValidReasonExpired - This reason is used with the +
-"LicenseValid" condition when it evaluates to False because a cluster has an +
-expired license. +
- || `NotPresent` | ClusterLicenseValidReasonNotPresent - This reason is used with the +
-"LicenseValid" condition when it evaluates to False because a cluster has no +
-license. +
- || `Error` | ClusterLicenseValidReasonError - This reason is used when a cluster has only +
-been partially reconciled and we have early returned due to a retryable error +
-occurring prior to applying the desired cluster state. If it is set on any +
-non-final condition, then the condition "Quiesced" will be False with a +
-reason of "SillReconciling". +
- || `TerminalError` | ClusterLicenseValidReasonTerminalError - This reason is used when a cluster +
-has only been partially reconciled and we have early returned due to a known +
-terminal error occurring prior to applying the desired cluster state. Because +
-the cluster should no longer be reconciled when a terminal error occurs, the +
-"Quiesced" status should be set to True. +
+| Reason | Description |
+| `Valid` | This reason is used with the "LicenseValid" condition when it evaluates to +
+True because a cluster has a valid license. +
  |
+| `Expired` | This reason is used with the "LicenseValid" condition when it evaluates to +
+False because a cluster has an expired license. +
+ |
+| `NotPresent` | This reason is used with the "LicenseValid" condition when it evaluates to +
+False because a cluster has no license. +
+ |
+| `Error` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a retryable error occurring prior to applying the +
+desired cluster state. If it is set on any non-final condition, then the +
+condition "Quiesced" will be False with a reason of "SillReconciling". +
+ |
+| `TerminalError` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a known terminal error occurring prior to applying +
+the desired cluster state. Because the cluster should no longer be reconciled +
+when a terminal error occurs, the "Quiesced" status should be set to True. +
+ |
+
 
 
 
@@ -657,16 +659,17 @@ be set by a controller when it subsequently reconciles a cluster.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Quiesced` | ClusterQuiescedReasonQuiesced - This reason is used with the "Quiesced" +
-condition when it evaluates to True because the operator has finished +
-reconciling the cluster at its current generation. +
- || `StillReconciling` | ClusterQuiescedReasonStillReconciling - This reason is used with the +
-"Quiesced" condition when it evaluates to False because the operator has not +
-finished reconciling the cluster at its current generation. This can happen +
-when, for example, we're doing a cluster scaling operation or a non-terminal +
-error has been encountered during reconciliation. +
+| Reason | Description |
+| `Quiesced` | This reason is used with the "Quiesced" condition when it evaluates to True +
+because the operator has finished reconciling the cluster at its current +
+generation. +
  |
+| `StillReconciling` | This reason is used with the "Quiesced" condition when it evaluates to False +
+because the operator has not finished reconciling the cluster at its current +
+generation. This can happen when, for example, we're doing a cluster scaling +
+operation or a non-terminal error has been encountered during reconciliation. +
+ |
+
 
 
 
@@ -691,22 +694,24 @@ must be set by a controller when it subsequently reconciles a cluster.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Ready` | ClusterReadyReasonReady - This reason is used with the "Ready" condition when +
-it evaluates to True because a cluster can service traffic. +
- || `NotReady` | ClusterReadyReasonNotReady - This reason is used with the "Ready" condition +
-when it evaluates to False because a cluster is not ready to service traffic. +
- || `Error` | ClusterReadyReasonError - This reason is used when a cluster has only been +
-partially reconciled and we have early returned due to a retryable error +
-occurring prior to applying the desired cluster state. If it is set on any +
-non-final condition, then the condition "Quiesced" will be False with a +
-reason of "SillReconciling". +
- || `TerminalError` | ClusterReadyReasonTerminalError - This reason is used when a cluster has only +
-been partially reconciled and we have early returned due to a known terminal +
-error occurring prior to applying the desired cluster state. Because the +
-cluster should no longer be reconciled when a terminal error occurs, the +
-"Quiesced" status should be set to True. +
+| Reason | Description |
+| `Ready` | This reason is used with the "Ready" condition when it evaluates to True +
+because a cluster can service traffic. +
  |
+| `NotReady` | This reason is used with the "Ready" condition when it evaluates to False +
+because a cluster is not ready to service traffic. +
+ |
+| `Error` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a retryable error occurring prior to applying the +
+desired cluster state. If it is set on any non-final condition, then the +
+condition "Quiesced" will be False with a reason of "SillReconciling". +
+ |
+| `TerminalError` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a known terminal error occurring prior to applying +
+the desired cluster state. Because the cluster should no longer be reconciled +
+when a terminal error occurs, the "Quiesced" status should be set to True. +
+ |
+
 
 
 
@@ -759,21 +764,21 @@ be set by a controller when it subsequently reconciles a cluster.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Synced` | ClusterResourcesSyncedReasonSynced - This reason is used with the +
-"ResourcesSynced" condition when it evaluates to True because a cluster has +
-had all of its Kubernetes resources synced. +
- || `Error` | ClusterResourcesSyncedReasonError - This reason is used when a cluster has +
-only been partially reconciled and we have early returned due to a retryable +
-error occurring prior to applying the desired cluster state. If it is set on +
-any non-final condition, then the condition "Quiesced" will be False with a +
-reason of "SillReconciling". +
- || `TerminalError` | ClusterResourcesSyncedReasonTerminalError - This reason is used when a +
-cluster has only been partially reconciled and we have early returned due to +
-a known terminal error occurring prior to applying the desired cluster state. +
-Because the cluster should no longer be reconciled when a terminal error +
-occurs, the "Quiesced" status should be set to True. +
+| Reason | Description |
+| `Synced` | This reason is used with the "ResourcesSynced" condition when it evaluates to +
+True because a cluster has had all of its Kubernetes resources synced. +
  |
+| `Error` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a retryable error occurring prior to applying the +
+desired cluster state. If it is set on any non-final condition, then the +
+condition "Quiesced" will be False with a reason of "SillReconciling". +
+ |
+| `TerminalError` | This reason is used when a cluster has only been partially reconciled and we +
+have early returned due to a known terminal error occurring prior to applying +
+the desired cluster state. Because the cluster should no longer be reconciled +
+when a terminal error occurs, the "Quiesced" status should be set to True. +
+ |
+
 
 
 
@@ -828,14 +833,14 @@ be set by a controller when it subsequently reconciles a cluster.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Stable` | ClusterStableReasonStable - This reason is used with the "Stable" condition +
-when it evaluates to True because all dependent conditions also evaluate to +
-True. +
- || `Unstable` | ClusterStableReasonUnstable - This reason is used with the "Stable" condition +
-when it evaluates to True because at least one dependent condition evaluates +
-to False. +
+| Reason | Description |
+| `Stable` | This reason is used with the "Stable" condition when it evaluates to True +
+because all dependent conditions also evaluate to True. +
  |
+| `Unstable` | This reason is used with the "Stable" condition when it evaluates to True +
+because at least one dependent condition evaluates to False. +
+ |
+
 
 
 
@@ -2110,18 +2115,22 @@ must be set by a controller when it subsequently reconciles a node pool.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Bound` | NodePoolBoundReasonBound - This reason is used with the "Bound" condition +
-when it evaluates to True because a node pool is bound to a cluster. +
- || `NotBound` | NodePoolBoundReasonNotBound - This reason is used with the "Bound" condition +
-when it evaluates to False because a node pool is not bound to a cluster. +
- || `Error` | NodePoolBoundReasonError - This reason is used when a node pool has only been +
-partially reconciled and we have early returned due to a retryable error +
-occurring prior to applying the desired node pool state. +
- || `TerminalError` | NodePoolBoundReasonTerminalError - This reason is used when a node pool has +
-only been partially reconciled and we have early returned due to a known +
-terminal error occurring prior to applying the desired node pool state. +
+| Reason | Description |
+| `Bound` | This reason is used with the "Bound" condition when it evaluates to True +
+because a node pool is bound to a cluster. +
  |
+| `NotBound` | This reason is used with the "Bound" condition when it evaluates to False +
+because a node pool is not bound to a cluster. +
+ |
+| `Error` | This reason is used when a node pool has only been partially reconciled and +
+we have early returned due to a retryable error occurring prior to applying +
+the desired node pool state. +
+ |
+| `TerminalError` | This reason is used when a node pool has only been partially reconciled and +
+we have early returned due to a known terminal error occurring prior to +
+applying the desired node pool state. +
+ |
+
 
 
 
@@ -2145,23 +2154,25 @@ must be set by a controller when it subsequently reconciles a node pool.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Deployed` | NodePoolDeployedReasonDeployed - This reason is used with the "Deployed" +
-condition when it evaluates to True because a node pool has been fully +
-deployed for a cluster. +
- || `Scaling` | NodePoolDeployedReasonScaling - This reason is used with the "Deployed" +
-condition when it evaluates to False because a node pool has not yet been +
-fully deployed for a cluster. +
- || `NotDeployed` | NodePoolDeployedReasonNotDeployed - This reason is used with the "Deployed" +
-condition when it evaluates to False because a node pool has not started to +
-deploy for a cluster. +
- || `Error` | NodePoolDeployedReasonError - This reason is used when a node pool has only +
-been partially reconciled and we have early returned due to a retryable error +
-occurring prior to applying the desired node pool state. +
- || `TerminalError` | NodePoolDeployedReasonTerminalError - This reason is used when a node pool +
-has only been partially reconciled and we have early returned due to a known +
-terminal error occurring prior to applying the desired node pool state. +
+| Reason | Description |
+| `Deployed` | This reason is used with the "Deployed" condition when it evaluates to True +
+because a node pool has been fully deployed for a cluster. +
  |
+| `Scaling` | This reason is used with the "Deployed" condition when it evaluates to False +
+because a node pool has not yet been fully deployed for a cluster. +
+ |
+| `NotDeployed` | This reason is used with the "Deployed" condition when it evaluates to False +
+because a node pool has not started to deploy for a cluster. +
+ |
+| `Error` | This reason is used when a node pool has only been partially reconciled and +
+we have early returned due to a retryable error occurring prior to applying +
+the desired node pool state. +
+ |
+| `TerminalError` | This reason is used when a node pool has only been partially reconciled and +
+we have early returned due to a known terminal error occurring prior to +
+applying the desired node pool state. +
+ |
+
 
 
 
@@ -2186,14 +2197,16 @@ be set by a controller when it subsequently reconciles a node pool.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Quiesced` | NodePoolQuiescedReasonQuiesced - This reason is used with the "Quiesced" +
-condition when it evaluates to True because the operator has finished +
-reconciling the node pool at its current generation. +
- || `StillReconciling` | NodePoolQuiescedReasonStillReconciling - This reason is used with the +
-"Quiesced" condition when it evaluates to False because the operator has not +
-finished reconciling the node pool at its current generation. +
+| Reason | Description |
+| `Quiesced` | This reason is used with the "Quiesced" condition when it evaluates to True +
+because the operator has finished reconciling the node pool at its current +
+generation. +
  |
+| `StillReconciling` | This reason is used with the "Quiesced" condition when it evaluates to False +
+because the operator has not finished reconciling the node pool at its +
+current generation. +
+ |
+
 
 
 
@@ -2245,14 +2258,14 @@ be set by a controller when it subsequently reconciles a node pool.
 
 [cols="20a,80a", options="header"]
 |===
-| Field | Description |
-| `Stable` | NodePoolStableReasonStable - This reason is used with the "Stable" condition +
-when it evaluates to True because all dependent conditions also evaluate to +
-True. +
- || `Unstable` | NodePoolStableReasonUnstable - This reason is used with the "Stable" +
-condition when it evaluates to True because at least one dependent condition +
-evaluates to False. +
+| Reason | Description |
+| `Stable` | This reason is used with the "Stable" condition when it evaluates to True +
+because all dependent conditions also evaluate to True. +
  |
+| `Unstable` | This reason is used with the "Stable" condition when it evaluates to True +
+because at least one dependent condition evaluates to False. +
+ |
+
 
 
 
