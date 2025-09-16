@@ -320,8 +320,12 @@ values:
         containers:
         - name: redpanda
         - name: sidecar
+          readinessProbe: {}
+          resources: {}
+          securityContext: {}
         initContainers:
         - name: redpanda-configurator
+          resources: {}
         priorityClassName: ""
         securityContext: {}
         terminationGracePeriodSeconds: 90
@@ -908,8 +912,15 @@ values:
         containers:
         - name: redpanda
         - name: sidecar
+          readinessProbe: {}
+          resources:
+            requests:
+              cpu: 16m
+              memory: 256Mi
+          securityContext: {}
         initContainers:
         - name: redpanda-configurator
+          resources: {}
         priorityClassName: ""
         securityContext: {}
         terminationGracePeriodSeconds: 90
@@ -1411,8 +1422,12 @@ values:
         containers:
         - name: redpanda
         - name: sidecar
+          readinessProbe: {}
+          resources: {}
+          securityContext: {}
         initContainers:
         - name: redpanda-configurator
+          resources: {}
         priorityClassName: ""
         securityContext: {}
         terminationGracePeriodSeconds: 90
