@@ -28,6 +28,8 @@ func TestEnvExpander(t *testing.T) {
 	cfg, err := env.Start()
 	require.NoError(t, err)
 
+	t.Cleanup(func() { _ = env.Stop() })
+
 	c, err := client.New(cfg, client.Options{})
 	require.NoError(t, err)
 
