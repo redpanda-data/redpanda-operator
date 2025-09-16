@@ -74,7 +74,6 @@ run `task generate:third-party-licenses-list`
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.4.1/LICENSE) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
-| github.com/distribution/reference | [Apache-2.0](https://github.com/distribution/reference/blob/v0.6.0/LICENSE) |
 | github.com/emicklei/go-restful/v3 | [MIT](https://github.com/emicklei/go-restful/blob/v3.12.2/LICENSE) |
 | github.com/evanphx/json-patch | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.9.11/LICENSE) |
 | github.com/evanphx/json-patch/v5 | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.9.11/v5/LICENSE) |
