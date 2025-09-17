@@ -4,12 +4,19 @@
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
-  name: basic
+  name: basic-b
 spec:
   replicas: 1
   sidecarImage:
     tag: dev
     repository: localhost/test
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: basic-a
+spec:
+  replicas: 1
 -- compat-test --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: Redpanda
