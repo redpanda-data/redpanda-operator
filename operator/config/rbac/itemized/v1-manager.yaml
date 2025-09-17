@@ -19,20 +19,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - nodes
   verbs:
   - get
@@ -67,9 +53,21 @@ rules:
   - patch
   - update
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - apps
   resources:
-  - deployments
   - statefulsets
   verbs:
   - create
@@ -133,7 +131,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters
-  - consoles
   verbs:
   - create
   - delete
@@ -146,7 +143,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/finalizers
-  - consoles/finalizers
   verbs:
   - patch
   - update
@@ -154,7 +150,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/status
-  - consoles/status
   verbs:
   - get
   - patch

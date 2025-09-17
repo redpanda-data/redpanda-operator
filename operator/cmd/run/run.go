@@ -39,7 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
@@ -53,10 +52,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	pkglabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	redpandawebhooks "github.com/redpanda-data/redpanda-operator/operator/webhooks/redpanda"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
@@ -595,19 +592,6 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, cloudExpa
 		return err
 	}
 
-	if err := (&vectorizedcontrollers.ConsoleReconciler{
-		Client:                  mgr.GetClient(),
-		Scheme:                  mgr.GetScheme(),
-		Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
-		AdminAPIClientFactory:   adminAPIClientFactory,
-		Store:                   consolepkg.NewStore(mgr.GetClient(), mgr.GetScheme()),
-		EventRecorder:           mgr.GetEventRecorderFor("Console"),
-		KafkaAdminClientFactory: consolepkg.NewKafkaAdmin,
-	}).WithClusterDomain(opts.clusterDomain).SetupWithManager(mgr); err != nil {
-		log.Error(ctx, err, "unable to create controller", "controller", "Console")
-		return err
-	}
-
 	// Setup webhooks
 	if opts.webhookEnabled {
 		log.Info(ctx, "Setup webhook")
@@ -615,19 +599,6 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, cloudExpa
 			log.Error(ctx, err, "Unable to create webhook", "webhook", "RedpandaCluster")
 			return err
 		}
-		hookServer := mgr.GetWebhookServer()
-		hookServer.Register("/mutate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
-			Handler: &redpandawebhooks.ConsoleDefaulter{
-				Client:  mgr.GetClient(),
-				Decoder: admission.NewDecoder(mgr.GetScheme()),
-			},
-		})
-		hookServer.Register("/validate-redpanda-vectorized-io-v1alpha1-console", &webhook.Admission{
-			Handler: &redpandawebhooks.ConsoleValidator{
-				Client:  mgr.GetClient(),
-				Decoder: admission.NewDecoder(mgr.GetScheme()),
-			},
-		})
 	}
 
 	if opts.enableGhostBrokerDecommissioner {

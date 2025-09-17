@@ -90,20 +90,6 @@ func clusterUpdater(
 	}
 }
 
-func consoleUpdater(
-	consoleNamespacedName types.NamespacedName, upd func(*vectorizedv1alpha1.Console),
-) func() error {
-	return func() error {
-		con := &vectorizedv1alpha1.Console{}
-		if err := k8sClient.Get(context.Background(), consoleNamespacedName, con); err != nil {
-			return err
-		}
-		latest := con.DeepCopy()
-		upd(con)
-		return k8sClient.Patch(context.Background(), con, client.MergeFrom(latest))
-	}
-}
-
 func statefulSetReplicasReconciler(
 	log logr.Logger, key types.NamespacedName, cluster *vectorizedv1alpha1.Cluster,
 ) func() error {
