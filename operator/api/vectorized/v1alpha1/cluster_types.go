@@ -1330,6 +1330,20 @@ func (r *Cluster) SchemaRegistryAPITLS() *SchemaRegistryAPI {
 	return nil
 }
 
+// SchemaRegistryInternalListener returns internal listener.
+func (r *Cluster) SchemaRegistryInternalListener() *SchemaRegistryAPI {
+	if r == nil {
+		return nil
+	}
+	for i := range r.Spec.Configuration.SchemaRegistryAPI {
+		el := &r.Spec.Configuration.SchemaRegistryAPI[i]
+		if el.External == nil || !el.External.Enabled {
+			return el
+		}
+	}
+	return nil
+}
+
 // SchemaRegistryListeners returns all schema registry listeners
 func (r *Cluster) SchemaRegistryListeners() []SchemaRegistryAPI {
 	if r == nil || r.Spec.Configuration.SchemaRegistry == nil {

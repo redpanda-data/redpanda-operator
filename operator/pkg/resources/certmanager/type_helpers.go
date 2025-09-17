@@ -733,12 +733,34 @@ func secretVolumesForTLS(
 	return vols, mounts
 }
 
-// GetTLSConfig returns TLS config for adminAPI that can then be used to connect
+// GetTLSConfig returns TLS config for admin API that can then be used to connect
 // to the admin API of the current cluster
 func (cc *ClusterCertificates) GetTLSConfig(
 	ctx context.Context, k8sClient client.Reader,
 ) (*tls.Config, error) {
-	nodeCertificateName := cc.adminAPI.nodeCertificateName()
+	return getTLSConfig(ctx, cc.adminAPI, k8sClient)
+}
+
+// GetKafkaTLSConfig returns TLS config for kafka API that can then be used to connect
+// to the kafka API of the current cluster
+func (cc *ClusterCertificates) GetKafkaTLSConfig(
+	ctx context.Context, k8sClient client.Reader,
+) (*tls.Config, error) {
+	return getTLSConfig(ctx, cc.kafkaAPI, k8sClient)
+}
+
+// GetSchemaTLSConfig returns TLS config for schema registry API that can then be used to connect
+// to the schema registry API of the current cluster
+func (cc *ClusterCertificates) GetSchemaTLSConfig(
+	ctx context.Context, k8sClient client.Reader,
+) (*tls.Config, error) {
+	return getTLSConfig(ctx, cc.schemaRegistryAPI, k8sClient)
+}
+
+func getTLSConfig(
+	ctx context.Context, certs *apiCertificates, k8sClient client.Reader,
+) (*tls.Config, error) {
+	nodeCertificateName := certs.nodeCertificateName()
 	if nodeCertificateName == nil {
 		return nil, errNoTLSError
 	}
@@ -755,9 +777,9 @@ func (cc *ClusterCertificates) GetTLSConfig(
 	caCertPool.AppendCertsFromPEM(nodeCertSecret.Data[cmmetav1.TLSCAKey])
 	tlsConfig.RootCAs = caCertPool
 
-	if len(cc.adminAPI.clientCertificates) > 0 {
+	if len(certs.clientCertificates) > 0 {
 		var clientCertSecret corev1.Secret
-		err := k8sClient.Get(ctx, cc.adminAPI.clientCertificateNames()[0], &clientCertSecret)
+		err := k8sClient.Get(ctx, certs.clientCertificateNames()[0], &clientCertSecret)
 		if err != nil {
 			return nil, err
 		}

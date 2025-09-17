@@ -174,6 +174,11 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 						Port: 9644,
 					},
 				},
+				SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{
+					{
+						Port: 8081,
+					},
+				},
 				DeveloperMode: true,
 			},
 		},
@@ -192,13 +197,27 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 		return cluster.Status.GetConditionStatus(vectorizedv1alpha1.OperatorQuiescentConditionType) == corev1.ConditionTrue
 	}, time.Minute*5, time.Second*5, "didn't work")
 
+	// check admin api
 	adminClient, err := clientFactory.RedpandaAdminClient(testutil.Context(t), &cr)
 	require.NoError(t, err)
-
 	brokers, err := adminClient.Brokers(context.Background())
 	require.NoError(t, err)
 	require.Len(t, brokers, 1)
 	require.Equal(t, rpadmin.MembershipStatusActive, brokers[0].MembershipStatus)
+
+	// check kafka api
+	kafkaClient, err := clientFactory.KafkaClient(testutil.Context(t), &cr)
+	require.NoError(t, err)
+	defer kafkaClient.Close()
+	metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(context.Background())
+	require.NoError(t, err)
+	require.Len(t, metadata.Brokers.NodeIDs(), 1)
+
+	// check schema registry api
+	srClient, err := clientFactory.SchemaRegistryClient(testutil.Context(t), &cr)
+	require.NoError(t, err)
+	_, err = srClient.SupportedTypes(context.Background())
+	require.NoError(t, err)
 }
 
 func TestIntegrationClientFactory(t *testing.T) {
