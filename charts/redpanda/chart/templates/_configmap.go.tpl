@@ -468,8 +468,8 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $brokerList := (list) -}}
-{{- range $_, $i := untilStep (((0 | int) | int)|int) (($state.Values.statefulset.replicas | int)|int) (1|int) -}}
-{{- $brokerList = (concat (default (list) $brokerList) (list (dict "address" (printf "%s-%d.%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $i (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) "port" ($state.Values.listeners.kafka.port | int)))) -}}
+{{- range $_, $broker := (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state -1)))) "r") -}}
+{{- $brokerList = (concat (default (list) $brokerList) (list (dict "address" $broker "port" ($state.Values.listeners.kafka.port | int)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}

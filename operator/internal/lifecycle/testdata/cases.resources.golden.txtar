@@ -1178,7 +1178,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -1333,7 +1351,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -1382,7 +1418,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -1537,7 +1591,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -2549,6 +2621,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -2685,6 +2761,10 @@
         - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
   kind: ConfigMap
   metadata:
@@ -2741,6 +2821,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -2877,6 +2961,10 @@
         - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
   kind: ConfigMap
   metadata:
@@ -2933,6 +3021,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -3069,6 +3161,10 @@
         - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
   kind: ConfigMap
   metadata:
