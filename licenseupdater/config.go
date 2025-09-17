@@ -187,14 +187,14 @@ func (m *match) doMatch(path string) bool {
 }
 
 type config struct {
-	Path             string        `yaml:"path"`
-	Organization     string        `yaml:"organization"`
-	TopLevelLicense  string        `yaml:"top_level_license"`
-	LicenseDirectory string        `yaml:"license_directory"`
-	Licenses         []string      `yaml:"licenses"`
-	Matches          []*match      `yaml:"matches"`
-	Ignore           []*match      `yaml:"ignore"`
-	Files            []*staticFile `yaml:"files"`
+	Path             string        `yaml:"path" json:"path"`
+	Organization     string        `yaml:"organization" json:"organization"`
+	TopLevelLicense  string        `yaml:"top_level_license" json:"top_level_license"`
+	LicenseDirectory string        `yaml:"license_directory" json:"license_directory"`
+	Licenses         []string      `yaml:"licenses" json:"licenses"`
+	Matches          []*match      `yaml:"matches" json:"matches"`
+	Ignore           []*match      `yaml:"ignore" json:"ignore"`
+	Files            []*staticFile `yaml:"files" json:"files"`
 }
 
 func loadConfig(path string) (*config, error) {
