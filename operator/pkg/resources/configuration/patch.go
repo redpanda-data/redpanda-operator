@@ -20,7 +20,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 const (

@@ -20,7 +20,7 @@ import (
 	"text/template"
 
 	"github.com/cockroachdb/errors"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 const defaultOrganization = "Redpanda Data, Inc."

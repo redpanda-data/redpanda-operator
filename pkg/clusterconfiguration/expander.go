@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/redpanda-data/common-go/rpadmin"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 // ParseRepresentation still has to handle the situation where non-string values are passed

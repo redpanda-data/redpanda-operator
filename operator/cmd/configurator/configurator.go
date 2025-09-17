@@ -28,11 +28,11 @@ import (
 	"github.com/moby/sys/mountinfo"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"

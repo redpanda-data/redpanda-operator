@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 const (

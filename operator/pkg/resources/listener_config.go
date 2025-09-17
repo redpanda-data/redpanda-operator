@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
