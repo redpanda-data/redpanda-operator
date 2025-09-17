@@ -25,13 +25,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func isStatefulSet(object client.Object) bool {
-	gvk := object.GetObjectKind().GroupVersionKind()
-	return gvk.Group == appsv1.SchemeGroupVersion.Group &&
-		gvk.Version == appsv1.SchemeGroupVersion.Version &&
-		gvk.Kind == "StatefulSet"
-}
-
 // getGroupVersionKind gets a GVK for an object based on all
 // GVKs registered with a runtime scheme.
 func getGroupVersionKind(scheme *runtime.Scheme, object client.Object) (*schema.GroupVersionKind, error) {
