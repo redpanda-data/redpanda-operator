@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3" //nolint:depguard // this is necessary due to differences in how the yaml tagging mechanisms work and the fact that some structs on config.RedpandaYaml are missing inline annotations
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
