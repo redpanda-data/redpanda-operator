@@ -17,6 +17,8 @@ metadata:
   name: compat-test
 spec:
   clusterSpec:
+    tuning:
+      tune_aio_events: false
     statefulset:
       replicas: 0
       sideCars:

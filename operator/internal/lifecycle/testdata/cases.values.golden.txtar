@@ -530,8 +530,6 @@ pools:
               memory: 256Mi
         - image: foo:bar
           name: redpanda-configurator
-        - image: foo:bar
-          name: tuning
         nodeSelector:
           foo: bar
         priorityClassName: some-priority-class
@@ -1019,8 +1017,7 @@ values:
         issuerRef: null
         secretRef: null
     enabled: true
-  tuning:
-    tune_aio_events: true
+  tuning: {}
 -- nodepool-basic-test --
 pools:
 - Generation: "0"
