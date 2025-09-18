@@ -43,10 +43,24 @@ func (v V1OwnershipResolver) GetOwnerLabels(cluster *vectorizedv1alpha1.Cluster)
 
 func (v V1OwnershipResolver) AddLabels(cluster *vectorizedv1alpha1.Cluster) map[string]string {
 	out := labels.ForCluster(cluster)
+	out[v.namespaceLabel] = cluster.GetNamespace()
+	out[v.ownerLabel] = cluster.GetName()
+	out[v.operatorLabel] = "v1"
 	out["migrate"] = "true"
 	return out
 }
 
 func (v V1OwnershipResolver) OwnerForObject(object client.Object) *types.NamespacedName {
+	if labels := object.GetLabels(); labels != nil {
+		owner := labels[v.ownerLabel]
+		namespace := labels[v.namespaceLabel]
+
+		if namespace != "" && owner != "" {
+			return &types.NamespacedName{
+				Namespace: namespace,
+				Name:      owner,
+			}
+		}
+	}
 	return nil
 }
