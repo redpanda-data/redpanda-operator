@@ -33,18 +33,27 @@
 {{- $values := $dot.Values.AsMap -}}
 {{- $issuers := (coalesce nil) -}}
 {{- $certs := (coalesce nil) -}}
-{{- if (not (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $dot)))) "r")) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (list $issuers $certs)) | toJson -}}
+{{- $inUseCerts := (dict) -}}
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseServerCerts" (dict "a" (list $values.listeners $values.tls)))) "r") -}}
+{{- $_ := (set $inUseCerts $name true) -}}
+{{- end -}}
+{{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- range $name, $data := $values.tls.certs -}}
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseClientCerts" (dict "a" (list $values.listeners $values.tls)))) "r") -}}
+{{- $_ := (set $inUseCerts $name true) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $name, $_ := $inUseCerts -}}
+{{- $data := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $name)))) "r") -}}
 {{- if (or (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $data.enabled true)))) "r")) (ne (toJson $data.secretRef) "null")) (ne (toJson $data.issuerRef) "null")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $issuers = (concat (default (list) $issuers) (list (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "cert-manager.io/v1" "kind" "Issuer")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf `%s-%s-selfsigned-issuer` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name) "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot)))) "r"))) "spec" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "selfSigned" (mustMergeOverwrite (dict) (dict)))) (dict)))))) -}}
 {{- $certs = (concat (default (list) $certs) (list (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict "secretName" "" "issuerRef" (dict "name" "")) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "cert-manager.io/v1" "kind" "Certificate")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf `%s-%s-root-certificate` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name) "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot)))) "r"))) "spec" (mustMergeOverwrite (dict "secretName" "" "issuerRef" (dict "name" "")) (dict "duration" (get (fromJson (include "_shims.time_Duration_String" (dict "a" (list (get (fromJson (include "_shims.time_ParseDuration" (dict "a" (list (default "43800h" $data.duration))))) "r"))))) "r") "isCA" true "commonName" (printf `%s-%s-root-certificate` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name) "secretName" (printf `%s-%s-root-certificate` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name) "privateKey" (mustMergeOverwrite (dict) (dict "algorithm" "ECDSA" "size" (256 | int))) "issuerRef" (mustMergeOverwrite (dict "name" "") (dict "name" (printf `%s-%s-selfsigned-issuer` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name) "kind" "Issuer" "group" "cert-manager.io")))))))) -}}
-{{- $issuers = (concat (default (list) $issuers) (list (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "cert-manager.io/v1" "kind" "Issuer")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf `%s-%s-root-issuer` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name) "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot)))) "r"))) "spec" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "ca" (mustMergeOverwrite (dict "secretName" "") (dict "secretName" (printf `%s-%s-root-certificate` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name))))) (dict)))))) -}}
+{{- $issuers = (concat (default (list) $issuers) (list (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "cert-manager.io/v1" "kind" "Issuer")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (printf `%s-%s-root-issuer` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $name) "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $dot)))) "r"))) "spec" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "ca" (mustMergeOverwrite (dict "secretName" "") (dict "secretName" (get (fromJson (include "redpanda.TLSCert.RootSecretName" (dict "a" (list $data $dot $name)))) "r"))))) (dict)))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
