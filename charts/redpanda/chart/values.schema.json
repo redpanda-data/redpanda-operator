@@ -21185,7 +21185,7 @@
                   ]
                 },
                 "cloud_storage_credentials_source": {
-                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata)$",
+                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$",
                   "type": "string"
                 },
                 "cloud_storage_disable_tls": {
