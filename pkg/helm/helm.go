@@ -563,9 +563,20 @@ func (c *Client) runHelmInDir(ctx context.Context, dir string, args ...string) (
 	cmd.Env = c.env
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
+	// Setting Cancel and WaitDelay will cause SIGINT to be sent upon context
+	// cancellation and send SIGKILL after 5s. (i.e. a graceful shutdown with a
+	// 5s grace period).
+	cmd.WaitDelay = 5 * time.Second
+	cmd.Cancel = func() error {
+		return cmd.Process.Signal(os.Interrupt)
+	}
 
 	err := cmd.Run()
-	return stdout.Bytes(), stderr.Bytes(), errors.Wrapf(err, "stderr: %s", stderr.String())
+
+	return stdout.Bytes(), stderr.Bytes(), errors.Join(
+		ctx.Err(),
+		errors.Wrapf(err, "stderr: %s", stderr.String()),
+	)
 }
 
 // writeValues writes a helm values file to a unique file in HELM_CONFIG_HOME

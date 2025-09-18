@@ -37,11 +37,17 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 	var issuers []*certmanagerv1.Issuer
 	var certs []*certmanagerv1.Certificate
 
-	if !TLSEnabled(dot) {
-		return issuers, certs
+	inUseCerts := map[string]bool{}
+	for _, name := range values.Listeners.InUseServerCerts(&values.TLS) {
+		inUseCerts[name] = true
+	}
+	for _, name := range values.Listeners.InUseClientCerts(&values.TLS) {
+		inUseCerts[name] = true
 	}
 
-	for name, data := range helmette.SortedMap(values.TLS.Certs) {
+	for name := range helmette.SortedMap(inUseCerts) {
+		data := values.TLS.Certs.MustGet(name)
+
 		// If this certificate is disabled (.Enabled), provided directly by the
 		// end user (.SecretRef), or has an issuer provided (.IssuerRef), we
 		// don't need to bootstrap an issuer.
@@ -130,7 +136,7 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 				Spec: certmanagerv1.IssuerSpec{
 					IssuerConfig: certmanagerv1.IssuerConfig{
 						CA: &certmanagerv1.CAIssuer{
-							SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
+							SecretName: data.RootSecretName(dot, name),
 						},
 					},
 				},
