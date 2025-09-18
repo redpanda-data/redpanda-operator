@@ -557,14 +557,21 @@ func (c *Client) runHelmInDir(ctx context.Context, dir string, args ...string) (
 	var stderr bytes.Buffer
 
 	log.Printf("Executing: %#v", strings.Join(append([]string{"helm"}, args...), " "))
-	cmd := exec.Command("helm", args...)
+	cmd := exec.CommandContext(ctx, "helm", args...)
 
 	cmd.Dir = dir
 	cmd.Env = c.env
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
+	// Setting Cancel and WaitDelay will cause SIGINT to be sent upon context
+	// cancellation and send SIGKILL after 5s. (i.e. a graceful shutdown with a
+	// 5s grace period).
+	cmd.WaitDelay = 5 * time.Second
+	cmd.Cancel = func() error {
+		return cmd.Process.Signal(os.Interrupt)
+	}
 
-	err := runWithGracePeriod(ctx, cmd, 5*time.Second)
+	err := cmd.Run()
 
 	return stdout.Bytes(), stderr.Bytes(), errors.Join(
 		ctx.Err(),
@@ -621,32 +628,4 @@ func UpdateChartLock(chartLock ChartLock, filepath string) error {
 	}
 
 	return os.WriteFile(filepath, b, 0o644)
-}
-
-// runWithGracePeriod is similar to [exec.CommandContext] except that it first
-// SIGINT's the child process and allows it exit within [gracePeriod] before
-// killing the process.
-func runWithGracePeriod(ctx context.Context, cmd *exec.Cmd, gracePeriod time.Duration) error {
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- cmd.Run()
-	}()
-
-	// Attempt to do a graceful shutdown of the
-	select {
-	case err := <-errCh:
-		return err
-
-	case <-ctx.Done():
-		_ = cmd.Process.Signal(os.Interrupt)
-
-		select {
-		case err := <-errCh:
-			return errors.Join(err, ctx.Err())
-
-		case <-time.After(gracePeriod):
-			_ = cmd.Process.Kill()
-			return errors.Join(<-errCh, ctx.Err())
-		}
-	}
 }
