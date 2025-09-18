@@ -39,7 +39,10 @@ var (
 	//go:embed templates/status_test.tpl
 	statusTestsTemplate string
 	//go:embed templates/status.tpl
-	statusTemplate      string
+	statusTemplate string
+	//go:embed templates/docs.tpl
+	statusDocsTemplate  string
+	statusDocsGenerator *template.Template
 	statusGenerator     *template.Template
 	statusTestGenerator *template.Template
 
@@ -61,17 +64,19 @@ var (
 )
 
 func init() {
+	statusDocsGenerator = template.Must(template.New("statuses-docs").Funcs(helpers).Parse(statusDocsTemplate))
 	statusGenerator = template.Must(template.New("statuses").Funcs(helpers).Parse(statusTemplate))
 	statusTestGenerator = template.Must(template.New("statusTests").Funcs(helpers).Parse(statusTestsTemplate))
 }
 
 type StatusConfig struct {
-	StatusesFile    string
-	Package         string
-	BasePackage     string
-	APIDirectory    string
-	RewriteComments bool
-	Outputs         StatusConfigOutputs
+	StatusesFile           string
+	GenerateCRDPackageDocs bool
+	Package                string
+	BasePackage            string
+	APIDirectory           string
+	RewriteComments        bool
+	Outputs                StatusConfigOutputs
 }
 
 type StatusConfigOutputs struct {
@@ -103,11 +108,16 @@ func Render(config StatusConfig) error {
 		}
 	}
 
-	return render(&templateInfo{
+	info := &templateInfo{
 		Package:  config.Package,
 		File:     config.StatusesFile,
 		Statuses: statuses,
-	}, config.Outputs)
+	}
+
+	if config.GenerateCRDPackageDocs {
+		return renderDocs(info, config.Outputs)
+	}
+	return render(info, config.Outputs)
 }
 
 func decode(name string) ([]*status, error) {
@@ -141,6 +151,14 @@ func render(info *templateInfo, outputs StatusConfigOutputs) error {
 	return nil
 }
 
+func renderDocs(info *templateInfo, outputs StatusConfigOutputs) error {
+	if err := renderAndWrite(outputs.Directory, outputs.StatusFile, info, renderStatusDocsFile); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func renderAndWrite(directory, file string, info *templateInfo, renderFn func(info *templateInfo) ([]byte, error)) error {
 	data, err := renderFn(info)
 	if err != nil {
@@ -164,6 +182,14 @@ func renderAndWrite(directory, file string, info *templateInfo, renderFn func(in
 		return err
 	}
 	return nil
+}
+
+func renderStatusDocsFile(info *templateInfo) ([]byte, error) {
+	var buffer bytes.Buffer
+	if err := statusDocsGenerator.Execute(&buffer, info); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
 
 func renderStatusFile(info *templateInfo) ([]byte, error) {
