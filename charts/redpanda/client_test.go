@@ -23,7 +23,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
@@ -384,7 +383,7 @@ func (c *Client) ExposeRedpandaCluster(ctx context.Context, out, errOut io.Write
 		return nil, errors.WithStack(err)
 	}
 
-	availablePorts, cleanup, err := c.Ctl.PortForward(ctx, pod, out, errOut)
+	ports, cleanup, err := c.Ctl.PortForward(ctx, pod, out, errOut)
 	if err != nil {
 		return cleanup, errors.WithStack(err)
 	}
@@ -393,24 +392,7 @@ func (c *Client) ExposeRedpandaCluster(ctx context.Context, out, errOut io.Write
 		c.proxyClients = make(map[string]*portForwardClient)
 	}
 
-	rpYaml, err := c.getRedpandaConfig(ctx)
-	if err != nil {
-		return cleanup, errors.WithStack(err)
-	}
-
-	defaultSecretName := fmt.Sprintf("%s-%s-%s", c.state.Release.Name, "default", "cert")
-
-	secretName := defaultSecretName
-	cert := c.state.Values.TLS.Certs[c.state.Values.Listeners.HTTP.TLS.Cert]
-	if ref := cert.ClientSecretRef; ref != nil {
-		secretName = ref.Name
-	}
-
-	proxyClient, err := c.createClient(ctx,
-		getInternalPort(rpYaml.Pandaproxy.PandaproxyAPI, availablePorts),
-		isTLSEnabled(rpYaml.Pandaproxy.PandaproxyAPITLS),
-		isMutualTLSEnabled(rpYaml.Pandaproxy.PandaproxyAPITLS),
-		secretName)
+	proxyClient, err := c.createClient(ctx, ports, c.state.Values.Listeners.HTTP.AsString())
 	if err != nil {
 		return cleanup, errors.WithStack(err)
 	}
@@ -420,89 +402,16 @@ func (c *Client) ExposeRedpandaCluster(ctx context.Context, out, errOut io.Write
 	return cleanup, err
 }
 
-func isMutualTLSEnabled(tlsCfg []config.ServerTLS) bool {
-	for _, t := range tlsCfg {
-		if t.Name != "internal" || !t.Enabled {
-			continue
-		}
-		return t.RequireClientAuth
-	}
-	return false
-}
-
-func isTLSEnabled(tlsCfg []config.ServerTLS) bool {
-	for _, t := range tlsCfg {
-		if t.Name != "internal" {
-			continue
-		}
-		return t.Enabled
-	}
-	return false
-}
-
-func getInternalPort(addresses any, availablePorts []portforward.ForwardedPort) int {
-	var adminListenerPort int
-	switch v := addresses.(type) {
-	case []config.NamedSocketAddress:
-		for _, a := range v {
-			if a.Name != "internal" {
-				continue
-			}
-			adminListenerPort = a.Port
-		}
-	case []config.NamedAuthNSocketAddress:
-		for _, a := range v {
-			if a.Name != "internal" {
-				continue
-			}
-			adminListenerPort = a.Port
-		}
-	}
-
-	for _, p := range availablePorts {
-		if int(p.Remote) == adminListenerPort {
-			return int(p.Local)
-		}
-	}
-
-	return 0
-}
-
-func (c *Client) getRedpandaConfig(ctx context.Context) (*config.RedpandaYaml, error) {
-	cm, err := kube.Get[corev1.ConfigMap](ctx, c.Ctl, kube.ObjectKey{
-		Name:      c.state.Release.Name,
-		Namespace: c.state.Release.Namespace,
-	})
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	rpCfg, exist := cm.Data["redpanda.yaml"]
-	if !exist {
-		return nil, errors.WithStack(fmt.Errorf("redpanda.yaml not found"))
-	}
-
-	var cfg config.RedpandaYaml
-	err = yaml.Unmarshal([]byte(rpCfg), &cfg)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return &cfg, nil
-}
-
-func (c *Client) createClient(ctx context.Context, port int, tlsEnabled, mTLSEnabled bool, tlsK8SSecretName string) (*portForwardClient, error) {
-	if port == 0 {
-		return nil, errors.New("admin internal listener port not found")
-	}
-
+func (c *Client) createClient(ctx context.Context, ports []portforward.ForwardedPort, cfg redpanda.ListenerConfig[string]) (*portForwardClient, error) {
 	schema := "http"
 	var rootCAs *x509.CertPool
 	var certs []tls.Certificate
-	if tlsEnabled {
+	if cfg.TLS.IsEnabled(&c.state.Values.TLS) {
+		cert := c.state.Values.TLS.Certs.MustGet(cfg.TLS.Cert)
+
 		schema = "https"
 		s, err := kube.Get[corev1.Secret](ctx, c.Ctl, kube.ObjectKey{
-			Name:      tlsK8SSecretName,
+			Name:      cert.ServerSecretName(c.state, cfg.TLS.Cert),
 			Namespace: c.state.Release.Namespace,
 		})
 		if err != nil {
@@ -515,7 +424,7 @@ func (c *Client) createClient(ctx context.Context, port int, tlsEnabled, mTLSEna
 			return nil, errors.WithStack(errors.New("failed to parse CA certificate"))
 		}
 
-		if mTLSEnabled {
+		if cfg.TLS.RequireClientAuth {
 			cert, err := tls.X509KeyPair(s.Data["tls.crt"], s.Data["tls.key"])
 			if err != nil {
 				return nil, errors.WithStack(err)
@@ -542,11 +451,15 @@ func (c *Client) createClient(ctx context.Context, port int, tlsEnabled, mTLSEna
 		Transport: transport,
 	}
 
-	pfc := &portForwardClient{
-		httpClient,
-		port,
-		schema,
+	for _, port := range ports {
+		if port.Remote == uint16(cfg.Port) {
+			return &portForwardClient{
+				httpClient,
+				int(port.Local),
+				schema,
+			}, nil
+		}
 	}
 
-	return pfc, nil
+	return nil, errors.Newf("remote port not forwarded: %d", cfg.Port)
 }

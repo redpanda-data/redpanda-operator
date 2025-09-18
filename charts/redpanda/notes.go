@@ -70,7 +70,7 @@ func Notes(state *RenderState) []string {
 		`Set up rpk for access to your external listeners:`,
 	)
 	profile := state.Values.Listeners.Kafka.External[profileName]
-	if TLSEnabled(state) {
+	if profile.TLS.IsEnabled(&state.Values.Listeners.Kafka.TLS, &state.Values.TLS) {
 		var external string
 		if profile.TLS != nil && profile.TLS.Cert != nil {
 			external = *profile.TLS.Cert

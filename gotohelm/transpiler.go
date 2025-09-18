@@ -1639,7 +1639,7 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 	switch underlying := typ.Underlying().(type) {
 	case *types.Basic:
 		switch underlying.Info() {
-		case types.IsString:
+		case types.IsString, types.IsUntyped | types.IsString:
 			return Literal(`""`)
 		case types.IsInteger, types.IsUnsigned | types.IsInteger:
 			return Literal("0")

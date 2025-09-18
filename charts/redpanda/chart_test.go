@@ -870,26 +870,50 @@ func httpProxyListenerTest(ctx context.Context, rpk *Client) error {
 
 func mTLSValuesUsingCertManager() *redpanda.PartialValues {
 	return minimalValues(&redpanda.PartialValues{
+		TLS: &redpanda.PartialTLS{
+			Certs: redpanda.PartialTLSCertMap{
+				"kafka": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+				"http": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+				"rpc": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+				"schema": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+			},
+		},
 		External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
 		ClusterDomain: ptr.To("cluster.local"),
 		Listeners: &redpanda.PartialListeners{
 			Admin: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				TLS: &redpanda.PartialInternalTLS{
+					// Uses default by default.
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			HTTP: &redpanda.PartialListenerConfig[redpanda.HTTPAuthenticationMethod]{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("http"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			Kafka: &redpanda.PartialListenerConfig[redpanda.KafkaAuthenticationMethod]{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("kafka"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			SchemaRegistry: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("schema"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},
@@ -898,6 +922,7 @@ func mTLSValuesUsingCertManager() *redpanda.PartialValues {
 				TLS  *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
 			}{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("rpc"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},

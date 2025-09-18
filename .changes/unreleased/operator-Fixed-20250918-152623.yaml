@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: mTLS client certificates are now generated per certificate, as required, instead of using a single and potentially invalid certificate.
+time: 2025-09-18T15:26:23.232523-04:00
