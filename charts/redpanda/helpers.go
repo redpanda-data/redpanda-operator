@@ -130,6 +130,7 @@ func InternalDomain(dot *helmette.Dot) string {
 	return fmt.Sprintf("%s.%s.svc.%s", service, ns, values.ClusterDomain)
 }
 
+<<<<<<< HEAD
 // check if client auth is enabled for any of the listeners
 func TLSEnabled(dot *helmette.Dot) bool {
 	values := helmette.Unwrap[Values](dot.Values)
@@ -177,6 +178,8 @@ func ClientAuthRequired(dot *helmette.Dot) bool {
 	return false
 }
 
+=======
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 // mounts that are common to most containers
 func DefaultMounts(dot *helmette.Dot) []corev1.VolumeMount {
 	return append([]corev1.VolumeMount{
@@ -201,23 +204,34 @@ func CommonMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		})
 	}
 
+<<<<<<< HEAD
 	if TLSEnabled(dot) {
 		certNames := helmette.Keys(values.TLS.Certs)
 		helmette.SortAlpha(certNames)
 
 		for _, name := range certNames {
 			cert := values.TLS.Certs[name]
+=======
+	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
 
-			if !ptr.Deref(cert.Enabled, true) {
-				continue
-			}
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      cert.ServerVolumeName(name),
+			MountPath: cert.ServerMountPoint(name),
+		})
+	}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 
-			mounts = append(mounts, corev1.VolumeMount{
-				Name:      fmt.Sprintf("redpanda-%s-cert", name),
-				MountPath: fmt.Sprintf("%s/%s", certificateMountPoint, name),
-			})
-		}
+	// mTLS for any potentially in use listeners (kafka, admin, schema?)
+	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
 
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      cert.ClientVolumeName(name),
+			MountPath: cert.ClientMountPoint(name),
+		})
+
+<<<<<<< HEAD
 		adminTLS := values.Listeners.Admin.TLS
 		if adminTLS.RequireClientAuth {
 			mounts = append(mounts, corev1.VolumeMount{
@@ -225,6 +239,8 @@ func CommonMounts(dot *helmette.Dot) []corev1.VolumeMount {
 				MountPath: fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(dot)),
 			})
 		}
+=======
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 	}
 
 	return mounts
@@ -248,6 +264,7 @@ func DefaultVolumes(dot *helmette.Dot) []corev1.Volume {
 // volumes that are common to all pods
 func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 	volumes := []corev1.Volume{}
+<<<<<<< HEAD
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if TLSEnabled(dot) {
@@ -268,10 +285,25 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 						SecretName:  CertSecretName(dot, name, &cert),
 						DefaultMode: ptr.To[int32](0o440),
 					},
-				},
-			})
-		}
+=======
 
+	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
+
+		volumes = append(volumes, corev1.Volume{
+			// Intentionally use static names for VolumeNames to make overrides easier.
+			Name: cert.ServerVolumeName(name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  cert.ServerSecretName(state, name),
+					DefaultMode: ptr.To[int32](0o440),
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
+				},
+			},
+		})
+	}
+
+<<<<<<< HEAD
 		adminTLS := values.Listeners.Admin.TLS
 		cert := values.TLS.Certs[adminTLS.Cert]
 		if adminTLS.RequireClientAuth {
@@ -279,17 +311,20 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 			if cert.ClientSecretRef != nil {
 				secretName = cert.ClientSecretRef.Name
 			}
+=======
+	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 
-			volumes = append(volumes, corev1.Volume{
-				Name: "mtls-client",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  secretName,
-						DefaultMode: ptr.To[int32](0o440),
-					},
+		volumes = append(volumes, corev1.Volume{
+			Name: cert.ClientVolumeName(name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  cert.ClientSecretName(state, name),
+					DefaultMode: ptr.To[int32](0o440),
 				},
-			})
-		}
+			},
+		})
 	}
 
 	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
@@ -306,6 +341,7 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 	return volumes
 }
 
+<<<<<<< HEAD
 // return correct secretName to use based if secretRef exists
 func CertSecretName(dot *helmette.Dot, certName string, cert *TLSCert) string {
 	if cert.SecretRef != nil {
@@ -343,6 +379,8 @@ func ContainerSecurityContext(dot *helmette.Dot) corev1.SecurityContext {
 	}
 }
 
+=======
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 //nolint:stylecheck
 func RedpandaAtLeast_22_2_0(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_22_2_0)

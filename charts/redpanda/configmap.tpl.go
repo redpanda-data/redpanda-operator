@@ -430,8 +430,13 @@ func rpkKafkaClientTLSConfiguration(dot *helmette.Dot) map[string]any {
 	}
 
 	if tls.RequireClientAuth {
+<<<<<<< HEAD
 		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
 		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+=======
+		result["cert_file"] = fmt.Sprintf("%s/tls.crt", tls.ClientMountPoint(&state.Values.TLS))
+		result["key_file"] = fmt.Sprintf("%s/tls.key", tls.ClientMountPoint(&state.Values.TLS))
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 	}
 
 	return result
@@ -454,8 +459,13 @@ func rpkAdminAPIClientTLSConfiguration(dot *helmette.Dot) map[string]any {
 	}
 
 	if tls.RequireClientAuth {
+<<<<<<< HEAD
 		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
 		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+=======
+		result["cert_file"] = fmt.Sprintf("%s/tls.crt", tls.ClientMountPoint(&state.Values.TLS))
+		result["key_file"] = fmt.Sprintf("%s/tls.key", tls.ClientMountPoint(&state.Values.TLS))
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 	}
 
 	return result
@@ -478,8 +488,13 @@ func rpkSchemaRegistryClientTLSConfiguration(dot *helmette.Dot) map[string]any {
 	}
 
 	if tls.RequireClientAuth {
+<<<<<<< HEAD
 		result["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
 		result["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+=======
+		result["cert_file"] = fmt.Sprintf("%s/tls.crt", tls.ClientMountPoint(&state.Values.TLS))
+		result["key_file"] = fmt.Sprintf("%s/tls.key", tls.ClientMountPoint(&state.Values.TLS))
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 	}
 
 	return result
@@ -513,8 +528,13 @@ func kafkaClient(dot *helmette.Dot) map[string]any {
 		}
 
 		if kafkaTLS.RequireClientAuth {
+<<<<<<< HEAD
 			brokerTLS["cert_file"] = fmt.Sprintf("%s/%s-client/tls.crt", certificateMountPoint, Fullname(dot))
 			brokerTLS["key_file"] = fmt.Sprintf("%s/%s-client/tls.key", certificateMountPoint, Fullname(dot))
+=======
+			brokerTLS["cert_file"] = fmt.Sprintf("%s/tls.crt", kafkaTLS.ClientMountPoint(&state.Values.TLS))
+			brokerTLS["key_file"] = fmt.Sprintf("%s/tls.key", kafkaTLS.ClientMountPoint(&state.Values.TLS))
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 		}
 
 	}
@@ -605,12 +625,10 @@ func rpcListenersTLS(dot *helmette.Dot) map[string]any {
 		return map[string]any{}
 	}
 
-	certName := r.TLS.Cert
-
 	return map[string]any{
 		"enabled":             true,
-		"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
-		"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
+		"cert_file":           fmt.Sprintf("%s/tls.crt", r.TLS.ServerMountPoint(&state.Values.TLS)),
+		"key_file":            fmt.Sprintf("%s/tls.key", r.TLS.ServerMountPoint(&state.Values.TLS)),
 		"require_client_auth": r.TLS.RequireClientAuth,
 		"truststore_file":     r.TLS.TrustStoreFilePath(&values.TLS),
 	}
@@ -634,8 +652,8 @@ func createInternalListenerTLSCfg(tls *TLS, internal InternalTLS) map[string]any
 	return map[string]any{
 		"name":                "internal",
 		"enabled":             true,
-		"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, internal.Cert),
-		"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, internal.Cert),
+		"cert_file":           fmt.Sprintf("%s/tls.crt", internal.ServerMountPoint(tls)),
+		"key_file":            fmt.Sprintf("%s/tls.key", internal.ServerMountPoint(tls)),
 		"require_client_auth": internal.RequireClientAuth,
 		"truststore_file":     internal.TrustStoreFilePath(tls),
 	}

@@ -532,8 +532,13 @@ func adminTLSCurlFlags(dot *helmette.Dot) string {
 		return ""
 	}
 
+<<<<<<< HEAD
 	if values.Listeners.Admin.TLS.RequireClientAuth {
 		path := fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(dot))
+=======
+	if state.Values.Listeners.Admin.TLS.RequireClientAuth {
+		path := state.Values.Listeners.Admin.TLS.ClientMountPoint(&state.Values.TLS)
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
 	}
 
