@@ -567,27 +567,6 @@
         - command:
           - /bin/bash
           - -c
-          - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
-          name: tuning
-          resources: {}
-          securityContext:
-            capabilities:
-              add:
-              - SYS_RESOURCE
-            privileged: true
-            runAsGroup: 0
-            runAsUser: 0
-          volumeMounts:
-          - mountPath: /etc/tls/certs/default
-            name: redpanda-default-cert
-          - mountPath: /etc/tls/certs/external
-            name: redpanda-external-cert
-          - mountPath: /etc/redpanda
-            name: base-config
-        - command:
-          - /bin/bash
-          - -c
           - trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}"
             & wait $!
           env:
@@ -949,27 +928,6 @@
             name: kube-api-access
             readOnly: true
         initContainers:
-        - command:
-          - /bin/bash
-          - -c
-          - rpk redpanda tune all
-          image: foo:bar
-          name: tuning
-          resources: {}
-          securityContext:
-            capabilities:
-              add:
-              - SYS_RESOURCE
-            privileged: true
-            runAsGroup: 0
-            runAsUser: 0
-          volumeMounts:
-          - mountPath: /etc/tls/certs/default
-            name: redpanda-default-cert
-          - mountPath: /etc/tls/certs/external
-            name: redpanda-external-cert
-          - mountPath: /etc/redpanda
-            name: base-config
         - command:
           - /bin/sh
           - -c

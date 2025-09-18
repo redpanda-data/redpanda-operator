@@ -41,6 +41,14 @@ linters:
             desc: 'use "github.com/cockroachdb/errors"'
           - pkg: "^github.com/pkg/errors"
             desc: 'use "github.com/cockroachdb/errors"'
+        # the yaml parsing behavior of each of these is slightly different, so standardize
+        # on one
+        yaml:
+          deny:
+          - pkg: "gopkg.in/yaml.v2"
+            desc: 'use "sigs.k8s.io/yaml"'
+          - pkg: "gopkg.in/yaml.v3"
+            desc: 'use "sigs.k8s.io/yaml"'
         gotohelm:
           deny:
           - pkg: "github.com/redpanda-data/redpanda-operator/pkg/gotohelm"

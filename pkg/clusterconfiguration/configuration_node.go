@@ -11,7 +11,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3" //nolint:depguard // this is necessary due to differences in how the yaml tagging mechanisms work and the fact that some structs on config.RedpandaYaml are missing inline annotations
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"

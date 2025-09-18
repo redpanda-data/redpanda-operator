@@ -1324,7 +1324,6 @@
           - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
-        tune_aio_events: true
       schema_registry:
         schema_registry_api:
         - address: 0.0.0.0
@@ -1564,7 +1563,6 @@
           - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
-        tune_aio_events: true
       schema_registry:
         schema_registry_api:
         - address: 0.0.0.0
