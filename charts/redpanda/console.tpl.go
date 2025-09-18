@@ -134,9 +134,11 @@ func consoleTLSVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		}
 		visitedCert[tlsCfg.Cert] = true
 
+		cert := values.TLS.Certs.MustGet(tlsCfg.Cert)
+
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      fmt.Sprintf("redpanda-%s-cert", tlsCfg.Cert),
-			MountPath: fmt.Sprintf("%s/%s", certificateMountPoint, tlsCfg.Cert),
+			Name:      cert.ServerVolumeName(tlsCfg.Cert),
+			MountPath: cert.ServerMountPoint(tlsCfg.Cert),
 		})
 	}
 
@@ -175,12 +177,14 @@ func consoleTLSVolumes(dot *helmette.Dot) []corev1.Volume {
 		}
 		visitedCert[tlsCfg.Cert] = true
 
+		cert := values.TLS.Certs.MustGet(tlsCfg.Cert)
+
 		volumes = append(volumes, corev1.Volume{
-			Name: fmt.Sprintf("redpanda-%s-cert", tlsCfg.Cert),
+			Name: cert.ServerVolumeName(tlsCfg.Cert),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					DefaultMode: ptr.To[int32](0o420),
-					SecretName:  CertSecretName(dot, tlsCfg.Cert, values.TLS.Certs.MustGet(tlsCfg.Cert)),
+					SecretName:  cert.ServerSecretName(dot, tlsCfg.Cert),
 				},
 			},
 		})

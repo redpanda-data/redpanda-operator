@@ -302,7 +302,7 @@ echo "passed"`) -}}
 {{- break -}}
 {{- end -}}
 {{- if $values.listeners.admin.tls.requireClientAuth -}}
-{{- $path := (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r")) -}}
+{{- $path := (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $values.listeners.admin.tls $values.tls)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key" $path $path $path)) | toJson -}}
 {{- break -}}

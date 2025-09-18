@@ -130,53 +130,6 @@ func InternalDomain(dot *helmette.Dot) string {
 	return fmt.Sprintf("%s.%s.svc.%s", service, ns, values.ClusterDomain)
 }
 
-// check if client auth is enabled for any of the listeners
-func TLSEnabled(dot *helmette.Dot) bool {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if values.TLS.Enabled {
-		return true
-	}
-
-	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
-	for _, listener := range listeners {
-		tlsCert := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "tls", "cert")
-		tlsEnabled := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "tls", "enabled")
-		if !helmette.Empty(tlsEnabled) && !helmette.Empty(tlsCert) {
-			return true
-		}
-
-		external := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external")
-		if helmette.Empty(external) {
-			continue
-		}
-
-		keys := helmette.Keys(external.(map[string]any))
-		for _, key := range keys {
-			enabled := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external", key, "enabled")
-			tlsCert := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "cert")
-			tlsEnabled := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "enabled")
-
-			if !helmette.Empty(enabled) && !helmette.Empty(tlsCert) && !helmette.Empty(tlsEnabled) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func ClientAuthRequired(dot *helmette.Dot) bool {
-	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
-	for _, listener := range listeners {
-		required := helmette.Dig(dot.Values.AsMap(), false, "listeners", listener, "tls", "requireClientAuth")
-		if !helmette.Empty(required) {
-			return true
-		}
-	}
-	return false
-}
-
 // mounts that are common to most containers
 func DefaultMounts(dot *helmette.Dot) []corev1.VolumeMount {
 	return append([]corev1.VolumeMount{
@@ -201,30 +154,23 @@ func CommonMounts(dot *helmette.Dot) []corev1.VolumeMount {
 		})
 	}
 
-	if TLSEnabled(dot) {
-		certNames := helmette.Keys(values.TLS.Certs)
-		helmette.SortAlpha(certNames)
+	for _, name := range values.Listeners.InUseServerCerts(&values.TLS) {
+		cert := values.TLS.Certs.MustGet(name)
 
-		for _, name := range certNames {
-			cert := values.TLS.Certs[name]
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      cert.ServerVolumeName(name),
+			MountPath: cert.ServerMountPoint(name),
+		})
+	}
 
-			if !ptr.Deref(cert.Enabled, true) {
-				continue
-			}
+	// mTLS for any potentially in use listeners (kafka, admin, schema?)
+	for _, name := range values.Listeners.InUseClientCerts(&values.TLS) {
+		cert := values.TLS.Certs.MustGet(name)
 
-			mounts = append(mounts, corev1.VolumeMount{
-				Name:      fmt.Sprintf("redpanda-%s-cert", name),
-				MountPath: fmt.Sprintf("%s/%s", certificateMountPoint, name),
-			})
-		}
-
-		adminTLS := values.Listeners.Admin.TLS
-		if adminTLS.RequireClientAuth {
-			mounts = append(mounts, corev1.VolumeMount{
-				Name:      "mtls-client",
-				MountPath: fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(dot)),
-			})
-		}
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      cert.ClientVolumeName(name),
+			MountPath: cert.ClientMountPoint(name),
+		})
 	}
 
 	return mounts
@@ -250,46 +196,33 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 	volumes := []corev1.Volume{}
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if TLSEnabled(dot) {
-		certNames := helmette.Keys(values.TLS.Certs)
-		helmette.SortAlpha(certNames)
+	for _, name := range values.Listeners.InUseServerCerts(&values.TLS) {
+		cert := values.TLS.Certs.MustGet(name)
 
-		for _, name := range certNames {
-			cert := values.TLS.Certs[name]
-
-			if !ptr.Deref(cert.Enabled, true) {
-				continue
-			}
-
-			volumes = append(volumes, corev1.Volume{
-				Name: fmt.Sprintf("redpanda-%s-cert", name),
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  CertSecretName(dot, name, &cert),
-						DefaultMode: ptr.To[int32](0o440),
-					},
+		volumes = append(volumes, corev1.Volume{
+			// Intentionally use static names for VolumeNames to make overrides easier.
+			Name: cert.ServerVolumeName(name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  cert.ServerSecretName(dot, name),
+					DefaultMode: ptr.To[int32](0o440),
 				},
-			})
-		}
+			},
+		})
+	}
 
-		adminTLS := values.Listeners.Admin.TLS
-		cert := values.TLS.Certs[adminTLS.Cert]
-		if adminTLS.RequireClientAuth {
-			secretName := fmt.Sprintf("%s-client", Fullname(dot))
-			if cert.ClientSecretRef != nil {
-				secretName = cert.ClientSecretRef.Name
-			}
+	for _, name := range values.Listeners.InUseClientCerts(&values.TLS) {
+		cert := values.TLS.Certs.MustGet(name)
 
-			volumes = append(volumes, corev1.Volume{
-				Name: "mtls-client",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  secretName,
-						DefaultMode: ptr.To[int32](0o440),
-					},
+		volumes = append(volumes, corev1.Volume{
+			Name: cert.ClientVolumeName(name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  cert.ClientSecretName(dot, name),
+					DefaultMode: ptr.To[int32](0o440),
 				},
-			})
-		}
+			},
+		})
 	}
 
 	if sasl := values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
@@ -304,14 +237,6 @@ func CommonVolumes(dot *helmette.Dot) []corev1.Volume {
 	}
 
 	return volumes
-}
-
-// return correct secretName to use based if secretRef exists
-func CertSecretName(dot *helmette.Dot, certName string, cert *TLSCert) string {
-	if cert.SecretRef != nil {
-		return cert.SecretRef.Name
-	}
-	return fmt.Sprintf("%s-%s-cert", Fullname(dot), certName)
 }
 
 //nolint:stylecheck

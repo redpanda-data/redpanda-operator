@@ -28,6 +28,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
@@ -300,35 +301,21 @@ func authFromDot(dot *helmette.Dot) (username string, password string, mechanism
 	return
 }
 
-func certificatesFor(dot *helmette.Dot, cert string) (certSecret, certKey, clientSecret string) {
+func certificatesFor(dot *helmette.Dot, name string) (certSecret, certKey, clientSecret string) {
 	values := helmette.Unwrap[redpanda.Values](dot.Values)
 
-	name := redpanda.Fullname(dot)
+	cert, ok := values.TLS.Certs[name]
+	if !ok || !ptr.Deref(cert.Enabled, true) {
+		// TODO this isn't correct but it matches historical behavior.
+		fullname := redpanda.Fullname(dot)
+		certSecret = fmt.Sprintf("%s-%s-root-certificate", fullname, name)
+		clientSecret = fmt.Sprintf("%s-default-client-cert", fullname)
 
-	// default to cert manager issued names and tls.crt which is
-	// where cert-manager outputs the root CA
-	certKey = corev1.TLSCertKey
-	certSecret = fmt.Sprintf("%s-%s-root-certificate", name, cert)
-	clientSecret = fmt.Sprintf("%s-client", name)
-
-	if certificate, ok := values.TLS.Certs[cert]; ok {
-		// if this references a non-enabled certificate, just return
-		// the default cert-manager issued names
-		if certificate.Enabled != nil && !*certificate.Enabled {
-			return certSecret, certKey, clientSecret
-		}
-
-		if certificate.ClientSecretRef != nil {
-			clientSecret = certificate.ClientSecretRef.Name
-		}
-		if certificate.SecretRef != nil {
-			certSecret = certificate.SecretRef.Name
-			if certificate.CAEnabled {
-				certKey = "ca.crt"
-			}
-		}
+		return certSecret, corev1.TLSCertKey, clientSecret
 	}
-	return certSecret, certKey, clientSecret
+
+	ref := cert.CASecretRef(dot, name)
+	return ref.LocalObjectReference.Name, ref.Key, cert.ClientSecretName(dot, name)
 }
 
 func tlsConfigFromDot(dot *helmette.Dot, listener redpanda.InternalTLS) (*tls.Config, error) {

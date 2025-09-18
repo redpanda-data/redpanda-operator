@@ -73,7 +73,8 @@
 {{- continue -}}
 {{- end -}}
 {{- $_ := (set $visitedCert $tlsCfg.cert true) -}}
-{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (printf "redpanda-%s-cert" $tlsCfg.cert) "mountPath" (printf "%s/%s" "/etc/tls/certs" $tlsCfg.cert))))) -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $tlsCfg.cert)))) "r") -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (get (fromJson (include "redpanda.TLSCert.ServerVolumeName" (dict "a" (list $cert $tlsCfg.cert)))) "r") "mountPath" (get (fromJson (include "redpanda.TLSCert.ServerMountPoint" (dict "a" (list $cert $tlsCfg.cert)))) "r"))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -100,14 +101,15 @@
 {{- end -}}
 {{- $visitedCert := (dict) -}}
 {{- range $_, $tlsCfg := (list $values.listeners.kafka.tls $values.listeners.schemaRegistry.tls $values.listeners.admin.tls) -}}
-{{- $_173___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
-{{- $_ := (index $_173___visited 0) -}}
-{{- $visited := (index $_173___visited 1) -}}
+{{- $_175___visited := (get (fromJson (include "_shims.dicttest" (dict "a" (list $visitedCert $tlsCfg.cert false)))) "r") -}}
+{{- $_ := (index $_175___visited 0) -}}
+{{- $visited := (index $_175___visited 1) -}}
 {{- if (or (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $tlsCfg $values.tls)))) "r")) $visited) -}}
 {{- continue -}}
 {{- end -}}
 {{- $_ := (set $visitedCert $tlsCfg.cert true) -}}
-{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "defaultMode" (0o420 | int) "secretName" (get (fromJson (include "redpanda.CertSecretName" (dict "a" (list $dot $tlsCfg.cert (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $tlsCfg.cert)))) "r"))))) "r"))))) (dict "name" (printf "redpanda-%s-cert" $tlsCfg.cert))))) -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $tlsCfg.cert)))) "r") -}}
+{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "defaultMode" (0o420 | int) "secretName" (get (fromJson (include "redpanda.TLSCert.ServerSecretName" (dict "a" (list $cert $dot $tlsCfg.cert)))) "r"))))) (dict "name" (get (fromJson (include "redpanda.TLSCert.ServerVolumeName" (dict "a" (list $cert $tlsCfg.cert)))) "r"))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
