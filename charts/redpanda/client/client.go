@@ -111,6 +111,8 @@ func AdminClientConnectionInfo(state *redpanda.RenderState, dialer DialContextFu
 		hosts[i] = fmt.Sprintf("%s:%d", record.Target, record.Port)
 	}
 	params.Hosts = hosts
+
+	fmt.Printf("The host list is : %v\n", hosts)
 	return params, nil
 }
 

@@ -226,8 +226,6 @@ type Syncer struct {
 }
 
 type ClusterConfigStatus struct {
-	Version      int64
-	NeedsRestart bool
 	// Hash of the properties that need restart
 	PropertiesThatNeedRestartHash string
 }
@@ -243,7 +241,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 
 	schema, err := s.Client.ClusterConfigSchema(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting cluster schema")
 	}
 
 	// 1. Normalize the desired config.
@@ -254,7 +252,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	// 2. Compute values to be removed.
 	status, err := s.Client.ClusterConfigStatus(ctx, true)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error getting cluster status")
 	}
 
 	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
@@ -283,7 +281,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	if s.Mode == SyncerModeDeclarative {
 		current, err := s.Client.Config(ctx, false)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "error getting Config")
 		}
 
 		for key := range current {
@@ -295,7 +293,6 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 
 	// Intermediate variable to hold the config result if syncing is actually
 	// enabled.
-	configVersion := int64(-1)
 
 	// 3. Actually send the patch to redpanda, if enabled.
 	if s.Mode == SyncerModeDisabled {
@@ -303,10 +300,9 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	} else {
 		result, err := s.Client.PatchClusterConfig(ctx, normalized, toRemove)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "error getting patch cluster config")
 		}
 
-		configVersion = int64(result.ConfigVersion)
 		logger.Info("updated cluster configuration", "config_version", result.ConfigVersion, "removed", toRemove)
 	}
 
@@ -317,23 +313,10 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	// Use of this hash is slated for removal.
 	hashOfConfigsThatNeedRestart, err := hashConfigsThatNeedRestart(desired, schema)
 	if err != nil {
-		return nil, fmt.Errorf("failed to hash config: %w", err)
-	}
-
-	status, err = s.Client.ClusterConfigStatus(ctx, true)
-	if err != nil {
-		return nil, err
-	}
-
-	needsRestart := false
-	for _, s := range status {
-		configVersion = max(s.ConfigVersion, configVersion)
-		needsRestart = needsRestart || s.Restart
+		return nil, errors.Wrap(err, "failed to hash config")
 	}
 
 	return &ClusterConfigStatus{
-		Version:                       configVersion,
-		NeedsRestart:                  needsRestart,
 		PropertiesThatNeedRestartHash: hashOfConfigsThatNeedRestart,
 	}, nil
 }

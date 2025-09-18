@@ -626,7 +626,7 @@ func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string
 }
 
 func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Container {
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", InternalDomain(state))
+	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", ptr.Deref(state.Values.Listeners.RPC.PrefixTemplate, InternalDomain(state)))
 
 	container := corev1.Container{
 		Name:  RedpandaContainerName,
@@ -792,7 +792,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 //nolint:stylecheck
 func adminApiURLs(state *RenderState) string {
 	return fmt.Sprintf(`${SERVICE_NAME}.%s:%d`,
-		InternalDomain(state),
+		ptr.Deref(state.Values.Listeners.Admin.PrefixTemplate, InternalDomain(state)),
 		state.Values.Listeners.Admin.Port,
 	)
 }
@@ -800,7 +800,7 @@ func adminApiURLs(state *RenderState) string {
 //nolint:stylecheck
 func adminURLsCLI(state *RenderState) string {
 	return fmt.Sprintf(`$(SERVICE_NAME).%s:%d`,
-		InternalDomain(state),
+		ptr.Deref(state.Values.Listeners.Admin.PrefixTemplate, InternalDomain(state)),
 		state.Values.Listeners.Admin.Port,
 	)
 }

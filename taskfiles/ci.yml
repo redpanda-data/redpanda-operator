@@ -141,7 +141,7 @@ tasks:
           CLI_ARGS: "--push"
       # Package and push Operator helm chart to Dockerhub
       - task: publish:nightly:helm:chart
-        vars: {REPO: redpanda-operator-nightly, CHART: operator, DIR: "operator/chart", VERSION: "{{ .OPERATOR_VERSION }}"}
+        vars: {REPO: redpanda-operator-nightly, CHART: operator, DIR: "operator/chart", VERSION: "{{ .OPERATOR_VERSION }}", SCRIPT: "yq -i \".image.repository = \\\"docker.io/redpandadata/redpanda-operator-nightly\\\"\" $TMP_PATH/values.yaml; yq -i \".appVersion = \\\"{{ .OPERATOR_VERSION }}\\\"\" $TMP_PATH/Chart.yaml"}
       - task: publish:nightly:helm:chart
         vars: {REPO: console-unstable, CHART: console, DIR: "charts/console/chart", VERSION: "{{ .CONSOLE_CHART_VERSION }}"}
 
@@ -168,6 +168,9 @@ tasks:
       # name is set with `yq`
       # version is set with `helm package`
       - yq -i '.name = "{{ .REPO }}"' {{.TMP_PATH}}/Chart.yaml
+      # This is a place for hook script that is specific to only one chart
+      # i.e. changing nightly container repository for operator
+      - /bin/sh -c 'export TMP_PATH={{.TMP_PATH}}; {{.SCRIPT}}'
       # dockerhub has a limitation where oci artifacts may not share tags with images [1].
       # We suffix versions with `-helm-chart` to work around this.
       # [1]: https://forums.docker.com/t/tag-overlap-in-oci-artifacts/131453

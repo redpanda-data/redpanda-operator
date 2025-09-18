@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/configuration"
@@ -459,6 +460,11 @@ func (m *MockAdminAPI) BrokerStatusGetter(
 		}
 		return ""
 	}
+}
+
+func (m *MockAdminAPI) GetLeaderID(_ context.Context) (*int, error) {
+	m.Log.WithName("GetLeaderID").Info("called")
+	return ptr.To(0), nil
 }
 
 func (m *MockAdminAPI) DecommissionBroker(_ context.Context, id int) error {

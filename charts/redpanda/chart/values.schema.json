@@ -4576,6 +4576,9 @@
             "port": {
               "type": "integer"
             },
+            "prefixTemplate": {
+              "type": "string"
+            },
             "tls": {
               "additionalProperties": false,
               "properties": {
@@ -4766,6 +4769,9 @@
             },
             "port": {
               "type": "integer"
+            },
+            "prefixTemplate": {
+              "type": "string"
             },
             "tls": {
               "additionalProperties": false,
@@ -4960,6 +4966,9 @@
             "port": {
               "type": "integer"
             },
+            "prefixTemplate": {
+              "type": "string"
+            },
             "tls": {
               "additionalProperties": false,
               "properties": {
@@ -5029,6 +5038,9 @@
           "properties": {
             "port": {
               "type": "integer"
+            },
+            "prefixTemplate": {
+              "type": "string"
             },
             "tls": {
               "additionalProperties": false,
@@ -5212,6 +5224,9 @@
             },
             "port": {
               "type": "integer"
+            },
+            "prefixTemplate": {
+              "type": "string"
             },
             "tls": {
               "additionalProperties": false,

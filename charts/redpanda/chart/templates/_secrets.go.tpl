@@ -210,7 +210,7 @@ echo "passed"`) -}}
 {{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
+{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.kafka.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r")) -}}
 {{- $snippet := (coalesce nil) -}}
 {{- $listenerName := "kafka" -}}
 {{- $listenerAdvertisedName := $listenerName -}}
@@ -258,7 +258,7 @@ echo "passed"`) -}}
 {{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
+{{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.http.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r")) -}}
 {{- $snippet := (coalesce nil) -}}
 {{- $listenerName := "http" -}}
 {{- $listenerAdvertisedName := "pandaproxy" -}}
@@ -387,7 +387,7 @@ echo "passed"`) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (printf "%s://%s.%s:%d" (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") `${SERVICE_NAME}` (trimSuffix "." (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) ($state.Values.listeners.admin.port | int))) | toJson -}}
+{{- (dict "r" (printf "%s://%s.%s:%d" (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") `${SERVICE_NAME}` (trimSuffix "." (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.admin.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r")) ($state.Values.listeners.admin.port | int))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

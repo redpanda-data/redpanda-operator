@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -721,22 +722,70 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 
 	mode := feature.ClusterConfigSyncMode.Get(ctx, state.cluster.Redpanda)
 
-	syncer := syncclusterconfig.Syncer{Client: state.admin, Mode: mode}
-	configStatus, err := syncer.Sync(ctx, config, superusers)
+	controllerLeaderExistingWithinBrokers, err := r.isControllerPartOfTheCluster(ctx, state)
 	if err != nil {
-		logger.Error(err, "syncing cluster config")
 		return ctrl.Result{}, errors.WithStack(err)
 	}
 
-	state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
+	shouldRequeue := state.restartOnConfigChange
 
-	version := configStatus.PropertiesThatNeedRestartHash
-	didConfigChange := state.cluster.Redpanda.Status.ConfigVersion != version
-	state.status.ConfigVersion = ptr.To(version)
+	if controllerLeaderExistingWithinBrokers {
+		syncer := syncclusterconfig.Syncer{Client: state.admin, Mode: mode}
+		configStatus, err := syncer.Sync(ctx, config, superusers)
+		if err != nil {
+			logger.Error(err, "syncing cluster config")
+			return ctrl.Result{}, errors.WithStack(err)
+		}
 
-	shouldRequeue := didConfigChange && state.restartOnConfigChange
+		state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
+
+		version := configStatus.PropertiesThatNeedRestartHash
+		didConfigChange := state.cluster.Redpanda.Status.ConfigVersion != version
+		state.status.ConfigVersion = ptr.To(version)
+
+		shouldRequeue = didConfigChange && shouldRequeue
+	}
 
 	return ctrl.Result{Requeue: shouldRequeue}, nil
+}
+
+func (r *RedpandaReconciler) isControllerPartOfTheCluster(ctx context.Context, state *clusterReconciliationState) (bool, error) {
+	dot, err := state.cluster.Redpanda.GetDot(r.KubeConfig)
+	if err != nil {
+		return false, errors.Wrap(err, "error creating dot")
+	}
+
+	stateFromDot, err := redpanda.RenderStateFromDot(dot)
+	if err != nil {
+		return false, errors.Wrap(err, "error rendering state")
+	}
+
+	params, err := redpandaclient.AdminClientConnectionInfo(stateFromDot, nil)
+	if err != nil {
+		return false, errors.Wrap(err, "error getting cluster config parameters")
+	}
+
+	id, err := state.admin.GetLeaderID(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "getting leader ID")
+	}
+	if id == nil {
+		return false, errors.New("leader ID is nil")
+	}
+
+	brokers, err := state.admin.Brokers(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "getting brokers")
+	}
+
+	for _, broker := range brokers {
+		for _, host := range params.Hosts {
+			if strings.Contains(host, broker.InternalRPCAddress) && broker.NodeID == *id {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 func (r *RedpandaReconciler) superusersFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]string, error) {
