@@ -21164,6 +21164,18 @@
                 "cloud_storage_azure_adls_port": {
                   "type": "integer"
                 },
+                "cloud_storage_azure_container": {
+                  "type": "string"
+                },
+                "cloud_storage_azure_managed_identity_id": {
+                  "type": "string"
+                },
+                "cloud_storage_azure_shared_key": {
+                  "type": "string"
+                },
+                "cloud_storage_azure_storage_account": {
+                  "type": "string"
+                },
                 "cloud_storage_bucket": {
                   "type": "string"
                 },
@@ -21185,7 +21197,7 @@
                   ]
                 },
                 "cloud_storage_credentials_source": {
-                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata)$",
+                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$",
                   "type": "string"
                 },
                 "cloud_storage_disable_tls": {
@@ -21353,6 +21365,18 @@
             "cloud_storage_azure_adls_port": {
               "type": "integer"
             },
+            "cloud_storage_azure_container": {
+              "type": "string"
+            },
+            "cloud_storage_azure_managed_identity_id": {
+              "type": "string"
+            },
+            "cloud_storage_azure_shared_key": {
+              "type": "string"
+            },
+            "cloud_storage_azure_storage_account": {
+              "type": "string"
+            },
             "cloud_storage_bucket": {
               "type": "string"
             },
@@ -21374,7 +21398,7 @@
               ]
             },
             "cloud_storage_credentials_source": {
-              "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata)$",
+              "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$",
               "type": "string"
             },
             "cloud_storage_disable_tls": {
