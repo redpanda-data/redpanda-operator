@@ -47,8 +47,13 @@
 {{- $_ := (sortAlpha $profiles) -}}
 {{- $profileName := (index $profiles (0 | int)) -}}
 {{- $notes = (concat (default (list) $notes) (list `` `Set up rpk for access to your external listeners:`)) -}}
+<<<<<<< HEAD:charts/redpanda/templates/_notes.go.tpl
 {{- $profile := (ternary (index $values.listeners.kafka.external $profileName) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $values.listeners.kafka.external $profileName)) -}}
 {{- if (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $dot)))) "r") -}}
+=======
+{{- $profile := (ternary (index $state.Values.listeners.kafka.external $profileName) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $state.Values.listeners.kafka.external $profileName)) -}}
+{{- if (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $profile.tls $state.Values.listeners.kafka.tls $state.Values.tls)))) "r") -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_notes.go.tpl
 {{- $external := "" -}}
 {{- if (and (ne (toJson $profile.tls) "null") (ne (toJson $profile.tls.cert) "null")) -}}
 {{- $external = $profile.tls.cert -}}
