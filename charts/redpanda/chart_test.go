@@ -19,6 +19,7 @@ import (
 	"io/fs"
 	"maps"
 	"math/big"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -456,6 +457,66 @@ func TestIntegrationChart(t *testing.T) {
 
 			for _, container := range pod.Status.ContainerStatuses {
 				require.Zero(t, container.RestartCount)
+			}
+		}
+	})
+
+	t.Run("console-integration", func(t *testing.T) {
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		release := env.Install(ctx, redpandaChart, helm.InstallOptions{
+			Values: minimalValues(&redpanda.PartialValues{
+				Console: &consolechart.PartialValues{
+					Enabled: ptr.To(true),
+				},
+			}),
+		})
+
+		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), client.MatchingLabels{
+			"app.kubernetes.io/instance": release.Name,
+			"app.kubernetes.io/name":     "console",
+		})
+		require.NoError(t, err)
+
+		dialer := kube.NewPodDialer(env.Ctl().RestConfig())
+
+		client := http.Client{
+			Transport: &http.Transport{
+				DialContext: dialer.DialContext,
+			},
+		}
+
+		consolePod := pods.Items[0]
+		baseURL := fmt.Sprintf("http://%s.%s:8080", consolePod.Name, consolePod.Namespace)
+
+		for _, check := range []struct {
+			endpoint string
+			check    func([]byte)
+		}{
+			{endpoint: "/api/schema-registry/mode"}, // Test that schema registry is connected.
+			{endpoint: "/api/topics"},               // Test that Kafka is connected.
+			{
+				endpoint: "/api/console/endpoints", // Test that adminAPI is connected
+				check: func(b []byte) {
+					// DebugBundleService will only be supported if the admin API is configured.
+					require.Contains(t, string(b), `{"endpoint":"redpanda.api.console.v1alpha1.DebugBundleService","method":"POST","isSupported":true}`)
+				},
+			},
+		} {
+			resp, err := client.Get(baseURL + check.endpoint)
+			require.NoError(t, err)
+
+			require.Equal(t, resp.StatusCode, 200)
+
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			t.Logf("%s", body)
+
+			if check.check != nil {
+				check.check(body)
 			}
 		}
 	})
@@ -913,6 +974,9 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues {
 	final := &redpanda.PartialValues{
 		Console: &consolechart.PartialValues{
+			Enabled: ptr.To(false),
+		},
+		External: &redpanda.PartialExternalConfig{
 			Enabled: ptr.To(false),
 		},
 		Statefulset: &redpanda.PartialStatefulset{

@@ -26,7 +26,7 @@ import (
 var Scheme = runtime.NewScheme()
 
 const (
-	AppVersion           = "v3.1.0"
+	AppVersion           = "v3.2.2"
 	ChartName            = "console"
 	ConsoleContainerName = "console"
 )

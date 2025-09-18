@@ -152,13 +152,13 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (and (ne (toJson $rr.limits) "null") (ne (toJson $rr.requests) "null")) -}}
-{{- $_440_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.requests) "cpu" "0")))) "r") -}}
-{{- $cpuReq := (index $_440_cpuReq_ok 0) -}}
-{{- $ok := (index $_440_cpuReq_ok 1) -}}
+{{- $_441_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.requests) "cpu" "0")))) "r") -}}
+{{- $cpuReq := (index $_441_cpuReq_ok 0) -}}
+{{- $ok := (index $_441_cpuReq_ok 1) -}}
 {{- if (not $ok) -}}
-{{- $_442_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.limits) "cpu" "0")))) "r") -}}
-{{- $cpuReq = (index $_442_cpuReq_ok 0) -}}
-{{- $ok = (index $_442_cpuReq_ok 1) -}}
+{{- $_443_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.limits) "cpu" "0")))) "r") -}}
+{{- $cpuReq = (index $_443_cpuReq_ok 0) -}}
+{{- $ok = (index $_443_cpuReq_ok 1) -}}
 {{- end -}}
 {{- if (and $ok (lt ((get (fromJson (include "_shims.resource_MilliValue" (dict "a" (list $cpuReq)))) "r") | int64) (1000 | int64))) -}}
 {{- $_is_returning = true -}}
@@ -185,13 +185,13 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (and (ne (toJson $rr.limits) "null") (ne (toJson $rr.requests) "null")) -}}
-{{- $_466_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.requests) "cpu" "0")))) "r") -}}
-{{- $cpuReq := (index $_466_cpuReq_ok 0) -}}
-{{- $ok := (index $_466_cpuReq_ok 1) -}}
+{{- $_467_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.requests) "cpu" "0")))) "r") -}}
+{{- $cpuReq := (index $_467_cpuReq_ok 0) -}}
+{{- $ok := (index $_467_cpuReq_ok 1) -}}
 {{- if (not $ok) -}}
-{{- $_468_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.limits) "cpu" "0")))) "r") -}}
-{{- $cpuReq = (index $_468_cpuReq_ok 0) -}}
-{{- $ok = (index $_468_cpuReq_ok 1) -}}
+{{- $_469_cpuReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.limits) "cpu" "0")))) "r") -}}
+{{- $cpuReq = (index $_469_cpuReq_ok 0) -}}
+{{- $ok = (index $_469_cpuReq_ok 1) -}}
 {{- end -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
@@ -223,13 +223,13 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (and (ne (toJson $rr.limits) "null") (ne (toJson $rr.requests) "null")) -}}
-{{- $_525_memReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.requests) "memory" "0")))) "r") -}}
-{{- $memReq := (index $_525_memReq_ok 0) -}}
-{{- $ok := (index $_525_memReq_ok 1) -}}
+{{- $_526_memReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.requests) "memory" "0")))) "r") -}}
+{{- $memReq := (index $_526_memReq_ok 0) -}}
+{{- $ok := (index $_526_memReq_ok 1) -}}
 {{- if (not $ok) -}}
-{{- $_527_memReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.limits) "memory" "0")))) "r") -}}
-{{- $memReq = (index $_527_memReq_ok 0) -}}
-{{- $ok = (index $_527_memReq_ok 1) -}}
+{{- $_528_memReq_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list ($rr.limits) "memory" "0")))) "r") -}}
+{{- $memReq = (index $_528_memReq_ok 0) -}}
+{{- $ok = (index $_528_memReq_ok 1) -}}
 {{- end -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
@@ -305,9 +305,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $conf := (get (fromJson (include "redpanda.Storage.GetTieredStorageConfig" (dict "a" (list $s)))) "r") -}}
-{{- $_645_b_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $conf "cloud_storage_enabled" (coalesce nil))))) "r") -}}
-{{- $b := (index $_645_b_ok 0) -}}
-{{- $ok := (index $_645_b_ok 1) -}}
+{{- $_646_b_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $conf "cloud_storage_enabled" (coalesce nil))))) "r") -}}
+{{- $b := (index $_646_b_ok 0) -}}
+{{- $ok := (index $_646_b_ok 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (and $ok (get (fromJson (include "_shims.typeassertion" (dict "a" (list "bool" $b)))) "r"))) | toJson -}}
 {{- break -}}
@@ -351,18 +351,18 @@
 {{- $state := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_673_dir_7_ok_8 := (get (fromJson (include "_shims.typetest" (dict "a" (list "string" (index $state.Values.config.node "cloud_storage_cache_directory") "")))) "r") -}}
-{{- $dir_7 := (index $_673_dir_7_ok_8 0) -}}
-{{- $ok_8 := (index $_673_dir_7_ok_8 1) -}}
+{{- $_674_dir_7_ok_8 := (get (fromJson (include "_shims.typetest" (dict "a" (list "string" (index $state.Values.config.node "cloud_storage_cache_directory") "")))) "r") -}}
+{{- $dir_7 := (index $_674_dir_7_ok_8 0) -}}
+{{- $ok_8 := (index $_674_dir_7_ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $dir_7) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $tieredConfig := (get (fromJson (include "redpanda.Storage.GetTieredStorageConfig" (dict "a" (list $state.Values.storage)))) "r") -}}
-{{- $_682_dir_9_ok_10 := (get (fromJson (include "_shims.typetest" (dict "a" (list "string" (index $tieredConfig "cloud_storage_cache_directory") "")))) "r") -}}
-{{- $dir_9 := (index $_682_dir_9_ok_10 0) -}}
-{{- $ok_10 := (index $_682_dir_9_ok_10 1) -}}
+{{- $_683_dir_9_ok_10 := (get (fromJson (include "_shims.typetest" (dict "a" (list "string" (index $tieredConfig "cloud_storage_cache_directory") "")))) "r") -}}
+{{- $dir_9 := (index $_683_dir_9_ok_10 0) -}}
+{{- $ok_10 := (index $_683_dir_9_ok_10 1) -}}
 {{- if $ok_10 -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $dir_9) | toJson -}}
@@ -477,9 +477,9 @@
 {{- $result := (dict) -}}
 {{- $s := (toJson $t) -}}
 {{- $tune := (fromJson $s) -}}
-{{- $_841_m_ok := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $tune (coalesce nil))))) "r") -}}
-{{- $m := (index $_841_m_ok 0) -}}
-{{- $ok := (index $_841_m_ok 1) -}}
+{{- $_842_m_ok := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $tune (coalesce nil))))) "r") -}}
+{{- $m := (index $_842_m_ok 0) -}}
+{{- $ok := (index $_842_m_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (dict)) | toJson -}}
@@ -608,9 +608,9 @@
 {{- $seen := (dict) -}}
 {{- $deduped := (coalesce nil) -}}
 {{- range $_, $item := $items -}}
-{{- $_984___ok_11 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
-{{- $_ := (index $_984___ok_11 0) -}}
-{{- $ok_11 := (index $_984___ok_11 1) -}}
+{{- $_985___ok_11 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
+{{- $_ := (index $_985___ok_11 0) -}}
+{{- $ok_11 := (index $_985___ok_11 1) -}}
 {{- if $ok_11 -}}
 {{- continue -}}
 {{- end -}}
@@ -722,9 +722,9 @@
 {{- $name := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1205_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)))))) "r") -}}
-{{- $cert := (index $_1205_cert_ok 0) -}}
-{{- $ok := (index $_1205_cert_ok 1) -}}
+{{- $_1206_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)))))) "r") -}}
+{{- $cert := (index $_1206_cert_ok 0) -}}
+{{- $ok := (index $_1206_cert_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_ := (fail (printf "Certificate %q referenced, but not found in the tls.certs map" $name)) -}}
 {{- end -}}
@@ -891,6 +891,39 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "%s/%s/tls.crt" "/etc/tls/certs" $t.cert)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.InternalTLS.ToCommonTLS" -}}
+{{- $t := (index .a 0) -}}
+{{- $state := (index .a 1) -}}
+{{- $tls := (index .a 2) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $t $tls)))) "r")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (coalesce nil)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $spec := (mustMergeOverwrite (dict "insecureSkipTlsVerify" false) (dict)) -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $tls.certs) $t.cert)))) "r") -}}
+{{- $secretName := (get (fromJson (include "redpanda.CertSecretName" (dict "a" (list $state $t.cert $cert)))) "r") -}}
+{{- if (ne (toJson $t.trustStore) "null") -}}
+{{- $_ := (set $spec "caCertSecretRef" (mustMergeOverwrite (dict) (dict "configMapKeyRef" $t.trustStore.configMapKeyRef "secretKeyRef" $t.trustStore.secretKeyRef))) -}}
+{{- else -}}{{- if $cert.caEnabled -}}
+{{- $_ := (set $spec "caCertSecretRef" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $secretName)) (dict "key" "ca.crt"))))) -}}
+{{- else -}}
+{{- $_ := (set $spec "caCertSecretRef" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $secretName)) (dict "key" "cert.crt"))))) -}}
+{{- end -}}
+{{- end -}}
+{{- if $t.requireClientAuth -}}
+{{- $clientSecretName := (get (fromJson (include "redpanda.ClientCertSecretName" (dict "a" (list $state $t.cert $cert)))) "r") -}}
+{{- $_ := (set $spec "certSecretRef" (mustMergeOverwrite (dict "name" "") (dict "name" $clientSecretName "key" "tls.crt"))) -}}
+{{- $_ := (set $spec "keySecretRef" (mustMergeOverwrite (dict "name" "") (dict "name" $clientSecretName "key" "tls.key"))) -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $spec) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -1134,9 +1167,9 @@
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
 {{- if (not (empty $v)) -}}
-{{- $_1654___ok_14 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
-{{- $_ := ((index $_1654___ok_14 0) | float64) -}}
-{{- $ok_14 := (index $_1654___ok_14 1) -}}
+{{- $_1710___ok_14 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
+{{- $_ := ((index $_1710___ok_14 0) | float64) -}}
+{{- $ok_14 := (index $_1710___ok_14 1) -}}
 {{- if $ok_14 -}}
 {{- $_ := (set $result $k $v) -}}
 {{- else -}}{{- if (kindIs "bool" $v) -}}
@@ -1162,9 +1195,9 @@
 {{- $_is_returning := false -}}
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
-{{- $_1674_b_15_ok_16 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
-{{- $b_15 := (index $_1674_b_15_ok_16 0) -}}
-{{- $ok_16 := (index $_1674_b_15_ok_16 1) -}}
+{{- $_1730_b_15_ok_16 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
+{{- $b_15 := (index $_1730_b_15_ok_16 0) -}}
+{{- $ok_16 := (index $_1730_b_15_ok_16 1) -}}
 {{- if $ok_16 -}}
 {{- $_ := (set $result $k $b_15) -}}
 {{- continue -}}
@@ -1207,15 +1240,15 @@
 {{- $config := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1719___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1719___hasAccessKey 0) -}}
-{{- $hasAccessKey := (index $_1719___hasAccessKey 1) -}}
-{{- $_1720___hasSecretKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_secret_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1720___hasSecretKey 0) -}}
-{{- $hasSecretKey := (index $_1720___hasSecretKey 1) -}}
-{{- $_1721___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1721___hasSharedKey 0) -}}
-{{- $hasSharedKey := (index $_1721___hasSharedKey 1) -}}
+{{- $_1775___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1775___hasAccessKey 0) -}}
+{{- $hasAccessKey := (index $_1775___hasAccessKey 1) -}}
+{{- $_1776___hasSecretKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_secret_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1776___hasSecretKey 0) -}}
+{{- $hasSecretKey := (index $_1776___hasSecretKey 1) -}}
+{{- $_1777___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1777___hasSharedKey 0) -}}
+{{- $hasSharedKey := (index $_1777___hasSharedKey 1) -}}
 {{- $envvars := (coalesce nil) -}}
 {{- if (and (not $hasAccessKey) (get (fromJson (include "redpanda.SecretRef.IsValid" (dict "a" (list $tsc.accessKey)))) "r")) -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_CLOUD_STORAGE_ACCESS_KEY" "valueFrom" (get (fromJson (include "redpanda.SecretRef.AsSource" (dict "a" (list $tsc.accessKey)))) "r"))))) -}}
@@ -1238,12 +1271,12 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1757___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1757___containerExists 0) -}}
-{{- $containerExists := (index $_1757___containerExists 1) -}}
-{{- $_1758___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1758___accountExists 0) -}}
-{{- $accountExists := (index $_1758___accountExists 1) -}}
+{{- $_1813___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1813___containerExists 0) -}}
+{{- $containerExists := (index $_1813___containerExists 1) -}}
+{{- $_1814___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1814___accountExists 0) -}}
+{{- $accountExists := (index $_1814___accountExists 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (and $containerExists $accountExists)) | toJson -}}
 {{- break -}}
@@ -1254,9 +1287,9 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1763_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
-{{- $value := (index $_1763_value_ok 0) -}}
-{{- $ok := (index $_1763_value_ok 1) -}}
+{{- $_1819_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
+{{- $value := (index $_1819_value_ok 0) -}}
+{{- $ok := (index $_1819_value_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}

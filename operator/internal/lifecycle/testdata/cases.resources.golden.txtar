@@ -869,33 +869,22 @@
         - basic-test-0.basic-test.basic-test.svc.cluster.local.:9093
         - basic-test-1.basic-test.basic-test.svc.cluster.local.:9093
         - basic-test-2.basic-test.basic-test.svc.cluster.local.:9093
-        sasl:
-          enabled: false
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
       redpanda:
         adminApi:
           enabled: true
           tls:
-            caFilepath: /etc/tls/certs/default/ca.crt
-            certFilepath: ""
+            caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
             enabled: true
-            insecureSkipTlsVerify: false
-            keyFilepath: ""
           urls:
           - https://basic-test.basic-test.svc.cluster.local.:9644
       schemaRegistry:
         enabled: true
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
         urls:
         - https://basic-test-0.basic-test.basic-test.svc.cluster.local.:8081
         - https://basic-test-1.basic-test.basic-test.svc.cluster.local.:8081
@@ -907,7 +896,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -924,7 +913,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -943,8 +932,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 95614d92e730a491d386446dfa4587e418cd315341dca7cd1982535470af7d44
-          checksum/config: 3cfe51f0baef37d1fe24fbb98752c49da32c608bf8265bab411251ad63faa913
+          checksum/config: a3d974367947aee56c3c1d7882e25166b4838fe7da7d082b35e96060e3cc8533
         creationTimestamp: null
         labels:
           app.kubernetes.io/instance: basic-test
@@ -955,7 +943,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.1.0
+          image: docker.redpanda.com/redpandadata/console:v3.2.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -986,8 +974,8 @@
           - mountPath: /etc/console/configs
             name: configs
             readOnly: true
-          - mountPath: /etc/tls/certs/default
-            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs
+            name: redpanda-certificates
         securityContext:
           fsGroup: 99
           fsGroupChangePolicy: Always
@@ -997,10 +985,14 @@
         - configMap:
             name: basic-test-console
           name: configs
-        - name: redpanda-default-cert
-          secret:
-            defaultMode: 272
-            secretName: basic-test-default-cert
+        - name: redpanda-certificates
+          projected:
+            sources:
+            - secret:
+                items:
+                - key: ca.crt
+                  path: secrets/basic-test-default-cert/ca.crt
+                name: basic-test-default-cert
   status: {}
 -- compat-test --
 - apiVersion: v1
@@ -2306,34 +2298,32 @@
         - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:9093
         - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:9093
         - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:9093
-        sasl:
-          enabled: false
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
       redpanda:
         adminApi:
           enabled: true
           tls:
-            caFilepath: /etc/tls/certs/default/ca.crt
-            certFilepath: ""
+            caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
             enabled: true
-            insecureSkipTlsVerify: false
-            keyFilepath: ""
           urls:
           - https://compat-test.compat-test.svc.cluster.local.:9644
       schemaRegistry:
         enabled: true
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
-        urls: null
+        urls:
+        - https://compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:8081
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -2341,7 +2331,7 @@
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
@@ -2358,7 +2348,7 @@
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
@@ -2377,8 +2367,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: def47a15dd1dd16979c3af7ae1d5b6d089e7bed8cbc3c4d76117406fd336e51b
-          checksum/config: b7b7d58b17bcf1f14e1c411b2e3e3512e69a671bcee204ca7461ddf7035e8f16
+          checksum/config: b5ebe68cfb837a39b35d01298571830506efbee4eb27a57d95b68da52a2af45f
         creationTimestamp: null
         labels:
           app.kubernetes.io/instance: compat-test
@@ -2389,7 +2378,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.1.0
+          image: docker.redpanda.com/redpandadata/console:v3.2.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -2420,8 +2409,8 @@
           - mountPath: /etc/console/configs
             name: configs
             readOnly: true
-          - mountPath: /etc/tls/certs/default
-            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs
+            name: redpanda-certificates
         securityContext:
           fsGroup: 99
           fsGroupChangePolicy: Always
@@ -2431,10 +2420,14 @@
         - configMap:
             name: compat-test-console
           name: configs
-        - name: redpanda-default-cert
-          secret:
-            defaultMode: 272
-            secretName: compat-test-default-cert
+        - name: redpanda-certificates
+          projected:
+            sources:
+            - secret:
+                items:
+                - key: ca.crt
+                  path: secrets/compat-test-default-cert/ca.crt
+                name: compat-test-default-cert
   status: {}
 -- nodepool-basic-test --
 - apiVersion: v1
@@ -3829,37 +3822,28 @@
         - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        sasl:
-          enabled: false
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
       redpanda:
         adminApi:
           enabled: true
           tls:
-            caFilepath: /etc/tls/certs/default/ca.crt
-            certFilepath: ""
+            caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
             enabled: true
-            insecureSkipTlsVerify: false
-            keyFilepath: ""
           urls:
           - https://nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
       schemaRegistry:
         enabled: true
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
         urls:
         - https://nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
         - https://nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
         - https://nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+        - https://nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+        - https://nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -3867,7 +3851,7 @@
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
@@ -3884,7 +3868,7 @@
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
@@ -3903,8 +3887,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: a6e927c774a415450f34487df5734a6e7068a2ad3f7a5c1006cbc20348b472c0
-          checksum/config: 608c992c254e4dcbc1326de93d9d2ce8f9601710e38c342c2aa25d25a8b1d186
+          checksum/config: c85e1818140a237fff8a40f9f195dade651942089e551fb9a093fb5e82bd14ec
         creationTimestamp: null
         labels:
           app.kubernetes.io/instance: nodepool-basic-test
@@ -3915,7 +3898,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.1.0
+          image: docker.redpanda.com/redpandadata/console:v3.2.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -3946,8 +3929,8 @@
           - mountPath: /etc/console/configs
             name: configs
             readOnly: true
-          - mountPath: /etc/tls/certs/default
-            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs
+            name: redpanda-certificates
         securityContext:
           fsGroup: 99
           fsGroupChangePolicy: Always
@@ -3957,8 +3940,12 @@
         - configMap:
             name: nodepool-basic-test-console
           name: configs
-        - name: redpanda-default-cert
-          secret:
-            defaultMode: 272
-            secretName: nodepool-basic-test-default-cert
+        - name: redpanda-certificates
+          projected:
+            sources:
+            - secret:
+                items:
+                - key: ca.crt
+                  path: secrets/nodepool-basic-test-default-cert/ca.crt
+                name: nodepool-basic-test-default-cert
   status: {}
