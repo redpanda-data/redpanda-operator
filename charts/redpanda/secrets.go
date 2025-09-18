@@ -518,7 +518,7 @@ func adminTLSCurlFlags(state *RenderState) string {
 	}
 
 	if state.Values.Listeners.Admin.TLS.RequireClientAuth {
-		path := fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(state))
+		path := state.Values.Listeners.Admin.TLS.ClientMountPoint(&state.Values.TLS)
 		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
 	}
 
