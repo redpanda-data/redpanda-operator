@@ -47,7 +47,7 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 		if err := convertV2Fields(state, &state.Values, spec); err != nil {
 			return err
 		}
-		pools, err := convertV2NodepoolsToPools(pools, defaulters)
+		pools, err := convertV2NodepoolsToPools(state.Values, pools, defaulters)
 		if err != nil {
 			return err
 		}
@@ -308,10 +308,10 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 	return nil
 }
 
-func convertV2NodepoolsToPools(pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
+func convertV2NodepoolsToPools(values redpanda.Values, pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
 	converted := make([]redpanda.Pool, len(pools))
 	for i, pool := range pools {
-		set, err := convertV2NodepoolToPool(pool, defaulters)
+		set, err := convertV2NodepoolToPool(values, pool, defaulters)
 		if err != nil {
 			return nil, err
 		}
@@ -320,7 +320,7 @@ func convertV2NodepoolsToPools(pools []*redpandav1alpha2.NodePool, defaulters *V
 	return converted, nil
 }
 
-func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
+func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
 	// we grab *just* the default values here
 	v, err := redpanda.Chart.LoadValues(map[string]any{})
 	if err != nil {
@@ -383,7 +383,8 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 			container.Image = ptr.To(image)
 			configurator.Image = ptr.To(image)
 
-			if values.Tuning.TuneAIOEvents {
+			// here we use clusterValues since we need to look at the cluster-level context
+			if clusterValues.Tuning.TuneAIOEvents {
 				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
 				tuning.Image = ptr.To(image)
 			}
