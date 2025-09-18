@@ -23,10 +23,6 @@ import (
 )
 
 func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
-	if !TLSEnabled(dot) {
-		return []*certmanagerv1.Certificate{}
-	}
-
 	values := helmette.Unwrap[Values](dot.Values)
 
 	fullname := Fullname(dot)
@@ -37,8 +33,11 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 	domain := strings.TrimSuffix(values.ClusterDomain, ".")
 
 	var certs []*certmanagerv1.Certificate
-	for name, data := range helmette.SortedMap(values.TLS.Certs) {
-		if !helmette.Empty(data.SecretRef) || !ptr.Deref(data.Enabled, true) {
+	for _, name := range values.Listeners.InUseServerCerts(&values.TLS) {
+		data := values.TLS.Certs.MustGet(name)
+
+		// Don't generate server Certificates if a secret is provided.
+		if !helmette.Empty(data.SecretRef) {
 			continue
 		}
 
@@ -85,7 +84,7 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 				Duration:   helmette.MustDuration(duration),
 				IsCA:       false,
 				IssuerRef:  issuerRef,
-				SecretName: fmt.Sprintf("%s-%s-cert", fullname, name),
+				SecretName: data.ServerSecretName(dot, name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
@@ -94,49 +93,54 @@ func ClientCerts(dot *helmette.Dot) []*certmanagerv1.Certificate {
 		})
 	}
 
-	name := values.Listeners.Kafka.TLS.Cert
+	for _, name := range values.Listeners.InUseClientCerts(&values.TLS) {
+		data := values.TLS.Certs.MustGet(name)
 
-	data, ok := values.TLS.Certs[name]
-	if !ok {
-		panic(fmt.Sprintf("Certificate %q referenced but not defined", name))
-	}
+		if data.SecretRef != nil && data.ClientSecretRef == nil {
+			panic(fmt.Sprintf(".clientSecretRef MUST be set if .secretRef is set and require_client_auth is true: Cert %q", name))
+		}
 
-	if !helmette.Empty(data.SecretRef) || !ClientAuthRequired(dot) {
-		return certs
-	}
+		// Don't generate a client Certificate if a client secret is provided.
+		if data.ClientSecretRef != nil {
+			continue
+		}
 
-	issuerRef := cmmetav1.ObjectReference{
-		Group: "cert-manager.io",
-		Kind:  "Issuer",
-		Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
-	}
+		issuerRef := cmmetav1.ObjectReference{
+			Group: "cert-manager.io",
+			Kind:  "Issuer",
+			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
+		}
 
-	if data.IssuerRef != nil {
-		issuerRef = *data.IssuerRef
-		issuerRef.Group = "cert-manager.io"
-	}
+		if data.IssuerRef != nil {
+			issuerRef = *data.IssuerRef
+			issuerRef.Group = "cert-manager.io"
+		}
 
-	duration := helmette.Default("43800h", data.Duration)
+		duration := helmette.Default("43800h", data.Duration)
 
-	return append(certs, &certmanagerv1.Certificate{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "cert-manager.io/v1",
-			Kind:       "Certificate",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("%s-client", fullname),
-			Labels: FullLabels(dot),
-		},
-		Spec: certmanagerv1.CertificateSpec{
-			CommonName: fmt.Sprintf("%s-client", fullname),
-			Duration:   helmette.MustDuration(duration),
-			IsCA:       false,
-			SecretName: fmt.Sprintf("%s-client", fullname),
-			PrivateKey: &certmanagerv1.CertificatePrivateKey{
-				Algorithm: "ECDSA",
-				Size:      256,
+		certs = append(certs, &certmanagerv1.Certificate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "cert-manager.io/v1",
+				Kind:       "Certificate",
 			},
-			IssuerRef: issuerRef,
-		},
-	})
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%s-client", fullname, name),
+				Namespace: dot.Release.Namespace,
+				Labels:    FullLabels(dot),
+			},
+			Spec: certmanagerv1.CertificateSpec{
+				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),
+				Duration:   helmette.MustDuration(duration),
+				IsCA:       false,
+				SecretName: data.ClientSecretName(dot, name),
+				PrivateKey: &certmanagerv1.CertificatePrivateKey{
+					Algorithm: "ECDSA",
+					Size:      256,
+				},
+				IssuerRef: issuerRef,
+			},
+		})
+	}
+
+	return certs
 }

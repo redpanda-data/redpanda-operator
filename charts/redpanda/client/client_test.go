@@ -58,7 +58,7 @@ func TestCertificates(t *testing.T) {
 			CertificateName:        "default",
 			ExpectedRootCertName:   "redpanda-default-root-certificate",
 			ExpectedRootCertKey:    "tls.crt",
-			ExpectedClientCertName: "redpanda-client",
+			ExpectedClientCertName: "redpanda-default-client-cert",
 		},
 		"default with non-enabled global cert": {
 			Cert: &redpanda.TLSCert{
@@ -70,7 +70,7 @@ func TestCertificates(t *testing.T) {
 			CertificateName:        "default",
 			ExpectedRootCertName:   "redpanda-default-root-certificate",
 			ExpectedRootCertKey:    "tls.crt",
-			ExpectedClientCertName: "redpanda-client",
+			ExpectedClientCertName: "redpanda-default-client-cert",
 		},
 		"certificate with secret ref": {
 			Cert: &redpanda.TLSCert{
@@ -81,7 +81,7 @@ func TestCertificates(t *testing.T) {
 			CertificateName:        "default",
 			ExpectedRootCertName:   "some-cert",
 			ExpectedRootCertKey:    "tls.crt",
-			ExpectedClientCertName: "redpanda-client",
+			ExpectedClientCertName: "redpanda-default-client-cert",
 		},
 		"certificate with CA": {
 			Cert: &redpanda.TLSCert{
@@ -93,7 +93,7 @@ func TestCertificates(t *testing.T) {
 			CertificateName:        "default",
 			ExpectedRootCertName:   "some-cert",
 			ExpectedRootCertKey:    "ca.crt",
-			ExpectedClientCertName: "redpanda-client",
+			ExpectedClientCertName: "redpanda-default-client-cert",
 		},
 		"certificate with client certificate": {
 			Cert: &redpanda.TLSCert{

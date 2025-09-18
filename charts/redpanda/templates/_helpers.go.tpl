@@ -110,75 +110,6 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.TLSEnabled" -}}
-{{- $dot := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $values := $dot.Values.AsMap -}}
-{{- if $values.tls.enabled -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" true) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- $listeners := (list "kafka" "admin" "schemaRegistry" "rpc" "http") -}}
-{{- range $_, $listener := $listeners -}}
-{{- $tlsCert := (dig "listeners" $listener "tls" "cert" false $dot.Values.AsMap) -}}
-{{- $tlsEnabled := (dig "listeners" $listener "tls" "enabled" false $dot.Values.AsMap) -}}
-{{- if (and (not (empty $tlsEnabled)) (not (empty $tlsCert))) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" true) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- $external := (dig "listeners" $listener "external" false $dot.Values.AsMap) -}}
-{{- if (empty $external) -}}
-{{- continue -}}
-{{- end -}}
-{{- $keys := (keys (get (fromJson (include "_shims.typeassertion" (dict "a" (list (printf "map[%s]%s" "string" "interface {}") $external)))) "r")) -}}
-{{- range $_, $key := $keys -}}
-{{- $enabled := (dig "listeners" $listener "external" $key "enabled" false $dot.Values.AsMap) -}}
-{{- $tlsCert := (dig "listeners" $listener "external" $key "tls" "cert" false $dot.Values.AsMap) -}}
-{{- $tlsEnabled := (dig "listeners" $listener "external" $key "tls" "enabled" false $dot.Values.AsMap) -}}
-{{- if (and (and (not (empty $enabled)) (not (empty $tlsCert))) (not (empty $tlsEnabled))) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" true) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" false) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.ClientAuthRequired" -}}
-{{- $dot := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $listeners := (list "kafka" "admin" "schemaRegistry" "rpc" "http") -}}
-{{- range $_, $listener := $listeners -}}
-{{- $required := (dig "listeners" $listener "tls" "requireClientAuth" false $dot.Values.AsMap) -}}
-{{- if (not (empty $required)) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" true) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" false) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "redpanda.DefaultMounts" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -199,23 +130,19 @@
 {{- if (and $sasl_5.enabled (ne $sasl_5.secretRef "")) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "users" "mountPath" "/etc/secrets/users" "readOnly" true)))) -}}
 {{- end -}}
-{{- if (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $dot)))) "r") -}}
-{{- $certNames := (keys $values.tls.certs) -}}
-{{- $_ := (sortAlpha $certNames) -}}
-{{- range $_, $name := $certNames -}}
-{{- $cert := (ternary (index $values.tls.certs $name) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)) (hasKey $values.tls.certs $name)) -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $cert.enabled true)))) "r")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (printf "redpanda-%s-cert" $name) "mountPath" (printf "%s/%s" "/etc/tls/certs" $name))))) -}}
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseServerCerts" (dict "a" (list $values.listeners $values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $name)))) "r") -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (get (fromJson (include "redpanda.TLSCert.ServerVolumeName" (dict "a" (list $cert $name)))) "r") "mountPath" (get (fromJson (include "redpanda.TLSCert.ServerMountPoint" (dict "a" (list $cert $name)))) "r"))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $adminTLS := $values.listeners.admin.tls -}}
-{{- if $adminTLS.requireClientAuth -}}
-{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "mtls-client" "mountPath" (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r")))))) -}}
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseClientCerts" (dict "a" (list $values.listeners $values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $name)))) "r") -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (get (fromJson (include "redpanda.TLSCert.ClientVolumeName" (dict "a" (list $cert $name)))) "r") "mountPath" (get (fromJson (include "redpanda.TLSCert.ClientMountPoint" (dict "a" (list $cert $name)))) "r"))))) -}}
 {{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $mounts) | toJson -}}
@@ -237,30 +164,21 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $volumes := (list) -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- if (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $dot)))) "r") -}}
-{{- $certNames := (keys $values.tls.certs) -}}
-{{- $_ := (sortAlpha $certNames) -}}
-{{- range $_, $name := $certNames -}}
-{{- $cert := (ternary (index $values.tls.certs $name) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)) (hasKey $values.tls.certs $name)) -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $cert.enabled true)))) "r")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpanda.CertSecretName" (dict "a" (list $dot $name $cert)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (printf "redpanda-%s-cert" $name))))) -}}
+{{- $volumes := (list) -}}
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseServerCerts" (dict "a" (list $values.listeners $values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $name)))) "r") -}}
+{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpanda.TLSCert.ServerSecretName" (dict "a" (list $cert $dot $name)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (get (fromJson (include "redpanda.TLSCert.ServerVolumeName" (dict "a" (list $cert $name)))) "r"))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $adminTLS := $values.listeners.admin.tls -}}
-{{- $cert := (ternary (index $values.tls.certs $adminTLS.cert) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)) (hasKey $values.tls.certs $adminTLS.cert)) -}}
-{{- if $adminTLS.requireClientAuth -}}
-{{- $secretName := (printf "%s-client" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r")) -}}
-{{- if (ne (toJson $cert.clientSecretRef) "null") -}}
-{{- $secretName = $cert.clientSecretRef.name -}}
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseClientCerts" (dict "a" (list $values.listeners $values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $values.tls.certs) $name)))) "r") -}}
+{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpanda.TLSCert.ClientSecretName" (dict "a" (list $cert $dot $name)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (get (fromJson (include "redpanda.TLSCert.ClientVolumeName" (dict "a" (list $cert $name)))) "r"))))) -}}
 {{- end -}}
-{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" $secretName "defaultMode" (0o440 | int))))) (dict "name" "mtls-client")))) -}}
-{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
 {{- end -}}
 {{- $sasl_6 := $values.auth.sasl -}}
 {{- if (and $sasl_6.enabled (ne $sasl_6.secretRef "")) -}}
@@ -268,23 +186,6 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volumes) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.CertSecretName" -}}
-{{- $dot := (index .a 0) -}}
-{{- $certName := (index .a 1) -}}
-{{- $cert := (index .a 2) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- if (ne (toJson $cert.secretRef) "null") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $cert.secretRef.name) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (printf "%s-%s-cert" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") $certName)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -399,9 +300,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $dot)))) "r")) -}}
-{{- $_391_result_err := (list (semverCompare $constraint $version) nil) -}}
-{{- $result := (index $_391_result_err 0) -}}
-{{- $err := (index $_391_result_err 1) -}}
+{{- $_316_result_err := (list (semverCompare $constraint $version) nil) -}}
+{{- $result := (index $_316_result_err 0) -}}
+{{- $err := (index $_316_result_err 1) -}}
 {{- if (ne (toJson $err) "null") -}}
 {{- $_ := (fail $err) -}}
 {{- end -}}
@@ -497,9 +398,9 @@
 {{- $originalKeys := (dict) -}}
 {{- $overrideByKey := (dict) -}}
 {{- range $_, $el := $override -}}
-{{- $_503_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_503_key_ok 0) -}}
-{{- $ok := (index $_503_key_ok 1) -}}
+{{- $_428_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_428_key_ok 0) -}}
+{{- $ok := (index $_428_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
@@ -510,13 +411,13 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $el := $original -}}
-{{- $_515_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_515_key__ 0) -}}
-{{- $_ := (index $_515_key__ 1) -}}
+{{- $_440_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_440_key__ 0) -}}
+{{- $_ := (index $_440_key__ 1) -}}
 {{- $_ := (set $originalKeys $key true) -}}
-{{- $_517_elOverride_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
-{{- $elOverride_7 := (index $_517_elOverride_7_ok_8 0) -}}
-{{- $ok_8 := (index $_517_elOverride_7_ok_8 1) -}}
+{{- $_442_elOverride_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
+{{- $elOverride_7 := (index $_442_elOverride_7_ok_8 0) -}}
+{{- $ok_8 := (index $_442_elOverride_7_ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- $merged = (concat (default (list) $merged) (list (get (fromJson (include $mergeFunc (dict "a" (list $el $elOverride_7)))) "r"))) -}}
 {{- else -}}
@@ -527,15 +428,15 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $el := $override -}}
-{{- $_527_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_527_key_ok 0) -}}
-{{- $ok := (index $_527_key_ok 1) -}}
+{{- $_452_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_452_key_ok 0) -}}
+{{- $ok := (index $_452_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
-{{- $_532___ok_9 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
-{{- $_ := (index $_532___ok_9 0) -}}
-{{- $ok_9 := (index $_532___ok_9 1) -}}
+{{- $_457___ok_9 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
+{{- $_ := (index $_457___ok_9 0) -}}
+{{- $ok_9 := (index $_457___ok_9 1) -}}
 {{- if $ok_9 -}}
 {{- continue -}}
 {{- end -}}
