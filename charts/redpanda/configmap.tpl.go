@@ -490,9 +490,9 @@ func rpkSchemaRegistryClientTLSConfiguration(state *RenderState) map[string]any 
 // Kafka API interactions.
 func kafkaClient(state *RenderState) map[string]any {
 	brokerList := []map[string]any{}
-	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
+	for _, broker := range BrokerList(state, -1) {
 		brokerList = append(brokerList, map[string]any{
-			"address": fmt.Sprintf("%s-%d.%s", Fullname(state), i, InternalDomain(state)),
+			"address": broker,
 			"port":    state.Values.Listeners.Kafka.Port,
 		})
 	}

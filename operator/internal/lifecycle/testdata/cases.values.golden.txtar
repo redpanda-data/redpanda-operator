@@ -1021,7 +1021,7 @@ values:
 -- nodepool-basic-test --
 pools:
 - Generation: "0"
-  Name: basic
+  Name: basic-a
   Statefulset:
     additionalRedpandaCmdFlags: []
     additionalSelectorLabels: {}
@@ -1049,7 +1049,7 @@ pools:
             requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
-                  app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-statefulset'
+                  app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-a-statefulset'
                   app.kubernetes.io/instance: '{{ .Release.Name }}'
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
@@ -1067,7 +1067,86 @@ pools:
         topologySpreadConstraints:
         - labelSelector:
             matchLabels:
-              app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-statefulset'
+              app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-a-statefulset'
+              app.kubernetes.io/instance: '{{ .Release.Name }}'
+              app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+    replicas: 1
+    sideCars:
+      args: []
+      brokerDecommissioner:
+        decommissionAfter: 60s
+        decommissionRequeueTimeout: 10s
+        enabled: false
+      configWatcher:
+        enabled: true
+      controllers:
+        createRBAC: true
+        enabled: false
+        healthProbeAddress: :8085
+        image: null
+        metricsAddress: :9082
+        pprofAddress: :9083
+        run:
+        - all
+      image:
+        repository: localhost/redpanda-operator
+        tag: dev
+      pvcUnbinder:
+        enabled: false
+        unbindAfter: 60s
+    updateStrategy:
+      type: RollingUpdate
+- Generation: "0"
+  Name: basic-b
+  Statefulset:
+    additionalRedpandaCmdFlags: []
+    additionalSelectorLabels: {}
+    budget:
+      maxUnavailable: 1
+    initContainerImage:
+      repository: busybox
+      tag: latest
+    initContainers:
+      configurator: {}
+      fsValidator:
+        enabled: false
+        expectedFS: xfs
+      setDataDirOwnership:
+        enabled: false
+    podAntiAffinity:
+      custom: {}
+      topologyKey: kubernetes.io/hostname
+      type: hard
+      weight: 100
+    podTemplate:
+      spec:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-b-statefulset'
+                  app.kubernetes.io/instance: '{{ .Release.Name }}'
+                  app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
+              topologyKey: kubernetes.io/hostname
+        containers:
+        - image: redpandadata/redpanda:v25.2.1
+          name: redpanda
+        initContainers:
+        - image: redpandadata/redpanda:v25.2.1
+          name: redpanda-configurator
+        - image: redpandadata/redpanda:v25.2.1
+          name: tuning
+        priorityClassName: ""
+        securityContext: {}
+        terminationGracePeriodSeconds: 90
+        topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: '{{ include "redpanda.name" . }}-basic-b-statefulset'
               app.kubernetes.io/instance: '{{ .Release.Name }}'
               app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
           maxSkew: 1

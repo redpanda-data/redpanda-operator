@@ -11,6 +11,8 @@ package conversion
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -47,11 +49,14 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 		if err := convertV2Fields(state, &state.Values, spec); err != nil {
 			return err
 		}
-		pools, err := convertV2NodepoolsToPools(state.Values, pools, defaulters)
+		renderedPools, err := convertV2NodepoolsToPools(state.Values, pools, defaulters)
 		if err != nil {
 			return err
 		}
-		state.Pools = pools
+		slices.SortStableFunc(renderedPools, func(poolA, poolB redpanda.Pool) int {
+			return strings.Compare(poolA.Name, poolB.Name)
+		})
+		state.Pools = renderedPools
 		return nil
 	})
 }

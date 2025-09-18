@@ -1178,7 +1178,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -1332,7 +1350,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -1381,7 +1417,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -1535,7 +1589,25 @@
           enabled: true
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        brokers: []
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -2547,6 +2619,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -2610,7 +2686,10 @@
             address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
         - host:
-            address: nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
       rpk:
         additional_start_flags:
@@ -2623,7 +2702,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
@@ -2632,7 +2712,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
@@ -2641,7 +2722,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -2677,6 +2759,10 @@
         - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
   kind: ConfigMap
   metadata:
@@ -2733,6 +2819,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -2796,7 +2886,10 @@
             address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
         - host:
-            address: nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
       rpk:
         additional_start_flags:
@@ -2809,7 +2902,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
@@ -2818,7 +2912,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
@@ -2827,7 +2922,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -2864,6 +2960,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -2878,7 +2978,207 @@
       helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test-basic
+    name: nodepool-basic-test-basic-a
+    namespace: nodepool-basic-test
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: nodepool-basic-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: nodepool-basic-test
+      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
+    name: nodepool-basic-test-basic-b
     namespace: nodepool-basic-test
 - apiVersion: v1
   data:
@@ -3433,7 +3733,57 @@
       helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test-basic-configurator
+    name: nodepool-basic-test-basic-a-configurator
+    namespace: nodepool-basic-test
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      ADVERTISED_KAFKA_ADDRESSES=()
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      ADVERTISED_HTTP_ADDRESSES=()
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: nodepool-basic-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: nodepool-basic-test
+      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-configurator
     namespace: nodepool-basic-test
   stringData:
     configurator.sh: |-
@@ -3477,7 +3827,8 @@
         - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+        - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+        - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         sasl:
           enabled: false
         tls:
@@ -3552,8 +3903,8 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: c8747073736e14d3b974e100efbe332bd74486e237db9575ae7d656b9e96d23a
-          checksum/config: d9fc3f8f7b446030171b8864f5b0662576038207416c2fc15e7a21941bf609eb
+          checksum-redpanda-chart/config: a6e927c774a415450f34487df5734a6e7068a2ad3f7a5c1006cbc20348b472c0
+          checksum/config: 608c992c254e4dcbc1326de93d9d2ce8f9601710e38c342c2aa25d25a8b1d186
         creationTimestamp: null
         labels:
           app.kubernetes.io/instance: nodepool-basic-test
