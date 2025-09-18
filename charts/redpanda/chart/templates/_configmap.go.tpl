@@ -115,7 +115,7 @@
 {{- end -}}
 {{- $_ := (set $redpanda "seed_servers" $servers) -}}
 {{- end -}}
-{{- $redpanda = (merge (dict) $redpanda (get (fromJson (include "redpanda.NodeConfig.Translate" (dict "a" (list $state.Values.config.node)))) "r")) -}}
+{{- $redpanda = (merge (dict) (get (fromJson (include "redpanda.NodeConfig.Translate" (dict "a" (list $state.Values.config.node)))) "r") $redpanda) -}}
 {{- $_ := (get (fromJson (include "redpanda.configureListeners" (dict "a" (list $redpanda $state)))) "r") -}}
 {{- $redpandaYaml := (dict "redpanda" $redpanda "schema_registry" (get (fromJson (include "redpanda.schemaRegistry" (dict "a" (list $state)))) "r") "pandaproxy" (get (fromJson (include "redpanda.pandaProxyListener" (dict "a" (list $state)))) "r") "config_file" "/etc/redpanda/redpanda.yaml") -}}
 {{- if $includeNonHashableItems -}}
