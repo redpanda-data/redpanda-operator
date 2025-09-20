@@ -104,3 +104,22 @@ func (r *PDBResource) obj() (k8sclient.Object, error) {
 func (r *PDBResource) Key() types.NamespacedName {
 	return types.NamespacedName{Name: r.pandaCluster.Name, Namespace: r.pandaCluster.Namespace}
 }
+
+// RenderPodDisruptionBudget creates a PodDisruptionBudget object for the cluster
+func RenderPodDisruptionBudget(cluster *vectorizedv1alpha1.Cluster) *policyv1.PodDisruptionBudget {
+	if cluster.Spec.PodDisruptionBudget == nil || !cluster.Spec.PodDisruptionBudget.Enabled {
+		return nil
+	}
+
+	return &policyv1.PodDisruptionBudget{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
+		},
+		Spec: policyv1.PodDisruptionBudgetSpec{
+			MinAvailable:   cluster.Spec.PodDisruptionBudget.MinAvailable,
+			MaxUnavailable: cluster.Spec.PodDisruptionBudget.MaxUnavailable,
+			Selector:       labels.ForCluster(cluster).AsAPISelector(),
+		},
+	}
+}

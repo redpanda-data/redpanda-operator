@@ -166,3 +166,79 @@ func (r *HeadlessServiceResource) getAnnotation() map[string]string {
 		externalDNSUseHostIP: "true",
 	}
 }
+
+// RenderHeadlessService creates a headless Service for the Redpanda cluster
+func RenderHeadlessService(cluster *vectorizedv1alpha1.Cluster) *corev1.Service {
+	var ports []corev1.ServicePort
+	for _, p := range generateHeadlessServicePorts(cluster) {
+		ports = append(ports, corev1.ServicePort{
+			Name:       p.Name,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       int32(p.Port),
+			TargetPort: intstr.FromInt32(int32(p.Port)),
+		})
+	}
+
+	labels := labels.ForCluster(cluster)
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cluster.Name,
+			Namespace:   cluster.Namespace,
+			Labels:      labels,
+			Annotations: getHeadlessServiceAnnotations(cluster),
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		Spec: corev1.ServiceSpec{
+			PublishNotReadyAddresses: true,
+			Type:                     corev1.ServiceTypeClusterIP,
+			ClusterIP:                corev1.ClusterIPNone,
+			Ports:                    ports,
+			Selector:                 labels.AsAPISelector().MatchLabels,
+		},
+	}
+}
+
+// generateHeadlessServicePorts collects all internal ports for the headless service
+func generateHeadlessServicePorts(cluster *vectorizedv1alpha1.Cluster) []NamedServicePort {
+	var ports []NamedServicePort
+
+	if admin := cluster.AdminAPIInternal(); admin != nil {
+		ports = append(ports, NamedServicePort{
+			Name: AdminPortName,
+			Port: admin.Port,
+		})
+	}
+
+	if internal := cluster.InternalListener(); internal != nil {
+		ports = append(ports, NamedServicePort{
+			Name: InternalListenerName,
+			Port: internal.Port,
+		})
+	}
+
+	if proxy := cluster.PandaproxyAPIInternal(); proxy != nil {
+		ports = append(ports, NamedServicePort{
+			Name: PandaproxyPortInternalName,
+			Port: proxy.Port,
+		})
+	}
+
+	return ports
+}
+
+// getHeadlessServiceAnnotations returns annotations for the headless service
+func getHeadlessServiceAnnotations(cluster *vectorizedv1alpha1.Cluster) map[string]string {
+	externalListener := cluster.FirstExternalListener()
+	if externalListener == nil || externalListener.External.Subdomain == "" {
+		return nil
+	}
+
+	return map[string]string{
+		externalDNSHostname: externalListener.External.Subdomain,
+		// https://github.com/kubernetes-sigs/external-dns/pull/1391
+		externalDNSUseHostIP: "true",
+	}
+}
