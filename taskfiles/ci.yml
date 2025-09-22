@@ -21,6 +21,7 @@ tasks:
   test:unit:
     cmds:
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/unit-tests-*.xml"'
+      - 'echo "--- Running unit tests"'
       - task: :test:unit
         vars:
           GO_TEST_RUNNER: gotestsum --raw-command --junitfile=unit-tests-%.xml -- go test
@@ -30,6 +31,7 @@ tasks:
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests-*.xml"'
+      - 'echo "--- Running integration tests"'
       - task: :test:integration
         vars:
           GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
@@ -39,6 +41,7 @@ tasks:
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/acceptance-tests-*.xml"'
+      - 'echo "--- Running acceptance tests"'
       - task: :test:acceptance
         vars:
           GO_TEST_RUNNER: gotestsum --raw-command --junitfile=acceptance-tests-%.xml -- go test

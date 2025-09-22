@@ -34,6 +34,10 @@
         {
           formatter = pkgs.nixpkgs-fmt;
 
+          # Make it possible to reference the devshell context from standard
+          # nix commands. e.g. nix copy .#devshell.
+          packages.devshell = self'.devShells.default;
+
           devshells.default = {
             env = [
               { name = "GOPRIVATE"; value = "github.com/redpanda-data/flux-controller-shim"; }

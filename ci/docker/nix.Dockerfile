@@ -18,4 +18,6 @@ RUN echo 'experimental-features = nix-command flakes' >> /etc/nix/nix.conf \
 	# easier to disable this check entirely:
 	&& git config --global --add safe.directory '*'
 
-ENTRYPOINT ["nix", "develop", "--impure", "--command"]
+COPY ci/docker/entrypoint.sh /
+
+ENTRYPOINT ["bash", "/entrypoint.sh"]
