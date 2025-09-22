@@ -9,10 +9,7 @@ tasks:
     - task: set-aio-max
     - task: set-inotify-watches
     - task: set-inotify-instances
-    - task: configure-git-private-repo
     - cmd: "mkdir -p {{.SRC_DIR}}/artifacts"
-    # Fetch the release branches for our git based linters.
-    - cmd: git fetch origin release/v2.4.x
 
   lint:
     cmds:
@@ -24,6 +21,7 @@ tasks:
   test:unit:
     cmds:
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      - 'echo "--- Running unit tests"'
       - task: :test:unit
         vars:
           GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --'
@@ -33,6 +31,7 @@ tasks:
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      - 'echo "--- Running integration tests"'
       - task: :test:integration
         vars:
           GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --'
@@ -42,6 +41,7 @@ tasks:
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      - 'echo "--- Running acceptance tests"'
       - task: :test:acceptance
         vars:
           GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-tests.xml --'
@@ -65,16 +65,6 @@ tasks:
       - task: run-kuttl-tests
         vars:
           KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
-
-  configure-git-private-repo:
-    internal: true
-    env:
-      GITHUB_TOKEN:
-        sh: echo "${GITHUB_TOKEN:-$GITHUB_API_TOKEN}"
-    cmds:
-      - git config --global url."https://$GITHUB_TOKEN@github.com/".insteadOf "https://github.com/"
-    preconditions:
-      - test -n "$GITHUB_API_TOKEN" || test -n "$GITHUB_TOKEN"
 
   run-kuttl-tests:
     cmds:
