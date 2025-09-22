@@ -21,7 +21,7 @@ run `task generate:third-party-licenses-list`
 | cloud.google.com/go/iam | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/iam/v1.5.0/iam/LICENSE) |
 | cloud.google.com/go/secretmanager | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/secretmanager/v1.14.6/secretmanager/LICENSE) |
 | connectrpc.com/connect | [Apache-2.0](https://github.com/connectrpc/connect-go/blob/v1.18.1/LICENSE) |
-| dario.cat/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v1.0.1/LICENSE) |
+| dario.cat/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v1.0.2/LICENSE) |
 | emperror.dev/errors | [MIT](https://github.com/emperror/errors/blob/v0.8.1/LICENSE) |
 | github.com/AlecAivazis/survey/v2 | [MIT](https://github.com/AlecAivazis/survey/blob/v2.3.7/LICENSE) |
 | github.com/AlecAivazis/survey/v2/terminal | [MIT](https://github.com/AlecAivazis/survey/blob/v2.3.7/terminal/LICENSE.txt) |
@@ -69,7 +69,7 @@ run `task generate:third-party-licenses-list`
 | github.com/cockroachdb/logtags | [Apache-2.0](https://github.com/cockroachdb/logtags/blob/21c54148d20b/LICENSE) |
 | github.com/cockroachdb/redact | [Apache-2.0](https://github.com/cockroachdb/redact/blob/v1.1.5/LICENSE) |
 | github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.27/LICENSE) |
-| github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v0.3.0/LICENSE) |
+| github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v1.0.0/LICENSE) |
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.4.1/LICENSE) |
@@ -169,7 +169,7 @@ run `task generate:third-party-licenses-list`
 | github.com/mitchellh/mapstructure | [MIT](https://github.com/mitchellh/mapstructure/blob/v1.5.0/LICENSE) |
 | github.com/mitchellh/reflectwalk | [MIT](https://github.com/mitchellh/reflectwalk/blob/v1.0.2/LICENSE) |
 | github.com/moby/spdystream | [Apache-2.0](https://github.com/moby/spdystream/blob/v0.5.0/LICENSE) |
-| github.com/moby/sys/mountinfo | [Apache-2.0](https://github.com/moby/sys/blob/mountinfo/v0.6.2/mountinfo/LICENSE) |
+| github.com/moby/sys/mountinfo | [Apache-2.0](https://github.com/moby/sys/blob/mountinfo/v0.7.2/mountinfo/LICENSE) |
 | github.com/moby/term | [Apache-2.0](https://github.com/moby/term/blob/v0.5.2/LICENSE) |
 | github.com/modern-go/concurrent | [Apache-2.0](https://github.com/modern-go/concurrent/blob/bacd9c7ef1dd/LICENSE) |
 | github.com/modern-go/reflect2 | [Apache-2.0](https://github.com/modern-go/reflect2/blob/v1.0.2/LICENSE) |
@@ -245,7 +245,7 @@ run `task generate:third-party-licenses-list`
 | golang.org/x/net | [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.41.0:LICENSE) |
 | golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.30.0:LICENSE) |
 | golang.org/x/sync | [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.16.0:LICENSE) |
-| golang.org/x/sys | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.34.0:LICENSE) |
+| golang.org/x/sys | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.36.0:LICENSE) |
 | golang.org/x/term | [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.33.0:LICENSE) |
 | golang.org/x/text | [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.27.0:LICENSE) |
 | golang.org/x/time/rate | [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.11.0:LICENSE) |
