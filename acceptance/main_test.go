@@ -44,6 +44,7 @@ func getSuite(t *testing.T) *framework.Suite {
 
 var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 	return framework.SuiteBuilderFromFlags().
+		Strict().
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
