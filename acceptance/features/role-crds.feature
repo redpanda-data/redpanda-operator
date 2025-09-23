@@ -31,7 +31,7 @@ Feature: Role CRDs
     """
     And role "admin-role" is successfully synced
     Then role "admin-role" should exist in cluster "roles"
-    And role "admin-role" should have members "alice" and "bob" in cluster "roles"
+    And role "admin-role" should have members "alice and bob" in cluster "roles"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage roles with authorization
@@ -68,7 +68,7 @@ Feature: Role CRDs
     And role "read-only-role" is successfully synced
     Then role "read-only-role" should exist in cluster "roles"
     And role "read-only-role" should have ACLs for topic pattern "public-" in cluster "roles"
-    And user "charlie" should be able to read from topic "public-test" in cluster "roles"
+    And "charlie" should be able to read from topic "public-test" in cluster "roles"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage authorization-only roles
