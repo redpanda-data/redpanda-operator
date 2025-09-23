@@ -29,6 +29,7 @@ func init() {
 	framework.RegisterStep(`^there is no topic "([^"]*)" in cluster "([^"]*)"$`, thereIsNoTopic)
 	framework.RegisterStep(`^topic "([^"]*)" is successfully synced$`, topicIsSuccessfullySynced)
 	framework.RegisterStep(`^I should be able to produce and consume from "([^"]*)" in cluster "([^"]*)"$`, iShouldBeAbleToProduceAndConsumeFrom)
+	framework.RegisterStep(`I create topic "([^"]*)" in cluster "([^"]*)"`, iCreateTopicInCluster)
 
 	// User scenario steps
 	framework.RegisterStep(`^user "([^"]*)" is successfully synced$`, userIsSuccessfullySynced)

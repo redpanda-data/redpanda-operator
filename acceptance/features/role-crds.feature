@@ -39,7 +39,8 @@ Feature: Role CRDs
     And there are the following pre-existing users in cluster "roles"
       | name    | password | mechanism     |
       | charlie | password | SCRAM-SHA-256 |
-    When I apply Kubernetes manifest:
+    When I create topic "public-test" in cluster "roles"
+    And I apply Kubernetes manifest:
     """
 # tag::manage-roles-with-authorization[]
     # In this example manifest, a role called "read-only-role" is created in a cluster called "roles".
