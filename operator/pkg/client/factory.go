@@ -170,6 +170,10 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 		return c.kafkaForCluster(cluster, opts...)
 	}
 
+	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
+		return c.kafkaForV1Cluster(cluster)
+	}
+
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
 		return c.kafkaForRPKProfile(profile, opts...)
 	}
@@ -234,6 +238,10 @@ func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.schemaRegistryForCluster(cluster)
+	}
+
+	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
+		return c.schemaRegistryForV1Cluster(cluster)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
