@@ -53,4 +53,35 @@ func TestCtl(t *testing.T) {
 	cms, err := kube.List[corev1.ConfigMapList](ctx, ctl, kube.InNamespace("hello-world"))
 	require.NoError(t, err)
 	require.Len(t, cms.Items, 3)
+
+	t.Run("Delete", func(t *testing.T) {
+		s := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "delete-me",
+				Namespace: "hello-world",
+				// Set a finalizer to stall deletion.
+				Finalizers: []string{"i-prevent.com/deletion"},
+			},
+		}
+
+		require.NoError(t, ctl.Apply(ctx, s))
+		require.NotZero(t, s.UID)
+
+		require.NoError(t, ctl.Delete(ctx, s))
+
+		// Refresh s and assert that it's now deleting.
+		require.NoError(t, ctl.Get(ctx, kube.AsKey(s), s))
+		require.NotNil(t, s.DeletionTimestamp)
+
+		// Re-issue delete with DeletionTimestamp already set to showcase that
+		// doesn't result in errors.
+		require.NoError(t, ctl.Delete(ctx, s))
+
+		// Clear finalizers to allow deletion to progress.
+		s.Finalizers = nil
+		require.NoError(t, ctl.ApplyAndWait(ctx, s, kube.IsDeleted))
+
+		// No 404s if we attempt o delete an already deleted object.
+		require.NoError(t, ctl.Delete(ctx, s))
+	})
 }

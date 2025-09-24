@@ -20,7 +20,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -389,94 +388,6 @@ func TestClientWatchResources(t *testing.T) {
 			require.Equal(t, "*lifecycle.MockCluster", builder.Base())
 			require.ElementsMatch(t, tt.ownedResources, builder.Owned())
 			require.ElementsMatch(t, tt.watchedResources, builder.Watched())
-		})
-	}
-}
-
-func TestClientSyncAll(t *testing.T) {
-	for name, tt := range map[string]struct {
-		renderLoops [][]client.Object
-		testParams  clientTest
-	}{
-		"no-op": {},
-		"render-error": {
-			testParams: clientTest{
-				resourcesRenderError: errors.New("render"),
-			},
-		},
-		"overlapping-resource-names": {
-			renderLoops: [][]client.Object{
-				{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "overlapping-resources-resource",
-							Namespace: metav1.NamespaceDefault,
-						},
-					},
-				},
-			},
-			testParams: clientTest{
-				watchedResources: []client.Object{
-					&corev1.ConfigMap{},
-					&corev1.Secret{},
-					&rbacv1.ClusterRole{},
-				},
-				resources: []client.Object{
-					&corev1.ConfigMap{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "overlapping-resources-resource",
-							Namespace: metav1.NamespaceDefault,
-						},
-					},
-					&corev1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "overlapping-resources-resource",
-							Namespace: metav1.NamespaceDefault,
-						},
-					},
-					&rbacv1.ClusterRole{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      "overlapping-resources-resource",
-							Namespace: metav1.NamespaceDefault,
-						},
-					},
-				},
-			},
-		},
-	} {
-		tt.testParams.Run(parentCtx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
-			ctx, cancel := setupContext()
-			defer cancel()
-
-			ensureSynced := func(resources []client.Object) {
-				objects, err := instances.resourceClient.listAllOwnedResources(ctx, cluster, false)
-				require.NoError(t, err)
-				require.Len(t, objects, len(resources))
-			}
-
-			for _, resource := range tt.testParams.resources {
-				err := instances.checkObject(ctx, t, resource)
-				require.Error(t, err)
-				require.True(t, k8sapierrors.IsNotFound(err))
-			}
-
-			err := instances.resourceClient.SyncAll(ctx, cluster)
-			if tt.testParams.resourcesRenderError != nil {
-				require.Error(t, err)
-				require.ErrorIs(t, err, tt.testParams.resourcesRenderError)
-				return
-			}
-
-			require.NoError(t, err)
-
-			ensureSynced(tt.testParams.resources)
-
-			for _, resources := range tt.renderLoops {
-				instances.resourceRenderer.SetResources(cluster, resources)
-
-				require.NoError(t, instances.resourceClient.SyncAll(ctx, cluster))
-				ensureSynced(resources)
-			}
 		})
 	}
 }

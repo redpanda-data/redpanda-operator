@@ -12,6 +12,7 @@ package lifecycle
 import (
 	"context"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -65,6 +66,14 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		annotations := object.GetAnnotations()
 		if annotations != nil {
 			_, isHook = annotations["helm.sh/hook"]
+		}
+
+		// Work around a bug where the helm chart incorrectly sets Namespace on
+		// ClusterRoleBindings which triggers a bug in kube.Syncer.
+		// This is fixed here to avoid having to juggle very specific redpanda
+		// chart versions.
+		if _, ok := object.(*rbacv1.ClusterRoleBinding); ok {
+			object.SetNamespace("")
 		}
 
 		if !isNodePool(object) && !isHook {

@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/tools/txtar"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -160,6 +161,9 @@ func TestV2ResourceClient(t *testing.T) {
 			for _, resource := range resources {
 				assertOwnership(resource)
 				require.False(t, resourceClient.nodePoolRenderer.IsNodePool(resource))
+				if _, ok := resource.(*rbacv1.ClusterRoleBinding); ok {
+					require.Empty(t, resource.GetNamespace())
+				}
 			}
 
 			resourceBytes, err := yaml.Marshal(resources)
