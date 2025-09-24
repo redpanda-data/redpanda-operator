@@ -7,3 +7,11 @@ spec:
       initContainers:
         setDataDirOwnership:
           enabled: true
+
+-- rack-awareness --
+# This causes a ClusterRoleBinding to be generated.
+spec:
+  clusterSpec:
+    rackAwareness:
+      enabled: true
+      nodeAnnotation: 'kubernetes.io/os'
