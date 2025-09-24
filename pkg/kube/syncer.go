@@ -108,7 +108,8 @@ func (s *Syncer) Sync(ctx context.Context) ([]Object, error) {
 		}
 	}
 
-	for _, obj := range toDelete {
+	for key, obj := range toDelete {
+		log.Info(ctx, "GC'ing object", "key", key.key.String(), "gvk", key.gvk.String())
 		if err := s.Ctl.Delete(ctx, obj); err != nil {
 			return nil, err
 		}
@@ -263,6 +264,13 @@ func (s *Syncer) applyOwnerReferences(obj Object) error {
 
 	// no owners on namespace scoped items.
 	if scope == meta.RESTScopeNameRoot {
+		// Cluster scoped objects should NOT have a namespace specified. If they
+		// do, they'll be incorrectly deleted due to their ObjectKey containing a
+		// Namespace and the Kubernetes version not containing a Namespace.
+		// Validate there here to prevent confusing and unexpected behavior.
+		if obj.GetNamespace() != "" {
+			return errors.Newf("cluster scoped object incorrectly has namespace set: %T %s", obj, AsKey(obj))
+		}
 		return nil
 	}
 
