@@ -91,6 +91,14 @@ func TestSyncer(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("NamespaceSetOnClusterScope", func(t *testing.T) {
+		r.ClusterScopeWithNamespace = true
+		defer func() { r.ClusterScopeWithNamespace = false }()
+
+		_, err := syncer.Sync(t.Context())
+		require.EqualError(t, err, fmt.Sprintf("cluster scoped object incorrectly has namespace set: *v1.Namespace %s/test-ns-nsd", r.Namespace))
+	})
+
 	t.Run("Sync", func(t *testing.T) {
 		defer func() {
 			r.Prefix = "test"
@@ -112,28 +120,44 @@ func TestSyncer(t *testing.T) {
 				objs, err := syncer.Sync(t.Context())
 				require.NoError(t, err)
 
+				uids := map[kube.ObjectKey]string{}
+				resourceVersions := map[kube.ObjectKey]string{}
 				for _, obj := range objs {
-					// assert that objects are updated in place.
-					require.NotEmpty(t, obj.GetUID())
-					// Ownership labels have been applied.
-					require.Equal(t, "syncer", obj.GetLabels()["owned_by"])
+					uids[kube.AsKey(obj)] = string(obj.GetUID())
+					resourceVersions[kube.AsKey(obj)] = obj.GetResourceVersion()
+				}
 
-					//
-					require.Equal(t, fmt.Sprintf("%d", j), obj.GetLabels()["iteration"])
-
-					gvk, err := kube.GVKFor(ctl.Scheme(), obj)
+				// Test idempotency by running a no-op and asserting that UID and
+				// resourceVersion remain stable.
+				for range 5 {
+					objs, err := syncer.Sync(t.Context())
 					require.NoError(t, err)
 
-					scope, err := ctl.ScopeOf(gvk)
-					require.NoError(t, err)
+					for _, obj := range objs {
+						// assert that objects are updated in place.
+						require.NotEmpty(t, obj.GetUID())
+						require.True(t, obj.GetDeletionTimestamp().IsZero())
+						require.Equal(t, uids[kube.AsKey(obj)], string(obj.GetUID()))
+						require.Equal(t, resourceVersions[kube.AsKey(obj)], obj.GetResourceVersion())
+						// Ownership labels have been applied.
+						require.Equal(t, "syncer", obj.GetLabels()["owned_by"])
+						// Iteration label has been applied.
+						require.Equal(t, fmt.Sprintf("%d", j), obj.GetLabels()["iteration"])
 
-					if scope == meta.RESTScopeNameNamespace {
-						require.Equal(t, []metav1.OwnerReference{{
-							Name:       ns.Name,
-							APIVersion: "v1",
-							Kind:       "Namespace",
-							UID:        ns.UID,
-						}}, obj.GetOwnerReferences())
+						gvk, err := kube.GVKFor(ctl.Scheme(), obj)
+						require.NoError(t, err)
+
+						scope, err := ctl.ScopeOf(gvk)
+						require.NoError(t, err)
+
+						if scope == meta.RESTScopeNameNamespace {
+							require.Equal(t, []metav1.OwnerReference{{
+								Name:       ns.Name,
+								APIVersion: "v1",
+								Kind:       "Namespace",
+								UID:        ns.UID,
+							}}, obj.GetOwnerReferences())
+						}
 					}
 				}
 			}
@@ -200,11 +224,12 @@ func TestSyncer(t *testing.T) {
 }
 
 type renderer struct {
-	Prefix         string
-	Namespace      string
-	ObjNotInScheme bool
-	ObjNotInAPI    bool
-	ObjNotInTypes  bool
+	Prefix                    string
+	Namespace                 string
+	ObjNotInScheme            bool
+	ObjNotInAPI               bool
+	ObjNotInTypes             bool
+	ClusterScopeWithNamespace bool
 }
 
 func (r *renderer) Render(_ context.Context) ([]kube.Object, error) {
@@ -222,6 +247,9 @@ func (r *renderer) Render(_ context.Context) ([]kube.Object, error) {
 	}
 	if r.ObjNotInTypes {
 		objs = append(objs, &corev1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: r.Prefix + "-pv"}})
+	}
+	if r.ClusterScopeWithNamespace {
+		objs = append(objs, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: r.Prefix + "-ns-nsd", Namespace: r.Namespace}})
 	}
 	return objs, nil
 }
