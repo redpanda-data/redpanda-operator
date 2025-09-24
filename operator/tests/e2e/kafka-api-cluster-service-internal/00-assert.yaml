@@ -28,14 +28,14 @@ metadata:
   name: kafka-api-cluster-service-internal-cluster
 spec:
   ports:
-    - name: kafka
-      port: 9092
-      protocol: TCP
-      targetPort: 9092
     - name: admin
       port: 9644
       protocol: TCP
       targetPort: 9644
+    - name: kafka
+      port: 9092
+      protocol: TCP
+      targetPort: 9092
   type: ClusterIP
 ---
 apiVersion: kuttl.dev/v1beta1

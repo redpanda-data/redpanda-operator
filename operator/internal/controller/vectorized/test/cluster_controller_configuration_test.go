@@ -783,6 +783,9 @@ func getInitialTestCluster(
 					},
 				},
 				AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 9644}},
+				RPCServer: vectorizedv1alpha1.SocketAddress{
+					Port: 33145,
+				},
 			},
 			Resources: vectorizedv1alpha1.RedpandaResourceRequirements{
 				ResourceRequirements: corev1.ResourceRequirements{
