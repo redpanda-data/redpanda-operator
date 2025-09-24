@@ -1793,21 +1793,25 @@ func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) (map[str
 // +gotohelm:ignore=true
 func (TieredStorageConfig) JSONSchema() *jsonschema.Schema {
 	type schema struct {
-		CloudStorageEnabled            bool   `json:"cloud_storage_enabled" jsonschema:"required"`
-		CloudStorageAccessKey          string `json:"cloud_storage_access_key"`
-		CloudStorageSecretKey          string `json:"cloud_storage_secret_key"`
-		CloudStorageAPIEndpoint        string `json:"cloud_storage_api_endpoint"`
-		CloudStorageAPIEndpointPort    int    `json:"cloud_storage_api_endpoint_port"`
-		CloudStorageAzureADLSEndpoint  string `json:"cloud_storage_azure_adls_endpoint"`
-		CloudStorageAzureADLSPort      int    `json:"cloud_storage_azure_adls_port"`
-		CloudStorageBucket             string `json:"cloud_storage_bucket"`
-		CloudStorageCacheCheckInterval int    `json:"cloud_storage_cache_check_interval"`
+		CloudStorageEnabled                bool   `json:"cloud_storage_enabled" jsonschema:"required"`
+		CloudStorageAccessKey              string `json:"cloud_storage_access_key"`
+		CloudStorageSecretKey              string `json:"cloud_storage_secret_key"`
+		CloudStorageAPIEndpoint            string `json:"cloud_storage_api_endpoint"`
+		CloudStorageAPIEndpointPort        int    `json:"cloud_storage_api_endpoint_port"`
+		CloudStorageAzureADLSEndpoint      string `json:"cloud_storage_azure_adls_endpoint"`
+		CloudStorageAzureADLSPort          int    `json:"cloud_storage_azure_adls_port"`
+		CloudStorageAzureContainer         string `json:"cloud_storage_azure_container"`
+		CloudStorageAzureManagedIdentityID string `json:"cloud_storage_azure_managed_identity_id"`
+		CloudStorageAzureStorageAccount    string `json:"cloud_storage_azure_storage_account"`
+		CloudStorageAzureSharedKey         string `json:"cloud_storage_azure_shared_key"`
+		CloudStorageBucket                 string `json:"cloud_storage_bucket"`
+		CloudStorageCacheCheckInterval     int    `json:"cloud_storage_cache_check_interval"`
 		// CloudStorageCacheDirectory is a node config property unlike
 		// everything else in this struct. It should instead be set via
 		// `config.node`.
 		CloudStorageCacheDirectory              string            `json:"cloud_storage_cache_directory" jsonschema:"deprecated"`
 		CloudStorageCacheSize                   *ResourceQuantity `json:"cloud_storage_cache_size"`
-		CloudStorageCredentialsSource           string            `json:"cloud_storage_credentials_source" jsonschema:"pattern=^(config_file|aws_instance_metadata|sts|gcp_instance_metadata)$"`
+		CloudStorageCredentialsSource           string            `json:"cloud_storage_credentials_source" jsonschema:"pattern=^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$"`
 		CloudStorageDisableTLS                  bool              `json:"cloud_storage_disable_tls"`
 		CloudStorageEnableRemoteRead            bool              `json:"cloud_storage_enable_remote_read"`
 		CloudStorageEnableRemoteWrite           bool              `json:"cloud_storage_enable_remote_write"`
