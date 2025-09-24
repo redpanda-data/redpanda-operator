@@ -135,9 +135,8 @@ func ClusterRoleBindings(state *RenderState) []*rbacv1.ClusterRoleBinding {
 				Kind:       "ClusterRoleBinding",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      clusterRole.ObjectMeta.Name,
-				Labels:    FullLabels(state),
-				Namespace: state.Release.Namespace,
+				Name:   clusterRole.ObjectMeta.Name,
+				Labels: FullLabels(state),
 				Annotations: helmette.Merge(
 					map[string]string{},
 					state.Values.ServiceAccount.Annotations, // For backwards compatibility
