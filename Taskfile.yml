@@ -169,7 +169,7 @@ tasks:
         sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
       PKG: '{{ .PKG | default ._PKG }}'
     cmds:
-    - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} {{.PKG}}'
+    - '{{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}'
 
   test:integration:
     desc: "Run all integration tests (~90m)"

@@ -314,6 +314,15 @@ func CertSecretName(dot *helmette.Dot, certName string, cert *TLSCert) string {
 	return fmt.Sprintf("%s-%s-cert", Fullname(dot), certName)
 }
 
+func ClientCertSecretName(state *RenderState, certName string, cert *TLSCert) string {
+	if cert.ClientSecretRef != nil {
+		return cert.SecretRef.Name
+	}
+	// TODO this case is incorrect because we only generate a single client
+	// cert. It should be 1 per Certificate that requires client auth.
+	return fmt.Sprintf("%s-client", Fullname(state))
+}
+
 //nolint:stylecheck
 func RedpandaAtLeast_22_2_0(dot *helmette.Dot) bool {
 	return redpandaAtLeast(dot, redpanda_22_2_0)

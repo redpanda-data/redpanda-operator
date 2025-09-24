@@ -289,6 +289,23 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "redpanda.ClientCertSecretName" -}}
+{{- $state := (index .a 0) -}}
+{{- $certName := (index .a 1) -}}
+{{- $cert := (index .a 2) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (ne (toJson $cert.clientSecretRef) "null") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $cert.secretRef.name) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf "%s-client" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "redpanda.RedpandaAtLeast_22_2_0" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -374,10 +391,17 @@
 {{- $constraint := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $dot)))) "r")) -}}
 {{- $_362_result_err := (list (semverCompare $constraint $version) nil) -}}
 {{- $result := (index $_362_result_err 0) -}}
 {{- $err := (index $_362_result_err 1) -}}
+=======
+{{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) -}}
+{{- $_358_result_err := (list (semverCompare $constraint $version) nil) -}}
+{{- $result := (index $_358_result_err 0) -}}
+{{- $err := (index $_358_result_err 1) -}}
+>>>>>>> 8d9b0bdb (charts/redpanda: refactor console integration):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- if (ne (toJson $err) "null") -}}
 {{- $_ := (fail $err) -}}
 {{- end -}}
@@ -498,9 +522,15 @@
 {{- $originalKeys := (dict) -}}
 {{- $overrideByKey := (dict) -}}
 {{- range $_, $el := $override -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $_499_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
 {{- $key := (index $_499_key_ok 0) -}}
 {{- $ok := (index $_499_key_ok 1) -}}
+=======
+{{- $_495_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_495_key_ok 0) -}}
+{{- $ok := (index $_495_key_ok 1) -}}
+>>>>>>> 8d9b0bdb (charts/redpanda: refactor console integration):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
@@ -511,6 +541,7 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $el := $original -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $_511_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
 {{- $key := (index $_511_key__ 0) -}}
 {{- $_ := (index $_511_key__ 1) -}}
@@ -520,6 +551,17 @@
 {{- $ok_8 := (index $_513_elOverride_7_ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- $merged = (concat (default (list) $merged) (list (get (fromJson (include $mergeFunc (dict "a" (list $el $elOverride_7)))) "r"))) -}}
+=======
+{{- $_507_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_507_key__ 0) -}}
+{{- $_ := (index $_507_key__ 1) -}}
+{{- $_ := (set $originalKeys $key true) -}}
+{{- $_509_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
+{{- $elOverride_5 := (index $_509_elOverride_5_ok_6 0) -}}
+{{- $ok_6 := (index $_509_elOverride_5_ok_6 1) -}}
+{{- if $ok_6 -}}
+{{- $merged = (concat (default (list) $merged) (list (get (fromJson (include (first $mergeFunc) (dict "a" (concat (rest $mergeFunc) (list $el $elOverride_5))))) "r"))) -}}
+>>>>>>> 8d9b0bdb (charts/redpanda: refactor console integration):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- else -}}
 {{- $merged = (concat (default (list) $merged) (list $el)) -}}
 {{- end -}}
@@ -528,6 +570,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $el := $override -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $_523_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
 {{- $key := (index $_523_key_ok 0) -}}
 {{- $ok := (index $_523_key_ok 1) -}}
@@ -538,6 +581,18 @@
 {{- $_ := (index $_528___ok_9 0) -}}
 {{- $ok_9 := (index $_528___ok_9 1) -}}
 {{- if $ok_9 -}}
+=======
+{{- $_519_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_519_key_ok 0) -}}
+{{- $ok := (index $_519_key_ok 1) -}}
+{{- if (not $ok) -}}
+{{- continue -}}
+{{- end -}}
+{{- $_524___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
+{{- $_ := (index $_524___ok_7 0) -}}
+{{- $ok_7 := (index $_524___ok_7 1) -}}
+{{- if $ok_7 -}}
+>>>>>>> 8d9b0bdb (charts/redpanda: refactor console integration):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- continue -}}
 {{- end -}}
 {{- $merged = (concat (default (list) $merged) (list (merge (dict) $el))) -}}
