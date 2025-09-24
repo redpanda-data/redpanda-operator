@@ -189,6 +189,11 @@ func (b *SuiteBuilder) WithCRDDirectory(directory string) *SuiteBuilder {
 	return b
 }
 
+func (b *SuiteBuilder) Strict() *SuiteBuilder {
+	b.opts.Strict = true
+	return b
+}
+
 func setupErrorCheck(ctx context.Context, err error, cleanupFn func(ctx context.Context)) {
 	if err != nil {
 		fmt.Printf("setting up test suite: %v\n", err)

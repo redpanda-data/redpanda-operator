@@ -206,6 +206,17 @@ func (c *clusterClients) checkSchema(ctx context.Context, schema string, exists 
 	}
 }
 
+func (c *clusterClients) CreateTopic(ctx context.Context, topic string) {
+	t := framework.T(ctx)
+
+	admin := kadm.NewClient(c.Kafka(ctx))
+	defer admin.Close()
+
+	response, err := admin.CreateTopic(ctx, 1, 1, map[string]*string{}, topic)
+	require.NoError(t, err)
+	require.NoError(t, response.Err)
+}
+
 func (c *clusterClients) ExpectTopic(ctx context.Context, topic string) {
 	t := framework.T(ctx)
 

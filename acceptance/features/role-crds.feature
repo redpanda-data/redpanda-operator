@@ -31,7 +31,7 @@ Feature: Role CRDs
     """
     And role "admin-role" is successfully synced
     Then role "admin-role" should exist in cluster "roles"
-    And role "admin-role" should have members "alice" and "bob" in cluster "roles"
+    And role "admin-role" should have members "alice and bob" in cluster "roles"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage roles with authorization
@@ -39,7 +39,8 @@ Feature: Role CRDs
     And there are the following pre-existing users in cluster "roles"
       | name    | password | mechanism     |
       | charlie | password | SCRAM-SHA-256 |
-    When I apply Kubernetes manifest:
+    When I create topic "public-test" in cluster "roles"
+    And I apply Kubernetes manifest:
     """
 # tag::manage-roles-with-authorization[]
     # In this example manifest, a role called "read-only-role" is created in a cluster called "roles".
@@ -68,7 +69,7 @@ Feature: Role CRDs
     And role "read-only-role" is successfully synced
     Then role "read-only-role" should exist in cluster "roles"
     And role "read-only-role" should have ACLs for topic pattern "public-" in cluster "roles"
-    And user "charlie" should be able to read from topic "public-test" in cluster "roles"
+    And "charlie" should be able to read from topic "public-test" in cluster "roles"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage authorization-only roles
