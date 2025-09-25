@@ -27,15 +27,6 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
-const (
-	// ClusterConfigSynced is a condition indicating whether or not the
-	// redpanda cluster's configuration is up to date with the desired config.
-	ClusterConfigSynced = "ClusterConfigSynced"
-	// ClusterLicenseValid is a condition indicating whether or not the
-	// redpanda cluster has a valid license.
-	ClusterLicenseValid = "ClusterLicenseValid"
-)
-
 type ChartRef struct {
 	// Specifies the name of the chart to deploy.
 	ChartName string `json:"chartName,omitempty"`

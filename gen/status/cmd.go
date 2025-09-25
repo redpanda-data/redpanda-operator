@@ -31,6 +31,7 @@ func Cmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&config.StatusesFile, "statuses-file", "statuses.yaml", "The location of the statuses file to read.")
+	cmd.Flags().BoolVar(&config.GenerateCRDPackageDocs, "generate-crd-docs", false, "Generate CRD Package docs and exit.")
 	cmd.Flags().StringVar(&config.Package, "output-package", "statuses", "The go package name.")
 	cmd.Flags().StringVar(&config.Outputs.Directory, "output-directory", ".", "The output directory.")
 	cmd.Flags().StringVar(&config.Outputs.StatusFile, "output-status-file", "zz_generated_status.go", "The output file for statuses.")

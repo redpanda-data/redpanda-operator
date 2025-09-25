@@ -8,6 +8,8 @@ processor:
   customMarkers:
   - name: "hidefromdoc"
     target: field
+  - name: "statusType"
+    target: type
 
 render:
   kubernetesVersion: 1.28

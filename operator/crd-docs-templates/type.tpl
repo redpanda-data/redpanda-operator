@@ -1,6 +1,6 @@
 {{- define "type" -}}
 {{- $type := . -}}
-{{- if asciidocShouldRenderType $type -}}
+{{- if (or (asciidocShouldRenderType $type) ($type.Markers.statusType)) }}
 
 [id="{{ asciidocTypeID $type | asciidocRenderAnchorID }}"]
 ==== {{ $type.Name  }}
@@ -14,6 +14,15 @@
 {{- range $type.Validation }}
 - {{ . }}
 {{- end }}
+{{- end }}
+
+{{ if (and $type.EnumValues $type.Markers.statusType) -}} 
+[cols="20a,80a", options="header"]
+|===
+| Reason | Description |
+{{ range $type.EnumValues -}}
+| `{{ .Name }}` | {{ asciidocRenderFieldDoc .Doc }} |
+{{ end }}
 {{- end }}
 
 {{ if $type.References -}}
