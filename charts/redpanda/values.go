@@ -1845,6 +1845,8 @@ func (c *NodeConfig) Translate() map[string]any {
 				result[k] = v
 			} else if helmette.KindIs("bool", v) {
 				result[k] = v
+			} else if helmette.KindIs("slice", v) {
+				result[k] = v
 			} else {
 				result[k] = helmette.ToYaml(v)
 			}
