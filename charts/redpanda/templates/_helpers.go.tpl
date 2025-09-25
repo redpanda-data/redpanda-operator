@@ -110,6 +110,7 @@
 {{- end -}}
 {{- end -}}
 
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- define "redpanda.TLSEnabled" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -179,6 +180,8 @@
 {{- end -}}
 {{- end -}}
 
+=======
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- define "redpanda.DefaultMounts" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -199,6 +202,7 @@
 {{- if (and $sasl_5.enabled (ne $sasl_5.secretRef "")) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "users" "mountPath" "/etc/secrets/users" "readOnly" true)))) -}}
 {{- end -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- if (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $dot)))) "r") -}}
 {{- $certNames := (keys $values.tls.certs) -}}
 {{- $_ := (sortAlpha $certNames) -}}
@@ -208,14 +212,27 @@
 {{- continue -}}
 {{- end -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (printf "redpanda-%s-cert" $name) "mountPath" (printf "%s/%s" "/etc/tls/certs" $name))))) -}}
+=======
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseServerCerts" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $name)))) "r") -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (get (fromJson (include "redpanda.TLSCert.ServerVolumeName" (dict "a" (list $cert $name)))) "r") "mountPath" (get (fromJson (include "redpanda.TLSCert.ServerMountPoint" (dict "a" (list $cert $name)))) "r"))))) -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $adminTLS := $values.listeners.admin.tls -}}
 {{- if $adminTLS.requireClientAuth -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "mtls-client" "mountPath" (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r")))))) -}}
+=======
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseClientCerts" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $name)))) "r") -}}
+{{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (get (fromJson (include "redpanda.TLSCert.ClientVolumeName" (dict "a" (list $cert $name)))) "r") "mountPath" (get (fromJson (include "redpanda.TLSCert.ClientMountPoint" (dict "a" (list $cert $name)))) "r"))))) -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $mounts) | toJson -}}
@@ -238,6 +255,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $volumes := (list) -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $values := $dot.Values.AsMap -}}
 {{- if (get (fromJson (include "redpanda.TLSEnabled" (dict "a" (list $dot)))) "r") -}}
 {{- $certNames := (keys $values.tls.certs) -}}
@@ -248,10 +266,16 @@
 {{- continue -}}
 {{- end -}}
 {{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpanda.CertSecretName" (dict "a" (list $dot $name $cert)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (printf "redpanda-%s-cert" $name))))) -}}
+=======
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseServerCerts" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $name)))) "r") -}}
+{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpanda.TLSCert.ServerSecretName" (dict "a" (list $cert $state $name)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (get (fromJson (include "redpanda.TLSCert.ServerVolumeName" (dict "a" (list $cert $name)))) "r"))))) -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $adminTLS := $values.listeners.admin.tls -}}
 {{- $cert := (ternary (index $values.tls.certs $adminTLS.cert) (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)) (hasKey $values.tls.certs $adminTLS.cert)) -}}
 {{- if $adminTLS.requireClientAuth -}}
@@ -260,7 +284,14 @@
 {{- $secretName = $cert.clientSecretRef.name -}}
 {{- end -}}
 {{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" $secretName "defaultMode" (0o440 | int))))) (dict "name" "mtls-client")))) -}}
+=======
+{{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseClientCerts" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r") -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $name)))) "r") -}}
+{{- $volumes = (concat (default (list) $volumes) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "redpanda.TLSCert.ClientSecretName" (dict "a" (list $cert $state $name)))) "r") "defaultMode" (0o440 | int))))) (dict "name" (get (fromJson (include "redpanda.TLSCert.ClientVolumeName" (dict "a" (list $cert $name)))) "r"))))) -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
 {{- end -}}
 {{- $sasl_6 := $values.auth.sasl -}}
 {{- if (and $sasl_6.enabled (ne $sasl_6.secretRef "")) -}}
@@ -272,6 +303,7 @@
 {{- end -}}
 {{- end -}}
 
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- define "redpanda.CertSecretName" -}}
 {{- $dot := (index .a 0) -}}
 {{- $certName := (index .a 1) -}}
@@ -289,6 +321,8 @@
 {{- end -}}
 {{- end -}}
 
+=======
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- define "redpanda.RedpandaAtLeast_22_2_0" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -374,10 +408,17 @@
 {{- $constraint := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $dot)))) "r")) -}}
 {{- $_362_result_err := (list (semverCompare $constraint $version) nil) -}}
 {{- $result := (index $_362_result_err 0) -}}
 {{- $err := (index $_362_result_err 1) -}}
+=======
+{{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) -}}
+{{- $_277_result_err := (list (semverCompare $constraint $version) nil) -}}
+{{- $result := (index $_277_result_err 0) -}}
+{{- $err := (index $_277_result_err 1) -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- if (ne (toJson $err) "null") -}}
 {{- $_ := (fail $err) -}}
 {{- end -}}
@@ -498,9 +539,15 @@
 {{- $originalKeys := (dict) -}}
 {{- $overrideByKey := (dict) -}}
 {{- range $_, $el := $override -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $_499_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
 {{- $key := (index $_499_key_ok 0) -}}
 {{- $ok := (index $_499_key_ok 1) -}}
+=======
+{{- $_414_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_414_key_ok 0) -}}
+{{- $ok := (index $_414_key_ok 1) -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
@@ -511,6 +558,7 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $el := $original -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $_511_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
 {{- $key := (index $_511_key__ 0) -}}
 {{- $_ := (index $_511_key__ 1) -}}
@@ -520,6 +568,17 @@
 {{- $ok_8 := (index $_513_elOverride_7_ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- $merged = (concat (default (list) $merged) (list (get (fromJson (include $mergeFunc (dict "a" (list $el $elOverride_7)))) "r"))) -}}
+=======
+{{- $_426_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_426_key__ 0) -}}
+{{- $_ := (index $_426_key__ 1) -}}
+{{- $_ := (set $originalKeys $key true) -}}
+{{- $_428_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
+{{- $elOverride_5 := (index $_428_elOverride_5_ok_6 0) -}}
+{{- $ok_6 := (index $_428_elOverride_5_ok_6 1) -}}
+{{- if $ok_6 -}}
+{{- $merged = (concat (default (list) $merged) (list (get (fromJson (include (first $mergeFunc) (dict "a" (concat (rest $mergeFunc) (list $el $elOverride_5))))) "r"))) -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- else -}}
 {{- $merged = (concat (default (list) $merged) (list $el)) -}}
 {{- end -}}
@@ -528,6 +587,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $el := $override -}}
+<<<<<<< HEAD:charts/redpanda/templates/_helpers.go.tpl
 {{- $_523_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
 {{- $key := (index $_523_key_ok 0) -}}
 {{- $ok := (index $_523_key_ok 1) -}}
@@ -538,6 +598,18 @@
 {{- $_ := (index $_528___ok_9 0) -}}
 {{- $ok_9 := (index $_528___ok_9 1) -}}
 {{- if $ok_9 -}}
+=======
+{{- $_438_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_438_key_ok 0) -}}
+{{- $ok := (index $_438_key_ok 1) -}}
+{{- if (not $ok) -}}
+{{- continue -}}
+{{- end -}}
+{{- $_443___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
+{{- $_ := (index $_443___ok_7 0) -}}
+{{- $ok_7 := (index $_443___ok_7 1) -}}
+{{- if $ok_7 -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_helpers.go.tpl
 {{- continue -}}
 {{- end -}}
 {{- $merged = (concat (default (list) $merged) (list (merge (dict) $el))) -}}

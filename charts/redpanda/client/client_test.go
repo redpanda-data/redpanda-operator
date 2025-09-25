@@ -21,6 +21,104 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+<<<<<<< HEAD:charts/redpanda/client/client_test.go
+=======
+func TestCertificates(t *testing.T) {
+	cases := map[string]struct {
+		Cert                   *TLSCert
+		CertificateName        string
+		ExpectedRootCertName   string
+		ExpectedRootCertKey    string
+		ExpectedClientCertName string
+	}{
+		"default": {
+			CertificateName:        "default",
+			ExpectedRootCertName:   "redpanda-default-root-certificate",
+			ExpectedRootCertKey:    "tls.crt",
+			ExpectedClientCertName: "redpanda-default-client-cert",
+		},
+		"default with non-enabled global cert": {
+			Cert: &TLSCert{
+				Enabled: ptr.To(false),
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "some-cert",
+				},
+			},
+			CertificateName:        "default",
+			ExpectedRootCertName:   "redpanda-default-root-certificate",
+			ExpectedRootCertKey:    "tls.crt",
+			ExpectedClientCertName: "redpanda-default-client-cert",
+		},
+		"certificate with secret ref": {
+			Cert: &TLSCert{
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "some-cert",
+				},
+			},
+			CertificateName:        "default",
+			ExpectedRootCertName:   "some-cert",
+			ExpectedRootCertKey:    "tls.crt",
+			ExpectedClientCertName: "redpanda-default-client-cert",
+		},
+		"certificate with CA": {
+			Cert: &TLSCert{
+				CAEnabled: true,
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "some-cert",
+				},
+			},
+			CertificateName:        "default",
+			ExpectedRootCertName:   "some-cert",
+			ExpectedRootCertKey:    "ca.crt",
+			ExpectedClientCertName: "redpanda-default-client-cert",
+		},
+		"certificate with client certificate": {
+			Cert: &TLSCert{
+				CAEnabled: true,
+				SecretRef: &corev1.LocalObjectReference{
+					Name: "some-cert",
+				},
+				ClientSecretRef: &corev1.LocalObjectReference{
+					Name: "client-cert",
+				},
+			},
+			CertificateName:        "default",
+			ExpectedRootCertName:   "some-cert",
+			ExpectedRootCertKey:    "ca.crt",
+			ExpectedClientCertName: "client-cert",
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			certMap := TLSCertMap{}
+
+			if c.Cert != nil {
+				certMap[c.CertificateName] = *c.Cert
+			}
+
+			dot, err := Chart.Dot(nil, helmette.Release{
+				Name:      "redpanda",
+				Namespace: "redpanda",
+				Service:   "Helm",
+			}, Values{
+				TLS: TLS{
+					Certs: certMap,
+				},
+			})
+			require.NoError(t, err)
+			state, err := RenderStateFromDot(dot)
+			require.NoError(t, err)
+
+			actualRootCertName, actualRootCertKey, actualClientCertName := certificatesFor(state, c.CertificateName)
+			require.Equal(t, c.ExpectedRootCertName, actualRootCertName)
+			require.Equal(t, c.ExpectedRootCertKey, actualRootCertKey)
+			require.Equal(t, c.ExpectedClientCertName, actualClientCertName)
+		})
+	}
+}
+
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/render_state_test.go
 func TestFirstUser(t *testing.T) {
 	cases := []struct {
 		In  string
