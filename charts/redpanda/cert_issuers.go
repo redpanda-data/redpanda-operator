@@ -37,11 +37,25 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 	var issuers []*certmanagerv1.Issuer
 	var certs []*certmanagerv1.Certificate
 
+<<<<<<< HEAD
 	if !TLSEnabled(dot) {
 		return issuers, certs
 	}
 
 	for name, data := range helmette.SortedMap(values.TLS.Certs) {
+=======
+	inUseCerts := map[string]bool{}
+	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
+		inUseCerts[name] = true
+	}
+	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
+		inUseCerts[name] = true
+	}
+
+	for name := range helmette.SortedMap(inUseCerts) {
+		data := state.Values.TLS.Certs.MustGet(name)
+
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 		// If this certificate is disabled (.Enabled), provided directly by the
 		// end user (.SecretRef), or has an issuer provided (.IssuerRef), we
 		// don't need to bootstrap an issuer.
@@ -130,7 +144,11 @@ func certIssuersAndCAs(dot *helmette.Dot) ([]*certmanagerv1.Issuer, []*certmanag
 				Spec: certmanagerv1.IssuerSpec{
 					IssuerConfig: certmanagerv1.IssuerConfig{
 						CA: &certmanagerv1.CAIssuer{
+<<<<<<< HEAD
 							SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(dot), name),
+=======
+							SecretName: data.RootSecretName(state, name),
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 						},
 					},
 				},

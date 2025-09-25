@@ -73,8 +73,13 @@ func Notes(dot *helmette.Dot) []string {
 		``,
 		`Set up rpk for access to your external listeners:`,
 	)
+<<<<<<< HEAD
 	profile := values.Listeners.Kafka.External[profileName]
 	if TLSEnabled(dot) {
+=======
+	profile := state.Values.Listeners.Kafka.External[profileName]
+	if profile.TLS.IsEnabled(&state.Values.Listeners.Kafka.TLS, &state.Values.TLS) {
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS)
 		var external string
 		if profile.TLS != nil && profile.TLS.Cert != nil {
 			external = *profile.TLS.Cert

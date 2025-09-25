@@ -303,8 +303,13 @@ echo "passed"`) -}}
 {{- (dict "r" "") | toJson -}}
 {{- break -}}
 {{- end -}}
+<<<<<<< HEAD:charts/redpanda/templates/_secrets.go.tpl
 {{- if $values.listeners.admin.tls.requireClientAuth -}}
 {{- $path := (printf "%s/%s-client" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r")) -}}
+=======
+{{- if $state.Values.listeners.admin.tls.requireClientAuth -}}
+{{- $path := (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
+>>>>>>> 6c63e57d (charts/redpanda: fix mTLS):charts/redpanda/chart/templates/_secrets.go.tpl
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key" $path $path $path)) | toJson -}}
 {{- break -}}
