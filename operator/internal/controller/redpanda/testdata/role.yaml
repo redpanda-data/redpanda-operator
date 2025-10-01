@@ -144,6 +144,7 @@ rules:
   - redpandas/finalizers
   - roles/finalizers
   - schemas/finalizers
+  - shadowlinks/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -155,6 +156,7 @@ rules:
   - redpandas/status
   - roles/status
   - schemas/status
+  - shadowlinks/status
   - topics/status
   - users/status
   verbs:
@@ -166,6 +168,7 @@ rules:
   resources:
   - roles
   - schemas
+  - shadowlinks
   - topics
   - users
   verbs:

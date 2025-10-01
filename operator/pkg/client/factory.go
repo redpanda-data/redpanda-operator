@@ -34,6 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 )
 
@@ -96,6 +97,9 @@ type ClientFactory interface {
 
 	// Schemas returns a high-level client for synchronizing Schemas.
 	Schemas(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error)
+
+	// ShadowLinks returns a high-level client for synchronizing ShadowLinks.
+	ShadowLinks(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error)
 }
 
 type Factory struct {
@@ -183,7 +187,7 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 		return nil, ErrInvalidKafkaClientObject
 	}
 
-	cluster, err := c.getCluster(ctx, o)
+	cluster, err := c.getV2Cluster(ctx, o)
 	if err != nil {
 		return nil, err
 	}
@@ -218,13 +222,22 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.Ad
 		return nil, ErrInvalidRedpandaClientObject
 	}
 
-	cluster, err := c.getCluster(ctx, o)
+	cluster, err := c.getV2Cluster(ctx, o)
 	if err != nil {
 		return nil, err
 	}
 
 	if cluster != nil {
 		return c.redpandaAdminForCluster(cluster)
+	}
+
+	v1Cluster, err := c.getV1Cluster(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+
+	if v1Cluster != nil {
+		return c.redpandaAdminForV1Cluster(v1Cluster)
 	}
 
 	if spec := c.getAdminSpec(o); spec != nil {
@@ -253,7 +266,7 @@ func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client
 		return nil, ErrInvalidSchemaRegistryClientObject
 	}
 
-	cluster, err := c.getCluster(ctx, o)
+	cluster, err := c.getV2Cluster(ctx, o)
 	if err != nil {
 		return nil, err
 	}
@@ -276,6 +289,15 @@ func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterRefer
 	}
 
 	return schemas.NewSyncer(schemaRegistryClient), nil
+}
+
+func (c *Factory) ShadowLinks(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error) {
+	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return shadow.NewSyncer(adminClient), nil
 }
 
 func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
@@ -310,14 +332,38 @@ func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 	return roles.NewClient(ctx, adminClient)
 }
 
-func (c *Factory) getCluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
+func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object) (*vectorizedv1alpha1.Cluster, error) {
 	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
 	if !ok {
 		return nil, nil
 	}
 
 	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
-		if ref := source.GetClusterRef(); ref != nil {
+		if ref := source.GetClusterRef(); ref != nil && ref.IsV1() {
+			var cluster vectorizedv1alpha1.Cluster
+
+			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, ErrInvalidClusterRef
+				}
+				return nil, err
+			}
+
+			return &cluster, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
+	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
+	if !ok {
+		return nil, nil
+	}
+
+	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
+		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
 			var cluster redpandav1alpha2.Redpanda
 
 			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {

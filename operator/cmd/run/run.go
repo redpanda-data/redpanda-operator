@@ -85,6 +85,7 @@ type RunOptions struct {
 	enableVectorizedControllers bool
 
 	enableV2NodepoolController          bool
+	enableShadowLinksController         bool
 	managerOptions                      ctrl.Options
 	clusterDomain                       string
 	secureMetrics                       bool
@@ -139,6 +140,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
+	cmd.Flags().BoolVar(&o.enableShadowLinksController, "enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
 	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
@@ -436,6 +438,14 @@ func Run(
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
+	}
+
+	// ShadowLink Reconciler
+	if opts.enableShadowLinksController {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
+			return err
+		}
 	}
 
 	if err := redpandacontrollers.SetupUserController(ctx, mgr); err != nil {

@@ -114,6 +114,11 @@ func NodePool() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("nodepools.cluster.redpanda.com"))
 }
 
+// ShadowLink returns the ShadowLink CustomResourceDefinition.
+func ShadowLink() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("shadowlinks.cluster.redpanda.com"))
+}
+
 // Cluster returns the Cluster CustomResourceDefinition.
 func Cluster() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("clusters.redpanda.vectorized.io"))

@@ -190,6 +190,16 @@ spec:
                       It is used in constructing the client created to configure a cluster.
                       This takes precedence over StaticConfigurationSource.
                     properties:
+                      group:
+                        description: |-
+                          Group is used to override the object group that this reference points to.
+                          If unspecified, defaults to "cluster.redpanda.com".
+                        type: string
+                      kind:
+                        description: |-
+                          Kind is used to override the object kind that this reference points to.
+                          If unspecified, defaults to "Redpanda".
+                        type: string
                       name:
                         description: Name specifies the name of the cluster being
                           referenced.
