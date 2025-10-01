@@ -24,7 +24,6 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
@@ -328,9 +327,9 @@ func srvLookup(state *redpanda.RenderState, dialer DialContextFunc, service stri
 				// Querying for k8s-app=kube-dns is a generally accepted / safe
 				// way of finding the kube DNS. We could alternatively find the
 				// kube-dns service and use its label selector.
-				pods, err := kube.List[corev1.PodList](ctx, ctl, client.MatchingLabels{
+				pods, err := kube.List[corev1.PodList](ctx, ctl, kube.NamespaceSystem, client.MatchingLabels{
 					"k8s-app": "kube-dns",
-				}, client.InNamespace(metav1.NamespaceSystem))
+				})
 				if err != nil {
 					return nil, err
 				}
