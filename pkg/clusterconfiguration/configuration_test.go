@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 
-	// rpkcfg "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
@@ -38,6 +37,118 @@ func TestRedpandaProperties(t *testing.T) {
 	assert.NotContains(t, concreteCfg, "a")
 	assert.Equal(t, "d", concreteCfg["c"])
 	assert.NotContains(t, concreteNode.Other, "c")
+}
+
+func TestAdditionalFlatProperties(t *testing.T) {
+	// String appends rely on CEL support
+	config := clusterconfiguration.NewConfig("namespace", nil, nil)
+
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.sasl_mechanisms_overrides", `[{"listener": "kafka","sasl_mechanisms": ["SCRAM"]}]`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.kafka_throughput_control", `[{'name': 'first_group','client_id': 'client1'}, {'client_id': 'consumer-\d+'}, {'name': 'catch all'}]`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.cloud_storage_recovery_topic_validation_mode", `check_manifest_existence`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.default_leaders_preference", `"racks:rack1,rack2"`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.kafka_nodelete_topics", `["__consumer_offsets","_schemas"]`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.partition_autobalancing_mode", `continuous`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.raft_learner_recovery_rate", `104857600`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.aggregate_metrics", `true`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.write_caching_default", `disabled`))
+	require.NoError(t, config.SetAdditionalFlatProperty("redpanda.kafka_memory_share_for_fetch", `80.0`))
+
+	// We require a schema to concretize configuration values
+	schema := rpadmin.ConfigSchema{
+		"sasl_mechanisms_overrides": rpadmin.ConfigPropertyMetadata{
+			Type:         "array",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+			Items: rpadmin.ConfigPropertyItems{
+				Type: "config::sasl_mechanisms_override",
+			},
+		},
+		"kafka_throughput_control": rpadmin.ConfigPropertyMetadata{
+			Type:         "array",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+			Items: rpadmin.ConfigPropertyItems{
+				Type: "config::throughput_control_group",
+			},
+		},
+		"cloud_storage_recovery_topic_validation_mode": rpadmin.ConfigPropertyMetadata{
+			Type:         "recovery_validation_mode",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+		},
+		"default_leaders_preference": rpadmin.ConfigPropertyMetadata{
+			Type:         "leaders_preference",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+		},
+		"kafka_nodelete_topics": rpadmin.ConfigPropertyMetadata{
+			Type:         "array",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+			Items: rpadmin.ConfigPropertyItems{
+				Type: "string",
+			},
+		},
+		"partition_autobalancing_mode": rpadmin.ConfigPropertyMetadata{
+			Type:         "partition_autobalancing_mode",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+		},
+		"raft_learner_recovery_rate": rpadmin.ConfigPropertyMetadata{
+			Type:         "integer",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "tunable",
+		},
+		"aggregate_metrics": rpadmin.ConfigPropertyMetadata{
+			Type:         "boolean",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+		},
+		"write_caching_default": rpadmin.ConfigPropertyMetadata{
+			Type:         "string",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+		},
+		"disk_reservation_percent": rpadmin.ConfigPropertyMetadata{
+			Type:         "number",
+			Nullable:     false,
+			NeedsRestart: false,
+			IsSecret:     false,
+			Visibility:   "user",
+		},
+	}
+
+	concreteCfg, err := config.ReifyClusterConfiguration(context.TODO(), schema)
+	require.NoError(t, err)
+	assert.Equal(t, []any{map[string]any{"listener": "kafka", "sasl_mechanisms": []any{"SCRAM"}}}, concreteCfg["sasl_mechanisms_overrides"])
+	assert.Equal(t, []any{map[string]any{"name": "first_group", "client_id": "client1"}, map[string]any{"client_id": "consumer-\\d+"}, map[string]any{"name": "catch all"}}, concreteCfg["kafka_throughput_control"])
+	assert.Equal(t, "check_manifest_existence", concreteCfg["cloud_storage_recovery_topic_validation_mode"])
+	assert.Equal(t, "racks:rack1,rack2", concreteCfg["default_leaders_preference"])
+	assert.Equal(t, []string{"__consumer_offsets", "_schemas"}, concreteCfg["kafka_nodelete_topics"])
+	assert.Equal(t, "continuous", concreteCfg["partition_autobalancing_mode"])
+	assert.Equal(t, int64(104857600), concreteCfg["raft_learner_recovery_rate"])
+	assert.Equal(t, true, concreteCfg["aggregate_metrics"])
+	assert.Equal(t, "disabled", concreteCfg["write_caching_default"])
+	assert.Equal(t, "80.0", concreteCfg["kafka_memory_share_for_fetch"])
 }
 
 func TestFlatProperties(t *testing.T) {
@@ -95,9 +206,9 @@ func TestStringSliceProperties(t *testing.T) {
 	// We require a schema to concretize configuration values
 	schema := rpadmin.ConfigSchema{"superusers": rpadmin.ConfigPropertyMetadata{
 		Type: "array",
-		//Items: rpadmin.ConfigPropertyItems{
-		//	Type: "string",
-		//},
+		Items: rpadmin.ConfigPropertyItems{
+			Type: "string",
+		},
 	}}
 
 	concreteCfg, err := config.ReifyClusterConfiguration(context.TODO(), schema)
