@@ -19,6 +19,7 @@ import (
 	"github.com/cockroachdb/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -36,8 +37,11 @@ type (
 	Object     = client.Object
 	ObjectList = client.ObjectList
 	ObjectKey  = client.ObjectKey
+)
 
-	InNamespace = client.InNamespace
+const (
+	NamespaceAll    = metav1.NamespaceAll
+	NamespaceSystem = metav1.NamespaceSystem
 )
 
 type Option interface {
@@ -150,11 +154,17 @@ func (c *Ctl) GetAndWait(ctx context.Context, key ObjectKey, obj Object, cond Co
 }
 
 // List fetches a list of objects into `objs` from Kubernetes.
+//
+// Cluster scoped resources should pass `""` as namespace.
+//
 // Usage:
 //
 //	var pods corev1.PodList
 //	ctl.List(ctx, &pods)
-func (c *Ctl) List(ctx context.Context, objs client.ObjectList, opts ...client.ListOption) error {
+func (c *Ctl) List(ctx context.Context, namespace string, objs ObjectList, opts ...client.ListOption) error {
+	// Top level namespace parameter takes precedence over anything specified
+	// in opts. The other way around is less straightforward.
+	opts = append(opts, client.InNamespace(namespace))
 	if err := c.client.List(ctx, objs, opts...); err != nil {
 		return errors.WithStack(err)
 	}

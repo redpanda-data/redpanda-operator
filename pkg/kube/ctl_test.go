@@ -50,7 +50,7 @@ func TestCtl(t *testing.T) {
 	))
 	require.Equal(t, []string{"cm-0", "cm-1", "cm-2"}, seen)
 
-	cms, err := kube.List[corev1.ConfigMapList](ctx, ctl, kube.InNamespace("hello-world"))
+	cms, err := kube.List[corev1.ConfigMapList](ctx, ctl, "hello-world")
 	require.NoError(t, err)
 	require.Len(t, cms.Items, 3)
 }
