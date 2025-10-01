@@ -28,7 +28,7 @@ Feature: Upgrading the operator
     """
     # use just a Ready status check here since that's all the
     # old operator supports
-    And v2 cluster "operator-upgrade" is available
+    And cluster "operator-upgrade" is available
     Then I can upgrade to the latest operator with the values:
     """
     image:
@@ -67,7 +67,7 @@ Feature: Upgrading the operator
     """
     # use just a Ready status check here since that's all the
     # old operator supports
-    And v2 cluster "operator-upgrade" is available
+    And cluster "operator-upgrade" is available
     Then I can upgrade to the latest operator with the values:
     """
     image:

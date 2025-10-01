@@ -293,9 +293,11 @@ func (c *clusterClients) checkRole(ctx context.Context, role string, exists bool
 }
 
 func versionedClientsForCluster(ctx context.Context, version, cluster string) *clusterClients {
-	framework.T(ctx).Log("Got versioned cluster %q", version)
+	version = strings.TrimSpace(version)
 
-	if version == "v1" {
+	framework.T(ctx).Logf("Got versioned cluster %q", version)
+
+	if version == "vectorized" {
 		return v1ClientsForCluster(ctx, cluster)
 	}
 

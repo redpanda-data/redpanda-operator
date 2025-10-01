@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand/v2"
+	"strings"
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -28,7 +29,9 @@ import (
 )
 
 func checkClusterAvailability(ctx context.Context, t framework.TestingT, version, clusterName string) {
-	if version == "v1" {
+	version = strings.TrimSpace(version)
+
+	if version == "vectorized" {
 		checkV1ClusterAvailability(ctx, t, clusterName)
 		return
 	}
