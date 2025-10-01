@@ -34,7 +34,7 @@ func init() {
 	// User scenario steps
 	framework.RegisterStep(`^user "([^"]*)" is successfully synced$`, userIsSuccessfullySynced)
 	framework.RegisterStep(`^"([^"]*)" should be able to read from topic "([^"]*)" in (v\d) cluster "([^"]*)"$`, userShouldBeAbleToReadFromTopicInCluster)
-	framework.RegisterStep(`^there is no user "([^"]*)" in cluster "([^"]*)"$`, thereIsNoUser)
+	framework.RegisterStep(`^there is no user "([^"]*)" in (v\d) cluster "([^"]*)"$`, thereIsNoUser)
 	framework.RegisterStep(`^there are already the following ACLs in cluster "([^"]*)":$`, thereAreAlreadyTheFollowingACLsInCluster)
 	framework.RegisterStep(`^there are the following pre-existing users in (v\d) cluster "([^"]*)"$`, thereAreTheFollowingPreexistingUsersInCluster)
 	framework.RegisterStep(`^I create CRD-based users for cluster "([^"]*)":$`, iCreateCRDbasedUsers)
