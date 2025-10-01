@@ -72,9 +72,7 @@ func NewClient(ctx context.Context, kubeCtl *kube.Ctl, dot *helmette.Dot) (*Clie
 }
 
 func (c *Client) getConsolePod(ctx context.Context) (*corev1.Pod, error) {
-	deploys, err := kube.List[appsv1.DeploymentList](ctx, c.Ctl,
-		k8sclient.InNamespace(c.Release.Namespace),
-	)
+	deploys, err := kube.List[appsv1.DeploymentList](ctx, c.Ctl, c.Release.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +90,7 @@ func (c *Client) getConsolePod(ctx context.Context) (*corev1.Pod, error) {
 	}
 
 	pods, err := kube.List[corev1.PodList](ctx, c.Ctl,
-		k8sclient.InNamespace(deployment.Namespace),
+		deployment.Namespace,
 		k8sclient.MatchingLabels(deployment.Spec.Selector.MatchLabels))
 	if err != nil {
 		return nil, err
