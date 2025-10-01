@@ -36,6 +36,8 @@ type BrokerTLSConfigProvider interface {
 // AdminTLSConfigProvider returns TLS config for admin API
 type AdminTLSConfigProvider interface {
 	GetTLSConfig(ctx context.Context, k8sClient client.Reader) (*tls.Config, error)
+	GetKafkaTLSConfig(ctx context.Context, k8sClient client.Reader) (*tls.Config, error)
+	GetSchemaTLSConfig(ctx context.Context, k8sClient client.Reader) (*tls.Config, error)
 }
 
 // TLSMountPoint defines paths to be mounted
