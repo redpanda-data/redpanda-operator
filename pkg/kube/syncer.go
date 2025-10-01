@@ -170,7 +170,7 @@ func (s *Syncer) listInPurview(ctx context.Context) ([]Object, error) {
 			return nil, err
 		}
 
-		if err := s.Ctl.List(ctx, list, client.InNamespace(s.Namespace), client.MatchingLabels(s.OwnershipLabels)); err != nil {
+		if err := s.Ctl.List(ctx, s.Namespace, list, client.MatchingLabels(s.OwnershipLabels)); err != nil {
 			return nil, err
 		}
 
