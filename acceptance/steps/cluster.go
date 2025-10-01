@@ -60,7 +60,7 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 
 func hasV1Condition(expected vectorizedv1alpha1.ClusterCondition, conditions []vectorizedv1alpha1.ClusterCondition) bool {
 	for _, condition := range conditions {
-		if expected.Type == condition.Type && expected.Status == condition.Status{
+		if expected.Type == condition.Type && expected.Status == condition.Status {
 			return true
 		}
 	}
