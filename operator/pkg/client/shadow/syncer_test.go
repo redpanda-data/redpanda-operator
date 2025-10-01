@@ -68,12 +68,12 @@ func TestSyncer(t *testing.T) {
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: redpandav1alpha2.ShadowLinkSpec{
-			SourceCluster: redpandav1alpha2.ClusterSource{
+			Cluster: redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{
 					Name: "bogus",
 				},
 			},
-			DestinationCluster: redpandav1alpha2.ClusterSource{
+			SourceCluster: redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{
 					Name: "bogus",
 				},

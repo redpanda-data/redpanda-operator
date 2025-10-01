@@ -40,56 +40,7 @@ spec:
             type: object
           spec:
             properties:
-              consumerOffsetSyncOptions:
-                description: Consumer offset sync options
-                properties:
-                  enabled:
-                    description: Whether it's enabled
-                    type: boolean
-                  groupFilters:
-                    description: The filters
-                    items:
-                      description: A filter based on the name of a resource
-                      properties:
-                        filterType:
-                          description: |-
-                            Valid values:
-                            - include
-                            - exclude
-                          enum:
-                          - include
-                          - exclude
-                          type: string
-                        name:
-                          default: '*'
-                          description: |-
-                            The resource name, or "*"
-                            Note if the wildcar "*" is used it must be the _only_ character
-                            and `patternType` must be `literal`
-                          type: string
-                        patternType:
-                          default: literal
-                          description: |-
-                            Default value is literal. Valid values:
-                            - literal
-                            - prefixed
-                          enum:
-                          - literal
-                          - prefixed
-                          type: string
-                      required:
-                      - filterType
-                      type: object
-                    type: array
-                  interval:
-                    default: 30
-                    description: |-
-                      Sync interval
-                      If 0 provided, defaults to 30 seconds
-                    format: int64
-                    type: integer
-                type: object
-              destinationCluster:
+              cluster:
                 description: ClusterSource defines how to connect to a particular
                   Redpanda cluster.
                 properties:
@@ -578,6 +529,55 @@ spec:
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable
                   rule: self == oldSelf
+              consumerOffsetSyncOptions:
+                description: Consumer offset sync options
+                properties:
+                  enabled:
+                    description: Whether it's enabled
+                    type: boolean
+                  groupFilters:
+                    description: The filters
+                    items:
+                      description: A filter based on the name of a resource
+                      properties:
+                        filterType:
+                          description: |-
+                            Valid values:
+                            - include
+                            - exclude
+                          enum:
+                          - include
+                          - exclude
+                          type: string
+                        name:
+                          default: '*'
+                          description: |-
+                            The resource name, or "*"
+                            Note if the wildcar "*" is used it must be the _only_ character
+                            and `patternType` must be `literal`
+                          type: string
+                        patternType:
+                          default: literal
+                          description: |-
+                            Default value is literal. Valid values:
+                            - literal
+                            - prefixed
+                          enum:
+                          - literal
+                          - prefixed
+                          type: string
+                      required:
+                      - filterType
+                      type: object
+                    type: array
+                  interval:
+                    default: 30
+                    description: |-
+                      Sync interval
+                      If 0 provided, defaults to 30 seconds
+                    format: int64
+                    type: integer
+                type: object
               securitySyncOptions:
                 description: Security settings sync options
                 properties:
@@ -1268,7 +1268,7 @@ spec:
                     type: array
                 type: object
             required:
-            - destinationCluster
+            - cluster
             - sourceCluster
             type: object
           status:

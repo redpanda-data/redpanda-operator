@@ -14,8 +14,8 @@ package v1alpha2
 // ShadowLinkSpecApplyConfiguration represents a declarative configuration of the ShadowLinkSpec type for use
 // with apply.
 type ShadowLinkSpecApplyConfiguration struct {
+	Cluster                   *ClusterSourceApplyConfiguration                         `json:"cluster,omitempty"`
 	SourceCluster             *ClusterSourceApplyConfiguration                         `json:"sourceCluster,omitempty"`
-	DestinationCluster        *ClusterSourceApplyConfiguration                         `json:"destinationCluster,omitempty"`
 	TopicMetadataSyncOptions  *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration    `json:"topicMetadataSyncOptions,omitempty"`
 	ConsumerOffsetSyncOptions *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration   `json:"consumerOffsetSyncOptions,omitempty"`
 	SecuritySyncOptions       *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration `json:"securitySyncOptions,omitempty"`
@@ -27,19 +27,19 @@ func ShadowLinkSpec() *ShadowLinkSpecApplyConfiguration {
 	return &ShadowLinkSpecApplyConfiguration{}
 }
 
+// WithCluster sets the Cluster field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Cluster field is set to the value of the last call.
+func (b *ShadowLinkSpecApplyConfiguration) WithCluster(value *ClusterSourceApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
+	b.Cluster = value
+	return b
+}
+
 // WithSourceCluster sets the SourceCluster field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SourceCluster field is set to the value of the last call.
 func (b *ShadowLinkSpecApplyConfiguration) WithSourceCluster(value *ClusterSourceApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
 	b.SourceCluster = value
-	return b
-}
-
-// WithDestinationCluster sets the DestinationCluster field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DestinationCluster field is set to the value of the last call.
-func (b *ShadowLinkSpecApplyConfiguration) WithDestinationCluster(value *ClusterSourceApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
-	b.DestinationCluster = value
 	return b
 }
 

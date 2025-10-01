@@ -33,11 +33,11 @@ type ShadowLink struct {
 }
 
 func (n *ShadowLink) GetClusterSource() *ClusterSource {
-	return &n.Spec.SourceCluster
+	return &n.Spec.Cluster
 }
 
 func (n *ShadowLink) GetRemoteClusterSource() *ClusterSource {
-	return &n.Spec.DestinationCluster
+	return &n.Spec.SourceCluster
 }
 
 // +kubebuilder:object:root=true
@@ -151,8 +151,8 @@ type TopicPartitionInformation struct {
 }
 
 type ShadowLinkSpec struct {
-	SourceCluster      ClusterSource `json:"sourceCluster"`
-	DestinationCluster ClusterSource `json:"destinationCluster"`
+	Cluster       ClusterSource `json:"cluster"`
+	SourceCluster ClusterSource `json:"sourceCluster"`
 
 	// Topic metadata sync options
 	TopicMetadataSyncOptions *ShadowLinkTopicMetadataSyncOptions `json:"topicMetadataSyncOptions,omitempty"`
