@@ -1,12 +1,12 @@
-@cluster:v1/roles
+@cluster:vectorized/sasl
 Feature: Vectorized Role CRDs
   Background: Cluster available
-    Given vectorized cluster "roles" is available
+    Given vectorized cluster "sasl" is available
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage vectorized roles
-    Given there is no role "admin-role" in vectorized cluster "roles"
-    And there are the following pre-existing users in vectorized cluster "roles"
+    Given there is no role "admin-role" in vectorized cluster "sasl"
+    And there are the following pre-existing users in vectorized cluster "sasl"
       | name    | password | mechanism     |
       | alice   | password | SCRAM-SHA-256 |
       | bob     | password | SCRAM-SHA-256 |
@@ -22,22 +22,22 @@ Feature: Vectorized Role CRDs
         clusterRef:
           group: redpanda.vectorized.io
           kind: Cluster
-          name: roles
+          name: sasl
       principals:
         - User:alice
         - User:bob
     """
     And role "admin-role" is successfully synced
-    Then role "admin-role" should exist in vectorized cluster "roles"
-    And role "admin-role" should have members "alice and bob" in vectorized cluster "roles"
+    Then role "admin-role" should exist in vectorized cluster "sasl"
+    And role "admin-role" should have members "alice and bob" in vectorized cluster "sasl"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage vectorized roles with authorization
-    Given there is no role "read-only-role" in vectorized cluster "roles"
-    And there are the following pre-existing users in vectorized cluster "roles"
+    Given there is no role "read-only-role" in vectorized cluster "sasl"
+    And there are the following pre-existing users in vectorized cluster "sasl"
       | name    | password | mechanism     |
       | charlie | password | SCRAM-SHA-256 |
-    When I create topic "public-test" in vectorized cluster "roles"
+    When I create topic "public-test" in vectorized cluster "sasl"
     And I apply Kubernetes manifest:
     """
     ---
@@ -50,7 +50,7 @@ Feature: Vectorized Role CRDs
         clusterRef:
           group: redpanda.vectorized.io
           kind: Cluster
-          name: roles
+          name: sasl
       principals:
         - User:charlie
       authorization:
@@ -63,16 +63,16 @@ Feature: Vectorized Role CRDs
             operations: [Read, Describe]
     """
     And role "read-only-role" is successfully synced
-    Then role "read-only-role" should exist in vectorized cluster "roles"
-    And role "read-only-role" should have ACLs for topic pattern "public-" in vectorized cluster "roles"
-    And "charlie" should be able to read from topic "public-test" in vectorized cluster "roles"
+    Then role "read-only-role" should exist in vectorized cluster "sasl"
+    And role "read-only-role" should have ACLs for topic pattern "public-" in vectorized cluster "sasl"
+    And "charlie" should be able to read from topic "public-test" in vectorized cluster "sasl"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage vectorized authorization-only roles
-    Given there are the following pre-existing users in vectorized cluster "roles"
+    Given there are the following pre-existing users in vectorized cluster "sasl"
       | name    | password | mechanism     |
       | travis  | password | SCRAM-SHA-256 |
-    And there is a pre-existing role "travis-role" in vectorized cluster "roles"
+    And there is a pre-existing role "travis-role" in vectorized cluster "sasl"
     When I apply Kubernetes manifest:
     """
     ---
@@ -85,7 +85,7 @@ Feature: Vectorized Role CRDs
         clusterRef:
           group: redpanda.vectorized.io
           kind: Cluster
-          name: roles
+          name: sasl
       principals:
         - User:travis
       authorization:
@@ -99,5 +99,5 @@ Feature: Vectorized Role CRDs
     """
     And role "travis-role" is successfully synced
     And I delete the CRD role "travis-role"
-    Then there should still be role "travis-role" in vectorized cluster "roles"
-    And there should be no ACLs for role "travis-role" in vectorized cluster "roles"
+    Then there should still be role "travis-role" in vectorized cluster "sasl"
+    And there should be no ACLs for role "travis-role" in vectorized cluster "sasl"

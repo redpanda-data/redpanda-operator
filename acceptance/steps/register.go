@@ -13,7 +13,7 @@ import framework "github.com/redpanda-data/redpanda-operator/harpoon"
 
 func init() {
 	// General scenario steps
-	framework.RegisterStep(`^(v\d) cluster "([^"]*)" is available$`, checkClusterAvailability)
+	framework.RegisterStep(`^(vectorized )?cluster "([^"]*)" is available$`, checkClusterAvailability)
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
 
 	framework.RegisterStep(`^I store "([^"]*)" of Kubernetes object with type "([^"]*)" and name "([^"]*)" as "([^"]*)"$`, recordVariable)
