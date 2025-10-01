@@ -58,7 +58,28 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 		}
 		return strconv.ParseBool(unquote(repr))
 	case "array":
-		return convertStringToStringArray(repr)
+		switch metadata.Items.Type {
+		case "string":
+			ss, err := convertStringToArray[string](repr)
+			if err != nil {
+				return nil, err
+			}
+			// Historically all string arrays have been sorted. It's likely this is
+			// NOT required and was an artifact of the operator and config-watcher
+			// "fighting" about the ordering of the superusers settings, which has
+			// since been fixed.
+			// However, there's no trail or test that would indicate why this is
+			// present so we've preserved it out of paranoia.
+			// DO NOT RELY ON THIS BEHAVIOR.
+			sort.Strings(ss)
+			return ss, nil
+
+		// Fallback to any for all other types.
+		// TODO: make this method recursive rather than special casing arrays like
+		// this.
+		default:
+			return convertStringToArray[any](repr)
+		}
 	default:
 		// TODO: It's unclear whether we should let this ride, or report an error.
 		// By letting it pass, we will ultimately report an Unknown value on the condition.
@@ -74,20 +95,17 @@ func unquote(repr string) string {
 	return strings.TrimPrefix(strings.TrimSuffix(repr, `"`), `"`)
 }
 
-// convertStringToStringArray duplicates the v1 string->[string] processing
-func convertStringToStringArray(value string) ([]string, error) {
-	a := make([]string, 0)
+func convertStringToArray[T any](value string) ([]T, error) {
+	a := make([]T, 0)
 	err := yaml.Unmarshal([]byte(value), &a)
 
 	if len(a) == 1 {
 		// it is possible this was not comma separated, so let's make it so and retry unmarshalling
-		b := make([]string, 0)
+		b := make([]T, 0)
 		errB := yaml.Unmarshal([]byte(strings.ReplaceAll(value, " ", ",")), &b)
 		if errB == nil && len(b) > len(a) {
-			sort.Strings(b)
 			return b, errB
 		}
 	}
-	sort.Strings(a)
 	return a, err
 }
