@@ -11,8 +11,8 @@ package shadow
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"net/http"
 
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"connectrpc.com/connect"
@@ -44,12 +44,16 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 	if err != nil {
 		var httpError *rpadmin.HTTPResponseError
 		if errors.As(err, &httpError) {
-			generic, decodeErr := httpError.DecodeGenericErrorBody()
-			if decodeErr != nil {
+			genericErr := struct {
+				Message string `json:"message"`
+				Code    string `json:"code"`
+			}{}
+
+			if decodeErr := json.Unmarshal(httpError.Body, &genericErr); decodeErr != nil {
 				return nil, errors.Join(err, decodeErr)
 			}
 			// on a 404, we don't error
-			if generic.Code != http.StatusNotFound {
+			if genericErr.Code != "not_found" {
 				return nil, err
 			}
 		} else {
