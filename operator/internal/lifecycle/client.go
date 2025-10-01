@@ -259,7 +259,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 
 // fetchExistingPools fetches the existing pools (StatefulSets) for a given cluster.
 func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U) ([]*poolWithOrdinals, error) {
-	sets, err := kube.List[appsv1.StatefulSetList](ctx, r.ctl, client.InNamespace(cluster.GetNamespace()), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
+	sets, err := kube.List[appsv1.StatefulSetList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing StatefulSets")
 	}
@@ -288,7 +288,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 
 		// based on https://github.com/kubernetes/kubernetes/blob/c90a4b16b6aa849ed362ee40997327db09e3a62d/pkg/controller/history/controller_history.go#L222
-		revisions, err := kube.List[appsv1.ControllerRevisionList](ctx, r.ctl, client.MatchingLabelsSelector{
+		revisions, err := kube.List[appsv1.ControllerRevisionList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {
@@ -303,7 +303,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			}
 		}
 
-		pods, err := kube.List[corev1.PodList](ctx, r.ctl, client.MatchingLabelsSelector{
+		pods, err := kube.List[corev1.PodList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {

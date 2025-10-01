@@ -275,7 +275,7 @@ func normalizeClusterResources(ctx context.Context, testScheme *runtime.Scheme, 
 
 	clusterSelector := labels.ForCluster(cluster).AsClientSelector()
 	for _, l := range lists {
-		err := ctl.List(ctx, l)
+		err := ctl.List(ctx, cluster.Namespace, l)
 		if errors.Is(err, &meta.NoKindMatchError{}) {
 			continue
 		}

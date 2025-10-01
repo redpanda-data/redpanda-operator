@@ -168,7 +168,7 @@ func TestIntegrationChart(t *testing.T) {
 			}),
 		})
 
-		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), client.MatchingLabels{
+		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), release.Namespace, client.MatchingLabels{
 			"app.kubernetes.io/instance":  release.Name,
 			"app.kubernetes.io/component": release.Chart + "-statefulset",
 		})
@@ -433,7 +433,7 @@ func TestIntegrationChart(t *testing.T) {
 			}),
 		})
 
-		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), client.MatchingLabels{
+		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), release.Namespace, client.MatchingLabels{
 			"app.kubernetes.io/instance":  release.Name,
 			"app.kubernetes.io/component": release.Chart + "-statefulset",
 		})
@@ -473,7 +473,7 @@ func TestIntegrationChart(t *testing.T) {
 			}),
 		})
 
-		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), client.MatchingLabels{
+		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), release.Namespace, client.MatchingLabels{
 			"app.kubernetes.io/instance": release.Name,
 			"app.kubernetes.io/name":     "console",
 		})

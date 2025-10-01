@@ -207,7 +207,7 @@ func TestSyncer(t *testing.T) {
 			// Our owning namespace hasn't been removed but the other one(s)
 			// have been cleaned up. NB: envtest namespaces never get fully
 			// deleted, so we filter to Active ones.
-			nss, err := kube.List[corev1.NamespaceList](ctx, ctl, client.MatchingFields{
+			nss, err := kube.List[corev1.NamespaceList](ctx, ctl, "", client.MatchingFields{
 				"status.phase": "Active",
 			}, client.HasLabels{"owned_by"})
 			require.NoError(t, err)
@@ -215,7 +215,7 @@ func TestSyncer(t *testing.T) {
 			require.Equal(t, ns.UID, nss.Items[0].UID)
 
 			// The only left over configmap is our unowned one.
-			cms, err := kube.List[corev1.ConfigMapList](ctx, ctl, client.HasLabels{"owned_by"}, client.InNamespace(ns.Name))
+			cms, err := kube.List[corev1.ConfigMapList](ctx, ctl, ns.Name, client.HasLabels{"owned_by"})
 			require.NoError(t, err)
 			require.Len(t, cms.Items, 1)
 			require.Equal(t, "not-owned", cms.Items[0].Name)
