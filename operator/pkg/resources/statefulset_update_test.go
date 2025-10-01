@@ -163,14 +163,36 @@ func TestShouldUpdate_AnnotationChange(t *testing.T) {
 			},
 		},
 	}
-	update, err := ssres.shouldUpdate(sts, stsWithAnnotation)
+	stsChange, _, err := ssres.shouldUpdate(sts, stsWithAnnotation)
 	require.NoError(t, err)
-	require.True(t, update)
+	require.True(t, stsChange)
 
 	// same statefulset with same annotation
-	update, err = ssres.shouldUpdate(stsWithAnnotation, stsWithAnnotation)
+	stsChange, _, err = ssres.shouldUpdate(stsWithAnnotation, stsWithAnnotation)
 	require.NoError(t, err)
-	require.False(t, update)
+	require.False(t, stsChange)
+
+	ssres = StatefulSetResource{
+		nodePool: vectorizedv1alpha1.NodePoolSpecWithDeleted{
+			NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{
+				Name: "default",
+			},
+		},
+		pandaCluster: &vectorizedv1alpha1.Cluster{
+			Status: vectorizedv1alpha1.ClusterStatus{
+				Restarting: false,
+				NodePools: map[string]vectorizedv1alpha1.NodePoolStatus{
+					"default": {
+						Restarting: true,
+					},
+				},
+			},
+		},
+	}
+	// same statefulset with same annotation, but with node pool status restarting
+	_, nodePoolRestarting, err := ssres.shouldUpdate(stsWithAnnotation, stsWithAnnotation)
+	require.NoError(t, err)
+	require.True(t, nodePoolRestarting)
 }
 
 func TestPutInMaintenanceMode(t *testing.T) {

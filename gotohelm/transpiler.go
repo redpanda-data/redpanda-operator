@@ -1233,6 +1233,8 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	switch id {
 	case "sort.Strings":
 		return &BuiltInCall{Func: Literal("sortAlpha"), Arguments: args}
+	case "strings.Contains":
+		return &BuiltInCall{Func: Literal("contains"), Arguments: []Node{args[1], args[0]}}
 	case "strings.TrimSuffix":
 		return &BuiltInCall{Func: Literal("trimSuffix"), Arguments: []Node{args[1], args[0]}}
 	case "strings.TrimPrefix":
@@ -1637,7 +1639,7 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 	switch underlying := typ.Underlying().(type) {
 	case *types.Basic:
 		switch underlying.Info() {
-		case types.IsString:
+		case types.IsString, types.IsUntyped | types.IsString:
 			return Literal(`""`)
 		case types.IsInteger, types.IsUnsigned | types.IsInteger:
 			return Literal("0")

@@ -34,8 +34,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 var c client.Client
@@ -657,6 +657,18 @@ func (TestStatefulsetTLSVolumeProvider) Volumes() (
 type TestAdminTLSConfigProvider struct{}
 
 func (TestAdminTLSConfigProvider) GetTLSConfig(
+	ctx context.Context, k8sClient client.Reader,
+) (*tls.Config, error) {
+	return nil, nil
+}
+
+func (TestAdminTLSConfigProvider) GetKafkaTLSConfig(
+	ctx context.Context, k8sClient client.Reader,
+) (*tls.Config, error) {
+	return nil, nil
+}
+
+func (TestAdminTLSConfigProvider) GetSchemaTLSConfig(
 	ctx context.Context, k8sClient client.Reader,
 ) (*tls.Config, error) {
 	return nil, nil

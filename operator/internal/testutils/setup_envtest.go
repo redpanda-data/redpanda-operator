@@ -43,7 +43,18 @@ func (e *RedpandaTestEnv) StartRedpandaTestEnv(withWebhook bool) (*rest.Config, 
 			Paths: []string{filepath.Join(configPath, "webhook")},
 		}
 	}
+
 	cfg, err := e.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	// Ideally we'd plumb in testing.T here to ensure that clean up is run.
+	// This seems to run ~80% of the time which is a dramatic improvement.
+	runtime.AddCleanup(cfg, func(e *RedpandaTestEnv) {
+		_ = e.Stop()
+	}, e)
+
 	return cfg, err
 }
 

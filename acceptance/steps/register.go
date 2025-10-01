@@ -29,20 +29,33 @@ func init() {
 	framework.RegisterStep(`^there is no topic "([^"]*)" in cluster "([^"]*)"$`, thereIsNoTopic)
 	framework.RegisterStep(`^topic "([^"]*)" is successfully synced$`, topicIsSuccessfullySynced)
 	framework.RegisterStep(`^I should be able to produce and consume from "([^"]*)" in cluster "([^"]*)"$`, iShouldBeAbleToProduceAndConsumeFrom)
+	framework.RegisterStep(`I create topic "([^"]*)" in cluster "([^"]*)"`, iCreateTopicInCluster)
 
 	// User scenario steps
 	framework.RegisterStep(`^user "([^"]*)" is successfully synced$`, userIsSuccessfullySynced)
-
+	framework.RegisterStep(`^"([^"]*)" should be able to read from topic "([^"]*)" in cluster "([^"]*)"$`, userShouldBeAbleToReadFromTopicInCluster)
 	framework.RegisterStep(`^there is no user "([^"]*)" in cluster "([^"]*)"$`, thereIsNoUser)
 	framework.RegisterStep(`^there are already the following ACLs in cluster "([^"]*)":$`, thereAreAlreadyTheFollowingACLsInCluster)
 	framework.RegisterStep(`^there are the following pre-existing users in cluster "([^"]*)"$`, thereAreTheFollowingPreexistingUsersInCluster)
-
 	framework.RegisterStep(`^I create CRD-based users for cluster "([^"]*)":$`, iCreateCRDbasedUsers)
 	framework.RegisterStep(`^I delete the CRD user "([^"]*)"$`, iDeleteTheCRDUser)
-
+	framework.RegisterStep(`^there should be ACLs in the cluster "([^"]*)" for user "([^"]*)"$`, thereShouldBeACLsInTheClusterForUser)
 	framework.RegisterStep(`^"([^"]*)" should exist and be able to authenticate to the "([^"]*)" cluster$`, shouldExistAndBeAbleToAuthenticateToTheCluster)
 	framework.RegisterStep(`^"([^"]*)" should be able to authenticate to the "([^"]*)" cluster with password "([^"]*)" and mechanism "([^"]*)"$`, shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism)
-	framework.RegisterStep(`^there should be ACLs in the cluster "([^"]*)" for user "([^"]*)"$`, thereShouldBeACLsInTheClusterForUser)
+
+	// Role scenario steps
+	framework.RegisterStep(`^role "([^"]*)" is successfully synced$`, roleIsSuccessfullySynced)
+	framework.RegisterStep(`^there is no role "([^"]*)" in cluster "([^"]*)"$`, thereIsNoRole)
+	framework.RegisterStep(`^role "([^"]*)" should exist in cluster "([^"]*)"$`, roleShouldExistInCluster)
+	framework.RegisterStep(`^there should be no role "([^"]*)" in cluster "([^"]*)"$`, thereShouldBeNoRoleInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should not have member "([^"]*)" in cluster "([^"]*)"$`, roleShouldNotHaveMemberInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should have ACLs for topic pattern "([^"]*)" in cluster "([^"]*)"$`, roleShouldHaveACLsForTopicPatternInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should have no managed ACLs in cluster "([^"]*)"$`, roleShouldHaveNoManagedACLsInCluster)
+	framework.RegisterStep(`^there should be no ACLs for role "([^"]*)" in cluster "([^"]*)"$`, thereShouldBeNoACLsForRoleInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should have members "([^"]*)" in cluster "([^"]*)"$`, roleShouldHaveMembersAndInCluster)
+	framework.RegisterStep(`^I delete the CRD role "([^"]*)"$`, iDeleteTheCRDRole)
+	framework.RegisterStep(`^there is a pre-existing role "([^"]*)" in cluster "([^"]*)"$`, thereIsAPreExistingRole)
+	framework.RegisterStep(`^there should still be role "([^"]*)" in cluster "([^"]*)"$`, thereShouldStillBeRole)
 
 	// Metrics scenario steps
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)

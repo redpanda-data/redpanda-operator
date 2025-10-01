@@ -108,3 +108,15 @@ func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr ctrl.Manager
 		return requests
 	})
 }
+
+func fromSourceCluster[T client.Object, U clientList[T]](ctx context.Context, c client.Client, name string, cluster *redpandav1alpha2.Redpanda, l U) ([]T, error) {
+	list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
+	err := c.List(ctx, list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName(name), client.ObjectKeyFromObject(cluster).String()),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return list.GetItems(), nil
+}

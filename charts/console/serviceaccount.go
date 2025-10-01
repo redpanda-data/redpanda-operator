@@ -7,7 +7,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_serviceaccount.go.tpl
 package console
 
 import (
@@ -19,23 +18,19 @@ import (
 )
 
 // Create the name of the service account to use
-func ServiceAccountName(dot *helmette.Dot) string {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if values.ServiceAccount.Create {
-		if values.ServiceAccount.Name != "" {
-			return values.ServiceAccount.Name
+func ServiceAccountName(state *RenderState) string {
+	if state.Values.ServiceAccount.Create {
+		if state.Values.ServiceAccount.Name != "" {
+			return state.Values.ServiceAccount.Name
 		}
-		return Fullname(dot)
+		return state.FullName()
 	}
 
-	return helmette.Default("default", values.ServiceAccount.Name)
+	return helmette.Default("default", state.Values.ServiceAccount.Name)
 }
 
-func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.ServiceAccount.Create {
+func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
+	if !state.Values.ServiceAccount.Create {
 		return nil
 	}
 
@@ -45,11 +40,11 @@ func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        ServiceAccountName(dot),
-			Labels:      Labels(dot),
-			Namespace:   dot.Release.Namespace,
-			Annotations: values.ServiceAccount.Annotations,
+			Name:        ServiceAccountName(state),
+			Labels:      state.Labels(nil),
+			Namespace:   state.Namespace,
+			Annotations: state.Values.ServiceAccount.Annotations,
 		},
-		AutomountServiceAccountToken: ptr.To(values.ServiceAccount.AutomountServiceAccountToken),
+		AutomountServiceAccountToken: ptr.To(state.Values.ServiceAccount.AutomountServiceAccountToken),
 	}
 }

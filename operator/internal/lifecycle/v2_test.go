@@ -99,7 +99,7 @@ func TestV2ResourceClient(t *testing.T) {
 		CloudSecretsEnabled: false,
 	}
 	redpandaImage := Image{
-		Repository: "redpandadata/redpanda-operator",
+		Repository: "redpandadata/redpanda",
 		Tag:        os.Getenv("TEST_REDPANDA_VERSION"),
 	}
 	sidecarImage := Image{

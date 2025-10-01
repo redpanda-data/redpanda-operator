@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: The console integration (`console.enabled=true`) now uses the chart managed bootstrap user rather than the first user from `auth.sasl.users`.
+time: 2025-09-08T11:24:22.515452-04:00

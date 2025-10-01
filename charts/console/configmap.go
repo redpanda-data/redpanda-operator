@@ -7,7 +7,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_configmap.go.tpl
 package console
 
 import (
@@ -19,15 +18,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func ConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.ConfigMap.Create {
+func ConfigMap(state *RenderState) *corev1.ConfigMap {
+	if !state.Values.ConfigMap.Create {
 		return nil
 	}
 
 	data := map[string]string{
-		"config.yaml": fmt.Sprintf("# from .Values.config\n%s\n", helmette.Tpl(dot, helmette.ToYaml(values.Config), dot)),
+		"config.yaml": fmt.Sprintf("# from .Values.config\n%s\n", state.Template(helmette.ToYaml(state.Values.Config))),
 	}
 
 	return &corev1.ConfigMap{
@@ -36,9 +33,9 @@ func ConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    Labels(dot),
-			Name:      Fullname(dot),
-			Namespace: dot.Release.Namespace,
+			Labels:    state.Labels(nil),
+			Name:      state.FullName(),
+			Namespace: state.Namespace,
 		},
 		Data: data,
 	}

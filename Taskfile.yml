@@ -51,7 +51,7 @@ tasks:
       - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
       - task: charts:download-dependencies
         vars: { CHART: redpanda/chart }
-      - helm lint --strict ./charts/console ./charts/connectors ./charts/redpanda/chart ./operator/chart/
+      - helm lint --strict ./charts/console/chart ./charts/connectors ./charts/redpanda/chart ./operator/chart/
       - actionlint
 
   lint-fix:
@@ -169,7 +169,7 @@ tasks:
         sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
       PKG: '{{ .PKG | default ._PKG }}'
     cmds:
-    - '{{.GO_TEST_RUNNER}} {{.CLI_ARGS}} {{.PKG}}'
+    - '{{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}'
 
   test:integration:
     desc: "Run all integration tests (~90m)"
@@ -186,7 +186,7 @@ tasks:
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
-        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run {{.RUN}} -timeout 35m -tags integration'
+        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run {{.RUN}} -timeout 60m -tags integration'
 
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"

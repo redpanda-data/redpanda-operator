@@ -10,7 +10,7 @@ import (
 	"slices"
 	"strings"
 
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 // TemplateBootstrapYaml expands the bootstrap file

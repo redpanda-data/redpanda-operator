@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 // Cluster is a generic interface for a pointer to a Kubernetes object
@@ -200,7 +201,9 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 				return err
 			}
 
-			r.logger.Error(err, "WARNING no registered value for resource type found in cluster", "resourceType", resourceType.GetObjectKind().GroupVersionKind().String())
+			// the WARNING messages here get logged constantly and are fairly static containing the resource type itself
+			// so we can just use the global debouncer which debounces by error string
+			log.DebounceError(r.logger, err, "WARNING no registered value for resource type found in cluster", "resourceType", resourceType.GetObjectKind().GroupVersionKind().String())
 
 			// we have a no match error, so just drop the watch altogether
 			continue
@@ -298,7 +301,6 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			if ref == nil || ref.UID == statefulSet.GetUID() {
 				ownedRevisions = append(ownedRevisions, &revisions.Items[i])
 			}
-
 		}
 
 		pods, err := kube.List[corev1.PodList](ctx, r.ctl, client.MatchingLabelsSelector{

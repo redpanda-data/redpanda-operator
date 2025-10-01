@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Add experimental support for node pools. To enable node pool support you must install the experimental NodePool CRDs and run the controller with the --enable-v2-nodepools flag.
+time: 2025-09-04T11:02:45.817343-04:00

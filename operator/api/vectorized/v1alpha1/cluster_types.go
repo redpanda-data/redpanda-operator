@@ -22,6 +22,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+
+	clusterconfiguration "github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 const (
@@ -1328,6 +1330,20 @@ func (r *Cluster) SchemaRegistryAPITLS() *SchemaRegistryAPI {
 	return nil
 }
 
+// SchemaRegistryInternalListener returns internal listener.
+func (r *Cluster) SchemaRegistryInternalListener() *SchemaRegistryAPI {
+	if r == nil {
+		return nil
+	}
+	for i := range r.Spec.Configuration.SchemaRegistryAPI {
+		el := &r.Spec.Configuration.SchemaRegistryAPI[i]
+		if el.External == nil || !el.External.Enabled {
+			return el
+		}
+	}
+	return nil
+}
+
 // SchemaRegistryListeners returns all schema registry listeners
 func (r *Cluster) SchemaRegistryListeners() []SchemaRegistryAPI {
 	if r == nil || r.Spec.Configuration.SchemaRegistry == nil {
@@ -1661,4 +1677,24 @@ func (r *Cluster) CalculateCurrentReplicas() int32 {
 type NodePoolSpecWithDeleted struct {
 	NodePoolSpec
 	Deleted bool
+}
+
+// ToClusterConfig converts [vectorizedv1alpha1.ClusterConfigValue] to [clusterconfiguration.ClusterConfigValue].
+func (v ClusterConfigValue) ToClusterConfig() clusterconfiguration.ClusterConfigValue {
+	var externalSecretRefSelector *clusterconfiguration.ExternalSecretKeySelector
+	if v.ExternalSecretRefSelector != nil {
+		externalSecretRefSelector = &clusterconfiguration.ExternalSecretKeySelector{
+			Name:     v.ExternalSecretRefSelector.Name,
+			Optional: v.ExternalSecretRefSelector.Optional,
+		}
+	}
+
+	return clusterconfiguration.ClusterConfigValue{
+		Repr:                      (*clusterconfiguration.YAMLRepresentation)(v.Repr),
+		ConfigMapKeyRef:           v.ConfigMapKeyRef,
+		SecretKeyRef:              v.SecretKeyRef,
+		ExternalSecretRef:         v.ExternalSecretRef,
+		ExternalSecretRefSelector: externalSecretRefSelector,
+		UseRawValue:               v.UseRawValue,
+	}
 }

@@ -869,33 +869,22 @@
         - basic-test-0.basic-test.basic-test.svc.cluster.local.:9093
         - basic-test-1.basic-test.basic-test.svc.cluster.local.:9093
         - basic-test-2.basic-test.basic-test.svc.cluster.local.:9093
-        sasl:
-          enabled: false
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
       redpanda:
         adminApi:
           enabled: true
           tls:
-            caFilepath: /etc/tls/certs/default/ca.crt
-            certFilepath: ""
+            caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
             enabled: true
-            insecureSkipTlsVerify: false
-            keyFilepath: ""
           urls:
           - https://basic-test.basic-test.svc.cluster.local.:9644
       schemaRegistry:
         enabled: true
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
         urls:
         - https://basic-test-0.basic-test.basic-test.svc.cluster.local.:8081
         - https://basic-test-1.basic-test.basic-test.svc.cluster.local.:8081
@@ -907,7 +896,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -924,7 +913,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -943,8 +932,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 95614d92e730a491d386446dfa4587e418cd315341dca7cd1982535470af7d44
-          checksum/config: 3cfe51f0baef37d1fe24fbb98752c49da32c608bf8265bab411251ad63faa913
+          checksum/config: a3d974367947aee56c3c1d7882e25166b4838fe7da7d082b35e96060e3cc8533
         creationTimestamp: null
         labels:
           app.kubernetes.io/instance: basic-test
@@ -955,7 +943,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.1.0
+          image: docker.redpanda.com/redpandadata/console:v3.2.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -986,8 +974,8 @@
           - mountPath: /etc/console/configs
             name: configs
             readOnly: true
-          - mountPath: /etc/tls/certs/default
-            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs
+            name: redpanda-certificates
         securityContext:
           fsGroup: 99
           fsGroupChangePolicy: Always
@@ -997,10 +985,1449 @@
         - configMap:
             name: basic-test-console
           name: configs
-        - name: redpanda-default-cert
-          secret:
-            defaultMode: 272
-            secretName: basic-test-default-cert
+        - name: redpanda-certificates
+          projected:
+            sources:
+            - secret:
+                items:
+                - key: ca.crt
+                  path: secrets/basic-test-default-cert/ca.crt
+                name: basic-test-default-cert
+  status: {}
+-- compat-test --
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-external
+    namespace: compat-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: policy/v1
+  kind: PodDisruptionBudget
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test
+    namespace: compat-test
+  spec:
+    maxUnavailable: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: compat-test
+        app.kubernetes.io/name: redpanda
+        redpanda.com/poddisruptionbudget: compat-test
+  status:
+    currentHealthy: 0
+    desiredHealthy: 0
+    disruptionsAllowed: 0
+    expectedPods: 0
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test
+    namespace: compat-test
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+      monitoring.redpanda.com/enabled: "false"
+    name: compat-test
+    namespace: compat-test
+  spec:
+    clusterIP: None
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/name: redpanda
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test
+    namespace: compat-test
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:9644
+          - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:9093
+          - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:8081
+          - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: compat-test-pool-0.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-1.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-2.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-3.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-4.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-5.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-6.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-7.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+        - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-pool
+    namespace: compat-test
+- apiVersion: v1
+  data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-rpk
+    namespace: compat-test
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-default-selfsigned-issuer
+    namespace: compat-test
+  spec:
+    selfSigned: {}
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-default-root-issuer
+    namespace: compat-test
+  spec:
+    ca:
+      secretName: compat-test-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-external-selfsigned-issuer
+    namespace: compat-test
+  spec:
+    selfSigned: {}
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-external-root-issuer
+    namespace: compat-test
+  spec:
+    ca:
+      secretName: compat-test-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-default-root-certificate
+    namespace: compat-test
+  spec:
+    commonName: compat-test-default-root-certificate
+    duration: 43800h0m0s
+    isCA: true
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: compat-test-default-selfsigned-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: compat-test-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-external-root-certificate
+    namespace: compat-test
+  spec:
+    commonName: compat-test-external-root-certificate
+    duration: 43800h0m0s
+    isCA: true
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: compat-test-external-selfsigned-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: compat-test-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-default-cert
+    namespace: compat-test
+  spec:
+    dnsNames:
+    - compat-test-cluster.compat-test.compat-test.svc.cluster.local
+    - compat-test-cluster.compat-test.compat-test.svc
+    - compat-test-cluster.compat-test.compat-test
+    - '*.compat-test-cluster.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test-cluster.compat-test.compat-test.svc'
+    - '*.compat-test-cluster.compat-test.compat-test'
+    - compat-test.compat-test.svc.cluster.local
+    - compat-test.compat-test.svc
+    - compat-test.compat-test
+    - '*.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test.compat-test.svc'
+    - '*.compat-test.compat-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: compat-test-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: compat-test-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-external-cert
+    namespace: compat-test
+  spec:
+    dnsNames:
+    - compat-test-cluster.compat-test.compat-test.svc.cluster.local
+    - compat-test-cluster.compat-test.compat-test.svc
+    - compat-test-cluster.compat-test.compat-test
+    - '*.compat-test-cluster.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test-cluster.compat-test.compat-test.svc'
+    - '*.compat-test-cluster.compat-test.compat-test'
+    - compat-test.compat-test.svc.cluster.local
+    - compat-test.compat-test.svc
+    - compat-test.compat-test
+    - '*.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test.compat-test.svc'
+    - '*.compat-test.compat-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: compat-test-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: compat-test-external-cert
+  status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-rpk-debug-bundle
+    namespace: compat-test
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    - endpoints
+    - events
+    - limitranges
+    - persistentvolumeclaims
+    - pods
+    - pods/log
+    - replicationcontrollers
+    - resourcequotas
+    - serviceaccounts
+    - services
+    verbs:
+    - get
+    - list
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-sidecar
+    namespace: compat-test
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-rpk-debug-bundle
+    namespace: compat-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: compat-test-rpk-debug-bundle
+  subjects:
+  - kind: ServiceAccount
+    name: compat-test
+    namespace: compat-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-sidecar
+    namespace: compat-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: compat-test-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: compat-test
+    namespace: compat-test
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-sts-lifecycle
+    namespace: compat-test
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      preStopHook
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-configurator
+    namespace: compat-test
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      ADVERTISED_KAFKA_ADDRESSES=()
+
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      ADVERTISED_HTTP_ADDRESSES=()
+
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-pool-configurator
+    namespace: compat-test
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      ADVERTISED_KAFKA_ADDRESSES=()
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      ADVERTISED_HTTP_ADDRESSES=()
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-pool-fs-validator
+    namespace: compat-test
+  stringData:
+    fsValidator.sh: |-
+      set -e
+      EXPECTED_FS_TYPE=$1
+
+      DATA_DIR="/var/lib/redpanda/data"
+      TEST_FILE="testfile"
+
+      echo "checking data directory exist..."
+      if [ ! -d "${DATA_DIR}" ]; then
+        echo "data directory does not exists, exiting"
+        exit 1
+      fi
+
+      echo "checking filesystem type..."
+      FS_TYPE=$(df -T $DATA_DIR  | tail -n +2 | awk '{print $2}')
+
+      if [ "${FS_TYPE}" != "${EXPECTED_FS_TYPE}" ]; then
+        echo "file system found to be ${FS_TYPE} when expected ${EXPECTED_FS_TYPE}"
+        exit 1
+      fi
+
+      echo "checking if able to create a test file..."
+
+      touch ${DATA_DIR}/${TEST_FILE}
+      result=$(touch ${DATA_DIR}/${TEST_FILE} 2> /dev/null; echo $?)
+      if [ "${result}" != "0" ]; then
+        echo "could not write testfile, may not have write permission"
+        exit 1
+      fi
+
+      echo "checking if able to delete a test file..."
+
+      result=$(rm ${DATA_DIR}/${TEST_FILE} 2> /dev/null; echo $?)
+      if [ "${result}" != "0" ]; then
+        echo "could not delete testfile"
+        exit 1
+      fi
+
+      echo "passed"
+  type: Opaque
+- apiVersion: v1
+  data:
+    config.yaml: |
+      # from .Values.config
+      kafka:
+        brokers:
+        - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:9093
+        - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:9093
+        tls:
+          caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
+          enabled: true
+      redpanda:
+        adminApi:
+          enabled: true
+          tls:
+            caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
+            enabled: true
+          urls:
+          - https://compat-test.compat-test.svc.cluster.local.:9644
+      schemaRegistry:
+        enabled: true
+        tls:
+          caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
+          enabled: true
+        urls:
+        - https://compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:8081
+        - https://compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:8081
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: console
+      app.kubernetes.io/version: v3.2.2
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: console-3.1.0
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-console
+    namespace: compat-test
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: console
+      app.kubernetes.io/version: v3.2.2
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: console-3.1.0
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-console
+    namespace: compat-test
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: compat-test
+        app.kubernetes.io/name: console
+    strategy: {}
+    template:
+      metadata:
+        annotations:
+          checksum/config: b5ebe68cfb837a39b35d01298571830506efbee4eb27a57d95b68da52a2af45f
+        creationTimestamp: null
+        labels:
+          app.kubernetes.io/instance: compat-test
+          app.kubernetes.io/name: console
+      spec:
+        affinity: {}
+        automountServiceAccountToken: false
+        containers:
+        - args:
+          - --config.filepath=/etc/console/configs/config.yaml
+          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: console
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          securityContext:
+            runAsNonRoot: true
+          volumeMounts:
+          - mountPath: /etc/console/configs
+            name: configs
+            readOnly: true
+          - mountPath: /etc/tls/certs
+            name: redpanda-certificates
+        securityContext:
+          fsGroup: 99
+          fsGroupChangePolicy: Always
+          runAsUser: 99
+        serviceAccountName: compat-test-console
+        volumes:
+        - configMap:
+            name: compat-test-console
+          name: configs
+        - name: redpanda-certificates
+          projected:
+            sources:
+            - secret:
+                items:
+                - key: ca.crt
+                  path: secrets/compat-test-default-cert/ca.crt
+                name: compat-test-default-cert
   status: {}
 -- nodepool-basic-test --
 - apiVersion: v1
@@ -1185,6 +2612,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -1248,7 +2679,10 @@
             address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
         - host:
-            address: nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
       rpk:
         additional_start_flags:
@@ -1261,7 +2695,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
@@ -1270,7 +2705,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
@@ -1279,7 +2715,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1315,6 +2752,10 @@
         - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
   kind: ConfigMap
   metadata:
@@ -1371,6 +2812,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
       redpanda:
         admin:
         - address: 0.0.0.0
@@ -1434,7 +2879,10 @@
             address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
         - host:
-            address: nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
             port: 33145
       rpk:
         additional_start_flags:
@@ -1447,7 +2895,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
@@ -1456,7 +2905,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
@@ -1465,7 +2915,8 @@
           - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-          - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1502,6 +2953,10 @@
           port: 9093
         - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -1516,7 +2971,207 @@
       helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test-basic
+    name: nodepool-basic-test-basic-a
+    namespace: nodepool-basic-test
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+        - host:
+            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: nodepool-basic-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: nodepool-basic-test
+      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
+    name: nodepool-basic-test-basic-b
     namespace: nodepool-basic-test
 - apiVersion: v1
   data:
@@ -2071,7 +3726,57 @@
       helm.sh/chart: redpanda-25.1.1-beta3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test-basic-configurator
+    name: nodepool-basic-test-basic-a-configurator
+    namespace: nodepool-basic-test
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      ADVERTISED_KAFKA_ADDRESSES=()
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}")
+
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      ADVERTISED_HTTP_ADDRESSES=()
+
+      PREFIX_TEMPLATE=""
+      ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
+
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    creationTimestamp: null
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: nodepool-basic-test
+      helm.sh/chart: redpanda-25.1.1-beta3
+      helm.toolkit.fluxcd.io/name: nodepool-basic-test
+      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-configurator
     namespace: nodepool-basic-test
   stringData:
     configurator.sh: |-
@@ -2115,38 +3820,30 @@
         - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        - nodepool-basic-test-basic-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        sasl:
-          enabled: false
+        - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+        - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
       redpanda:
         adminApi:
           enabled: true
           tls:
-            caFilepath: /etc/tls/certs/default/ca.crt
-            certFilepath: ""
+            caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
             enabled: true
-            insecureSkipTlsVerify: false
-            keyFilepath: ""
           urls:
           - https://nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
       schemaRegistry:
         enabled: true
         tls:
-          caFilepath: /etc/tls/certs/default/ca.crt
-          certFilepath: ""
+          caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
           enabled: true
-          insecureSkipTlsVerify: false
-          keyFilepath: ""
         urls:
         - https://nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
         - https://nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
         - https://nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+        - https://nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+        - https://nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
   kind: ConfigMap
   metadata:
     creationTimestamp: null
@@ -2154,7 +3851,7 @@
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
@@ -2171,7 +3868,7 @@
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.1.0
+      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
@@ -2190,8 +3887,7 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: c8747073736e14d3b974e100efbe332bd74486e237db9575ae7d656b9e96d23a
-          checksum/config: d9fc3f8f7b446030171b8864f5b0662576038207416c2fc15e7a21941bf609eb
+          checksum/config: c85e1818140a237fff8a40f9f195dade651942089e551fb9a093fb5e82bd14ec
         creationTimestamp: null
         labels:
           app.kubernetes.io/instance: nodepool-basic-test
@@ -2202,7 +3898,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.1.0
+          image: docker.redpanda.com/redpandadata/console:v3.2.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -2233,8 +3929,8 @@
           - mountPath: /etc/console/configs
             name: configs
             readOnly: true
-          - mountPath: /etc/tls/certs/default
-            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs
+            name: redpanda-certificates
         securityContext:
           fsGroup: 99
           fsGroupChangePolicy: Always
@@ -2244,8 +3940,12 @@
         - configMap:
             name: nodepool-basic-test-console
           name: configs
-        - name: redpanda-default-cert
-          secret:
-            defaultMode: 272
-            secretName: nodepool-basic-test-default-cert
+        - name: redpanda-certificates
+          projected:
+            sources:
+            - secret:
+                items:
+                - key: ca.crt
+                  path: secrets/nodepool-basic-test-default-cert/ca.crt
+                name: nodepool-basic-test-default-cert
   status: {}

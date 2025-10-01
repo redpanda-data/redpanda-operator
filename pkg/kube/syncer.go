@@ -52,6 +52,8 @@ type Syncer struct {
 }
 
 func (s *Syncer) Sync(ctx context.Context) ([]Object, error) {
+	logger := log.FromContext(ctx)
+
 	toSync, err := s.toSync(ctx)
 	if err != nil {
 		return nil, err
@@ -97,14 +99,17 @@ func (s *Syncer) Sync(ctx context.Context) ([]Object, error) {
 					return nil, err
 				}
 
-				log.Error(ctx, err, "WARNING no registered value for resource type", "gvk", gvk.String(), "key", AsKey(obj))
+				// the WARNING messages here get logged constantly and are fairly static containing the resource type itself
+				// so we can just use the global debouncer which debounces by error string
+				log.DebounceError(logger, err, "WARNING no registered value for resource type", "gvk", gvk.String(), "key", AsKey(obj))
 				continue
 			}
 			return nil, err
 		}
 	}
 
-	for _, obj := range toDelete {
+	for key, obj := range toDelete {
+		log.Info(ctx, "GC'ing object", "key", key.key.String(), "gvk", key.gvk.String())
 		if err := s.Ctl.Delete(ctx, obj); err != nil {
 			return nil, err
 		}
@@ -137,6 +142,8 @@ func (s *Syncer) DeleteAll(ctx context.Context) (bool, error) {
 }
 
 func (s *Syncer) listInPurview(ctx context.Context) ([]Object, error) {
+	logger := log.FromContext(ctx)
+
 	var objects []Object
 	for _, t := range s.Renderer.Types() {
 		gvk, err := GVKFor(s.Ctl.Scheme(), t)
@@ -150,7 +157,9 @@ func (s *Syncer) listInPurview(ctx context.Context) ([]Object, error) {
 			// cert-manager, don't block the entire sync process. Instead we'll
 			// log a warning and move on.
 			if meta.IsNoMatchError(err) {
-				log.Error(ctx, err, "WARNING no registered value for resource type", "gvk", gvk.String())
+				// the WARNING messages here get logged constantly and are fairly static containing the resource type itself
+				// so we can just use the global debouncer which debounces by error string
+				log.DebounceError(logger, err, "WARNING no registered value for resource type", "gvk", gvk.String())
 				continue
 			}
 			return nil, err
@@ -255,6 +264,13 @@ func (s *Syncer) applyOwnerReferences(obj Object) error {
 
 	// no owners on namespace scoped items.
 	if scope == meta.RESTScopeNameRoot {
+		// Cluster scoped objects should NOT have a namespace specified. If they
+		// do, they'll be incorrectly deleted due to their ObjectKey containing a
+		// Namespace and the Kubernetes version not containing a Namespace.
+		// Validate there here to prevent confusing and unexpected behavior.
+		if obj.GetNamespace() != "" {
+			return errors.Newf("cluster scoped object incorrectly has namespace set: %T %s", obj, AsKey(obj))
+		}
 		return nil
 	}
 

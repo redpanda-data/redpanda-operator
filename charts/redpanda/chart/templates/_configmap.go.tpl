@@ -5,7 +5,7 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $cms := (list (get (fromJson (include "redpanda.RedpandaConfigMap" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
+{{- $cms := (list (get (fromJson (include "redpanda.RedpandaConfigMap" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
 {{- range $_, $set := $state.Pools -}}
 {{- $cms = (concat (default (list) $cms) (list (get (fromJson (include "redpanda.RedpandaConfigMap" (dict "a" (list $state $set)))) "r"))) -}}
 {{- end -}}
@@ -330,7 +330,7 @@
 {{- $port := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $bl := (get (fromJson (include "redpanda.brokersFor" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)) $port)))) "r") -}}
+{{- $bl := (get (fromJson (include "redpanda.brokersFor" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)) $port)))) "r") -}}
 {{- range $_, $set := $state.Pools -}}
 {{- $bl = (concat (default (list) $bl) (default (list) (get (fromJson (include "redpanda.brokersFor" (dict "a" (list $state $set $port)))) "r"))) -}}
 {{- end -}}
@@ -412,8 +412,8 @@
 {{- end -}}
 {{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $state.Values.tls)))) "r")) -}}
 {{- if $tls.requireClientAuth -}}
-{{- $_ := (set $result "cert_file" (printf "%s/%s-client/tls.crt" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
-{{- $_ := (set $result "key_file" (printf "%s/%s-client/tls.key" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
+{{- $_ := (set $result "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
+{{- $_ := (set $result "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}
@@ -433,8 +433,8 @@
 {{- end -}}
 {{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $state.Values.tls)))) "r")) -}}
 {{- if $tls.requireClientAuth -}}
-{{- $_ := (set $result "cert_file" (printf "%s/%s-client/tls.crt" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
-{{- $_ := (set $result "key_file" (printf "%s/%s-client/tls.key" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
+{{- $_ := (set $result "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
+{{- $_ := (set $result "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}
@@ -454,8 +454,8 @@
 {{- end -}}
 {{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $state.Values.tls)))) "r")) -}}
 {{- if $tls.requireClientAuth -}}
-{{- $_ := (set $result "cert_file" (printf "%s/%s-client/tls.crt" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
-{{- $_ := (set $result "key_file" (printf "%s/%s-client/tls.key" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
+{{- $_ := (set $result "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
+{{- $_ := (set $result "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}
@@ -468,8 +468,8 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $brokerList := (list) -}}
-{{- range $_, $i := untilStep (((0 | int) | int)|int) (($state.Values.statefulset.replicas | int)|int) (1|int) -}}
-{{- $brokerList = (concat (default (list) $brokerList) (list (dict "address" (printf "%s-%d.%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $i (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) "port" ($state.Values.listeners.kafka.port | int)))) -}}
+{{- range $_, $broker := (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state -1)))) "r") -}}
+{{- $brokerList = (concat (default (list) $brokerList) (list (dict "address" $broker "port" ($state.Values.listeners.kafka.port | int)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -479,8 +479,8 @@
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.kafka.tls $state.Values.tls)))) "r") -}}
 {{- $brokerTLS = (dict "enabled" true "require_client_auth" $kafkaTLS.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $kafkaTLS $state.Values.tls)))) "r")) -}}
 {{- if $kafkaTLS.requireClientAuth -}}
-{{- $_ := (set $brokerTLS "cert_file" (printf "%s/%s-client/tls.crt" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
-{{- $_ := (set $brokerTLS "key_file" (printf "%s/%s-client/tls.key" "/etc/tls/certs" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) -}}
+{{- $_ := (set $brokerTLS "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $kafkaTLS $state.Values.tls)))) "r"))) -}}
+{{- $_ := (set $brokerTLS "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $kafkaTLS $state.Values.tls)))) "r"))) -}}
 {{- end -}}
 {{- end -}}
 {{- $cfg := (dict "brokers" $brokerList) -}}
@@ -573,9 +573,8 @@
 {{- (dict "r" (dict)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $certName := $r.tls.cert -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "enabled" true "cert_file" (printf "%s/%s/tls.crt" "/etc/tls/certs" $certName) "key_file" (printf "%s/%s/tls.key" "/etc/tls/certs" $certName) "require_client_auth" $r.tls.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $r.tls $state.Values.tls)))) "r"))) | toJson -}}
+{{- (dict "r" (dict "enabled" true "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $r.tls $state.Values.tls)))) "r")) "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $r.tls $state.Values.tls)))) "r")) "require_client_auth" $r.tls.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $r.tls $state.Values.tls)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -601,7 +600,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "name" "internal" "enabled" true "cert_file" (printf "%s/%s/tls.crt" "/etc/tls/certs" $internal.cert) "key_file" (printf "%s/%s/tls.key" "/etc/tls/certs" $internal.cert) "require_client_auth" $internal.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $internal $tls)))) "r"))) | toJson -}}
+{{- (dict "r" (dict "name" "internal" "enabled" true "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $internal $tls)))) "r")) "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $internal $tls)))) "r")) "require_client_auth" $internal.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $internal $tls)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -624,17 +623,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_672_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_14 := (index $_672_value_14_ok_15 0) -}}
-{{- $ok_15 := (index $_672_value_14_ok_15 1) -}}
+{{- $_670_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_14 := (index $_670_value_14_ok_15 0) -}}
+{{- $ok_15 := (index $_670_value_14_ok_15 1) -}}
 {{- if $ok_15 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_14) false (hasKey $enabledOptions $value_14)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_679_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_16 := (index $_679_value_16_ok_17 0) -}}
-{{- $ok_17 := (index $_679_value_16_ok_17 1) -}}
+{{- $_677_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_16 := (index $_677_value_16_ok_17 0) -}}
+{{- $ok_17 := (index $_677_value_16_ok_17 1) -}}
 {{- if $ok_17 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_16) false (hasKey $enabledOptions $value_16)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}

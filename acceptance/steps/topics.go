@@ -39,6 +39,10 @@ func thereIsNoTopic(ctx context.Context, topic, cluster string) {
 	clientsForCluster(ctx, cluster).ExpectNoTopic(ctx, topic)
 }
 
+func iCreateTopicInCluster(ctx context.Context, topic, cluster string) {
+	clientsForCluster(ctx, cluster).CreateTopic(ctx, topic)
+}
+
 func iShouldBeAbleToProduceAndConsumeFrom(ctx context.Context, t framework.TestingT, topic, cluster string) {
 	payload := []byte("test")
 

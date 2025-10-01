@@ -79,6 +79,8 @@ cloud_storage_segment_max_upload_interval_sec: 1800
 default_topic_partitions: 3
 enable_idempotence: true
 enable_rack_awareness: true
+internal_topic_replication_factor: 3
+kafka_nodelete_topics: [_internal_connectors_configs _internal_connectors_offsets _internal_connectors_status _audit __consumer_offsets _redpanda_e2e_probe _schemas]
 log_segment_size: 536870912
 EOF
 )

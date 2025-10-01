@@ -7,28 +7,23 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_ingress.go.tpl
 package console
 
 import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Ingress.Enabled {
+func Ingress(state *RenderState) *networkingv1.Ingress {
+	if !state.Values.Ingress.Enabled {
 		return nil
 	}
 
 	var tls []networkingv1.IngressTLS
-	for _, t := range values.Ingress.TLS {
+	for _, t := range state.Values.Ingress.TLS {
 		var hosts []string
 		for _, host := range t.Hosts {
-			hosts = append(hosts, helmette.Tpl(dot, host, dot))
+			hosts = append(hosts, state.Template(host))
 		}
 		tls = append(tls, networkingv1.IngressTLS{
 			SecretName: t.SecretName,
@@ -37,7 +32,7 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 	}
 
 	var rules []networkingv1.IngressRule
-	for _, host := range values.Ingress.Hosts {
+	for _, host := range state.Values.Ingress.Hosts {
 		var paths []networkingv1.HTTPIngressPath
 		for _, path := range host.Paths {
 			paths = append(paths, networkingv1.HTTPIngressPath{
@@ -45,9 +40,9 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 				PathType: path.PathType,
 				Backend: networkingv1.IngressBackend{
 					Service: &networkingv1.IngressServiceBackend{
-						Name: Fullname(dot),
+						Name: state.FullName(),
 						Port: networkingv1.ServiceBackendPort{
-							Number: values.Service.Port,
+							Number: state.Values.Service.Port,
 						},
 					},
 				},
@@ -55,7 +50,7 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 		}
 
 		rules = append(rules, networkingv1.IngressRule{
-			Host: helmette.Tpl(dot, host.Host, dot),
+			Host: state.Template(host.Host),
 			IngressRuleValue: networkingv1.IngressRuleValue{
 				HTTP: &networkingv1.HTTPIngressRuleValue{
 					Paths: paths,
@@ -70,13 +65,13 @@ func Ingress(dot *helmette.Dot) *networkingv1.Ingress {
 			APIVersion: "networking.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        Fullname(dot),
-			Labels:      Labels(dot),
-			Namespace:   dot.Release.Namespace,
-			Annotations: values.Ingress.Annotations,
+			Name:        state.FullName(),
+			Labels:      state.Labels(nil),
+			Namespace:   state.Namespace,
+			Annotations: state.Values.Ingress.Annotations,
 		},
 		Spec: networkingv1.IngressSpec{
-			IngressClassName: values.Ingress.ClassName,
+			IngressClassName: state.Values.Ingress.ClassName,
 			TLS:              tls,
 			Rules:            rules,
 		},

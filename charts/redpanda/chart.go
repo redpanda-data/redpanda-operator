@@ -25,8 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -38,7 +38,7 @@ var (
 	Scheme = runtime.NewScheme()
 
 	// Chart is the go version of the redpanda helm chart.
-	Chart = gotohelm.MustLoad(chart.ChartFiles, render, console.Chart)
+	Chart = gotohelm.MustLoad(redpandachart.ChartFiles, render, consolechart.Chart)
 )
 
 // Types returns a slice containing the set of all [kube.Object] types that

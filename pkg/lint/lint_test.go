@@ -16,15 +16,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
-	"slices"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/module"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -143,66 +140,71 @@ func unmarshalFileInto[T any](t *testing.T, name string) T {
 	return out
 }
 
-// TestGoModLint parses most go.mod files in this repository and verifies that:
-//   - go directive is equal to runtime version.
-//   - No replace directives specifying paths are present (with exceptions).
-//   - All dependencies on modules in this repo reference either a git tag or a
-//     commit reachable from main or release/*.
+// TestGoModLint parses most go.mod files in this repository and verifies that
+// intra-repository module dependencies follow the allowed model. This ensures
+// consistent behavior with or without go.mod and prevent technically
+// permissible circular dependencies.
 func TestGoModLint(t *testing.T) {
 	const modPrefix = "github.com/redpanda-data/redpanda-operator/"
 
-	permittedReplaces := map[string][]string{
-		modPrefix + "harpoon": {modPrefix + "pkg"},
+	// Gotohelm is only ever hosted in the main branch. It is NOT replaced
+	// within any of our modules.
 
-		// acceptance is exempt as it's just a runner for the harpoon module.
-		// (harpoon could be moved into acceptance to resolve this).
-		modPrefix + "acceptance": {
-			modPrefix + "charts/redpanda/v25",
-			modPrefix + "harpoon",
-			modPrefix + "operator",
-			modPrefix + "pkg",
+	// module -> allowed deps -> replace required.
+	localDeps := map[string]map[string]bool{
+		// Connectors is mildly abandoned. For that reason we don't both
+		// enforcing replacement rules.
+		modPrefix + "charts/connectors": {
+			modPrefix + "pkg":      false,
+			modPrefix + "gotohelm": false,
 		},
 
-		// gotohelm is exempt because it's a very loose wrapper around pkg to
-		// expose ./pkg/gotohelm as CLI. (pkg/gotohelm could be re-homed to
-		// resolve this).
-		modPrefix + "gotohelm": {modPrefix + "pkg"},
+		modPrefix + "charts/console/v3": {
+			modPrefix + "pkg":      true,
+			modPrefix + "gotohelm": false,
+		},
 
-		// gen is exempt from this rule because it's an internal static file
-		// generator. The invocation `gen schema` uses reflection on Charts'
-		// Value types that need to be up to date. (Generation could be moved
-		// into their respective charts to resolve this).
+		modPrefix + "charts/redpanda/v25": {
+			modPrefix + "charts/console/v3": true,
+			modPrefix + "gotohelm":          false,
+			modPrefix + "pkg":               true,
+		},
+
+		// To allow go run'ing  gotohelm, it does not use replace directives.
+		modPrefix + "gotohelm": {
+			modPrefix + "pkg": false,
+		},
+
+		modPrefix + "harpoon": {
+			modPrefix + "pkg": true,
+		},
+
+		modPrefix + "acceptance": {
+			modPrefix + "charts/console/v3":   true,
+			modPrefix + "charts/redpanda/v25": true,
+			modPrefix + "harpoon":             true,
+			modPrefix + "operator":            true,
+			modPrefix + "pkg":                 true,
+			modPrefix + "gotohelm":            false,
+		},
+
 		modPrefix + "gen": {
-			modPrefix + "charts/console/v3",
-			modPrefix + "charts/redpanda/v25",
-			modPrefix + "operator",
-			modPrefix + "pkg",
+			modPrefix + "charts/console/v3":   true,
+			modPrefix + "charts/redpanda/v25": true,
+			modPrefix + "gotohelm":            false,
+			modPrefix + "operator":            true,
+			modPrefix + "pkg":                 true,
 		},
 
 		modPrefix + "operator": {
-			modPrefix + "charts/redpanda/v25",
-			modPrefix + "pkg",
+			// An older version of console is used for tests as it's the API
+			// used by the v1alpha2 CRD.
+			modPrefix + "charts/console":      false,
+			modPrefix + "charts/console/v3":   true,
+			modPrefix + "charts/redpanda/v25": true,
+			modPrefix + "gotohelm":            false,
+			modPrefix + "pkg":                 true,
 		},
-	}
-
-	// This could also be done with go work sync but go.work causes many other
-	// pains :(.
-	workspaceWideVersions := map[string]string{
-		"github.com/Masterminds/semver/v3": "v3.3.1",
-		"github.com/Masterminds/sprig/v3":  "v3.3.0",
-		"helm.sh/helm/v3":                  "v3.18.5",
-		"k8s.io/api":                       "v0.33.3",
-		"k8s.io/apiextensions-apiserver":   "v0.33.3",
-		"k8s.io/apimachinery":              "v0.33.3",
-		"k8s.io/apiserver":                 "v0.33.3",
-		"k8s.io/cli-runtime":               "v0.33.3",
-		"k8s.io/client-go":                 "v0.33.3",
-		"k8s.io/component-base":            "v0.33.3",
-		"k8s.io/component-helpers":         "v0.33.3",
-		"k8s.io/kubectl":                   "v0.33.3",
-		"k8s.io/utils":                     "v0.0.0-20250502105355-0f33e8f1c979",
-		"sigs.k8s.io/controller-runtime":   "v0.20.4",
-		"sigs.k8s.io/yaml":                 "v1.5.0",
 	}
 
 	modPaths, err := filepath.Glob("../../*/go.mod")
@@ -226,107 +228,35 @@ func TestGoModLint(t *testing.T) {
 	}
 
 	for _, modFile := range modFiles {
-		assert.Equalf(t, runtime.Version()[2:], modFile.Go.Version, "%s's go directive should be match runtime.Version(): %q", modFile.Module.Mod.Path, runtime.Version()[2:])
-
+		localReferences := map[string]struct{}{}
 		for _, r := range modFile.Require {
-			if strings.HasPrefix(r.Mod.Path, modPrefix) {
-				assertPresentInMainOrRelease(t, modFile, r.Mod)
+			if !strings.HasPrefix(r.Mod.Path, modPrefix) {
+				continue
 			}
+			localReferences[r.Mod.Path] = struct{}{}
+		}
 
-			if version, ok := workspaceWideVersions[r.Mod.Path]; ok {
-				assert.Equalf(t, version, r.Mod.Version, `
-%s MUST be %s across the all go.mod's in this repository.
-
-	%s is using %s
-
-Quick Fixes:
-
-	go get %s@%s
-	go mod edit -require=%s@%s
-	%s %s
-
-If this was an intentional version change, apply it to all go.mod's and update the workspaceWideVersions variable in this linter.
-`, r.Mod.Path, version, modFile.Module.Mod.Path, r.Mod.Version, r.Mod.Path, version, r.Mod.Path, version, r.Mod.Path, version)
+		for localref := range localReferences {
+			if _, ok := localDeps[modFile.Module.Mod.Path][localref]; ok {
+				continue
 			}
+			t.Errorf("Dependency not permitted:\n%s => %s\n\n", modFile.Module.Mod.Path, localref)
 		}
 
 		// For replaces, only check the replacement as we may not have much
 		// choice about the decided version.
 		for _, r := range modFile.Replace {
-			if strings.HasPrefix(r.New.Path, modPrefix) {
-				assertPresentInMainOrRelease(t, modFile, r.New)
-			}
-		}
-
-		for _, r := range modFile.Replace {
-			if !modfile.IsDirectoryPath(r.New.Path) {
+			if !strings.HasPrefix(r.Old.Path, modPrefix) {
 				continue
 			}
+			delete(localReferences, r.Old.Path)
+		}
 
-			if slices.Contains(permittedReplaces[modFile.Module.Mod.Path], r.Old.Path) {
+		for localref := range localReferences {
+			if !localDeps[modFile.Module.Mod.Path][localref] {
 				continue
 			}
-
-			t.Errorf(`
-Replace directives specifying paths are not allowed.
-
-	%s: %q => %q
-
-A go.work may be used to test local changes.
-Cross module changes MUST be performed via multiple commits (PRs) to main or release/*.
-
-`, modFile.Module.Mod, r.Old.Path, r.New.Path)
+			t.Errorf("Dependency MUST have replace direct specified in go.mod:\n%s => %s\n\n", modFile.Module.Mod.Path, localref)
 		}
 	}
-}
-
-func assertPresentInMainOrRelease(t *testing.T, modFile *modfile.File, version module.Version) {
-	// Versions come in the form v1.2.3 OR
-	// v0.0.0-20250122184213-86ba034147e9 v1.2.3 must be a tag in the
-	// git repo, so no need to check that. Otherwise, we'll extract the
-	// SHA and assert that the commit is in the main or release/*
-	// branches.
-	spl := strings.Split(version.Version, "-")
-	if len(spl) != 3 {
-		return
-	}
-
-	// Sometimes a version is all zeros due to a replace directive. Skip those
-	// as they'll be checked by the replace directive checks.
-	if spl[2] == "000000000000" {
-		return
-	}
-
-	if !presentInMainOrRelease(t, spl[2]) {
-		t.Errorf(`
-Dependencies on commits from github.com/redpanda-data/redpanda-operator modules MUST be present in main, release/*, or be a git tag.
-
-%s: %q
-
-%s could not be resolved via git merge-base --is-ancestor %s <acceptable-branches>
-
-`, modFile.Module.Mod.Path, version.String(), spl[2], spl[2])
-	}
-}
-
-func presentInMainOrRelease(t *testing.T, shortSha string) bool {
-	isAncestor := func(ancestor, commitish string) bool {
-		output, err := exec.Command("git", "merge-base", "--is-ancestor", ancestor, commitish).CombinedOutput()
-		switch err := err.(type) {
-		case nil:
-			return true // Success!
-		case *exec.ExitError:
-			// merge-base exits 1 if everything worked and the result is
-			// "no".
-			if err.ExitCode() == 1 {
-				return false
-			}
-			t.Fatalf("`git merge-base --is-ancestor %s %s` failed with unexpected code: %d\noutput: %s", ancestor, commitish, err.ExitCode(), output)
-			panic("unreachable")
-		default:
-			require.NoError(t, err)
-			panic("unreachable")
-		}
-	}
-	return isAncestor(shortSha, "main") || isAncestor(shortSha, "origin/release/v2.4.x")
 }

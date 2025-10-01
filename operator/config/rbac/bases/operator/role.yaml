@@ -26,11 +26,7 @@ rules:
   - events
   verbs:
   - create
-  - get
-  - list
   - patch
-  - update
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -164,6 +160,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -175,6 +172,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -186,6 +184,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -264,7 +263,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters
-  - consoles
   verbs:
   - create
   - delete
@@ -277,7 +275,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/finalizers
-  - consoles/finalizers
   verbs:
   - patch
   - update
@@ -285,7 +282,6 @@ rules:
   - redpanda.vectorized.io
   resources:
   - clusters/status
-  - consoles/status
   verbs:
   - get
   - patch

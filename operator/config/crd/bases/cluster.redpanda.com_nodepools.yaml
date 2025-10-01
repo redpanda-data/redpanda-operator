@@ -16,7 +16,14 @@ spec:
     singular: nodepool
   scope: Namespaced
   versions:
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Bound")].status
+      name: Bound
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Deployed")].status
+      name: Deployed
+      type: string
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         properties:
@@ -38,14 +45,21 @@ spec:
           metadata:
             type: object
           spec:
+            description: |-
+              NodePoolSpec contains the node pool spec for the given node pool.
+              Note that the defaulting behavior comes from the underlying Redpanda
+              chart renderer, the attributes specified here will get merged in and
+              override the defaults.
             properties:
               additionalRedpandaCmdFlags:
+                description: 'Chart default: []'
                 items:
                   type: string
                 type: array
               additionalSelectorLabels:
                 additionalProperties:
                   type: string
+                description: 'Chart default: {}'
                 type: object
               clusterRef:
                 description: ClusterRef represents a reference to a cluster that is
@@ -68,8 +82,10 @@ spec:
                 - name
                 type: object
               image:
-                description: RedpandaImage configures the Redpanda container image
-                  settings in the Helm values.
+                description: |-
+                  Default:
+                      repository: docker.redpanda.com/redpandadata/redpanda
+                      tag: {{.redpandaVersion}}
                 properties:
                   pullPolicy:
                     description: Specifies the strategy used for pulling images from
@@ -83,8 +99,10 @@ spec:
                     type: string
                 type: object
               initContainerImage:
-                description: InitContainerImage configures the init container image
-                  used to perform initial setup tasks before the main containers start.
+                description: |-
+                  Chart default:
+                      repository: busybox
+                      tag: latest
                 properties:
                   repository:
                     type: string
@@ -96,6 +114,7 @@ spec:
                   configurator:
                     properties:
                       additionalCLIArgs:
+                        description: 'Chart default: []'
                         items:
                           type: string
                         type: array
@@ -103,19 +122,48 @@ spec:
                   fsValidator:
                     properties:
                       enabled:
+                        description: 'Chart default: false'
                         type: boolean
                       expectedFS:
+                        description: 'Chart default: xfs'
                         type: string
                     type: object
                   setDataDirOwnership:
                     properties:
                       enabled:
+                        description: 'Chart default: false'
                         type: boolean
                     type: object
                 type: object
               podTemplate:
-                description: PodTemplate will pass label and annotation to Statefulset
-                  Pod template.
+                description: |-
+                  Chart default:
+                      labels: {}
+                      annotations: {}
+                      spec:
+                        securityContext: {}
+                        affinity:
+                          podAntiAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                            - topologyKey: kubernetes.io/hostname
+                              labelSelector:
+                                matchLabels:
+                                  "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
+                                  "app.kubernetes.io/instance":  '{{ .Release.Name }}'
+                                  "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
+                        terminationGracePeriodSeconds: 90
+                        nodeSelector: {}
+                        priorityClassName: ""
+                        tolerations: []
+                        topologySpreadConstraints:
+                        - maxSkew: 1
+                          topologyKey: topology.kubernetes.io/zone
+                          whenUnsatisfiable: ScheduleAnyway
+                          labelSelector:
+                            matchLabels:
+                              "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
+                              "app.kubernetes.io/instance":  '{{ .Release.Name }}'
+                              "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
                 properties:
                   annotations:
                     additionalProperties:
@@ -4182,11 +4230,14 @@ spec:
                     type: object
                 type: object
               replicas:
+                description: 'Chart default: 3'
                 format: int32
                 type: integer
               sidecarImage:
-                description: RedpandaImage configures the Redpanda container image
-                  settings in the Helm values.
+                description: |-
+                  Default:
+                      repository: docker.redpanda.com/redpandadata/redpanda-operator
+                      tag: {{.operatorVersion}}
                 properties:
                   pullPolicy:
                     description: Specifies the strategy used for pulling images from
@@ -4203,6 +4254,28 @@ spec:
             - clusterRef
             type: object
           status:
+            default:
+              conditions:
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Bound
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Deployed
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Quiesced
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Stable
             description: NodePoolStatus defines the observed state of any node pools
               tied to this cluster
             properties:
@@ -4269,6 +4342,12 @@ spec:
                   - type
                   type: object
                 type: array
+              deployedGeneration:
+                description: |-
+                  DeployedGeneration represents the generation of the NodePool CRD that is currently
+                  deployed as a StatefulSet
+                format: int64
+                type: integer
               desiredReplicas:
                 description: |-
                   DesiredReplicas is the number of replicas that ought to be
@@ -4312,15 +4391,6 @@ spec:
                   their node pool definitions.
                 format: int32
                 type: integer
-            required:
-            - condemnedReplicas
-            - desiredReplicas
-            - name
-            - outOfDateReplicas
-            - readyReplicas
-            - replicas
-            - runningReplicas
-            - upToDateReplicas
             type: object
         type: object
     served: true

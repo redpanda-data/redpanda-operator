@@ -11,6 +11,8 @@ package conversion
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -47,11 +49,14 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 		if err := convertV2Fields(state, &state.Values, spec); err != nil {
 			return err
 		}
-		pools, err := convertV2NodepoolsToPools(pools, defaulters)
+		renderedPools, err := convertV2NodepoolsToPools(state.Values, pools, defaulters)
 		if err != nil {
 			return err
 		}
-		state.Pools = pools
+		slices.SortStableFunc(renderedPools, func(poolA, poolB redpanda.Pool) int {
+			return strings.Compare(poolA.Name, poolB.Name)
+		})
+		state.Pools = renderedPools
 		return nil
 	})
 }
@@ -182,6 +187,16 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds = ptr.To(int64(*spec.TerminationGracePeriodSeconds))
 	}
 
+	if redpandaContainer.LivenessProbe == nil {
+		redpandaContainer.LivenessProbe = &applycorev1.ProbeApplyConfiguration{}
+	}
+	if redpandaContainer.StartupProbe == nil {
+		redpandaContainer.StartupProbe = &applycorev1.ProbeApplyConfiguration{}
+	}
+	if sidecarContainer.ReadinessProbe == nil {
+		sidecarContainer.ReadinessProbe = &applycorev1.ProbeApplyConfiguration{}
+	}
+
 	if err := convertJSONNotNil(spec.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
 		return err
 	}
@@ -191,12 +206,14 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 	if err := convertJSONNotNil(spec.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
 		return err
 	}
+
 	if err := convertAndAppendJSONNotNil(spec.Tolerations, &values.Statefulset.PodTemplate.Spec.Tolerations); err != nil {
 		return err
 	}
 	if err := convertAndAppendJSONNotNil(spec.TopologySpreadConstraints, &values.Statefulset.PodTemplate.Spec.TopologySpreadConstraints); err != nil {
 		return err
 	}
+
 	if values.Statefulset.PodTemplate.Spec.Affinity == nil {
 		values.Statefulset.PodTemplate.Spec.Affinity = &applycorev1.AffinityApplyConfiguration{}
 	}
@@ -277,6 +294,14 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 	if err := convertAndAppendYAMLNotNil(state, spec.ExtraVolumeMounts, &sidecarContainer.VolumeMounts); err != nil {
 		return err
 	}
+
+	if sidecarContainer.Resources == nil {
+		sidecarContainer.Resources = &applycorev1.ResourceRequirementsApplyConfiguration{}
+	}
+	if sidecarContainer.SecurityContext == nil {
+		sidecarContainer.SecurityContext = &applycorev1.SecurityContextApplyConfiguration{}
+	}
+
 	if err := convertJSONNotNil(spec.Resources, sidecarContainer.Resources); err != nil {
 		return err
 	}
@@ -288,10 +313,10 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 	return nil
 }
 
-func convertV2NodepoolsToPools(pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
+func convertV2NodepoolsToPools(values redpanda.Values, pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
 	converted := make([]redpanda.Pool, len(pools))
 	for i, pool := range pools {
-		set, err := convertV2NodepoolToPool(pool, defaulters)
+		set, err := convertV2NodepoolToPool(values, pool, defaulters)
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +325,7 @@ func convertV2NodepoolsToPools(pools []*redpandav1alpha2.NodePool, defaulters *V
 	return converted, nil
 }
 
-func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
+func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
 	// we grab *just* the default values here
 	v, err := redpanda.Chart.LoadValues(map[string]any{})
 	if err != nil {
@@ -335,7 +360,7 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 		pool.Spec.Image = defaulters.RedpandaImage(pool.Spec.Image)
 	}
 	if defaulters.SidecarImage != nil {
-		pool.Spec.SidecarImage = defaulters.SidecarImage(pool.Spec.Image)
+		pool.Spec.SidecarImage = defaulters.SidecarImage(pool.Spec.SidecarImage)
 	}
 
 	// now we merge everything in to construct the pool
@@ -348,9 +373,37 @@ func convertV2NodepoolToPool(pool *redpandav1alpha2.NodePool, defaulters *V2Defa
 		return redpanda.Pool{}, err
 	}
 
-	// and finally return wrapped with a name
+	// this is needed since normally the image is taken from the top-level cluster CRD, but node pools
+	// can override it
+	if pool.Spec.Image != nil {
+		repo := ptr.Deref(pool.Spec.Image.Repository, "")
+		tag := ptr.Deref(pool.Spec.Image.Tag, "")
+		if repo != "" && tag != "" {
+			image := fmt.Sprintf("%s:%s", repo, tag)
+
+			// override all of the containers that generally are set via Values.Image
+			container := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
+			configurator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
+
+			container.Image = ptr.To(image)
+			configurator.Image = ptr.To(image)
+
+			// here we use clusterValues since we need to look at the cluster-level context
+			if clusterValues.Tuning.TuneAIOEvents {
+				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
+				tuning.Image = ptr.To(image)
+			}
+			if values.Statefulset.InitContainers.FSValidator.Enabled {
+				validator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
+				validator.Image = ptr.To(image)
+			}
+		}
+	}
+
+	// and finally return wrapped with a name and generation
 	return redpanda.Pool{
 		Name:        pool.Name,
+		Generation:  fmt.Sprintf("%d", pool.Generation),
 		Statefulset: defaultSet,
 	}, nil
 }

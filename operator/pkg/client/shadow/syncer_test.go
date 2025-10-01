@@ -33,7 +33,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 )
 
 func getTestImage() string {
@@ -112,7 +111,7 @@ func TestSyncer(t *testing.T) {
 		},
 	}
 
-	syncer := NewSyncer(clusterTwo.v2Client)
+	syncer := NewSyncer(clusterTwo.client)
 	defer syncer.Close()
 
 	// ensure nothing exists
@@ -128,7 +127,7 @@ func TestSyncer(t *testing.T) {
 	// wait for the out-of-band sync by the cluster
 	time.Sleep(syncTime + 1*time.Second)
 
-	response, err := clusterTwo.v2Client.ShadowLinks().GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
+	response, err := clusterTwo.client.ShadowLinkService().GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
 		Name: linkName,
 	}))
 	require.NoError(t, err)
@@ -187,9 +186,6 @@ func runShadowLinkEnabledCluster(t *testing.T, ctx context.Context, name, userna
 	}, nil)
 	require.NoError(t, err)
 
-	adminV2Client, err := adminv2.NewClientBuilder(adminAddress).WithBasicAuth(username, password).Build()
-	require.NoError(t, err)
-
 	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(kafkaAddress), kgo.SASL(scram.Auth{
 		User: username,
 		Pass: password,
@@ -205,7 +201,6 @@ func runShadowLinkEnabledCluster(t *testing.T, ctx context.Context, name, userna
 		container:   container,
 		kafkaClient: kafkaClient,
 		client:      rpadminClient,
-		v2Client:    adminV2Client,
 	}
 
 	c.enableDevelopmentFeature(t, ctx, "development_enable_cluster_link")
@@ -225,13 +220,11 @@ type cluster struct {
 	container   *redpanda.Container
 	kafkaClient *kgo.Client
 	client      *rpadmin.AdminAPI
-	v2Client    *adminv2.Client
 }
 
 func (c *cluster) close() {
 	c.kafkaClient.Close()
 	c.client.Close()
-	c.v2Client.Close()
 	c.container.Terminate(context.Background())
 }
 

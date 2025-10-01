@@ -38,7 +38,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
-	consolepkg "github.com/redpanda-data/redpanda-operator/operator/pkg/console"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
@@ -48,15 +47,12 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	k8sClient             client.Client
-	testEnv               *testutils.RedpandaTestEnv
-	cfg                   *rest.Config
-	testAdminAPI          func(string) *adminutils.MockAdminAPI
-	testAdminAPIFactory   adminutils.NodePoolAdminAPIClientFactory
-	testStore             *consolepkg.Store
-	testKafkaAdmin        *mockKafkaAdmin
-	testKafkaAdminFactory consolepkg.KafkaAdminClientFactory
-	ts                    *httptest.Server
+	k8sClient           client.Client
+	testEnv             *testutils.RedpandaTestEnv
+	cfg                 *rest.Config
+	testAdminAPI        func(string) *adminutils.MockAdminAPI
+	testAdminAPIFactory adminutils.NodePoolAdminAPIClientFactory
+	ts                  *httptest.Server
 
 	ctx              context.Context
 	controllerCancel context.CancelFunc
@@ -153,12 +149,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		return api, nil
 	}
 
-	testStore = consolepkg.NewStore(k8sManager.GetClient(), k8sManager.GetScheme())
-	testKafkaAdmin = &mockKafkaAdmin{}
-	testKafkaAdminFactory = func(context.Context, client.Client, *vectorizedv1alpha1.Cluster, *consolepkg.Store) (consolepkg.KafkaAdminClient, error) {
-		return testKafkaAdmin, nil
-	}
-
 	driftCheckPeriod := 500 * time.Millisecond
 	err = (&vectorized.ClusterReconciler{
 		Client:                         k8sManager.GetClient(),
@@ -172,17 +162,6 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		ConfiguratorTag:       "latest",
 		ImagePullPolicy:       "Always",
 	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&vectorized.ConsoleReconciler{
-		Client:                  k8sManager.GetClient(),
-		Scheme:                  k8sManager.GetScheme(),
-		Log:                     l.WithName("controllers").WithName("redpanda").WithName("Console"),
-		AdminAPIClientFactory:   testAdminAPIFactory,
-		Store:                   testStore,
-		EventRecorder:           k8sManager.GetEventRecorderFor("Console"),
-		KafkaAdminClientFactory: testKafkaAdminFactory,
-	}).WithClusterDomain("cluster.local").SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {

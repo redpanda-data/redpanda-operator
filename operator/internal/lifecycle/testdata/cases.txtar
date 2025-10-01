@@ -4,9 +4,156 @@
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
-  name: basic
+  name: basic-b
 spec:
   replicas: 1
   sidecarImage:
     tag: dev
     repository: localhost/test
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: basic-a
+spec:
+  replicas: 1
+-- compat-test --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: compat-test
+spec:
+  clusterSpec:
+    tuning:
+      tune_aio_events: false
+    statefulset:
+      replicas: 0
+      sideCars:
+        resources:
+          requests:
+            cpu: 16m
+            memory: 256Mi
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool
+spec:
+  clusterRef:
+    name: compat-test
+  replicas: 9
+  image:
+    repository: foo
+    tag: bar
+  initContainerImage:
+    repository: public.ecr.aws/docker/library/busybox
+    tag: 1.36-glibc@sha256:e046063223f7eaafbfbc026aa3954d9a31b9f1053ba5db04a4f1fdc97abd8963
+  initContainers:
+    setDataDirOwnership:
+      enabled: true
+    fsValidator:
+      enabled: true
+      expectedFS: xfs
+    configurator:
+      additionalCLIArgs:
+      - foo
+      - bar
+      - baz
+  podTemplate:
+    labels:
+      azure.workload.identity/use: "true"
+      cloud.redpanda.com/network-loadbalancer-access: "true"
+    spec:
+      resources:
+        limits:
+          cpu: 1
+          memory: 1Gi
+        requests:
+          cpu: 1
+          memory: 1Gi
+      nodeSelector:
+        foo: bar
+      tolerations:
+        - key: Some/Toleration
+          operator: Equal
+          value: "true"
+      securityContext:
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        # from the kubernetes spec, the following need to be set on a per-container basis
+        # see the difference in https://pkg.go.dev/k8s.io/api@v0.33.3/core/v1#PodSecurityContext
+        # and https://pkg.go.dev/k8s.io/api@v0.33.3/core/v1#SecurityContext
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+      priorityClassName: some-priority-class
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "kubernetes.azure.com/agentpool"
+                operator: "In"
+                values:
+                - pool
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: redpanda-node-readiness
+                operator: DoesNotExist
+            namespaces:
+            - redpanda-node-setup
+            topologyKey: kubernetes.io/hostname
+      volumes:
+      # I see no mounts for this
+      - name: redpanda-truststore
+        configMap:
+          name: redpanda-truststore.crt
+          defaultMode: 0644
+          optional: false
+      containers:
+      - name: sidecar
+        resources:
+          requests:
+            cpu: 16m
+            memory: 64Mi
+      - name: redpanda
+        args:
+          - --memory=1G
+          - --reserve-memory=1G
+      initContainers:
+        - name: fs-validator
+          resources:
+            requests:
+              cpu: 16m
+              memory: 256Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi
+        - name: set-datadir-ownership
+          command:
+            - /bin/sh
+            - -c
+            - chown 65534:65534 -R /var/lib/redpanda/data
+          resources:
+            requests:
+              cpu: 16m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /var/lib/redpanda/data
+              name: datadir
+        - name: redpanda-configuraor
+          resources:
+            requests:
+              cpu: 16m
+              memory: 256Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi

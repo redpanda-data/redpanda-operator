@@ -58,15 +58,6 @@ func ForCluster(cluster *vectorizedv1alpha1.Cluster) CommonLabels {
 	return labels
 }
 
-// ForConsole return a set of labels that is a union of console labels as well as recommended default labels
-// recommended by the kubernetes documentation https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func ForConsole(console *vectorizedv1alpha1.Console) CommonLabels {
-	dl := defaultConsoleLabels(console)
-	labels := merge(console.Labels, dl)
-
-	return labels
-}
-
 // AsClientSelector returns label selector made out of subset of common labels: name, instance, component
 // return type is apimachinery labels selector, which is used when constructing client calls
 func (cl CommonLabels) AsClientSelector() k8slabels.Selector {
@@ -146,17 +137,6 @@ func defaultClusterLabels(cluster *vectorizedv1alpha1.Cluster) map[string]string
 	labels[InstanceKey] = cluster.Name
 	labels[ComponentKey] = "redpanda"
 	labels[PartOfKey] = nameKeyRedpandaVal
-	labels[ManagedByKey] = managedByOperatorVal
-
-	return labels
-}
-
-func defaultConsoleLabels(console *vectorizedv1alpha1.Console) map[string]string {
-	labels := make(map[string]string)
-	labels[NameKey] = nameKeyConsoleVal
-	labels[InstanceKey] = console.Name
-	labels[ComponentKey] = "console"
-	labels[PartOfKey] = nameKeyConsoleVal
 	labels[ManagedByKey] = managedByOperatorVal
 
 	return labels

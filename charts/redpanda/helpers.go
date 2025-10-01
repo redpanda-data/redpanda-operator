@@ -122,52 +122,6 @@ func InternalDomain(state *RenderState) string {
 	return fmt.Sprintf("%s.%s.svc.%s", service, ns, state.Values.ClusterDomain)
 }
 
-// check if client auth is enabled for any of the listeners
-func TLSEnabled(state *RenderState) bool {
-	if state.Values.TLS.Enabled {
-		return true
-	}
-
-	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
-	for _, listener := range listeners {
-		// TODO: replace the use of general map stuff to actually leverage the structured values
-		tlsCert := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "tls", "cert")
-		tlsEnabled := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "tls", "enabled")
-		if !helmette.Empty(tlsEnabled) && !helmette.Empty(tlsCert) {
-			return true
-		}
-
-		external := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external")
-		if helmette.Empty(external) {
-			continue
-		}
-
-		keys := helmette.Keys(external.(map[string]any))
-		for _, key := range keys {
-			enabled := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external", key, "enabled")
-			tlsCert := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "cert")
-			tlsEnabled := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "external", key, "tls", "enabled")
-
-			if !helmette.Empty(enabled) && !helmette.Empty(tlsCert) && !helmette.Empty(tlsEnabled) {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func ClientAuthRequired(state *RenderState) bool {
-	listeners := []string{"kafka", "admin", "schemaRegistry", "rpc", "http"}
-	for _, listener := range listeners {
-		required := helmette.Dig(state.Dot.Values.AsMap(), false, "listeners", listener, "tls", "requireClientAuth")
-		if !helmette.Empty(required) {
-			return true
-		}
-	}
-	return false
-}
-
 // mounts that are common to most containers
 func DefaultMounts(state *RenderState) []corev1.VolumeMount {
 	return append([]corev1.VolumeMount{
@@ -190,30 +144,24 @@ func CommonMounts(state *RenderState) []corev1.VolumeMount {
 		})
 	}
 
-	if TLSEnabled(state) {
-		certNames := helmette.Keys(state.Values.TLS.Certs)
-		helmette.SortAlpha(certNames)
+	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
 
-		for _, name := range certNames {
-			cert := state.Values.TLS.Certs[name]
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      cert.ServerVolumeName(name),
+			MountPath: cert.ServerMountPoint(name),
+		})
+	}
 
-			if !ptr.Deref(cert.Enabled, true) {
-				continue
-			}
+	// mTLS for any potentially in use listeners (kafka, admin, schema?)
+	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
 
-			mounts = append(mounts, corev1.VolumeMount{
-				Name:      fmt.Sprintf("redpanda-%s-cert", name),
-				MountPath: fmt.Sprintf("%s/%s", certificateMountPoint, name),
-			})
-		}
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      cert.ClientVolumeName(name),
+			MountPath: cert.ClientMountPoint(name),
+		})
 
-		adminTLS := state.Values.Listeners.Admin.TLS
-		if adminTLS.RequireClientAuth {
-			mounts = append(mounts, corev1.VolumeMount{
-				Name:      "mtls-client",
-				MountPath: fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(state)),
-			})
-		}
 	}
 
 	return mounts
@@ -237,46 +185,34 @@ func DefaultVolumes(state *RenderState) []corev1.Volume {
 // volumes that are common to all pods
 func CommonVolumes(state *RenderState) []corev1.Volume {
 	volumes := []corev1.Volume{}
-	if TLSEnabled(state) {
-		certNames := helmette.Keys(state.Values.TLS.Certs)
-		helmette.SortAlpha(certNames)
 
-		for _, name := range certNames {
-			cert := state.Values.TLS.Certs[name]
+	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
 
-			if !ptr.Deref(cert.Enabled, true) {
-				continue
-			}
-
-			volumes = append(volumes, corev1.Volume{
-				Name: fmt.Sprintf("redpanda-%s-cert", name),
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  CertSecretName(state, name, &cert),
-						DefaultMode: ptr.To[int32](0o440),
-					},
+		volumes = append(volumes, corev1.Volume{
+			// Intentionally use static names for VolumeNames to make overrides easier.
+			Name: cert.ServerVolumeName(name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  cert.ServerSecretName(state, name),
+					DefaultMode: ptr.To[int32](0o440),
 				},
-			})
-		}
+			},
+		})
+	}
 
-		adminTLS := state.Values.Listeners.Admin.TLS
-		cert := state.Values.TLS.Certs[adminTLS.Cert]
-		if adminTLS.RequireClientAuth {
-			secretName := fmt.Sprintf("%s-client", Fullname(state))
-			if cert.ClientSecretRef != nil {
-				secretName = cert.ClientSecretRef.Name
-			}
+	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
+		cert := state.Values.TLS.Certs.MustGet(name)
 
-			volumes = append(volumes, corev1.Volume{
-				Name: "mtls-client",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  secretName,
-						DefaultMode: ptr.To[int32](0o440),
-					},
+		volumes = append(volumes, corev1.Volume{
+			Name: cert.ClientVolumeName(name),
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  cert.ClientSecretName(state, name),
+					DefaultMode: ptr.To[int32](0o440),
 				},
-			})
-		}
+			},
+		})
 	}
 
 	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
@@ -291,14 +227,6 @@ func CommonVolumes(state *RenderState) []corev1.Volume {
 	}
 
 	return volumes
-}
-
-// return correct secretName to use based if secretRef exists
-func CertSecretName(state *RenderState, certName string, cert *TLSCert) string {
-	if cert.SecretRef != nil {
-		return cert.SecretRef.Name
-	}
-	return fmt.Sprintf("%s-%s-cert", Fullname(state), certName)
 }
 
 //nolint:stylecheck
@@ -527,7 +455,9 @@ func mergeEnvVar(original corev1.EnvVar, overrides applycorev1.EnvVarApplyConfig
 }
 
 func mergeVolume(original corev1.Volume, override applycorev1.VolumeApplyConfiguration) corev1.Volume {
-	return helmette.MergeTo[corev1.Volume](override, original)
+	// Similar to the above, if a volume is being overridden, it's likely to
+	// change the VolumeSource. Don't merge, just accept the override.
+	return helmette.MergeTo[corev1.Volume](override)
 }
 
 func mergeVolumeMount(original corev1.VolumeMount, override applycorev1.VolumeMountApplyConfiguration) corev1.VolumeMount {

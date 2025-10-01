@@ -32,9 +32,9 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 )
 
@@ -78,12 +78,6 @@ type ClientFactory interface {
 	// to ensure any idle connections in the underlying transport are closed.
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
 
-	// RedpandaAdminV2Client initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
-	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.AdminConnectedObject interface
-	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should call Close on the returned *rpadmin.AdminAPI
-	// to ensure any idle connections in the underlying transport are closed.
-	RedpandaAdminV2Client(ctx context.Context, object any) (*adminv2.Client, error)
-
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
@@ -96,6 +90,10 @@ type ClientFactory interface {
 	// Users returns a high-level client for managing users. Callers should always call Close on the returned *users.Client, or it will leak
 	// goroutines.
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
+
+	// Roles returns a high-level client for managing roles. Callers should always call Close on the returned *roles.Client, or it will leak
+	// goroutines.
+	Roles(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error)
 
 	// Schemas returns a high-level client for synchronizing Schemas.
 	Schemas(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error)
@@ -176,6 +174,10 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 		return c.kafkaForCluster(cluster, opts...)
 	}
 
+	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
+		return c.kafkaForV1Cluster(cluster)
+	}
+
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
 		return c.kafkaForRPKProfile(profile, opts...)
 	}
@@ -245,50 +247,14 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.Ad
 	return nil, ErrInvalidRedpandaClientObject
 }
 
-func (c *Factory) RedpandaAdminV2Client(ctx context.Context, obj any) (*adminv2.Client, error) {
-	// if we pass in a Redpanda cluster, just use it
-	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
-		return c.redpandaAdminV2ForCluster(cluster)
-	}
-
-	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
-		return c.redpandaAdminV2ForV1Cluster(cluster)
-	}
-
-	o, ok := obj.(client.Object)
-	if !ok {
-		return nil, ErrInvalidRedpandaClientObject
-	}
-
-	cluster, err := c.getV2Cluster(ctx, o)
-	if err != nil {
-		return nil, err
-	}
-
-	if cluster != nil {
-		return c.redpandaAdminV2ForCluster(cluster)
-	}
-
-	v1Cluster, err := c.getV1Cluster(ctx, o)
-	if err != nil {
-		return nil, err
-	}
-
-	if v1Cluster != nil {
-		return c.redpandaAdminV2ForV1Cluster(v1Cluster)
-	}
-
-	if spec := c.getAdminSpec(o); spec != nil {
-		return c.redpandaAdminV2ForSpec(ctx, o.GetNamespace(), spec)
-	}
-
-	return nil, ErrInvalidRedpandaClientObject
-}
-
 func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.schemaRegistryForCluster(cluster)
+	}
+
+	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
+		return c.schemaRegistryForV1Cluster(cluster)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
@@ -326,7 +292,7 @@ func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterRefer
 }
 
 func (c *Factory) ShadowLinks(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error) {
-	adminClient, err := c.RedpandaAdminV2Client(ctx, obj)
+	adminClient, err := c.RedpandaAdminClient(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -355,6 +321,15 @@ func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 	}
 
 	return users.NewClient(ctx, c.Client, kadm.NewClient(kafkaClient), adminClient)
+}
+
+func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error) {
+	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return roles.NewClient(ctx, adminClient)
 }
 
 func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object) (*vectorizedv1alpha1.Cluster, error) {

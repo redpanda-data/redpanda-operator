@@ -76,6 +76,35 @@ type ClusterQuiescedCondition string
 // be set by a controller when it subsequently reconciles a cluster.
 type ClusterStableCondition string
 
+// NodePoolBoundCondition - This condition indicates whether a node pool is
+// bound to a known Redpanda cluster.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a node pool.
+type NodePoolBoundCondition string
+
+// NodePoolDeployedCondition - This condition indicates whether a node pool has
+// been deployed for a known Redpanda cluster.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a node pool.
+type NodePoolDeployedCondition string
+
+// NodePoolQuiescedCondition - This condition is used as to indicate that the
+// node pool is no longer reconciling due to it being in a finalized state for
+// the current generation.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a node pool.
+type NodePoolQuiescedCondition string
+
+// NodePoolStableCondition - This condition is used as a roll-up status for any
+// sort of automation such as terraform.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a node pool.
+type NodePoolStableCondition string
+
 const (
 	// ClusterReady - This condition indicates whether a cluster is ready to serve
 	// any traffic. This can happen, for example if a cluster is partially degraded
@@ -194,6 +223,11 @@ const (
 	// "ConfigurationApplied" condition when it evaluates to True because a cluster
 	// has had its cluster configuration parameters applied.
 	ClusterConfigurationAppliedReasonApplied ClusterConfigurationAppliedCondition = "Applied"
+	// ClusterConfigurationAppliedReasonNotApplied - This reason is used with the
+	// "ConfigurationApplied" condition when it evaluates to False due to some
+	// implementation-specific condition, such as when no brokers have been created
+	// and thus we can't attempt a configuration.
+	ClusterConfigurationAppliedReasonNotApplied ClusterConfigurationAppliedCondition = "NotApplied"
 	// ClusterConfigurationAppliedReasonError - This reason is used when a cluster
 	// has only been partially reconciled and we have early returned due to a
 	// retryable error occurring prior to applying the desired cluster state. If it
@@ -239,6 +273,84 @@ const (
 	// when it evaluates to True because at least one dependent condition evaluates
 	// to False.
 	ClusterStableReasonUnstable ClusterStableCondition = "Unstable"
+	// NodePoolBound - This condition indicates whether a node pool is bound to a
+	// known Redpanda cluster.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a node pool.
+	NodePoolBound = "Bound"
+	// NodePoolBoundReasonBound - This reason is used with the "Bound" condition
+	// when it evaluates to True because a node pool is bound to a cluster.
+	NodePoolBoundReasonBound NodePoolBoundCondition = "Bound"
+	// NodePoolBoundReasonNotBound - This reason is used with the "Bound" condition
+	// when it evaluates to False because a node pool is not bound to a cluster.
+	NodePoolBoundReasonNotBound NodePoolBoundCondition = "NotBound"
+	// NodePoolBoundReasonError - This reason is used when a node pool has only been
+	// partially reconciled and we have early returned due to a retryable error
+	// occurring prior to applying the desired node pool state.
+	NodePoolBoundReasonError NodePoolBoundCondition = "Error"
+	// NodePoolBoundReasonTerminalError - This reason is used when a node pool has
+	// only been partially reconciled and we have early returned due to a known
+	// terminal error occurring prior to applying the desired node pool state.
+	NodePoolBoundReasonTerminalError NodePoolBoundCondition = "TerminalError"
+
+	// NodePoolDeployed - This condition indicates whether a node pool has been
+	// deployed for a known Redpanda cluster.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a node pool.
+	NodePoolDeployed = "Deployed"
+	// NodePoolDeployedReasonDeployed - This reason is used with the "Deployed"
+	// condition when it evaluates to True because a node pool has been fully
+	// deployed for a cluster.
+	NodePoolDeployedReasonDeployed NodePoolDeployedCondition = "Deployed"
+	// NodePoolDeployedReasonScaling - This reason is used with the "Deployed"
+	// condition when it evaluates to False because a node pool has not yet been
+	// fully deployed for a cluster.
+	NodePoolDeployedReasonScaling NodePoolDeployedCondition = "Scaling"
+	// NodePoolDeployedReasonNotDeployed - This reason is used with the "Deployed"
+	// condition when it evaluates to False because a node pool has not started to
+	// deploy for a cluster.
+	NodePoolDeployedReasonNotDeployed NodePoolDeployedCondition = "NotDeployed"
+	// NodePoolDeployedReasonError - This reason is used when a node pool has only
+	// been partially reconciled and we have early returned due to a retryable error
+	// occurring prior to applying the desired node pool state.
+	NodePoolDeployedReasonError NodePoolDeployedCondition = "Error"
+	// NodePoolDeployedReasonTerminalError - This reason is used when a node pool
+	// has only been partially reconciled and we have early returned due to a known
+	// terminal error occurring prior to applying the desired node pool state.
+	NodePoolDeployedReasonTerminalError NodePoolDeployedCondition = "TerminalError"
+
+	// NodePoolQuiesced - This condition is used as to indicate that the node pool
+	// is no longer reconciling due to it being in a finalized state for the current
+	// generation.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a node pool.
+	NodePoolQuiesced = "Quiesced"
+	// NodePoolQuiescedReasonQuiesced - This reason is used with the "Quiesced"
+	// condition when it evaluates to True because the operator has finished
+	// reconciling the node pool at its current generation.
+	NodePoolQuiescedReasonQuiesced NodePoolQuiescedCondition = "Quiesced"
+	// NodePoolQuiescedReasonStillReconciling - This reason is used with the
+	// "Quiesced" condition when it evaluates to False because the operator has not
+	// finished reconciling the node pool at its current generation.
+	NodePoolQuiescedReasonStillReconciling NodePoolQuiescedCondition = "StillReconciling"
+
+	// NodePoolStable - This condition is used as a roll-up status for any sort of
+	// automation such as terraform.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a node pool.
+	NodePoolStable = "Stable"
+	// NodePoolStableReasonStable - This reason is used with the "Stable" condition
+	// when it evaluates to True because all dependent conditions also evaluate to
+	// True.
+	NodePoolStableReasonStable NodePoolStableCondition = "Stable"
+	// NodePoolStableReasonUnstable - This reason is used with the "Stable"
+	// condition when it evaluates to True because at least one dependent condition
+	// evaluates to False.
+	NodePoolStableReasonUnstable NodePoolStableCondition = "Unstable"
 )
 
 // ClusterStatus - Defines the observed status conditions of a cluster.
@@ -546,6 +658,11 @@ func (s *ClusterStatus) SetConfigurationApplied(reason ClusterConfigurationAppli
 			message = "Cluster configuration successfully applied"
 		}
 		status = metav1.ConditionTrue
+	case ClusterConfigurationAppliedReasonNotApplied:
+		if message == "" {
+			message = "Cluster configuration not applied"
+		}
+		status = metav1.ConditionFalse
 	case ClusterConfigurationAppliedReasonError:
 		s.isConfigurationAppliedTransientError = true
 		status = metav1.ConditionFalse
@@ -622,6 +739,235 @@ func (s *ClusterStatus) getStable(conditions []metav1.Condition) metav1.Conditio
 	}
 }
 
+// NodePoolStatus - Defines the observed status conditions of a node pool.
+type NodePoolStatus struct {
+	conditions               []metav1.Condition
+	hasTerminalError         bool
+	isBoundSet               bool
+	isBoundTransientError    bool
+	isDeployedSet            bool
+	isDeployedTransientError bool
+}
+
+// NewNodePool() returns a new NodePoolStatus
+func NewNodePool() *NodePoolStatus {
+	return &NodePoolStatus{}
+}
+
+// UpdateConditions updates any conditions for the passed in object that need to be updated.
+func (s *NodePoolStatus) UpdateConditions(o client.Object) bool {
+	var conditions *[]metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.NodePool:
+		conditions = &kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	updated := false
+	for _, condition := range s.getConditions(o.GetGeneration()) {
+		if setStatusCondition(conditions, condition) {
+			updated = true
+		}
+	}
+
+	return updated
+}
+
+// StatusConditionConfigs returns a set of configurations that can be used with Server Side Apply.
+func (s *NodePoolStatus) StatusConditionConfigs(o client.Object) []*applymetav1.ConditionApplyConfiguration {
+	var conditions []metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.NodePool:
+		conditions = kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	return utils.StatusConditionConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+}
+
+// conditions returns the aggregated status conditions of the NodePoolStatus.
+func (s *NodePoolStatus) getConditions(generation int64) []metav1.Condition {
+	conditions := append([]metav1.Condition{}, s.conditions...)
+	conditions = append(conditions, s.getQuiesced())
+	conditions = append(conditions, s.getStable(conditions))
+
+	for i, condition := range conditions {
+		condition.ObservedGeneration = generation
+		conditions[i] = condition
+	}
+
+	return conditions
+}
+
+// SetBoundFromCurrent sets the underlying condition based on an existing object.
+func (s *NodePoolStatus) SetBoundFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), NodePoolBound)
+	if condition == nil {
+		return
+	}
+
+	s.SetBound(NodePoolBoundCondition(condition.Reason), condition.Message)
+}
+
+// SetBound sets the underlying condition to the given reason.
+func (s *NodePoolStatus) SetBound(reason NodePoolBoundCondition, messages ...string) {
+	if s.isBoundSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isBoundSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case NodePoolBoundReasonBound:
+		if message == "" {
+			message = "Node pool successfully bound to cluster"
+		}
+		status = metav1.ConditionTrue
+	case NodePoolBoundReasonNotBound:
+		if message == "" {
+			message = "Node pool not bound to cluster"
+		}
+		status = metav1.ConditionFalse
+	case NodePoolBoundReasonError:
+		s.isBoundTransientError = true
+		status = metav1.ConditionFalse
+	case NodePoolBoundReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    NodePoolBound,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetDeployedFromCurrent sets the underlying condition based on an existing object.
+func (s *NodePoolStatus) SetDeployedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), NodePoolDeployed)
+	if condition == nil {
+		return
+	}
+
+	s.SetDeployed(NodePoolDeployedCondition(condition.Reason), condition.Message)
+}
+
+// SetDeployed sets the underlying condition to the given reason.
+func (s *NodePoolStatus) SetDeployed(reason NodePoolDeployedCondition, messages ...string) {
+	if s.isDeployedSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isDeployedSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case NodePoolDeployedReasonDeployed:
+		if message == "" {
+			message = "Node pool successfully deployed to cluster"
+		}
+		status = metav1.ConditionTrue
+	case NodePoolDeployedReasonScaling:
+		if message == "" {
+			message = "Node pool is scaling"
+		}
+		status = metav1.ConditionFalse
+	case NodePoolDeployedReasonNotDeployed:
+		if message == "" {
+			message = "Node pool not deployed to cluster"
+		}
+		status = metav1.ConditionFalse
+	case NodePoolDeployedReasonError:
+		s.isDeployedTransientError = true
+		status = metav1.ConditionFalse
+	case NodePoolDeployedReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    NodePoolDeployed,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+func (s *NodePoolStatus) getQuiesced() metav1.Condition {
+	transientErrorConditionsSet := s.isBoundTransientError || s.isDeployedTransientError
+	allConditionsSet := s.isBoundSet && s.isDeployedSet
+
+	if (allConditionsSet || s.hasTerminalError) && !transientErrorConditionsSet {
+		return metav1.Condition{
+			Type:    NodePoolQuiesced,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(NodePoolQuiescedReasonQuiesced),
+			Message: "Node pool reconciliation finished",
+		}
+	}
+
+	return metav1.Condition{
+		Type:    NodePoolQuiesced,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(NodePoolQuiescedReasonStillReconciling),
+		Message: "Node pool still reconciling",
+	}
+}
+
+func (s *NodePoolStatus) getStable(conditions []metav1.Condition) metav1.Condition {
+	allConditionsFoundAndTrue := true
+	for _, condition := range []string{NodePoolBound, NodePoolDeployed, NodePoolQuiesced} {
+		conditionFoundAndTrue := false
+		for _, setCondition := range conditions {
+			if setCondition.Type == condition {
+				conditionFoundAndTrue = setCondition.Status == metav1.ConditionTrue
+				break
+			}
+		}
+		if !conditionFoundAndTrue {
+			allConditionsFoundAndTrue = false
+			break
+		}
+	}
+
+	if allConditionsFoundAndTrue {
+		return metav1.Condition{
+			Type:    NodePoolStable,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(NodePoolStableReasonStable),
+			Message: "Node pool stable",
+		}
+	}
+
+	return metav1.Condition{
+		Type:    NodePoolStable,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(NodePoolStableReasonUnstable),
+		Message: "Node pool unstable",
+	}
+}
+
 // HasRecentCondition returns whether or not an object has a given condition with the given value that is up-to-date and set
 // within the given time period.
 func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration) bool {
@@ -641,6 +987,8 @@ func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav
 func GetConditions(o client.Object) []metav1.Condition {
 	switch kind := o.(type) {
 	case *redpandav1alpha2.Redpanda:
+		return kind.Status.Conditions
+	case *redpandav1alpha2.NodePool:
 		return kind.Status.Conditions
 	default:
 		panic("unsupported kind")

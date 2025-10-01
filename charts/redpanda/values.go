@@ -27,9 +27,10 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 )
 
 const (
@@ -64,11 +65,6 @@ const (
 	// FSValidatorContainerName is the user facing name of the
 	// fs-validator init container in the redpanda StatefulSet.
 	FSValidatorContainerName = "fs-validator"
-
-	// certificateMountPoint is a common mount point for any TLS certificate
-	// defined as external truststore or as certificate that would be
-	// created by cert-manager.
-	certificateMountPoint = "/etc/tls/certs"
 )
 
 type MebiBytes = int64
@@ -87,32 +83,32 @@ type Values struct {
 	// Global is an untyped map of values that are "global" to this chart and
 	// all its sub-charts.
 	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
-	Global           map[string]any        `json:"global,omitempty"`
-	NameOverride     string                `json:"nameOverride"`
-	FullnameOverride string                `json:"fullnameOverride"`
-	ClusterDomain    string                `json:"clusterDomain"`
-	CommonLabels     map[string]string     `json:"commonLabels"`
-	Image            Image                 `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
-	Service          *Service              `json:"service"`
-	LicenseKey       string                `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
-	AuditLogging     AuditLogging          `json:"auditLogging"`
-	Enterprise       Enterprise            `json:"enterprise"`
-	RackAwareness    RackAwareness         `json:"rackAwareness"`
-	Console          console.PartialValues `json:"console,omitempty"`
-	Auth             Auth                  `json:"auth"`
-	TLS              TLS                   `json:"tls"`
-	External         ExternalConfig        `json:"external"`
-	Logging          Logging               `json:"logging"`
-	Monitoring       Monitoring            `json:"monitoring"`
-	Resources        RedpandaResources     `json:"resources"`
-	Storage          Storage               `json:"storage"`
-	PostInstallJob   PostInstallJob        `json:"post_install_job"`
-	Statefulset      Statefulset           `json:"statefulset"`
-	ServiceAccount   ServiceAccountCfg     `json:"serviceAccount"`
-	RBAC             RBAC                  `json:"rbac"`
-	Tuning           Tuning                `json:"tuning"`
-	Listeners        Listeners             `json:"listeners"`
-	Config           Config                `json:"config"`
+	Global           map[string]any             `json:"global,omitempty"`
+	NameOverride     string                     `json:"nameOverride"`
+	FullnameOverride string                     `json:"fullnameOverride"`
+	ClusterDomain    string                     `json:"clusterDomain"`
+	CommonLabels     map[string]string          `json:"commonLabels"`
+	Image            Image                      `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
+	Service          *Service                   `json:"service"`
+	LicenseKey       string                     `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
+	AuditLogging     AuditLogging               `json:"auditLogging"`
+	Enterprise       Enterprise                 `json:"enterprise"`
+	RackAwareness    RackAwareness              `json:"rackAwareness"`
+	Console          consolechart.PartialValues `json:"console,omitempty"`
+	Auth             Auth                       `json:"auth"`
+	TLS              TLS                        `json:"tls"`
+	External         ExternalConfig             `json:"external"`
+	Logging          Logging                    `json:"logging"`
+	Monitoring       Monitoring                 `json:"monitoring"`
+	Resources        RedpandaResources          `json:"resources"`
+	Storage          Storage                    `json:"storage"`
+	PostInstallJob   PostInstallJob             `json:"post_install_job"`
+	Statefulset      Statefulset                `json:"statefulset"`
+	ServiceAccount   ServiceAccountCfg          `json:"serviceAccount"`
+	RBAC             RBAC                       `json:"rbac"`
+	Tuning           Tuning                     `json:"tuning"`
+	Listeners        Listeners                  `json:"listeners"`
+	Config           Config                     `json:"config"`
 	Tests            *struct {
 		Enabled bool `json:"enabled"`
 	} `json:"tests"`
@@ -760,6 +756,7 @@ type PodTemplate struct {
 
 type Pool struct {
 	Name        string
+	Generation  string
 	Statefulset Statefulset
 }
 
@@ -898,6 +895,65 @@ type Listeners struct {
 		Port int32       `json:"port" jsonschema:"required"`
 		TLS  InternalTLS `json:"tls" jsonschema:"required"`
 	} `json:"rpc" jsonschema:"required"`
+}
+
+// InUseServerCerts returns a set of names (As a sorted slice) of all TLS
+// certificates that are referenced via listeners and enabled.
+func (l *Listeners) InUseServerCerts(tls *TLS) []string {
+	listeners := []ListenerConfig[string]{
+		l.Admin.AsString(),
+		l.Kafka.AsString(),
+		l.HTTP.AsString(),
+		l.SchemaRegistry.AsString(),
+	}
+
+	certs := map[string]bool{}
+
+	if l.RPC.TLS.IsEnabled(tls) {
+		certs[l.RPC.TLS.Cert] = true
+	}
+
+	for _, listener := range listeners {
+		if !listener.TLS.IsEnabled(tls) {
+			continue
+		}
+
+		certs[listener.TLS.Cert] = true
+
+		for _, external := range helmette.SortedMap(listener.External) {
+			if !external.IsEnabled() || !external.TLS.IsEnabled(&listener.TLS, tls) {
+				continue
+			}
+
+			certs[external.TLS.GetCertName(&listener.TLS)] = true
+		}
+	}
+
+	return helmette.SortedKeys(certs)
+}
+
+func (l *Listeners) InUseClientCerts(tls *TLS) []string {
+	listeners := []ListenerConfig[string]{
+		l.Admin.AsString(),
+		l.Kafka.AsString(),
+		l.HTTP.AsString(),
+		l.SchemaRegistry.AsString(),
+	}
+
+	certs := map[string]bool{}
+
+	if l.RPC.TLS.IsEnabled(tls) && l.RPC.TLS.RequireClientAuth {
+		certs[l.RPC.TLS.Cert] = true
+	}
+
+	for _, listener := range listeners {
+		if !listener.TLS.IsEnabled(tls) || !listener.TLS.RequireClientAuth {
+			continue
+		}
+		certs[listener.TLS.Cert] = true
+	}
+
+	return helmette.SortedKeys(certs)
 }
 
 func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain string) []map[string]any {
@@ -1185,6 +1241,73 @@ type TLSCert struct {
 	ClientSecretRef       *corev1.LocalObjectReference `json:"clientSecretRef"`
 }
 
+func (c *TLSCert) ServerVolumeName(name string) string {
+	// NB: Volume names are intentionally hardcoded to redpanda to make
+	// overrides easier.
+	return fmt.Sprintf("redpanda-%s-cert", name)
+}
+
+func (c *TLSCert) ClientVolumeName(name string) string {
+	// NB: Volume names are intentionally hardcoded to redpanda to make
+	// overrides easier.
+	return fmt.Sprintf("redpanda-%s-client-cert", name)
+}
+
+func (c *TLSCert) ServerMountPoint(name string) string {
+	// NB: The path here is intentionally hardcoded to discourage manual
+	// construct of this mount point.
+	return fmt.Sprintf("/etc/tls/certs/%s", name)
+}
+
+func (c *TLSCert) ClientMountPoint(name string) string {
+	// NB: The path here is intentionally hardcoded to discourage manual
+	// construct of this mount point.
+	return fmt.Sprintf("/etc/tls/certs/%s-client", name)
+}
+
+func (c *TLSCert) ServerSecretName(state *RenderState, name string) string {
+	if c.SecretRef != nil {
+		return c.SecretRef.Name
+	}
+	return fmt.Sprintf("%s-%s-cert", Fullname(state), name)
+}
+
+func (c *TLSCert) ClientSecretName(state *RenderState, name string) string {
+	if c.ClientSecretRef != nil {
+		return c.ClientSecretRef.Name
+	}
+	return fmt.Sprintf("%s-%s-client-cert", Fullname(state), name)
+}
+
+func (c *TLSCert) RootSecretName(state *RenderState, name string) string {
+	return fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name)
+}
+
+func (c *TLSCert) CASecretRef(state *RenderState, name string) corev1.SecretKeySelector {
+	// If no SecretRef is specified, we know that the CA was generated by cert-manager.
+	if c.SecretRef == nil {
+		return corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: c.RootSecretName(state, name),
+			},
+			Key: corev1.TLSCertKey,
+		}
+	}
+
+	// Otherwise we have to use the provided SecretRef.
+	key := corev1.TLSCertKey
+	if c.CAEnabled {
+		key = "ca.crt"
+	}
+
+	return corev1.SecretKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: c.ServerSecretName(state, name),
+		},
+		Key: key,
+	}
+}
+
 type TLSCertMap map[string]TLSCert
 
 // +gotohelm:ignore=true
@@ -1348,8 +1471,9 @@ func (t *InternalTLS) TrustStoreFilePath(tls *TLS) string {
 		return t.TrustStore.TrustStoreFilePath()
 	}
 
-	if tls.Certs.MustGet(t.Cert).CAEnabled {
-		return fmt.Sprintf("%s/%s/ca.crt", certificateMountPoint, t.Cert)
+	cert := tls.Certs.MustGet(t.Cert)
+	if cert.CAEnabled {
+		return fmt.Sprintf("%s/ca.crt", cert.ServerMountPoint(t.Cert))
 	}
 
 	return defaultTruststorePath
@@ -1362,15 +1486,86 @@ func (t *InternalTLS) ServerCAPath(tls *TLS) string {
 		return t.TrustStore.TrustStoreFilePath()
 	}
 
-	if tls.Certs.MustGet(t.Cert).CAEnabled {
-		return fmt.Sprintf("%s/%s/ca.crt", certificateMountPoint, t.Cert)
+	cert := tls.Certs.MustGet(t.Cert)
+	if cert.CAEnabled {
+		return fmt.Sprintf("%s/ca.crt", cert.ServerMountPoint(t.Cert))
 	}
+
 	// Strange but technically correct, if CAEnabled is false, we can't safely
 	// assume that a ca.crt file will exist. So we fallback to using the
 	// server's certificate itself.
 	// Other options would be: failing or falling back to the container's
 	// default truststore.
-	return fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, t.Cert)
+	return fmt.Sprintf("%s/tls.crt", cert.ServerMountPoint(t.Cert))
+}
+
+// ServerMountPoint is a helper to call [TLSCert.ServerMountPoint] on the
+// configure certificate.
+func (t *InternalTLS) ServerMountPoint(tls *TLS) string {
+	cert := tls.Certs.MustGet(t.Cert)
+	return cert.ServerMountPoint(t.Cert)
+}
+
+// ClientMountPoint is a helper to call [TLSCert.ClientMountPoint] on the
+// configure certificate.
+func (t *InternalTLS) ClientMountPoint(tls *TLS) string {
+	cert := tls.Certs.MustGet(t.Cert)
+	return cert.ClientMountPoint(t.Cert)
+}
+
+// ToCommonTLS converts InternalTLS configuration to ir.CommonTLS format with proper secret references.
+func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
+	if !t.IsEnabled(tls) {
+		return nil
+	}
+
+	spec := &ir.CommonTLS{}
+	cert := tls.Certs.MustGet(t.Cert)
+	secretName := cert.ServerSecretName(state, t.Cert)
+
+	if t.TrustStore != nil {
+		// Only one of ConfigMapKeyRef or SecretKeyRef should actually be set.
+		// Copy both to simplify the logic.
+		spec.CaCert = &ir.ObjectKeyRef{
+			ConfigMapKeyRef: t.TrustStore.ConfigMapKeyRef,
+			SecretKeyRef:    t.TrustStore.SecretKeyRef,
+		}
+	} else if cert.CAEnabled {
+		spec.CaCert = &ir.ObjectKeyRef{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secretName,
+				},
+				Key: "ca.crt",
+			},
+		}
+	} else {
+		spec.CaCert = &ir.ObjectKeyRef{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secretName,
+				},
+				Key: "cert.crt",
+			},
+		}
+	}
+
+	// Add client certificate and key if client auth is required
+	if t.RequireClientAuth {
+		clientSecretName := cert.ClientSecretName(state, t.Cert)
+
+		spec.Cert = &ir.SecretKeyRef{
+			Name: clientSecretName,
+			Key:  "tls.crt",
+		}
+
+		spec.Key = &ir.SecretKeyRef{
+			Name: clientSecretName,
+			Key:  "tls.key",
+		}
+	}
+
+	return spec
 }
 
 // ExternalTLS is the TLS configuration associated with a given "external"
@@ -1400,8 +1595,9 @@ func (t *ExternalTLS) TrustStoreFilePath(i *InternalTLS, tls *TLS) string {
 		return t.TrustStore.TrustStoreFilePath()
 	}
 
-	if t.GetCert(i, tls).CAEnabled {
-		return fmt.Sprintf("%s/%s/ca.crt", certificateMountPoint, t.GetCertName(i))
+	name := t.GetCertName(i)
+	if cert := t.GetCert(i, tls); cert.CAEnabled {
+		return fmt.Sprintf("%s/ca.crt", cert.ServerMountPoint(name))
 	}
 
 	return defaultTruststorePath
@@ -1425,6 +1621,28 @@ type ListenerConfig[T ~string] struct {
 
 	AppProtocol          *string `json:"appProtocol,omitempty"`
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
+}
+
+func (l *ListenerConfig[T]) AsString() ListenerConfig[string] {
+	ext := map[string]ExternalListener[string]{}
+	for name, l := range l.External {
+		ext[name] = l.AsString()
+	}
+
+	var auth *string
+	if l.AuthenticationMethod != nil {
+		authAStr := string(*l.AuthenticationMethod)
+		auth = &authAStr
+	}
+
+	return ListenerConfig[string]{
+		Enabled:              l.Enabled,
+		External:             ext,
+		Port:                 l.Port,
+		TLS:                  l.TLS,
+		AppProtocol:          l.AppProtocol,
+		AuthenticationMethod: auth,
+	}
 }
 
 // +gotohelm:ignore=true
@@ -1534,60 +1752,18 @@ func (l *ListenerConfig[T]) ListenersTLS(tls *TLS) []map[string]any {
 		}
 
 		certName := lis.TLS.GetCertName(&l.TLS)
+		cert := tls.Certs.MustGet(certName)
 
 		pp = append(pp, map[string]any{
 			"name":                k,
 			"enabled":             true,
-			"cert_file":           fmt.Sprintf("%s/%s/tls.crt", certificateMountPoint, certName),
-			"key_file":            fmt.Sprintf("%s/%s/tls.key", certificateMountPoint, certName),
+			"cert_file":           fmt.Sprintf("%s/tls.crt", cert.ServerMountPoint(certName)),
+			"key_file":            fmt.Sprintf("%s/tls.key", cert.ServerMountPoint(certName)),
 			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
 			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, tls),
 		})
 	}
 	return pp
-}
-
-// ConsoleTLS is a struct that represents TLS configuration used
-// in console configuration in Kafka, Schema Registry and
-// Redpanda Admin API.
-// For the above configuration helm chart could import struct, but
-// as of the writing the struct fields tag have only `yaml` annotation.
-// `sigs.k8s.io/yaml` requires `json` tags.
-type ConsoleTLS struct {
-	Enabled               bool   `json:"enabled"`
-	CaFilepath            string `json:"caFilepath"`
-	CertFilepath          string `json:"certFilepath"`
-	KeyFilepath           string `json:"keyFilepath"`
-	InsecureSkipTLSVerify bool   `json:"insecureSkipTlsVerify"`
-}
-
-func (l *ListenerConfig[T]) ConsoleTLS(tls *TLS) ConsoleTLS {
-	t := ConsoleTLS{Enabled: l.TLS.IsEnabled(tls)}
-	if !t.Enabled {
-		return t
-	}
-
-	adminAPIPrefix := fmt.Sprintf("%s/%s", certificateMountPoint, l.TLS.Cert)
-
-	// Strange but technically correct, if CAEnabled is false, we can't safely
-	// assume that a ca.crt file will exist. So we fallback to using the
-	// server's certificate itself.
-	// Other options would be: failing or falling back to the container's
-	// default truststore.
-	if tls.Certs.MustGet(l.TLS.Cert).CAEnabled {
-		t.CaFilepath = fmt.Sprintf("%s/ca.crt", adminAPIPrefix)
-	} else {
-		t.CaFilepath = fmt.Sprintf("%s/tls.crt", adminAPIPrefix)
-	}
-
-	if !l.TLS.RequireClientAuth {
-		return t
-	}
-
-	t.CertFilepath = fmt.Sprintf("%s/tls.crt", adminAPIPrefix)
-	t.KeyFilepath = fmt.Sprintf("%s/tls.key", adminAPIPrefix)
-
-	return t
 }
 
 type ExternalListener[T ~string] struct {
@@ -1600,6 +1776,24 @@ type ExternalListener[T ~string] struct {
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
+}
+
+func (l *ExternalListener[T]) AsString() ExternalListener[string] {
+	var auth *string
+	if l.AuthenticationMethod != nil {
+		authAStr := string(*l.AuthenticationMethod)
+		auth = &authAStr
+	}
+
+	return ExternalListener[string]{
+		Enabled:              l.Enabled,
+		AdvertisedPorts:      l.AdvertisedPorts,
+		Port:                 l.Port,
+		NodePort:             l.NodePort,
+		TLS:                  l.TLS,
+		AuthenticationMethod: auth,
+		PrefixTemplate:       l.PrefixTemplate,
+	}
 }
 
 // +gotohelm:ignore=true
@@ -1792,21 +1986,25 @@ func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) (map[str
 // +gotohelm:ignore=true
 func (TieredStorageConfig) JSONSchema() *jsonschema.Schema {
 	type schema struct {
-		CloudStorageEnabled            bool   `json:"cloud_storage_enabled" jsonschema:"required"`
-		CloudStorageAccessKey          string `json:"cloud_storage_access_key"`
-		CloudStorageSecretKey          string `json:"cloud_storage_secret_key"`
-		CloudStorageAPIEndpoint        string `json:"cloud_storage_api_endpoint"`
-		CloudStorageAPIEndpointPort    int    `json:"cloud_storage_api_endpoint_port"`
-		CloudStorageAzureADLSEndpoint  string `json:"cloud_storage_azure_adls_endpoint"`
-		CloudStorageAzureADLSPort      int    `json:"cloud_storage_azure_adls_port"`
-		CloudStorageBucket             string `json:"cloud_storage_bucket"`
-		CloudStorageCacheCheckInterval int    `json:"cloud_storage_cache_check_interval"`
+		CloudStorageEnabled                bool   `json:"cloud_storage_enabled" jsonschema:"required"`
+		CloudStorageAccessKey              string `json:"cloud_storage_access_key"`
+		CloudStorageSecretKey              string `json:"cloud_storage_secret_key"`
+		CloudStorageAPIEndpoint            string `json:"cloud_storage_api_endpoint"`
+		CloudStorageAPIEndpointPort        int    `json:"cloud_storage_api_endpoint_port"`
+		CloudStorageAzureADLSEndpoint      string `json:"cloud_storage_azure_adls_endpoint"`
+		CloudStorageAzureADLSPort          int    `json:"cloud_storage_azure_adls_port"`
+		CloudStorageAzureContainer         string `json:"cloud_storage_azure_container"`
+		CloudStorageAzureManagedIdentityID string `json:"cloud_storage_azure_managed_identity_id"`
+		CloudStorageAzureStorageAccount    string `json:"cloud_storage_azure_storage_account"`
+		CloudStorageAzureSharedKey         string `json:"cloud_storage_azure_shared_key"`
+		CloudStorageBucket                 string `json:"cloud_storage_bucket"`
+		CloudStorageCacheCheckInterval     int    `json:"cloud_storage_cache_check_interval"`
 		// CloudStorageCacheDirectory is a node config property unlike
 		// everything else in this struct. It should instead be set via
 		// `config.node`.
 		CloudStorageCacheDirectory              string            `json:"cloud_storage_cache_directory" jsonschema:"deprecated"`
 		CloudStorageCacheSize                   *ResourceQuantity `json:"cloud_storage_cache_size"`
-		CloudStorageCredentialsSource           string            `json:"cloud_storage_credentials_source" jsonschema:"pattern=^(config_file|aws_instance_metadata|sts|gcp_instance_metadata)$"`
+		CloudStorageCredentialsSource           string            `json:"cloud_storage_credentials_source" jsonschema:"pattern=^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$"`
 		CloudStorageDisableTLS                  bool              `json:"cloud_storage_disable_tls"`
 		CloudStorageEnableRemoteRead            bool              `json:"cloud_storage_enable_remote_read"`
 		CloudStorageEnableRemoteWrite           bool              `json:"cloud_storage_enable_remote_write"`

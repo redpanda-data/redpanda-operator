@@ -19,6 +19,7 @@ import (
 	"io/fs"
 	"maps"
 	"math/big"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,6 +46,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -458,6 +460,66 @@ func TestIntegrationChart(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("console-integration", func(t *testing.T) {
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		release := env.Install(ctx, redpandaChart, helm.InstallOptions{
+			Values: minimalValues(&redpanda.PartialValues{
+				Console: &consolechart.PartialValues{
+					Enabled: ptr.To(true),
+				},
+			}),
+		})
+
+		pods, err := kube.List[corev1.PodList](ctx, env.Ctl(), client.MatchingLabels{
+			"app.kubernetes.io/instance": release.Name,
+			"app.kubernetes.io/name":     "console",
+		})
+		require.NoError(t, err)
+
+		dialer := kube.NewPodDialer(env.Ctl().RestConfig())
+
+		client := http.Client{
+			Transport: &http.Transport{
+				DialContext: dialer.DialContext,
+			},
+		}
+
+		consolePod := pods.Items[0]
+		baseURL := fmt.Sprintf("http://%s.%s:8080", consolePod.Name, consolePod.Namespace)
+
+		for _, check := range []struct {
+			endpoint string
+			check    func([]byte)
+		}{
+			{endpoint: "/api/schema-registry/mode"}, // Test that schema registry is connected.
+			{endpoint: "/api/topics"},               // Test that Kafka is connected.
+			{
+				endpoint: "/api/console/endpoints", // Test that adminAPI is connected
+				check: func(b []byte) {
+					// DebugBundleService will only be supported if the admin API is configured.
+					require.Contains(t, string(b), `{"endpoint":"redpanda.api.console.v1alpha1.DebugBundleService","method":"POST","isSupported":true}`)
+				},
+			},
+		} {
+			resp, err := client.Get(baseURL + check.endpoint)
+			require.NoError(t, err)
+
+			require.Equal(t, resp.StatusCode, 200)
+
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			t.Logf("%s", body)
+
+			if check.check != nil {
+				check.check(body)
+			}
+		}
+	})
 }
 
 func TieredStorageStatic(t *testing.T) redpanda.PartialValues {
@@ -808,26 +870,50 @@ func httpProxyListenerTest(ctx context.Context, rpk *Client) error {
 
 func mTLSValuesUsingCertManager() *redpanda.PartialValues {
 	return minimalValues(&redpanda.PartialValues{
+		TLS: &redpanda.PartialTLS{
+			Certs: redpanda.PartialTLSCertMap{
+				"kafka": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+				"http": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+				"rpc": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+				"schema": redpanda.PartialTLSCert{
+					Enabled:   ptr.To(true),
+					CAEnabled: ptr.To(true),
+				},
+			},
+		},
 		External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
 		ClusterDomain: ptr.To("cluster.local"),
 		Listeners: &redpanda.PartialListeners{
 			Admin: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				TLS: &redpanda.PartialInternalTLS{
+					// Uses default by default.
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			HTTP: &redpanda.PartialListenerConfig[redpanda.HTTPAuthenticationMethod]{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("http"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			Kafka: &redpanda.PartialListenerConfig[redpanda.KafkaAuthenticationMethod]{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("kafka"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},
 			SchemaRegistry: &redpanda.PartialListenerConfig[redpanda.NoAuth]{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("schema"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},
@@ -836,6 +922,7 @@ func mTLSValuesUsingCertManager() *redpanda.PartialValues {
 				TLS  *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
 			}{
 				TLS: &redpanda.PartialInternalTLS{
+					Cert:              ptr.To("rpc"),
 					RequireClientAuth: ptr.To(true),
 				},
 			},
@@ -911,7 +998,10 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 
 func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues {
 	final := &redpanda.PartialValues{
-		Console: &console.PartialValues{
+		Console: &consolechart.PartialValues{
+			Enabled: ptr.To(false),
+		},
+		External: &redpanda.PartialExternalConfig{
 			Enabled: ptr.To(false),
 		},
 		Statefulset: &redpanda.PartialStatefulset{
@@ -978,7 +1068,7 @@ func TestLabels(t *testing.T) {
 		values := &redpanda.PartialValues{
 			CommonLabels: labels,
 			// This guarantee does not currently extend to console.
-			Console: &console.PartialValues{Enabled: ptr.To(false)},
+			Console: &consolechart.PartialValues{Enabled: ptr.To(false)},
 		}
 
 		helmValues, err := redpanda.Chart.LoadValues(values)
@@ -1095,23 +1185,25 @@ func TestGoHelmEquivalence(t *testing.T) {
 				values.Auth.SASL.BootstrapUser.Password = ptr.To("bootstrapuser-p@ssw0rd")
 			}
 
-			values.Console = &console.PartialValues{
+			values.Console = &consolechart.PartialValues{
 				Enabled: ptr.To(true),
-				Ingress: &console.PartialIngressConfig{
-					Enabled: ptr.To(true),
-				},
-				Secret: &console.PartialSecretConfig{
-					Authentication: &console.PartialAuthenticationSecrets{
-						JWTSigningKey: ptr.To("JWT_PLACEHOLDER"),
+				Tests:   &consolechart.PartialEnableable{Enabled: ptr.To(false)},
+				PartialRenderValues: console.PartialRenderValues{
+					Ingress: &console.PartialIngressConfig{
+						Enabled: ptr.To(true),
 					},
-				},
-				Tests: &console.PartialEnableable{Enabled: ptr.To(false)},
-				// ServiceAccount and AutomountServiceAccountToken could be removed after Console helm chart release
-				// Currently there is difference between dependency Console Deployment and ServiceAccount
-				ServiceAccount: &console.PartialServiceAccountConfig{
+					Secret: &console.PartialSecretConfig{
+						Authentication: &console.PartialAuthenticationSecrets{
+							JWTSigningKey: ptr.To("JWT_PLACEHOLDER"),
+						},
+					},
+					// ServiceAccount and AutomountServiceAccountToken could be removed after Console helm chart release
+					// Currently there is difference between dependency Console Deployment and ServiceAccount
+					ServiceAccount: &console.PartialServiceAccountConfig{
+						AutomountServiceAccountToken: ptr.To(false),
+					},
 					AutomountServiceAccountToken: ptr.To(false),
 				},
-				AutomountServiceAccountToken: ptr.To(false),
 			}
 
 			goObjs, err := redpanda.Chart.Render(nil, helmette.Release{

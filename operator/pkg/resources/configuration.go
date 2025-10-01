@@ -24,10 +24,10 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/operator/pkg/secrets"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 // CreateConfiguration creates a combined config.
@@ -292,7 +292,7 @@ func CreateConfiguration(
 	// on any initContainer.
 	for _, k := range slices.Sorted(maps.Keys(pandaCluster.Spec.ClusterConfiguration)) {
 		v := pandaCluster.Spec.ClusterConfiguration[k]
-		cfg.Cluster.Set(k, *(v.DeepCopy()))
+		cfg.Cluster.Set(k, v.ToClusterConfig())
 	}
 
 	return cfg, nil
@@ -320,7 +320,7 @@ func prepareCloudStorage(
 		if pandaCluster.Namespace != pandaCluster.Spec.CloudStorage.SecretKeyRef.Namespace {
 			return fmt.Errorf("Spec.CloudStorage.SecretKeyRef.Namespace must match %q", pandaCluster.Namespace)
 		}
-		cfg.Cluster.Set("cloud_storage_secret_key", vectorizedv1alpha1.ClusterConfigValue{
+		cfg.Cluster.Set("cloud_storage_secret_key", clusterconfiguration.ClusterConfigValue{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: pandaCluster.Spec.CloudStorage.SecretKeyRef.Name,

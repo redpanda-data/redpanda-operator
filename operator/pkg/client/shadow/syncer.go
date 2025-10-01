@@ -16,20 +16,20 @@ import (
 
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"connectrpc.com/connect"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"k8s.io/utils/ptr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 )
 
 // Syncer synchronizes Schemas for the given object to Redpanda.
 type Syncer struct {
-	client *adminv2.Client
+	client *rpadmin.AdminAPI
 }
 
 // NewSyncer initializes a Syncer.
-func NewSyncer(client *adminv2.Client) *Syncer {
+func NewSyncer(client *rpadmin.AdminAPI) *Syncer {
 	return &Syncer{
 		client: client,
 	}
@@ -37,13 +37,22 @@ func NewSyncer(client *adminv2.Client) *Syncer {
 
 // Sync synchronizes the shadow link in Redpanda.
 func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings) (*redpandav1alpha2.ShadowLinkStatus, error) {
-	response, err := s.client.ShadowLinks().GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
+	response, err := s.client.ShadowLinkService().GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
 		Name: o.Name,
 	}))
 	var existing *adminv2api.GetShadowLinkResponse
 	if err != nil {
-		var httpError *adminv2.HTTPResponseError
-		if !errors.As(err, &httpError) || httpError.StatusCode != http.StatusNotFound {
+		var httpError *rpadmin.HTTPResponseError
+		if errors.As(err, &httpError) {
+			generic, decodeErr := httpError.DecodeGenericErrorBody()
+			if decodeErr != nil {
+				return nil, errors.Join(err, decodeErr)
+			}
+			// on a 404, we don't error
+			if generic.Code != http.StatusNotFound {
+				return nil, err
+			}
+		} else {
 			return nil, err
 		}
 	} else {
@@ -54,7 +63,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 	if existing == nil {
 		link := convertCRDToAPIShadowLink(o, remoteClusterSettings)
 
-		response, err := s.client.ShadowLinks().CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
+		response, err := s.client.ShadowLinkService().CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
 			ShadowLink: link,
 		}))
 		if err != nil {
@@ -66,7 +75,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 	}
 
 	// update (NOTE: this is unimplemented currently)
-	update, err := s.client.ShadowLinks().UpdateShadowLink(ctx, connect.NewRequest(&adminv2api.UpdateShadowLinkRequest{
+	update, err := s.client.ShadowLinkService().UpdateShadowLink(ctx, connect.NewRequest(&adminv2api.UpdateShadowLinkRequest{
 		ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
 		UpdateMask: &fieldmaskpb.FieldMask{
 			// update all fields
@@ -83,7 +92,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 // Delete deletes the shadow link in Redpanda.
 func (s *Syncer) Delete(ctx context.Context, o *redpandav1alpha2.ShadowLink) error {
 	// delete (NOTE: this is unimplemented currently)
-	_, err := s.client.ShadowLinks().DeleteShadowLink(ctx, connect.NewRequest(&adminv2api.DeleteShadowLinkRequest{
+	_, err := s.client.ShadowLinkService().DeleteShadowLink(ctx, connect.NewRequest(&adminv2api.DeleteShadowLinkRequest{
 		Name: o.Name,
 	}))
 	return err

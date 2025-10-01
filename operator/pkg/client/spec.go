@@ -21,7 +21,6 @@ import (
 	"github.com/twmb/franz-go/pkg/sr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow/adminv2"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
@@ -134,45 +133,6 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 	}
 
 	return client, nil
-}
-
-func (c *Factory) redpandaAdminV2ForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (*adminv2.Client, error) {
-	if len(spec.URLs) == 0 {
-		return nil, ErrEmptyURLList
-	}
-
-	var err error
-	var tlsConfig *tls.Config
-	if spec.TLS != nil {
-		tlsConfig, err = c.configureSpecTLS(ctx, namespace, spec.TLS)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	var username, password, token string
-	username, password, token, err = c.configureAdminSpecSASL(ctx, namespace, spec)
-	if err != nil {
-		return nil, err
-	}
-
-	if c.userAuth != nil {
-		username = c.userAuth.Username
-		password = c.userAuth.Password
-	}
-
-	builder := adminv2.NewClientBuilder(spec.URLs...).
-		WithDialer(c.dialer).
-		WithTLS(tlsConfig).
-		WithClientTimeout(c.adminClientTimeout)
-
-	if username != "" {
-		builder = builder.WithBasicAuth(username, password)
-	} else if token != "" {
-		builder = builder.WithBearerToken(token)
-	}
-
-	return builder.Build()
 }
 
 func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.SchemaRegistrySpec) (*sr.Client, error) {

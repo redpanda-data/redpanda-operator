@@ -494,6 +494,63 @@ func (m *MockAdminAPI) GetHealthOverview(_ context.Context) (rpadmin.ClusterHeal
 	}, nil
 }
 
+// Role management methods
+func (m *MockAdminAPI) Role(_ context.Context, roleName string) (rpadmin.RoleDetailResponse, error) {
+	m.Log.WithName("Role").WithValues("roleName", roleName).Info("called")
+	m.monitor.Lock()
+	defer m.monitor.Unlock()
+	if m.unavailable {
+		return rpadmin.RoleDetailResponse{}, &unavailableError{}
+	}
+	return rpadmin.RoleDetailResponse{
+		RoleName: roleName,
+	}, nil
+}
+
+func (m *MockAdminAPI) CreateRole(_ context.Context, roleName string) (rpadmin.CreateRole, error) {
+	m.Log.WithName("CreateRole").WithValues("roleName", roleName).Info("called")
+	m.monitor.Lock()
+	defer m.monitor.Unlock()
+	if m.unavailable {
+		return rpadmin.CreateRole{}, &unavailableError{}
+	}
+	return rpadmin.CreateRole{
+		RoleName: roleName,
+	}, nil
+}
+
+func (m *MockAdminAPI) DeleteRole(_ context.Context, roleName string, deleteACLs bool) error {
+	m.Log.WithName("DeleteRole").WithValues("roleName", roleName, "deleteACLs", deleteACLs).Info("called")
+	m.monitor.Lock()
+	defer m.monitor.Unlock()
+	if m.unavailable {
+		return &unavailableError{}
+	}
+	return nil
+}
+
+func (m *MockAdminAPI) UpdateRoleMembership(_ context.Context, roleName string, add, remove []rpadmin.RoleMember, dryRun bool) (rpadmin.PatchRoleResponse, error) {
+	m.Log.WithName("UpdateRoleMembership").WithValues("roleName", roleName, "add", add, "remove", remove, "dryRun", dryRun).Info("called")
+	m.monitor.Lock()
+	defer m.monitor.Unlock()
+	if m.unavailable {
+		return rpadmin.PatchRoleResponse{}, &unavailableError{}
+	}
+	return rpadmin.PatchRoleResponse{}, nil
+}
+
+func (m *MockAdminAPI) RoleMembers(_ context.Context, roleName string) (rpadmin.RoleMemberResponse, error) {
+	m.Log.WithName("RoleMembers").WithValues("roleName", roleName).Info("called")
+	m.monitor.Lock()
+	defer m.monitor.Unlock()
+	if m.unavailable {
+		return rpadmin.RoleMemberResponse{}, &unavailableError{}
+	}
+	return rpadmin.RoleMemberResponse{
+		Members: []rpadmin.RoleMember{},
+	}, nil
+}
+
 //nolint:goerr113 // test code
 func (m *MockAdminAPI) SetBrokerStatus(
 	id int, status rpadmin.MembershipStatus,

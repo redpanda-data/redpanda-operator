@@ -14,11 +14,11 @@ import (
 	"reflect"
 
 	"github.com/cockroachdb/errors"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -108,6 +108,9 @@ func convertInitContainer(state *redpanda.RenderState, values *redpanda.Values, 
 	}
 
 	container := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, name)
+	if container.Resources == nil {
+		container.Resources = &applycorev1.ResourceRequirementsApplyConfiguration{}
+	}
 	if err := convertJSONNotNil(spec.GetResources(), container.Resources); err != nil {
 		return err
 	}

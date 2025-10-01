@@ -13,7 +13,7 @@ import "sigs.k8s.io/controller-runtime/pkg/client"
 
 const (
 	DefaultFieldOwner     = client.FieldOwner("cluster.redpanda.com/operator")
-	defaultNamespaceLabel = "cluster.redpanda.com/namespace"
+	DefaultNamespaceLabel = "cluster.redpanda.com/namespace"
 	defaultOperatorLabel  = "cluster.redpanda.com/operator"
 	defaultOwnerLabel     = "cluster.redpanda.com/owner"
 	generationLabel       = "cluster.redpanda.com/generation"

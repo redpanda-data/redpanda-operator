@@ -273,6 +273,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -284,6 +285,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -295,6 +297,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -973,6 +976,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -984,6 +988,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -995,6 +1000,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -1729,6 +1735,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -1740,6 +1747,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -1751,6 +1759,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -2445,6 +2454,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -2456,6 +2466,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -2467,6 +2478,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -3173,6 +3185,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -3184,6 +3197,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -3195,6 +3209,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -3917,6 +3932,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -3928,6 +3944,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -3939,6 +3956,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -4645,6 +4663,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -4656,6 +4675,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -4667,6 +4687,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -5392,6 +5413,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -5403,6 +5425,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -5414,6 +5437,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -6341,6 +6365,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -6352,6 +6377,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -6363,6 +6389,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -7093,6 +7120,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -7104,6 +7132,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -7115,6 +7144,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -7822,6 +7852,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -7833,6 +7864,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -7844,6 +7876,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -8600,6 +8633,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -8611,6 +8645,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -8622,6 +8657,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -9321,6 +9357,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -9332,6 +9369,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -9343,6 +9381,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -10082,6 +10121,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -10093,6 +10133,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -10104,6 +10145,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -11052,6 +11094,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -11063,6 +11106,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -11074,6 +11118,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -11949,6 +11994,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -11960,6 +12006,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -11971,6 +12018,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -12812,6 +12860,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -12823,6 +12872,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -12834,6 +12884,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -13599,6 +13650,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -13610,6 +13662,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -13621,6 +13674,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -14361,6 +14415,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -14372,6 +14427,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -14383,6 +14439,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -15262,6 +15319,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -15273,6 +15331,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -15284,6 +15343,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -16014,6 +16074,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -16025,6 +16086,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -16036,6 +16098,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -16932,6 +16995,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -16943,6 +17007,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -16954,6 +17019,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -17919,6 +17985,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -17930,6 +17997,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -17941,6 +18009,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -19305,6 +19374,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -19316,6 +19386,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -19327,6 +19398,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -20283,6 +20355,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -20294,6 +20367,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -20305,6 +20379,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -21559,6 +21634,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -21570,6 +21646,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -21581,6 +21658,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -23012,6 +23090,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -23023,6 +23102,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -23034,6 +23114,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -24480,6 +24561,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -24491,6 +24573,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -24502,6 +24585,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -27543,6 +27627,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -27554,6 +27639,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -27565,6 +27651,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -29409,6 +29496,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -29420,6 +29508,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -29431,6 +29520,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -30439,6 +30529,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -30450,6 +30541,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -30461,6 +30553,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -32181,6 +32274,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -32192,6 +32286,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -32203,6 +32298,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -34330,6 +34426,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -34341,6 +34438,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -34352,6 +34450,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -35365,6 +35464,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -35376,6 +35476,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -35387,6 +35488,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -36263,6 +36365,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -36274,6 +36377,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -36285,6 +36389,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -37363,6 +37468,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -37374,6 +37480,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -37385,6 +37492,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -37744,7 +37852,6 @@ spec:
         - --leader-elect
         - --log-level=Y01SjB
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=WHh
         - --configurator-base-image=AzmZ3dTJs
@@ -37844,7 +37951,7 @@ metadata:
     app.kubernetes.io/name: 6iZG
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: RAyK-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -37879,7 +37986,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/RAyK-webhook-cert
   creationTimestamp: null
   name: RAyK-mutating-webhook-configuration
   namespace: default
@@ -37911,7 +38018,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/RAyK-webhook-cert
   creationTimestamp: null
   name: RAyK-validating-webhook-configuration
   namespace: default
@@ -38212,6 +38319,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -38223,6 +38331,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -38234,6 +38343,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -38596,7 +38706,6 @@ spec:
         - --leader-elect
         - --log-level=H1NDG8
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=K
         - --configurator-base-image=mM7lGw9fmKx
@@ -38708,7 +38817,7 @@ metadata:
     app.kubernetes.io/name: hsmvzpSm
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: tyx5W-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -38743,7 +38852,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/tyx5W-webhook-cert
   creationTimestamp: null
   name: tyx5W-mutating-webhook-configuration
   namespace: default
@@ -38775,7 +38884,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/tyx5W-webhook-cert
   creationTimestamp: null
   name: tyx5W-validating-webhook-configuration
   namespace: default
@@ -39076,6 +39185,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -39087,6 +39197,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -39098,6 +39209,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -39462,7 +39574,6 @@ spec:
         - --leader-elect
         - --log-level=SQz
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -39572,7 +39683,7 @@ metadata:
     app.kubernetes.io/name: njC0cLDExDA
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: 89IgS-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -39607,7 +39718,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/89IgS-webhook-cert
   creationTimestamp: null
   name: 89IgS-mutating-webhook-configuration
   namespace: default
@@ -39639,7 +39750,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/89IgS-webhook-cert
   creationTimestamp: null
   name: 89IgS-validating-webhook-configuration
   namespace: default
@@ -39946,6 +40057,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -39957,6 +40069,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -39968,6 +40081,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -40339,7 +40453,6 @@ spec:
         - --leader-elect
         - --log-level=z1LU
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -40439,7 +40552,7 @@ metadata:
     app.kubernetes.io/name: Re
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: fRjXK1u0-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -40476,7 +40589,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/fRjXK1u0-webhook-cert
   creationTimestamp: null
   name: fRjXK1u0-mutating-webhook-configuration
   namespace: default
@@ -40508,7 +40621,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/fRjXK1u0-webhook-cert
   creationTimestamp: null
   name: fRjXK1u0-validating-webhook-configuration
   namespace: default
@@ -40820,6 +40933,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -40831,6 +40945,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -40842,6 +40957,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -41219,7 +41335,6 @@ spec:
         - --leader-elect
         - --log-level=yVlZuzf
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=NnFVx
         - --configurator-base-image=zCQ
@@ -41328,7 +41443,7 @@ metadata:
     app.kubernetes.io/name: eMNuQ
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: 2jUS-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -41366,7 +41481,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/2jUS-webhook-cert
   creationTimestamp: null
   name: 2jUS-mutating-webhook-configuration
   namespace: default
@@ -41398,7 +41513,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/2jUS-webhook-cert
   creationTimestamp: null
   name: 2jUS-validating-webhook-configuration
   namespace: default
@@ -41703,6 +41818,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -41714,6 +41830,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -41725,6 +41842,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -42093,7 +42211,6 @@ spec:
         - --leader-elect
         - --log-level=caaG
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -42191,7 +42308,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     kP0Mu: tnINl
-  name: redpanda-serving-cert
+  name: WM-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -42227,7 +42344,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/WM-webhook-cert
   creationTimestamp: null
   name: WM-mutating-webhook-configuration
   namespace: default
@@ -42259,7 +42376,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/WM-webhook-cert
   creationTimestamp: null
   name: WM-validating-webhook-configuration
   namespace: default
@@ -42463,7 +42580,6 @@ spec:
         - --leader-elect
         - --log-level=smF3
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -42578,7 +42694,7 @@ metadata:
     app.kubernetes.io/name: X2us
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: operator-X2us-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -42614,7 +42730,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/operator-X2us-webhook-cert
   creationTimestamp: null
   name: operator-X2us-mutating-webhook-configuration
   namespace: default
@@ -42646,7 +42762,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/operator-X2us-webhook-cert
   creationTimestamp: null
   name: operator-X2us-validating-webhook-configuration
   namespace: default
@@ -42827,7 +42943,6 @@ spec:
         - --leader-elect
         - --log-level=Co
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=Jug9nLx
         - --configurator-base-image=ma3F
@@ -42987,7 +43102,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     jE0q9M4zk: 1A
-  name: redpanda-serving-cert
+  name: pEvEye-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -43026,7 +43141,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/pEvEye-webhook-cert
   creationTimestamp: null
   name: pEvEye-mutating-webhook-configuration
   namespace: default
@@ -43099,7 +43214,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/pEvEye-webhook-cert
   creationTimestamp: null
   name: pEvEye-validating-webhook-configuration
   namespace: default
@@ -43400,6 +43515,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -43411,6 +43527,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -43422,6 +43539,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -43789,7 +43907,6 @@ spec:
         - --leader-elect
         - --log-level=vMA
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=vnJvYTYU8
         - --configurator-base-image=idWmcYq6IZQH
@@ -43913,7 +44030,7 @@ metadata:
     app.kubernetes.io/name: fgsJm
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: nLM2irjC-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -43948,7 +44065,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/nLM2irjC-webhook-cert
   creationTimestamp: null
   name: nLM2irjC-mutating-webhook-configuration
   namespace: default
@@ -43980,7 +44097,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/nLM2irjC-webhook-cert
   creationTimestamp: null
   name: nLM2irjC-validating-webhook-configuration
   namespace: default
@@ -44283,6 +44400,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -44294,6 +44412,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -44305,6 +44424,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -44669,7 +44789,6 @@ spec:
         - --leader-elect
         - --log-level=d
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -44761,7 +44880,7 @@ metadata:
     app.kubernetes.io/name: zUC
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: X374QF3AYX-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -44796,7 +44915,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/X374QF3AYX-webhook-cert
   creationTimestamp: null
   name: X374QF3AYX-mutating-webhook-configuration
   namespace: default
@@ -44863,7 +44982,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/X374QF3AYX-webhook-cert
   creationTimestamp: null
   name: X374QF3AYX-validating-webhook-configuration
   namespace: default
@@ -45174,6 +45293,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -45185,6 +45305,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -45196,6 +45317,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -45550,7 +45672,6 @@ spec:
         - --leader-elect
         - --log-level=OzauffS1XLt
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=9mw
         - --configurator-base-image=qbU
@@ -45666,7 +45787,7 @@ metadata:
     app.kubernetes.io/name: 8V1wVzO
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: G-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -45704,7 +45825,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/G-webhook-cert
   creationTimestamp: null
   name: G-mutating-webhook-configuration
   namespace: default
@@ -45736,7 +45857,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/G-webhook-cert
   creationTimestamp: null
   name: G-validating-webhook-configuration
   namespace: default
@@ -46046,6 +46167,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -46057,6 +46179,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -46068,6 +46191,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -46443,7 +46567,6 @@ spec:
         - --leader-elect
         - --log-level=pN6bqJZQR
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=GfYtT
         - --configurator-base-image=2g
@@ -46543,7 +46666,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     jcF: qXntI
-  name: redpanda-serving-cert
+  name: tDaA-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -46580,7 +46703,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/tDaA-webhook-cert
   creationTimestamp: null
   name: tDaA-mutating-webhook-configuration
   namespace: default
@@ -46651,7 +46774,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/tDaA-webhook-cert
   creationTimestamp: null
   name: tDaA-validating-webhook-configuration
   namespace: default
@@ -46964,6 +47087,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -46975,6 +47099,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -46986,6 +47111,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -47352,7 +47478,6 @@ spec:
         - --leader-elect
         - --log-level=7mzP0
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -47466,7 +47591,7 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
     j: Wmsdb
     uS: h6Fj
-  name: redpanda-serving-cert
+  name: 79ioSjMT8KG-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -47504,7 +47629,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/79ioSjMT8KG-webhook-cert
   creationTimestamp: null
   name: 79ioSjMT8KG-mutating-webhook-configuration
   namespace: default
@@ -47536,7 +47661,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/79ioSjMT8KG-webhook-cert
   creationTimestamp: null
   name: 79ioSjMT8KG-validating-webhook-configuration
   namespace: default
@@ -47830,6 +47955,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -47841,6 +47967,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -47852,6 +47979,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -48313,7 +48441,6 @@ spec:
         - --leader-elect
         - --log-level=6i5
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=vJ7ET
         - --configurator-base-image=cd7qo
@@ -48468,7 +48595,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     wig: gAae
-  name: redpanda-serving-cert
+  name: 41nucs5-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -48506,7 +48633,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/41nucs5-webhook-cert
   creationTimestamp: null
   name: 41nucs5-mutating-webhook-configuration
   namespace: default
@@ -48538,7 +48665,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/41nucs5-webhook-cert
   creationTimestamp: null
   name: 41nucs5-validating-webhook-configuration
   namespace: default
@@ -48850,6 +48977,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -48861,6 +48989,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -48872,6 +49001,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -49306,7 +49436,6 @@ spec:
         - --leader-elect
         - --log-level=irlLOaCak6uG
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=DF517x
         - --configurator-base-image=SCN
@@ -49423,7 +49552,7 @@ metadata:
     app.kubernetes.io/name: Kcp
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: xtpIQu-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -49461,7 +49590,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/xtpIQu-webhook-cert
   creationTimestamp: null
   name: xtpIQu-mutating-webhook-configuration
   namespace: default
@@ -49493,7 +49622,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/xtpIQu-webhook-cert
   creationTimestamp: null
   name: xtpIQu-validating-webhook-configuration
   namespace: default
@@ -49781,7 +49910,6 @@ spec:
         - --leader-elect
         - --log-level=x4gaS
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=1
         - --configurator-base-image=
@@ -49952,7 +50080,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     yhRLU: bn88A
-  name: redpanda-serving-cert
+  name: CbM6ZNJQ-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -49989,7 +50117,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/CbM6ZNJQ-webhook-cert
   creationTimestamp: null
   name: CbM6ZNJQ-mutating-webhook-configuration
   namespace: default
@@ -50021,7 +50149,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/CbM6ZNJQ-webhook-cert
   creationTimestamp: null
   name: CbM6ZNJQ-validating-webhook-configuration
   namespace: default
@@ -50296,7 +50424,6 @@ spec:
         - --leader-elect
         - --log-level=LwcaR
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=47nK
         - --configurator-base-image=UWHmykY
@@ -50414,7 +50541,7 @@ metadata:
     app.kubernetes.io/name: 19ztDQ
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: oWZxG4ft6-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -50450,7 +50577,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/oWZxG4ft6-webhook-cert
   creationTimestamp: null
   name: oWZxG4ft6-mutating-webhook-configuration
   namespace: default
@@ -50482,7 +50609,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/oWZxG4ft6-webhook-cert
   creationTimestamp: null
   name: oWZxG4ft6-validating-webhook-configuration
   namespace: default
@@ -50770,6 +50897,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -50781,6 +50909,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -50792,6 +50921,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -51326,7 +51456,6 @@ spec:
         - --leader-elect
         - --log-level=tI
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=boxAxRu
         - --configurator-base-image=kBJV23
@@ -51518,7 +51647,7 @@ metadata:
     app.kubernetes.io/name: axjCvWi
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: PxBN-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -51554,7 +51683,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/PxBN-webhook-cert
   creationTimestamp: null
   name: PxBN-mutating-webhook-configuration
   namespace: default
@@ -51586,7 +51715,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/PxBN-webhook-cert
   creationTimestamp: null
   name: PxBN-validating-webhook-configuration
   namespace: default
@@ -51915,7 +52044,6 @@ spec:
         - --leader-elect
         - --log-level=4J4TVSNI8I
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=HXXm
         - --configurator-base-image=7wdG0
@@ -52135,7 +52263,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     fYyBJj2Al: 00TYG
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: CFnO9s-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -52173,7 +52301,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/CFnO9s-webhook-cert
   creationTimestamp: null
   name: CFnO9s-mutating-webhook-configuration
   namespace: default
@@ -52244,7 +52372,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/CFnO9s-webhook-cert
   creationTimestamp: null
   name: CFnO9s-validating-webhook-configuration
   namespace: default
@@ -52523,7 +52651,6 @@ spec:
         - --leader-elect
         - --log-level=CpVihaT
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=Vk
         - --configurator-base-image=xmIP4HeALlQ8
@@ -52695,7 +52822,7 @@ metadata:
     app.kubernetes.io/name: "N"
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: zLyH-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -52734,7 +52861,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/zLyH-webhook-cert
   creationTimestamp: null
   name: zLyH-mutating-webhook-configuration
   namespace: default
@@ -52766,7 +52893,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/zLyH-webhook-cert
   creationTimestamp: null
   name: zLyH-validating-webhook-configuration
   namespace: default
@@ -53054,6 +53181,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -53065,6 +53193,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -53076,6 +53205,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -53785,7 +53915,6 @@ spec:
         - --leader-elect
         - --log-level=Kp
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=m0a
         - --configurator-base-image=h9
@@ -53994,7 +54123,7 @@ metadata:
     app.kubernetes.io/name: nUS
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: m7Z5VmKktJ-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -54030,7 +54159,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/m7Z5VmKktJ-webhook-cert
   creationTimestamp: null
   name: m7Z5VmKktJ-mutating-webhook-configuration
   namespace: default
@@ -54099,7 +54228,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/m7Z5VmKktJ-webhook-cert
   creationTimestamp: null
   name: m7Z5VmKktJ-validating-webhook-configuration
   namespace: default
@@ -54399,6 +54528,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -54410,6 +54540,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -54421,6 +54552,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -55039,7 +55171,6 @@ spec:
         - --leader-elect
         - --log-level=VNcVbeobGuK
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=TPaa
         - --configurator-base-image=Zme9w8o
@@ -55244,7 +55375,7 @@ metadata:
     app.kubernetes.io/name: Eg0Oz
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: OyOZvn5WT-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -55284,7 +55415,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/OyOZvn5WT-webhook-cert
   creationTimestamp: null
   name: OyOZvn5WT-mutating-webhook-configuration
   namespace: default
@@ -55359,7 +55490,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/OyOZvn5WT-webhook-cert
   creationTimestamp: null
   name: OyOZvn5WT-validating-webhook-configuration
   namespace: default
@@ -55823,7 +55954,6 @@ spec:
         - --leader-elect
         - --log-level=OdA
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=6E02z0oYQUL
         - --configurator-base-image=Tzah
@@ -56006,7 +56136,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     v0: 1iClRDvVO3c
-  name: redpanda-serving-cert
+  name: 5GoUVR7T-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -56045,7 +56175,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/5GoUVR7T-webhook-cert
   creationTimestamp: null
   name: 5GoUVR7T-mutating-webhook-configuration
   namespace: default
@@ -56077,7 +56207,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/5GoUVR7T-webhook-cert
   creationTimestamp: null
   name: 5GoUVR7T-validating-webhook-configuration
   namespace: default
@@ -56550,7 +56680,6 @@ spec:
         - --leader-elect
         - --log-level=dtDojkH
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=3ncj
         - --configurator-base-image=Ozfq
@@ -56726,7 +56855,7 @@ metadata:
     app.kubernetes.io/name: Pt
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: IsP97jKm-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -56766,7 +56895,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/IsP97jKm-webhook-cert
   creationTimestamp: null
   name: IsP97jKm-mutating-webhook-configuration
   namespace: default
@@ -56840,7 +56969,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/IsP97jKm-webhook-cert
   creationTimestamp: null
   name: IsP97jKm-validating-webhook-configuration
   namespace: default
@@ -57256,7 +57385,6 @@ spec:
         - --leader-elect
         - --log-level=51BriCol
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=8YPjvr
         - --configurator-base-image=w3qgVe7
@@ -57463,7 +57591,7 @@ metadata:
     app.kubernetes.io/name: 4MPmeCPMB
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: dHTgQf-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -57499,7 +57627,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/dHTgQf-webhook-cert
   creationTimestamp: null
   name: dHTgQf-mutating-webhook-configuration
   namespace: default
@@ -57531,7 +57659,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/dHTgQf-webhook-cert
   creationTimestamp: null
   name: dHTgQf-validating-webhook-configuration
   namespace: default
@@ -57837,6 +57965,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -57848,6 +57977,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -57859,6 +57989,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -58389,7 +58520,6 @@ spec:
         - --leader-elect
         - --log-level=HTKj8qv
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=hk
         - --configurator-base-image=9kg
@@ -58625,7 +58755,7 @@ metadata:
     app.kubernetes.io/name: 8ZgI1VH
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: Hjo9sbxO-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -58661,7 +58791,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/Hjo9sbxO-webhook-cert
   creationTimestamp: null
   name: Hjo9sbxO-mutating-webhook-configuration
   namespace: default
@@ -58693,7 +58823,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/Hjo9sbxO-webhook-cert
   creationTimestamp: null
   name: Hjo9sbxO-validating-webhook-configuration
   namespace: default
@@ -58990,6 +59120,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -59001,6 +59132,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -59012,6 +59144,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -59848,7 +59981,6 @@ spec:
         - --leader-elect
         - --log-level=VC4
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=McKTb81
         - --configurator-base-image=D43Nf
@@ -60008,7 +60140,7 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
     ib: 8cz
     mKZJ: qFJ
-  name: redpanda-serving-cert
+  name: 8K2N-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -60047,7 +60179,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/8K2N-webhook-cert
   creationTimestamp: null
   name: 8K2N-mutating-webhook-configuration
   namespace: default
@@ -60079,7 +60211,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/8K2N-webhook-cert
   creationTimestamp: null
   name: 8K2N-validating-webhook-configuration
   namespace: default
@@ -60392,6 +60524,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -60403,6 +60536,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -60414,6 +60548,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -61103,7 +61238,6 @@ spec:
         - --leader-elect
         - --log-level=
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=Q9Q
         - --configurator-base-image=M2Q
@@ -61269,7 +61403,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     mNkAknTCpbj0: NCMcS
-  name: redpanda-serving-cert
+  name: RQkbO-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -61307,7 +61441,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/RQkbO-webhook-cert
   creationTimestamp: null
   name: RQkbO-mutating-webhook-configuration
   namespace: default
@@ -61339,7 +61473,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/RQkbO-webhook-cert
   creationTimestamp: null
   name: RQkbO-validating-webhook-configuration
   namespace: default
@@ -61649,6 +61783,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -61660,6 +61795,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -61671,6 +61807,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -62317,7 +62454,6 @@ spec:
         - --leader-elect
         - --log-level=XrGv
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=EQ6C
         - --configurator-base-image=tczCHr
@@ -62504,7 +62640,7 @@ metadata:
     app.kubernetes.io/name: vYy9
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: 2rNNJQv8k5j97-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -62541,7 +62677,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/2rNNJQv8k5j97-webhook-cert
   creationTimestamp: null
   name: 2rNNJQv8k5j97-mutating-webhook-configuration
   namespace: default
@@ -62573,7 +62709,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/2rNNJQv8k5j97-webhook-cert
   creationTimestamp: null
   name: 2rNNJQv8k5j97-validating-webhook-configuration
   namespace: default
@@ -63025,7 +63161,6 @@ spec:
         - --leader-elect
         - --log-level=o7
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=w8Y59
         - --configurator-base-image=ahO
@@ -63210,7 +63345,7 @@ metadata:
     app.kubernetes.io/name: lbhx
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: QClq-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -63245,7 +63380,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/QClq-webhook-cert
   creationTimestamp: null
   name: QClq-mutating-webhook-configuration
   namespace: default
@@ -63312,7 +63447,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/QClq-webhook-cert
   creationTimestamp: null
   name: QClq-validating-webhook-configuration
   namespace: default
@@ -63632,6 +63767,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -63643,6 +63779,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -63654,6 +63791,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -64047,7 +64185,6 @@ spec:
         - --leader-elect
         - --log-level=I
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=ZpYBKn
         - --configurator-base-image=ZMlofIenTW3
@@ -64271,7 +64408,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     zWv: hIfkuex2B
-  name: redpanda-serving-cert
+  name: xxjYziP-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -64311,7 +64448,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/xxjYziP-webhook-cert
   creationTimestamp: null
   name: xxjYziP-mutating-webhook-configuration
   namespace: default
@@ -64386,7 +64523,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/xxjYziP-webhook-cert
   creationTimestamp: null
   name: xxjYziP-validating-webhook-configuration
   namespace: default
@@ -64696,6 +64833,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -64707,6 +64845,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -64718,6 +64857,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -65375,7 +65515,6 @@ spec:
         - --leader-elect
         - --log-level=fhg
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=okj1Bqm1LHE
         - --configurator-base-image=YYLGC7
@@ -65595,7 +65734,7 @@ metadata:
     app.kubernetes.io/name: zsU8D
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: OZHCbAk-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -65633,7 +65772,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/OZHCbAk-webhook-cert
   creationTimestamp: null
   name: OZHCbAk-mutating-webhook-configuration
   namespace: default
@@ -65703,7 +65842,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/OZHCbAk-webhook-cert
   creationTimestamp: null
   name: OZHCbAk-validating-webhook-configuration
   namespace: default
@@ -65952,7 +66091,6 @@ spec:
         - --leader-elect
         - --log-level=E3A4
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=H0aN
         - --configurator-base-image=kG9n
@@ -66167,7 +66305,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     v: pV
-  name: redpanda-serving-cert
+  name: JvUUYZNAn-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -66204,7 +66342,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/JvUUYZNAn-webhook-cert
   creationTimestamp: null
   name: JvUUYZNAn-mutating-webhook-configuration
   namespace: default
@@ -66236,7 +66374,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/JvUUYZNAn-webhook-cert
   creationTimestamp: null
   name: JvUUYZNAn-validating-webhook-configuration
   namespace: default
@@ -66527,6 +66665,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -66538,6 +66677,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -66549,6 +66689,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -67030,7 +67171,6 @@ spec:
         - --leader-elect
         - --log-level=p7w
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=3BE
         - --configurator-base-image=BkpCoE
@@ -67261,7 +67401,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     dRuotY: sUV
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: twuYH9-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -67298,7 +67438,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/twuYH9-webhook-cert
   creationTimestamp: null
   name: twuYH9-mutating-webhook-configuration
   namespace: default
@@ -67330,7 +67470,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/twuYH9-webhook-cert
   creationTimestamp: null
   name: twuYH9-validating-webhook-configuration
   namespace: default
@@ -67638,6 +67778,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -67649,6 +67790,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -67660,6 +67802,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -68351,7 +68494,6 @@ spec:
         - --leader-elect
         - --log-level=grDHZkPyKot
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=y8Skx9
         - --configurator-base-image=n74Ca
@@ -68501,7 +68643,7 @@ metadata:
     app.kubernetes.io/name: MOjCBp
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: Sb2hWn-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -68537,7 +68679,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/Sb2hWn-webhook-cert
   creationTimestamp: null
   name: Sb2hWn-mutating-webhook-configuration
   namespace: default
@@ -68606,7 +68748,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/Sb2hWn-webhook-cert
   creationTimestamp: null
   name: Sb2hWn-validating-webhook-configuration
   namespace: default
@@ -68894,6 +69036,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -68905,6 +69048,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -68916,6 +69060,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -69348,7 +69493,6 @@ spec:
         - --leader-elect
         - --log-level=Yd
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=bBlM
         - --configurator-base-image=ftKlY
@@ -69569,7 +69713,7 @@ metadata:
     app.kubernetes.io/name: B
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: operator-B-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -69605,7 +69749,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/operator-B-webhook-cert
   creationTimestamp: null
   name: operator-B-mutating-webhook-configuration
   namespace: default
@@ -69673,7 +69817,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/operator-B-webhook-cert
   creationTimestamp: null
   name: operator-B-validating-webhook-configuration
   namespace: default
@@ -70033,7 +70177,6 @@ spec:
         - --leader-elect
         - --log-level=Ufou7z
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=wp
         - --configurator-base-image=AJtD86QQ
@@ -70186,7 +70329,7 @@ metadata:
     app.kubernetes.io/name: 3SyCJ
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: QSmzerg-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -70221,7 +70364,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/QSmzerg-webhook-cert
   creationTimestamp: null
   name: QSmzerg-mutating-webhook-configuration
   namespace: default
@@ -70288,7 +70431,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/QSmzerg-webhook-cert
   creationTimestamp: null
   name: QSmzerg-validating-webhook-configuration
   namespace: default
@@ -70582,6 +70725,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -70593,6 +70737,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -70604,6 +70749,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -71021,7 +71167,6 @@ spec:
         - --leader-elect
         - --log-level=pB9UJO8ZqB
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=1XQEc73
         - --configurator-base-image=87
@@ -71188,7 +71333,7 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
     q93: ONPg3F
     rZBEA7mOLYT: iFtHtFH
-  name: redpanda-serving-cert
+  name: nJ-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -71226,7 +71371,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/nJ-webhook-cert
   creationTimestamp: null
   name: nJ-mutating-webhook-configuration
   namespace: default
@@ -71258,7 +71403,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/nJ-webhook-cert
   creationTimestamp: null
   name: nJ-validating-webhook-configuration
   namespace: default
@@ -71558,6 +71703,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -71569,6 +71715,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -71580,6 +71727,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -72163,7 +72311,6 @@ spec:
         - --leader-elect
         - --log-level=tYc
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=y3ROS
         - --configurator-base-image=I
@@ -72349,7 +72496,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     jHlVD3i0I: Hfqg8dMgdc
-  name: redpanda-serving-cert
+  name: cCP-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -72389,7 +72536,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/cCP-webhook-cert
   creationTimestamp: null
   name: cCP-mutating-webhook-configuration
   namespace: default
@@ -72463,7 +72610,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/cCP-webhook-cert
   creationTimestamp: null
   name: cCP-validating-webhook-configuration
   namespace: default
@@ -72857,7 +73004,6 @@ spec:
         - --leader-elect
         - --log-level=AKFy
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=u
         - --configurator-base-image=TPAc
@@ -73063,7 +73209,7 @@ metadata:
     app.kubernetes.io/name: yHixING
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: 8WTbb-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -73098,7 +73244,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/8WTbb-webhook-cert
   creationTimestamp: null
   name: 8WTbb-mutating-webhook-configuration
   namespace: default
@@ -73165,7 +73311,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/8WTbb-webhook-cert
   creationTimestamp: null
   name: 8WTbb-validating-webhook-configuration
   namespace: default
@@ -73479,6 +73625,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -73490,6 +73637,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -73501,6 +73649,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -74076,7 +74225,6 @@ spec:
         - --leader-elect
         - --log-level=PcP
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=tr
         - --configurator-base-image=MxYHsvk3O
@@ -74289,7 +74437,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     nI2ZSs: 4AI8h
-  name: redpanda-serving-cert
+  name: Wo-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -74327,7 +74475,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/Wo-webhook-cert
   creationTimestamp: null
   name: Wo-mutating-webhook-configuration
   namespace: default
@@ -74399,7 +74547,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/Wo-webhook-cert
   creationTimestamp: null
   name: Wo-validating-webhook-configuration
   namespace: default
@@ -74719,6 +74867,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -74730,6 +74879,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -74741,6 +74891,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -75256,7 +75407,6 @@ spec:
         - --leader-elect
         - --log-level=s63h
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=lWf3R8lv
         - --configurator-base-image=zZLbhNE
@@ -75475,7 +75625,7 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
     t: W
     wH2b: ""
-  name: redpanda-serving-cert
+  name: w-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -75515,7 +75665,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/w-webhook-cert
   creationTimestamp: null
   name: w-mutating-webhook-configuration
   namespace: default
@@ -75589,7 +75739,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/w-webhook-cert
   creationTimestamp: null
   name: w-validating-webhook-configuration
   namespace: default
@@ -76037,7 +76187,6 @@ spec:
         - --leader-elect
         - --log-level=qZr
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=EyNNr90u1
         - --configurator-base-image=6C
@@ -76230,7 +76379,7 @@ metadata:
     gi: 9j2
     helm.sh/chart: operator-25.2.1-beta1
     zb8lDT9V: olwEfoWZ
-  name: redpanda-serving-cert
+  name: f3nfwQai-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -76270,7 +76419,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/f3nfwQai-webhook-cert
   creationTimestamp: null
   name: f3nfwQai-mutating-webhook-configuration
   namespace: default
@@ -76345,7 +76494,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/f3nfwQai-webhook-cert
   creationTimestamp: null
   name: f3nfwQai-validating-webhook-configuration
   namespace: default
@@ -76649,6 +76798,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -76660,6 +76810,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -76671,6 +76822,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -77077,7 +77229,6 @@ spec:
         - --leader-elect
         - --log-level=hj
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=wA5XUe
         - --configurator-base-image=kE0AJ1
@@ -77279,7 +77430,7 @@ metadata:
     app.kubernetes.io/name: Tlv
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: KXsg6-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -77315,7 +77466,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/KXsg6-webhook-cert
   creationTimestamp: null
   name: KXsg6-mutating-webhook-configuration
   namespace: default
@@ -77383,7 +77534,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/KXsg6-webhook-cert
   creationTimestamp: null
   name: KXsg6-validating-webhook-configuration
   namespace: default
@@ -77677,6 +77828,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -77688,6 +77840,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -77699,6 +77852,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -78158,7 +78312,6 @@ spec:
         - --leader-elect
         - --log-level=cU5MS1z
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=PQfV4
         - --configurator-base-image=uzG5
@@ -78326,7 +78479,7 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
     oLWSEoF: Ps5P
     uO6upU7K: lMwbJ
-  name: redpanda-serving-cert
+  name: FCXrBjh-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -78364,7 +78517,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/FCXrBjh-webhook-cert
   creationTimestamp: null
   name: FCXrBjh-mutating-webhook-configuration
   namespace: default
@@ -78396,7 +78549,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/FCXrBjh-webhook-cert
   creationTimestamp: null
   name: FCXrBjh-validating-webhook-configuration
   namespace: default
@@ -78704,6 +78857,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -78715,6 +78869,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -78726,6 +78881,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -79383,7 +79539,6 @@ spec:
         - --leader-elect
         - --log-level=sbpkgy
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=ob8Ckc
         - --configurator-base-image=iqTYWQsJpRK
@@ -79589,7 +79744,7 @@ metadata:
     app.kubernetes.io/name: "Y"
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: 02-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -79625,7 +79780,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/02-webhook-cert
   creationTimestamp: null
   name: 02-mutating-webhook-configuration
   namespace: default
@@ -79657,7 +79812,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/02-webhook-cert
   creationTimestamp: null
   name: 02-validating-webhook-configuration
   namespace: default
@@ -80033,7 +80188,6 @@ spec:
         - --leader-elect
         - --log-level=TmP83vnBu
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v
         - --configurator-base-image=xS
@@ -80244,7 +80398,7 @@ metadata:
     app.kubernetes.io/name: axov6PJ
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: 3SkASoputZl-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -80281,7 +80435,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/3SkASoputZl-webhook-cert
   creationTimestamp: null
   name: 3SkASoputZl-mutating-webhook-configuration
   namespace: default
@@ -80313,7 +80467,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/3SkASoputZl-webhook-cert
   creationTimestamp: null
   name: 3SkASoputZl-validating-webhook-configuration
   namespace: default
@@ -80613,6 +80767,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -80624,6 +80779,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -80635,6 +80791,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -81282,7 +81439,6 @@ spec:
         - --leader-elect
         - --log-level=G6sQWEEyqb
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=3EcYA
         - --configurator-base-image=HoNUZ89Keda
@@ -81497,7 +81653,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     dwmXsKZoxFp: TZf
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: KPhNK5uNi-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -81537,7 +81693,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/KPhNK5uNi-webhook-cert
   creationTimestamp: null
   name: KPhNK5uNi-mutating-webhook-configuration
   namespace: default
@@ -81569,7 +81725,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/KPhNK5uNi-webhook-cert
   creationTimestamp: null
   name: KPhNK5uNi-validating-webhook-configuration
   namespace: default
@@ -82057,7 +82213,6 @@ spec:
         - --leader-elect
         - --log-level=tqqBMvp3V
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=P
         - --configurator-base-image=h8K
@@ -82262,7 +82417,7 @@ metadata:
     app.kubernetes.io/name: LH
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: iP-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -82298,7 +82453,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/iP-webhook-cert
   creationTimestamp: null
   name: iP-mutating-webhook-configuration
   namespace: default
@@ -82330,7 +82485,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/iP-webhook-cert
   creationTimestamp: null
   name: iP-validating-webhook-configuration
   namespace: default
@@ -82643,6 +82798,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -82654,6 +82810,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -82665,6 +82822,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -83192,7 +83350,6 @@ spec:
         - --leader-elect
         - --log-level=OIXyC
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=HAScR
         - --configurator-base-image=C9o
@@ -83381,7 +83538,7 @@ metadata:
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
     rnKI: dxHr
-  name: redpanda-serving-cert
+  name: 5U9oyj-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -83419,7 +83576,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/5U9oyj-webhook-cert
   creationTimestamp: null
   name: 5U9oyj-mutating-webhook-configuration
   namespace: default
@@ -83492,7 +83649,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/5U9oyj-webhook-cert
   creationTimestamp: null
   name: 5U9oyj-validating-webhook-configuration
   namespace: default
@@ -83793,6 +83950,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -83804,6 +83962,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -83815,6 +83974,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -84629,6 +84789,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -84640,6 +84801,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -84651,6 +84813,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -85464,6 +85627,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -85475,6 +85639,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -85486,6 +85651,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -86160,6 +86326,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -86171,6 +86338,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -86182,6 +86350,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -86873,6 +87042,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -86884,6 +87054,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -86895,6 +87066,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -87569,6 +87741,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -87580,6 +87753,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -87591,6 +87765,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -88265,6 +88440,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -88276,6 +88452,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -88287,6 +88464,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics
@@ -88646,7 +88824,6 @@ spec:
         - --leader-elect
         - --log-level=info
         - --webhook-enabled=true
-        - --webhook-enabled=true
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --configurator-tag=v25.2.1-beta1
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
@@ -88730,7 +88907,7 @@ metadata:
     app.kubernetes.io/name: operator
     app.kubernetes.io/version: v25.2.1-beta1
     helm.sh/chart: operator-25.2.1-beta1
-  name: redpanda-serving-cert
+  name: operator-webhook-cert
   namespace: default
 spec:
   dnsNames:
@@ -88765,7 +88942,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/operator-webhook-cert
   creationTimestamp: null
   name: operator-mutating-webhook-configuration
   namespace: default
@@ -88797,7 +88974,7 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: default/redpanda-serving-cert
+    cert-manager.io/inject-ca-from: default/operator-webhook-cert
   creationTimestamp: null
   name: operator-validating-webhook-configuration
   namespace: default
@@ -89098,6 +89275,7 @@ rules:
   resources:
   - nodepools/finalizers
   - redpandas/finalizers
+  - roles/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
   - topics/finalizers
@@ -89109,6 +89287,7 @@ rules:
   resources:
   - nodepools/status
   - redpandas/status
+  - roles/status
   - schemas/status
   - shadowlinks/status
   - topics/status
@@ -89120,6 +89299,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - roles
   - schemas
   - shadowlinks
   - topics

@@ -21103,15 +21103,6 @@ spec:
                         their node pool definitions.
                       format: int32
                       type: integer
-                  required:
-                  - condemnedReplicas
-                  - desiredReplicas
-                  - name
-                  - outOfDateReplicas
-                  - readyReplicas
-                  - replicas
-                  - runningReplicas
-                  - upToDateReplicas
                   type: object
                 type: array
               observedGeneration:
@@ -42220,15 +42211,6 @@ spec:
                         their node pool definitions.
                       format: int32
                       type: integer
-                  required:
-                  - condemnedReplicas
-                  - desiredReplicas
-                  - name
-                  - outOfDateReplicas
-                  - readyReplicas
-                  - replicas
-                  - runningReplicas
-                  - upToDateReplicas
                   type: object
                 type: array
               observedGeneration:
