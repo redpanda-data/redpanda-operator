@@ -5,9 +5,9 @@ Feature: User CRDs
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage users
-    Given there is no user "bob" in v2 cluster "sasl"
-    And there is no user "james" in v2 cluster "sasl"
-    And there is no user "alice" in v2 cluster "sasl"
+    Given there is no user "bob" in cluster "sasl"
+    And there is no user "james" in cluster "sasl"
+    And there is no user "alice" in cluster "sasl"
     When I create CRD-based users for cluster "sasl":
       | name  | password | mechanism     | acls |
       | bob   |          | SCRAM-SHA-256 |      |
@@ -19,7 +19,7 @@ Feature: User CRDs
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage authentication-only users
-    Given there is no user "jason" in v2 cluster "sasl"
+    Given there is no user "jason" in cluster "sasl"
     And there are already the following ACLs in cluster "sasl":
       | user   | acls |
       | jason  | [{"type":"allow","resource":{"type":"cluster"},"operations":["Read"]}] |

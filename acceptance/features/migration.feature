@@ -30,7 +30,7 @@ Feature: Helm chart to Redpanda Operator migration
             fullnameOverride: name-override
     # end::redpanda-custom-resource-manifest[]
         """
-        Then cluster "redpanda-migration-example" is available
+        Then v2 cluster "redpanda-migration-example" is available
         And the Kubernetes object of type "StatefulSet.v1.apps" with name "name-override" has an OwnerReference pointing to the cluster "redpanda-migration-example"
         And the helm release for "redpanda-migration-example" can be deleted by removing its stored secret
         And the cluster "redpanda-migration-example" is healthy
