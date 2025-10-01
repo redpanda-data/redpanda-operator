@@ -448,17 +448,17 @@ func Run(
 		}
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mgr); err != nil {
+	if err := redpandacontrollers.SetupUserController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mgr); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Role")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}

@@ -111,8 +111,8 @@ func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.T
 	}
 }
 
-func thereAreTheFollowingPreexistingUsersInCluster(ctx context.Context, t framework.TestingT, cluster string, users *godog.Table) {
-	clients := clientsForCluster(ctx, cluster)
+func thereAreTheFollowingPreexistingUsersInCluster(ctx context.Context, t framework.TestingT, version, cluster string, users *godog.Table) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
 	// throw this in a cleanup instead of a defer since we use it in a cleanup
 	// below and it needs to stay alive until then
@@ -174,15 +174,15 @@ func thereShouldBeACLsInTheClusterForUser(ctx context.Context, t framework.Testi
 	require.NotEmpty(t, rules)
 }
 
-func thereIsNoUser(ctx context.Context, user, cluster string) {
-	clientsForCluster(ctx, cluster).ExpectNoUser(ctx, user)
+func thereIsNoUser(ctx context.Context, user, version, cluster string) {
+	versionedClientsForCluster(ctx, version, cluster).ExpectNoUser(ctx, user)
 }
 
-func userShouldBeAbleToReadFromTopicInCluster(ctx context.Context, t framework.TestingT, user, topic, cluster string) {
+func userShouldBeAbleToReadFromTopicInCluster(ctx context.Context, t framework.TestingT, user, topic, version, cluster string) {
 	payload := []byte("test")
 
 	// First, ensure the topic exists and has a test message (using admin client)
-	adminClients := clientsForCluster(ctx, cluster)
+	adminClients := versionedClientsForCluster(ctx, version, cluster)
 	adminClients.ExpectTopic(ctx, topic)
 
 	adminKafkaClient := adminClients.Kafka(ctx)
@@ -193,7 +193,7 @@ func userShouldBeAbleToReadFromTopicInCluster(ctx context.Context, t framework.T
 	t.Logf("Wrote record to topic %q", topic)
 
 	// Now test consumption as the authenticated user
-	clients := clientsForCluster(ctx, cluster).WithAuthentication(&client.UserAuth{
+	clients := versionedClientsForCluster(ctx, version, cluster).WithAuthentication(&client.UserAuth{
 		Username:  user,
 		Password:  "password", // Using default password from test setup
 		Mechanism: "SCRAM-SHA-256",

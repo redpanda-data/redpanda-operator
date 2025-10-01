@@ -20,6 +20,7 @@ import (
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
@@ -81,22 +82,31 @@ func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceR
 	return nil
 }
 
-func SetupSchemaController(ctx context.Context, mgr ctrl.Manager) error {
+func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
 	controller := NewResourceController(c, factory, &SchemaReconciler{}, "SchemaReconciler")
 
-	enqueueSchema, err := registerClusterSourceIndex(ctx, mgr, "schema", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
+	builder := ctrl.NewControllerManagedBy(mgr).
+		For(&redpandav1alpha2.Schema{})
+
+	if includeV1 {
+		enqueueV1Schema, err := registerV1ClusterSourceIndex(ctx, mgr, "schema_v1", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
+	}
+
+	enqueueV2Schema, err := registerClusterSourceIndex(ctx, mgr, "schema", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
 	if err != nil {
 		return err
 	}
+	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema)
 
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Schema{}).
-		Watches(&redpandav1alpha2.Redpanda{}, enqueueSchema).
-		// Every 5 minutes try and check to make sure no manual modifications
-		// happened on the resource synced to the cluster and attempt to correct
-		// any drift.
-		Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+	// Every 5 minutes try and check to make sure no manual modifications
+	// happened on the resource synced to the cluster and attempt to correct
+	// any drift.
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
 }

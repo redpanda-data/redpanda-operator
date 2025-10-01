@@ -1,7 +1,7 @@
 @cluster:basic
 Feature: Topic CRDs
   Background: Cluster available
-    Given cluster "basic" is available
+    Given v2 cluster "basic" is available
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage topics

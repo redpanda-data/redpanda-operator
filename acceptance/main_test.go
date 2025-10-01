@@ -25,6 +25,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	operatorchart "github.com/redpanda-data/redpanda-operator/operator/chart"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil"
@@ -60,7 +61,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
 			"quay.io/jetstack/cert-manager-webhook:v1.14.2",
 		}...).
-		WithSchemeFunctions(redpandav1alpha1.Install, redpandav1alpha2.Install).
+		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install).
 		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
 			Name:            "cert-manager",
 			Namespace:       "cert-manager",
@@ -88,9 +89,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						Repository: ptr.To(imageRepo),
 					},
 					CRDs: &operatorchart.PartialCRDs{
+						Enabled:      ptr.To(true),
+						Experimental: ptr.To(true),
+					},
+					VectorizedControllers: &operatorchart.PartialVectorizedControllers{
 						Enabled: ptr.To(true),
 					},
 					AdditionalCmdFlags: []string{
+						// For the v1 controllers since otherwise we'll attempt to always
+						// pull the locally built operator which will result in errors
+						"--configurator-image-pull-policy=IfNotPresent",
 						// These are needed for running decommissioning tests.
 						"--additional-controllers=nodeWatcher,decommission",
 						"--unbind-pvcs-after=5s",

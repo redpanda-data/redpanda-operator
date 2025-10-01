@@ -69,11 +69,11 @@ func iDeleteTheCRDRole(ctx context.Context, t framework.TestingT, role string) {
 	t.Logf("Successfully deleted role %q CRD", role)
 }
 
-func roleShouldExistInCluster(ctx context.Context, t framework.TestingT, role, cluster string) {
-	clientsForCluster(ctx, cluster).ExpectRole(ctx, role)
+func roleShouldExistInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
+	versionedClientsForCluster(ctx, version, cluster).ExpectRole(ctx, role)
 }
 
-func thereShouldBeNoRoleInCluster(ctx context.Context, t framework.TestingT, role, cluster string) {
+func thereShouldBeNoRoleInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
 	t.Logf("Checking that role %q does not exist in cluster %q", role, cluster)
 
 	// Add retry logic for role deletion timing issues
@@ -83,13 +83,13 @@ func thereShouldBeNoRoleInCluster(ctx context.Context, t framework.TestingT, rol
 				t.Logf("Recovered from panic during role check: %v", r)
 			}
 		}()
-		clientsForCluster(ctx, cluster).ExpectNoRole(ctx, role)
+		versionedClientsForCluster(ctx, version, cluster).ExpectNoRole(ctx, role)
 		return true
 	}, 60*time.Second, 5*time.Second, "Role %q should be deleted from cluster %q", role, cluster)
 }
 
-func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT, role string, members string, cluster string) {
-	clients := clientsForCluster(ctx, cluster)
+func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT, role string, members string, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
 	defer adminClient.Close()
 
@@ -132,8 +132,8 @@ func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT
 		"Role %q should have exactly %d members, got %d", role, len(expectedMembers), len(actualMembers))
 }
 
-func roleShouldNotHaveMemberInCluster(ctx context.Context, t framework.TestingT, role, member, cluster string) {
-	clients := clientsForCluster(ctx, cluster)
+func roleShouldNotHaveMemberInCluster(ctx context.Context, t framework.TestingT, role, member, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
 	defer adminClient.Close()
 
@@ -150,13 +150,13 @@ func roleShouldNotHaveMemberInCluster(ctx context.Context, t framework.TestingT,
 	}
 }
 
-func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework.TestingT, role, pattern, cluster string) {
+func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework.TestingT, role, pattern, version, cluster string) {
 	t.Logf("Checking ACLs for role %q in cluster %q", role, cluster)
 
 	// Add a small delay to ensure cluster is fully ready
 	time.Sleep(5 * time.Second)
 
-	clients := clientsForCluster(ctx, cluster)
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	t.Logf("Created cluster clients for %q", cluster)
 
 	aclClient := clients.ACLs(ctx)
@@ -189,8 +189,8 @@ func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework
 	require.True(t, found, "Role %q should have ACL for topic pattern %q", role, pattern)
 }
 
-func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.TestingT, role, cluster string) {
-	clients := clientsForCluster(ctx, cluster)
+func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	aclClient := clients.ACLs(ctx)
 	defer aclClient.Close()
 
@@ -207,8 +207,8 @@ func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.Testi
 	require.Empty(t, rules, "Role %q should have no managed ACLs", role)
 }
 
-func thereShouldBeNoACLsForRoleInCluster(ctx context.Context, t framework.TestingT, role, cluster string) {
-	clients := clientsForCluster(ctx, cluster)
+func thereShouldBeNoACLsForRoleInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	aclClient := clients.ACLs(ctx)
 	defer aclClient.Close()
 
@@ -225,15 +225,15 @@ func thereShouldBeNoACLsForRoleInCluster(ctx context.Context, t framework.Testin
 	require.Empty(t, rules, "There should be no ACLs for role %q", role)
 }
 
-func thereIsNoRole(ctx context.Context, role, cluster string) {
-	clientsForCluster(ctx, cluster).ExpectNoRole(ctx, role)
+func thereIsNoRole(ctx context.Context, role, version, cluster string) {
+	versionedClientsForCluster(ctx, version, cluster).ExpectNoRole(ctx, role)
 }
 
-func thereIsAPreExistingRole(ctx context.Context, role, cluster string) {
+func thereIsAPreExistingRole(ctx context.Context, role, version, cluster string) {
 	t := framework.T(ctx)
 
 	t.Logf("Creating pre-existing role %q in cluster %q", role, cluster)
-	adminClient := clientsForCluster(ctx, cluster).RedpandaAdmin(ctx)
+	adminClient := versionedClientsForCluster(ctx, version, cluster).RedpandaAdmin(ctx)
 	defer adminClient.Close()
 
 	// Create the role first
@@ -256,6 +256,6 @@ func thereIsAPreExistingRole(ctx context.Context, role, cluster string) {
 	t.Logf("Successfully created pre-existing role %q", role)
 }
 
-func thereShouldStillBeRole(ctx context.Context, role, cluster string) {
-	clientsForCluster(ctx, cluster).ExpectRole(ctx, role)
+func thereShouldStillBeRole(ctx context.Context, role, version, cluster string) {
+	versionedClientsForCluster(ctx, version, cluster).ExpectRole(ctx, role)
 }

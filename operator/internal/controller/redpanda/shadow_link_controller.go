@@ -94,14 +94,8 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1 
 	factory := internalclient.NewFactory(config, c)
 	controller := NewResourceController(c, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
 
-	enqueueShadowLink, err := registerClusterSourceIndex(ctx, mgr, "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
-	if err != nil {
-		return err
-	}
-
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.ShadowLink{}).
-		Watches(&redpandav1alpha2.Redpanda{}, enqueueShadowLink)
+		For(&redpandav1alpha2.ShadowLink{})
 
 	if includeV1 {
 		enqueueV1ShadowLink, err := registerV1ClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
@@ -110,6 +104,12 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1 
 		}
 		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink)
 	}
+
+	enqueueV2ShadowLink, err := registerClusterSourceIndex(ctx, mgr, "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+	if err != nil {
+		return err
+	}
+	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink)
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct

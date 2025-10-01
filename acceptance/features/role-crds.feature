@@ -1,12 +1,12 @@
 @cluster:roles
 Feature: Role CRDs
   Background: Cluster available
-    Given cluster "roles" is available
+    Given v2 cluster "roles" is available
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage roles
-    Given there is no role "admin-role" in cluster "roles"
-    And there are the following pre-existing users in cluster "roles"
+    Given there is no role "admin-role" in v2 cluster "roles"
+    And there are the following pre-existing users in v2 cluster "roles"
       | name    | password | mechanism     |
       | alice   | password | SCRAM-SHA-256 |
       | bob     | password | SCRAM-SHA-256 |
@@ -30,16 +30,16 @@ Feature: Role CRDs
 # end::manage-roles-with-principals[]
     """
     And role "admin-role" is successfully synced
-    Then role "admin-role" should exist in cluster "roles"
-    And role "admin-role" should have members "alice and bob" in cluster "roles"
+    Then role "admin-role" should exist in v2 cluster "roles"
+    And role "admin-role" should have members "alice and bob" in v2 cluster "roles"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage roles with authorization
-    Given there is no role "read-only-role" in cluster "roles"
-    And there are the following pre-existing users in cluster "roles"
+    Given there is no role "read-only-role" in v2 cluster "roles"
+    And there are the following pre-existing users in v2 cluster "roles"
       | name    | password | mechanism     |
       | charlie | password | SCRAM-SHA-256 |
-    When I create topic "public-test" in cluster "roles"
+    When I create topic "public-test" in v2 cluster "roles"
     And I apply Kubernetes manifest:
     """
 # tag::manage-roles-with-authorization[]
@@ -67,16 +67,16 @@ Feature: Role CRDs
 # end::manage-roles-with-authorization[]
     """
     And role "read-only-role" is successfully synced
-    Then role "read-only-role" should exist in cluster "roles"
-    And role "read-only-role" should have ACLs for topic pattern "public-" in cluster "roles"
-    And "charlie" should be able to read from topic "public-test" in cluster "roles"
+    Then role "read-only-role" should exist in v2 cluster "roles"
+    And role "read-only-role" should have ACLs for topic pattern "public-" in v2 cluster "roles"
+    And "charlie" should be able to read from topic "public-test" in v2 cluster "roles"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage authorization-only roles
-    Given there are the following pre-existing users in cluster "roles"
+    Given there are the following pre-existing users in v2 cluster "roles"
       | name    | password | mechanism     |
       | travis  | password | SCRAM-SHA-256 |
-    And there is a pre-existing role "travis-role" in cluster "roles"
+    And there is a pre-existing role "travis-role" in v2 cluster "roles"
     When I apply Kubernetes manifest:
     """
 # tag::manage-authz-only-roles[]
@@ -106,5 +106,5 @@ Feature: Role CRDs
     """
     And role "travis-role" is successfully synced
     And I delete the CRD role "travis-role"
-    Then there should still be role "travis-role" in cluster "roles"
-    And there should be no ACLs for role "travis-role" in cluster "roles"
+    Then there should still be role "travis-role" in v2 cluster "roles"
+    And there should be no ACLs for role "travis-role" in v2 cluster "roles"

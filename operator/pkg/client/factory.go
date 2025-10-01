@@ -196,6 +196,15 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 		return c.kafkaForCluster(cluster, opts...)
 	}
 
+	v1Cluster, err := c.getV1Cluster(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+
+	if v1Cluster != nil {
+		return c.kafkaForV1Cluster(v1Cluster, opts...)
+	}
+
 	if spec := c.getKafkaSpec(o); spec != nil {
 		return c.kafkaForSpec(ctx, o.GetNamespace(), c.getKafkaMetricNamespace(o), spec, opts...)
 	}
@@ -273,6 +282,15 @@ func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client
 
 	if cluster != nil {
 		return c.schemaRegistryForCluster(cluster)
+	}
+
+	v1Cluster, err := c.getV1Cluster(ctx, o)
+	if err != nil {
+		return nil, err
+	}
+
+	if v1Cluster != nil {
+		return c.schemaRegistryForV1Cluster(v1Cluster)
 	}
 
 	if spec := c.getSchemaRegistrySpec(o); spec != nil {

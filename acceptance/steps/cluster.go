@@ -24,9 +24,50 @@ import (
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
-func checkClusterAvailability(ctx context.Context, t framework.TestingT, clusterName string) {
+func checkClusterAvailability(ctx context.Context, t framework.TestingT, version, clusterName string) {
+	if version == "v1" {
+		checkV1ClusterAvailability(ctx, t, clusterName)
+		return
+	}
+	checkV2ClusterAvailability(ctx, t, clusterName)
+}
+
+func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clusterName string) {
+	var cluster vectorizedv1alpha1.Cluster
+
+	key := t.ResourceKey(clusterName)
+
+	t.Logf("Checking cluster %q is ready", clusterName)
+	require.Eventually(t, func() bool {
+		require.NoError(t, t.Get(ctx, key, &cluster))
+		hasConditionQuiescent := hasV1Condition(vectorizedv1alpha1.ClusterCondition{
+			Type:   vectorizedv1alpha1.OperatorQuiescentConditionType,
+			Status: corev1.ConditionTrue,
+		}, cluster.Status.Conditions)
+
+		hasCondition := hasConditionQuiescent
+
+		t.Logf(`Checking cluster resource conditions contains "OperatorQuiescent"? %v`, hasCondition)
+		return hasCondition
+	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+		return fmt.Sprintf(`Cluster %q never contained the condition reason "OperatorQuiescent", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
+	}))
+	t.Logf("Cluster %q is ready!", clusterName)
+}
+
+func hasV1Condition(expected vectorizedv1alpha1.ClusterCondition, conditions []vectorizedv1alpha1.ClusterCondition) bool {
+	for _, condition := range conditions {
+		if expected.Type == condition.Type && expected.Status == condition.Status{
+			return true
+		}
+	}
+	return false
+}
+
+func checkV2ClusterAvailability(ctx context.Context, t framework.TestingT, clusterName string) {
 	var cluster redpandav1alpha2.Redpanda
 
 	key := t.ResourceKey(clusterName)
