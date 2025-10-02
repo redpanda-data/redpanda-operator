@@ -1,7 +1,7 @@
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
-  name: roles
+  name: sasl
 spec:
   image: "redpandadata/redpanda"
   version: "v25.2.1"
