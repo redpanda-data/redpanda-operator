@@ -41,6 +41,7 @@ import (
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
@@ -291,6 +292,18 @@ func (c *clusterClients) checkRole(ctx context.Context, role string, exists bool
 	}
 }
 
+func versionedClientsForCluster(ctx context.Context, version, cluster string) *clusterClients {
+	version = strings.TrimSpace(version)
+
+	framework.T(ctx).Logf("Got versioned cluster %q", version)
+
+	if version == "vectorized" {
+		return v1ClientsForCluster(ctx, cluster)
+	}
+
+	return clientsForCluster(ctx, cluster)
+}
+
 func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t := framework.T(ctx)
 
@@ -321,6 +334,51 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
+
+	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+
+	clients := &clusterClients{
+		resourceTarget: referencer,
+		cluster:        cluster,
+		factory:        factory,
+	}
+
+	t.Logf("Successfully created clients for cluster %q", cluster)
+	return clients
+}
+
+func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
+	t := framework.T(ctx)
+
+	t.Logf("Creating clients for cluster %q in namespace %q", cluster, t.Namespace())
+
+	// First verify the cluster exists
+	var testCluster vectorizedv1alpha1.Cluster
+	clusterKey := t.ResourceKey(cluster)
+	if err := t.Get(ctx, clusterKey, &testCluster); err != nil {
+		t.Fatalf("Failed to find cluster %q in namespace %q: %v", cluster, t.Namespace(), err)
+	}
+	t.Logf("Found cluster %q with status: %+v", cluster, testCluster.Status)
+
+	// we construct a fake user to grab all of the clients for the cluster
+	referencer := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: t.Namespace(),
+			Name:      "test-user-" + cluster, // Add a name for debugging
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{
+					Group: ptr.To("redpanda.vectorized.io"),
+					Kind:  ptr.To("Cluster"),
+					Name:  cluster,
+				},
+			},
+		},
+	}
+
+	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
+	t.Logf("Fake v1 user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
 	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 

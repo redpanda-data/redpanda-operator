@@ -430,16 +430,6 @@ func Run(
 		}
 	}
 
-	if err := (&redpandacontrollers.TopicReconciler{
-		Client:        mgr.GetClient(),
-		Factory:       factory,
-		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Topic")
-		return err
-	}
-
 	// ShadowLink Reconciler
 	if opts.enableShadowLinksController {
 		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
@@ -448,17 +438,22 @@ func Run(
 		}
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mgr); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Topic")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupUserController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mgr); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Role")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}

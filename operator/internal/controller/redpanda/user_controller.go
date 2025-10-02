@@ -22,6 +22,7 @@ import (
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
@@ -159,23 +160,32 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
-func SetupUserController(ctx context.Context, mgr ctrl.Manager) error {
+func SetupUserController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
 	controller := NewResourceController(c, factory, &UserReconciler{}, "UserReconciler")
 
-	enqueueUser, err := registerClusterSourceIndex(ctx, mgr, "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+	builder := ctrl.NewControllerManagedBy(mgr).
+		For(&redpandav1alpha2.User{}).
+		Owns(&corev1.Secret{})
+
+	if includeV1 {
+		enqueueV1User, err := registerV1ClusterSourceIndex(ctx, mgr, "user_v1", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User)
+	}
+
+	enqueueV2User, err := registerClusterSourceIndex(ctx, mgr, "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
 	if err != nil {
 		return err
 	}
+	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User)
 
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.User{}).
-		Owns(&corev1.Secret{}).
-		Watches(&redpandav1alpha2.Redpanda{}, enqueueUser).
-		// Every 5 minutes try and check to make sure no manual modifications
-		// happened on the resource synced to the cluster and attempt to correct
-		// any drift.
-		Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+	// Every 5 minutes try and check to make sure no manual modifications
+	// happened on the resource synced to the cluster and attempt to correct
+	// any drift.
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
 }

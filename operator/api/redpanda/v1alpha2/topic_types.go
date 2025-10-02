@@ -13,6 +13,9 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
 // TopicSpec defines the desired state of the topic. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
@@ -171,6 +174,10 @@ type TopicList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	// Specifies a list of Topic resources.
 	Items []Topic `json:"items"`
+}
+
+func (u *TopicList) GetItems() []*Topic {
+	return functional.MapFn(ptr.To, u.Items)
 }
 
 func (t *Topic) GetTopicName() string {

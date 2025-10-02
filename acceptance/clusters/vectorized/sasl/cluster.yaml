@@ -1,0 +1,27 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: sasl
+spec:
+  image: "redpandadata/redpanda"
+  version: "v25.2.1"
+  replicas: 1
+  enableSasl: true
+  resources:
+    requests:
+      cpu: "100m"
+      memory: 256Mi
+    limits:
+      cpu: "100m"
+      memory: 256Mi
+  configuration:
+    rpcServer:
+      port: 33145
+    kafkaApi:
+      - port: 9092
+    adminApi:
+      - port: 9644
+    developerMode: true
+    additionalCommandlineArguments:
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''
