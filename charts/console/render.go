@@ -11,15 +11,26 @@
 package console
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
+
+//go:embed chart/values.yaml
+var defaultValuesYAML []byte
 
 // Scheme is a [runtime.Scheme] with the appropriate extensions to load all
 // objects produced by the console chart.
@@ -49,6 +60,38 @@ type RenderState struct {
 	Template     func(string) string
 	CommonLabels map[string]string
 	Values       RenderValues
+}
+
+// +gotohelm:ignore=true
+func NewRenderState(namespace, name string, labels map[string]string, values PartialRenderValues) (*RenderState, error) {
+	var rv RenderValues
+	if err := yaml.Unmarshal(defaultValuesYAML, &rv); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	// Converting from PartialRenderValues to RenderValues is easiest to do
+	// with JSON marshalling / unmarshalling as it lets us side step the type
+	// system. Given that partial's serialize to fragments / partial,
+	// unmarshaling into a full struct is nearly identical to helm's values
+	// merging behavior.
+	// Possible divergences may occur if slices are merged together but there's
+	// no case for that with console's default values.
+	out, err := json.Marshal(values)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if err := json.Unmarshal(out, &rv); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return &RenderState{
+		Namespace:    namespace,
+		ReleaseName:  name,
+		Values:       rv,
+		CommonLabels: labels,
+		Template:     func(s string) string { return s },
+	}, nil
 }
 
 // ChartName returns the name of this "chart", respecting any overrides.
@@ -130,6 +173,18 @@ func Render(state *RenderState) []kube.Object {
 	// Filtering happens elsewhere, don't call this function directly if you
 	// can avoid it.
 	return manifests
+}
+
+func Types() []kube.Object {
+	return []kube.Object{
+		&corev1.ServiceAccount{},
+		&corev1.Secret{},
+		&corev1.ConfigMap{},
+		&corev1.Service{},
+		&networkingv1.Ingress{},
+		&appsv1.Deployment{},
+		&autoscalingv2.HorizontalPodAutoscaler{},
+	}
 }
 
 func cleanForK8s(s string) string {
