@@ -199,10 +199,15 @@ func (c *clusterClients) checkSchema(ctx context.Context, schema string, exists 
 		t.Logf("Pulling list of schema subjects from cluster")
 		schemaRegistry := c.SchemaRegistry(ctx)
 		subjects, err = schemaRegistry.Subjects(ctx)
-		require.NoError(t, err)
+		if err != nil {
+			// just retry on error, sometimes v1 stuff is slow to come up even after
+			// the broker is marked as healthy
+			return false
+		}
 
 		return exists == slices.Contains(subjects, schema)
 	}, 10*time.Second, 1*time.Second, message) {
+		require.NoError(t, err)
 		t.Errorf("Final list of schema subjects: %v", subjects)
 	}
 }
@@ -293,7 +298,7 @@ func (c *clusterClients) checkRole(ctx context.Context, role string, exists bool
 }
 
 func versionedClientsForCluster(ctx context.Context, version, cluster string) *clusterClients {
-	version = strings.TrimSpace(version)
+	version = getVersion(framework.T(ctx), version)
 
 	framework.T(ctx).Logf("Got versioned cluster %q", version)
 
@@ -392,7 +397,7 @@ func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	return clients
 }
 
-func usersFromACLTable(t framework.TestingT, cluster string, table *godog.Table) []*redpandav1alpha2.User {
+func usersFromACLTable(t framework.TestingT, version, cluster string, table *godog.Table) []*redpandav1alpha2.User {
 	var users []*redpandav1alpha2.User
 
 	for i, row := range table.Rows {
@@ -404,13 +409,13 @@ func usersFromACLTable(t framework.TestingT, cluster string, table *godog.Table)
 		name, acls := row.Cells[0].Value, row.Cells[1].Value
 		name, acls = strings.TrimSpace(name), strings.TrimSpace(acls)
 
-		users = append(users, userFromRow(t, cluster, name, "", "", acls))
+		users = append(users, userFromRow(t, version, cluster, name, "", "", acls))
 	}
 
 	return users
 }
 
-func usersFromAuthTable(t framework.TestingT, cluster string, table *godog.Table) []*redpandav1alpha2.User {
+func usersFromAuthTable(t framework.TestingT, version, cluster string, table *godog.Table) []*redpandav1alpha2.User {
 	var users []*redpandav1alpha2.User
 
 	for i, row := range table.Rows {
@@ -422,13 +427,13 @@ func usersFromAuthTable(t framework.TestingT, cluster string, table *godog.Table
 		name, password, mechanism := row.Cells[0].Value, row.Cells[1].Value, row.Cells[2].Value
 		name, password, mechanism = strings.TrimSpace(name), strings.TrimSpace(password), strings.TrimSpace(mechanism)
 
-		users = append(users, userFromRow(t, cluster, name, password, mechanism, ""))
+		users = append(users, userFromRow(t, version, cluster, name, password, mechanism, ""))
 	}
 
 	return users
 }
 
-func usersFromFullTable(t framework.TestingT, cluster string, table *godog.Table) []*redpandav1alpha2.User {
+func usersFromFullTable(t framework.TestingT, version, cluster string, table *godog.Table) []*redpandav1alpha2.User {
 	var users []*redpandav1alpha2.User
 
 	for i, row := range table.Rows {
@@ -440,13 +445,15 @@ func usersFromFullTable(t framework.TestingT, cluster string, table *godog.Table
 		name, password, mechanism, acls := row.Cells[0].Value, row.Cells[1].Value, row.Cells[2].Value, row.Cells[3].Value
 		name, password, mechanism, acls = strings.TrimSpace(name), strings.TrimSpace(password), strings.TrimSpace(mechanism), strings.TrimSpace(acls)
 
-		users = append(users, userFromRow(t, cluster, name, password, mechanism, acls))
+		users = append(users, userFromRow(t, version, cluster, name, password, mechanism, acls))
 	}
 
 	return users
 }
 
-func userFromRow(t framework.TestingT, cluster, name, password, mechanism, acls string) *redpandav1alpha2.User {
+func userFromRow(t framework.TestingT, version, cluster, name, password, mechanism, acls string) *redpandav1alpha2.User {
+	version = getVersion(t, version)
+
 	user := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: t.Namespace(),
@@ -460,6 +467,12 @@ func userFromRow(t framework.TestingT, cluster, name, password, mechanism, acls 
 			},
 		},
 	}
+
+	if version == "vectorized" {
+		user.Spec.ClusterSource.ClusterRef.Group = ptr.To("redpanda.vectorized.io")
+		user.Spec.ClusterSource.ClusterRef.Kind = ptr.To("Cluster")
+	}
+
 	if mechanism != "" || password != "" {
 		user.Spec.Authentication = &redpandav1alpha2.UserAuthenticationSpec{
 			Type: ptr.To(redpandav1alpha2.SASLMechanism(mechanism)),
@@ -618,4 +631,13 @@ func removeAllFinalizers(ctx context.Context, t framework.TestingT, gvk schema.G
 			require.NoError(t, t.Update(ctx, &item))
 		}
 	}
+}
+
+func getVersion(t framework.TestingT, version string) string {
+	version = strings.TrimSpace(version)
+	if version != "" {
+		return version
+	}
+
+	return t.Variant()
 }

@@ -116,10 +116,12 @@ func (f *FeatureHookTracker) ScenarioFinished(ctx context.Context, scenario *god
 	f.features[scenario.Uri] = features
 
 	f.scenarios.finish(ctx, scenario)
+	features.t.Logf("finished feature scenario, %d scenarios left", features.scenariosToRun)
 	if features.scenariosToRun <= 0 {
 		delete(f.features, scenario.Uri)
 
 		features.t.SetMessagePrefix(fmt.Sprintf("Feature (%s) Cleanup Failure: ", features.name))
+		features.t.Log("running cleanup handlers")
 		internaltesting.WrapWithPanicHandler(false, f.opts.ExitBehavior, features.DoCleanup)(ctx, features.hasStepFailure)
 	}
 }
@@ -171,8 +173,7 @@ func (f *FeatureHookTracker) TestRunStarted() {}
 func (f *FeatureHookTracker) Defined(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition) {
 }
 
-func (f *FeatureHookTracker) Pickle(pickle *messages.Pickle) {
-}
+func (f *FeatureHookTracker) Pickle(*messages.Pickle) {}
 
 func (f *FeatureHookTracker) Failed(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition, error) {
 }

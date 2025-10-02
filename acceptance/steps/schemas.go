@@ -34,11 +34,11 @@ func schemaIsSuccessfullySynced(ctx context.Context, t framework.TestingT, schem
 	}, schemaObject.Status.Conditions)
 }
 
-func thereIsNoSchema(ctx context.Context, schema, cluster string) {
-	clientsForCluster(ctx, cluster).ExpectNoSchema(ctx, schema)
+func thereIsNoSchema(ctx context.Context, schema, version, cluster string) {
+	versionedClientsForCluster(ctx, version, cluster).ExpectNoSchema(ctx, schema)
 }
 
-func iShouldBeAbleToCheckCompatibilityAgainst(ctx context.Context, schema, cluster string) {
-	clients := clientsForCluster(ctx, cluster)
+func iShouldBeAbleToCheckCompatibilityAgainst(ctx context.Context, schema, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	clients.ExpectSchema(ctx, schema)
 }

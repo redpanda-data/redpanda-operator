@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -101,6 +102,8 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 
 	builder.RegisterTag("isolated", -1000, isolatedTag)
 	builder.RegisterTag("vcluster", -2000, vclusterTag)
+	builder.RegisterTag("variant", -3000, variantTag)
+	builder.RegisterTag("injectVariant", -3000, injectVariantTag)
 
 	return builder
 }
@@ -225,6 +228,28 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 
 	opts.DefaultContext = ctx
 	opts.Tags = fmt.Sprintf("~@skip:%s", providerName)
+
+	parsingSuite := &godog.TestSuite{
+		Name:    "acceptance",
+		Options: &opts,
+	}
+	features, err := parsingSuite.RetrieveFeatures()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, feature := range features {
+		if variantTag := featureVariant(feature.Feature.Tags); variantTag != "" {
+			content := bytes.ReplaceAll(feature.Content, []byte("Feature: "), []byte(fmt.Sprintf("Feature: %s - ", variantTag)))
+			content = bytes.ReplaceAll(content, []byte("Scenario: "), []byte(fmt.Sprintf("Scenario: %s - ", variantTag)))
+			content = bytes.ReplaceAll(content, []byte("Scenario Outline: "), []byte(fmt.Sprintf("Scenario Outline: %s - ", variantTag)))
+			content = bytes.ReplaceAll(content, []byte(fmt.Sprintf("@variant:%s", variantTag)), []byte(fmt.Sprintf("@injectVariant:%s", variantTag)))
+			opts.FeatureContents = append(opts.FeatureContents, godog.Feature{
+				Name:     path.Join(variantTag, feature.Uri),
+				Contents: content,
+			})
+		}
+	}
 
 	var kubeOptions *internaltesting.KubectlOptions
 	var helmClient *helm.Client

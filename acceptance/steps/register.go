@@ -15,33 +15,32 @@ func init() {
 	// General scenario steps
 	framework.RegisterStep(`^(vectorized )?cluster "([^"]*)" is available$`, checkClusterAvailability)
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
-
 	framework.RegisterStep(`^I store "([^"]*)" of Kubernetes object with type "([^"]*)" and name "([^"]*)" as "([^"]*)"$`, recordVariable)
 	framework.RegisterStep(`^the recorded value "([^"]*)" has the same value as "([^"]*)" of the Kubernetes object with type "([^"]*)" and name "([^"]*)"$`, assertVariableValue)
 	framework.RegisterStep(`^the recorded value "([^"]*)" is one less than "([^"]*)" of the Kubernetes object with type "([^"]*)" and name "([^"]*)"$`, assertVariableValueIncremented)
 
 	// Schema scenario steps
-	framework.RegisterStep(`^there is no schema "([^"]*)" in cluster "([^"]*)"$`, thereIsNoSchema)
+	framework.RegisterStep(`^there is no schema "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsNoSchema)
 	framework.RegisterStep(`^schema "([^"]*)" is successfully synced$`, schemaIsSuccessfullySynced)
-	framework.RegisterStep(`^I should be able to check compatibility against "([^"]*)" in cluster "([^"]*)"$`, iShouldBeAbleToCheckCompatibilityAgainst)
+	framework.RegisterStep(`^I should be able to check compatibility against "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, iShouldBeAbleToCheckCompatibilityAgainst)
 
 	// Topic scenario steps
-	framework.RegisterStep(`^there is no topic "([^"]*)" in cluster "([^"]*)"$`, thereIsNoTopic)
+	framework.RegisterStep(`^there is no topic "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsNoTopic)
 	framework.RegisterStep(`^topic "([^"]*)" is successfully synced$`, topicIsSuccessfullySynced)
-	framework.RegisterStep(`^I should be able to produce and consume from "([^"]*)" in cluster "([^"]*)"$`, iShouldBeAbleToProduceAndConsumeFrom)
+	framework.RegisterStep(`^I should be able to produce and consume from "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, iShouldBeAbleToProduceAndConsumeFrom)
 	framework.RegisterStep(`I create topic "([^"]*)" in( vectorized)? cluster "([^"]*)"`, iCreateTopicInCluster)
 
 	// User scenario steps
 	framework.RegisterStep(`^user "([^"]*)" is successfully synced$`, userIsSuccessfullySynced)
 	framework.RegisterStep(`^"([^"]*)" should be able to read from topic "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, userShouldBeAbleToReadFromTopicInCluster)
 	framework.RegisterStep(`^there is no user "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsNoUser)
-	framework.RegisterStep(`^there are already the following ACLs in cluster "([^"]*)":$`, thereAreAlreadyTheFollowingACLsInCluster)
+	framework.RegisterStep(`^there are already the following ACLs in( vectorized)? cluster "([^"]*)":$`, thereAreAlreadyTheFollowingACLsInCluster)
 	framework.RegisterStep(`^there are the following pre-existing users in( vectorized)? cluster "([^"]*)"$`, thereAreTheFollowingPreexistingUsersInCluster)
-	framework.RegisterStep(`^I create CRD-based users for cluster "([^"]*)":$`, iCreateCRDbasedUsers)
+	framework.RegisterStep(`^I create CRD-based users for( vectorized)? cluster "([^"]*)":$`, iCreateCRDbasedUsers)
 	framework.RegisterStep(`^I delete the CRD user "([^"]*)"$`, iDeleteTheCRDUser)
-	framework.RegisterStep(`^there should be ACLs in the cluster "([^"]*)" for user "([^"]*)"$`, thereShouldBeACLsInTheClusterForUser)
-	framework.RegisterStep(`^"([^"]*)" should exist and be able to authenticate to the "([^"]*)" cluster$`, shouldExistAndBeAbleToAuthenticateToTheCluster)
-	framework.RegisterStep(`^"([^"]*)" should be able to authenticate to the "([^"]*)" cluster with password "([^"]*)" and mechanism "([^"]*)"$`, shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism)
+	framework.RegisterStep(`^there should be ACLs in the( vectorized)? cluster "([^"]*)" for user "([^"]*)"$`, thereShouldBeACLsInTheClusterForUser)
+	framework.RegisterStep(`^"([^"]*)" should exist and be able to authenticate to the( vectorized)? "([^"]*)" cluster$`, shouldExistAndBeAbleToAuthenticateToTheCluster)
+	framework.RegisterStep(`^"([^"]*)" should be able to authenticate to the( vectorized)? "([^"]*)" cluster with password "([^"]*)" and mechanism "([^"]*)"$`, shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism)
 
 	// Role scenario steps
 	framework.RegisterStep(`^role "([^"]*)" is successfully synced$`, roleIsSuccessfullySynced)

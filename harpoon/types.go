@@ -54,6 +54,8 @@ type TestingT interface {
 
 	IsolateNamespace(ctx context.Context) string
 	VCluster(ctx context.Context) string
+	MarkVariant(variant string)
+	Variant() string
 
 	InstallHelmChart(ctx context.Context, url, repo, chart string, options helm.InstallOptions)
 	UpgradeHelmChart(ctx context.Context, repo, chart, release string, options helm.UpgradeOptions)
