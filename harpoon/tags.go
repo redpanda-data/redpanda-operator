@@ -11,6 +11,8 @@ package framework
 
 import (
 	"context"
+
+	"github.com/stretchr/testify/require"
 )
 
 func isolatedTag(ctx context.Context, t TestingT, args ...string) context.Context {
@@ -20,5 +22,16 @@ func isolatedTag(ctx context.Context, t TestingT, args ...string) context.Contex
 
 func vclusterTag(ctx context.Context, t TestingT, args ...string) context.Context {
 	t.VCluster(ctx)
+	return ctx
+}
+
+func variantTag(ctx context.Context, t TestingT, args ...string) context.Context {
+	require.Equal(t, len(args), 1, "variant tags take a single argument")
+	return ctx
+}
+
+func injectVariantTag(ctx context.Context, t TestingT, args ...string) context.Context {
+	require.Equal(t, len(args), 1, "variant tags take a single argument")
+	t.MarkVariant(args[0])
 	return ctx
 }
