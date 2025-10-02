@@ -12,9 +12,11 @@ package steps
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 )
@@ -23,7 +25,7 @@ func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifes
 	file, err := os.CreateTemp("", "manifest-*.yaml")
 	require.NoError(t, err)
 
-	_, err = file.Write([]byte(manifest.Content))
+	_, err = file.Write(normalizeContent(t, manifest.Content))
 	require.NoError(t, err)
 	require.NoError(t, file.Close())
 
@@ -36,4 +38,45 @@ func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifes
 
 func iInstallLocalCRDs(ctx context.Context, t framework.TestingT, directory string) {
 	t.ApplyManifest(ctx, directory)
+}
+
+func normalizeContent(t framework.TestingT, content string) []byte {
+	manifest := map[string]any{}
+	require.NoError(t, yaml.Unmarshal([]byte(content), &manifest))
+
+	if getVersion(t, "") == "vectorized" {
+		addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.cluster.clusterRef.group")
+		addStringValueAtPath(manifest, "Cluster", "spec.cluster.clusterRef.kind")
+	}
+
+	contentBytes, err := yaml.Marshal(manifest)
+	require.NoError(t, err)
+
+	return contentBytes
+}
+
+func addStringValueAtPath(manifest map[string]any, value string, path string) map[string]any {
+	keys := strings.Split(path, ".")
+
+	current := manifest
+	for i, key := range keys {
+		if i == len(keys)-1 {
+			break
+		}
+		found, ok := current[key]
+		if !ok {
+			// all but the final key must exist in the path
+			return manifest
+		}
+		cast, ok := found.(map[string]any)
+		if !ok {
+			return manifest
+		}
+		current = cast
+	}
+	if len(keys) > 0 {
+		last := keys[len(keys)-1]
+		current[last] = value
+	}
+	return manifest
 }

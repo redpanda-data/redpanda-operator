@@ -70,6 +70,8 @@ type TestingOptions struct {
 	ExitBehavior ExitBehavior
 	// Images says the base images to import any time a new node comes up
 	Images []string
+
+	variant string
 }
 
 func (o *TestingOptions) Clone() *TestingOptions {
@@ -82,6 +84,7 @@ func (o *TestingOptions) Clone() *TestingOptions {
 		SchemeRegisterers: o.SchemeRegisterers,
 		ExitBehavior:      o.ExitBehavior,
 		Images:            o.Images,
+		variant:           o.variant,
 	}
 }
 
@@ -235,8 +238,9 @@ func (t *TestingT) ApplyManifest(ctx context.Context, fileOrDirectory string) {
 
 	t.Cleanup(func(ctx context.Context) {
 		t.Logf("Deleting manifest %q", fileOrDirectory)
-		_, err := KubectlDelete(ctx, fileOrDirectory, opts)
+		output, err := KubectlDelete(ctx, fileOrDirectory, opts)
 		require.NoError(t, err)
+		t.Logf("Deletion finished: %s", output)
 	})
 }
 
@@ -324,6 +328,22 @@ func (t *TestingT) IsolateNamespace(ctx context.Context) string {
 	})
 
 	return namespace
+}
+
+// MarkVariant marks the test with a variant tag that can be fetched later on.
+func (t *TestingT) MarkVariant(variant string) {
+	oldVariant := t.options.variant
+	t.Logf("Marking test as variant %q", variant)
+	t.options.variant = variant
+
+	t.Cleanup(func(ctx context.Context) {
+		t.options.variant = oldVariant
+	})
+}
+
+// Variant retrieves the testing variant.
+func (t *TestingT) Variant() string {
+	return t.options.variant
 }
 
 // VCluster creates a vcluster instance and sets up the test routines to use it.
