@@ -6,6 +6,7 @@ require (
 	github.com/cloudhut/common v0.11.0
 	github.com/cockroachdb/errors v1.11.3
 	github.com/google/gofuzz v1.2.0
+	github.com/itchyny/gojq v0.12.17
 	github.com/redpanda-data/console/backend v0.0.0-20250915195818-3cd9fabec94b
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
@@ -86,6 +87,7 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/jsonschema v0.12.0 // indirect
+	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
