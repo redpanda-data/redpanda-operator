@@ -55,9 +55,9 @@ func ApplyAndWait[T any, PT AddrOfObject[T]](ctx context.Context, ctl *Ctl, obj 
 }
 
 // List is a generic equivalent of [Ctl.List].
-func List[T any, L AddrOfObjectList[T]](ctx context.Context, ctl *Ctl, opts ...client.ListOption) (*T, error) {
+func List[T any, L AddrOfObjectList[T]](ctx context.Context, ctl *Ctl, namespace string, opts ...client.ListOption) (*T, error) {
 	var list T
-	if err := ctl.List(ctx, L(&list), opts...); err != nil {
+	if err := ctl.List(ctx, namespace, L(&list), opts...); err != nil {
 		return nil, err
 	}
 	return &list, nil
