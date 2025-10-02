@@ -533,7 +533,7 @@ func adminTLSCurlFlags(dot *helmette.Dot) string {
 	}
 
 	if values.Listeners.Admin.TLS.RequireClientAuth {
-		path := fmt.Sprintf("%s/%s-client", certificateMountPoint, Fullname(dot))
+		path := values.Listeners.Admin.TLS.ClientMountPoint(&values.TLS)
 		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
 	}
 
