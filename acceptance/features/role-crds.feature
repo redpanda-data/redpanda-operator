@@ -1,4 +1,4 @@
-@cluster:sasl
+@cluster:sasl @variant:vectorized
 Feature: Role CRDs
   Background: Cluster available
     Given cluster "sasl" is available

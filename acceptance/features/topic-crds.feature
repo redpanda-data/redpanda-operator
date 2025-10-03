@@ -1,4 +1,4 @@
-@cluster:basic
+@cluster:basic @variant:vectorized
 Feature: Topic CRDs
   Background: Cluster available
     Given cluster "basic" is available
