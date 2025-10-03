@@ -55,7 +55,7 @@ func normalizeContent(t framework.TestingT, content string) []byte {
 	return contentBytes
 }
 
-func addStringValueAtPath(manifest map[string]any, value string, path string) map[string]any {
+func addStringValueAtPath(manifest map[string]any, value string, path string) {
 	keys := strings.Split(path, ".")
 
 	current := manifest
@@ -66,11 +66,11 @@ func addStringValueAtPath(manifest map[string]any, value string, path string) ma
 		found, ok := current[key]
 		if !ok {
 			// all but the final key must exist in the path
-			return manifest
+			return
 		}
 		cast, ok := found.(map[string]any)
 		if !ok {
-			return manifest
+			return
 		}
 		current = cast
 	}
@@ -78,5 +78,4 @@ func addStringValueAtPath(manifest map[string]any, value string, path string) ma
 		last := keys[len(keys)-1]
 		current[last] = value
 	}
-	return manifest
 }
