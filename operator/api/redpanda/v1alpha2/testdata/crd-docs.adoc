@@ -13,11 +13,9 @@
 
 
 .Resource Types
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool[$$NodePool$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-role[$$Role$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlink[$$ShadowLink$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic[$$Topic$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user[$$User$$]
 
@@ -51,26 +49,6 @@ all principals with the specified `operation` and `permissionType` + | * |
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclfilter"]
-==== ACLFilter
-
-
-
-A filter for ACLs
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions[$$ShadowLinkSecuritySettingsSyncOptions$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`accessFilter`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclaccessfilter[$$ACLAccessFilter$$]__ | The access filter + |  | 
-| *`resourceFilter`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcefilter[$$ACLResourceFilter$$]__ | The resource filter + |  | 
-|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-acloperation"]
@@ -537,7 +515,6 @@ ClusterRef represents a reference to a cluster that is being targeted.
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -567,7 +544,6 @@ ClusterSource defines how to connect to a particular Redpanda cluster.
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec[$$TopicSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]
 ****
@@ -881,46 +857,6 @@ CredentialSecretRef can be used to set cloud_storage_secret_key from referenced 
 | Field | Description | Default | Validation
 | *`accessKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
 | *`secretKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolstatus"]
-==== EmbeddedNodePoolStatus
-
-
-
-EmbeddedNodePoolStatus defines the observed state of any node pools tied to this cluster
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`name`* __string__ | Name is the name of the pool + |  | 
-| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
-the node pool. This differs from DesiredReplicas during +
-a scaling operation, but should be the same once the cluster +
-has quiesced. + |  | 
-| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
-run for the cluster. It combines the desired replicas across +
-all node pools. + |  | 
-| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
-match their node pool definitions. If OutOfDateReplicas is not 0 +
-it should mean that the operator will soon roll this many pods. + |  | 
-| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
-their node pool definitions. + |  | 
-| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
-as part of a scaling down operation. + |  | 
-| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
-currently passing. + |  | 
-| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
-state. + |  | 
 |===
 
 
@@ -1654,135 +1590,6 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter"]
-==== NameFilter
-
-
-
-A filter based on the name of a resource
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions[$$ShadowLinkConsumerOffsetSyncOptions$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions[$$ShadowLinkSecuritySettingsSyncOptions$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktopicmetadatasyncoptions[$$ShadowLinkTopicMetadataSyncOptions$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`name`* __string__ | The resource name, or "*" +
-Note if the wildcar "*" is used it must be the _only_ character +
-and `patternType` must be `literal` + | * | 
-| *`filterType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-filtertype[$$FilterType$$]__ | Valid values: +
-- include +
-- exclude + |  | Enum: [include exclude] +
-
-| *`patternType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-patterntype[$$PatternType$$]__ | Default value is literal. Valid values: +
-- literal +
-- prefixed + | literal | Enum: [literal prefixed] +
-
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool"]
-==== NodePool
-
-
-
-
-
-
-
-
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
-| *`kind`* __string__ | `NodePool` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
-| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
- |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec[$$NodePoolSpec$$]__ |  |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus[$$NodePoolStatus$$]__ |  | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Bound] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Deployed] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Quiesced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Stable]] } | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolspec"]
-==== NodePoolSpec
-
-
-
-NodePoolSpec contains the node pool spec for the given node pool.
-Note that the defaulting behavior comes from the underlying Redpanda
-chart renderer, the attributes specified here will get merged in and
-override the defaults.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool[$$NodePool$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ |  |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepoolstatus"]
-==== NodePoolStatus
-
-
-
-NodePoolStatus defines the observed state of any node pools tied to this cluster
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-nodepool[$$NodePool$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`name`* __string__ | Name is the name of the pool + |  | 
-| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
-the node pool. This differs from DesiredReplicas during +
-a scaling operation, but should be the same once the cluster +
-has quiesced. + |  | 
-| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
-run for the cluster. It combines the desired replicas across +
-all node pools. + |  | 
-| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
-match their node pool definitions. If OutOfDateReplicas is not 0 +
-it should mean that the operator will soon roll this many pods. + |  | 
-| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
-their node pool definitions. + |  | 
-| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
-as part of a scaling down operation. + |  | 
-| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
-currently passing. + |  | 
-| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
-state. + |  | 
-| *`deployedGeneration`* __integer__ | DeployedGeneration represents the generation of the NodePool CRD that is currently +
-deployed as a StatefulSet + |  | 
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
-|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password"]
@@ -2523,8 +2330,6 @@ RedpandaStatus defines the observed state of Redpanda
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
 | *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
 installed license in the Redpanda cluster. + |  | 
-| *`nodePools`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddednodepoolstatus[$$EmbeddedNodePoolStatus$$] array__ | NodePools contains information about the node pools associated +
-with this cluster. + |  | 
 | *`configVersion`* __string__ | ConfigVersion contains the configuration version written in +
 Redpanda used for restarting broker nodes as necessary. + |  | 
 | *`observedGeneration`* __integer__ | Specifies the last observed generation. +
@@ -3188,245 +2993,6 @@ SetTieredStorageCacheDirOwnership configures the settings related to ownership o
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlink"]
-==== ShadowLink
-
-
-
-ShadowLink defines the CRD for ShadowLink cluster configuration.
-
-
-
-
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
-| *`kind`* __string__ | `ShadowLink` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
-| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
- |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]__ |  |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstatus[$$ShadowLinkStatus$$]__ |  |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions"]
-==== ShadowLinkConsumerOffsetSyncOptions
-
-
-
-Options for syncing consumer offsets
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`interval`* __xref:{anchor_prefix}-time-duration[$$Duration$$]__ | Sync interval +
-If 0 provided, defaults to 30 seconds + | 30 | 
-| *`enabled`* __boolean__ | Whether it's enabled + |  | 
-| *`groupFilters`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter[$$NameFilter$$] array__ | The filters + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions"]
-==== ShadowLinkSecuritySettingsSyncOptions
-
-
-
-Options for syncing security settings
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`interval`* __xref:{anchor_prefix}-time-duration[$$Duration$$]__ | Sync interval +
-If 0 provided, defaults to 30 seconds + | 30 | 
-| *`enabled`* __boolean__ | Whether or not it's enabled + |  | 
-| *`roleFilters`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter[$$NameFilter$$] array__ | Role filters + |  | 
-| *`scramCredFilters`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter[$$NameFilter$$] array__ | SCRAM credential filters + |  | 
-| *`aclFilters`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclfilter[$$ACLFilter$$] array__ | ACL filters + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec"]
-==== ShadowLinkSpec
-
-
-
-
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlink[$$ShadowLink$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ |  |  | 
-| *`sourceCluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ |  |  | 
-| *`topicMetadataSyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktopicmetadatasyncoptions[$$ShadowLinkTopicMetadataSyncOptions$$]__ | Topic metadata sync options + |  | 
-| *`consumerOffsetSyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions[$$ShadowLinkConsumerOffsetSyncOptions$$]__ | Consumer offset sync options + |  | 
-| *`securitySyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions[$$ShadowLinkSecuritySettingsSyncOptions$$]__ | Security settings sync options + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstate"]
-==== ShadowLinkState
-
-_Underlying type:_ _string_
-
-State of the shadow link
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstatus[$$ShadowLinkStatus$$]
-****
-
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstatus"]
-==== ShadowLinkStatus
-
-
-
-ShadowLinkStatus defines the observed state of any node pools tied to this cluster
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlink[$$ShadowLink$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`state`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstate[$$ShadowLinkState$$]__ | State of the shadow link + |  | 
-| *`taskStatuses`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktaskstatus[$$ShadowLinkTaskStatus$$] array__ | Statuses of the running tasks + |  | 
-| *`shadowTopicStatuses`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowtopicstatus[$$ShadowTopicStatus$$] array__ | Status of shadow topics + |  | 
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the ShadowLink. + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktaskstatus"]
-==== ShadowLinkTaskStatus
-
-
-
-
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstatus[$$ShadowLinkStatus$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`lastTransitionTime`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#time-v1-meta[$$Time$$]__ |  |  | 
-| *`name`* __string__ | Name of the task + |  | 
-| *`state`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-taskstate[$$TaskState$$]__ | State of the task + |  | 
-| *`reason`* __string__ | Reason for task being in state + |  | 
-| *`brokerId`* __integer__ | The broker the task is running on + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktopicmetadatasyncoptions"]
-==== ShadowLinkTopicMetadataSyncOptions
-
-
-
-Options for syncing topic metadata
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`interval`* __xref:{anchor_prefix}-time-duration[$$Duration$$]__ | How often to sync metadata +
-If 0 provided, defaults to 30 seconds + | 30 | 
-| *`topicFilters`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter[$$NameFilter$$] array__ | The topic filters to use + |  | 
-| *`shadowedTopicProperties`* __string array__ | Additional topic properties to shadow +
-Partition count, `max.message.bytes`, `cleanup.policy` and +
-`timestamp.type` will always be replicated + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowtopicstate"]
-==== ShadowTopicState
-
-_Underlying type:_ _string_
-
-State of a shadow topic
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowtopicstatus[$$ShadowTopicStatus$$]
-****
-
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowtopicstatus"]
-==== ShadowTopicStatus
-
-
-
-Status of a ShadowTopic
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkstatus[$$ShadowLinkStatus$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`lastTransitionTime`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#time-v1-meta[$$Time$$]__ |  |  | 
-| *`name`* __string__ | Name of the shadow topic + |  | 
-| *`topicId`* __string__ | Topic ID of the shadow topic + |  | 
-| *`state`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowtopicstate[$$ShadowTopicState$$]__ | State of the shadow topic + |  | 
-| *`partitionInformation`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicpartitioninformation[$$TopicPartitionInformation$$] array__ | List of partition information for the shadow topic + |  | 
-|===
-
-
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj"]
 ==== SideCarObj
 
@@ -3623,20 +3189,6 @@ TLS configures TLS in the Helm values. See https://docs.redpanda.com/current/man
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-taskstate"]
-==== TaskState
-
-_Underlying type:_ _string_
-
-Task states
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktaskstatus[$$ShadowLinkTaskStatus$$]
-****
-
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered"]
@@ -3753,28 +3305,6 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicpartitioninformation"]
-==== TopicPartitionInformation
-
-
-
-Topic partition information
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowtopicstatus[$$ShadowTopicStatus$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`partitionId`* __integer__ | Partition ID + |  | 
-| *`sourceLastStableOffset`* __integer__ | Source partition's LSO + |  | 
-| *`sourceHighWatermark`* __integer__ | Source partition's HWM + |  | 
-| *`highWatermark`* __integer__ | Shadowed partition's HWM + |  | 
-|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec"]
