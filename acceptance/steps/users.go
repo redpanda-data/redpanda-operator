@@ -39,8 +39,8 @@ func userIsSuccessfullySynced(ctx context.Context, t framework.TestingT, user st
 	}, userObject.Status.Conditions)
 }
 
-func iCreateCRDbasedUsers(ctx context.Context, t framework.TestingT, cluster string, users *godog.Table) {
-	for _, user := range usersFromFullTable(t, cluster, users) {
+func iCreateCRDbasedUsers(ctx context.Context, t framework.TestingT, version, cluster string, users *godog.Table) {
+	for _, user := range usersFromFullTable(t, version, cluster, users) {
 		user := user
 
 		t.Logf("Creating user %q", user.Name)
@@ -84,8 +84,8 @@ func iDeleteTheCRDUser(ctx context.Context, t framework.TestingT, user string) {
 	require.NoError(t, t.Delete(ctx, &userObject))
 }
 
-func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.TestingT, cluster string, acls *godog.Table) {
-	clients := clientsForCluster(ctx, cluster)
+func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.TestingT, version, cluster string, acls *godog.Table) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 	aclClient := clients.ACLs(ctx)
 	// throw this in a cleanup instead of a defer since we use it in a cleanup
 	// below and it needs to stay alive until then
@@ -93,7 +93,7 @@ func thereAreAlreadyTheFollowingACLsInCluster(ctx context.Context, t framework.T
 		aclClient.Close()
 	})
 
-	for _, user := range usersFromACLTable(t, cluster, acls) {
+	for _, user := range usersFromACLTable(t, version, cluster, acls) {
 		user := user
 
 		t.Logf("Creating acls in cluster %q for %q", cluster, user.Name)
@@ -123,7 +123,7 @@ func thereAreTheFollowingPreexistingUsersInCluster(ctx context.Context, t framew
 	usersClient := clients.Users(ctx)
 	defer usersClient.Close()
 
-	for _, user := range usersFromAuthTable(t, cluster, users) {
+	for _, user := range usersFromAuthTable(t, version, cluster, users) {
 		user := user
 
 		t.Logf("Creating user in cluster %q for %q", cluster, user.Name)
@@ -141,8 +141,8 @@ func thereAreTheFollowingPreexistingUsersInCluster(ctx context.Context, t framew
 	}
 }
 
-func shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism(ctx context.Context, t framework.TestingT, user, cluster, password, mechanism string) {
-	clients := clientsForCluster(ctx, cluster).WithAuthentication(&client.UserAuth{
+func shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism(ctx context.Context, t framework.TestingT, user, version, cluster, password, mechanism string) {
+	clients := versionedClientsForCluster(ctx, version, cluster).WithAuthentication(&client.UserAuth{
 		Username:  user,
 		Password:  password,
 		Mechanism: mechanism,
@@ -152,8 +152,8 @@ func shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism(ctx context.
 	require.NotEmpty(t, users)
 }
 
-func shouldExistAndBeAbleToAuthenticateToTheCluster(ctx context.Context, t framework.TestingT, user, cluster string) {
-	clients := clientsForCluster(ctx, cluster)
+func shouldExistAndBeAbleToAuthenticateToTheCluster(ctx context.Context, t framework.TestingT, user, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
 
 	clients.ExpectUser(ctx, user)
 
@@ -165,8 +165,8 @@ func shouldExistAndBeAbleToAuthenticateToTheCluster(ctx context.Context, t frame
 	clients.AsUser(ctx, &userObject).ExpectUser(ctx, user)
 }
 
-func thereShouldBeACLsInTheClusterForUser(ctx context.Context, t framework.TestingT, cluster, user string) {
-	aclClient := clientsForCluster(ctx, cluster).ACLs(ctx)
+func thereShouldBeACLsInTheClusterForUser(ctx context.Context, t framework.TestingT, version, cluster, user string) {
+	aclClient := versionedClientsForCluster(ctx, version, cluster).ACLs(ctx)
 	defer aclClient.Close()
 
 	rules, err := aclClient.ListACLs(ctx, fmt.Sprintf("User:%s", user))
