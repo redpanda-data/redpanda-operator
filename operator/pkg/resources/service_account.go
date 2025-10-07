@@ -92,3 +92,25 @@ func (s *ServiceAccountResource) Key() types.NamespacedName {
 	}
 	return types.NamespacedName{Name: *s.pandaCluster.Spec.ServiceAccount, Namespace: s.pandaCluster.Namespace}
 }
+
+func serviceAccountResourceKey(cluster *vectorizedv1alpha1.Cluster) types.NamespacedName {
+	if cluster.Spec.ServiceAccount == nil || *cluster.Spec.ServiceAccount == "" {
+		return types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}
+	}
+	return types.NamespacedName{Name: *cluster.Spec.ServiceAccount, Namespace: cluster.Namespace}
+}
+
+// RenderServiceAccount renders a service account object
+func RenderServiceAccount(cluster *vectorizedv1alpha1.Cluster) *corev1.ServiceAccount {
+	ns := serviceAccountResourceKey(cluster)
+	return &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ns.Name,
+			Namespace: ns.Namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceAccount",
+			APIVersion: "v1",
+		},
+	}
+}

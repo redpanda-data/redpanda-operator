@@ -4,8 +4,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  annotations:
-    redpanda.com/last-applied: <removed>
   creationTimestamp: "1970-01-01T00:00:00Z"
   labels:
     app.kubernetes.io/component: redpanda
@@ -13,6 +11,10 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v1
+    cluster.redpanda.com/owner: cluster
+    migrate: "true"
   name: redpanda-init-configurator
   resourceVersion: "1"
 rules:
@@ -35,6 +37,10 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v1
+    cluster.redpanda.com/owner: cluster
+    migrate: "true"
   name: redpanda-init-configurator
   resourceVersion: "1"
 roleRef:
@@ -186,6 +192,10 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v1
+    cluster.redpanda.com/owner: cluster
+    migrate: "true"
   name: cluster
   namespace: default
   ownerReferences:
@@ -283,6 +293,10 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v1
+    cluster.redpanda.com/owner: cluster
+    migrate: "true"
   name: cluster
   namespace: default
   ownerReferences:
@@ -338,6 +352,10 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v1
+    cluster.redpanda.com/owner: cluster
+    migrate: "true"
   name: cluster-cluster
   namespace: default
   ownerReferences:
@@ -357,6 +375,14 @@ spec:
   - IPv4
   ipFamilyPolicy: SingleStack
   ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - name: kafka
+    port: 9092
+    protocol: TCP
+    targetPort: 9092
   - name: proxy
     port: 8082
     protocol: TCP
@@ -365,14 +391,6 @@ spec:
     port: 8081
     protocol: TCP
     targetPort: 8081
-  - name: kafka
-    port: 9092
-    protocol: TCP
-    targetPort: 9092
-  - name: admin
-    port: 9644
-    protocol: TCP
-    targetPort: 9644
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/component: redpanda
@@ -437,8 +455,6 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    redpanda.com/last-applied: <removed>
   creationTimestamp: "1970-01-01T00:00:00Z"
   labels:
     app.kubernetes.io/component: redpanda
@@ -446,6 +462,10 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v1
+    cluster.redpanda.com/owner: cluster
+    migrate: "true"
   name: cluster-lb-bootstrap
   namespace: default
   ownerReferences:
@@ -487,8 +507,6 @@ status:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  annotations:
-    redpanda.com/last-applied: <removed>
   creationTimestamp: "1970-01-01T00:00:00Z"
   labels:
     app.kubernetes.io/component: redpanda
@@ -496,6 +514,10 @@ metadata:
     app.kubernetes.io/managed-by: redpanda-operator
     app.kubernetes.io/name: redpanda
     app.kubernetes.io/part-of: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v1
+    cluster.redpanda.com/owner: cluster
+    migrate: "true"
   name: cluster
   namespace: default
   ownerReferences:

@@ -12,6 +12,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -90,7 +91,7 @@ func (r *ClusterServiceResource) obj() (k8sclient.Object, error) {
 			Name:       svcPort.Name,
 			Protocol:   corev1.ProtocolTCP,
 			Port:       int32(svcPort.Port),
-			TargetPort: intstr.FromInt(svcPort.Port),
+			TargetPort: intstr.FromInt32(int32(svcPort.Port)),
 		})
 	}
 
@@ -147,4 +148,81 @@ func (r *ClusterServiceResource) ServiceFQDN(clusterDomain string) string {
 		r.Key().Namespace,
 		clusterDomain,
 	)
+}
+
+// RenderClusterService renders a cluster service
+func RenderClusterService(cluster *vectorizedv1alpha1.Cluster) *corev1.Service {
+	var ports []corev1.ServicePort
+	for _, svcPort := range generateClusterServicePorts(cluster) {
+		ports = append(ports, corev1.ServicePort{
+			Name:       svcPort.Name,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       int32(svcPort.Port),
+			TargetPort: intstr.FromInt32(int32(svcPort.Port)),
+		})
+	}
+
+	objLabels := labels.ForCluster(cluster)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cluster.Namespace,
+			Name:      cluster.Name + "-cluster",
+			Labels:    objLabels,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		Spec: corev1.ServiceSpec{
+			PublishNotReadyAddresses: true,
+			Type:                     corev1.ServiceTypeClusterIP,
+			Ports:                    ports,
+			Selector:                 objLabels.AsAPISelector().MatchLabels,
+		},
+	}
+}
+
+// generateClusterServicePorts generates the service ports for a cluster service
+// by examining the cluster configuration and determining which ports need to be exposed
+func generateClusterServicePorts(cluster *vectorizedv1alpha1.Cluster) []NamedServicePort {
+	var clusterPorts []NamedServicePort
+
+	if p := cluster.InternalListener(); p != nil {
+		clusterPorts = append(clusterPorts, NamedServicePort{
+			Name: InternalListenerName,
+			Port: p.Port,
+		})
+	}
+
+	if p := cluster.AdminAPIInternal(); p != nil {
+		clusterPorts = append(clusterPorts, NamedServicePort{
+			Name: AdminPortName,
+			Port: p.Port,
+		})
+	}
+
+	if p := cluster.PandaproxyAPIInternal(); p != nil {
+		clusterPorts = append(clusterPorts, NamedServicePort{
+			Name: PandaproxyPortInternalName,
+			Port: p.Port,
+		})
+	}
+
+	for _, sr := range cluster.SchemaRegistryListeners() {
+		if !sr.IsExternallyAvailable() {
+			clusterPorts = append(clusterPorts, NamedServicePort{
+				Name: SchemaRegistryPortName,
+				Port: sr.Port,
+			})
+			break // Only need the internal one for cluster service
+		}
+	}
+
+	// Sort ports by name to ensure deterministic ordering
+	sort.Slice(clusterPorts, func(i, j int) bool {
+		return clusterPorts[i].Name < clusterPorts[j].Name
+	})
+
+	return clusterPorts
 }
