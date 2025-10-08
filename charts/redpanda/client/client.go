@@ -233,6 +233,35 @@ func KafkaClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...kg
 	return client, nil
 }
 
+func KafkaBrokers(state *redpanda.RenderState, dialer DialContextFunc) ([]string, error) {
+	records, err := srvLookup(state, dialer, redpanda.InternalKafkaPortName)
+	if err != nil {
+		return nil, err
+	}
+
+	brokers := make([]string, len(records))
+	for i, record := range records {
+		brokers[i] = fmt.Sprintf("%s:%d", record.Target, record.Port)
+	}
+
+	return brokers, nil
+}
+
+func KafkaTLSConfig(state *redpanda.RenderState) (*redpanda.TLSConfig, error) {
+	if state.Values.Listeners.Kafka.TLS.IsEnabled(&state.Values.TLS) {
+		tlsConfig, err := state.TLSConfigValues(state.Values.Listeners.Kafka.TLS)
+		if err != nil {
+			return nil, err
+		}
+		return tlsConfig, nil
+	}
+	return nil, nil
+}
+
+func KafkaAuthConfig(state *redpanda.RenderState) (username string, password string, mechanism string, err error) {
+	return authFromState(state)
+}
+
 func authFromState(state *redpanda.RenderState) (username string, password string, mechanism string, err error) {
 	// shim in the panic handler from helmette since the call to
 	// redpanda.SecretBootstrapUser can fail if something about the

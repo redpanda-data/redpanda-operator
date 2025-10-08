@@ -112,6 +112,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						// for and additional 30+ seconds every reconciliation before the client's
 						// broker list is pruned.
 						"--cluster-connection-timeout=500ms",
+						"--enable-shadowlinks",
 					},
 				},
 			})
@@ -135,15 +136,16 @@ func TestAcceptanceSuite(t *testing.T) {
 
 func ClusterTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {
 	require.Greater(t, len(args), 0, "clusters tags can only be used with additional arguments")
-	name := args[0]
 
-	if variant := t.Variant(); variant != "" {
-		name = filepath.Join(variant, name)
+	for _, name := range args {
+		if variant := t.Variant(); variant != "" {
+			name = filepath.Join(variant, name)
+		}
+
+		t.Logf("Installing cluster %q", name)
+		t.ApplyManifest(ctx, filepath.Join("clusters", name))
+		t.Logf("Finished installing cluster %q", name)
 	}
-
-	t.Logf("Installing cluster %q", name)
-	t.ApplyManifest(ctx, filepath.Join("clusters", name))
-	t.Logf("Finished installing cluster %q", name)
 
 	return ctx
 }

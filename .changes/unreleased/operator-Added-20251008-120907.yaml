@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Add ShadowLink experimental CRD for managing new disaster recovery feature in Redpanda.
+time: 2025-10-08T12:09:07.569068-04:00

@@ -22,6 +22,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 )
 
@@ -153,9 +154,61 @@ func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kg
 	return client, nil
 }
 
-func (c *Factory) kafkaForV1Cluster(cluster *vectorizedv1alpha1.Cluster, opts ...kgo.Opt) (*kgo.Client, error) {
-	ctx := context.Background()
+func (c *Factory) remoteClusterSettingsForCluster(cluster *redpandav1alpha2.Redpanda) (shadow.RemoteClusterSettings, error) {
+	var settings shadow.RemoteClusterSettings
 
+	dot, err := cluster.GetDot(c.config)
+	if err != nil {
+		return settings, err
+	}
+
+	state, err := redpandachart.RenderStateFromDot(dot)
+	if err != nil {
+		return settings, err
+	}
+
+	brokers, err := redpanda.KafkaBrokers(state, c.dialer)
+	if err != nil {
+		return settings, err
+	}
+	settings.BootstrapServers = brokers
+
+	tls, err := redpanda.KafkaTLSConfig(state)
+	if err != nil {
+		return settings, err
+	}
+	if tls != nil {
+		settings.TLSSettings = &shadow.TLSSettings{
+			CA:   tls.CA,
+			Cert: tls.Cert,
+			Key:  tls.Key,
+		}
+	}
+
+	username, password, mechanism, err := redpanda.KafkaAuthConfig(state)
+	if err != nil {
+		return settings, err
+	}
+	if username != "" && password != "" {
+		settings.Authentication = &shadow.AuthenticationSettings{
+			Username: username,
+			Password: password,
+		}
+
+		if mechanism != "" {
+			switch mechanism {
+			case "SCRAM-SHA-256", "SCRAM-SHA-512":
+				settings.Authentication.Mechanism = redpandav1alpha2.SASLMechanism(mechanism)
+			default:
+				return settings, fmt.Errorf("unhandled SASL mechanism: %s", mechanism)
+			}
+		}
+	}
+
+	return settings, nil
+}
+
+func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, opts ...kgo.Opt) (*kgo.Client, error) {
 	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
 	if err != nil {
 		return nil, err
@@ -182,4 +235,15 @@ func (c *Factory) kafkaForV1Cluster(cluster *vectorizedv1alpha1.Cluster, opts ..
 	}
 
 	return client, nil
+}
+
+func (c *Factory) remoteClusterSettingsForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster) (shadow.RemoteClusterSettings, error) {
+	var settings shadow.RemoteClusterSettings
+
+	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
+	if err != nil {
+		return settings, err
+	}
+
+	return remoteClusterSettingsFromV1(ctx, c.Client, cluster, fqdn, certs)
 }

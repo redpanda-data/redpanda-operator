@@ -73,3 +73,8 @@ func iShouldBeAbleToProduceAndConsumeFrom(ctx context.Context, t framework.Testi
 	kafkaClient.Close()
 	consumerClient.Close()
 }
+
+func iShouldFindTopicIn(ctx context.Context, t framework.TestingT, topic, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	clients.ExpectTopic(ctx, topic)
+}

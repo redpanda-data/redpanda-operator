@@ -35,6 +35,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
+	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
@@ -662,14 +663,32 @@ func (TestAdminTLSConfigProvider) GetTLSConfig(
 	return nil, nil
 }
 
+func (TestAdminTLSConfigProvider) GetTLSConfigValues(
+	ctx context.Context, k8sClient client.Reader,
+) (*resourcetypes.TLSConfig, error) {
+	return nil, nil
+}
+
 func (TestAdminTLSConfigProvider) GetKafkaTLSConfig(
 	ctx context.Context, k8sClient client.Reader,
 ) (*tls.Config, error) {
 	return nil, nil
 }
 
+func (TestAdminTLSConfigProvider) GetKafkaTLSConfigValues(
+	ctx context.Context, k8sClient client.Reader,
+) (*resourcetypes.TLSConfig, error) {
+	return nil, nil
+}
+
 func (TestAdminTLSConfigProvider) GetSchemaTLSConfig(
 	ctx context.Context, k8sClient client.Reader,
 ) (*tls.Config, error) {
+	return nil, nil
+}
+
+func (TestAdminTLSConfigProvider) GetSchemaTLSConfigValues(
+	ctx context.Context, k8sClient client.Reader,
+) (*resourcetypes.TLSConfig, error) {
 	return nil, nil
 }

@@ -100,6 +100,9 @@ type ClientFactory interface {
 
 	// ShadowLinks returns a high-level client for synchronizing ShadowLinks.
 	ShadowLinks(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error)
+
+	// RemoteClusterSettings returns the ShadowLink connection configuration for an object.
+	RemoteClusterSettings(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error)
 }
 
 type Factory struct {
@@ -175,7 +178,7 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 	}
 
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
-		return c.kafkaForV1Cluster(cluster)
+		return c.kafkaForV1Cluster(ctx, cluster)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
@@ -202,7 +205,7 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 	}
 
 	if v1Cluster != nil {
-		return c.kafkaForV1Cluster(v1Cluster, opts...)
+		return c.kafkaForV1Cluster(ctx, v1Cluster, opts...)
 	}
 
 	if spec := c.getKafkaSpec(o); spec != nil {
@@ -350,6 +353,39 @@ func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 	return roles.NewClient(ctx, adminClient)
 }
 
+func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error) {
+	var settings shadow.RemoteClusterSettings
+
+	o, ok := obj.(client.Object)
+	if !ok {
+		return settings, ErrInvalidKafkaClientObject
+	}
+
+	cluster, err := c.getRemoteV2Cluster(ctx, o)
+	if err != nil {
+		return settings, err
+	}
+
+	if cluster != nil {
+		return c.remoteClusterSettingsForCluster(cluster)
+	}
+
+	v1Cluster, err := c.getRemoteV1Cluster(ctx, o)
+	if err != nil {
+		return settings, err
+	}
+
+	if v1Cluster != nil {
+		return c.remoteClusterSettingsForV1Cluster(ctx, v1Cluster)
+	}
+
+	if spec := c.getRemoteKafkaSpec(o); spec != nil {
+		return c.remoteClusterSettingsForSpec(ctx, o.GetNamespace(), spec)
+	}
+
+	return settings, ErrInvalidKafkaClientObject
+}
+
 func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object) (*vectorizedv1alpha1.Cluster, error) {
 	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
 	if !ok {
@@ -357,6 +393,30 @@ func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object) (*vectori
 	}
 
 	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
+		if ref := source.GetClusterRef(); ref != nil && ref.IsV1() {
+			var cluster vectorizedv1alpha1.Cluster
+
+			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, ErrInvalidClusterRef
+				}
+				return nil, err
+			}
+
+			return &cluster, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func (c *Factory) getRemoteV1Cluster(ctx context.Context, obj client.Object) (*vectorizedv1alpha1.Cluster, error) {
+	o, ok := obj.(redpandav1alpha2.RemoteClusterReferencingObject)
+	if !ok {
+		return nil, nil
+	}
+
+	if source := o.GetRemoteClusterSource(); source != nil { //nolint:nestif // ignore
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV1() {
 			var cluster vectorizedv1alpha1.Cluster
 
@@ -398,9 +458,48 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object) (*redpand
 	return nil, nil
 }
 
+func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
+	o, ok := obj.(redpandav1alpha2.RemoteClusterReferencingObject)
+	if !ok {
+		return nil, nil
+	}
+
+	if source := o.GetRemoteClusterSource(); source != nil { //nolint:nestif // ignore
+		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
+			var cluster redpandav1alpha2.Redpanda
+
+			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, ErrInvalidClusterRef
+				}
+				return nil, err
+			}
+
+			return &cluster, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func (c *Factory) getKafkaSpec(obj client.Object) *redpandav1alpha2.KafkaAPISpec {
 	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
 		if source := o.GetClusterSource(); source != nil {
+			if spec := source.GetKafkaAPISpec(); spec != nil {
+				return spec
+			}
+		}
+	}
+
+	if o, ok := obj.(redpandav1alpha2.KafkaConnectedObject); ok {
+		return o.GetKafkaAPISpec()
+	}
+	return nil
+}
+
+func (c *Factory) getRemoteKafkaSpec(obj client.Object) *redpandav1alpha2.KafkaAPISpec {
+	if o, ok := obj.(redpandav1alpha2.RemoteClusterReferencingObject); ok {
+		if source := o.GetRemoteClusterSource(); source != nil {
 			if spec := source.GetKafkaAPISpec(); spec != nil {
 				return spec
 			}

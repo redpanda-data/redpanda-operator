@@ -46,7 +46,11 @@ func normalizeContent(t framework.TestingT, content string) []byte {
 
 	if getVersion(t, "") == "vectorized" {
 		addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.cluster.clusterRef.group")
+		addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.shadowCluster.clusterRef.group")
+		addStringValueAtPath(manifest, "redpanda.vectorized.io", "spec.sourceCluster.clusterRef.group")
 		addStringValueAtPath(manifest, "Cluster", "spec.cluster.clusterRef.kind")
+		addStringValueAtPath(manifest, "Cluster", "spec.shadowCluster.clusterRef.kind")
+		addStringValueAtPath(manifest, "Cluster", "spec.sourceCluster.clusterRef.kind")
 	}
 
 	contentBytes, err := yaml.Marshal(manifest)

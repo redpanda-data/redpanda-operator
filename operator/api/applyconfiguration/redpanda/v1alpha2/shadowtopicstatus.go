@@ -19,11 +19,10 @@ import (
 // ShadowTopicStatusApplyConfiguration represents a declarative configuration of the ShadowTopicStatus type for use
 // with apply.
 type ShadowTopicStatusApplyConfiguration struct {
-	LastTransitionTime   *v1.Time                                      `json:"lastTransitionTime,omitempty"`
-	Name                 *string                                       `json:"name,omitempty"`
-	TopicID              *string                                       `json:"topicId,omitempty"`
-	State                *redpandav1alpha2.ShadowTopicState            `json:"state,omitempty"`
-	PartitionInformation []TopicPartitionInformationApplyConfiguration `json:"partitionInformation,omitempty"`
+	LastTransitionTime *v1.Time                           `json:"lastTransitionTime,omitempty"`
+	Name               *string                            `json:"name,omitempty"`
+	TopicID            *string                            `json:"topicId,omitempty"`
+	State              *redpandav1alpha2.ShadowTopicState `json:"state,omitempty"`
 }
 
 // ShadowTopicStatusApplyConfiguration constructs a declarative configuration of the ShadowTopicStatus type for use with
@@ -61,18 +60,5 @@ func (b *ShadowTopicStatusApplyConfiguration) WithTopicID(value string) *ShadowT
 // If called multiple times, the State field is set to the value of the last call.
 func (b *ShadowTopicStatusApplyConfiguration) WithState(value redpandav1alpha2.ShadowTopicState) *ShadowTopicStatusApplyConfiguration {
 	b.State = &value
-	return b
-}
-
-// WithPartitionInformation adds the given value to the PartitionInformation field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the PartitionInformation field.
-func (b *ShadowTopicStatusApplyConfiguration) WithPartitionInformation(values ...*TopicPartitionInformationApplyConfiguration) *ShadowTopicStatusApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithPartitionInformation")
-		}
-		b.PartitionInformation = append(b.PartitionInformation, *values[i])
-	}
 	return b
 }

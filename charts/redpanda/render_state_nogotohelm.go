@@ -236,6 +236,76 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
+type TLSConfig struct {
+	CA   string
+	Cert string
+	Key  string
+}
+
+// TLSConfigValues constructs a TLSConfig for the given internal listener.
+func (r *RenderState) TLSConfigValues(listener InternalTLS) (*TLSConfig, error) {
+	ctl, err := r.KubeCTL()
+	if err != nil {
+		return nil, err
+	}
+
+	namespace := r.Release.Namespace
+
+	rootCertName, rootCertKey, clientCertName := certificatesFor(r, listener.Cert)
+
+	serverTLSError := func(err error) error {
+		return fmt.Errorf("error fetching server root CA %s/%s: %w", namespace, rootCertName, err)
+	}
+	clientTLSError := func(err error) error {
+		return fmt.Errorf("error fetching client certificate default/%s: %w", clientCertName, err)
+	}
+
+	var serverCert corev1.Secret
+	lookupErr := ctl.Get(context.TODO(), types.NamespacedName{Name: rootCertName, Namespace: namespace}, &serverCert)
+	if lookupErr != nil {
+		if k8sapierrors.IsNotFound(lookupErr) {
+			return nil, serverTLSError(ErrServerCertificateNotFound)
+		}
+		return nil, serverTLSError(lookupErr)
+	}
+
+	serverPublicKey, found := serverCert.Data[rootCertKey]
+	if !found {
+		return nil, serverTLSError(ErrServerCertificatePublicKeyNotFound)
+	}
+
+	config := &TLSConfig{
+		CA: string(serverPublicKey),
+	}
+
+	if listener.RequireClientAuth {
+		var clientCert corev1.Secret
+		lookupErr := ctl.Get(context.TODO(), types.NamespacedName{Name: clientCertName, Namespace: namespace}, &clientCert)
+		if lookupErr != nil {
+			if k8sapierrors.IsNotFound(lookupErr) {
+				return nil, clientTLSError(ErrClientCertificateNotFound)
+			}
+			return nil, clientTLSError(lookupErr)
+		}
+
+		// we always use tls.crt for client certs
+		clientPublicKey, found := clientCert.Data[corev1.TLSCertKey]
+		if !found {
+			return nil, clientTLSError(ErrClientCertificatePublicKeyNotFound)
+		}
+
+		clientPrivateKey, found := clientCert.Data[corev1.TLSPrivateKeyKey]
+		if !found {
+			return nil, clientTLSError(ErrClientCertificatePrivateKeyNotFound)
+		}
+
+		config.Cert = string(clientPublicKey)
+		config.Key = string(clientPrivateKey)
+	}
+
+	return config, nil
+}
+
 func certificatesFor(state *RenderState, name string) (certSecret, certKey, clientSecret string) {
 	cert, ok := state.Values.TLS.Certs[name]
 	if !ok || !ptr.Deref(cert.Enabled, true) {

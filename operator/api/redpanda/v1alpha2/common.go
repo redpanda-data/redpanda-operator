@@ -355,7 +355,7 @@ func ResourceSyncedCondition(name string) metav1.Condition {
 		Type:    ResourceConditionTypeSynced,
 		Status:  metav1.ConditionTrue,
 		Reason:  ResourceConditionReasonSynced,
-		Message: fmt.Sprintf("Successfully %q synced to cluster.", name),
+		Message: fmt.Sprintf("Successfully synced %q to cluster.", name),
 	}
 }
 

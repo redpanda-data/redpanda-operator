@@ -28,8 +28,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
@@ -267,4 +269,73 @@ func saslOpt(user, password, mechanism string) (kgo.Opt, error) {
 	}
 
 	return kgo.SASL(m), nil
+}
+
+func remoteClusterSettingsFromV1(
+	ctx context.Context,
+	k8sClient client.Client,
+	redpandaCluster *vectorizedv1alpha1.Cluster,
+	fqdn string,
+	tlsProvider resourcetypes.AdminTLSConfigProvider,
+	pods ...string,
+) (shadow.RemoteClusterSettings, error) {
+	var settings shadow.RemoteClusterSettings
+	var err error
+
+	kafkaAPI := redpandaCluster.InternalListener()
+	if kafkaAPI == nil {
+		return settings, NoKafkaAPI
+	}
+
+	if len(pods) == 0 {
+		pods, err = v1PodNames(ctx, k8sClient, redpandaCluster)
+		if err != nil {
+			return settings, fmt.Errorf("unable list pods to infer kafka API URLs: %w", err)
+		}
+	}
+
+	var tlsConfig *resourcetypes.TLSConfig
+	if kafkaAPI.TLS.Enabled {
+		tlsConfig, err = tlsProvider.GetKafkaTLSConfigValues(ctx, k8sClient)
+		if err != nil {
+			return settings, fmt.Errorf("could not create tls configuration for internal kafka API: %w", err)
+		}
+		settings.TLSSettings = &shadow.TLSSettings{
+			CA:   tlsConfig.CA,
+			Cert: tlsConfig.Cert,
+			Key:  tlsConfig.Key,
+		}
+	}
+
+	kafkaInternalPort := kafkaAPI.Port
+
+	urls := make([]string, len(pods))
+	for i, pod := range pods {
+		urls[i] = fmt.Sprintf("%s.%s:%d", pod, fqdn, kafkaInternalPort)
+	}
+
+	settings.BootstrapServers = urls
+
+	username, password, mechanism, err := v1ClusterAuth(ctx, k8sClient, redpandaCluster)
+	if err != nil {
+		return settings, err
+	}
+
+	if username != "" && password != "" {
+		settings.Authentication = &shadow.AuthenticationSettings{
+			Username: username,
+			Password: password,
+		}
+
+		if mechanism != "" {
+			switch mechanism {
+			case "SCRAM-SHA-256", "SCRAM-SHA-512":
+				settings.Authentication.Mechanism = redpandav1alpha2.SASLMechanism(mechanism)
+			default:
+				return settings, fmt.Errorf("unhandled SASL mechanism: %s", mechanism)
+			}
+		}
+	}
+
+	return settings, nil
 }

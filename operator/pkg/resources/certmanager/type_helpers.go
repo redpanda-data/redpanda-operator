@@ -741,6 +741,12 @@ func (cc *ClusterCertificates) GetTLSConfig(
 	return getTLSConfig(ctx, cc.adminAPI, k8sClient)
 }
 
+func (cc *ClusterCertificates) GetTLSConfigValues(
+	ctx context.Context, k8sClient client.Reader,
+) (*resourcetypes.TLSConfig, error) {
+	return getTLSConfigValues(ctx, cc.adminAPI, k8sClient)
+}
+
 // GetKafkaTLSConfig returns TLS config for kafka API that can then be used to connect
 // to the kafka API of the current cluster
 func (cc *ClusterCertificates) GetKafkaTLSConfig(
@@ -749,12 +755,24 @@ func (cc *ClusterCertificates) GetKafkaTLSConfig(
 	return getTLSConfig(ctx, cc.kafkaAPI, k8sClient)
 }
 
+func (cc *ClusterCertificates) GetKafkaTLSConfigValues(
+	ctx context.Context, k8sClient client.Reader,
+) (*resourcetypes.TLSConfig, error) {
+	return getTLSConfigValues(ctx, cc.kafkaAPI, k8sClient)
+}
+
 // GetSchemaTLSConfig returns TLS config for schema registry API that can then be used to connect
 // to the schema registry API of the current cluster
 func (cc *ClusterCertificates) GetSchemaTLSConfig(
 	ctx context.Context, k8sClient client.Reader,
 ) (*tls.Config, error) {
 	return getTLSConfig(ctx, cc.schemaRegistryAPI, k8sClient)
+}
+
+func (cc *ClusterCertificates) GetSchemaTLSConfigValues(
+	ctx context.Context, k8sClient client.Reader,
+) (*resourcetypes.TLSConfig, error) {
+	return getTLSConfigValues(ctx, cc.schemaRegistryAPI, k8sClient)
 }
 
 func getTLSConfig(
@@ -791,6 +809,37 @@ func getTLSConfig(
 	}
 
 	return &tlsConfig, nil
+}
+
+func getTLSConfigValues(
+	ctx context.Context, certs *apiCertificates, k8sClient client.Reader,
+) (*resourcetypes.TLSConfig, error) {
+	nodeCertificateName := certs.nodeCertificateName()
+	if nodeCertificateName == nil {
+		return nil, errNoTLSError
+	}
+
+	var nodeCertSecret corev1.Secret
+	err := k8sClient.Get(ctx, *nodeCertificateName, &nodeCertSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &resourcetypes.TLSConfig{}
+	// root CA
+	config.CA = string(nodeCertSecret.Data[cmmetav1.TLSCAKey])
+
+	if len(certs.clientCertificates) > 0 {
+		var clientCertSecret corev1.Secret
+		err := k8sClient.Get(ctx, certs.clientCertificateNames()[0], &clientCertSecret)
+		if err != nil {
+			return nil, err
+		}
+		config.Cert = string(clientCertSecret.Data[corev1.TLSCertKey])
+		config.Key = string(clientCertSecret.Data[corev1.TLSPrivateKeyKey])
+	}
+
+	return config, nil
 }
 
 // KafkaClientBrokerTLS returns configuration to connect to kafka api with tls

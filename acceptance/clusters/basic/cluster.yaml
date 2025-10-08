@@ -5,6 +5,11 @@ metadata:
   name: basic
 spec:
   clusterSpec:
+    image:
+      tag: v0.0.0-20251008git7a18f63
+      repository: redpandadata/redpanda-nightly
+    external:
+      enabled: false
     statefulset:
       replicas: 1
       sideCars:
