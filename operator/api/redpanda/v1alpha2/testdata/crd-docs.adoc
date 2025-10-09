@@ -13,6 +13,7 @@
 
 
 .Resource Types
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-role[$$Role$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
@@ -325,6 +326,28 @@ Auth configures authentication in the Helm values. See https://docs.redpanda.com
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authenticationsecrets"]
+==== AuthenticationSecrets
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig[$$SecretConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`jwtSigningKey`* __string__ |  |  | 
+| *`oidc`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-oidcloginsecrets[$$OIDCLoginSecrets$$]__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authorizationtype"]
 ==== AuthorizationType
 
@@ -342,6 +365,31 @@ AuthorizationType specifies the type of authorization to use in creating a user.
 
 
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-autoscaling"]
+==== AutoScaling
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`minReplicas`* __integer__ |  |  | 
+| *`maxReplicas`* __integer__ |  |  | 
+| *`targetCPUUtilizationPercentage`* __integer__ |  |  | 
+| *`targetMemoryUtilizationPercentage`* __integer__ |  |  | 
+|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-bootstrapuser"]
@@ -542,6 +590,7 @@ ClusterSource defines how to connect to a particular Redpanda cluster.
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec[$$TopicSpec$$]
@@ -795,6 +844,38 @@ never used. Prefer Create. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console"]
+==== Console
+
+
+
+Redpanda defines the CRD for Redpanda clusters.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Console` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]__ |  |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolestatus[$$ConsoleStatus$$]__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolecreateobj"]
 ==== ConsoleCreateObj
 
@@ -814,6 +895,90 @@ ConsoleCreateObj represents configuration options for creating Kubernetes object
 | Field | Description | Default | Validation
 | *`create`* __boolean__ | Indicates whether the corresponding Kubernetes object (ConfigMap, Secret, or Deployment) should be created. + |  | 
 |===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec"]
+==== ConsoleSpec
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`replicaCount`* __integer__ |  |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-image[$$Image$$]__ |  |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ |  |  | 
+| *`automountServiceAccountToken`* __boolean__ |  |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccountconfig[$$ServiceAccountConfig$$]__ |  |  | 
+| *`commonLabels`* __object (keys:string, values:string)__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`podAnnotations`* __object (keys:string, values:string)__ |  |  | 
+| *`podLabels`* __object (keys:string, values:string)__ |  |  | 
+| *`podSecurityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ |  |  | 
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ |  |  | 
+| *`service`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceconfig[$$ServiceConfig$$]__ |  |  | 
+| *`ingress`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingressconfig[$$IngressConfig$$]__ |  |  | 
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
+| *`autoscaling`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-autoscaling[$$AutoScaling$$]__ |  |  | 
+| *`nodeSelector`* __object (keys:string, values:string)__ |  |  | 
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ |  |  | 
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#affinity-v1-core[$$Affinity$$]__ |  |  | 
+| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ |  |  | 
+| *`priorityClassName`* __string__ |  |  | 
+| *`config`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ |  |  | 
+| *`extraEnv`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core[$$EnvVar$$] array__ |  |  | 
+| *`extraEnvFrom`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envfromsource-v1-core[$$EnvFromSource$$] array__ |  |  | 
+| *`extraVolumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volume-v1-core[$$Volume$$] array__ |  |  | 
+| *`extraVolumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volumemount-v1-core[$$VolumeMount$$] array__ |  |  | 
+| *`extraContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#container-v1-core[$$Container$$] array__ |  |  | 
+| *`secretMounts`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretmount[$$SecretMount$$] array__ |  |  | 
+| *`secret`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig[$$SecretConfig$$]__ |  |  | 
+| *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ |  |  | 
+| *`livenessProbe`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#probe-v1-core[$$Probe$$]__ |  |  | 
+| *`readinessProbe`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#probe-v1-core[$$Probe$$]__ |  |  | 
+| *`deployment`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-deploymentconfig[$$DeploymentConfig$$]__ |  |  | 
+| *`strategy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#deploymentstrategy-v1-apps[$$DeploymentStrategy$$]__ |  |  | 
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolestatus"]
+==== ConsoleStatus
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | The generation observed by the Console controller. + |  | 
+| *`replicas`* __integer__ | Total number of non-terminating Pods targeted by this Console's Deployment. + |  | 
+| *`updatedReplicas`* __integer__ | Total number of non-terminating pods targeted by this Console's Deployment that have the desired template spec. + |  | 
+| *`readyReplicas`* __integer__ | Total number of non-terminating pods targeted by this Console's Deployment with a Ready Condition. + |  | 
+| *`availableReplicas`* __integer__ | Total number of available non-terminating pods (ready for at least minReadySeconds) targeted by this Console's Deployment. + |  | 
+| *`unavailableReplicas`* __integer__ | Total number of unavailable pods targeted by this deployment. This is the total number of +
+pods that are still required for the deployment to have 100% available capacity. They may +
+either be pods that are running but not yet available or pods that still have not been created. + |  | 
+|===
+
+
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-containerresources"]
@@ -857,6 +1022,28 @@ CredentialSecretRef can be used to set cloud_storage_secret_key from referenced 
 | Field | Description | Default | Validation
 | *`accessKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
 | *`secretKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretwithconfigfield[$$SecretWithConfigField$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-deploymentconfig"]
+==== DeploymentConfig
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`command`* __string array__ |  |  | 
+| *`extraArgs`* __string array__ |  |  | 
 |===
 
 
@@ -1110,6 +1297,99 @@ deprecated and not respected. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-image"]
+==== Image
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`registry`* __string__ |  |  | 
+| *`repository`* __string__ |  |  | 
+| *`pullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#pullpolicy-v1-core[$$PullPolicy$$]__ |  |  | 
+| *`tag`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingressconfig"]
+==== IngressConfig
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`className`* __string__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`hosts`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingresshost[$$IngressHost$$] array__ |  |  | 
+| *`tls`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#ingresstls-v1-networking[$$IngressTLS$$] array__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingresshost"]
+==== IngressHost
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingressconfig[$$IngressConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`host`* __string__ |  |  | 
+| *`paths`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingresspath[$$IngressPath$$] array__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingresspath"]
+==== IngressPath
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingresshost[$$IngressHost$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`path`* __string__ |  |  | 
+| *`pathType`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#pathtype-v1-networking[$$PathType$$]__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage"]
 ==== InitContainerImage
 
@@ -1348,6 +1628,32 @@ KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 |===
 | Field | Description | Default | Validation
 | *`tokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasecrets"]
+==== KafkaSecrets
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig[$$SecretConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`saslPassword`* __string__ |  |  | 
+| *`awsMskIamSecretKey`* __string__ |  |  | 
+| *`tlsCa`* __string__ |  |  | 
+| *`tlsCert`* __string__ |  |  | 
+| *`tlsKey`* __string__ |  |  | 
+| *`tlsPassphrase`* __string__ |  |  | 
 |===
 
 
@@ -1590,6 +1896,27 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 |===
 
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-oidcloginsecrets"]
+==== OIDCLoginSecrets
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authenticationsecrets[$$AuthenticationSecrets$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`clientSecret`* __string__ |  |  | 
+|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password"]
@@ -2037,6 +2364,30 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaadminapisecrets"]
+==== RedpandaAdminAPISecrets
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandasecrets[$$RedpandaSecrets$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`password`* __string__ |  |  | 
+| *`tlsCa`* __string__ |  |  | 
+| *`tlsCert`* __string__ |  |  | 
+| *`tlsKey`* __string__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec"]
 ==== RedpandaClusterSpec
 
@@ -2067,7 +2418,8 @@ RedpandaClusterSpec defines the desired state of a Redpanda cluster. These setti
 | *`license_secret_ref`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-licensesecretref[$$LicenseSecretRef$$]__ | Deprecated: Use `EnterpriseLicenseSecretRef` instead. + |  | 
 | *`enterprise`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise[$$Enterprise$$]__ | Defines an Enterprise license. + |  | 
 | *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | Defines rack awareness settings. + |  | 
-| *`console`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]__ | Defines Redpanda Console settings. + |  | 
+| *`console`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]__ | Defines Redpanda Console settings. +
+Deprecated: Use the dedicated Console CRD. + |  | 
 
 | *`auth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auth[$$Auth$$]__ | Defines authentication settings for listeners. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | Defines TLS settings for listeners. + |  | 
@@ -2285,6 +2637,27 @@ Defined by the `--reserve-memory` parameter. Represents the memory available for
 | Field | Description | Default | Validation
 | *`memory`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Memory for the Redpanda process. This must be lower than the container's memory (`resources.memory.container.min` if provided, otherwise `resources.memory.container.max`). Equivalent to `--memory`. For production, use 8Gi or greater. + |  | 
 | *`reserveMemory`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Memory reserved for the OS. Any value above 1Gi will provide diminishing performance benefits. Equivalent to `--reserve-memory`. For production, use 1Gi. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandasecrets"]
+==== RedpandaSecrets
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig[$$SecretConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`adminApi`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaadminapisecrets[$$RedpandaAdminAPISecrets$$]__ |  |  | 
 |===
 
 
@@ -2714,6 +3087,31 @@ SchemaRegistrySASL configures credentials to connect to Redpanda cluster that ha
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysecrets"]
+==== SchemaRegistrySecrets
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig[$$SecretConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`bearerToken`* __string__ |  |  | 
+| *`password`* __string__ |  |  | 
+| *`tlsCa`* __string__ |  |  | 
+| *`tlsCert`* __string__ |  |  | 
+| *`tlsKey`* __string__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistryspec"]
 ==== SchemaRegistrySpec
 
@@ -2807,6 +3205,33 @@ SchemaType specifies the type of the given schema.
 
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig"]
+==== SecretConfig
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`create`* __boolean__ |  |  | 
+| *`kafka`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasecrets[$$KafkaSecrets$$]__ |  |  | 
+| *`authentication`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-authenticationsecrets[$$AuthenticationSecrets$$]__ |  |  | 
+| *`license`* __string__ |  |  | 
+| *`redpanda`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandasecrets[$$RedpandaSecrets$$]__ |  |  | 
+| *`serde`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serdesecrets[$$SerdeSecrets$$]__ |  |  | 
+| *`schemaRegistry`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysecrets[$$SchemaRegistrySecrets$$]__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref"]
 ==== SecretKeyRef
 
@@ -2834,6 +3259,31 @@ See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
 | *`name`* __string__ | Name of the referent. +
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names + |  | 
 | *`key`* __string__ | Key in Secret data to get value from + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretmount"]
+==== SecretMount
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ |  |  | 
+| *`secretName`* __string__ |  |  | 
+| *`path`* __string__ |  |  | 
+| *`subPath`* __string__ |  |  | 
+| *`defaultMode`* __integer__ |  |  | 
 |===
 
 
@@ -2881,6 +3331,27 @@ SecretRef configures the Secret resource that contains existing TLS certificates
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serdesecrets"]
+==== SerdeSecrets
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig[$$SecretConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`protobufGitBasicAuthPassword`* __string__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-service"]
 ==== Service
 
@@ -2924,6 +3395,54 @@ ServiceAccount configures Service Accounts.
 | *`annotations`* __object (keys:string, values:string)__ | Adds custom annotations to the ServiceAccount resources. + |  | 
 | *`create`* __boolean__ | Specifies whether a ServiceAccount should be created. + |  | 
 | *`name`* __string__ | Specifies the name of the ServiceAccount. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccountconfig"]
+==== ServiceAccountConfig
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`automountServiceAccountToken`* __boolean__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`name`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceconfig"]
+==== ServiceConfig
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`type`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#servicetype-v1-core[$$ServiceType$$]__ |  |  | 
+| *`port`* __integer__ |  |  | 
+| *`nodePort`* __integer__ |  |  | 
+| *`targetPort`* __integer__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
 |===
 
 

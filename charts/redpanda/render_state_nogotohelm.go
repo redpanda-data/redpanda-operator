@@ -29,7 +29,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
@@ -235,10 +234,6 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 	}
 
 	return tlsConfig, nil
-}
-
-func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
-	return toStaticConfig(r)
 }
 
 func certificatesFor(state *RenderState, name string) (certSecret, certKey, clientSecret string) {

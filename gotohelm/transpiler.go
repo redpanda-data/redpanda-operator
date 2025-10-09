@@ -195,6 +195,13 @@ func (t *Transpiler) transpileFile(f *ast.File) *File {
 			continue
 		}
 
+		// Don't transpile functions that are stand ins for sprig / helm provided
+		// functions. transpileExpr handles references to these functions by
+		// reading this annotation.
+		if _, ok := funcDirectives["builtin"]; ok {
+			continue
+		}
+
 		var params []Node
 		if fn.Recv != nil {
 			for _, param := range fn.Recv.List {

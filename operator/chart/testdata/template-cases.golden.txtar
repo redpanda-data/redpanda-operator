@@ -78,6 +78,77 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -630,14 +701,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-image-pull-policy=IfNotPresent
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-base-image=my.repo.com/configurator
-        - --configurator-tag=XYZ
-        - --configurator-image-pull-policy=IfNotPresent
         command:
         - /manager
         env: []
@@ -780,6 +853,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: koBY-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -1337,13 +1481,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=a35
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -1539,6 +1685,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: WSGbu-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -2092,16 +2309,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=p9Di
+        - --configurator-tag=H6X3S
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=TNizkRf0
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=H6X3S
-        - --configurator-base-image=p9Di
-        - 3AeeXxo
-        - EoLf5
-        - "9"
         command:
         - /manager
         env: []
@@ -2258,6 +2474,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: Dx441G-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -2832,13 +3119,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Ae
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -2989,6 +3278,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: rEba-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -3554,16 +3914,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=CcZY
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - 4ApSMU1
-        - r
-        - BXVuKkMQ
         command:
         - /manager
         env: []
@@ -3736,6 +4095,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: kdh6Z-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -4298,13 +4728,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=a4SuUdq
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -4467,6 +4899,77 @@ metadata:
     wU3MsxN: 4Bn0vQj
   name: WM7nRI7B-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -5039,15 +5542,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=Rr9cCH8
+        - --configurator-tag=IyW
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=eM
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=IyW
-        - --configurator-base-image=Rr9cCH8
-        - sAQJC
-        - "72"
         command:
         - /manager
         env: []
@@ -5217,6 +5720,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: Em-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -5777,13 +6351,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=eZ6Hz
+        - --configurator-tag=9JWhXp
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=OdrK
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=9JWhXp
-        - --configurator-base-image=eZ6Hz
         command:
         - /manager
         env: []
@@ -6002,13 +6578,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=ISoDbxsE
+        - --configurator-tag=E5edBYpa
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Y
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=E5edBYpa
-        - --configurator-base-image=ISoDbxsE
         command:
         - /manager
         env: []
@@ -6169,6 +6747,77 @@ metadata:
     u: yT9Aqc
   name: DBMkVbLNvvZn-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -6760,13 +7409,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=kw6W
+        - --configurator-tag=6LBRlD
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=gT
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=6LBRlD
-        - --configurator-base-image=kw6W
         command:
         - /manager
         env: []
@@ -6924,6 +7575,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: kBI8lEs-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -7487,13 +8209,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=nkEl
+        - --configurator-tag=Fc9SuJ
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Qgv
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=Fc9SuJ
-        - --configurator-base-image=nkEl
         command:
         - /manager
         env: []
@@ -7656,6 +8380,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: rcE-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -8245,15 +9040,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=dqEg
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - ""
-        - W7
         command:
         - /manager
         env: []
@@ -8437,6 +9232,77 @@ metadata:
     w49JChsEQqA0: "3"
   name: 7guti07-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -9005,15 +9871,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=5grR1QB
+        - --configurator-tag=W0p45uvP8
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=aWy1AZjYl
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=W0p45uvP8
-        - --configurator-base-image=5grR1QB
-        - 6SD9JDbQ7Q
-        - YSovMAw
         command:
         - /manager
         env: []
@@ -9161,6 +10027,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: J5MiI-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -9715,13 +10652,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=DpT1qi9X
+        - --configurator-tag=iRz
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=HhY5pV
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=iRz
-        - --configurator-base-image=DpT1qi9X
         command:
         - /manager
         env: []
@@ -9925,6 +10864,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: NofaS-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -10493,13 +11503,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=DCM8
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -10717,14 +11729,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=AhZ
+        - --configurator-tag=J18tP9n
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=6TGvv
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=J18tP9n
-        - --configurator-base-image=AhZ
-        - x7K3o
         command:
         - /manager
         env: []
@@ -10898,6 +11911,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: K9R-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -11289,13 +12373,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=vOvAQKBh
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -11594,16 +12680,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=4kWMzql
+        - --configurator-tag=PGITfvk
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=mU
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=PGITfvk
-        - --configurator-base-image=4kWMzql
-        - YXvYnHoraN
-        - 6PWVVeCET
-        - D
         command:
         - /manager
         env: []
@@ -11798,6 +12883,77 @@ metadata:
     m2Z8Z: wRw
   name: DX7O-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -12366,13 +13522,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=BpnfO
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -12664,6 +13822,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: x8K24mCZYsnh-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -13236,14 +14465,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=gSveMOQ8Iaw
+        - --configurator-tag=UVj2te38
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=pMbmKX
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=UVj2te38
-        - --configurator-base-image=gSveMOQ8Iaw
-        - 6gNh
         command:
         - /manager
         env: []
@@ -13454,6 +14684,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: UHlKDi-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -14029,13 +15330,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=5ruW
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -14219,6 +15522,77 @@ metadata:
     ruSHmUUvOj1: h3BuiPAHIC
   name: wINY4HR-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -14859,14 +16233,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=6ERMjI8
+        - --configurator-tag=MJp
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=wt4uT
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=MJp
-        - --configurator-base-image=6ERMjI8
-        - vp9WG
         command:
         - /manager
         env: []
@@ -15123,6 +16498,77 @@ metadata:
     kxvj1aV: un4v2
   name: 5-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -15684,16 +17130,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=5T8t
+        - --configurator-tag=fK
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=PgU9SwD
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=fK
-        - --configurator-base-image=5T8t
-        - aQJ
-        - ""
-        - DJZ4
         command:
         - /manager
         env: []
@@ -15878,6 +17323,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: sFwgtf-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -16567,13 +18083,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=Jlzs9s
+        - --configurator-tag=GXw
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=zoF
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=GXw
-        - --configurator-base-image=Jlzs9s
         command:
         - /manager
         env: []
@@ -16799,6 +18317,77 @@ metadata:
     iW8sRg: to
   name: bi-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -17579,13 +19168,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=S3
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -17789,6 +19380,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: operator-YCs-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -18497,15 +20159,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=4s6FZUA
+        - --configurator-tag=z7F5fT
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=mcE2xz8
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=z7F5fT
-        - --configurator-base-image=4s6FZUA
-        - 2MguVfZ
-        - 2d4Gz
         command:
         - /manager
         env: []
@@ -18951,13 +20613,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=g96
+        - --configurator-tag=Lotm9epAH
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=NaLO9z
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=Lotm9epAH
-        - --configurator-base-image=g96
         command:
         - /manager
         env: []
@@ -19178,6 +20842,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: 2-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -19876,15 +21611,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=Bl6b0ql7
+        - --configurator-tag=5yg4G
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=xLHAob
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=5yg4G
-        - --configurator-base-image=Bl6b0ql7
-        - htV
-        - ItRsBL
         command:
         - /manager
         env: []
@@ -20159,6 +21894,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: z7BRO-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -20770,14 +22576,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=GusePZR7AB
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - TvXwul
         command:
         - /manager
         env: []
@@ -21147,14 +22954,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=qO8Q6
+        - --configurator-tag=S
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=EQ
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=S
-        - --configurator-base-image=qO8Q6
-        - ufbUW
         command:
         - /manager
         env: []
@@ -21438,6 +23246,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: D-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -22067,13 +23946,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=8mlV
+        - --configurator-tag=Gd0
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=hPrI1P
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=Gd0
-        - --configurator-base-image=8mlV
         command:
         - /manager
         env: []
@@ -22668,13 +24549,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=a2vgH0
+        - --configurator-tag=SwdpKv
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=v1480
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=SwdpKv
-        - --configurator-base-image=a2vgH0
         command:
         - /manager
         env: []
@@ -22894,6 +24777,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: tDyp0579ogHIu-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -23677,15 +25631,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=bqtHD7
+        - --configurator-tag=zo
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=XxZ
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=zo
-        - --configurator-base-image=bqtHD7
-        - Rlceb
-        - pf5
         command:
         - /manager
         env: []
@@ -24083,14 +26037,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=16DN2
+        - --configurator-tag=RK6Ba96O
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=G3wz
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=RK6Ba96O
-        - --configurator-base-image=16DN2
-        - wK
         command:
         - /manager
         env: []
@@ -24365,6 +26320,77 @@ metadata:
     uUW: Us
   name: 6z0k3NX-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -24963,15 +26989,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=MhZp
+        - --configurator-tag=NaNHQ74
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=KMFMJqF
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=NaNHQ74
-        - --configurator-base-image=MhZp
-        - SkxA4PXfixGo6H
-        - Fa1
         command:
         - /manager
         env: []
@@ -25486,14 +27512,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=5Q
+        - --configurator-tag=jr9
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=SzbHWgTpbD2
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=jr9
-        - --configurator-base-image=5Q
-        - gQcl6Ej6
         command:
         - /manager
         env: []
@@ -26000,14 +28027,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=P9JMlA
+        - --configurator-tag=i6Q4sn53d
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=iAMFhZ
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=i6Q4sn53d
-        - --configurator-base-image=P9JMlA
-        - 8kSamSw9
         command:
         - /manager
         env: []
@@ -26609,15 +28637,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=dOHS
+        - --configurator-tag=4hS76
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=W
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=4hS76
-        - --configurator-base-image=dOHS
-        - Cz5DsC
-        - dk6pMw8X
         command:
         - /manager
         env: []
@@ -27139,15 +29167,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=5R2fC0t
+        - --configurator-tag=C5
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=GyEj
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=C5
-        - --configurator-base-image=5R2fC0t
-        - 0H
-        - nCx9L
         command:
         - /manager
         env: []
@@ -27431,6 +29459,77 @@ metadata:
     x: 4Xx1lbe
   name: fjEnE-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -28131,16 +30230,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=CABd5
+        - --configurator-tag=DV
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=WFheHptfh
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=DV
-        - --configurator-base-image=CABd5
-        - E9Eu
-        - EU
-        - nE
         command:
         - /manager
         env: []
@@ -28644,16 +30742,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=
-        - --webhook-enabled=false
-        - --configurator-tag=95V5Gm
         - --configurator-base-image=h
-        - JFs
-        - nNwqWRT
-        - ScYwDYt
+        - --configurator-tag=95V5Gm
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -29035,16 +31132,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=OjO
+        - --configurator-tag=YHoj
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=yGdn
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=YHoj
-        - --configurator-base-image=OjO
-        - krIILz
-        - "5"
-        - cS
         command:
         - /manager
         env: []
@@ -29300,6 +31396,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: dLmCJ99UDA-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -30092,14 +32259,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=Olq
+        - --configurator-tag=X
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=K
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=X
-        - --configurator-base-image=Olq
-        - jq37e
         command:
         - /manager
         env: []
@@ -30333,6 +32501,77 @@ metadata:
     x: c
   name: I5FRf-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -31231,15 +33470,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=VX7rtbd
+        - --configurator-tag=VPI
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=10rTK
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=VPI
-        - --configurator-base-image=VX7rtbd
-        - Fpr
-        - bQ4Xdn
         command:
         - /manager
         env: []
@@ -31794,16 +34033,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=5SfzkB5M1vx
+        - --configurator-tag=l0yDQ3G
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=D3sVjB0WumuG
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=l0yDQ3G
-        - --configurator-base-image=5SfzkB5M1vx
-        - J
-        - k
-        - VRWdl
         command:
         - /manager
         env: []
@@ -32078,6 +34316,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: Uu-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -32794,13 +35103,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=
-        - --webhook-enabled=false
-        - --configurator-tag=QiVn05LHP7O
         - --configurator-base-image=a7e7
+        - --configurator-tag=QiVn05LHP7O
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -33450,16 +35761,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=Nt
+        - --configurator-tag=H
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=YQXlr
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=H
-        - --configurator-base-image=Nt
-        - KeFi
-        - dfONW9
-        - 9znBOn
         command:
         - /manager
         env: []
@@ -33967,13 +36277,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=MRDUBfo4
+        - --configurator-tag=go
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=TwQtVGrOeJf
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=go
-        - --configurator-base-image=MRDUBfo4
         command:
         - /manager
         env: []
@@ -34230,6 +36542,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: oL1SSfzH9d-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -35057,14 +37440,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=KbWqGz
+        - --configurator-tag=pneZv
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=EFXhBX
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=pneZv
-        - --configurator-base-image=KbWqGz
-        - 5O
         command:
         - /manager
         env: []
@@ -35268,6 +37652,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: qVYvaMYre-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -35935,13 +38390,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=CPQ9Y6
+        - --configurator-tag=qPbAyXLw
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=ozF
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=qPbAyXLw
-        - --configurator-base-image=CPQ9Y6
         command:
         - /manager
         env: []
@@ -36169,6 +38626,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: RxVwZrtkv-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -36965,15 +39493,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=U4heCUyQYeE
+        - --configurator-tag=CyopzJ
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=bVWCG
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=CyopzJ
-        - --configurator-base-image=U4heCUyQYeE
-        - 6ArBn
-        - zve
         command:
         - /manager
         env: []
@@ -37272,6 +39800,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: RAyK-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -37847,14 +40446,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=AzmZ3dTJs
+        - --configurator-tag=WHh
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Y01SjB
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=WHh
-        - --configurator-base-image=AzmZ3dTJs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -38123,6 +40724,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: tyx5W-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -38701,16 +41373,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=mM7lGw9fmKx
+        - --configurator-tag=K
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=H1NDG8
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=K
-        - --configurator-base-image=mM7lGw9fmKx
-        - l4dHBtic0cX0cs7
-        - ""
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -38989,6 +41661,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: 89IgS-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -39569,14 +42312,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=SQz
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -39861,6 +42606,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: fRjXK1u0-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -40448,14 +43264,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=z1LU
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -40737,6 +43555,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: 2jUS-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -41330,14 +44219,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=zCQ
+        - --configurator-tag=NnFVx
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=yVlZuzf
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=NnFVx
-        - --configurator-base-image=zCQ
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -41622,6 +44513,77 @@ metadata:
     kP0Mu: tnINl
   name: WM-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -42206,17 +45168,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=caaG
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - D4rks
-        - p7p
-        - 1kSb
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -42575,14 +45536,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=smF3
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -42938,16 +45901,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=ma3F
+        - --configurator-tag=Jug9nLx
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Co
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=Jug9nLx
-        - --configurator-base-image=ma3F
-        - JOd
-        - JV6w
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -43319,6 +46282,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: nLM2irjC-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -43902,14 +46936,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=idWmcYq6IZQH
+        - --configurator-tag=vnJvYTYU8
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=vMA
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=vnJvYTYU8
-        - --configurator-base-image=idWmcYq6IZQH
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -44204,6 +47240,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: X374QF3AYX-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -44784,14 +47891,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=d
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -45097,6 +48206,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: G-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -45667,17 +48847,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=qbU
+        - --configurator-tag=9mw
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=OzauffS1XLt
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=9mw
-        - --configurator-base-image=qbU
-        - 8TZ
-        - c
-        - cpUq
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -45971,6 +49150,77 @@ metadata:
     jcF: qXntI
   name: tDaA-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -46562,14 +49812,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=2g
+        - --configurator-tag=GfYtT
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=pN6bqJZQR
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=GfYtT
-        - --configurator-base-image=2g
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -46891,6 +50143,77 @@ metadata:
     uS: h6Fj
   name: 79ioSjMT8KG-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -47473,14 +50796,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=7mzP0
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -47759,6 +51084,77 @@ metadata:
     wig: gAae
   name: 41nucs5-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -48436,16 +51832,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=cd7qo
+        - --configurator-tag=vJ7ET
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=6i5
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=vJ7ET
-        - --configurator-base-image=cd7qo
-        - r4LII
-        - m5622dBz6A
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -48781,6 +52177,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: xtpIQu-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -49431,16 +52898,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=SCN
+        - --configurator-tag=DF517x
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=irlLOaCak6uG
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=DF517x
-        - --configurator-base-image=SCN
-        - ""
-        - QL9X
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -49905,17 +53372,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image
+        - --configurator-tag=1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=x4gaS
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=1
-        - --configurator-base-image=
-        - Q9
-        - JLCZc
-        - c
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -50419,14 +53885,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=UWHmykY
+        - --configurator-tag=47nK
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=LwcaR
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=47nK
-        - --configurator-base-image=UWHmykY
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -50701,6 +54169,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: PxBN-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -51451,14 +54990,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=kBJV23
+        - --configurator-tag=boxAxRu
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=tI
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=boxAxRu
-        - --configurator-base-image=kBJV23
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -52039,17 +55580,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=7wdG0
+        - --configurator-tag=HXXm
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=4J4TVSNI8I
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=HXXm
-        - --configurator-base-image=7wdG0
-        - dWzxr3xXRM
-        - vEF
-        - DAM
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -52646,15 +56186,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=xmIP4HeALlQ8
+        - --configurator-tag=Vk
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=CpVihaT
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=Vk
-        - --configurator-base-image=xmIP4HeALlQ8
-        - oxdTcKZmy5
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -52985,6 +56526,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: m7Z5VmKktJ-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -53910,17 +57522,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=h9
+        - --configurator-tag=m0a
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Kp
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=m0a
-        - --configurator-base-image=h9
-        - ReK6Upw
-        - 7Pu0AA
-        - 0yNEqlggmA
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -54332,6 +57943,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: OyOZvn5WT-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -55166,16 +58848,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=Zme9w8o
+        - --configurator-tag=TPaa
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=VNcVbeobGuK
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=TPaa
-        - --configurator-base-image=Zme9w8o
-        - LlHz1
-        - 4qYzSV
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -55949,17 +59631,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=Tzah
+        - --configurator-tag=6E02z0oYQUL
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=OdA
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=6E02z0oYQUL
-        - --configurator-base-image=Tzah
-        - zTsg
-        - Sv
-        - 9M23O7X
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -56675,16 +60356,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=Ozfq
+        - --configurator-tag=3ncj
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=dtDojkH
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=3ncj
-        - --configurator-base-image=Ozfq
-        - 5orCeu
-        - v7kr
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -57380,16 +61061,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=w3qgVe7
+        - --configurator-tag=8YPjvr
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=51BriCol
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=8YPjvr
-        - --configurator-base-image=w3qgVe7
-        - "n"
-        - H7B3A1m
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -57769,6 +61450,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: Hjo9sbxO-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -58515,17 +62267,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=9kg
+        - --configurator-tag=hk
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=HTKj8qv
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=hk
-        - --configurator-base-image=9kg
-        - eyxGhI
-        - 9YL
-        - 6HEr
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -58924,6 +62675,77 @@ metadata:
     mKZJ: qFJ
   name: 8K2N-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -59976,14 +63798,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=D43Nf
+        - --configurator-tag=McKTb81
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=VC4
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=McKTb81
-        - --configurator-base-image=D43Nf
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -60328,6 +64152,77 @@ metadata:
     mNkAknTCpbj0: NCMcS
   name: RQkbO-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -61233,14 +65128,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=Q9Q
         - --configurator-base-image=M2Q
+        - --configurator-tag=Q9Q
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -61587,6 +65484,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: 2rNNJQv8k5j97-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -62449,17 +66417,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=tczCHr
+        - --configurator-tag=EQ6C
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=XrGv
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=EQ6C
-        - --configurator-base-image=tczCHr
-        - Sb4JTueXASpBtQ
-        - og
-        - GaoUIcOT
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -63156,14 +67123,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=ahO
+        - --configurator-tag=w8Y59
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=o7
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=w8Y59
-        - --configurator-base-image=ahO
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -63571,6 +67540,77 @@ metadata:
     zWv: hIfkuex2B
   name: xxjYziP-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -64180,14 +68220,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=ZMlofIenTW3
+        - --configurator-tag=ZpYBKn
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=I
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=ZpYBKn
-        - --configurator-base-image=ZMlofIenTW3
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -64637,6 +68679,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: OZHCbAk-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -65510,17 +69623,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=YYLGC7
+        - --configurator-tag=okj1Bqm1LHE
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=fhg
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=okj1Bqm1LHE
-        - --configurator-base-image=YYLGC7
-        - Gc3q48w
-        - JNFXPzkrj
-        - hYzBm
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -66086,14 +70198,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=kG9n
+        - --configurator-tag=H0aN
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=E3A4
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=H0aN
-        - --configurator-base-image=kG9n
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -66469,6 +70583,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: twuYH9-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -67166,15 +71351,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=BkpCoE
+        - --configurator-tag=3BE
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=p7w
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=3BE
-        - --configurator-base-image=BkpCoE
-        - QpxE2
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -67582,6 +71768,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: Sb2hWn-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -68489,16 +72746,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=n74Ca
+        - --configurator-tag=y8Skx9
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=grDHZkPyKot
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=y8Skx9
-        - --configurator-base-image=n74Ca
-        - bv4LbFjFG
-        - X5vvak7u
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -68840,6 +73097,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: operator-B-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -69488,15 +73816,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=ftKlY
+        - --configurator-tag=bBlM
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Yd
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=bBlM
-        - --configurator-base-image=ftKlY
-        - amoUVan
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -70172,14 +74501,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=AJtD86QQ
+        - --configurator-tag=wp
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=Ufou7z
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=wp
-        - --configurator-base-image=AJtD86QQ
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -70529,6 +74860,77 @@ metadata:
     rZBEA7mOLYT: iFtHtFH
   name: nJ-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -71162,14 +75564,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=87
+        - --configurator-tag=1XQEc73
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=pB9UJO8ZqB
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=1XQEc73
-        - --configurator-base-image=87
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -71507,6 +75911,77 @@ metadata:
     jHlVD3i0I: Hfqg8dMgdc
   name: cCP-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -72306,14 +76781,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=I
+        - --configurator-tag=y3ROS
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=tYc
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=y3ROS
-        - --configurator-base-image=I
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -72999,14 +77476,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=TPAc
+        - --configurator-tag=u
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=AKFy
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=u
-        - --configurator-base-image=TPAc
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -73429,6 +77908,77 @@ metadata:
     nI2ZSs: 4AI8h
   name: Wo-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -74220,14 +78770,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=MxYHsvk3O
+        - --configurator-tag=tr
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=PcP
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=tr
-        - --configurator-base-image=MxYHsvk3O
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -74671,6 +79223,77 @@ metadata:
     wH2b: ""
   name: w-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -75402,17 +80025,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=zZLbhNE
+        - --configurator-tag=lWf3R8lv
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=s63h
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=lWf3R8lv
-        - --configurator-base-image=zZLbhNE
-        - oMtn
-        - Q
-        - 3z6Z0vrvjWuC
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -76182,17 +80804,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=6C
+        - --configurator-tag=EyNNr90u1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=qZr
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=EyNNr90u1
-        - --configurator-base-image=6C
-        - IoP
-        - oEPSF
-        - w659VcIIlO
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -76602,6 +81223,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: KXsg6-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -77224,17 +81916,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=kE0AJ1
+        - --configurator-tag=wA5XUe
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=hj
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=wA5XUe
-        - --configurator-base-image=kE0AJ1
-        - ""
-        - 2BwL4Tf6d
-        - LY5cEH
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -77632,6 +82323,77 @@ metadata:
     uO6upU7K: lMwbJ
   name: FCXrBjh-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -78307,16 +83069,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=uzG5
+        - --configurator-tag=PQfV4
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=cU5MS1z
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=PQfV4
-        - --configurator-base-image=uzG5
-        - 7G3Tgu
-        - Oh
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -78661,6 +83423,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: 02-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -79534,14 +84367,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=iqTYWQsJpRK
+        - --configurator-tag=ob8Ckc
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=sbpkgy
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=ob8Ckc
-        - --configurator-base-image=iqTYWQsJpRK
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -80183,14 +85018,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=xS
+        - --configurator-tag=v
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=TmP83vnBu
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v
-        - --configurator-base-image=xS
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -80571,6 +85408,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: KPhNK5uNi-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -81434,17 +86342,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=HoNUZ89Keda
+        - --configurator-tag=3EcYA
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=G6sQWEEyqb
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=3EcYA
-        - --configurator-base-image=HoNUZ89Keda
-        - l9a
-        - Arx
-        - bLHpq0J3
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -82208,17 +87115,16 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=h8K
+        - --configurator-tag=P
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=tqqBMvp3V
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=P
-        - --configurator-base-image=h8K
-        - P
-        - WM7Be
-        - JLya
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -82602,6 +87508,77 @@ metadata:
     rnKI: dxHr
   name: 5U9oyj-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -83345,14 +88322,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=C9o
+        - --configurator-tag=HAScR
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=OIXyC
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=HAScR
-        - --configurator-base-image=C9o
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -83755,6 +88734,77 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -84307,13 +89357,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -84594,6 +89646,77 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -85146,13 +90269,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -85432,6 +90557,77 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -85984,13 +91180,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -86131,6 +91329,77 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -86683,13 +91952,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -86847,6 +92118,77 @@ metadata:
   name: operator-default
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -87399,13 +92741,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -87545,6 +92889,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: operator-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -88098,13 +93513,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []
@@ -88244,6 +93661,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: operator-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -88819,14 +94307,16 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
-        - --webhook-enabled=true
+        - --metrics-bind-address=:8443
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -89079,6 +94569,77 @@ metadata:
     helm.sh/chart: operator-25.2.1-beta1
   name: operator-default
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - authentication.k8s.io
   resources:
@@ -89632,13 +95193,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
         - --leader-elect
         - --log-level=info
+        - --metrics-bind-address=:8443
         - --webhook-enabled=false
-        - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         command:
         - /manager
         env: []

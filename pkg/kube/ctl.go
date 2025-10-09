@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -188,6 +189,7 @@ func (c *Ctl) List(ctx context.Context, namespace string, objs ObjectList, opts 
 // Apply "applies" the provided [Object] via SSA (Server Side Apply).
 func (c *Ctl) Apply(ctx context.Context, obj Object, opts ...client.PatchOption) error {
 	obj.SetManagedFields(nil)
+	obj.SetResourceVersion("")
 
 	if err := setGVK(c.Scheme(), obj); err != nil {
 		return err
@@ -200,6 +202,24 @@ func (c *Ctl) Apply(ctx context.Context, obj Object, opts ...client.PatchOption)
 		return errors.WithStack(err)
 	}
 
+	return nil
+}
+
+// ApplyStatus "applies" the .Status of the provided [Object] via SSA (Server Side Apply).
+func (c *Ctl) ApplyStatus(ctx context.Context, obj Object, opts ...client.SubResourcePatchOption) error {
+	obj.SetManagedFields(nil)
+	obj.SetResourceVersion("")
+
+	if err := setGVK(c.Scheme(), obj); err != nil {
+		return err
+	}
+
+	// Prepend field owner to allow caller's to override it.
+	opts = append([]client.SubResourcePatchOption{c.fieldOwner}, opts...)
+
+	if err := c.client.Status().Patch(ctx, obj, client.Apply, opts...); err != nil {
+		return errors.WithStack(err)
+	}
 	return nil
 }
 
@@ -262,6 +282,20 @@ func (c *Ctl) CreateAndWait(ctx context.Context, obj Object, cond CondFn[Object]
 	return c.WaitFor(ctx, obj, cond)
 }
 
+func (c *Ctl) Update(ctx context.Context, obj Object, opts ...client.UpdateOption) error {
+	if err := c.client.Update(ctx, obj, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (c *Ctl) UpdateStatus(ctx context.Context, obj Object, opts ...client.SubResourceUpdateOption) error {
+	if err := c.client.Status().Update(ctx, obj, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 // Delete declaratively initiates deletion the given [Object].
 //
 // Unlike other Ctl methods, Delete does not update obj.
@@ -305,7 +339,7 @@ func IsDeleted[T Object](obj T, err error) (bool, error) {
 // have a deadline a default of 5m will be used.
 func (c *Ctl) WaitFor(ctx context.Context, obj Object, cond CondFn[Object]) error {
 	const timeout = 5 * time.Minute
-	const logEvery = 10 * time.Second
+	logEvery := rate.Sometimes{First: 1, Interval: 10 * time.Second}
 
 	// If ctx doesn't have a deadline, we'll apply the default.
 	if _, ok := ctx.Deadline(); !ok {
@@ -314,8 +348,7 @@ func (c *Ctl) WaitFor(ctx context.Context, obj Object, cond CondFn[Object]) erro
 		defer cancel()
 	}
 
-	start := time.Now()
-	lastLog := start
+	interval := intervalFromDeadline(ctx)
 
 	// TODO(chrisseto): We should be able to pull this off obj but Get doesn't
 	// seem to set TypeMeta?
@@ -326,6 +359,7 @@ func (c *Ctl) WaitFor(ctx context.Context, obj Object, cond CondFn[Object]) erro
 
 	gvk := kinds[0]
 
+	start := time.Now()
 	for {
 		err := c.Get(ctx, AsKey(obj), obj)
 
@@ -339,18 +373,43 @@ func (c *Ctl) WaitFor(ctx context.Context, obj Object, cond CondFn[Object]) erro
 			return nil
 		}
 
-		if time.Since(lastLog) >= logEvery {
-			lastLog = time.Now()
+		logEvery.Do(func() {
 			log.Info(ctx, "waiting for Cond", "key", AsKey(obj), "gvk", gvk, "waited", time.Since(start))
-		}
+		})
 
 		select {
-		case <-time.After(10 * time.Second):
+		case <-time.After(interval):
 			continue
 		case <-ctx.Done():
 			return errors.WithStack(ctx.Err())
 		}
 	}
+}
+
+// intervalFromDeadline determines a sliding interval at which to perform checks based
+// off the deadline of the given context.Context. Clamped to [1s, 10s].
+//
+// deadline | interval
+// 10s      | 1s
+// 30s      | 3s
+// 1m       | 6s
+// 5m       | 10s
+func intervalFromDeadline(ctx context.Context) time.Duration {
+	const (
+		min   = time.Second
+		max   = 10 * time.Second
+		scale = 10
+	)
+	deadline, _ := ctx.Deadline()
+	// As we're using deadline, we round up to the nearest 5s block to account
+	// for any duration between minting the deadline and this computation.
+	interval := (time.Until(deadline).Round(5*time.Second) / scale).Round(time.Second)
+	if interval > max {
+		return max
+	} else if interval < min {
+		return min
+	}
+	return interval
 }
 
 // Logs returns a log stream for `container` in the [corev1.Pod].

@@ -34,7 +34,7 @@ tasks:
     - task: genschema
       vars: { CHART: operator, DIR: operator/chart }
     - task: gotohelm
-      vars: { CHART: operator, DIR: operator/chart }
+      vars: { CHART: operator, DIR: operator/chart, BUNDLE: ['github.com/redpanda-data/redpanda-operator/pkg/chartutil']}
 
   generate:redpanda:
     desc: "Generate files for the redpanda Helm chart"
@@ -47,6 +47,8 @@ tasks:
       vars:
         CHART: redpanda
         OUT: "./chart/templates"
+        BUNDLE:
+        - github.com/redpanda-data/redpanda-operator/pkg/chartutil
         SUBCHARTS:
         - github.com/redpanda-data/redpanda-operator/charts/console/v3
         - github.com/redpanda-data/redpanda-operator/charts/console/v3/chart

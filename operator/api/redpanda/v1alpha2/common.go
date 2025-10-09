@@ -138,7 +138,7 @@ type CommonTLS struct {
 	Key *SecretKeyRef `json:"keySecretRef,omitempty"`
 	// InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda
 	// +optional
-	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify"`
+	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify,omitempty"`
 }
 
 // SecretKeyRef contains enough information to inspect or modify the referred Secret data

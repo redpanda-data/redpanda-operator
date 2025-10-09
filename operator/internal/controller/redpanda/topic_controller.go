@@ -33,6 +33,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
@@ -131,14 +132,14 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, includeV1 bool)
 		For(&redpandav1alpha2.Topic{})
 
 	if includeV1 {
-		enqueueV1Schema, err := registerV1ClusterSourceIndex(ctx, mgr, "topic_v1", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+		enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "topic_v1", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
 		if err != nil {
 			return err
 		}
 		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
 	}
 
-	enqueueV2Topic, err := registerClusterSourceIndex(ctx, mgr, "topic", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+	enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr, "topic", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
 	if err != nil {
 		return err
 	}
