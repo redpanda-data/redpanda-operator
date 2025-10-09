@@ -83,8 +83,9 @@ func toStaticConfig(state *RenderState) ir.StaticConfigurationSource {
 		kafkaSpec.SASL = &ir.KafkaSASL{
 			Username: username,
 			Password: ir.SecretKeyRef{
-				Name: passwordRef.Name,
-				Key:  passwordRef.Key,
+				Namespace: state.Release.Namespace,
+				Name:      passwordRef.Name,
+				Key:       passwordRef.Key,
 			},
 			Mechanism: ir.SASLMechanism(state.Values.Auth.SASL.BootstrapUser.GetMechanism()),
 		}
@@ -104,8 +105,9 @@ func toStaticConfig(state *RenderState) ir.StaticConfigurationSource {
 		adminAuth = &ir.AdminAuth{
 			Username: username,
 			Password: ir.SecretKeyRef{
-				Name: passwordRef.Name,
-				Key:  passwordRef.Key,
+				Namespace: state.Release.Namespace,
+				Name:      passwordRef.Name,
+				Key:       passwordRef.Key,
 			},
 		}
 	}
@@ -146,8 +148,9 @@ func toStaticConfig(state *RenderState) ir.StaticConfigurationSource {
 			schemaRegistrySpec.SASL = &ir.SchemaRegistrySASL{
 				Username: username,
 				Password: ir.SecretKeyRef{
-					Name: passwordRef.Name,
-					Key:  passwordRef.Key,
+					Namespace: state.Release.Namespace,
+					Name:      passwordRef.Name,
+					Key:       passwordRef.Key,
 				},
 			}
 		}

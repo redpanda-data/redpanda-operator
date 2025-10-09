@@ -361,6 +361,10 @@ const (
 	PatternTypeUnknown  PatternType = ""
 	PatternTypeLiteral  PatternType = "literal"
 	PatternTypePrefixed PatternType = "prefixed"
+
+	// don't do these in the kafka conversion
+
+	PatternTypeMatch PatternType = "match"
 )
 
 var (
@@ -405,6 +409,11 @@ const (
 	ResourceTypeGroup           ResourceType = "group"
 	ResourceTypeCluster         ResourceType = "cluster"
 	ResourceTypeTransactionalID ResourceType = "transactionalId"
+
+	// don't include these in the kafka types since they're extensions
+
+	ResourceTypeSchemaRegistrySubject  ResourceType = "subject"
+	ResourceTypeSchemaRegistryRegistry ResourceType = "registry"
 )
 
 var (

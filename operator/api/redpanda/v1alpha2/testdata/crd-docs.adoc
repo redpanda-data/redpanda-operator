@@ -3305,8 +3305,6 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
-
-
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec"]
 ==== TopicSpec
 

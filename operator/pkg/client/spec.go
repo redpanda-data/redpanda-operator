@@ -12,15 +12,18 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/console/backend/pkg/config"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
@@ -184,4 +187,82 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 	opts = append(opts, sr.URLs(spec.URLs...))
 
 	return sr.NewClient(opts...)
+}
+
+func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (shadow.RemoteClusterSettings, error) {
+	var settings shadow.RemoteClusterSettings
+
+	if len(spec.Brokers) == 0 {
+		return settings, ErrEmptyBrokerList
+	}
+
+	if spec.SASL != nil {
+		auth, err := c.remoteClusterAuthSettingsForSpec(ctx, namespace, spec)
+		if err != nil {
+			return settings, err
+		}
+		settings.Authentication = auth
+	}
+
+	if spec.TLS != nil {
+		tls, err := c.remoteClusterTLSSettingsForSpec(ctx, namespace, spec.TLS)
+		if err != nil {
+			return settings, err
+		}
+		settings.TLSSettings = tls
+	}
+
+	return settings, nil
+}
+
+func (c *Factory) remoteClusterTLSSettingsForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.CommonTLS) (*shadow.TLSSettings, error) {
+	settings := &shadow.TLSSettings{}
+
+	// Root CA
+	if spec.CaCert != nil {
+		ca, err := spec.CaCert.GetValue(ctx, c.Client, namespace, "ca.crt")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ca certificate secret: %w", err)
+		}
+
+		settings.CA = string(ca)
+	}
+
+	// If configured load TLS cert & key - Mutual TLS
+	if spec.Cert != nil && spec.Key != nil {
+		// 1. Read certificates
+		cert, err := spec.Cert.GetValue(ctx, c.Client, namespace, "tls.crt")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read certificate secret: %w", err)
+		}
+
+		settings.Cert = string(cert)
+
+		key, err := spec.Cert.GetValue(ctx, c.Client, namespace, "tls.key")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read key certificate secret: %w", err)
+		}
+
+		settings.Key = string(key)
+	}
+
+	return settings, nil
+}
+
+func (c *Factory) remoteClusterAuthSettingsForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (*shadow.AuthenticationSettings, error) {
+	switch spec.SASL.Mechanism {
+	case config.SASLMechanismPlain, config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
+		p, err := spec.SASL.Password.GetValue(ctx, c.Client, namespace, "password")
+		if err != nil {
+			return nil, fmt.Errorf("unable to fetch sasl plain password: %w", err)
+		}
+
+		return &shadow.AuthenticationSettings{
+			Username:  spec.SASL.Username,
+			Password:  string(p),
+			Mechanism: spec.SASL.Mechanism,
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unsupported sasl mechanism: %s", spec.SASL.Mechanism)
 }

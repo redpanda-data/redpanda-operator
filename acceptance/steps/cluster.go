@@ -245,3 +245,13 @@ func checkClusterStableWithCount(ctx context.Context, t framework.TestingT, clus
 	}))
 	t.Logf("Cluster %q is stable with %d nodes!", clusterName, nodeCount)
 }
+
+func enableDevelopmentFeatureOn(ctx context.Context, t framework.TestingT, feature, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	clients.EnableFeature(ctx, feature)
+}
+
+func setLogLevelOn(ctx context.Context, t framework.TestingT, level, logger, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	clients.SetLogLevel(ctx, level, logger)
+}

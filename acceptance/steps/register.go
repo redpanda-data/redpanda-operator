@@ -18,6 +18,8 @@ func init() {
 	framework.RegisterStep(`^I store "([^"]*)" of Kubernetes object with type "([^"]*)" and name "([^"]*)" as "([^"]*)"$`, recordVariable)
 	framework.RegisterStep(`^the recorded value "([^"]*)" has the same value as "([^"]*)" of the Kubernetes object with type "([^"]*)" and name "([^"]*)"$`, assertVariableValue)
 	framework.RegisterStep(`^the recorded value "([^"]*)" is one less than "([^"]*)" of the Kubernetes object with type "([^"]*)" and name "([^"]*)"$`, assertVariableValueIncremented)
+	framework.RegisterStep(`^I enable feature "([^"]*)" on( vectorized)? cluster "([^"]*)"`, enableDevelopmentFeatureOn)
+	framework.RegisterStep(`^I enable "([^"]*)" logging for the "([^"]*)" logger on( vectorized)? cluster "([^"]*)"`, setLogLevelOn)
 
 	// Schema scenario steps
 	framework.RegisterStep(`^there is no schema "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsNoSchema)
@@ -29,6 +31,10 @@ func init() {
 	framework.RegisterStep(`^topic "([^"]*)" is successfully synced$`, topicIsSuccessfullySynced)
 	framework.RegisterStep(`^I should be able to produce and consume from "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, iShouldBeAbleToProduceAndConsumeFrom)
 	framework.RegisterStep(`I create topic "([^"]*)" in( vectorized)? cluster "([^"]*)"`, iCreateTopicInCluster)
+	framework.RegisterStep(`I should find topic "([^"]*)" in( vectorized)? cluster "([^"]*)"`, iShouldFindTopicIn)
+
+	// ShadowLink scenario steps
+	framework.RegisterStep(`^shadow link "([^"]*)" is successfully synced$`, shadowLinkIsSuccessfullySynced)
 
 	// User scenario steps
 	framework.RegisterStep(`^user "([^"]*)" is successfully synced$`, userIsSuccessfullySynced)

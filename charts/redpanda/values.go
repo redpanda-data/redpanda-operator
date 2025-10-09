@@ -1527,11 +1527,13 @@ func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
 		// Only one of ConfigMapKeyRef or SecretKeyRef should actually be set.
 		// Copy both to simplify the logic.
 		spec.CaCert = &ir.ObjectKeyRef{
+			Namespace:       state.Release.Namespace,
 			ConfigMapKeyRef: t.TrustStore.ConfigMapKeyRef,
 			SecretKeyRef:    t.TrustStore.SecretKeyRef,
 		}
 	} else if cert.CAEnabled {
 		spec.CaCert = &ir.ObjectKeyRef{
+			Namespace: state.Release.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: secretName,
@@ -1541,6 +1543,7 @@ func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
 		}
 	} else {
 		spec.CaCert = &ir.ObjectKeyRef{
+			Namespace: state.Release.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: secretName,
@@ -1555,13 +1558,15 @@ func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
 		clientSecretName := cert.ClientSecretName(state, t.Cert)
 
 		spec.Cert = &ir.SecretKeyRef{
-			Name: clientSecretName,
-			Key:  "tls.crt",
+			Namespace: state.Release.Namespace,
+			Name:      clientSecretName,
+			Key:       "tls.crt",
 		}
 
 		spec.Key = &ir.SecretKeyRef{
-			Name: clientSecretName,
-			Key:  "tls.key",
+			Namespace: state.Release.Namespace,
+			Name:      clientSecretName,
+			Key:       "tls.key",
 		}
 	}
 

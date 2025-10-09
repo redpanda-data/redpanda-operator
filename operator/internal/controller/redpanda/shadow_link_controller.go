@@ -11,7 +11,6 @@ package redpanda
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,10 +22,13 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
+
+// maxTopicAndTaskStatusEntries artificially limits the number of individual
+// reported statuses for tasks and topics in a link, as each may be extremely
+// large in cardinality
+const maxTopicAndTaskStatusEntries = 200
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=shadowlinks,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=shadowlinks/status,verbs=get;update;patch
@@ -71,8 +73,15 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 		return createPatch(err, state, tasks, topics)
 	}
 
-	// TODO: map the cluster ref to RemoteClusterSettings
-	status, err := syncer.Sync(ctx, shadowLink, shadow.RemoteClusterSettings{})
+	remoteCluster, err := request.factory.RemoteClusterSettings(ctx, shadowLink)
+	if err != nil {
+		return createPatch(err, state, tasks, topics)
+	}
+
+	status, err := syncer.Sync(ctx, shadowLink, remoteCluster)
+	if err != nil {
+		return createPatch(err, state, tasks, topics)
+	}
 	return createPatch(err, status.State, status.TaskStatuses, status.ShadowTopicStatuses)
 }
 
@@ -81,6 +90,8 @@ func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request Resou
 	if err != nil {
 		return ignoreAllConnectionErrors(request.logger, err)
 	}
+
+	// TODO: should we materialize previously mirrored topics to CRDs?
 	if err := syncer.Delete(ctx, request.object); err != nil {
 		return ignoreAllConnectionErrors(request.logger, err)
 	}
@@ -130,7 +141,7 @@ func ShadowLinkTaskStatusesToConfigs(existing, updated []redpandav1alpha2.Shadow
 		return nil
 	}
 
-	for _, task := range updated {
+	for _, task := range truncateArray(updated) {
 		existingTask := findStatus(task)
 		if existingTask == nil {
 			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
@@ -180,8 +191,7 @@ func ShadowTopicStatusesToConfigs(existing, updated []redpandav1alpha2.ShadowTop
 		return nil
 	}
 
-OUTER:
-	for _, topic := range updated {
+	for _, topic := range truncateArray(updated) {
 		existingTopic := findStatus(topic)
 		if existingTopic == nil {
 			topics = append(topics, shadowTopicStatusToConfig(now, topic))
@@ -191,17 +201,6 @@ OUTER:
 		if existingTopic.State != topic.State {
 			topics = append(topics, shadowTopicStatusToConfig(now, topic))
 			continue
-		}
-
-		if len(existingTopic.PartitionInformation) != len(topic.PartitionInformation) {
-			topics = append(topics, shadowTopicStatusToConfig(now, topic))
-			continue
-		}
-
-		for i, updatedPartition := range topic.PartitionInformation {
-			if !reflect.DeepEqual(updatedPartition, existingTopic.PartitionInformation[i]) {
-				continue OUTER
-			}
 		}
 
 		topics = append(topics, shadowTopicStatusToConfig(existingTopic.LastTransitionTime, *existingTopic))
@@ -215,12 +214,12 @@ func shadowTopicStatusToConfig(now metav1.Time, topic redpandav1alpha2.ShadowTop
 		WithName(topic.Name).
 		WithTopicID(topic.TopicID).
 		WithState(topic.State).
-		WithPartitionInformation(functional.MapFn(func(info redpandav1alpha2.TopicPartitionInformation) *redpandav1alpha2ac.TopicPartitionInformationApplyConfiguration {
-			return redpandav1alpha2ac.TopicPartitionInformation().
-				WithPartitionID(info.PartitionID).
-				WithSourceLastStableOffset(info.SourceLastStableOffset).
-				WithSourceHighWatermark(info.SourceHighWatermark).
-				WithHighWatermark(info.HighWatermark)
-		}, topic.PartitionInformation)...).
 		WithLastTransitionTime(now)
+}
+
+func truncateArray[T any](v []T) []T {
+	if len(v) > maxTopicAndTaskStatusEntries {
+		return v[:maxTopicAndTaskStatusEntries]
+	}
+	return v
 }

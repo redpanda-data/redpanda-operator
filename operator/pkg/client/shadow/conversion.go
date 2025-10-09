@@ -1,6 +1,17 @@
+// Copyright 2025 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
 package shadow
 
 import (
+	"sort"
+
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/common"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -52,7 +63,9 @@ func convertTLSSettingsToAPITLSConfig(tlsSettings *TLSSettings) *adminv2api.TLSS
 	if tlsSettings == nil {
 		return nil
 	}
-	settings := &adminv2api.TLSSettings{}
+	settings := &adminv2api.TLSSettings{
+		Enabled: true,
+	}
 	settings.SetTlsPemSettings(&adminv2api.TLSPEMSettings{
 		Ca:             tlsSettings.CA,
 		Cert:           tlsSettings.Cert,
@@ -96,7 +109,7 @@ func convertCRDToAPIShadowLinkConsumerOffsetSyncOptions(options *redpandav1alpha
 		return nil
 	}
 	return &adminv2api.ConsumerOffsetSyncOptions{
-		Interval:     durationpb.New(options.Interval),
+		Interval:     durationpb.New(options.Interval.Duration),
 		Enabled:      options.Enabled,
 		GroupFilters: functional.MapFn(convertCRDToAPINameFilter, options.GroupFilters),
 	}
@@ -129,9 +142,9 @@ func convertCRDToAPIShadowLinkTopicMetadataSyncOptions(options *redpandav1alpha2
 		return nil
 	}
 	return &adminv2api.TopicMetadataSyncOptions{
-		Interval:                durationpb.New(options.Interval),
-		TopicFilters:            functional.MapFn(convertCRDToAPINameFilter, options.TopicFilters),
-		ShadowedTopicProperties: options.ShadowedTopicProperties,
+		Interval:                     durationpb.New(options.Interval.Duration),
+		AutoCreateShadowTopicFilters: functional.MapFn(convertCRDToAPINameFilter, options.AutoCreateShadowTopicFilters),
+		ShadowedTopicProperties:      options.ShadowedTopicProperties,
 	}
 }
 
@@ -143,7 +156,7 @@ func convertCRDToCommonPatternType(patternType *redpandav1alpha2.PatternType) co
 	return map[redpandav1alpha2.PatternType]common.ACLPattern{
 		redpandav1alpha2.PatternTypeLiteral:  common.ACLPattern_ACL_PATTERN_LITERAL,
 		redpandav1alpha2.PatternTypePrefixed: common.ACLPattern_ACL_PATTERN_PREFIXED,
-		// handle match?
+		redpandav1alpha2.PatternTypeMatch:    common.ACLPattern_ACL_PATTERN_MATCH,
 	}[*patternType]
 }
 
@@ -153,12 +166,43 @@ func convertCRDToCommonResourceType(resourceType *redpandav1alpha2.ResourceType)
 	}
 
 	return map[redpandav1alpha2.ResourceType]common.ACLResource{
-		redpandav1alpha2.ResourceTypeTopic:           common.ACLResource_ACL_RESOURCE_TOPIC,
-		redpandav1alpha2.ResourceTypeGroup:           common.ACLResource_ACL_RESOURCE_GROUP,
-		redpandav1alpha2.ResourceTypeCluster:         common.ACLResource_ACL_RESOURCE_CLUSTER,
-		redpandav1alpha2.ResourceTypeTransactionalID: common.ACLResource_ACL_RESOURCE_TXN_ID,
-		// other types?
+		redpandav1alpha2.ResourceTypeTopic:                  common.ACLResource_ACL_RESOURCE_TOPIC,
+		redpandav1alpha2.ResourceTypeGroup:                  common.ACLResource_ACL_RESOURCE_GROUP,
+		redpandav1alpha2.ResourceTypeCluster:                common.ACLResource_ACL_RESOURCE_CLUSTER,
+		redpandav1alpha2.ResourceTypeTransactionalID:        common.ACLResource_ACL_RESOURCE_TXN_ID,
+		redpandav1alpha2.ResourceTypeSchemaRegistrySubject:  common.ACLResource_ACL_RESOURCE_SR_SUBJECT,
+		redpandav1alpha2.ResourceTypeSchemaRegistryRegistry: common.ACLResource_ACL_RESOURCE_SR_REGISTRY,
 	}[*resourceType]
+}
+
+func convertCRDToCommonOperationType(operationType *redpandav1alpha2.ACLOperation) common.ACLOperation {
+	if operationType == nil {
+		return common.ACLOperation_ACL_OPERATION_ANY
+	}
+
+	return map[redpandav1alpha2.ACLOperation]common.ACLOperation{
+		redpandav1alpha2.ACLOperationRead:            common.ACLOperation_ACL_OPERATION_READ,
+		redpandav1alpha2.ACLOperationWrite:           common.ACLOperation_ACL_OPERATION_WRITE,
+		redpandav1alpha2.ACLOperationDelete:          common.ACLOperation_ACL_OPERATION_REMOVE,
+		redpandav1alpha2.ACLOperationAlter:           common.ACLOperation_ACL_OPERATION_ALTER,
+		redpandav1alpha2.ACLOperationDescribe:        common.ACLOperation_ACL_OPERATION_DESCRIBE,
+		redpandav1alpha2.ACLOperationIdempotentWrite: common.ACLOperation_ACL_OPERATION_IDEMPOTENT_WRITE,
+		redpandav1alpha2.ACLOperationClusterAction:   common.ACLOperation_ACL_OPERATION_CLUSTER_ACTION,
+		redpandav1alpha2.ACLOperationCreate:          common.ACLOperation_ACL_OPERATION_CREATE,
+		redpandav1alpha2.ACLOperationAlterConfigs:    common.ACLOperation_ACL_OPERATION_ALTER_CONFIGS,
+		redpandav1alpha2.ACLOperationDescribeConfigs: common.ACLOperation_ACL_OPERATION_DESCRIBE_CONFIGS,
+	}[*operationType]
+}
+
+func convertCRDToCommonPermissionType(aclType *redpandav1alpha2.ACLType) common.ACLPermissionType {
+	if aclType == nil {
+		return common.ACLPermissionType_ACL_PERMISSION_TYPE_ANY
+	}
+
+	return map[redpandav1alpha2.ACLType]common.ACLPermissionType{
+		redpandav1alpha2.ACLTypeAllow: common.ACLPermissionType_ACL_PERMISSION_TYPE_ALLOW,
+		redpandav1alpha2.ACLTypeDeny:  common.ACLPermissionType_ACL_PERMISSION_TYPE_DENY,
+	}[*aclType]
 }
 
 func convertCRDToAPIACLResourceFilter(filter redpandav1alpha2.ACLResourceFilter) *adminv2api.ACLResourceFilter {
@@ -171,8 +215,10 @@ func convertCRDToAPIACLResourceFilter(filter redpandav1alpha2.ACLResourceFilter)
 
 func convertCRDToAPIACLAccessFilter(filter redpandav1alpha2.ACLAccessFilter) *adminv2api.ACLAccessFilter {
 	return &adminv2api.ACLAccessFilter{
-		Principal: filter.Principal,
-		Host:      filter.Host,
+		Principal:      filter.Principal,
+		Host:           filter.Host,
+		Operation:      convertCRDToCommonOperationType(filter.Operation),
+		PermissionType: convertCRDToCommonPermissionType(filter.PermissionType),
 	}
 }
 
@@ -188,7 +234,7 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 		return nil
 	}
 	return &adminv2api.SecuritySettingsSyncOptions{
-		Interval:         durationpb.New(options.Interval),
+		Interval:         durationpb.New(options.Interval.Duration),
 		Enabled:          options.Enabled,
 		RoleFilters:      functional.MapFn(convertCRDToAPINameFilter, options.RoleFilters),
 		ScramCredFilters: functional.MapFn(convertCRDToAPINameFilter, options.ScramCredentialFilters),
@@ -199,17 +245,15 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 func convertAPIToCRDStatus(status *adminv2api.ShadowLinkStatus) redpandav1alpha2.ShadowLinkStatus {
 	return redpandav1alpha2.ShadowLinkStatus{
 		State:               convertAPIToCRDState(status.State),
-		TaskStatuses:        functional.MapFn(convertAPIToCRDTaskStatus, status.TaskStatuses),
-		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, status.ShadowTopicStatuses),
+		TaskStatuses:        functional.MapFn(convertAPIToCRDTaskStatus, sortByName(status.TaskStatuses)),
+		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, sortByName(status.ShadowTopicStatuses)),
 	}
 }
 
 func convertAPIToCRDState(state adminv2api.ShadowLinkState) redpandav1alpha2.ShadowLinkState {
 	return map[adminv2api.ShadowLinkState]redpandav1alpha2.ShadowLinkState{
-		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_ACTIVE:       redpandav1alpha2.ShadowLinkStateActive,
-		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_PAUSED:       redpandav1alpha2.ShadowLinkStatePaused,
-		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_FAILING_OVER: redpandav1alpha2.ShadowLinkStateFailingOver,
-		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_FAILED_OVER:  redpandav1alpha2.ShadowLinkStateFailedOver,
+		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_ACTIVE: redpandav1alpha2.ShadowLinkStateActive,
+		adminv2api.ShadowLinkState_SHADOW_LINK_STATE_PAUSED: redpandav1alpha2.ShadowLinkStatePaused,
 	}[state]
 }
 
@@ -234,10 +278,9 @@ func convertAPIToCRDTaskStatusState(state adminv2api.TaskState) redpandav1alpha2
 
 func convertAPIToCRDTopicStatus(status *adminv2api.ShadowTopicStatus) redpandav1alpha2.ShadowTopicStatus {
 	return redpandav1alpha2.ShadowTopicStatus{
-		Name:                 status.Name,
-		TopicID:              status.TopicId,
-		State:                convertAPIToCRDTopicStatusState(status.State),
-		PartitionInformation: functional.MapFn(convertAPIToCRDPartitionInformation, status.PartitionInformation),
+		Name:    status.Name,
+		TopicID: status.TopicId,
+		State:   convertAPIToCRDTopicStatusState(status.State),
 	}
 }
 
@@ -250,11 +293,13 @@ func convertAPIToCRDTopicStatusState(state adminv2api.ShadowTopicState) redpanda
 	}[state]
 }
 
-func convertAPIToCRDPartitionInformation(info *adminv2api.TopicPartitionInformation) redpandav1alpha2.TopicPartitionInformation {
-	return redpandav1alpha2.TopicPartitionInformation{
-		PartitionID:            info.PartitionId,
-		SourceLastStableOffset: info.SourceLastStableOffset,
-		SourceHighWatermark:    info.SourceHighWatermark,
-		HighWatermark:          info.HighWatermark,
-	}
+type named interface {
+	GetName() string
+}
+
+func sortByName[T named](v []T) []T {
+	sort.SliceStable(v, func(i, j int) bool {
+		return v[i].GetName() < v[j].GetName()
+	})
+	return v
 }

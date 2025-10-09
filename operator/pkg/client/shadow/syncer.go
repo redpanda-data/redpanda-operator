@@ -65,10 +65,8 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 
 	// creation
 	if existing == nil {
-		link := convertCRDToAPIShadowLink(o, remoteClusterSettings)
-
 		response, err := s.client.ShadowLinkService().CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
-			ShadowLink: link,
+			ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
 		}))
 		if err != nil {
 			return nil, err
@@ -78,12 +76,15 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 		return ptr.To(converted), nil
 	}
 
-	// update (NOTE: this is unimplemented currently)
 	update, err := s.client.ShadowLinkService().UpdateShadowLink(ctx, connect.NewRequest(&adminv2api.UpdateShadowLinkRequest{
 		ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
 		UpdateMask: &fieldmaskpb.FieldMask{
+			// From: https://github.com/redpanda-data/redpanda/blob/60c590be34d5b2bd2934ac2143105ee7e2442388/src/v/redpanda/admin/services/shadow_link/shadow_link.cc#L64C1-L66C57
+			// "configurations", "client_options", "bootstrap_servers"
+			// "configurations", "client_options", "tls_settings"
+			//
 			// update all fields
-			Paths: []string{"*"},
+			Paths: []string{"configurations.topic_metadata_sync_options", "configurations.consumer_offset_sync_options", "configurations.security_sync_options"},
 		},
 	}))
 	if err != nil {
@@ -95,10 +96,11 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 
 // Delete deletes the shadow link in Redpanda.
 func (s *Syncer) Delete(ctx context.Context, o *redpandav1alpha2.ShadowLink) error {
-	// delete (NOTE: this is unimplemented currently)
 	_, err := s.client.ShadowLinkService().DeleteShadowLink(ctx, connect.NewRequest(&adminv2api.DeleteShadowLinkRequest{
-		Name: o.Name,
+		Name:  o.Name,
+		Force: true,
 	}))
+
 	return err
 }
 

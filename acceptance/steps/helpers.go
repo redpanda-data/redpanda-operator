@@ -239,6 +239,38 @@ func (c *clusterClients) ExpectNoTopic(ctx context.Context, topic string) {
 	t.Logf("Found no topic %q in cluster %q", topic, c.cluster)
 }
 
+// Enable experimental feature support.
+//
+// The key must be equal to the current broker time expressed as unix epoch
+// in seconds, and be within 1 hour.
+func (c *clusterClients) EnableFeature(ctx context.Context, feature string) {
+	t := framework.T(ctx)
+
+	admin := c.RedpandaAdmin(ctx)
+	defer admin.Close()
+
+	_, err := admin.PatchClusterConfig(ctx, map[string]any{
+		"enable_developmental_unrecoverable_data_corrupting_features": time.Now().Unix(),
+	}, []string{})
+	require.NoError(t, err)
+
+	// now enable the feature
+	_, err = admin.PatchClusterConfig(ctx, map[string]any{
+		feature: true,
+	}, []string{})
+	require.NoError(t, err)
+}
+
+// Set log level for given logger.
+func (c *clusterClients) SetLogLevel(ctx context.Context, level, logger string) {
+	t := framework.T(ctx)
+
+	admin := c.RedpandaAdmin(ctx)
+	defer admin.Close()
+
+	require.NoError(t, admin.SetLogLevel(ctx, logger, level, 0))
+}
+
 func (c *clusterClients) checkTopic(ctx context.Context, topic string, exists bool, message string) {
 	t := framework.T(ctx)
 

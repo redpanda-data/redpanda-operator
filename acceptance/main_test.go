@@ -12,6 +12,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -20,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 
-	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
+	"github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
@@ -44,6 +46,10 @@ func getSuite(t *testing.T) *framework.Suite {
 }
 
 var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
+	// For now we need to use nightly images so that we can use shadow links
+	steps.DefaultRedpandaRepo = "redpandadata/redpanda-nightly"
+	steps.DefaultRedpandaTag = "v0.0.0-20251008git7a18f63"
+
 	return framework.SuiteBuilderFromFlags().
 		Strict().
 		RegisterProvider("eks", framework.NoopProvider).
@@ -112,6 +118,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						// for and additional 30+ seconds every reconciliation before the client's
 						// broker list is pruned.
 						"--cluster-connection-timeout=500ms",
+						"--enable-shadowlinks",
 					},
 				},
 			})
@@ -135,17 +142,50 @@ func TestAcceptanceSuite(t *testing.T) {
 
 func ClusterTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {
 	require.Greater(t, len(args), 0, "clusters tags can only be used with additional arguments")
-	name := args[0]
 
-	if variant := t.Variant(); variant != "" {
-		name = filepath.Join(variant, name)
+	for _, name := range args {
+		if variant := t.Variant(); variant != "" {
+			name = filepath.Join(variant, name)
+		}
+
+		t.Logf("Installing cluster %q", name)
+		t.ApplyManifest(ctx, duplicateManifests(t, filepath.Join("clusters", name)))
+		t.Logf("Finished installing cluster %q", name)
 	}
 
-	t.Logf("Installing cluster %q", name)
-	t.ApplyManifest(ctx, filepath.Join("clusters", name))
-	t.Logf("Finished installing cluster %q", name)
-
 	return ctx
+}
+
+// we need to dup the manifests some place where we can write their munged
+// content using the patched up values
+func duplicateManifests(t framework.TestingT, directory string) string {
+	tmp, err := os.MkdirTemp("", "manifests-*")
+	require.NoError(t, err)
+	t.Cleanup(func(ctx context.Context) {
+		require.NoError(t, os.RemoveAll(tmp))
+	})
+
+	require.NoError(t, filepath.WalkDir(directory, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		patched := steps.PatchManifest(t, string(data))
+		newPath := filepath.Join(tmp, path)
+		if err := os.MkdirAll(filepath.Dir(newPath), 0o755); err != nil {
+			return err
+		}
+		return os.WriteFile(newPath, []byte(patched), 0o644)
+	}))
+
+	return filepath.Join(tmp, directory)
 }
 
 func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {

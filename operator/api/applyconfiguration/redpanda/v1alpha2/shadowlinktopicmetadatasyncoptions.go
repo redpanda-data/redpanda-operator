@@ -12,15 +12,15 @@
 package v1alpha2
 
 import (
-	time "time"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ShadowLinkTopicMetadataSyncOptionsApplyConfiguration represents a declarative configuration of the ShadowLinkTopicMetadataSyncOptions type for use
 // with apply.
 type ShadowLinkTopicMetadataSyncOptionsApplyConfiguration struct {
-	Interval                *time.Duration                 `json:"interval,omitempty"`
-	TopicFilters            []NameFilterApplyConfiguration `json:"topicFilters,omitempty"`
-	ShadowedTopicProperties []string                       `json:"shadowedTopicProperties,omitempty"`
+	Interval                     *v1.Duration                   `json:"interval,omitempty"`
+	AutoCreateShadowTopicFilters []NameFilterApplyConfiguration `json:"autoCreateShadowTopicFilters,omitempty"`
+	ShadowedTopicProperties      []string                       `json:"shadowedTopicProperties,omitempty"`
 }
 
 // ShadowLinkTopicMetadataSyncOptionsApplyConfiguration constructs a declarative configuration of the ShadowLinkTopicMetadataSyncOptions type for use with
@@ -32,20 +32,20 @@ func ShadowLinkTopicMetadataSyncOptions() *ShadowLinkTopicMetadataSyncOptionsApp
 // WithInterval sets the Interval field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Interval field is set to the value of the last call.
-func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithInterval(value time.Duration) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
+func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithInterval(value v1.Duration) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
 	b.Interval = &value
 	return b
 }
 
-// WithTopicFilters adds the given value to the TopicFilters field in the declarative configuration
+// WithAutoCreateShadowTopicFilters adds the given value to the AutoCreateShadowTopicFilters field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the TopicFilters field.
-func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithTopicFilters(values ...*NameFilterApplyConfiguration) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the AutoCreateShadowTopicFilters field.
+func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithAutoCreateShadowTopicFilters(values ...*NameFilterApplyConfiguration) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithTopicFilters")
+			panic("nil value passed to WithAutoCreateShadowTopicFilters")
 		}
-		b.TopicFilters = append(b.TopicFilters, *values[i])
+		b.AutoCreateShadowTopicFilters = append(b.AutoCreateShadowTopicFilters, *values[i])
 	}
 	return b
 }

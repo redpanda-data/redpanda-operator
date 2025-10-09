@@ -10,8 +10,6 @@
 package v1alpha2
 
 import (
-	"time"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -24,6 +22,7 @@ import (
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=shadowlinks
 // +kubebuilder:resource:shortName=sl
+// +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=`.status.conditions[?(@.type=="Synced")].status`
 type ShadowLink struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -33,7 +32,7 @@ type ShadowLink struct {
 }
 
 func (n *ShadowLink) GetClusterSource() *ClusterSource {
-	return &n.Spec.Cluster
+	return &n.Spec.ShadowCluster
 }
 
 func (n *ShadowLink) GetRemoteClusterSource() *ClusterSource {
@@ -61,10 +60,6 @@ const (
 	ShadowLinkStateActive ShadowLinkState = "active"
 	// Shadow link was paused
 	ShadowLinkStatePaused ShadowLinkState = "paused"
-	// Shadow link is in the process of failing over
-	ShadowLinkStateFailingOver ShadowLinkState = "failing over"
-	// Shadow link was failed over
-	ShadowLinkStateFailedOver ShadowLinkState = "failed over"
 )
 
 // ShadowLinkStatus defines the observed state of any node pools tied to this cluster
@@ -134,24 +129,15 @@ type ShadowTopicStatus struct {
 	TopicID string `json:"topicId,omitempty"`
 	// State of the shadow topic
 	State ShadowTopicState `json:"state,omitempty"`
-	// List of partition information for the shadow topic
-	PartitionInformation []TopicPartitionInformation `json:"partitionInformation,omitempty"`
-}
-
-// Topic partition information
-type TopicPartitionInformation struct {
-	// Partition ID
-	PartitionID int64 `json:"partitionId,omitempty"`
-	// Source partition's LSO
-	SourceLastStableOffset int64 `json:"sourceLastStableOffset,omitempty"`
-	// Source partition's HWM
-	SourceHighWatermark int64 `json:"sourceHighWatermark,omitempty"`
-	// Shadowed partition's HWM
-	HighWatermark int64 `json:"highWatermark,omitempty"`
 }
 
 type ShadowLinkSpec struct {
-	Cluster       ClusterSource `json:"cluster"`
+	// From: https://github.com/redpanda-data/redpanda/blob/60c590be34d5b2bd2934ac2143105ee7e2442388/src/v/redpanda/admin/services/shadow_link/shadow_link.cc#L64C1-L66C57
+	// the following are immutable, since we derive those from our cluster sources anyway, which are already immutable, that should be fine
+	// "configurations", "client_options", "bootstrap_servers"
+	// "configurations", "client_options", "tls_settings"
+
+	ShadowCluster ClusterSource `json:"shadowCluster"`
 	SourceCluster ClusterSource `json:"sourceCluster"`
 
 	// Topic metadata sync options
@@ -226,10 +212,10 @@ type ACLFilter struct {
 type ShadowLinkTopicMetadataSyncOptions struct {
 	// How often to sync metadata
 	// If 0 provided, defaults to 30 seconds
-	// +kubebuilder:default=30
-	Interval time.Duration `json:"interval,omitempty"`
+	// +kubebuilder:default="30s"
+	Interval metav1.Duration `json:"interval,omitempty"`
 	// The topic filters to use
-	TopicFilters []NameFilter `json:"topicFilters,omitempty"`
+	AutoCreateShadowTopicFilters []NameFilter `json:"autoCreateShadowTopicFilters,omitempty"`
 	// Additional topic properties to shadow
 	// Partition count, `max.message.bytes`, `cleanup.policy` and
 	// `timestamp.type` will always be replicated
@@ -240,8 +226,8 @@ type ShadowLinkTopicMetadataSyncOptions struct {
 type ShadowLinkConsumerOffsetSyncOptions struct {
 	// Sync interval
 	// If 0 provided, defaults to 30 seconds
-	// +kubebuilder:default=30
-	Interval time.Duration `json:"interval,omitempty"`
+	// +kubebuilder:default="30s"
+	Interval metav1.Duration `json:"interval,omitempty"`
 	// Whether it's enabled
 	Enabled bool `json:"enabled,omitempty"`
 	// The filters
@@ -252,8 +238,8 @@ type ShadowLinkConsumerOffsetSyncOptions struct {
 type ShadowLinkSecuritySettingsSyncOptions struct {
 	// Sync interval
 	// If 0 provided, defaults to 30 seconds
-	// +kubebuilder:default=30
-	Interval time.Duration `json:"interval,omitempty"`
+	// +kubebuilder:default="30s"
+	Interval metav1.Duration `json:"interval,omitempty"`
 	// Whether or not it's enabled
 	Enabled bool `json:"enabled,omitempty"`
 	// Role filters

@@ -22,6 +22,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 )
 
@@ -153,9 +154,44 @@ func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kg
 	return client, nil
 }
 
-func (c *Factory) kafkaForV1Cluster(cluster *vectorizedv1alpha1.Cluster, opts ...kgo.Opt) (*kgo.Client, error) {
-	ctx := context.Background()
+func (c *Factory) remoteClusterSettingsForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (shadow.RemoteClusterSettings, error) {
+	var settings shadow.RemoteClusterSettings
 
+	dot, err := cluster.GetDot(c.config)
+	if err != nil {
+		return settings, err
+	}
+
+	state, err := redpandachart.RenderStateFromDot(dot)
+	if err != nil {
+		return settings, err
+	}
+
+	config, err := state.AsStaticConfigSource().Kafka.Load(ctx, c.Client)
+	if err != nil {
+		return settings, err
+	}
+	settings.BootstrapServers = config.Brokers
+	if config.TLS != nil {
+		settings.TLSSettings = &shadow.TLSSettings{
+			CA:   config.TLS.CA,
+			Cert: config.TLS.Cert,
+			Key:  config.TLS.Key,
+		}
+	}
+
+	if config.SASL != nil {
+		settings.Authentication = &shadow.AuthenticationSettings{
+			Username:  config.SASL.Username,
+			Password:  config.SASL.Password,
+			Mechanism: redpandav1alpha2.SASLMechanism(config.SASL.Mechanism),
+		}
+	}
+
+	return settings, nil
+}
+
+func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, opts ...kgo.Opt) (*kgo.Client, error) {
 	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
 	if err != nil {
 		return nil, err
@@ -182,4 +218,15 @@ func (c *Factory) kafkaForV1Cluster(cluster *vectorizedv1alpha1.Cluster, opts ..
 	}
 
 	return client, nil
+}
+
+func (c *Factory) remoteClusterSettingsForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster) (shadow.RemoteClusterSettings, error) {
+	var settings shadow.RemoteClusterSettings
+
+	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
+	if err != nil {
+		return settings, err
+	}
+
+	return remoteClusterSettingsFromV1(ctx, c.Client, cluster, fqdn, certs)
 }

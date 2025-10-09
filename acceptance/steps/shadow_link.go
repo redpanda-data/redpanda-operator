@@ -1,0 +1,35 @@
+// Copyright 2025 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package steps
+
+import (
+	"context"
+
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+)
+
+func shadowLinkIsSuccessfullySynced(ctx context.Context, t framework.TestingT, link string) {
+	var shadowLinkObject redpandav1alpha2.ShadowLink
+	require.NoError(t, t.Get(ctx, t.ResourceKey(link), &shadowLinkObject))
+
+	// make sure the resource is stable
+	checkStableResource(ctx, t, &shadowLinkObject)
+
+	// make sure it's synchronized
+	t.RequireCondition(metav1.Condition{
+		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
+		Status: metav1.ConditionTrue,
+		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
+	}, shadowLinkObject.Status.Conditions)
+}
