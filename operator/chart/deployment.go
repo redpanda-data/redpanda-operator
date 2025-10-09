@@ -20,6 +20,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/chartutil"
 )
 
 const (
@@ -310,47 +311,36 @@ func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 func operatorArguments(dot *helmette.Dot) []string {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	args := []string{
-		"--health-probe-bind-address=:8081",
-		"--metrics-bind-address=:8443",
-		"--leader-elect",
-		fmt.Sprintf("--log-level=%s", values.LogLevel),
-		fmt.Sprintf("--webhook-enabled=%t", values.Webhook.Enabled),
+	defaults := map[string]string{
+		"--health-probe-bind-address": ":8081",
+		"--metrics-bind-address":      ":8443",
+		"--leader-elect":              "",
+		"--log-level":                 fmt.Sprintf("%q", values.LogLevel),
+		"--webhook-enabled":           fmt.Sprintf("%t", values.Webhook.Enabled),
+		// If --configurator-base-image and --configurator-tag haven't been
+		// specified, set them to the image specified in this chart. This ensures
+		// that the operator deploys the correct version of itself when it's
+		// deploying itself for other purposes, like the sidecar, initcontainer, or
+		// configurator.
+		"--configurator-tag":              containerTag(dot),
+		"--configurator-base-image":       fmt.Sprintf("%q", values.Image.Repository),
+		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
 	}
 
 	if values.Webhook.Enabled {
-		args = append(args,
-			fmt.Sprintf("--webhook-cert-path=%s", webhookCertificatePath),
-		)
+		defaults["--webhook-cert-path"] = webhookCertificatePath
 	}
 
-	if values.VectorizedControllers.Enabled {
-		args = append(args, "--enable-vectorized-controllers")
-	}
+	userProvided := chartutil.ParseFlags(values.AdditionalCmdFlags)
 
-	hasConfiguratorTag := false
-	hasConfiguratorImage := false
-	for _, flag := range values.AdditionalCmdFlags {
-		if helmette.Contains("--configurator-tag", flag) {
-			hasConfiguratorTag = true
-		}
-		if helmette.Contains("--configurator-base-image", flag) {
-			hasConfiguratorImage = true
+	var flags []string
+	for key, value := range helmette.SortedMap(helmette.Merge(defaults, userProvided)) {
+		if value == "" {
+			flags = append(flags, key)
+		} else {
+			flags = append(flags, fmt.Sprintf("%s=%s", key, value))
 		}
 	}
 
-	// If --configurator-base-image and --configurator-tag haven't been
-	// specified, set them to the image specified in this chart. This ensures
-	// that the operator deploys the correct version of itself when it's
-	// deploying itself for other purposes, like the sidecar, initcontainer, or
-	// configurator.
-	if !hasConfiguratorTag {
-		args = append(args, fmt.Sprintf("--configurator-tag=%s", containerTag(dot)))
-	}
-
-	if !hasConfiguratorImage {
-		args = append(args, fmt.Sprintf("--configurator-base-image=%s", values.Image.Repository))
-	}
-
-	return append(args, values.AdditionalCmdFlags...)
+	return flags
 }

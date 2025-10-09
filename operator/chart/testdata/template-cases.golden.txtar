@@ -630,14 +630,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
-        - --configurator-base-image=my.repo.com/configurator
-        - --configurator-tag=XYZ
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-image-pull-policy=IfNotPresent
+        - --configurator-tag=v25.2.1-beta1
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -1337,13 +1338,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=a35
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="a35"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -2092,16 +2094,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=TNizkRf0
-        - --webhook-enabled=false
+        - --configurator-base-image="p9Di"
         - --configurator-tag=H6X3S
-        - --configurator-base-image=p9Di
-        - 3AeeXxo
-        - EoLf5
-        - "9"
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="TNizkRf0"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -2832,13 +2832,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Ae
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Ae"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -3554,16 +3555,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=CcZY
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - 4ApSMU1
-        - r
-        - BXVuKkMQ
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="CcZY"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -4298,13 +4297,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=a4SuUdq
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="a4SuUdq"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -5039,15 +5039,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=eM
-        - --webhook-enabled=false
+        - --configurator-base-image="Rr9cCH8"
         - --configurator-tag=IyW
-        - --configurator-base-image=Rr9cCH8
-        - sAQJC
-        - "72"
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="eM"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -5777,13 +5776,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=OdrK
-        - --webhook-enabled=false
+        - --configurator-base-image="eZ6Hz"
         - --configurator-tag=9JWhXp
-        - --configurator-base-image=eZ6Hz
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="OdrK"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -6002,13 +6002,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Y
-        - --webhook-enabled=false
+        - --configurator-base-image="ISoDbxsE"
         - --configurator-tag=E5edBYpa
-        - --configurator-base-image=ISoDbxsE
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Y"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -6760,13 +6761,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=gT
-        - --webhook-enabled=false
+        - --configurator-base-image="kw6W"
         - --configurator-tag=6LBRlD
-        - --configurator-base-image=kw6W
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="gT"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -7487,13 +7489,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Qgv
-        - --webhook-enabled=false
+        - --configurator-base-image="nkEl"
         - --configurator-tag=Fc9SuJ
-        - --configurator-base-image=nkEl
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Qgv"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -8245,15 +8248,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=dqEg
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - ""
-        - W7
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="dqEg"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -9005,15 +9007,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=aWy1AZjYl
-        - --webhook-enabled=false
+        - --configurator-base-image="5grR1QB"
         - --configurator-tag=W0p45uvP8
-        - --configurator-base-image=5grR1QB
-        - 6SD9JDbQ7Q
-        - YSovMAw
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="aWy1AZjYl"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -9715,13 +9716,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=HhY5pV
-        - --webhook-enabled=false
+        - --configurator-base-image="DpT1qi9X"
         - --configurator-tag=iRz
-        - --configurator-base-image=DpT1qi9X
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="HhY5pV"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -10493,13 +10495,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=DCM8
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="DCM8"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -10717,14 +10720,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=6TGvv
-        - --webhook-enabled=false
+        - --configurator-base-image="AhZ"
         - --configurator-tag=J18tP9n
-        - --configurator-base-image=AhZ
-        - x7K3o
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="6TGvv"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -11289,13 +11292,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=vOvAQKBh
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="vOvAQKBh"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -11594,16 +11598,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=mU
-        - --webhook-enabled=false
+        - --configurator-base-image="4kWMzql"
         - --configurator-tag=PGITfvk
-        - --configurator-base-image=4kWMzql
-        - YXvYnHoraN
-        - 6PWVVeCET
-        - D
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="mU"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -12366,13 +12368,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=BpnfO
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="BpnfO"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -13236,14 +13239,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=pMbmKX
-        - --webhook-enabled=false
+        - --configurator-base-image="gSveMOQ8Iaw"
         - --configurator-tag=UVj2te38
-        - --configurator-base-image=gSveMOQ8Iaw
-        - 6gNh
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="pMbmKX"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -14029,13 +14032,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=5ruW
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="5ruW"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -14859,14 +14863,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=wt4uT
-        - --webhook-enabled=false
+        - --configurator-base-image="6ERMjI8"
         - --configurator-tag=MJp
-        - --configurator-base-image=6ERMjI8
-        - vp9WG
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="wt4uT"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -15684,16 +15688,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=PgU9SwD
-        - --webhook-enabled=false
+        - --configurator-base-image="5T8t"
         - --configurator-tag=fK
-        - --configurator-base-image=5T8t
-        - aQJ
-        - ""
-        - DJZ4
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="PgU9SwD"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -16567,13 +16569,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=zoF
-        - --webhook-enabled=false
+        - --configurator-base-image="Jlzs9s"
         - --configurator-tag=GXw
-        - --configurator-base-image=Jlzs9s
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="zoF"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -17579,13 +17582,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=S3
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="S3"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -18497,15 +18501,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=mcE2xz8
-        - --webhook-enabled=false
+        - --configurator-base-image="4s6FZUA"
         - --configurator-tag=z7F5fT
-        - --configurator-base-image=4s6FZUA
-        - 2MguVfZ
-        - 2d4Gz
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="mcE2xz8"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -18951,13 +18954,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=NaLO9z
-        - --webhook-enabled=false
+        - --configurator-base-image="g96"
         - --configurator-tag=Lotm9epAH
-        - --configurator-base-image=g96
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="NaLO9z"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -19876,15 +19880,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=xLHAob
-        - --webhook-enabled=false
+        - --configurator-base-image="Bl6b0ql7"
         - --configurator-tag=5yg4G
-        - --configurator-base-image=Bl6b0ql7
-        - htV
-        - ItRsBL
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="xLHAob"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -20770,14 +20773,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=GusePZR7AB
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - TvXwul
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="GusePZR7AB"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -21147,14 +21150,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=EQ
-        - --webhook-enabled=false
+        - --configurator-base-image="qO8Q6"
         - --configurator-tag=S
-        - --configurator-base-image=qO8Q6
-        - ufbUW
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="EQ"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -22067,13 +22070,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=hPrI1P
-        - --webhook-enabled=false
+        - --configurator-base-image="8mlV"
         - --configurator-tag=Gd0
-        - --configurator-base-image=8mlV
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="hPrI1P"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -22668,13 +22672,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=v1480
-        - --webhook-enabled=false
+        - --configurator-base-image="a2vgH0"
         - --configurator-tag=SwdpKv
-        - --configurator-base-image=a2vgH0
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="v1480"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -23677,15 +23682,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=XxZ
-        - --webhook-enabled=false
+        - --configurator-base-image="bqtHD7"
         - --configurator-tag=zo
-        - --configurator-base-image=bqtHD7
-        - Rlceb
-        - pf5
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="XxZ"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -24083,14 +24087,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=G3wz
-        - --webhook-enabled=false
+        - --configurator-base-image="16DN2"
         - --configurator-tag=RK6Ba96O
-        - --configurator-base-image=16DN2
-        - wK
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="G3wz"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -24963,15 +24967,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=KMFMJqF
-        - --webhook-enabled=false
+        - --configurator-base-image="MhZp"
         - --configurator-tag=NaNHQ74
-        - --configurator-base-image=MhZp
-        - SkxA4PXfixGo6H
-        - Fa1
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="KMFMJqF"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -25486,14 +25489,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=SzbHWgTpbD2
-        - --webhook-enabled=false
+        - --configurator-base-image="5Q"
         - --configurator-tag=jr9
-        - --configurator-base-image=5Q
-        - gQcl6Ej6
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="SzbHWgTpbD2"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -26000,14 +26003,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=iAMFhZ
-        - --webhook-enabled=false
+        - --configurator-base-image="P9JMlA"
         - --configurator-tag=i6Q4sn53d
-        - --configurator-base-image=P9JMlA
-        - 8kSamSw9
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="iAMFhZ"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -26609,15 +26612,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=W
-        - --webhook-enabled=false
+        - --configurator-base-image="dOHS"
         - --configurator-tag=4hS76
-        - --configurator-base-image=dOHS
-        - Cz5DsC
-        - dk6pMw8X
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="W"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -27139,15 +27141,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=GyEj
-        - --webhook-enabled=false
+        - --configurator-base-image="5R2fC0t"
         - --configurator-tag=C5
-        - --configurator-base-image=5R2fC0t
-        - 0H
-        - nCx9L
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="GyEj"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -28131,16 +28132,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=WFheHptfh
-        - --webhook-enabled=false
+        - --configurator-base-image="CABd5"
         - --configurator-tag=DV
-        - --configurator-base-image=CABd5
-        - E9Eu
-        - EU
-        - nE
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="WFheHptfh"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -28644,16 +28643,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=
-        - --webhook-enabled=false
+        - --configurator-base-image="h"
         - --configurator-tag=95V5Gm
-        - --configurator-base-image=h
-        - JFs
-        - nNwqWRT
-        - ScYwDYt
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level=""
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -29035,16 +29032,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=yGdn
-        - --webhook-enabled=false
+        - --configurator-base-image="OjO"
         - --configurator-tag=YHoj
-        - --configurator-base-image=OjO
-        - krIILz
-        - "5"
-        - cS
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="yGdn"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -30092,14 +30087,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=K
-        - --webhook-enabled=false
+        - --configurator-base-image="Olq"
         - --configurator-tag=X
-        - --configurator-base-image=Olq
-        - jq37e
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="K"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -31231,15 +31226,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=10rTK
-        - --webhook-enabled=false
+        - --configurator-base-image="VX7rtbd"
         - --configurator-tag=VPI
-        - --configurator-base-image=VX7rtbd
-        - Fpr
-        - bQ4Xdn
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="10rTK"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -31794,16 +31788,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=D3sVjB0WumuG
-        - --webhook-enabled=false
+        - --configurator-base-image="5SfzkB5M1vx"
         - --configurator-tag=l0yDQ3G
-        - --configurator-base-image=5SfzkB5M1vx
-        - J
-        - k
-        - VRWdl
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="D3sVjB0WumuG"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -32794,13 +32786,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=
-        - --webhook-enabled=false
+        - --configurator-base-image="a7e7"
         - --configurator-tag=QiVn05LHP7O
-        - --configurator-base-image=a7e7
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level=""
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -33450,16 +33443,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=YQXlr
-        - --webhook-enabled=false
+        - --configurator-base-image="Nt"
         - --configurator-tag=H
-        - --configurator-base-image=Nt
-        - KeFi
-        - dfONW9
-        - 9znBOn
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="YQXlr"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -33967,13 +33958,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=TwQtVGrOeJf
-        - --webhook-enabled=false
+        - --configurator-base-image="MRDUBfo4"
         - --configurator-tag=go
-        - --configurator-base-image=MRDUBfo4
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="TwQtVGrOeJf"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -35057,14 +35049,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=EFXhBX
-        - --webhook-enabled=false
+        - --configurator-base-image="KbWqGz"
         - --configurator-tag=pneZv
-        - --configurator-base-image=KbWqGz
-        - 5O
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="EFXhBX"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -35935,13 +35927,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=ozF
-        - --webhook-enabled=false
+        - --configurator-base-image="CPQ9Y6"
         - --configurator-tag=qPbAyXLw
-        - --configurator-base-image=CPQ9Y6
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="ozF"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -36965,15 +36958,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=bVWCG
-        - --webhook-enabled=false
+        - --configurator-base-image="U4heCUyQYeE"
         - --configurator-tag=CyopzJ
-        - --configurator-base-image=U4heCUyQYeE
-        - 6ArBn
-        - zve
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="bVWCG"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -37847,14 +37839,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Y01SjB
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="AzmZ3dTJs"
         - --configurator-tag=WHh
-        - --configurator-base-image=AzmZ3dTJs
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Y01SjB"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -38701,16 +38694,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=H1NDG8
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="mM7lGw9fmKx"
         - --configurator-tag=K
-        - --configurator-base-image=mM7lGw9fmKx
-        - l4dHBtic0cX0cs7
-        - ""
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="H1NDG8"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -39569,14 +39561,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=SQz
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="SQz"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -40448,14 +40441,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=z1LU
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="z1LU"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -41330,14 +41324,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=yVlZuzf
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="zCQ"
         - --configurator-tag=NnFVx
-        - --configurator-base-image=zCQ
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="yVlZuzf"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -42206,17 +42201,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=caaG
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - D4rks
-        - p7p
-        - 1kSb
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="caaG"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -42575,14 +42568,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=smF3
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="smF3"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -42938,16 +42932,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Co
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="ma3F"
         - --configurator-tag=Jug9nLx
-        - --configurator-base-image=ma3F
-        - JOd
-        - JV6w
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Co"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -43902,14 +43895,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=vMA
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="idWmcYq6IZQH"
         - --configurator-tag=vnJvYTYU8
-        - --configurator-base-image=idWmcYq6IZQH
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="vMA"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -44784,14 +44778,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=d
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="d"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -45667,17 +45662,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=OzauffS1XLt
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="qbU"
         - --configurator-tag=9mw
-        - --configurator-base-image=qbU
-        - 8TZ
-        - c
-        - cpUq
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="OzauffS1XLt"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -46562,14 +46555,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=pN6bqJZQR
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="2g"
         - --configurator-tag=GfYtT
-        - --configurator-base-image=2g
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="pN6bqJZQR"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -47473,14 +47467,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=7mzP0
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="7mzP0"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -48436,16 +48431,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=6i5
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="cd7qo"
         - --configurator-tag=vJ7ET
-        - --configurator-base-image=cd7qo
-        - r4LII
-        - m5622dBz6A
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="6i5"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -49431,16 +49425,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=irlLOaCak6uG
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="SCN"
         - --configurator-tag=DF517x
-        - --configurator-base-image=SCN
-        - ""
-        - QL9X
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="irlLOaCak6uG"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -49905,17 +49898,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=x4gaS
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image=""
         - --configurator-tag=1
-        - --configurator-base-image=
-        - Q9
-        - JLCZc
-        - c
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="x4gaS"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -50419,14 +50410,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=LwcaR
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="UWHmykY"
         - --configurator-tag=47nK
-        - --configurator-base-image=UWHmykY
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="LwcaR"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -51451,14 +51443,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=tI
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="kBJV23"
         - --configurator-tag=boxAxRu
-        - --configurator-base-image=kBJV23
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="tI"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -52039,17 +52032,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=4J4TVSNI8I
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="7wdG0"
         - --configurator-tag=HXXm
-        - --configurator-base-image=7wdG0
-        - dWzxr3xXRM
-        - vEF
-        - DAM
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="4J4TVSNI8I"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -52646,15 +52637,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=CpVihaT
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="xmIP4HeALlQ8"
         - --configurator-tag=Vk
-        - --configurator-base-image=xmIP4HeALlQ8
-        - oxdTcKZmy5
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="CpVihaT"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -53910,17 +53901,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Kp
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="h9"
         - --configurator-tag=m0a
-        - --configurator-base-image=h9
-        - ReK6Upw
-        - 7Pu0AA
-        - 0yNEqlggmA
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Kp"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -55166,16 +55155,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=VNcVbeobGuK
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="Zme9w8o"
         - --configurator-tag=TPaa
-        - --configurator-base-image=Zme9w8o
-        - LlHz1
-        - 4qYzSV
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="VNcVbeobGuK"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -55949,17 +55937,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=OdA
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="Tzah"
         - --configurator-tag=6E02z0oYQUL
-        - --configurator-base-image=Tzah
-        - zTsg
-        - Sv
-        - 9M23O7X
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="OdA"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -56675,16 +56661,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=dtDojkH
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="Ozfq"
         - --configurator-tag=3ncj
-        - --configurator-base-image=Ozfq
-        - 5orCeu
-        - v7kr
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="dtDojkH"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -57380,16 +57365,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=51BriCol
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="w3qgVe7"
         - --configurator-tag=8YPjvr
-        - --configurator-base-image=w3qgVe7
-        - "n"
-        - H7B3A1m
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="51BriCol"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -58515,17 +58499,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=HTKj8qv
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="9kg"
         - --configurator-tag=hk
-        - --configurator-base-image=9kg
-        - eyxGhI
-        - 9YL
-        - 6HEr
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="HTKj8qv"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -59976,14 +59958,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=VC4
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="D43Nf"
         - --configurator-tag=McKTb81
-        - --configurator-base-image=D43Nf
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="VC4"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -61233,14 +61216,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="M2Q"
         - --configurator-tag=Q9Q
-        - --configurator-base-image=M2Q
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level=""
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -62449,17 +62433,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=XrGv
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="tczCHr"
         - --configurator-tag=EQ6C
-        - --configurator-base-image=tczCHr
-        - Sb4JTueXASpBtQ
-        - og
-        - GaoUIcOT
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="XrGv"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -63156,14 +63138,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=o7
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="ahO"
         - --configurator-tag=w8Y59
-        - --configurator-base-image=ahO
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="o7"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -64180,14 +64163,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=I
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="ZMlofIenTW3"
         - --configurator-tag=ZpYBKn
-        - --configurator-base-image=ZMlofIenTW3
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="I"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -65510,17 +65494,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=fhg
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="YYLGC7"
         - --configurator-tag=okj1Bqm1LHE
-        - --configurator-base-image=YYLGC7
-        - Gc3q48w
-        - JNFXPzkrj
-        - hYzBm
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="fhg"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -66086,14 +66068,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=E3A4
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="kG9n"
         - --configurator-tag=H0aN
-        - --configurator-base-image=kG9n
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="E3A4"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -67166,15 +67149,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=p7w
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="BkpCoE"
         - --configurator-tag=3BE
-        - --configurator-base-image=BkpCoE
-        - QpxE2
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="p7w"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -68489,16 +68472,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=grDHZkPyKot
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="n74Ca"
         - --configurator-tag=y8Skx9
-        - --configurator-base-image=n74Ca
-        - bv4LbFjFG
-        - X5vvak7u
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="grDHZkPyKot"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -69488,15 +69470,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Yd
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="ftKlY"
         - --configurator-tag=bBlM
-        - --configurator-base-image=ftKlY
-        - amoUVan
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Yd"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -70172,14 +70154,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=Ufou7z
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="AJtD86QQ"
         - --configurator-tag=wp
-        - --configurator-base-image=AJtD86QQ
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="Ufou7z"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -71162,14 +71145,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=pB9UJO8ZqB
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="87"
         - --configurator-tag=1XQEc73
-        - --configurator-base-image=87
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="pB9UJO8ZqB"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -72306,14 +72290,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=tYc
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="I"
         - --configurator-tag=y3ROS
-        - --configurator-base-image=I
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="tYc"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -72999,14 +72984,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=AKFy
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="TPAc"
         - --configurator-tag=u
-        - --configurator-base-image=TPAc
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="AKFy"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -74220,14 +74206,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=PcP
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="MxYHsvk3O"
         - --configurator-tag=tr
-        - --configurator-base-image=MxYHsvk3O
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="PcP"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -75402,17 +75389,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=s63h
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="zZLbhNE"
         - --configurator-tag=lWf3R8lv
-        - --configurator-base-image=zZLbhNE
-        - oMtn
-        - Q
-        - 3z6Z0vrvjWuC
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="s63h"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -76182,17 +76167,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=qZr
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="6C"
         - --configurator-tag=EyNNr90u1
-        - --configurator-base-image=6C
-        - IoP
-        - oEPSF
-        - w659VcIIlO
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="qZr"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -77224,17 +77207,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=hj
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="kE0AJ1"
         - --configurator-tag=wA5XUe
-        - --configurator-base-image=kE0AJ1
-        - ""
-        - 2BwL4Tf6d
-        - LY5cEH
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="hj"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -78307,16 +78288,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=cU5MS1z
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="uzG5"
         - --configurator-tag=PQfV4
-        - --configurator-base-image=uzG5
-        - 7G3Tgu
-        - Oh
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="cU5MS1z"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -79534,14 +79514,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=sbpkgy
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="iqTYWQsJpRK"
         - --configurator-tag=ob8Ckc
-        - --configurator-base-image=iqTYWQsJpRK
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="sbpkgy"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -80183,14 +80164,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=TmP83vnBu
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="xS"
         - --configurator-tag=v
-        - --configurator-base-image=xS
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="TmP83vnBu"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -81434,17 +81416,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=G6sQWEEyqb
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="HoNUZ89Keda"
         - --configurator-tag=3EcYA
-        - --configurator-base-image=HoNUZ89Keda
-        - l9a
-        - Arx
-        - bLHpq0J3
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="G6sQWEEyqb"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -82208,17 +82188,15 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=tqqBMvp3V
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="h8K"
         - --configurator-tag=P
-        - --configurator-base-image=h8K
-        - P
-        - WM7Be
-        - JLya
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="tqqBMvp3V"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -83345,14 +83323,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=OIXyC
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="C9o"
         - --configurator-tag=HAScR
-        - --configurator-base-image=C9o
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="OIXyC"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -84307,13 +84286,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -85146,13 +85126,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -85984,13 +85965,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -86683,13 +86665,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -87399,13 +87382,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -88098,13 +88082,14 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
@@ -88819,14 +88804,15 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=true
-        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+        - --webhook-enabled=true
         command:
         - /manager
         env: []
@@ -89632,13 +89618,14 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=:8443
-        - --leader-elect
-        - --log-level=info
-        - --webhook-enabled=false
+        - --configurator-base-image="docker.redpanda.com/redpandadata/redpanda-operator"
         - --configurator-tag=v25.2.1-beta1
-        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level="info"
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
         command:
         - /manager
         env: []
