@@ -94,7 +94,7 @@ func (r *StatefulSetResource) runUpdate(
 	// Check if we should run update on this specific STS.
 
 	log.V(logger.DebugLevel).Info("Checking that we should update")
-	stsChanged, nodePoolRestarting, err := r.shouldUpdate(current, modified)
+	stsChanged, nodePoolRestarting, err := r.shouldUpdate(ctx, current, modified)
 	if err != nil {
 		return fmt.Errorf("unable to determine the update procedure: %w", err)
 	}
@@ -629,7 +629,7 @@ func (r *StatefulSetResource) updateStatefulSet(
 // If no differences are found, the function returns `false` as first value. The second value
 // depends on the Node Pool Status, indicating whether rolling restart is still in progress.
 func (r *StatefulSetResource) shouldUpdate(
-	current, modified *appsv1.StatefulSet,
+	ctx context.Context, current, modified *appsv1.StatefulSet,
 ) (bool, bool, error) {
 	log := r.logger.WithName("shouldUpdate")
 
@@ -645,6 +645,18 @@ func (r *StatefulSetResource) shouldUpdate(
 		npStatus := r.getNodePoolStatus()
 
 		if npStatus.Restarting || r.pandaCluster.Status.Restarting {
+			return false, true, nil
+		}
+
+		// Check if any pods have ClusterUpdate condition set.
+		// This makes the controller idempotent: if a previous reconcile set the condition
+		// but the status flag wasn't persisted (due to controller restart, stale cache, etc.),
+		// we'll still detect that a rolling update is needed by checking actual pod state.
+		allPodsUpdated, err := r.areAllPodsUpdated(ctx)
+		if err != nil {
+			log.V(logger.DebugLevel).Error(err, "error checking if pods need update")
+		} else if !allPodsUpdated {
+			log.Info("Found pods with ClusterUpdate condition, continuing rolling update")
 			return false, true, nil
 		}
 
