@@ -149,34 +149,24 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $args := (list "--health-probe-bind-address=:8081" "--metrics-bind-address=:8443" "--leader-elect" (printf "--log-level=%s" $values.logLevel) (printf "--webhook-enabled=%t" $values.webhook.enabled)) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--log-level" (printf "%q" $values.logLevel) "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" (printf "%q" $values.image.repository) "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
 {{- if $values.webhook.enabled -}}
-{{- $args = (concat (default (list) $args) (list (printf "--webhook-cert-path=%s" "/tmp/k8s-webhook-server/serving-certs"))) -}}
+{{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
 {{- end -}}
-{{- if $values.vectorizedControllers.enabled -}}
-{{- $args = (concat (default (list) $args) (list "--enable-vectorized-controllers")) -}}
-{{- end -}}
-{{- $hasConfiguratorTag := false -}}
-{{- $hasConfiguratorImage := false -}}
-{{- range $_, $flag := $values.additionalCmdFlags -}}
-{{- if (contains "--configurator-tag" $flag) -}}
-{{- $hasConfiguratorTag = true -}}
-{{- end -}}
-{{- if (contains "--configurator-base-image" $flag) -}}
-{{- $hasConfiguratorImage = true -}}
+{{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
+{{- $flags := (coalesce nil) -}}
+{{- range $key, $value := (merge (dict) $defaults $userProvided) -}}
+{{- if (eq $value "") -}}
+{{- $flags = (concat (default (list) $flags) (list $key)) -}}
+{{- else -}}
+{{- $flags = (concat (default (list) $flags) (list (printf "%s=%s" $key $value))) -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- if (not $hasConfiguratorTag) -}}
-{{- $args = (concat (default (list) $args) (list (printf "--configurator-tag=%s" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r")))) -}}
-{{- end -}}
-{{- if (not $hasConfiguratorImage) -}}
-{{- $args = (concat (default (list) $args) (list (printf "--configurator-base-image=%s" $values.image.repository))) -}}
-{{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (concat (default (list) $args) (default (list) $values.additionalCmdFlags))) | toJson -}}
+{{- (dict "r" $flags) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

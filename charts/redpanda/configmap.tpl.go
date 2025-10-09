@@ -18,6 +18,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/chartutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
@@ -641,7 +642,7 @@ func RedpandaAdditionalStartFlags(values *Values, pool Pool) (bool, bool, []stri
 		delete(flags, "--reserve-memory")
 	}
 
-	for key, value := range helmette.SortedMap(ParseCLIArgs(pool.Statefulset.AdditionalRedpandaCmdFlags)) {
+	for key, value := range helmette.SortedMap(chartutil.ParseFlags(pool.Statefulset.AdditionalRedpandaCmdFlags)) {
 		flags[key] = value
 	}
 
