@@ -486,10 +486,10 @@ func TestShouldUpdate_PodsWithClusterUpdateCondition(t *testing.T) {
 				Namespace: "default",
 			},
 			Status: vectorizedv1alpha1.ClusterStatus{
-				Restarting: false,  // Status says not restarting (stale cache)
+				Restarting: false, // Status says not restarting (stale cache)
 				NodePools: map[string]vectorizedv1alpha1.NodePoolStatus{
 					"first": {
-						Restarting: false,  // NodePool status also says not restarting
+						Restarting: false, // NodePool status also says not restarting
 					},
 				},
 			},
