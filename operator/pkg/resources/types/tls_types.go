@@ -17,6 +17,8 @@ import (
 	"github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 )
 
 // StatefulsetTLSVolumeProvider returns volumes and volume mounts that
@@ -33,20 +35,14 @@ type BrokerTLSConfigProvider interface {
 	SchemaRegistryClientTLS(mountPoints *TLSMountPoints) *config.TLS
 }
 
-type TLSConfig struct {
-	CA   string
-	Cert string
-	Key  string
-}
-
 // AdminTLSConfigProvider returns TLS config for admin API
 type AdminTLSConfigProvider interface {
 	GetTLSConfig(ctx context.Context, k8sClient client.Reader) (*tls.Config, error)
-	GetTLSConfigValues(ctx context.Context, k8sClient client.Reader) (*TLSConfig, error)
+	GetTLSConfigValues(ctx context.Context, k8sClient client.Reader) (*ir.TLSConfig, error)
 	GetKafkaTLSConfig(ctx context.Context, k8sClient client.Reader) (*tls.Config, error)
-	GetKafkaTLSConfigValues(ctx context.Context, k8sClient client.Reader) (*TLSConfig, error)
+	GetKafkaTLSConfigValues(ctx context.Context, k8sClient client.Reader) (*ir.TLSConfig, error)
 	GetSchemaTLSConfig(ctx context.Context, k8sClient client.Reader) (*tls.Config, error)
-	GetSchemaTLSConfigValues(ctx context.Context, k8sClient client.Reader) (*TLSConfig, error)
+	GetSchemaTLSConfigValues(ctx context.Context, k8sClient client.Reader) (*ir.TLSConfig, error)
 }
 
 // TLSMountPoint defines paths to be mounted

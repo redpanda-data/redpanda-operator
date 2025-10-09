@@ -1,3 +1,12 @@
+// Copyright 2025 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
 // Package clusterconfiguration holds types to track cluster configuration - the CRD declarations need to
 // be transformed down into a representation of those values in a bootstrap template; we also supply an
 // evaluator that can turn such a map of values into a map of raw concrete values.

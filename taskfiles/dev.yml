@@ -52,4 +52,4 @@ tasks:
 
   update-licenses:
     cmds:
-      - go run -C licenseupdater ./... -config ../.licenseupdater.yaml
+      - go run ./licenseupdater ./... -config .licenseupdater.yaml

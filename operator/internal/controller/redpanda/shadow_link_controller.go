@@ -25,9 +25,9 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
-// as topic and status entries may be in the thousands if a shadow link is
-// replicating many topics, we artificially limit the number of reported
-// individual statuses
+// maxTopicAndTaskStatusEntries artificially limits the number of individual
+// reported statuses for tasks and topics in a link, as each may be extremely
+// large in cardinality
 const maxTopicAndTaskStatusEntries = 200
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=shadowlinks,verbs=get;list;watch;update;patch

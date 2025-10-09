@@ -22,5 +22,3 @@ Feature: Metrics endpoint has authentication and authorization
     """
     And "testing" service account has bounded "redpanda-operator-.*-metrics-reader" regexp cluster role name
     Then its metrics endpoint should accept https request with "testing" service account token
-
-

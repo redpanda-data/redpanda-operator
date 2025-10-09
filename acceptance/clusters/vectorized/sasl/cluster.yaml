@@ -3,8 +3,8 @@ kind: Cluster
 metadata:
   name: sasl
 spec:
-  image: "redpandadata/redpanda-nightly"
-  version: "v0.0.0-20251008git7a18f63"
+  image: ${DEFAULT_REDPANDA_REPO}
+  version: ${DEFAULT_REDPANDA_TAG}
   replicas: 1
   enableSasl: true
   resources:

@@ -36,6 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
@@ -265,7 +266,7 @@ func saslOpt(user, password, mechanism string) (kgo.Opt, error) {
 			m = scram.AsSha512Mechanism()
 		}
 	default:
-		return nil, fmt.Errorf("unhandled SASL mechanism: %s", mechanism)
+		return nil, errors.Newf("unhandled SASL mechanism: %s", mechanism)
 	}
 
 	return kgo.SASL(m), nil
@@ -277,7 +278,6 @@ func remoteClusterSettingsFromV1(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	tlsProvider resourcetypes.AdminTLSConfigProvider,
-	pods ...string,
 ) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 	var err error
@@ -287,14 +287,12 @@ func remoteClusterSettingsFromV1(
 		return settings, NoKafkaAPI
 	}
 
-	if len(pods) == 0 {
-		pods, err = v1PodNames(ctx, k8sClient, redpandaCluster)
-		if err != nil {
-			return settings, fmt.Errorf("unable list pods to infer kafka API URLs: %w", err)
-		}
+	pods, err := v1PodNames(ctx, k8sClient, redpandaCluster)
+	if err != nil {
+		return settings, fmt.Errorf("unable list pods to infer kafka API URLs: %w", err)
 	}
 
-	var tlsConfig *resourcetypes.TLSConfig
+	var tlsConfig *ir.TLSConfig
 	if kafkaAPI.TLS.Enabled {
 		tlsConfig, err = tlsProvider.GetKafkaTLSConfigValues(ctx, k8sClient)
 		if err != nil {
@@ -332,7 +330,7 @@ func remoteClusterSettingsFromV1(
 			case "SCRAM-SHA-256", "SCRAM-SHA-512":
 				settings.Authentication.Mechanism = redpandav1alpha2.SASLMechanism(mechanism)
 			default:
-				return settings, fmt.Errorf("unhandled SASL mechanism: %s", mechanism)
+				return settings, errors.Newf("unhandled SASL mechanism: %s", mechanism)
 			}
 		}
 	}

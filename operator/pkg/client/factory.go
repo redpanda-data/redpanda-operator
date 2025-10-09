@@ -367,7 +367,7 @@ func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha
 	}
 
 	if cluster != nil {
-		return c.remoteClusterSettingsForCluster(cluster)
+		return c.remoteClusterSettingsForCluster(ctx, cluster)
 	}
 
 	v1Cluster, err := c.getRemoteV1Cluster(ctx, o)

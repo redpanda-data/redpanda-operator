@@ -38,6 +38,9 @@ import (
 )
 
 func getTestImage() string {
+	// this is the latest nightly image that contains shadow links, once a release
+	// with shadow links is actually cut, we can switch to the typical release
+	// images
 	return "redpandadata/redpanda-nightly:v0.0.0-20251008git7a18f63"
 }
 
@@ -47,6 +50,8 @@ func TestSyncer(t *testing.T) {
 	// TODO: a current bug in duration parsing in core winds up considering duration intervals zigzag encoded
 	// we explicitly choose 2 seconds as that represents the value 1s in zigzag whereas 1s decodes to -1s and
 	// winds up with the maximum sync interval -- choosing 2s works around that to speed up tests
+	// see https://github.com/redpanda-data/redpanda/pull/27941 which has been merged but is not yet available
+	// in nightly builds.
 	syncTime := metav1.Duration{Duration: 2 * time.Second}
 	linkName := "link"
 	topicName := "topic"

@@ -12,7 +12,6 @@ package certmanager
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"path/filepath"
 
@@ -31,6 +30,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 )
 
 const (
@@ -743,7 +743,7 @@ func (cc *ClusterCertificates) GetTLSConfig(
 
 func (cc *ClusterCertificates) GetTLSConfigValues(
 	ctx context.Context, k8sClient client.Reader,
-) (*resourcetypes.TLSConfig, error) {
+) (*ir.TLSConfig, error) {
 	return getTLSConfigValues(ctx, cc.adminAPI, k8sClient)
 }
 
@@ -757,7 +757,7 @@ func (cc *ClusterCertificates) GetKafkaTLSConfig(
 
 func (cc *ClusterCertificates) GetKafkaTLSConfigValues(
 	ctx context.Context, k8sClient client.Reader,
-) (*resourcetypes.TLSConfig, error) {
+) (*ir.TLSConfig, error) {
 	return getTLSConfigValues(ctx, cc.kafkaAPI, k8sClient)
 }
 
@@ -771,75 +771,63 @@ func (cc *ClusterCertificates) GetSchemaTLSConfig(
 
 func (cc *ClusterCertificates) GetSchemaTLSConfigValues(
 	ctx context.Context, k8sClient client.Reader,
-) (*resourcetypes.TLSConfig, error) {
+) (*ir.TLSConfig, error) {
 	return getTLSConfigValues(ctx, cc.schemaRegistryAPI, k8sClient)
 }
 
 func getTLSConfig(
 	ctx context.Context, certs *apiCertificates, k8sClient client.Reader,
 ) (*tls.Config, error) {
-	nodeCertificateName := certs.nodeCertificateName()
-	if nodeCertificateName == nil {
-		return nil, errNoTLSError
-	}
-	tlsConfig := tls.Config{MinVersion: tls.VersionTLS12} // TLS12 is min version allowed by gosec.
-
-	var nodeCertSecret corev1.Secret
-	err := k8sClient.Get(ctx, *nodeCertificateName, &nodeCertSecret)
+	commonTLS, err := getCommonTLS(certs)
 	if err != nil {
 		return nil, err
 	}
-
-	// Add root CA
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(nodeCertSecret.Data[cmmetav1.TLSCAKey])
-	tlsConfig.RootCAs = caCertPool
-
-	if len(certs.clientCertificates) > 0 {
-		var clientCertSecret corev1.Secret
-		err := k8sClient.Get(ctx, certs.clientCertificateNames()[0], &clientCertSecret)
-		if err != nil {
-			return nil, err
-		}
-		cert, err := tls.X509KeyPair(clientCertSecret.Data[corev1.TLSCertKey], clientCertSecret.Data[corev1.TLSPrivateKeyKey])
-		if err != nil {
-			return nil, err
-		}
-		tlsConfig.Certificates = []tls.Certificate{cert}
-	}
-
-	return &tlsConfig, nil
+	return commonTLS.Config(ctx, k8sClient)
 }
 
 func getTLSConfigValues(
 	ctx context.Context, certs *apiCertificates, k8sClient client.Reader,
-) (*resourcetypes.TLSConfig, error) {
+) (*ir.TLSConfig, error) {
+	commonTLS, err := getCommonTLS(certs)
+	if err != nil {
+		return nil, err
+	}
+	return commonTLS.Load(ctx, k8sClient)
+}
+
+func getCommonTLS(certs *apiCertificates) (*ir.CommonTLS, error) {
 	nodeCertificateName := certs.nodeCertificateName()
 	if nodeCertificateName == nil {
 		return nil, errNoTLSError
 	}
 
-	var nodeCertSecret corev1.Secret
-	err := k8sClient.Get(ctx, *nodeCertificateName, &nodeCertSecret)
-	if err != nil {
-		return nil, err
+	commonTLS := &ir.CommonTLS{
+		CaCert: &ir.ObjectKeyRef{
+			Namespace: nodeCertificateName.Namespace,
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: nodeCertificateName.Name,
+				},
+				Key: cmmetav1.TLSCAKey,
+			},
+		},
 	}
-
-	config := &resourcetypes.TLSConfig{}
-	// root CA
-	config.CA = string(nodeCertSecret.Data[cmmetav1.TLSCAKey])
 
 	if len(certs.clientCertificates) > 0 {
-		var clientCertSecret corev1.Secret
-		err := k8sClient.Get(ctx, certs.clientCertificateNames()[0], &clientCertSecret)
-		if err != nil {
-			return nil, err
+		certObject := certs.clientCertificateNames()[0]
+		commonTLS.Cert = &ir.SecretKeyRef{
+			Namespace: certObject.Namespace,
+			Name:      certObject.Name,
+			Key:       corev1.TLSCertKey,
 		}
-		config.Cert = string(clientCertSecret.Data[corev1.TLSCertKey])
-		config.Key = string(clientCertSecret.Data[corev1.TLSPrivateKeyKey])
+		commonTLS.Key = &ir.SecretKeyRef{
+			Namespace: certObject.Namespace,
+			Name:      certObject.Name,
+			Key:       corev1.TLSPrivateKeyKey,
+		}
 	}
 
-	return config, nil
+	return commonTLS, nil
 }
 
 // KafkaClientBrokerTLS returns configuration to connect to kafka api with tls

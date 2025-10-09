@@ -154,7 +154,7 @@ func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kg
 	return client, nil
 }
 
-func (c *Factory) remoteClusterSettingsForCluster(cluster *redpandav1alpha2.Redpanda) (shadow.RemoteClusterSettings, error) {
+func (c *Factory) remoteClusterSettingsForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
 	dot, err := cluster.GetDot(c.config)
@@ -167,41 +167,24 @@ func (c *Factory) remoteClusterSettingsForCluster(cluster *redpandav1alpha2.Redp
 		return settings, err
 	}
 
-	brokers, err := redpanda.KafkaBrokers(state, c.dialer)
+	config, err := state.AsStaticConfigSource().Kafka.Load(ctx, c.Client)
 	if err != nil {
 		return settings, err
 	}
-	settings.BootstrapServers = brokers
-
-	tls, err := redpanda.KafkaTLSConfig(state)
-	if err != nil {
-		return settings, err
-	}
-	if tls != nil {
+	settings.BootstrapServers = config.Brokers
+	if config.TLS != nil {
 		settings.TLSSettings = &shadow.TLSSettings{
-			CA:   tls.CA,
-			Cert: tls.Cert,
-			Key:  tls.Key,
+			CA:   config.TLS.CA,
+			Cert: config.TLS.Cert,
+			Key:  config.TLS.Key,
 		}
 	}
 
-	username, password, mechanism, err := redpanda.KafkaAuthConfig(state)
-	if err != nil {
-		return settings, err
-	}
-	if username != "" && password != "" {
+	if config.SASL != nil {
 		settings.Authentication = &shadow.AuthenticationSettings{
-			Username: username,
-			Password: password,
-		}
-
-		if mechanism != "" {
-			switch mechanism {
-			case "SCRAM-SHA-256", "SCRAM-SHA-512":
-				settings.Authentication.Mechanism = redpandav1alpha2.SASLMechanism(mechanism)
-			default:
-				return settings, fmt.Errorf("unhandled SASL mechanism: %s", mechanism)
-			}
+			Username:  config.SASL.Username,
+			Password:  config.SASL.Password,
+			Mechanism: redpandav1alpha2.SASLMechanism(config.SASL.Mechanism),
 		}
 	}
 

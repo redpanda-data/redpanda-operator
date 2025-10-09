@@ -12,6 +12,7 @@ package steps
 import (
 	"context"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/cucumber/godog"
@@ -82,4 +83,23 @@ func addStringValueAtPath(manifest map[string]any, value string, path string) {
 		last := keys[len(keys)-1]
 		current[last] = value
 	}
+}
+
+// substRE is a regular expression used to match placeholders in YAML manifests in the form of: ${KEY_NAME}
+// os.Expand is not used as it's matching is too permissive.
+var substRE = regexp.MustCompile(`\$\{[A-Z_]+\}`)
+
+func PatchManifest(t framework.TestingT, content string) string {
+	return substRE.ReplaceAllStringFunc(content, func(match string) string {
+		key := match[2 : len(match)-1] // ${FOO} -> FOO
+		switch key {
+		case "DEFAULT_REDPANDA_REPO":
+			return DefaultRedpandaRepo
+		case "DEFAULT_REDPANDA_TAG":
+			return DefaultRedpandaTag
+		}
+
+		t.Fatalf("unhandled expansion: %s", key)
+		return "UNREACHABLE"
+	})
 }
