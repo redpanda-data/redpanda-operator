@@ -1881,6 +1881,30 @@ into this Job's PodTemplate. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-principalssource"]
+==== PrincipalsSource
+
+
+
+PrincipalsSource contains the source for principals.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`configMapRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#configmapkeyselector-v1-core[$$ConfigMapKeySelector$$]__ | ConfigMapRef references a ConfigMap containing principals. +
+The ConfigMap data must contain a key with either: +
+- A JSON array of principal strings: ["User:alice", "User:bob"] +
+- Newline-separated principal strings + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac"]
 ==== RBAC
 
@@ -2519,9 +2543,14 @@ RoleSpec defines the configuration of a Redpanda role.
 | Field | Description | Default | Validation
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the role should be created. +
 It is used in constructing the client created to configure a cluster. + |  | 
-| *`principals`* __string array__ | Principals defines the list of users assigned to this role. +
-Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. + |  | MaxItems: 1024 +
+| *`principals`* __string array__ | Principals defines the list of users assigned to this role inline. +
+Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. +
+Can be used together with PrincipalsFrom to combine inline and referenced principals. + |  | MaxItems: 1024 +
 
+| *`principalsFrom`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-principalssource[$$PrincipalsSource$$]__ | PrincipalsFrom allows principals to be sourced from a ConfigMap. +
+The referenced ConfigMap must contain a key with a JSON array of principal strings, +
+or newline-separated principal strings. +
+Principals from this source are merged with inline Principals. + |  | 
 | *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]__ | Authorization rules defined for this role. If specified, the operator will manage ACLs for this role. +
 If omitted, ACLs should be managed separately using Redpanda's ACL management. + |  | 
 |===

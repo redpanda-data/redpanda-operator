@@ -18,7 +18,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -33,6 +36,7 @@ import (
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=roles,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=roles/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=roles/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch
 
 // RoleReconciler reconciles a Role object
 type RoleReconciler struct {
@@ -160,6 +164,38 @@ func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request Resource
 	return rolesClient, syncer, hasRole, nil
 }
 
+// enqueueRolesForConfigMap returns an event handler that enqueues all Roles
+// that reference a ConfigMap when the ConfigMap changes.
+func enqueueRolesForConfigMap(c client.Client) handler.MapFunc {
+	return func(ctx context.Context, obj client.Object) []ctrl.Request {
+		cm, ok := obj.(*corev1.ConfigMap)
+		if !ok {
+			return nil
+		}
+
+		var roleList redpandav1alpha2.RoleList
+		if err := c.List(ctx, &roleList, client.InNamespace(cm.Namespace)); err != nil {
+			return nil
+		}
+
+		var requests []ctrl.Request
+		for _, role := range roleList.Items {
+			// Check if this role references the ConfigMap
+			if role.Spec.PrincipalsFrom != nil &&
+				role.Spec.PrincipalsFrom.ConfigMapRef != nil &&
+				role.Spec.PrincipalsFrom.ConfigMapRef.Name == cm.Name {
+				requests = append(requests, ctrl.Request{
+					NamespacedName: client.ObjectKey{
+						Namespace: role.Namespace,
+						Name:      role.Name,
+					},
+				})
+			}
+		}
+		return requests
+	}
+}
+
 func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
@@ -168,7 +204,12 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) 
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Role{}).
-		Owns(&corev1.Secret{})
+		Owns(&corev1.Secret{}).
+		Watches(
+			&corev1.ConfigMap{},
+			handler.EnqueueRequestsFromMapFunc(enqueueRolesForConfigMap(c)),
+			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+		)
 
 	if includeV1 {
 		enqueueV1Role, err := registerV1ClusterSourceIndex(ctx, mgr, "role_v1", &redpandav1alpha2.Role{}, &redpandav1alpha2.RoleList{})

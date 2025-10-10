@@ -16,6 +16,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -443,4 +444,308 @@ func TestRoleImmutableFields(t *testing.T) {
 	err = c.Update(ctx, &role)
 
 	require.EqualError(t, err, `Role.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
+}
+
+func TestPrincipalsSource_FetchPrincipals(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	err = AddToScheme(scheme.Scheme)
+	require.NoError(t, err)
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	tests := []struct {
+		name      string
+		setup     func(t *testing.T)
+		source    *PrincipalsSource
+		expected  []string
+		expectErr bool
+	}{
+		{
+			name:     "nil source",
+			source:   nil,
+			expected: nil,
+		},
+		{
+			name: "JSON array format",
+			setup: func(t *testing.T) {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "json-principals",
+						Namespace: metav1.NamespaceDefault,
+					},
+					Data: map[string]string{
+						"principals": `["User:alice", "User:bob", "User:charlie"]`,
+					},
+				}
+				require.NoError(t, c.Create(ctx, cm))
+			},
+			source: &PrincipalsSource{
+				ConfigMapRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "json-principals",
+					},
+					Key: "principals",
+				},
+			},
+			expected: []string{"User:alice", "User:bob", "User:charlie"},
+		},
+		{
+			name: "newline-separated format",
+			setup: func(t *testing.T) {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "newline-principals",
+						Namespace: metav1.NamespaceDefault,
+					},
+					Data: map[string]string{
+						"principals": "User:alice\nUser:bob\nUser:charlie",
+					},
+				}
+				require.NoError(t, c.Create(ctx, cm))
+			},
+			source: &PrincipalsSource{
+				ConfigMapRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "newline-principals",
+					},
+					Key: "principals",
+				},
+			},
+			expected: []string{"User:alice", "User:bob", "User:charlie"},
+		},
+		{
+			name: "newline-separated with comments and empty lines",
+			setup: func(t *testing.T) {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "principals-with-comments",
+						Namespace: metav1.NamespaceDefault,
+					},
+					Data: map[string]string{
+						"principals": "User:alice\n# This is a comment\nUser:bob\n\nUser:charlie\n  ",
+					},
+				}
+				require.NoError(t, c.Create(ctx, cm))
+			},
+			source: &PrincipalsSource{
+				ConfigMapRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "principals-with-comments",
+					},
+					Key: "principals",
+				},
+			},
+			expected: []string{"User:alice", "User:bob", "User:charlie"},
+		},
+		{
+			name: "default key name",
+			setup: func(t *testing.T) {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "default-key",
+						Namespace: metav1.NamespaceDefault,
+					},
+					Data: map[string]string{
+						"principals": `["User:default"]`,
+					},
+				}
+				require.NoError(t, c.Create(ctx, cm))
+			},
+			source: &PrincipalsSource{
+				ConfigMapRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "default-key",
+					},
+					// Key not specified, should default to "principals"
+				},
+			},
+			expected: []string{"User:default"},
+		},
+		{
+			name: "configmap not found",
+			source: &PrincipalsSource{
+				ConfigMapRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "nonexistent",
+					},
+					Key: "principals",
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "key not found in configmap",
+			setup: func(t *testing.T) {
+				cm := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "wrong-key",
+						Namespace: metav1.NamespaceDefault,
+					},
+					Data: map[string]string{
+						"other-key": `["User:test"]`,
+					},
+				}
+				require.NoError(t, c.Create(ctx, cm))
+			},
+			source: &PrincipalsSource{
+				ConfigMapRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "wrong-key",
+					},
+					Key: "principals",
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setup != nil {
+				tt.setup(t)
+			}
+
+			result, err := tt.source.FetchPrincipals(ctx, c, metav1.NamespaceDefault)
+
+			if tt.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestRoleSpec_GetPrincipals(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	err = AddToScheme(scheme.Scheme)
+	require.NoError(t, err)
+
+	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	// Setup ConfigMap for testing
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-principals",
+			Namespace: metav1.NamespaceDefault,
+		},
+		Data: map[string]string{
+			"principals": `["User:from-configmap", "User:also-from-cm"]`,
+		},
+	}
+	require.NoError(t, c.Create(ctx, cm))
+
+	tests := []struct {
+		name      string
+		spec      *RoleSpec
+		expected  []string
+		expectErr bool
+	}{
+		{
+			name: "only inline principals",
+			spec: &RoleSpec{
+				Principals: []string{"User:alice", "User:bob"},
+			},
+			expected: []string{"User:alice", "User:bob"},
+		},
+		{
+			name: "only configmap principals",
+			spec: &RoleSpec{
+				PrincipalsFrom: &PrincipalsSource{
+					ConfigMapRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "test-principals",
+						},
+						Key: "principals",
+					},
+				},
+			},
+			expected: []string{"User:from-configmap", "User:also-from-cm"},
+		},
+		{
+			name: "merged inline and configmap principals",
+			spec: &RoleSpec{
+				Principals: []string{"User:inline1", "User:inline2"},
+				PrincipalsFrom: &PrincipalsSource{
+					ConfigMapRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "test-principals",
+						},
+						Key: "principals",
+					},
+				},
+			},
+			expected: []string{"User:inline1", "User:inline2", "User:from-configmap", "User:also-from-cm"},
+		},
+		{
+			name:     "no principals",
+			spec:     &RoleSpec{},
+			expected: nil,
+		},
+		{
+			name: "configmap error propagates",
+			spec: &RoleSpec{
+				Principals: []string{"User:inline"},
+				PrincipalsFrom: &PrincipalsSource{
+					ConfigMapRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "nonexistent",
+						},
+						Key: "principals",
+					},
+				},
+			},
+			expectErr: true,
+		},
+		{
+			name: "duplicates are removed",
+			spec: &RoleSpec{
+				Principals: []string{"User:alice", "User:bob", "User:alice"},
+				PrincipalsFrom: &PrincipalsSource{
+					ConfigMapRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "test-principals",
+						},
+						Key: "principals",
+					},
+				},
+			},
+			// test-principals contains: ["User:from-configmap", "User:also-from-cm"]
+			// We also have duplicate "User:alice" in inline
+			// Final result should deduplicate to just unique values
+			expected: []string{"User:alice", "User:bob", "User:from-configmap", "User:also-from-cm"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := tt.spec.GetPrincipals(ctx, c, metav1.NamespaceDefault)
+
+			if tt.expectErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
 }

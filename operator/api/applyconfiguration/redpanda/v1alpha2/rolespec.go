@@ -14,9 +14,10 @@ package v1alpha2
 // RoleSpecApplyConfiguration represents a declarative configuration of the RoleSpec type for use
 // with apply.
 type RoleSpecApplyConfiguration struct {
-	ClusterSource *ClusterSourceApplyConfiguration         `json:"cluster,omitempty"`
-	Principals    []string                                 `json:"principals,omitempty"`
-	Authorization *RoleAuthorizationSpecApplyConfiguration `json:"authorization,omitempty"`
+	ClusterSource  *ClusterSourceApplyConfiguration         `json:"cluster,omitempty"`
+	Principals     []string                                 `json:"principals,omitempty"`
+	PrincipalsFrom *PrincipalsSourceApplyConfiguration      `json:"principalsFrom,omitempty"`
+	Authorization  *RoleAuthorizationSpecApplyConfiguration `json:"authorization,omitempty"`
 }
 
 // RoleSpecApplyConfiguration constructs a declarative configuration of the RoleSpec type for use with
@@ -40,6 +41,14 @@ func (b *RoleSpecApplyConfiguration) WithPrincipals(values ...string) *RoleSpecA
 	for i := range values {
 		b.Principals = append(b.Principals, values[i])
 	}
+	return b
+}
+
+// WithPrincipalsFrom sets the PrincipalsFrom field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PrincipalsFrom field is set to the value of the last call.
+func (b *RoleSpecApplyConfiguration) WithPrincipalsFrom(value *PrincipalsSourceApplyConfiguration) *RoleSpecApplyConfiguration {
+	b.PrincipalsFrom = value
 	return b
 }
 

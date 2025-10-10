@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -25,10 +26,11 @@ import (
 // Client is a high-level client for managing roles in a Redpanda cluster.
 type Client struct {
 	adminClient *rpadmin.AdminAPI
+	k8sClient   client.Client
 }
 
 // NewClient returns a high-level client that is able to manage roles in a Redpanda cluster.
-func NewClient(ctx context.Context, adminClient *rpadmin.AdminAPI) (*Client, error) {
+func NewClient(ctx context.Context, k8sClient client.Client, adminClient *rpadmin.AdminAPI) (*Client, error) {
 	// Verify admin client connectivity (similar to how users client verifies API versions)
 	_, err := adminClient.Brokers(ctx)
 	if err != nil {
@@ -37,6 +39,7 @@ func NewClient(ctx context.Context, adminClient *rpadmin.AdminAPI) (*Client, err
 
 	return &Client{
 		adminClient: adminClient,
+		k8sClient:   k8sClient,
 	}, nil
 }
 
@@ -84,9 +87,17 @@ func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.Role) error 
 		return fmt.Errorf("creating role %s: %w", role.Name, err)
 	}
 
+	// Get all principals (inline + ConfigMap)
+	principals, err := role.Spec.GetPrincipals(ctx, c.k8sClient, role.Namespace)
+	if err != nil {
+		// Try to clean up the role if principal fetching fails
+		_ = c.adminClient.DeleteRole(ctx, role.Name, true)
+		return fmt.Errorf("fetching principals for role %s: %w", role.Name, err)
+	}
+
 	// Assign principals to the role if specified
-	if len(role.Spec.Principals) > 0 {
-		err = c.updateRoleMembers(ctx, role.Name, role.Spec.Principals, nil)
+	if len(principals) > 0 {
+		err = c.updateRoleMembers(ctx, role.Name, principals, nil)
 		if err != nil {
 			// Try to clean up the role if principal assignment fails
 			_ = c.adminClient.DeleteRole(ctx, role.Name, true)
@@ -144,8 +155,14 @@ func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.Role) error 
 		currentPrincipalNames[i] = member.PrincipalType + ":" + member.Name
 	}
 
+	// Get all desired principals (inline + ConfigMap)
+	desiredPrincipals, err := role.Spec.GetPrincipals(ctx, c.k8sClient, role.Namespace)
+	if err != nil {
+		return fmt.Errorf("fetching principals for role %s: %w", role.Name, err)
+	}
+
 	// Calculate members to add and remove
-	toAdd, toRemove := calculateMembershipChanges(currentPrincipalNames, role.Spec.Principals)
+	toAdd, toRemove := calculateMembershipChanges(currentPrincipalNames, desiredPrincipals)
 
 	// Update membership if there are changes
 	if len(toAdd) > 0 || len(toRemove) > 0 {

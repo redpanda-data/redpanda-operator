@@ -60,7 +60,7 @@ func TestClient(t *testing.T) {
 		}, nil)
 		require.NoError(t, err)
 
-		rolesClient, err := NewClient(ctx, rpadminClient)
+		rolesClient, err := NewClient(ctx, c, rpadminClient)
 		require.NoError(t, err)
 		defer rolesClient.Close()
 
@@ -68,7 +68,8 @@ func TestClient(t *testing.T) {
 		roleName := "test-role-" + strconv.Itoa(int(time.Now().UnixNano()))
 		role := &redpandav1alpha2.Role{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: roleName,
+				Name:      roleName,
+				Namespace: metav1.NamespaceDefault,
 			},
 			Spec: redpandav1alpha2.RoleSpec{
 				Principals: []string{"User:testuser1", "User:testuser2"},
