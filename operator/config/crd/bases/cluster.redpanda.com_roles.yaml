@@ -675,12 +675,50 @@ spec:
                   rule: self == oldSelf
               principals:
                 description: |-
-                  Principals defines the list of users assigned to this role.
+                  Principals defines the list of users assigned to this role inline.
                   Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+                  Can be used together with PrincipalsFrom to combine inline and referenced principals.
                 items:
                   type: string
                 maxItems: 1024
                 type: array
+              principalsFrom:
+                description: |-
+                  PrincipalsFrom allows principals to be sourced from a ConfigMap.
+                  The referenced ConfigMap must contain a key with a JSON array of principal strings,
+                  or newline-separated principal strings.
+                  Principals from this source are merged with inline Principals.
+                properties:
+                  configMapRef:
+                    description: |-
+                      ConfigMapRef references a ConfigMap containing principals.
+                      The ConfigMap data must contain a key with either:
+                      - A JSON array of principal strings: ["User:alice", "User:bob"]
+                      - Newline-separated principal strings
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        default: ""
+                        description: |-
+                          Name of the referent.
+                          This field is effectively required, but due to backwards compatibility is
+                          allowed to be empty. Instances of this type with an empty value here are
+                          almost certainly wrong.
+                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        type: string
+                      optional:
+                        description: Specify whether the ConfigMap or its key must
+                          be defined
+                        type: boolean
+                    required:
+                    - key
+                    type: object
+                    x-kubernetes-map-type: atomic
+                required:
+                - configMapRef
+                type: object
             required:
             - cluster
             type: object

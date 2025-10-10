@@ -350,7 +350,7 @@ func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 		return nil, err
 	}
 
-	return roles.NewClient(ctx, adminClient)
+	return roles.NewClient(ctx, c.Client, adminClient)
 }
 
 func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error) {

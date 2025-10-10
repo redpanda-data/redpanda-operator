@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Support for sourcing principals from config map in the role CRD
+time: 2025-10-10T14:32:41.891936266+02:00
