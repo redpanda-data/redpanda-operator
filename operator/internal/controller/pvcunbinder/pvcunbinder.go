@@ -58,10 +58,6 @@ type Controller struct {
 	// Selector, if specified, will narrow the scope of Pods that this
 	// Reconciler will consider for remediation.
 	Selector labels.Selector
-	// Filter, if specified, will narrow the scope of Pods that this
-	// Reconciler will consider for remediation via some sort of filtering
-	// function.
-	Filter func(ctx context.Context, pod *corev1.Pod) (bool, error)
 	// AllowRebinding optionally enables clearing of the unbound PV's ClaimRef
 	// which effectively makes the PVs "re-bindable" if the underlying Node
 	// become capable of scheduling Pods once again.
@@ -73,20 +69,26 @@ type Controller struct {
 	AllowRebinding bool
 }
 
-func FilterPodOwner(ownerNamespace, ownerName string) func(ctx context.Context, pod *corev1.Pod) (bool, error) {
-	filter := filterOwner(ownerNamespace, ownerName)
-	return func(ctx context.Context, pod *corev1.Pod) (bool, error) {
-		return filter(pod), nil
-	}
-}
-
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;patch
 
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=get;list;watch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;watch;delete;
 
 func (r *Controller) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Pod{}, builder.WithPredicates(predicate.NewPredicateFuncs(pvcUnbinderPredicate))).Complete(r)
+	selectorPredicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		if r.Selector == nil {
+			return true
+		}
+
+		lbls := object.GetLabels()
+		if lbls == nil {
+			lbls = map[string]string{}
+		}
+		return r.Selector.Matches(labels.Set(lbls))
+	})
+	unbinderPredicate := predicate.NewPredicateFuncs(pvcUnbinderPredicate)
+
+	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Pod{}, builder.WithPredicates(selectorPredicate, unbinderPredicate)).Complete(r)
 }
 
 // Reconcile implements the algorithm described in the docs of [Reconciler]. To
@@ -297,19 +299,6 @@ func (r *Controller) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool
 		return false, 0
 	}
 
-	if r.Filter != nil {
-		keep, err := r.Filter(ctx, pod)
-		if err != nil {
-			log.FromContext(ctx).Error(err, "error filtering pod", "name", pod.Name, "labels", pod.Labels)
-			return false, 0
-		}
-
-		if !keep {
-			log.FromContext(ctx).Info("filter not satisfied; skipping", "name", pod.Name, "labels", pod.Labels)
-			return false, 0
-		}
-	}
-
 	idx := slices.IndexFunc(pod.Status.Conditions, func(cond corev1.PodCondition) bool {
 		return cond.Type == corev1.PodScheduled && cond.Status == corev1.ConditionFalse && cond.Reason == "Unschedulable"
 	})
@@ -378,17 +367,4 @@ func StsPVCs(pod *corev1.Pod) []client.ObjectKey {
 		})
 	}
 	return found
-}
-
-// TODO extract to wellknown labels package?
-const k8sInstanceLabelKey = "app.kubernetes.io/instance"
-
-func filterOwner(ownerNamespace, ownerName string) func(o client.Object) bool {
-	return func(o client.Object) bool {
-		labels := o.GetLabels()
-		if o.GetNamespace() == ownerNamespace && labels != nil && labels[k8sInstanceLabelKey] == ownerName {
-			return true
-		}
-		return false
-	}
 }
