@@ -2,7 +2,7 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: kubectl delete -f https://github.com/fluxcd/flux2/releases/latest/download/install.yaml
+  - command: kubectl delete -f https://github.com/fluxcd/flux2/releases/download/v2.3.0/install.yaml
 delete:
   - apiVersion: cluster.redpanda.com/v1alpha2
     kind: Redpanda

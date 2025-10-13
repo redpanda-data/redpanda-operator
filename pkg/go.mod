@@ -13,6 +13,7 @@ require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250417174137-234f93a35ce2
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.32.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
@@ -166,7 +167,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/testcontainers/testcontainers-go v0.33.0 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
