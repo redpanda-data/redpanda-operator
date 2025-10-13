@@ -136,7 +136,16 @@ func New(t *testing.T, options Options) *Env {
 
 	t.Logf("Executing in namespace '%s'", ns.Name)
 
-	t.Cleanup(env.shutdown)
+	// If this is operating in the "shared" testenv cluster, we tear down the
+	// isolated namespace and retain the cluster itself. Otherwise we just tear
+	// down the cluster as it's faster and reduces resource usage.
+	if options.Name != k3dClusterName {
+		t.Cleanup(env.shutdown)
+	} else {
+		t.Cleanup(func() {
+			require.NoError(t, cluster.Cleanup())
+		})
+	}
 
 	return env
 }
