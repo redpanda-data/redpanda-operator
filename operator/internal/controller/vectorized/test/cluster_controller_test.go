@@ -33,6 +33,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	res "github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
@@ -872,6 +873,13 @@ var _ = Describe("RedPandaCluster controller", func() {
 				objects = append(objects, pods[i])
 			}
 			fc := fake.NewClientBuilder().WithObjects(objects...).WithScheme(controller.UnifiedScheme).WithStatusSubresource(objects...).Build()
+			testMgr, err := ctrl.NewManager(cfg, ctrl.Options{
+				Scheme: controller.UnifiedScheme,
+				Metrics: metricsserver.Options{
+					BindAddress: "0",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
 			r := &vectorized.ClusterReconciler{
 				Client:                    fc,
 				Log:                       ctrl.Log,
@@ -879,8 +887,9 @@ var _ = Describe("RedPandaCluster controller", func() {
 				AdminAPIClientFactory:     testAdminAPIFactory,
 				DecommissionWaitInterval:  100 * time.Millisecond,
 				RestrictToRedpandaVersion: allowedVersion,
+				LifecycleClient:           lifecycle.NewResourceClient(testMgr, lifecycle.V1ResourceManagers()),
 			}
-			_, err := r.Reconcile(context.Background(), ctrl.Request{NamespacedName: key})
+			_, err = r.Reconcile(context.Background(), ctrl.Request{NamespacedName: key})
 			Expect(err).To(Succeed())
 			By("Reporting the existence of cluster and allowed version status")
 			var rc vectorizedv1alpha1.Cluster
@@ -978,9 +987,14 @@ func getVersionedRedpanda(
 		Redpanda: nil,
 	}
 	redpandaCluster := &vectorizedv1alpha1.Cluster{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "redpanda.vectorized.io/v1alpha1",
+			Kind:       "Cluster",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key.Name,
 			Namespace: key.Namespace,
+			UID:       "test-uid-12345",
 		},
 		Spec: vectorizedv1alpha1.ClusterSpec{
 			Image:         "vectorized/redpanda",

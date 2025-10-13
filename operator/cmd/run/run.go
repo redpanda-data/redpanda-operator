@@ -579,6 +579,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, cloudExpa
 		Client:                    mgr.GetClient(),
 		Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 		Scheme:                    mgr.GetScheme(),
+		LifecycleClient:           lifecycle.NewResourceClient(mgr, lifecycle.V1ResourceManagers()),
 		AdminAPIClientFactory:     adminAPIClientFactory,
 		DecommissionWaitInterval:  opts.decommissionWaitInterval,
 		MetricsTimeout:            opts.metricsTimeout,
