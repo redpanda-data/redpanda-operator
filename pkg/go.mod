@@ -14,6 +14,7 @@ require (
 	github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
+	github.com/spf13/pflag v1.0.7
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.39.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
@@ -178,7 +179,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
-	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/testcontainers/testcontainers-go v0.39.0 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect

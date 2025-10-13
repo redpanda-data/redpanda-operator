@@ -161,6 +161,11 @@ tasks:
         vars:
           CLI_ARGS: '--load {{.CLI_ARGS}}'
 
+  build:charts:
+    desc: "Run helm dep build for all charts"
+    cmds:
+      - helm dep build ./charts/redpanda
+
   test:unit:
     desc: "Run all unit tests (~5m)"
     vars:
@@ -174,6 +179,9 @@ tasks:
   test:integration:
     desc: "Run all integration tests (~90m)"
     deps:
+    # Helm deps for redpanda need to be built for anything attempting to run it
+    # from source.
+    - task: build:charts
     # The operator image is required to test the configurator and sidecar.
     # In integration tests, the operator itself will be run from the go test process.
     - task: build:image
@@ -193,6 +201,7 @@ tasks:
     deps:
     - task: test:pull-images
     - task: build:image
+    - task: build:charts
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
     vars:
