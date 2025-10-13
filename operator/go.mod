@@ -37,7 +37,6 @@ require (
 	github.com/scalalang2/golang-fifo v1.0.2
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.7
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.39.0
 	github.com/testcontainers/testcontainers-go/modules/redpanda v0.39.0
@@ -263,6 +262,7 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
+	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect

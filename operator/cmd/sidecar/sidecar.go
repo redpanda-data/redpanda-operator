@@ -15,11 +15,18 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/rpadmin"
+	rpkadminapi "github.com/redpanda-data/redpanda/src/go/rpk/pkg/adminapi"
+	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
@@ -27,6 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
 )
 
 // +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
@@ -56,6 +64,7 @@ func Command() *cobra.Command {
 		brokerProbeBrokerURL       string
 		runUnbinder                bool
 		unbinderTimeout            time.Duration
+		selector                   pflagutil.LabelSelectorValue
 		panicAfter                 time.Duration
 	)
 
@@ -86,6 +95,7 @@ func Command() *cobra.Command {
 				brokerProbeBrokerURL,
 				runUnbinder,
 				unbinderTimeout,
+				selector.Selector,
 				panicAfter,
 			)
 		},
@@ -102,6 +112,7 @@ func Command() *cobra.Command {
 	// cluster flags
 	cmd.Flags().StringVar(&clusterNamespace, "redpanda-cluster-namespace", "", "The namespace of the cluster that this sidecar manages.")
 	cmd.Flags().StringVar(&clusterName, "redpanda-cluster-name", "", "The name of the cluster that this sidecar manages.")
+	cmd.Flags().Var(&selector, "selector", "Kubernetes label selector that will filter objects to be considered by the all controllers run by the sidecar.")
 
 	// decommission flags
 	cmd.Flags().BoolVar(&runDecommissioner, "run-decommissioner", false, "Specifies if the sidecar should run the broker decommissioner.")
@@ -153,9 +164,13 @@ func Run(
 	brokerProbeBrokerURL string,
 	runUnbinder bool,
 	unbinderTimeout time.Duration,
+	selector labels.Selector,
 	panicAfter time.Duration,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
+
+	// Required arguments check, in sidecar mode these MUST be specified to
+	// ensure the sidecar only affects the helm deployment that's deployed it.
 
 	if clusterNamespace == "" {
 		err := errors.New("must specify a cluster-namespace parameter")
@@ -167,6 +182,20 @@ func Run(
 		err := errors.New("must specify a cluster-name parameter")
 		setupLog.Error(err, "no cluster name provided")
 		return err
+	}
+
+	if selector == nil || selector.Empty() {
+		// Use a sensible default that's about as correct than the previous
+		// hard coded values. Hardcoding of name=redpanda is incorrect when
+		// nameoverride is used.
+		var err error
+		selector, err = labels.Parse(fmt.Sprintf(
+			"apps.kubernetes.io/component,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=%s",
+			clusterName,
+		))
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	scheme := runtime.NewScheme()
@@ -183,6 +212,12 @@ func Run(
 		LeaderElectionID:        clusterName + "." + clusterNamespace + ".redpanda",
 		Scheme:                  scheme,
 		LeaderElectionNamespace: clusterNamespace,
+		Cache: cache.Options{
+			// Only watch the specified namespace, we don't have permissions for watch at the ClusterScope.
+			DefaultNamespaces: map[string]cache.Config{
+				clusterNamespace: {},
+			},
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to initialize manager")
@@ -190,28 +225,41 @@ func Run(
 	}
 
 	if runDecommissioner {
-		fetcher := decommissioning.NewChainedFetcher(
-			// prefer RPK profile first and then move on to fetch from helm values
-			decommissioning.NewRPKProfileFetcher(redpandaYAMLPath),
-			decommissioning.NewHelmFetcher(mgr),
-		)
+		setupLog.Info("broker decommissioner enabled", "namespace", clusterNamespace, "cluster", clusterName, "selector", selector)
 
-		if err := decommissioning.NewStatefulSetDecommissioner(mgr, fetcher, []decommissioning.Option{
-			decommissioning.WithFilter(decommissioning.FilterStatefulSetOwner(clusterNamespace, clusterName)),
+		fs := afero.NewOsFs()
+
+		params := rpkconfig.Params{ConfigFlag: redpandaYAMLPath}
+
+		config, err := params.Load(afero.NewOsFs())
+		if err != nil {
+			return err
+		}
+
+		if err := decommissioning.NewStatefulSetDecommissioner(
+			mgr,
+			func(ctx context.Context, _ *appsv1.StatefulSet) (*rpadmin.AdminAPI, error) {
+				// Always use the config that's loaded from redpanda.yaml, in
+				// sidecar mode no other STS's should be watched.
+				return rpkadminapi.NewClient(ctx, fs, config.VirtualProfile())
+			},
+			decommissioning.WithSelector(selector),
 			decommissioning.WithRequeueTimeout(decommissionRequeueTimeout),
 			decommissioning.WithDelayedCacheInterval(decommissionVoteInterval),
 			decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
-		}...).SetupWithManager(mgr); err != nil {
+		).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
 		}
 	}
 
 	if runUnbinder {
+		setupLog.Info("PVC unbinder enabled", "namespace", clusterNamespace, "selector", selector)
+
 		if err := (&pvcunbinder.Controller{
-			Client:  mgr.GetClient(),
-			Timeout: unbinderTimeout,
-			Filter:  pvcunbinder.FilterPodOwner(clusterNamespace, clusterName),
+			Client:   mgr.GetClient(),
+			Timeout:  unbinderTimeout,
+			Selector: selector,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err

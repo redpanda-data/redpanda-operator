@@ -16,11 +16,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/suite"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,6 +42,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
+const redpandaChartPath = "../../../../charts/redpanda"
+
 //go:embed testdata/role.yaml
 var decommissionerRBAC []byte
 
@@ -58,13 +61,13 @@ type StatefulSetDecommissionerSuite struct {
 	client        client.Client
 	helm          *helm.Client
 	clientFactory internalclient.ClientFactory
+	releases      map[string]*chart
 }
 
 var _ suite.SetupAllSuite = (*StatefulSetDecommissionerSuite)(nil)
 
 func (s *StatefulSetDecommissionerSuite) TestDecommission() {
-	s.T().Skip("we currently have issues with the eviction code in this test due to pod disruption budgets")
-	chart := s.installChart("basic", "", map[string]any{
+	chart := s.installChart("basic", map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 5,
 		},
@@ -109,7 +112,10 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	s.T().Cleanup(func() {
 		s.untaintNode(firstBrokerNode)
 	})
-	s.Require().NoError(s.client.SubResource("eviction").Create(s.ctx, &firstBroker, &policyv1.Eviction{}))
+	// TODO(chrisseto): Evictions fail in CI with `Cannot evict pod as it would violate the pod's disruption budget.` but not locally.
+	// For now use a forced delete as that mimics node failure equally well.
+	// s.Require().NoError(s.client.SubResource("eviction").Create(s.ctx, &firstBroker, &policyv1.Eviction{}))
+	s.Require().NoError(s.client.Delete(s.ctx, &firstBroker, client.GracePeriodSeconds(0)))
 
 	s.waitFor(func(ctx context.Context) (bool, error) {
 		health, err := adminClient.GetHealthOverview(ctx)
@@ -169,14 +175,16 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	})
 
 	s.ctx = context.Background()
+	s.releases = map[string]*chart{}
 	s.env = testenv.New(t, testenv.Options{
 		// We need our own cluster for these tests since we need additional
 		// agents. Otherwise we can just turn up the default... but we'll
 		// need a different cluster to manipulate for node cleanup anyway.
-		Name:   "decommissioning",
-		Agents: 5,
-		Scheme: scheme,
-		Logger: log,
+		Name:         "decommissioning",
+		Agents:       5,
+		SkipVCluster: true,
+		Scheme:       scheme,
+		Logger:       log,
 	})
 
 	s.client = s.env.Client()
@@ -188,25 +196,31 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 		if err != nil {
 			return err
 		}
-		if err := helmClient.RepoAdd(s.ctx, "redpandadata", "https://charts.redpanda.com"); err != nil {
-			return err
-		}
 
 		s.helm = helmClient
 		dialer := kube.NewPodDialer(mgr.GetConfig())
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
 
-		options := []decommissioning.Option{
-			// override this so we can dial directly to our Redpanda pods
-			decommissioning.WithFactory(s.clientFactory),
+		decommissioner := decommissioning.NewStatefulSetDecommissioner(
+			mgr,
+			func(ctx context.Context, sts *appsv1.StatefulSet) (*rpadmin.AdminAPI, error) {
+				// NB: We expect to see some errors here. The release isn't
+				// populated until after the chart installation finishes.
+				name := sts.Labels["app.kubernetes.io/instance"]
+				release, ok := s.releases[name]
+				if !ok {
+					return nil, errors.Newf("no release: %q", name)
+				}
+				return s.adminClientFor(release), nil
+			},
 			// set these low so that we don't have to wait forever in the test
 			// these settings should give about a 5-10 second window before
 			// actually running a decommission
-			decommissioning.WithDelayedCacheInterval(5 * time.Second),
+			decommissioning.WithDelayedCacheInterval(5*time.Second),
 			decommissioning.WithDelayedCacheMaxCount(2),
-			decommissioning.WithRequeueTimeout(2 * time.Second),
-		}
-		decommissioner := decommissioning.NewStatefulSetDecommissioner(mgr, decommissioning.NewHelmFetcher(mgr), options...)
+			decommissioning.WithRequeueTimeout(2*time.Second),
+		)
+
 		if err := decommissioner.SetupWithManager(mgr); err != nil {
 			return err
 		}
@@ -217,12 +231,11 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 
 type chart struct {
 	name    string
-	version string
 	release helm.Release
 	values  map[string]any
 }
 
-func (s *StatefulSetDecommissionerSuite) installChart(name, version string, overrides map[string]any) *chart {
+func (s *StatefulSetDecommissionerSuite) installChart(name string, overrides map[string]any) *chart {
 	values := map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 1,
@@ -233,18 +246,13 @@ func (s *StatefulSetDecommissionerSuite) installChart(name, version string, over
 		"external": map[string]any{
 			"enabled": false,
 		},
-		"image": map[string]any{
-			"repository": "redpandadata/redpanda",
-			"tag":        "v24.3.1",
-		},
 	}
 
 	if overrides != nil {
 		values = functional.MergeMaps(values, overrides)
 	}
 
-	release, err := s.helm.Install(s.ctx, "redpandadata/redpanda", helm.InstallOptions{
-		Version:         version,
+	release, err := s.helm.Install(s.ctx, redpandaChartPath, helm.InstallOptions{
 		CreateNamespace: true,
 		Name:            name,
 		Namespace:       s.env.Namespace(),
@@ -252,12 +260,15 @@ func (s *StatefulSetDecommissionerSuite) installChart(name, version string, over
 	})
 	s.Require().NoError(err)
 
-	return &chart{
+	c := &chart{
 		name:    name,
-		version: version,
 		values:  values,
 		release: release,
 	}
+
+	s.releases[name] = c
+
+	return c
 }
 
 func (s *StatefulSetDecommissionerSuite) adminClientFor(chart *chart) *rpadmin.AdminAPI {
@@ -283,8 +294,7 @@ func (s *StatefulSetDecommissionerSuite) adminClientFor(chart *chart) *rpadmin.A
 
 func (s *StatefulSetDecommissionerSuite) upgradeChart(chart *chart, overrides map[string]any) {
 	values := functional.MergeMaps(chart.values, overrides)
-	release, err := s.helm.Upgrade(s.ctx, chart.release.Name, "redpandadata/redpanda", helm.UpgradeOptions{
-		Version:   chart.version,
+	release, err := s.helm.Upgrade(s.ctx, chart.release.Name, redpandaChartPath, helm.UpgradeOptions{
 		Namespace: s.env.Namespace(),
 		Values:    values,
 	})
@@ -306,10 +316,14 @@ func (s *StatefulSetDecommissionerSuite) setupRBAC() string {
 	clusterRole := roles[0].(*rbacv1.ClusterRole)
 
 	// Inject additional permissions required for running in testenv.
-	role.Rules = append(role.Rules, rbacv1.PolicyRule{
+	clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
 		APIGroups: []string{""},
 		Resources: []string{"pods/portforward"},
 		Verbs:     []string{"*"},
+	}, rbacv1.PolicyRule{
+		APIGroups: []string{""},
+		Resources: []string{"pods"},
+		Verbs:     []string{"get", "list"},
 	})
 
 	name := "testenv-" + testenv.RandString(6)
