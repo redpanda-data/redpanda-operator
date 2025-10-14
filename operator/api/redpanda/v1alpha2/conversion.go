@@ -38,6 +38,17 @@ var (
 	// goverter:context namespace
 	ConvertStaticConfigToIR func(namespace string, src *StaticConfigurationSource) *ir.StaticConfigurationSource
 
+	// goverter:context namespace
+	ConvertKafkaAPISpecToIR func(namespace string, src *KafkaAPISpec) *ir.KafkaAPISpec
+
+	// goverter:map SASL Auth
+	// goverter:context namespace
+	// AdminAPI auth isn't technically SASL; it's been renamed.
+	ConvertAdminAPISpecToIR func(namespace string, src *AdminAPISpec) *ir.AdminAPISpec
+
+	// goverter:context namespace
+	ConvertSchemaRegistrySpecToIR func(namespace string, src *SchemaRegistrySpec) *ir.SchemaRegistrySpec
+
 	// Private conversions for tuning / customizing conversions.
 	// Naming conversion: `autoconv_<Type>_To_<pkg>_<Type>`
 
@@ -49,17 +60,9 @@ var (
 	// Ability to disable creation of service account is not exposed through the Console CRD.
 	autoconv_ServiceAccountConfig_To_console_PartialServiceAccountConfig func(*ServiceAccountConfig) *console.PartialServiceAccountConfig
 
-	// goverter:map SASL Auth
-	// goverter:context namespace
-	// AdminAPI auth isn't technically SASL; it's been renamed.
-	autoconv_AdminAPISpec_To_ir_AdminAPISpec func(_ *AdminAPISpec, namespace string) *ir.AdminAPISpec
-
 	// goverter:map Namespace | getNamespace
 	// goverter:context namespace
-	autoconv_SecretKeyRef_To_ir_SecretKeyRef func(_ SecretKeyRef, namespace string) ir.SecretKeyRef
-
-	// goverter:context namespace
-	autoconv_CommonTLS_To_ir_CommonTLS func(_ *CommonTLS, namespace string) *ir.CommonTLS
+	autoconv_ValueSource_To_ir_ValueSource func(_ *ValueSource, namespace string) *ir.ValueSource
 )
 
 // getNamespace returns the namespace context argument to set fields on nested
@@ -69,17 +72,41 @@ func getNamespace(namespace string) string {
 	return namespace
 }
 
-// Manually implemented conversion routines
-// Naming conversion: `conv_<Type>_To_<pkg>_<Type>`
+//goverter:context namespace
+func conv_CommonTLS_To_ir_CommonTLS(tls *CommonTLS, namespace string) *ir.CommonTLS {
+	if tls == nil {
+		return nil
+	}
+
+	commonTLS := &ir.CommonTLS{
+		CaCert: autoconv_ValueSource_To_ir_ValueSource(tls.CaCert, namespace),
+		Cert:   autoconv_ValueSource_To_ir_ValueSource(tls.Cert, namespace),
+		Key:    autoconv_ValueSource_To_ir_ValueSource(tls.Key, namespace),
+	}
+
+	if tls.DeprecatedCaCert != nil {
+		commonTLS.CaCert = conv_SecretKeyRefPtr_To_ir_ValueSourcePtr(tls.DeprecatedCaCert, namespace)
+	}
+	if tls.DeprecatedCert != nil {
+		commonTLS.Cert = conv_SecretKeyRefPtr_To_ir_ValueSourcePtr(tls.DeprecatedCert, namespace)
+	}
+	if tls.DeprecatedKey != nil {
+		commonTLS.Key = conv_SecretKeyRefPtr_To_ir_ValueSourcePtr(tls.DeprecatedKey, namespace)
+	}
+
+	commonTLS.InsecureSkipTLSVerify = tls.InsecureSkipTLSVerify
+
+	return commonTLS
+}
 
 //goverter:context namespace
-func conv_SecretKeyRef_To_ir_ObjectKeyRef(skr *SecretKeyRef, namespace string) *ir.ObjectKeyRef {
+func conv_SecretKeyRefPtr_To_ir_ValueSourcePtr(skr *SecretKeyRef, namespace string) *ir.ValueSource {
 	if skr == nil {
 		return nil
 	}
 	// Internal type supports ConfigMaps and Secrets. Public API only supports
 	// Secrets.
-	return &ir.ObjectKeyRef{
+	return &ir.ValueSource{
 		Namespace: namespace,
 		SecretKeyRef: &corev1.SecretKeySelector{
 			Key: skr.Key,
@@ -88,6 +115,15 @@ func conv_SecretKeyRef_To_ir_ObjectKeyRef(skr *SecretKeyRef, namespace string) *
 			},
 		},
 	}
+}
+
+//goverter:context namespace
+func conv_SecretKeyRef_To_ir_ValueSourcePtr(skr SecretKeyRef, namespace string) *ir.ValueSource {
+	if skr.Name == "" {
+		return nil
+	}
+
+	return conv_SecretKeyRefPtr_To_ir_ValueSourcePtr(&skr, namespace)
 }
 
 func conv_runtime_RawExtension_To_mapany(ext *runtime.RawExtension) (map[string]any, error) {

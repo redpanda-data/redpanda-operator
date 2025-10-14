@@ -626,9 +626,12 @@ CommonTLS specifies TLS configuration settings for Redpanda clusters that have a
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`caCertSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | CaCert is the reference for certificate authority used to establish TLS connection to Redpanda + |  | 
-| *`certSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Cert is the reference for client public certificate to establish mTLS connection to Redpanda + |  | 
-| *`keySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Key is the reference for client private certificate to establish mTLS connection to Redpanda + |  | 
+| *`caCert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | CaCert is the reference for certificate authority used to establish TLS connection to Redpanda + |  | 
+| *`cert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Cert is the reference for client public certificate to establish mTLS connection to Redpanda + |  | 
+| *`key`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Key is the reference for client private certificate to establish mTLS connection to Redpanda + |  | 
+| *`caCertSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "caCert". + |  | 
+| *`certSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "cert". + |  | 
+| *`keySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "key". + |  | 
 | *`insecureSkipTlsVerify`* __boolean__ | InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda + |  | 
 |===
 
@@ -1197,6 +1200,28 @@ internal and external listeners. However, it is ignored when specified +
 on internal listeners. + |  | 
 | *`advertisedPorts`* __integer array__ | Specifies the network port that the external Service listens on. + |  | 
 | *`nodePort`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalsecretkeyselector"]
+==== ExternalSecretKeySelector
+
+
+
+ExternalSecretKeySelector selects a key of an external Secret.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ |  |  | 
+| *`optional`* __boolean__ | Specify whether the Secret or its key must be defined + |  | 
 |===
 
 
@@ -4199,6 +4224,34 @@ UsersItems configures a list of superusers in the Helm values.
 | *`mechanism`* __string__ | Specifies the authentication mechanism to use for superusers. Overrides the default in `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
 | *`name`* __string__ | Specifies the name of the superuser. + |  | 
 | *`password`* __string__ | Specifies the superuser password. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource"]
+==== ValueSource
+
+
+
+ValueSource represents where a value can be pulled from
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`inline`* __string__ | Inline is the raw value specified inline. + |  | 
+| *`configMapKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#configmapkeyselector-v1-core[$$ConfigMapKeySelector$$]__ | If the value is supplied by a kubernetes object reference, coordinates are embedded here. +
+For target values, the string value fetched from the source will be treated as +
+a raw string. + |  | 
+| *`secretKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | Should the value be contained in a k8s secret rather than configmap, we can refer +
+to it here. + |  | 
+| *`externalSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalsecretkeyselector[$$ExternalSecretKeySelector$$]__ | If the value is supplied by an external source, coordinates are embedded here. +
+Note: we interpret all fetched external secrets as raw string values + |  | 
 |===
 
 

@@ -802,7 +802,7 @@ func getCommonTLS(certs *apiCertificates) (*ir.CommonTLS, error) {
 	}
 
 	commonTLS := &ir.CommonTLS{
-		CaCert: &ir.ObjectKeyRef{
+		CaCert: &ir.ValueSource{
 			Namespace: nodeCertificateName.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -815,15 +815,19 @@ func getCommonTLS(certs *apiCertificates) (*ir.CommonTLS, error) {
 
 	if len(certs.clientCertificates) > 0 {
 		certObject := certs.clientCertificateNames()[0]
-		commonTLS.Cert = &ir.SecretKeyRef{
+		commonTLS.Cert = &ir.ValueSource{
 			Namespace: certObject.Namespace,
-			Name:      certObject.Name,
-			Key:       corev1.TLSCertKey,
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: certObject.Name},
+				Key:                  corev1.TLSCertKey,
+			},
 		}
-		commonTLS.Key = &ir.SecretKeyRef{
+		commonTLS.Key = &ir.ValueSource{
 			Namespace: certObject.Namespace,
-			Name:      certObject.Name,
-			Key:       corev1.TLSPrivateKeyKey,
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: certObject.Name},
+				Key:                  corev1.TLSPrivateKeyKey,
+			},
 		}
 	}
 
