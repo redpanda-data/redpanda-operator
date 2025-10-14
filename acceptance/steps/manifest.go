@@ -12,7 +12,9 @@ package steps
 import (
 	"context"
 	"os"
+	"os/exec"
 
+	"github.com/cockroachdb/errors"
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
 
@@ -32,4 +34,13 @@ func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifes
 	})
 
 	t.ApplyManifest(ctx, file.Name())
+}
+
+func iKustomizeApply(ctx context.Context, t framework.TestingT, url string) {
+	cmd := exec.CommandContext(ctx, "kubectl", "kustomize", url)
+
+	out, err := cmd.CombinedOutput()
+	require.NoError(t, errors.WithStack(err), "failed to run kubectl kustomize %q", url)
+
+	iApplyKubernetesManifest(ctx, t, &godog.DocString{Content: string(out)})
 }
