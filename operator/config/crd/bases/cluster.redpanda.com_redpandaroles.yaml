@@ -4,13 +4,13 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.3
-  name: roles.cluster.redpanda.com
+  name: redpandaroles.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
   names:
     kind: Role
     listKind: RoleList
-    plural: roles
+    plural: redpandaroles
     shortNames:
     - rpr
     singular: role

@@ -111,7 +111,7 @@ func Schema() *apiextensionsv1.CustomResourceDefinition {
 
 // Role returns the Role CustomResourceDefinition.
 func Role() *apiextensionsv1.CustomResourceDefinition {
-	return mustT(ByName("roles.cluster.redpanda.com"))
+	return mustT(ByName("redpandaroles.cluster.redpanda.com"))
 }
 
 // NodePool returns the NodePool CustomResourceDefinition.

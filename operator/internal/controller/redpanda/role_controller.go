@@ -31,9 +31,9 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=roles,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=roles/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=roles/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandaroles,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandaroles/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandaroles/finalizers,verbs=update
 
 // RoleReconciler reconciles a Role object
 type RoleReconciler struct {
