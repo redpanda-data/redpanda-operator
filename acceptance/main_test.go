@@ -92,7 +92,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				return
 			}
 			t.Log("Installing default Redpanda operator chart")
-			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+			t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 				Name:      "redpanda-operator",
 				Namespace: namespace,
 				Values: operatorchart.PartialValues{
@@ -204,7 +204,7 @@ func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) cont
 	}
 
 	t.Logf("Installing Redpanda operator chart: %q", name)
-	t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+	t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 		Name:       "redpanda-operator",
 		Namespace:  t.Namespace(),
 		ValuesFile: filepath.Join("operator", fmt.Sprintf("%s.yaml", name)),

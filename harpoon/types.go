@@ -57,10 +57,9 @@ type TestingT interface {
 	MarkVariant(variant string)
 	Variant() string
 
-	InstallHelmChart(ctx context.Context, url, repo, chart string, options helm.InstallOptions)
-	UpgradeHelmChart(ctx context.Context, repo, chart, release string, options helm.UpgradeOptions)
-	InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions, deps ...helm.Dependency)
-	UpgradeLocalHelmChart(ctx context.Context, path, release string, options helm.UpgradeOptions)
+	AddHelmRepo(ctx context.Context, name, url string)
+	InstallHelmChart(ctx context.Context, chart string, options helm.InstallOptions)
+	UpgradeHelmChart(ctx context.Context, release, chart string, options helm.UpgradeOptions)
 
 	Namespace() string
 	RestConfig() *rest.Config
