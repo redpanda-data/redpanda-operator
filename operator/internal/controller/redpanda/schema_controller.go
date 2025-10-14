@@ -83,7 +83,7 @@ func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceR
 	return nil
 }
 
-func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
+func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
@@ -99,11 +99,13 @@ func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, includeV1 bool
 		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
 	}
 
-	enqueueV2Schema, err := controller.RegisterClusterSourceIndex(ctx, mgr, "schema", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
-	if err != nil {
-		return err
+	if includeV2 {
+		enqueueV2Schema, err := controller.RegisterClusterSourceIndex(ctx, mgr, "schema", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema)
 	}
-	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema)
 
 	controller := NewResourceController(c, factory, &SchemaReconciler{}, "SchemaReconciler")
 

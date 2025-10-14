@@ -161,7 +161,7 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
-func SetupUserController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
+func SetupUserController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
@@ -178,11 +178,13 @@ func SetupUserController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) 
 		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User)
 	}
 
-	enqueueV2User, err := controller.RegisterClusterSourceIndex(ctx, mgr, "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
-	if err != nil {
-		return err
+	if includeV2 {
+		enqueueV2User, err := controller.RegisterClusterSourceIndex(ctx, mgr, "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User)
 	}
-	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User)
 
 	controller := NewResourceController(c, factory, &UserReconciler{}, "UserReconciler")
 

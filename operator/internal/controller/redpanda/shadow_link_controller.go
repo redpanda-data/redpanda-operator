@@ -100,7 +100,7 @@ func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request Resou
 	return nil
 }
 
-func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
+func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
@@ -116,11 +116,13 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1 
 		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink)
 	}
 
-	enqueueV2ShadowLink, err := controller.RegisterClusterSourceIndex(ctx, mgr, "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
-	if err != nil {
-		return err
+	if includeV2 {
+		enqueueV2ShadowLink, err := controller.RegisterClusterSourceIndex(ctx, mgr, "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink)
 	}
-	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink)
 
 	controller := NewResourceController(c, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
 

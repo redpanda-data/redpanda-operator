@@ -118,7 +118,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return result, err
 }
 
-func SetupTopicController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
+func SetupTopicController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	r := &TopicReconciler{
@@ -139,11 +139,13 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, includeV1 bool)
 		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
 	}
 
-	enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr, "topic", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
-	if err != nil {
-		return err
+	if includeV2 {
+		enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr, "topic", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic)
 	}
-	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic)
 
 	return builder.Complete(r)
 }
