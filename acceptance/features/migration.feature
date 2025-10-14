@@ -2,7 +2,7 @@ Feature: Helm chart to Redpanda Operator migration
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Migrate from a Helm chart release to a Redpanda custom resource
-        Given a Helm release named "redpanda-migration-example" of the "redpanda/redpanda" helm chart with the values:
+        Given I helm install "redpanda-migration-example" "../charts/redpanda" with values:
         """
     # tag::helm-values[]
         fullnameOverride: name-override

@@ -102,7 +102,7 @@ func checkClusterHealthCondition(ctx context.Context, t framework.TestingT, clus
 	t.Logf("Cluster %q contains Healthy reason %q!", clusterName, reason)
 }
 
-func shutdownRandomClusterNode(ctx context.Context, t framework.TestingT, clusterName string) {
+func shutdownRandomClusterNode(ctx context.Context, t framework.TestingT, clusterName string) context.Context {
 	var clusterSet appsv1.StatefulSet
 
 	key := t.ResourceKey(clusterName)
@@ -123,6 +123,27 @@ func shutdownRandomClusterNode(ctx context.Context, t framework.TestingT, cluste
 	pod := pods.Items[index]
 
 	t.ShutdownNode(ctx, pod.Spec.NodeName)
+	return context.WithValue(ctx, recordedVariable("ShutdownNodeName"), pod.Spec.NodeName)
+}
+
+func shutdownNodeOfPod(ctx context.Context, t framework.TestingT, podName string) context.Context {
+	t.ResourceKey(podName)
+
+	var pod corev1.Pod
+	require.NoError(t, t.Get(ctx, t.ResourceKey(podName), &pod))
+
+	var node corev1.Node
+	require.NoError(t, t.Get(ctx, t.ResourceKey(pod.Spec.NodeName), &node))
+
+	node.Spec.Taints = append(node.Spec.Taints, corev1.Taint{
+		Key:    "node.kubernetes.io/out-of-service",
+		Effect: corev1.TaintEffectNoExecute,
+	})
+
+	require.NoError(t, t.Update(ctx, &node))
+
+	t.ShutdownNode(ctx, pod.Spec.NodeName)
+	return context.WithValue(ctx, recordedVariable("ShutdownNodeName"), pod.Spec.NodeName)
 }
 
 func deleteNotReadyKubernetesNodes(ctx context.Context, t framework.TestingT) {
@@ -136,6 +157,12 @@ func deleteNotReadyKubernetesNodes(ctx context.Context, t framework.TestingT) {
 			}
 		}
 	}
+}
+
+func deleteKubernetesNodesFromContext(ctx context.Context, t framework.TestingT) {
+	shutdownNodeName := ctx.Value(recordedVariable("ShutdownNodeName"))
+	t.Logf("Deleting Kubernetes node: %q", shutdownNodeName)
+	t.DeleteNode(ctx, shutdownNodeName.(string))
 }
 
 func checkClusterNodeCount(ctx context.Context, t framework.TestingT, clusterName string, nodeCount int32) {

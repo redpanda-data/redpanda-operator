@@ -24,9 +24,9 @@ func Roles(dot *helmette.Dot) []*rbacv1.Role {
 
 	// path of static role definition -> Enabled
 	mapping := map[string]bool{
-		"files/sidecar.Role.yaml":          values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
-		"files/pvcunbinder.Role.yaml":      values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.PVCUnbinderEnabled(),
-		"files/decommission.Role.yaml":     values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
+		"files/sidecar.Role.yaml":          values.RBAC.Enabled,
+		"files/pvcunbinder.Role.yaml":      values.RBAC.Enabled && values.Statefulset.SideCars.PVCUnbinder.Enabled,
+		"files/decommission.Role.yaml":     values.RBAC.Enabled && values.Statefulset.SideCars.BrokerDecommissioner.Enabled,
 		"files/rpk-debug-bundle.Role.yaml": values.RBAC.Enabled && values.RBAC.RPKDebugBundle,
 	}
 
@@ -59,8 +59,8 @@ func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {
 
 	// path of static ClusterRole definition -> Enabled
 	mapping := map[string]bool{
-		"files/pvcunbinder.ClusterRole.yaml":    values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.PVCUnbinderEnabled(),
-		"files/decommission.ClusterRole.yaml":   values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
+		"files/pvcunbinder.ClusterRole.yaml":    values.RBAC.Enabled && values.Statefulset.SideCars.PVCUnbinder.Enabled,
+		"files/decommission.ClusterRole.yaml":   values.RBAC.Enabled && values.Statefulset.SideCars.BrokerDecommissioner.Enabled,
 		"files/rack-awareness.ClusterRole.yaml": values.RBAC.Enabled && values.RackAwareness.Enabled,
 	}
 

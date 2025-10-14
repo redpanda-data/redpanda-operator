@@ -113,20 +113,8 @@ func KubectlApply(ctx context.Context, fileOrDirectory string, options ...*Kubec
 }
 
 func kubectl(ctx context.Context, options *KubectlOptions, args ...string) (string, error) {
-	command := exec.Command("kubectl", options.args(args)...) //nolint:gosec // This is just test code.
+	command := exec.CommandContext(ctx, "kubectl", options.args(args)...) //nolint:gosec // This is just test code.
 	command.Env = options.environment()
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	go func() {
-		// signal a cancel on the command to make
-		// it responsive to upstream context cancelation
-		<-ctx.Done()
-		if command != nil && command.ProcessState != nil && !command.ProcessState.Exited() {
-			_ = command.Cancel()
-		}
-	}()
 
 	output, err := command.CombinedOutput()
 	if err != nil {

@@ -16,6 +16,11 @@ func init() {
 	framework.RegisterStep(`^cluster "([^"]*)" is available$`, checkClusterAvailability)
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
 
+	framework.RegisterStep(`I kubectl kustomize "([^"]+)" | kubectl apply -f - --server-side`, iKustomizeApply)
+	framework.RegisterStep(`^I exec "([^"]+)" in a Pod matching "([^"]+)", it will output:$`, execInPodMatchingEventuallyMatches)
+	framework.RegisterStep(`^kubectl exec -it "([^"]+)" "([^"]+)" will eventually output:$`, execInPodEventuallyMatches)
+	framework.RegisterStep(`Pod "([^"]+)" (?:will|is) eventually(?: be)? (Running|Pending)`, podWillEventuallyBeInPhase)
+
 	framework.RegisterStep(`^I store "([^"]*)" of Kubernetes object with type "([^"]*)" and name "([^"]*)" as "([^"]*)"$`, recordVariable)
 	framework.RegisterStep(`^the recorded value "([^"]*)" has the same value as "([^"]*)" of the Kubernetes object with type "([^"]*)" and name "([^"]*)"$`, assertVariableValue)
 	framework.RegisterStep(`^the recorded value "([^"]*)" is one less than "([^"]*)" of the Kubernetes object with type "([^"]*)" and name "([^"]*)"$`, assertVariableValueIncremented)
@@ -51,8 +56,17 @@ func init() {
 	framework.RegisterStep(`^"([^"]*)" service account has bounded "([^"]*)" cluster role$`, createClusterRoleBinding)
 	framework.RegisterStep(`^its metrics endpoint should accept https request with "([^"]*)" service account token$`, acceptServiceAccountMetricsRequest)
 
+	// Helm steps
+	// I helm install "release-name" "chart/path" with values:
+	// I can helm install "release-name" "chart/path" with values:
+	// I helm install "release-name" "chart/path" --version v1.2.3 with values:
+	framework.RegisterStep(`I(?: can)? helm install "([^"]+)" "([^"]+)"(?: --version (\S+))? with values:`, iHelmInstall)
+	// I helm upgrade "release-name" "chart/path" with values:
+	// I can helm upgrade "release-name" "chart/path" with values:
+	// I helm upgrade "release-name" "chart/path" --version v1.2.3 with values:
+	framework.RegisterStep(`I(?: can)? helm upgrade "([^"]+)" "([^"]+)"(?: --version (\S+))? with values:`, iHelmUpgrade)
+
 	// Helm migration scenario steps
-	framework.RegisterStep(`^a Helm release named "([^"]*)" of the "([^"]*)" helm chart with the values:$`, iInstallHelmRelease)
 	framework.RegisterStep(`^the Kubernetes object of type "([^"]*)" with name "([^"]*)" has an OwnerReference pointing to the cluster "([^"]*)"$`, kubernetesObjectHasClusterOwner)
 	framework.RegisterStep(`^the helm release for "([^"]*)" can be deleted by removing its stored secret$`, iDeleteHelmReleaseSecret)
 	framework.RegisterStep(`^the cluster "([^"]*)" is healthy$`, redpandaClusterIsHealthy)
@@ -74,11 +88,9 @@ func init() {
 	framework.RegisterStep(`^cluster "([^"]*)" should recover$`, checkClusterHealthy)
 	framework.RegisterStep(`^I physically shutdown a kubernetes node for cluster "([^"]*)"$`, shutdownRandomClusterNode)
 	framework.RegisterStep(`^I prune any kubernetes node that is now in a NotReady status$`, deleteNotReadyKubernetesNodes)
+	framework.RegisterStep(`^I prune kubernetes node that was removed in previous step$`, deleteKubernetesNodesFromContext)
+	framework.RegisterStep(`I stop the Node running Pod "([^"]+)"`, shutdownNodeOfPod)
 	framework.RegisterStep(`^cluster "([^"]*)" has only (\d+) remaining nodes$`, checkClusterNodeCount)
-
-	// Operator upgrade scenario steps
-	framework.RegisterStep(`^I can upgrade to the latest operator with the values:$`, iCanUpgradeToTheLatestOperatorWithTheValues)
-	framework.RegisterStep(`^I install redpanda helm chart version "([^"]*)" with the values:$`, iInstallRedpandaHelmChartVersionWithTheValues)
 
 	// User CRDs with Redpanda 25.2 scenario steps
 	framework.RegisterStep(`^I create a sasl cluster named "([^"]*)"$`, iCreateSASLCluster)

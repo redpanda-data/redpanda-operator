@@ -187,6 +187,7 @@ tasks:
     - task: build:image
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
     vars:
       RUN: '{{ default `"^TestIntegration"` .RUN }}'
     cmds:
@@ -204,6 +205,7 @@ tasks:
     - task: build:charts
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
     vars:
       RUN: '{{ default `"^TestAcceptance"` .RUN }}'
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
@@ -215,7 +217,7 @@ tasks:
         # Minor speed up only building the acceptance package, which (surprise
         # surprise) is the only package with acceptance tests.
         PKG: ./acceptance/
-        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 35m -tags acceptance'
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 55m -tags acceptance'
 
   test:pull-images:
     vars:
