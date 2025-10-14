@@ -38,7 +38,7 @@ require (
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.5
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20251120164856-73a55da0a551
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/scalalang2/golang-fifo v1.0.2

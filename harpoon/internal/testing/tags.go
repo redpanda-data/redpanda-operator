@@ -19,9 +19,14 @@ import (
 type CleanupFunc func(context.Context)
 
 type ParsedTagHandler struct {
-	Priority  int
+	ParsedTag
+	Priority int
+	Handler  func(context.Context, *TestingT, []string) context.Context
+}
+
+type ParsedTag struct {
+	Name      string
 	Arguments []string
-	Handler   func(context.Context, *TestingT, []string) context.Context
 }
 
 type PriorityTagHandler struct {
@@ -60,9 +65,12 @@ func (r *TagRegistry) Handlers(tags []string) []ParsedTagHandler {
 
 		if handler, ok := r.tags[tag]; ok {
 			handlers = append(handlers, ParsedTagHandler{
-				Arguments: args,
-				Priority:  handler.Priority,
-				Handler:   handler.Handler,
+				ParsedTag: ParsedTag{
+					Name:      tag,
+					Arguments: args,
+				},
+				Priority: handler.Priority,
+				Handler:  handler.Handler,
 			})
 		}
 	}
@@ -73,4 +81,13 @@ func (r *TagRegistry) Handlers(tags []string) []ParsedTagHandler {
 	})
 
 	return handlers
+}
+
+func ParsedTags(handlers []ParsedTagHandler) []ParsedTag {
+	tags := []ParsedTag{}
+	for _, handler := range handlers {
+		tags = append(tags, handler.ParsedTag)
+	}
+
+	return tags
 }

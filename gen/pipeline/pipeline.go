@@ -36,7 +36,7 @@ var suites = []TestSuite{
 	{
 		Name:     "integration",
 		Required: false,
-		Timeout:  30*time.Minute + time.Hour,
+		Timeout:  2 * time.Hour,
 		Retry:    ptr.To(3),
 	},
 	{

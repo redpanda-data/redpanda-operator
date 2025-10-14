@@ -891,7 +891,7 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 					Tag:        ptr.To("dev"),
 				},
 				Controllers: &struct {
-					Image              *redpanda.PartialImage  "json:\"image,omitempty\""
+					DeprecatedImage    *redpanda.PartialImage  "json:\"image,omitempty\""
 					Enabled            *bool                   "json:\"enabled,omitempty\""
 					CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
 					Resources          any                     "json:\"resources,omitempty\""
@@ -901,7 +901,7 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 					PprofAddress       *string                 "json:\"pprofAddress,omitempty\""
 					Run                []string                "json:\"run,omitempty\""
 				}{
-					Image: &redpanda.PartialImage{
+					DeprecatedImage: &redpanda.PartialImage{
 						Repository: ptr.To("localhost/redpanda-operator"),
 						Tag:        ptr.To("dev"),
 					},

@@ -7,7 +7,7 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20251117203443-a8920e43b70c
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.29.0
 	k8s.io/api v0.30.3

@@ -998,11 +998,23 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 {"createRBAC":true,"enabled":false,"healthProbeAddress":":8085","image":{"repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":"v2.4.4"},"metricsAddress":":9082","pprofAddress":":9083","resources":{},"run":["all"],"securityContext":{}}
 ```
 
+### [statefulset.sideCars.controllers.createRBAC](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.createRBAC)
+
+DEPRECATED: Use `rbac.enabled` to control RBAC chart wide or control RBAC by selectively enabling/disabling specific sidecar controllers. Setting this field has no effect.
+
+**Default:** `true`
+
 ### [statefulset.sideCars.controllers.resources](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.resources)
 
 To create `Guaranteed` Pods for Redpanda brokers, provide both requests and limits for CPU and memory. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed  * Every container in the Pod must have a CPU limit and a CPU request. * For every container in the Pod, the CPU limit must equal the CPU request. * Every container in the Pod must have a CPU limit and a CPU request. * For every container in the Pod, the CPU limit must equal the CPU request.  To maximize efficiency, use the `static` CPU manager policy by specifying an even integer for CPU resource requests and limits. This policy gives the Pods running Redpanda brokers access to exclusive CPUs on the node. For details, see https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy
 
 **Default:** `{}`
+
+### [statefulset.sideCars.controllers.run](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.run)
+
+DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset.sideCars.pvcUnbinder Setting this field has no effect.
+
+**Default:** `["all"]`
 
 ### [statefulset.sideCars.extraVolumeMounts](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.extraVolumeMounts)
 
