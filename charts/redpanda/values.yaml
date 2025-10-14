@@ -690,14 +690,17 @@ statefulset:
     configWatcher:
       enabled: true
     controllers:
-      # You must also enable RBAC, `rbac.enabled=true`, to deploy this sidecar
       enabled: false
+      # -- DEPRECATED: Use `rbac.enabled` to control RBAC chart wide or control RBAC by selectively enabling/disabling specific sidecar controllers.
+      # Setting this field has no effect.
+      createRBAC: true
       healthProbeAddress: ":8085"
       metricsAddress: ":9082"
       pprofAddress: ":9083"
+      # -- DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset.sideCars.pvcUnbinder
+      # Setting this field has no effect.
       run:
         - all
-      createRBAC: true
   initContainers:
     fsValidator:
       enabled: false

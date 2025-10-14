@@ -3,6 +3,7 @@ module github.com/redpanda-data/redpanda-operator/acceptance
 go 1.24.3
 
 require (
+	github.com/cockroachdb/errors v1.11.3
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.64.0
 	github.com/redpanda-data/common-go/rpadmin v0.1.14
@@ -75,7 +76,6 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cisco-open/k8s-objectmatcher v1.9.0 // indirect
 	github.com/cloudhut/common v0.10.0 // indirect
-	github.com/cockroachdb/errors v1.11.3 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
