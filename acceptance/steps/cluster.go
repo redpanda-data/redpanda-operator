@@ -166,6 +166,25 @@ func shutdownRandomClusterNode(ctx context.Context, t framework.TestingT, cluste
 	t.ShutdownNode(ctx, pod.Spec.NodeName)
 }
 
+func shutdownNodeOfPod(ctx context.Context, t framework.TestingT, podName string) {
+	t.ResourceKey(podName)
+
+	var pod corev1.Pod
+	require.NoError(t, t.Get(ctx, t.ResourceKey(podName), &pod))
+
+	var node corev1.Node
+	require.NoError(t, t.Get(ctx, t.ResourceKey(pod.Spec.NodeName), &node))
+
+	node.Spec.Taints = append(node.Spec.Taints, corev1.Taint{
+		Key:    "node.kubernetes.io/out-of-service",
+		Effect: corev1.TaintEffectNoExecute,
+	})
+
+	require.NoError(t, t.Update(ctx, &node))
+
+	t.ShutdownNode(ctx, pod.Spec.NodeName)
+}
+
 func deleteNotReadyKubernetesNodes(ctx context.Context, t framework.TestingT) {
 	var nodes corev1.NodeList
 	require.NoError(t, t.List(ctx, &nodes))

@@ -12,40 +12,45 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 )
 
-// The unused parameter is meant to specify a Helm chart place (remote or local in the file system).
-func iInstallHelmRelease(ctx context.Context, t framework.TestingT, helmReleaseName, _ string, values *godog.DocString) {
+func iHelmInstall(ctx context.Context, t framework.TestingT, name, chart, version string, values *godog.DocString) {
+	// We don't really reference anything other than the redpanda repo, so just
+	// handle repos as a naive check here.
+	if strings.HasPrefix(chart, "redpanda/") {
+		t.AddHelmRepo(ctx, "redpanda", "https://charts.redpanda.com")
+	}
+
 	var valuesMap map[string]any
 	require.NoError(t, yaml.Unmarshal([]byte(values.Content), &valuesMap))
 
-	helmClient, err := helm.New(helm.Options{
-		KubeConfig: rest.CopyConfig(t.RestConfig()),
-	})
-	require.NoError(t, err)
-
-	require.NoError(t, helmClient.RepoAdd(ctx, "console", "https://charts.redpanda.com"))
-
-	path := "../charts/redpanda/chart"
-	require.NoError(t, helmClient.DependencyBuild(ctx, path))
-
-	t.Logf("installing chart %q", path)
-	_, err = helmClient.Install(ctx, path, helm.InstallOptions{
-		Name:      helmReleaseName,
-		Namespace: t.Namespace(),
+	t.InstallHelmChart(ctx, chart, helm.InstallOptions{
+		Name:      name,
+		Version:   version,
 		Values:    valuesMap,
+		Namespace: t.Namespace(),
 	})
-	require.NoError(t, err)
+}
+
+func iHelmUpgrade(ctx context.Context, t framework.TestingT, name, chart, version string, values *godog.DocString) {
+	var valuesMap map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(values.Content), &valuesMap))
+
+	t.UpgradeHelmChart(ctx, name, chart, helm.UpgradeOptions{
+		Version:   version,
+		Values:    valuesMap,
+		Namespace: t.Namespace(),
+	})
 }
 
 func iDeleteHelmReleaseSecret(ctx context.Context, t framework.TestingT, helmReleaseName string) {

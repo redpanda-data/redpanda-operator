@@ -22,9 +22,9 @@ import (
 func Roles(state *RenderState) []*rbacv1.Role {
 	// path of static role definition -> Enabled
 	mapping := map[string]bool{
-		"files/sidecar.Role.yaml":          state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.Controllers.CreateRBAC,
-		"files/pvcunbinder.Role.yaml":      state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.PVCUnbinderEnabled(),
-		"files/decommission.Role.yaml":     state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
+		"files/sidecar.Role.yaml":          state.Values.RBAC.Enabled,
+		"files/pvcunbinder.Role.yaml":      state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.PVCUnbinder.Enabled,
+		"files/decommission.Role.yaml":     state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.BrokerDecommissioner.Enabled,
 		"files/rpk-debug-bundle.Role.yaml": state.Values.RBAC.Enabled && state.Values.RBAC.RPKDebugBundle,
 	}
 
@@ -55,8 +55,8 @@ func Roles(state *RenderState) []*rbacv1.Role {
 func ClusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 	// path of static ClusterRole definition -> Enabled
 	mapping := map[string]bool{
-		"files/pvcunbinder.ClusterRole.yaml":    state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.PVCUnbinderEnabled(),
-		"files/decommission.ClusterRole.yaml":   state.Values.Statefulset.SideCars.ShouldCreateRBAC() && state.Values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
+		"files/pvcunbinder.ClusterRole.yaml":    state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.PVCUnbinder.Enabled,
+		"files/decommission.ClusterRole.yaml":   state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.BrokerDecommissioner.Enabled,
 		"files/rack-awareness.ClusterRole.yaml": state.Values.RBAC.Enabled && state.Values.RackAwareness.Enabled,
 	}
 
