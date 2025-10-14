@@ -68,8 +68,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
 			namespace := t.IsolateNamespace(ctx)
 
+<<<<<<< HEAD
 			t.Log("Installing Redpanda operator chart")
 			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+=======
+			if slices.ContainsFunc(tags, shouldSkipOperatorInstall) {
+				return
+			}
+			t.Log("Installing default Redpanda operator chart")
+			t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 				Name:      "redpanda-operator",
 				Namespace: namespace,
 				Values: map[string]any{
@@ -120,9 +128,18 @@ func ClusterTag(ctx context.Context, t framework.TestingT, args ...string) conte
 	require.Greater(t, len(args), 0, "clusters tags can only be used with additional arguments")
 	name := args[0]
 
+<<<<<<< HEAD
 	t.Logf("Installing cluster %q", name)
 	t.ApplyManifest(ctx, filepath.Join("clusters", name))
 	t.Logf("Finished installing cluster %q", name)
+=======
+	t.Logf("Installing Redpanda operator chart: %q", name)
+	t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+		Name:       "redpanda-operator",
+		Namespace:  t.Namespace(),
+		ValuesFile: filepath.Join("operator", fmt.Sprintf("%s.yaml", name)),
+	})
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 
 	return ctx
 }
