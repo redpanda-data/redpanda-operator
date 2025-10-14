@@ -161,7 +161,7 @@ func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request Resource
 	return rolesClient, syncer, hasRole, nil
 }
 
-func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) error {
+func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
@@ -178,11 +178,13 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1 bool) 
 		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Role)
 	}
 
-	enqueueV2Role, err := controller.RegisterClusterSourceIndex(ctx, mgr, "role", &redpandav1alpha2.Role{}, &redpandav1alpha2.RoleList{})
-	if err != nil {
-		return err
+	if includeV2 {
+		enqueueV2Role, err := controller.RegisterClusterSourceIndex(ctx, mgr, "role", &redpandav1alpha2.Role{}, &redpandav1alpha2.RoleList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Role)
 	}
-	builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Role)
 
 	controller := NewResourceController(c, factory, &RoleReconciler{}, "RoleReconciler")
 

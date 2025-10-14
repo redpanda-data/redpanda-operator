@@ -86,6 +86,11 @@ type RunOptions struct {
 	// will be enabled or not.
 	enableVectorizedControllers bool
 
+	// disableRedpandaController controls whether or not to disable the Redpanda
+	// controller - this should really only be used in cloud where we leverage
+	// a different set of cluster CRDs.
+	disableRedpandaController bool
+
 	enableV2NodepoolController          bool
 	enableShadowLinksController         bool
 	enableConsoleController             bool
@@ -146,6 +151,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableShadowLinksController, "enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
+	cmd.Flags().BoolVar(&o.disableRedpandaController, "disable-redpanda-controller", false, "Specifies whether or not to enabled the Redpanda cluster controller")
 	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
 	cmd.Flags().StringVar(&o.configuratorTag, "configurator-tag", version.Version, "The tag of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
@@ -267,6 +273,9 @@ func Run(
 	cloudExpander *pkgsecrets.CloudExpander,
 	opts *RunOptions,
 ) error {
+	v1Controllers := opts.enableVectorizedControllers
+	v2Controllers := !opts.disableRedpandaController
+
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
@@ -410,83 +419,88 @@ func Run(
 		Tag:        opts.redpandaDefaultTag,
 	}
 
-	// Redpanda Reconciler
-	if err := (&redpandacontrollers.RedpandaReconciler{
-		KubeConfig:           mgr.GetConfig(),
-		Client:               mgr.GetClient(),
-		EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
-		LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
-		ClientFactory:        factory,
-		CloudSecretsExpander: cloudExpander,
-		UseNodePools:         opts.enableV2NodepoolController,
-	}).SetupWithManager(ctx, mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
-		return err
-	}
-
-	// NodePool Reconciler
-	if opts.enableV2NodepoolController {
-		if err := (&redpandacontrollers.NodePoolReconciler{
-			Client: mgr.GetClient(),
+	if v2Controllers {
+		// Redpanda Reconciler
+		if err := (&redpandacontrollers.RedpandaReconciler{
+			KubeConfig:           mgr.GetConfig(),
+			Client:               mgr.GetClient(),
+			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
+			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+			ClientFactory:        factory,
+			CloudSecretsExpander: cloudExpander,
+			UseNodePools:         opts.enableV2NodepoolController,
 		}).SetupWithManager(ctx, mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
-	}
 
-	// Console Reconciler.
-	if opts.enableConsoleController {
-		ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-			Options: client.Options{
-				Scheme: mgr.GetScheme(),
-				// mgr's GetClient sets the cache, to have a fully compatible ctl, we
-				// need to set the cache as well.
-				Cache: &client.CacheOptions{
-					Reader: mgr.GetCache(),
+		// the following 2 controllers depend on the Redpanda controller being run, so
+		// only run them if we run the Redpanda controller
+
+		// NodePool Reconciler
+		if opts.enableV2NodepoolController {
+			if err := (&redpandacontrollers.NodePoolReconciler{
+				Client: mgr.GetClient(),
+			}).SetupWithManager(ctx, mgr); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+				return err
+			}
+		}
+
+		// Console Reconciler.
+		if opts.enableConsoleController {
+			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+				Options: client.Options{
+					Scheme: mgr.GetScheme(),
+					// mgr's GetClient sets the cache, to have a fully compatible ctl, we
+					// need to set the cache as well.
+					Cache: &client.CacheOptions{
+						Reader: mgr.GetCache(),
+					},
 				},
-			},
-		})
-		if err != nil {
-			return err
-		}
+			})
+			if err != nil {
+				return err
+			}
 
-		if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Console")
-			return err
+			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "Console")
+				return err
+			}
 		}
 	}
 
 	// ShadowLink Reconciler
 	if opts.enableShadowLinksController {
-		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
 		}
 	}
 
-	if err := redpandacontrollers.SetupTopicController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
+	if err := redpandacontrollers.SetupUserController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Role")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, opts.enableVectorizedControllers); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}
 
 	// Next configure and setup optional controllers.
 
-	if opts.enableVectorizedControllers {
+	if v1Controllers {
 		setupLog.Info("setting up vectorized controllers")
 		if err := setupVectorizedControllers(ctx, mgr, cloudExpander, opts); err != nil {
 			return err
