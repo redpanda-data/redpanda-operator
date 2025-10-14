@@ -19,7 +19,7 @@ require (
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v5 v5.10.5
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250419175459-064513f9bee4
-	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250328114403-0fc6b9d24a38
+	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20251120164856-73a55da0a551
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.23.0
@@ -144,8 +144,8 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8 // indirect
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 // indirect
+	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20251117203443-a8920e43b70c // indirect
+	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20251117203443-a8920e43b70c // indirect
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect

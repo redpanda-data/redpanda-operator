@@ -435,10 +435,10 @@ github.com/redpanda-data/common-go/net v0.1.0 h1:JnJioRJuL961r1QXiJQ1tW9+yEaJfu8
 github.com/redpanda-data/common-go/net v0.1.0/go.mod h1:iOdNkjxM7a1T8F3cYHTaKIPFCHzzp/ia6TN+Z+7Tt5w=
 github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e h1:0kdPPgbSCZ8XX6K/51x61/9cas2/sXj8UgdoiLJnOqQ=
 github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8 h1:aSlJX+HNh9C9NKA0+xp9DfYwfVs1fp4tkFaZS9DUkXM=
-github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8/go.mod h1:o6FEj/SPoAxl6Rn1X9+XO1tlzSl2V64vAiBDgHntfVc=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 h1:HIkLbEDKeCALHFytZdHfeWYo/9JMa1yh4QlsIlhlsB8=
-github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8/go.mod h1:Sof2HY8U+RLesHJInGLoqhUMzN8iN8gUHXALbROsew8=
+github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20251117203443-a8920e43b70c h1:qjb8Haw0a1alWTahzfdkgUwHgR1cOGKhhG/IPT25uO8=
+github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20251117203443-a8920e43b70c/go.mod h1:A0hoXcpCdt1NMoS51HeDTGxPj6Kl+M7jtLojv/S68qA=
+github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20251117203443-a8920e43b70c h1:jI9iu4iyhkBDrajXwGEQjlKHyHUe83l5uRWW2wwmfU0=
+github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20251117203443-a8920e43b70c/go.mod h1:aSiQU9wI3DcOv4tyvoJz5Gx2bUq71LHlLnPkQcGWpK4=
 github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0 h1:IV2Ic66JDKPtCnNU4Kn1naJlzZmhl0izRj17qgTCo20=
 github.com/redpanda-data/redpanda-operator/gotohelm v1.1.0/go.mod h1:usCpPzzzhgtPrRTiUQOzFqGmukce8U0SrzEeX2ONDFE=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20240827155712-244863ea0ae8 h1:uTQKqF8UPNxYxKBJ11VlG6Vt2l9ctkkeXsmmjHUSUG4=

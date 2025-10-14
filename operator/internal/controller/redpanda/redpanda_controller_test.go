@@ -33,6 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	helmkube "helm.sh/helm/v3/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -847,6 +848,8 @@ func (s *RedpandaControllerSuite) TestStableUIDAndGeneration() {
 
 func (s *RedpandaControllerSuite) SetupSuite() {
 	t := s.T()
+
+	helmkube.ManagedFieldsManager = "testing"
 
 	helmRepositoryURL := "https://charts.redpanda.com/"
 

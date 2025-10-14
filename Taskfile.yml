@@ -170,6 +170,8 @@ tasks:
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
     - task: build:charts
+    vars:
+      RUN: '{{ default `"^TestIntegration"` .RUN }}'
     cmds:
     - task: charts:kind-cluster
     - kind load docker-image localhost/redpanda-operator:dev
@@ -177,7 +179,7 @@ tasks:
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
-        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run "^TestIntegration" -timeout 60m -tags integration'
+        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run {{.RUN}} -timeout 60m -tags integration'
 
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
@@ -191,16 +193,6 @@ tasks:
       RUN: '{{ default `"^TestAcceptance"` .RUN }}'
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
     cmds:
-    - defer: 'k3d cluster delete harpoon'
-    - |
-      k3d cluster create harpoon \
-      --agents=5 --timeout=3m --image=rancher/k3s:v1.29.6-k3s2 \
-      --k3s-arg --kube-controller-manager-arg=node-monitor-grace-period=10s@server:* \
-      --k3s-arg --kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:* \
-      --k3s-arg --kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:* \
-      --k3s-arg --disable=traefik@server:* \
-      --verbose
-    - task: test:import-images
     - task: test:unit
       vars:
         GO_TEST_RUNNER:
@@ -238,31 +230,3 @@ tasks:
     cmds:
       - for: {var: IMAGES}
         cmd: docker inspect {{.ITEM}} > /dev/null || docker pull {{.ITEM}}
-
-  test:import-images:
-    vars:
-      DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
-      DEFAULT_TEST_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
-      DEFAULT_TEST_REDPANDA_VERSION: v25.1.1
-      DEFAULT_TEST_UPGRADE_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
-      DEFAULT_TEST_UPGRADE_REDPANDA_VERSION: v24.3.11
-      DEFAULT_TEST_UPGRADE_OPERATOR_VERSION: v2.3.9-24.3.11
-      TEST_CERTMANAGER_VERSION: '{{ .TEST_CERTMANAGER_VERSION | default .DEFAULT_TEST_CERTMANAGER_VERSION }}'
-      TEST_REDPANDA_REPO: '{{ .TEST_REDPANDA_REPO | default .DEFAULT_TEST_REDPANDA_REPO }}'
-      TEST_REDPANDA_VERSION: '{{ .TEST_REDPANDA_VERSION | default .DEFAULT_TEST_REDPANDA_VERSION }}'
-      TEST_UPGRADE_REDPANDA_REPO: '{{ .TEST_UPGRADE_REDPANDA_REPO | default .DEFAULT_TEST_UPGRADE_REDPANDA_REPO }}'
-      TEST_UPGRADE_REDPANDA_VERSION: '{{ .TEST_UPGRADE_REDPANDA_VERSION | default .DEFAULT_TEST_UPGRADE_REDPANDA_VERSION }}'
-      TEST_UPGRADE_OPERATOR_VERSION: '{{ .TEST_UPGRADE_OPERATOR_VERSION | default .DEFAULT_TEST_UPGRADE_OPERATOR_VERSION }}'
-      IMAGES:
-        - quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
-        - quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
-        - quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
-        - quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
-        - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
-        - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
-        - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
-        - localhost/redpanda-operator:dev
-
-    cmds:
-      - for: {var: IMAGES}
-        cmd: k3d image import {{.ITEM}} -c harpoon

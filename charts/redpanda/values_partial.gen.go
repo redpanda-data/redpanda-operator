@@ -380,7 +380,7 @@ type PartialSidecars struct {
 		SecurityContext   *corev1.SecurityContext "json:\"securityContext,omitempty\""
 	} "json:\"configWatcher,omitempty\""
 	Controllers *struct {
-		Image              *PartialImage           "json:\"image,omitempty\""
+		DeprecatedImage    *PartialImage           "json:\"image,omitempty\""
 		Enabled            *bool                   "json:\"enabled,omitempty\""
 		CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
 		Resources          any                     "json:\"resources,omitempty\""

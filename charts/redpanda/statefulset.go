@@ -831,6 +831,13 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 		dot.Release.Namespace,
 		`--redpanda-cluster-name`,
 		Fullname(dot),
+		// Values pulled from FullLabels.
+		fmt.Sprintf(
+			"--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s",
+			ChartLabel(dot),
+			Name(dot),
+			dot.Release.Name,
+		),
 		`--run-broker-probe`,
 		`--broker-probe-broker-url`,
 		// even though this is named "...URLs", it returns
