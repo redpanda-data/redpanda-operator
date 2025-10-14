@@ -1,20 +1,40 @@
 package steps
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/cucumber/godog"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
+
+// this is a nasty hack due to the fact that we can't disable the linter for typecheck
+// that reports sigs.k8s.io/controller-runtime/pkg/client as unused when it's solely used
+// for type assertions
+var _ client.Object = (client.Object)(nil)
+
+func podWillEventuallyBeInPhase(ctx context.Context, t framework.TestingT, podName string, phase string) {
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		var pod corev1.Pod
+		require.NoError(c, t.Get(ctx, t.ResourceKey(podName), &pod))
+
+		require.Equal(c, corev1.PodPhase(phase), pod.Status.Phase)
+	}, 5*time.Minute, 5*time.Second)
+}
 
 func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName, clusterName string) {
 	var cluster redpandav1alpha2.Redpanda
@@ -141,4 +161,60 @@ func execJSONPath(ctx context.Context, t framework.TestingT, jsonPath, groupVers
 		}
 	}
 	return nil
+}
+
+func execInPodEventuallyMatches(
+	ctx context.Context,
+	t framework.TestingT,
+	podName string,
+	cmd string,
+	expected *godog.DocString,
+) {
+	ctl, err := kube.FromRESTConfig(t.RestConfig())
+	require.NoError(t, err)
+
+	pod, err := kube.Get[corev1.Pod](ctx, ctl, kube.ObjectKey{Namespace: t.Namespace(), Name: podName})
+	require.NoErrorf(t, err, "Pod with name %q not found", podName)
+
+	execInPod(t, ctx, ctl, pod, cmd, expected)
+}
+
+func execInPodMatchingEventuallyMatches(
+	ctx context.Context,
+	t framework.TestingT,
+	cmd,
+	selectorStr string,
+	expected *godog.DocString,
+) {
+	selector, err := labels.Parse(selectorStr)
+	require.NoError(t, err)
+
+	ctl, err := kube.FromRESTConfig(t.RestConfig())
+	require.NoError(t, err)
+
+	pods, err := kube.List[corev1.PodList](ctx, ctl, t.Namespace(), client.MatchingLabelsSelector{Selector: selector})
+	require.NoError(t, err)
+
+	require.True(t, len(pods.Items) > 0, "selector %q found no Pods", selector.String())
+
+	execInPod(t, ctx, ctl, &pods.Items[0], cmd, expected)
+}
+
+func execInPod(
+	t framework.TestingT,
+	ctx context.Context,
+	ctl *kube.Ctl,
+	pod *corev1.Pod,
+	cmd string,
+	expected *godog.DocString,
+) {
+	require.EventuallyWithT(t, func(collect *assert.CollectT) {
+		var stdout bytes.Buffer
+		require.NoError(collect, ctl.Exec(ctx, pod, kube.ExecOptions{
+			Command: []string{"sh", "-c", cmd},
+			Stdout:  &stdout,
+		}))
+
+		assert.Equal(collect, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
+	}, 5*time.Minute, 5*time.Second)
 }

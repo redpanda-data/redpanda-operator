@@ -845,6 +845,8 @@ Number of Redpanda brokers (Redpanda Data recommends setting this to the number 
 
 ### [statefulset.sideCars.controllers.createRBAC](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.createRBAC)
 
+DEPRECATED: Use `rbac.enabled` to control RBAC chart wide or control RBAC by selectively enabling/disabling specific sidecar controllers. Setting this field has no effect.
+
 **Default:** `true`
 
 ### [statefulset.sideCars.controllers.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.enabled)
@@ -863,9 +865,11 @@ Number of Redpanda brokers (Redpanda Data recommends setting this to the number 
 
 **Default:** `":9083"`
 
-### [statefulset.sideCars.controllers.run[0]](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.run[0])
+### [statefulset.sideCars.controllers.run](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.run)
 
-**Default:** `"all"`
+DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset.sideCars.pvcUnbinder Setting this field has no effect.
+
+**Default:** `["all"]`
 
 ### [statefulset.sideCars.image.repository](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.repository)
 

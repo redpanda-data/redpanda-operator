@@ -273,7 +273,7 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 					})
 					setupErrorCheck(ctx, err, cleanup)
 
-					err = pullImages(b.images)
+					err = pullImages(ctx, b.images)
 					setupErrorCheck(ctx, err, cleanup)
 
 					err = provider.LoadImages(ctx, b.images)
@@ -418,11 +418,11 @@ func writeTestLog(buffer bytes.Buffer, path string) {
 	}
 }
 
-func pullImages(images []string) error {
+func pullImages(ctx context.Context, images []string) error {
 	for _, image := range images {
 		if !strings.HasPrefix(image, "localhost") {
 			//nolint:gosec // this code is for tests
-			if output, err := exec.Command("docker", "pull", image).CombinedOutput(); err != nil {
+			if output, err := exec.CommandContext(ctx, "docker", "pull", image).CombinedOutput(); err != nil {
 				return errors.Wrapf(err, "output: %s", output)
 			}
 		}
