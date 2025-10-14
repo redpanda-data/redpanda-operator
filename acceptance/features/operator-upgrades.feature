@@ -3,10 +3,8 @@ Feature: Upgrading the operator
   @skip:gke @skip:aks @skip:eks
   Scenario: Operator upgrade from 2.4.5
     Given I install local CRDs from "../operator/config/crd/bases"
-    And I install redpanda helm chart version "v2.4.5" with the values:
+    And I helm install "redpanda-operator" "redpanda/operator" --version v2.4.5 with values:
     """
-    console:
-      enabled: false
     """
     And I apply Kubernetes manifest:
     """
@@ -29,7 +27,7 @@ Feature: Upgrading the operator
     # use just a Ready status check here since that's all the
     # old operator supports
     And cluster "operator-upgrade" is available
-    Then I can upgrade to the latest operator with the values:
+    Then I can helm upgrade "redpanda-operator" "../operator/chart" with values:
     """
     image:
       tag: dev
@@ -42,7 +40,7 @@ Feature: Upgrading the operator
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Operator upgrade from 25.1.3
-    And I install redpanda helm chart version "v25.1.3" with the values:
+    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
     """
     crds:
       enabled: true
@@ -68,7 +66,7 @@ Feature: Upgrading the operator
     # use just a Ready status check here since that's all the
     # old operator supports
     And cluster "operator-upgrade" is available
-    Then I can upgrade to the latest operator with the values:
+    Then I can helm upgrade "redpanda-operator" "../operator/chart" with values:
     """
     image:
       tag: dev
