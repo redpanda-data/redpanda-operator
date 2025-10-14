@@ -86,10 +86,10 @@ type RunOptions struct {
 	// will be enabled or not.
 	enableVectorizedControllers bool
 
-	// disableRedpandaController controls whether or not to disable the Redpanda
+	// enableRedpandaControllers controls whether or not to enable the Redpanda
 	// controller - this should really only be used in cloud where we leverage
 	// a different set of cluster CRDs.
-	disableRedpandaController bool
+	enableRedpandaControllers bool
 
 	enableV2NodepoolController          bool
 	enableShadowLinksController         bool
@@ -151,7 +151,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableShadowLinksController, "enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
-	cmd.Flags().BoolVar(&o.disableRedpandaController, "disable-redpanda-controller", false, "Specifies whether or not to enabled the Redpanda cluster controller")
+	cmd.Flags().BoolVar(&o.enableRedpandaControllers, "enable-redpanda-controllers", true, "Specifies whether or not to enabled the Redpanda cluster controllers")
 	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
 	cmd.Flags().StringVar(&o.configuratorTag, "configurator-tag", version.Version, "The tag of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
@@ -274,7 +274,11 @@ func Run(
 	opts *RunOptions,
 ) error {
 	v1Controllers := opts.enableVectorizedControllers
-	v2Controllers := !opts.disableRedpandaController
+	v2Controllers := opts.enableRedpandaControllers
+
+	if (opts.enableV2NodepoolController || opts.enableConsoleController) && !v2Controllers {
+		return errors.New("running NodePool or Console controllers requires running the Redpanda controller")
+	}
 
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
