@@ -830,7 +830,18 @@ func statefulSetContainerSidecar(dot *helmette.Dot) *corev1.Container {
 		`--redpanda-cluster-namespace`,
 		dot.Release.Namespace,
 		`--redpanda-cluster-name`,
+<<<<<<< HEAD
 		Fullname(dot),
+=======
+		Fullname(state),
+		// Values pulled from FullLabels.
+		fmt.Sprintf(
+			"--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s",
+			ChartLabel(state),
+			Name(state),
+			state.Dot.Release.Name,
+		),
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 		`--run-broker-probe`,
 		`--broker-probe-broker-url`,
 		// even though this is named "...URLs", it returns

@@ -461,3 +461,15 @@ func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName
 		}},
 	}
 }
+<<<<<<< HEAD
+=======
+
+func getVersion(t framework.TestingT, version string) string {
+	version = strings.TrimSpace(version)
+	if version != "" {
+		return version
+	}
+
+	return t.Variant()
+}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)

@@ -22,6 +22,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+<<<<<<< HEAD
+=======
+
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 )
 
 type contextKey struct{}
@@ -88,6 +95,7 @@ type TestingT struct {
 	client.Client
 	*Cleaner
 
+	helmClient    *helm.Client
 	lastError     string
 	activeSubtest *TestingT
 	restConfig    *rest.Config
@@ -105,10 +113,16 @@ func NewTesting(ctx context.Context, options *TestingOptions, cleaner *Cleaner) 
 	restConfig, err := restConfig(options.KubectlOptions)
 	require.NoError(t, err)
 
+	helmClient, err := helm.New(helm.Options{
+		KubeConfig: rest.CopyConfig(restConfig),
+	})
+	require.NoError(t, err)
+
 	return &TestingT{
 		TestingT:   t,
 		Client:     client,
 		Cleaner:    cleaner,
+		helmClient: helmClient,
 		restConfig: restConfig,
 		options:    options,
 	}

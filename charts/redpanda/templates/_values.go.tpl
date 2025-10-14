@@ -482,16 +482,50 @@
 {{- end -}}
 {{- end -}}
 
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- define "redpanda.Sidecars.PVCUnbinderEnabled" -}}
 {{- $s := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (and $s.controllers.enabled $s.pvcUnbinder.enabled)) | toJson -}}
+=======
+{{- define "redpanda.Listeners.InUseServerCerts" -}}
+{{- $l := (index .a 0) -}}
+{{- $tls := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $listeners := (list (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.admin)))) "r") (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.kafka)))) "r") (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.http)))) "r") (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.schemaRegistry)))) "r")) -}}
+{{- $certs := (dict) -}}
+{{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $l.rpc.tls $tls)))) "r") -}}
+{{- $_ := (set $certs $l.rpc.tls.cert true) -}}
+{{- end -}}
+{{- range $_, $listener := $listeners -}}
+{{- if (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $listener.tls $tls)))) "r")) -}}
+{{- continue -}}
+{{- end -}}
+{{- $_ := (set $certs $listener.tls.cert true) -}}
+{{- range $_, $external := $listener.external -}}
+{{- if (or (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r")) (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $external.tls $listener.tls $tls)))) "r"))) -}}
+{{- continue -}}
+{{- end -}}
+{{- $_ := (set $certs (get (fromJson (include "redpanda.ExternalTLS.GetCertName" (dict "a" (list $external.tls $listener.tls)))) "r") true) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (sortAlpha (keys $certs))) | toJson -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- define "redpanda.Sidecars.BrokerDecommissionerEnabled" -}}
 {{- $s := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -518,6 +552,29 @@
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (or $s.pvcUnbinder.enabled $s.brokerDecommissioner.enabled)) | toJson -}}
+=======
+{{- define "redpanda.Listeners.InUseClientCerts" -}}
+{{- $l := (index .a 0) -}}
+{{- $tls := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $listeners := (list (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.admin)))) "r") (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.kafka)))) "r") (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.http)))) "r") (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $l.schemaRegistry)))) "r")) -}}
+{{- $certs := (dict) -}}
+{{- if (and (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $l.rpc.tls $tls)))) "r") $l.rpc.tls.requireClientAuth) -}}
+{{- $_ := (set $certs $l.rpc.tls.cert true) -}}
+{{- end -}}
+{{- range $_, $listener := $listeners -}}
+{{- if (or (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $listener.tls $tls)))) "r")) (not $listener.tls.requireClientAuth)) -}}
+{{- continue -}}
+{{- end -}}
+{{- $_ := (set $certs $listener.tls.cert true) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (sortAlpha (keys $certs))) | toJson -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -640,9 +697,15 @@
 {{- $seen := (dict) -}}
 {{- $deduped := (coalesce nil) -}}
 {{- range $_, $item := $items -}}
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- $_1071___ok_11 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
 {{- $_ := (index $_1071___ok_11 0) -}}
 {{- $ok_11 := (index $_1071___ok_11 1) -}}
+=======
+{{- $_1028___ok_11 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
+{{- $_ := (index $_1028___ok_11 0) -}}
+{{- $ok_11 := (index $_1028___ok_11 1) -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- if $ok_11 -}}
 {{- continue -}}
 {{- end -}}
@@ -754,9 +817,15 @@
 {{- $name := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- $_1292_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)))))) "r") -}}
 {{- $cert := (index $_1292_cert_ok 0) -}}
 {{- $ok := (index $_1292_cert_ok 1) -}}
+=======
+{{- $_1316_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)))))) "r") -}}
+{{- $cert := (index $_1316_cert_ok 0) -}}
+{{- $ok := (index $_1316_cert_ok 1) -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- if (not $ok) -}}
 {{- $_ := (fail (printf "Certificate %q referenced, but not found in the tls.certs map" $name)) -}}
 {{- end -}}
@@ -1502,10 +1571,17 @@
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
 {{- if (not (empty $v)) -}}
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- $_2128___ok_18 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
 {{- $_ := ((index $_2128___ok_18 0) | float64) -}}
 {{- $ok_18 := (index $_2128___ok_18 1) -}}
 {{- if $ok_18 -}}
+=======
+{{- $_1842___ok_15 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
+{{- $_ := ((index $_1842___ok_15 0) | float64) -}}
+{{- $ok_15 := (index $_1842___ok_15 1) -}}
+{{- if $ok_15 -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- $_ := (set $result $k $v) -}}
 {{- else -}}{{- if (kindIs "bool" $v) -}}
 {{- $_ := (set $result $k $v) -}}
@@ -1530,11 +1606,19 @@
 {{- $_is_returning := false -}}
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- $_2148_b_19_ok_20 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
 {{- $b_19 := (index $_2148_b_19_ok_20 0) -}}
 {{- $ok_20 := (index $_2148_b_19_ok_20 1) -}}
 {{- if $ok_20 -}}
 {{- $_ := (set $result $k $b_19) -}}
+=======
+{{- $_1862_b_16_ok_17 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
+{{- $b_16 := (index $_1862_b_16_ok_17 0) -}}
+{{- $ok_17 := (index $_1862_b_16_ok_17 1) -}}
+{{- if $ok_17 -}}
+{{- $_ := (set $result $k $b_16) -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- continue -}}
 {{- end -}}
 {{- if (not (empty $v)) -}}
@@ -1575,6 +1659,7 @@
 {{- $config := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- $_2193___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
 {{- $_ := (index $_2193___hasAccessKey 0) -}}
 {{- $hasAccessKey := (index $_2193___hasAccessKey 1) -}}
@@ -1584,6 +1669,17 @@
 {{- $_2195___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
 {{- $_ := (index $_2195___hasSharedKey 0) -}}
 {{- $hasSharedKey := (index $_2195___hasSharedKey 1) -}}
+=======
+{{- $_1907___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1907___hasAccessKey 0) -}}
+{{- $hasAccessKey := (index $_1907___hasAccessKey 1) -}}
+{{- $_1908___hasSecretKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_secret_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1908___hasSecretKey 0) -}}
+{{- $hasSecretKey := (index $_1908___hasSecretKey 1) -}}
+{{- $_1909___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1909___hasSharedKey 0) -}}
+{{- $hasSharedKey := (index $_1909___hasSharedKey 1) -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- $envvars := (coalesce nil) -}}
 {{- if (and (not $hasAccessKey) (get (fromJson (include "redpanda.SecretRef.IsValid" (dict "a" (list $tsc.accessKey)))) "r")) -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_CLOUD_STORAGE_ACCESS_KEY" "valueFrom" (get (fromJson (include "redpanda.SecretRef.AsSource" (dict "a" (list $tsc.accessKey)))) "r"))))) -}}
@@ -1606,12 +1702,21 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- $_2231___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
 {{- $_ := (index $_2231___containerExists 0) -}}
 {{- $containerExists := (index $_2231___containerExists 1) -}}
 {{- $_2232___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
 {{- $_ := (index $_2232___accountExists 0) -}}
 {{- $accountExists := (index $_2232___accountExists 1) -}}
+=======
+{{- $_1945___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1945___containerExists 0) -}}
+{{- $containerExists := (index $_1945___containerExists 1) -}}
+{{- $_1946___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1946___accountExists 0) -}}
+{{- $accountExists := (index $_1946___accountExists 1) -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- $_is_returning = true -}}
 {{- (dict "r" (and $containerExists $accountExists)) | toJson -}}
 {{- break -}}
@@ -1622,9 +1727,15 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+<<<<<<< HEAD:charts/redpanda/templates/_values.go.tpl
 {{- $_2237_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
 {{- $value := (index $_2237_value_ok 0) -}}
 {{- $ok := (index $_2237_value_ok 1) -}}
+=======
+{{- $_1951_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
+{{- $value := (index $_1951_value_ok 0) -}}
+{{- $ok := (index $_1951_value_ok 1) -}}
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag):charts/redpanda/chart/templates/_values.go.tpl
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
