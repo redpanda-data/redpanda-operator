@@ -33,3 +33,57 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "redpanda.toStaticConfig" -}}
+{{- $state := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $username := (get (fromJson (include "redpanda.BootstrapUser.Username" (dict "a" (list $state.Values.auth.sasl.bootstrapUser)))) "r") -}}
+{{- $passwordRef := (get (fromJson (include "redpanda.BootstrapUser.SecretKeySelector" (dict "a" (list $state.Values.auth.sasl.bootstrapUser (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))))) "r") -}}
+{{- $kafkaSpec := (mustMergeOverwrite (dict "brokers" (coalesce nil)) (dict "brokers" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.kafka.port | int))))) "r"))) -}}
+{{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.kafka.tls $state.Values.tls)))) "r") -}}
+{{- $_ := (set $kafkaSpec "tls" (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $state.Values.listeners.kafka.tls $state $state.Values.tls)))) "r")) -}}
+{{- end -}}
+{{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r") -}}
+{{- $_ := (set $kafkaSpec "sasl" (mustMergeOverwrite (dict "mechanism" "" "oauth" (dict "tokenSecretRef" (coalesce nil)) "gssapi" (dict "authType" "" "keyTabPath" "" "kerberosConfigPath" "" "serviceName" "" "username" "" "passwordSecretRef" (coalesce nil) "realm" "" "enableFast" false) "awsMskIam" (dict "accessKey" "" "secretKeySecretRef" (coalesce nil) "sessionTokenSecretRef" (coalesce nil) "userAgent" "")) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict) (dict "namespace" $state.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key)))) "mechanism" (toString (get (fromJson (include "redpanda.BootstrapUser.GetMechanism" (dict "a" (list $state.Values.auth.sasl.bootstrapUser)))) "r"))))) -}}
+{{- end -}}
+{{- $adminTLS := (coalesce nil) -}}
+{{- $adminSchema := "http" -}}
+{{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
+{{- $adminSchema = "https" -}}
+{{- $adminTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $state.Values.listeners.admin.tls $state $state.Values.tls)))) "r") -}}
+{{- end -}}
+{{- $adminAuth := (coalesce nil) -}}
+{{- $_106_adminAuthEnabled__ := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" (index $state.Values.config.cluster "admin_api_require_auth") false)))) "r") -}}
+{{- $adminAuthEnabled := (index $_106_adminAuthEnabled__ 0) -}}
+{{- $_ := (index $_106_adminAuthEnabled__ 1) -}}
+{{- if $adminAuthEnabled -}}
+{{- $adminAuth = (mustMergeOverwrite (dict) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict) (dict "namespace" $state.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key)))))) -}}
+{{- end -}}
+{{- $adminSpec := (mustMergeOverwrite (dict "urls" (coalesce nil)) (dict "tls" $adminTLS "sasl" $adminAuth "urls" (list (printf "%s://%s:%d" $adminSchema (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r") ($state.Values.listeners.admin.port | int))))) -}}
+{{- $schemaRegistrySpec := (coalesce nil) -}}
+{{- if $state.Values.listeners.schemaRegistry.enabled -}}
+{{- $schemaTLS := (coalesce nil) -}}
+{{- $schemaSchema := "http" -}}
+{{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.schemaRegistry.tls $state.Values.tls)))) "r") -}}
+{{- $schemaSchema = "https" -}}
+{{- $schemaTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $state.Values.listeners.schemaRegistry.tls $state $state.Values.tls)))) "r") -}}
+{{- end -}}
+{{- $schemaURLs := (coalesce nil) -}}
+{{- $brokers := (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.schemaRegistry.port | int))))) "r") -}}
+{{- range $_, $broker := $brokers -}}
+{{- $schemaURLs = (concat (default (list) $schemaURLs) (list (printf "%s://%s" $schemaSchema $broker))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $schemaRegistrySpec = (mustMergeOverwrite (dict "urls" (coalesce nil)) (dict "urls" $schemaURLs "tls" $schemaTLS)) -}}
+{{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r") -}}
+{{- $_ := (set $schemaRegistrySpec "sasl" (mustMergeOverwrite (dict) (dict "username" $username "password" (mustMergeOverwrite (dict) (dict "namespace" $state.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key))))))) -}}
+{{- end -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict) (dict "kafka" $kafkaSpec "admin" $adminSpec "schemaRegistry" $schemaRegistrySpec))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+

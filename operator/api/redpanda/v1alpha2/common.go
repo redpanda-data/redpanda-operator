@@ -131,14 +131,48 @@ type KafkaSASLAWSMskIam struct {
 // CommonTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
 type CommonTLS struct {
 	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
-	CaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
+	CaCert *ValueSource `json:"caCert,omitempty"`
 	// Cert is the reference for client public certificate to establish mTLS connection to Redpanda
-	Cert *SecretKeyRef `json:"certSecretRef,omitempty"`
+	Cert *ValueSource `json:"cert,omitempty"`
 	// Key is the reference for client private certificate to establish mTLS connection to Redpanda
-	Key *SecretKeyRef `json:"keySecretRef,omitempty"`
+	Key *ValueSource `json:"key,omitempty"`
+
+	// Deprecated: replaced by "caCert".
+	DeprecatedCaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
+	// Deprecated: replaced by "cert".
+	DeprecatedCert *SecretKeyRef `json:"certSecretRef,omitempty"`
+	// Deprecated: replaced by "key".
+	DeprecatedKey *SecretKeyRef `json:"keySecretRef,omitempty"`
+
 	// InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda
 	// +optional
 	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify,omitempty"`
+}
+
+// ValueSource represents where a value can be pulled from
+// +structType=atomic
+type ValueSource struct {
+	// Inline is the raw value specified inline.
+	Inline *string `json:"inline,omitempty"`
+	// If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+	// For target values, the string value fetched from the source will be treated as
+	// a raw string.
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Should the value be contained in a k8s secret rather than configmap, we can refer
+	// to it here.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// If the value is supplied by an external source, coordinates are embedded here.
+	// Note: we interpret all fetched external secrets as raw string values
+	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRef,omitempty"`
+}
+
+// ExternalSecretKeySelector selects a key of an external Secret.
+// +structType=atomic
+type ExternalSecretKeySelector struct {
+	Name string `json:"name"`
+	// Specify whether the Secret or its key must be defined
+	// +optional
+	Optional *bool `json:"optional,omitempty"`
 }
 
 // SecretKeyRef contains enough information to inspect or modify the referred Secret data

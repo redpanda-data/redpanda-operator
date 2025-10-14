@@ -104,7 +104,7 @@
 {{- end -}}
 {{- if (ne (toJson $schema.sasl) "null") -}}
 {{- $_ := (set $cfg "authentication" (mustMergeOverwrite (dict) (dict "basic" (mustMergeOverwrite (dict) (dict "username" $schema.sasl.username))))) -}}
-{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD" $schema.sasl.passwordSecretRef)))) "r") -}}
+{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD" $schema.sasl.password)))) "r") -}}
 {{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "SCHEMAREGISTRY_AUTHENTICATION_BEARERTOKEN" $schema.sasl.token)))) "r") -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -127,15 +127,15 @@
 {{- if $tls.insecureSkipTlsVerify -}}
 {{- $_ := (set $out "insecureSkipTlsVerify" $tls.insecureSkipTlsVerify) -}}
 {{- end -}}
-{{- $ca_7 := (get (fromJson (include "console.volumes.MaybeAdd" (dict "a" (list $m.Volumes $tls.caCertSecretRef)))) "r") -}}
+{{- $ca_7 := (get (fromJson (include "console.volumes.MaybeAdd" (dict "a" (list $m.Volumes $tls.caCert)))) "r") -}}
 {{- if (ne (toJson $ca_7) "null") -}}
 {{- $_ := (set $out "caFilepath" $ca_7) -}}
 {{- end -}}
-{{- $cert_8 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.certSecretRef)))) "r") -}}
+{{- $cert_8 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.cert)))) "r") -}}
 {{- if (ne (toJson $cert_8) "null") -}}
 {{- $_ := (set $out "certFilepath" $cert_8) -}}
 {{- end -}}
-{{- $key_9 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.keySecretRef)))) "r") -}}
+{{- $key_9 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.key)))) "r") -}}
 {{- if (ne (toJson $key_9) "null") -}}
 {{- $_ := (set $out "keyFilepath" $key_9) -}}
 {{- end -}}
@@ -148,9 +148,15 @@
 {{- define "console.configMapper.addEnv" -}}
 {{- $m := (index .a 0) -}}
 {{- $name := (index .a 1) -}}
-{{- $ref := (index .a 2) -}}
+{{- $secretRef := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- if (or (eq (toJson $secretRef) "null") (eq (toJson $secretRef.secretKeyRef) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $ref := $secretRef.secretKeyRef -}}
 {{- if (or (eq $ref.key "") (eq $ref.name "")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list)) | toJson -}}
@@ -179,7 +185,7 @@
 {{- $skr_11 := $ref.secretKeyRef -}}
 {{- if (ne (toJson $skr_11) "null") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $v (mustMergeOverwrite (dict "name" "") (dict "name" $skr_11.name "key" $skr_11.key)))))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $v (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $skr_11.name)) (dict "key" $skr_11.key)))))))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -198,9 +204,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_236___ok_12 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_236___ok_12 0) -}}
-{{- $ok_12 := (index $_236___ok_12 1) -}}
+{{- $_242___ok_12 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_242___ok_12 0) -}}
+{{- $ok_12 := (index $_242___ok_12 1) -}}
 {{- if (not $ok_12) -}}
 {{- $_ := (set $v.ConfigMaps $ref.name (dict)) -}}
 {{- end -}}
@@ -213,17 +219,23 @@
 
 {{- define "console.volumes.MaybeAddSecret" -}}
 {{- $v := (index .a 0) -}}
-{{- $ref := (index .a 1) -}}
+{{- $secretRef := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- if (eq (toJson $secretRef.secretKeyRef) "null") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (coalesce nil)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $ref := $secretRef.secretKeyRef -}}
 {{- if (or (eq (toJson $ref) "null") ((and (eq $ref.key "") (eq $ref.name "")))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_248___ok_13 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_248___ok_13 0) -}}
-{{- $ok_13 := (index $_248___ok_13 1) -}}
+{{- $_258___ok_13 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_258___ok_13 0) -}}
+{{- $ok_13 := (index $_258___ok_13 1) -}}
 {{- if (not $ok_13) -}}
 {{- $_ := (set $v.Secrets $ref.name (dict)) -}}
 {{- end -}}
