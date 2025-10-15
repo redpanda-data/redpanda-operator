@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Rename Role CRD resource path to avoid kubectl collision
+time: 2025-10-15T12:08:22.921426581+02:00
