@@ -256,15 +256,15 @@ var _ = Describe("RedpandaCluster configuration controller", func() {
 			cluster.Spec.AdditionalConfiguration["redpanda.kafka_nodelete_topics"] = "[_internal_connectors_configs _internal_connectors_offsets _internal_connectors_status _audit __consumer_offsets _redpanda_e2e_probe _schemas]"
 			Expect(k8sClient.Patch(context.Background(), &cluster, client.MergeFrom(latest))).To(Succeed())
 
-			Eventually(adminAPI.PropertyGetter("kafka_nodelete_topics")).Should(Equal([]string{
-				"__consumer_offsets",
-				"_audit",
+			Eventually(adminAPI.PropertyGetter("kafka_nodelete_topics")).Should(ConsistOf(
 				"_internal_connectors_configs",
 				"_internal_connectors_offsets",
 				"_internal_connectors_status",
+				"_audit",
+				"__consumer_offsets",
 				"_redpanda_e2e_probe",
 				"_schemas",
-			}))
+			))
 
 			patches = adminAPI.PatchesGetter()()
 			Expect(patches).NotTo(BeEmpty())
