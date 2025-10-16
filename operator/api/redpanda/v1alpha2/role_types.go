@@ -16,16 +16,15 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
-// Role defines the CRD for a Redpanda role.
+// RedpandaRole defines the CRD for a Redpanda role.
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=redpandaroles,singular=redpandarole
 // +kubebuilder:resource:shortName=rpr
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=`.status.conditions[?(@.type=="Synced")].status`
 // +kubebuilder:printcolumn:name="Managing ACLs",type="boolean",JSONPath=`.status.managedAcls`
 // +kubebuilder:storageversion
-type Role struct {
+type RedpandaRole struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -37,40 +36,40 @@ type Role struct {
 }
 
 var (
-	_ ClusterReferencingObject = (*Role)(nil)
-	_ AuthorizedObject         = (*Role)(nil)
+	_ ClusterReferencingObject = (*RedpandaRole)(nil)
+	_ AuthorizedObject         = (*RedpandaRole)(nil)
 )
 
 // GetPrincipal constructs the principal of a Role for defining ACLs.
-func (r *Role) GetPrincipal() string {
+func (r *RedpandaRole) GetPrincipal() string {
 	return "RedpandaRole:" + r.Name
 }
 
-func (r *Role) GetACLs() []ACLRule {
+func (r *RedpandaRole) GetACLs() []ACLRule {
 	if r.Spec.Authorization == nil {
 		return nil
 	}
 	return r.Spec.Authorization.ACLs
 }
 
-func (r *Role) GetClusterSource() *ClusterSource {
+func (r *RedpandaRole) GetClusterSource() *ClusterSource {
 	return r.Spec.ClusterSource
 }
 
-func (r *Role) ShouldManageACLs() bool {
+func (r *RedpandaRole) ShouldManageACLs() bool {
 	return r.Spec.Authorization != nil
 }
 
-func (r *Role) HasManagedACLs() bool {
+func (r *RedpandaRole) HasManagedACLs() bool {
 	return r.Status.ManagedACLs
 }
 
-func (r *Role) ShouldManageRole() bool {
+func (r *RedpandaRole) ShouldManageRole() bool {
 	// Always manage the role if it has a spec (similar to how users work)
 	return true
 }
 
-func (r *Role) HasManagedRole() bool {
+func (r *RedpandaRole) HasManagedRole() bool {
 	return r.Status.ManagedRole
 }
 
@@ -112,15 +111,15 @@ type RoleStatus struct {
 	ManagedRole bool `json:"managedRole,omitempty"`
 }
 
-// RoleList contains a list of Redpanda role objects.
+// RedpandaRoleList contains a list of Redpanda role objects.
 // +kubebuilder:object:root=true
-type RoleList struct {
+type RedpandaRoleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	// Specifies a list of Redpanda role resources.
-	Items []Role `json:"items"`
+	Items []RedpandaRole `json:"items"`
 }
 
-func (r *RoleList) GetItems() []*Role {
+func (r *RedpandaRoleList) GetItems() []*RedpandaRole {
 	return functional.MapFn(ptr.To, r.Items)
 }

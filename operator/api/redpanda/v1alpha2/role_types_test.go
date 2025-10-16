@@ -25,7 +25,7 @@ import (
 )
 
 func TestRole_GetPrincipal(t *testing.T) {
-	role := &Role{
+	role := &RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-role",
 		},
@@ -37,12 +37,12 @@ func TestRole_GetPrincipal(t *testing.T) {
 func TestRole_GetACLs(t *testing.T) {
 	tests := []struct {
 		name     string
-		role     *Role
+		role     *RedpandaRole
 		expected []ACLRule
 	}{
 		{
 			name: "role with ACLs",
-			role: &Role{
+			role: &RedpandaRole{
 				Spec: RoleSpec{
 					Authorization: &RoleAuthorizationSpec{
 						ACLs: []ACLRule{
@@ -71,14 +71,14 @@ func TestRole_GetACLs(t *testing.T) {
 		},
 		{
 			name: "role without authorization",
-			role: &Role{
+			role: &RedpandaRole{
 				Spec: RoleSpec{},
 			},
 			expected: nil,
 		},
 		{
 			name: "role with nil authorization",
-			role: &Role{
+			role: &RedpandaRole{
 				Spec: RoleSpec{
 					Authorization: nil,
 				},
@@ -98,12 +98,12 @@ func TestRole_GetACLs(t *testing.T) {
 func TestRole_ShouldManageACLs(t *testing.T) {
 	tests := []struct {
 		name     string
-		role     *Role
+		role     *RedpandaRole
 		expected bool
 	}{
 		{
 			name: "role with authorization",
-			role: &Role{
+			role: &RedpandaRole{
 				Spec: RoleSpec{
 					Authorization: &RoleAuthorizationSpec{},
 				},
@@ -112,7 +112,7 @@ func TestRole_ShouldManageACLs(t *testing.T) {
 		},
 		{
 			name: "role without authorization",
-			role: &Role{
+			role: &RedpandaRole{
 				Spec: RoleSpec{},
 			},
 			expected: false,
@@ -130,12 +130,12 @@ func TestRole_ShouldManageACLs(t *testing.T) {
 func TestRole_HasManagedACLs(t *testing.T) {
 	tests := []struct {
 		name     string
-		role     *Role
+		role     *RedpandaRole
 		expected bool
 	}{
 		{
 			name: "role with managed ACLs",
-			role: &Role{
+			role: &RedpandaRole{
 				Status: RoleStatus{
 					ManagedACLs: true,
 				},
@@ -144,7 +144,7 @@ func TestRole_HasManagedACLs(t *testing.T) {
 		},
 		{
 			name: "role without managed ACLs",
-			role: &Role{
+			role: &RedpandaRole{
 				Status: RoleStatus{
 					ManagedACLs: false,
 				},
@@ -170,7 +170,7 @@ func TestRoleValidation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	baseRole := Role{
+	baseRole := RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
 			Namespace: metav1.NamespaceDefault,
@@ -191,23 +191,23 @@ func TestRoleValidation(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	for name, tt := range map[string]validationTestCase[*Role]{
+	for name, tt := range map[string]validationTestCase[*RedpandaRole]{
 		"basic create": {},
 		// connection params
 		"clusterRef or kafkaApiSpec and adminApiSpec - no cluster source": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.ClusterSource = nil
 			},
 			errors: []string{`spec.cluster: required value`},
 		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - none": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.ClusterSource.ClusterRef = nil
 			},
 			errors: []string{`either clusterref or staticconfiguration must be set`},
 		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - admin api spec": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.ClusterSource.ClusterRef = nil
 				role.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 					Admin: &AdminAPISpec{
@@ -218,7 +218,7 @@ func TestRoleValidation(t *testing.T) {
 			errors: []string{`spec.cluster.staticconfiguration.kafka: required value`},
 		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - kafka api spec": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.ClusterSource.ClusterRef = nil
 				role.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 					Kafka: &KafkaAPISpec{
@@ -229,7 +229,7 @@ func TestRoleValidation(t *testing.T) {
 			errors: []string{`spec.cluster.staticconfiguration.admin: required value`},
 		},
 		"clusterRef or kafkaApiSpec and adminApiSpec - kafka and admin api spec": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.ClusterSource.ClusterRef = nil
 				role.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 					Kafka: &KafkaAPISpec{
@@ -243,18 +243,18 @@ func TestRoleValidation(t *testing.T) {
 		},
 		// principals
 		"principals - valid user principals": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.Principals = []string{"User:john", "User:jane"}
 			},
 		},
 		"principals - user without type prefix": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.Principals = []string{"john", "jane"}
 			},
 		},
 		// authorization (optional)
 		"authorization topic": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.Authorization = &RoleAuthorizationSpec{
 					ACLs: []ACLRule{{
 						Type: ACLTypeAllow,
@@ -272,7 +272,7 @@ func TestRoleValidation(t *testing.T) {
 			},
 		},
 		"authorization topic - invalid operation": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.Authorization = &RoleAuthorizationSpec{
 					ACLs: []ACLRule{{
 						Type: ACLTypeAllow,
@@ -289,7 +289,7 @@ func TestRoleValidation(t *testing.T) {
 			errors: []string{`supported topic operations are ['Alter', 'AlterConfigs', 'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read', 'Write']`},
 		},
 		"combined - principals and authorization": {
-			mutate: func(role *Role) {
+			mutate: func(role *RedpandaRole) {
 				role.Spec.Principals = []string{"User:john", "User:jane"}
 				role.Spec.Authorization = &RoleAuthorizationSpec{
 					ACLs: []ACLRule{{
@@ -327,7 +327,7 @@ func TestRoleDefaults(t *testing.T) {
 	require.NotNil(t, c)
 
 	// Test role with just principals (Redpanda RBAC mode)
-	require.NoError(t, c.Create(ctx, &Role{
+	require.NoError(t, c.Create(ctx, &RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "principals-only",
 			Namespace: metav1.NamespaceDefault,
@@ -342,7 +342,7 @@ func TestRoleDefaults(t *testing.T) {
 		},
 	}))
 
-	var principalsOnlyRole Role
+	var principalsOnlyRole RedpandaRole
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "principals-only"}, &principalsOnlyRole))
 
 	require.Len(t, principalsOnlyRole.Status.Conditions, 1)
@@ -355,7 +355,7 @@ func TestRoleDefaults(t *testing.T) {
 	require.False(t, principalsOnlyRole.ShouldManageACLs())
 
 	// Test role with both principals and authorization (Integrated mode)
-	require.NoError(t, c.Create(ctx, &Role{
+	require.NoError(t, c.Create(ctx, &RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "with-authorization",
 			Namespace: metav1.NamespaceDefault,
@@ -380,7 +380,7 @@ func TestRoleDefaults(t *testing.T) {
 		},
 	}))
 
-	var authRole Role
+	var authRole RedpandaRole
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "with-authorization"}, &authRole))
 
 	require.Equal(t, []string{"User:alice"}, authRole.Spec.Principals)
@@ -409,7 +409,7 @@ func TestRoleImmutableFields(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	require.NoError(t, c.Create(ctx, &Role{
+	require.NoError(t, c.Create(ctx, &RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
 			Namespace: metav1.NamespaceDefault,
@@ -423,13 +423,13 @@ func TestRoleImmutableFields(t *testing.T) {
 		},
 	}))
 
-	var role Role
+	var role RedpandaRole
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &role))
 
 	role.Spec.ClusterSource.ClusterRef.Name = "other"
 	err = c.Update(ctx, &role)
 
-	require.EqualError(t, err, `Role.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
+	require.EqualError(t, err, `RedpandaRole.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &role))
 	role.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
@@ -442,5 +442,5 @@ func TestRoleImmutableFields(t *testing.T) {
 	}
 	err = c.Update(ctx, &role)
 
-	require.EqualError(t, err, `Role.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
+	require.EqualError(t, err, `RedpandaRole.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 }

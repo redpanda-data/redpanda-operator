@@ -66,7 +66,7 @@ func TestClient(t *testing.T) {
 
 		// Test role lifecycle
 		roleName := "test-role-" + strconv.Itoa(int(time.Now().UnixNano()))
-		role := &redpandav1alpha2.Role{
+		role := &redpandav1alpha2.RedpandaRole{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: roleName,
 			},

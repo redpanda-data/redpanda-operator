@@ -46,7 +46,7 @@ func (c *Client) Close() {
 }
 
 // Has checks if a role exists in the Redpanda cluster.
-func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.Role) (bool, error) {
+func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.RedpandaRole) (bool, error) {
 	if role == nil || role.Name == "" {
 		return false, fmt.Errorf("role is nil or has empty name")
 	}
@@ -64,7 +64,7 @@ func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.Role) (bool, er
 }
 
 // Create creates a role in the Redpanda cluster.
-func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.Role) error {
+func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
 	if role == nil || role.Name == "" {
 		return fmt.Errorf("role is nil or has empty name")
 	}
@@ -98,7 +98,7 @@ func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.Role) error 
 }
 
 // Delete removes a role from the Redpanda cluster.
-func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.Role) error {
+func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
 	if role == nil || role.Name == "" {
 		return fmt.Errorf("role is nil or has empty name")
 	}
@@ -117,7 +117,7 @@ func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.Role) error 
 }
 
 // Update updates an existing role in the Redpanda cluster.
-func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.Role) error {
+func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
 	if role == nil || role.Name == "" {
 		return fmt.Errorf("role is nil or has empty name")
 	}

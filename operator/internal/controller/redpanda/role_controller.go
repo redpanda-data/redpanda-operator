@@ -43,20 +43,20 @@ type RoleReconciler struct {
 	extraOptions []kgo.Opt
 }
 
-func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha2.Role]) client.Patch {
+func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha2.RedpandaRole]) client.Patch {
 	role := request.object
-	config := redpandav1alpha2ac.Role(role.Name, role.Namespace)
+	config := redpandav1alpha2ac.RedpandaRole(role.Name, role.Namespace)
 	return kubernetes.ApplyPatch(config.WithFinalizers(FinalizerKey))
 }
 
-func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Role]) (client.Patch, error) {
+func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (client.Patch, error) {
 	role := request.object
 	hasManagedACLs, hasManagedRole := role.HasManagedACLs(), role.HasManagedRole()
 	shouldManageACLs, shouldManageRole := role.ShouldManageACLs(), role.ShouldManageRole()
 
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
-		config := redpandav1alpha2ac.Role(role.Name, role.Namespace)
+		config := redpandav1alpha2ac.RedpandaRole(role.Name, role.Namespace)
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
@@ -111,7 +111,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	return createPatch(nil)
 }
 
-func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Role]) error {
+func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) error {
 	request.logger.V(2).Info("Deleting role data from cluster")
 
 	role := request.object
@@ -141,7 +141,7 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	return nil
 }
 
-func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Role]) (*roles.Client, *acls.Syncer, bool, error) {
+func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (*roles.Client, *acls.Syncer, bool, error) {
 	role := request.object
 	rolesClient, err := request.factory.Roles(ctx, role)
 	if err != nil {
@@ -167,11 +167,11 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1, inclu
 	factory := internalclient.NewFactory(config, c)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Role{}).
+		For(&redpandav1alpha2.RedpandaRole{}).
 		Owns(&corev1.Secret{})
 
 	if includeV1 {
-		enqueueV1Role, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "role_v1", &redpandav1alpha2.Role{}, &redpandav1alpha2.RoleList{})
+		enqueueV1Role, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "role_v1", &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})
 		if err != nil {
 			return err
 		}
@@ -179,7 +179,7 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1, inclu
 	}
 
 	if includeV2 {
-		enqueueV2Role, err := controller.RegisterClusterSourceIndex(ctx, mgr, "role", &redpandav1alpha2.Role{}, &redpandav1alpha2.RoleList{})
+		enqueueV2Role, err := controller.RegisterClusterSourceIndex(ctx, mgr, "role", &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})
 		if err != nil {
 			return err
 		}
