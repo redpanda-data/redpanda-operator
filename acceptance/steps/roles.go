@@ -25,7 +25,7 @@ import (
 )
 
 func roleIsSuccessfullySynced(ctx context.Context, t framework.TestingT, role string) {
-	var roleObject redpandav1alpha2.Role
+	var roleObject redpandav1alpha2.RedpandaRole
 	require.NoError(t, t.Get(ctx, t.ResourceKey(role), &roleObject))
 
 	// make sure the resource is stable
@@ -52,7 +52,7 @@ func roleIsSuccessfullySynced(ctx context.Context, t framework.TestingT, role st
 }
 
 func iDeleteTheCRDRole(ctx context.Context, t framework.TestingT, role string) {
-	var roleObject redpandav1alpha2.Role
+	var roleObject redpandav1alpha2.RedpandaRole
 
 	t.Logf("Deleting role %q", role)
 	err := t.Get(ctx, t.ResourceKey(role), &roleObject)
@@ -164,7 +164,7 @@ func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework
 	t.Logf("Created ACL client for cluster %q", cluster)
 
 	// Create a role object for ACL checking
-	roleObj := &redpandav1alpha2.Role{
+	roleObj := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{Name: role},
 	}
 
@@ -195,7 +195,7 @@ func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.Testi
 	defer aclClient.Close()
 
 	// Create a role object for ACL checking
-	roleObj := &redpandav1alpha2.Role{
+	roleObj := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{Name: role},
 	}
 
@@ -213,7 +213,7 @@ func thereShouldBeNoACLsForRoleInCluster(ctx context.Context, t framework.Testin
 	defer aclClient.Close()
 
 	// Create a role object for ACL checking
-	roleObj := &redpandav1alpha2.Role{
+	roleObj := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{Name: role},
 	}
 

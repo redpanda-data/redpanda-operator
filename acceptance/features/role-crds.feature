@@ -17,7 +17,7 @@ Feature: Role CRDs
     # The role includes two principals (alice and bob) who will inherit the role's permissions.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: Role
+    kind: RedpandaRole
     metadata:
       name: admin-role
     spec:
@@ -47,7 +47,7 @@ Feature: Role CRDs
     # The role includes authorization rules that allow reading from topics with names starting with "public-".
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: Role
+    kind: RedpandaRole
     metadata:
       name: read-only-role
     spec:
@@ -85,7 +85,7 @@ Feature: Role CRDs
     # This example assumes that you already have a role called "travis-role" in your cluster.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: Role
+    kind: RedpandaRole
     metadata:
       name: travis-role
     spec:

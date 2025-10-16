@@ -17,22 +17,22 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// RoleApplyConfiguration represents a declarative configuration of the Role type for use
+// RedpandaRoleApplyConfiguration represents a declarative configuration of the RedpandaRole type for use
 // with apply.
-type RoleApplyConfiguration struct {
+type RedpandaRoleApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	Spec                             *RoleSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                           *RoleStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// Role constructs a declarative configuration of the Role type for use with
+// RedpandaRole constructs a declarative configuration of the RedpandaRole type for use with
 // apply.
-func Role(name, namespace string) *RoleApplyConfiguration {
-	b := &RoleApplyConfiguration{}
+func RedpandaRole(name, namespace string) *RedpandaRoleApplyConfiguration {
+	b := &RedpandaRoleApplyConfiguration{}
 	b.WithName(name)
 	b.WithNamespace(namespace)
-	b.WithKind("Role")
+	b.WithKind("RedpandaRole")
 	b.WithAPIVersion("cluster.redpanda.com/v1alpha2")
 	return b
 }
@@ -40,7 +40,7 @@ func Role(name, namespace string) *RoleApplyConfiguration {
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithKind(value string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithKind(value string) *RedpandaRoleApplyConfiguration {
 	b.TypeMetaApplyConfiguration.Kind = &value
 	return b
 }
@@ -48,7 +48,7 @@ func (b *RoleApplyConfiguration) WithKind(value string) *RoleApplyConfiguration 
 // WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithAPIVersion(value string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithAPIVersion(value string) *RedpandaRoleApplyConfiguration {
 	b.TypeMetaApplyConfiguration.APIVersion = &value
 	return b
 }
@@ -56,7 +56,7 @@ func (b *RoleApplyConfiguration) WithAPIVersion(value string) *RoleApplyConfigur
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithName(value string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithName(value string) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Name = &value
 	return b
@@ -65,7 +65,7 @@ func (b *RoleApplyConfiguration) WithName(value string) *RoleApplyConfiguration 
 // WithGenerateName sets the GenerateName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GenerateName field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithGenerateName(value string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithGenerateName(value string) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.GenerateName = &value
 	return b
@@ -74,7 +74,7 @@ func (b *RoleApplyConfiguration) WithGenerateName(value string) *RoleApplyConfig
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithNamespace(value string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithNamespace(value string) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Namespace = &value
 	return b
@@ -83,7 +83,7 @@ func (b *RoleApplyConfiguration) WithNamespace(value string) *RoleApplyConfigura
 // WithUID sets the UID field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UID field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithUID(value types.UID) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithUID(value types.UID) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.UID = &value
 	return b
@@ -92,7 +92,7 @@ func (b *RoleApplyConfiguration) WithUID(value types.UID) *RoleApplyConfiguratio
 // WithResourceVersion sets the ResourceVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithResourceVersion(value string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithResourceVersion(value string) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.ResourceVersion = &value
 	return b
@@ -101,7 +101,7 @@ func (b *RoleApplyConfiguration) WithResourceVersion(value string) *RoleApplyCon
 // WithGeneration sets the Generation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Generation field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithGeneration(value int64) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithGeneration(value int64) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Generation = &value
 	return b
@@ -110,7 +110,7 @@ func (b *RoleApplyConfiguration) WithGeneration(value int64) *RoleApplyConfigura
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithCreationTimestamp(value metav1.Time) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithCreationTimestamp(value metav1.Time) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
@@ -119,7 +119,7 @@ func (b *RoleApplyConfiguration) WithCreationTimestamp(value metav1.Time) *RoleA
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
@@ -128,7 +128,7 @@ func (b *RoleApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *RoleA
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
@@ -138,7 +138,7 @@ func (b *RoleApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *Ro
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *RoleApplyConfiguration) WithLabels(entries map[string]string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithLabels(entries map[string]string) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
@@ -153,7 +153,7 @@ func (b *RoleApplyConfiguration) WithLabels(entries map[string]string) *RoleAppl
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *RoleApplyConfiguration) WithAnnotations(entries map[string]string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithAnnotations(entries map[string]string) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
@@ -167,7 +167,7 @@ func (b *RoleApplyConfiguration) WithAnnotations(entries map[string]string) *Rol
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-func (b *RoleApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
@@ -181,7 +181,7 @@ func (b *RoleApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenc
 // WithFinalizers adds the given value to the Finalizers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Finalizers field.
-func (b *RoleApplyConfiguration) WithFinalizers(values ...string) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithFinalizers(values ...string) *RedpandaRoleApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
@@ -189,7 +189,7 @@ func (b *RoleApplyConfiguration) WithFinalizers(values ...string) *RoleApplyConf
 	return b
 }
 
-func (b *RoleApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
+func (b *RedpandaRoleApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
@@ -198,7 +198,7 @@ func (b *RoleApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithSpec(value *RoleSpecApplyConfiguration) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithSpec(value *RoleSpecApplyConfiguration) *RedpandaRoleApplyConfiguration {
 	b.Spec = value
 	return b
 }
@@ -206,13 +206,13 @@ func (b *RoleApplyConfiguration) WithSpec(value *RoleSpecApplyConfiguration) *Ro
 // WithStatus sets the Status field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Status field is set to the value of the last call.
-func (b *RoleApplyConfiguration) WithStatus(value *RoleStatusApplyConfiguration) *RoleApplyConfiguration {
+func (b *RedpandaRoleApplyConfiguration) WithStatus(value *RoleStatusApplyConfiguration) *RedpandaRoleApplyConfiguration {
 	b.Status = value
 	return b
 }
 
 // GetName retrieves the value of the Name field in the declarative configuration.
-func (b *RoleApplyConfiguration) GetName() *string {
+func (b *RedpandaRoleApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
 }

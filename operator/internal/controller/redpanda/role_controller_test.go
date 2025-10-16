@@ -47,7 +47,7 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 		}},
 	}
 
-	baseRole := &redpandav1alpha2.Role{
+	baseRole := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: metav1.NamespaceDefault,
 		},
@@ -59,7 +59,7 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 	}
 
 	for name, tt := range map[string]struct {
-		mutate            func(role *redpandav1alpha2.Role)
+		mutate            func(role *redpandav1alpha2.RedpandaRole)
 		expectedCondition metav1.Condition
 		onlyCheckDeletion bool
 	}{
@@ -71,46 +71,46 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			onlyCheckDeletion: true,
 		},
 		"success - role only (no authorization)": {
-			mutate: func(role *redpandav1alpha2.Role) {
+			mutate: func(role *redpandav1alpha2.RedpandaRole) {
 				role.Spec.Authorization = nil
 			},
 			expectedCondition: environment.SyncedCondition,
 		},
 		"success - role only deletion cleanup": {
-			mutate: func(role *redpandav1alpha2.Role) {
+			mutate: func(role *redpandav1alpha2.RedpandaRole) {
 				role.Spec.Authorization = nil
 			},
 			expectedCondition: environment.SyncedCondition,
 			onlyCheckDeletion: true,
 		},
 		"success - authorization only (no principals)": {
-			mutate: func(role *redpandav1alpha2.Role) {
+			mutate: func(role *redpandav1alpha2.RedpandaRole) {
 				role.Spec.Principals = nil
 			},
 			expectedCondition: environment.SyncedCondition,
 			onlyCheckDeletion: true,
 		},
 		"success - authorization only deletion cleanup": {
-			mutate: func(role *redpandav1alpha2.Role) {
+			mutate: func(role *redpandav1alpha2.RedpandaRole) {
 				role.Spec.Principals = nil
 			},
 			expectedCondition: environment.SyncedCondition,
 			onlyCheckDeletion: true,
 		},
 		"error - invalid cluster ref": {
-			mutate: func(role *redpandav1alpha2.Role) {
+			mutate: func(role *redpandav1alpha2.RedpandaRole) {
 				role.Spec.ClusterSource = environment.ClusterSourceInvalidRef
 			},
 			expectedCondition: environment.InvalidClusterRefCondition,
 		},
 		"error - client error no SASL": {
-			mutate: func(role *redpandav1alpha2.Role) {
+			mutate: func(role *redpandav1alpha2.RedpandaRole) {
 				role.Spec.ClusterSource = environment.ClusterSourceNoSASL
 			},
 			expectedCondition: environment.ClientErrorCondition,
 		},
 		"error - client error invalid credentials": {
-			mutate: func(role *redpandav1alpha2.Role) {
+			mutate: func(role *redpandav1alpha2.RedpandaRole) {
 				role.Spec.ClusterSource = environment.ClusterSourceBadPassword
 			},
 			expectedCondition: environment.ClientErrorCondition,
@@ -308,7 +308,7 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			role := &redpandav1alpha2.Role{
+			role := &redpandav1alpha2.RedpandaRole{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: metav1.NamespaceDefault,
 					Name:      "test-role-" + strconv.Itoa(int(time.Now().UnixNano())),
@@ -380,7 +380,7 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
-	role := &redpandav1alpha2.Role{
+	role := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: metav1.NamespaceDefault,
 			Name:      "lifecycle-role-" + strconv.Itoa(int(time.Now().UnixNano())),
