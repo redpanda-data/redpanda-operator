@@ -7,6 +7,7 @@ kind: Kustomization
 resources:
 - bases/redpanda.vectorized.io_clusters.yaml
 - bases/redpanda.vectorized.io_consoles.yaml
+- bases/cluster.redpanda.com_consoles.yaml
 - bases/cluster.redpanda.com_redpandas.yaml
 - bases/cluster.redpanda.com_redpandaroles.yaml
 - bases/cluster.redpanda.com_schemas.yaml
