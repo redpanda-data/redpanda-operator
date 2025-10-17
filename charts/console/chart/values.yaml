@@ -172,6 +172,13 @@ extraVolumeMounts: []
 # -- Add additional containers, such as for oauth2-proxy.
 extraContainers: []
 
+# -- Add additional container ports to the console container.
+# Useful when using multi-listener configuration.
+extraContainerPorts: []
+# - name: private
+#   containerPort: 8081
+#   protocol: TCP
+
 # -- Any initContainers defined should be written here
 initContainers:
   # -- Additional set of init containers

@@ -1146,6 +1146,11 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ExtraContainerPorts != nil {
+		in, out := &in.ExtraContainerPorts, &out.ExtraContainerPorts
+		*out = make([]v1.ContainerPort, len(*in))
+		copy(*out, *in)
+	}
 	if in.SecretMounts != nil {
 		in, out := &in.SecretMounts, &out.SecretMounts
 		*out = make([]SecretMount, len(*in))

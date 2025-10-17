@@ -75,6 +75,12 @@ Settings for the `Config.yaml` (required). For a reference of configuration sett
 
 **Default:** `true`
 
+### [extraContainerPorts](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=extraContainerPorts)
+
+Add additional container ports to the console container. Useful when using multi-listener configuration.
+
+**Default:** `[]`
+
 ### [extraContainers](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=extraContainers)
 
 Add additional containers, such as for oauth2-proxy.

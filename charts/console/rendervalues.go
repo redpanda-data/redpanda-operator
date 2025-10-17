@@ -44,21 +44,22 @@ type RenderValues struct {
 	// enterprise build is used. For simplicity, we opt to NOT types this
 	// value.
 	// Note that [PartialConfig] is the OSS version of console's config.
-	Config            map[string]any            `json:"config"`
-	ExtraEnv          []corev1.EnvVar           `json:"extraEnv"`
-	ExtraEnvFrom      []corev1.EnvFromSource    `json:"extraEnvFrom"`
-	ExtraVolumes      []corev1.Volume           `json:"extraVolumes"`
-	ExtraVolumeMounts []corev1.VolumeMount      `json:"extraVolumeMounts"`
-	ExtraContainers   []corev1.Container        `json:"extraContainers"`
-	InitContainers    InitContainers            `json:"initContainers"`
-	SecretMounts      []SecretMount             `json:"secretMounts"`
-	Secret            SecretConfig              `json:"secret"`
-	LicenseSecretRef  *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
-	LivenessProbe     corev1.Probe              `json:"livenessProbe"`
-	ReadinessProbe    corev1.Probe              `json:"readinessProbe"`
-	ConfigMap         Creatable                 `json:"configmap"`
-	Deployment        DeploymentConfig          `json:"deployment"`
-	Strategy          appsv1.DeploymentStrategy `json:"strategy"`
+	Config              map[string]any            `json:"config"`
+	ExtraEnv            []corev1.EnvVar           `json:"extraEnv"`
+	ExtraEnvFrom        []corev1.EnvFromSource    `json:"extraEnvFrom"`
+	ExtraVolumes        []corev1.Volume           `json:"extraVolumes"`
+	ExtraVolumeMounts   []corev1.VolumeMount      `json:"extraVolumeMounts"`
+	ExtraContainers     []corev1.Container        `json:"extraContainers"`
+	ExtraContainerPorts []corev1.ContainerPort    `json:"extraContainerPorts"`
+	InitContainers      InitContainers            `json:"initContainers"`
+	SecretMounts        []SecretMount             `json:"secretMounts"`
+	Secret              SecretConfig              `json:"secret"`
+	LicenseSecretRef    *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
+	LivenessProbe       corev1.Probe              `json:"livenessProbe"`
+	ReadinessProbe      corev1.Probe              `json:"readinessProbe"`
+	ConfigMap           Creatable                 `json:"configmap"`
+	Deployment          DeploymentConfig          `json:"deployment"`
+	Strategy            appsv1.DeploymentStrategy `json:"strategy"`
 }
 
 type DeploymentConfig struct {

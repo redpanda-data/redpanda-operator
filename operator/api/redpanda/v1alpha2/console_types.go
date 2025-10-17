@@ -117,6 +117,7 @@ type ConsoleValues struct {
 	ExtraVolumes                 []corev1.Volume                   `json:"extraVolumes,omitempty"`
 	ExtraVolumeMounts            []corev1.VolumeMount              `json:"extraVolumeMounts,omitempty"`
 	ExtraContainers              []corev1.Container                `json:"extraContainers,omitempty"`
+	ExtraContainerPorts          []corev1.ContainerPort            `json:"extraContainerPorts,omitempty"`
 	SecretMounts                 []SecretMount                     `json:"secretMounts,omitempty"`
 	Secret                       SecretConfig                      `json:"secret,omitempty"`
 	LicenseSecretRef             *corev1.SecretKeySelector         `json:"licenseSecretRef,omitempty"`

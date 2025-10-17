@@ -122,10 +122,16 @@ func init() {
 					consolePartialRenderValues.ExtraContainers[p] = v1ContainerToV1Container((*source).ExtraContainers[p])
 				}
 			}
+			if (*source).ExtraContainerPorts != nil {
+				consolePartialRenderValues.ExtraContainerPorts = make([]v1.ContainerPort, len((*source).ExtraContainerPorts))
+				for q := 0; q < len((*source).ExtraContainerPorts); q++ {
+					consolePartialRenderValues.ExtraContainerPorts[q] = v1ContainerPortToV1ContainerPort((*source).ExtraContainerPorts[q])
+				}
+			}
 			if (*source).SecretMounts != nil {
 				consolePartialRenderValues.SecretMounts = make([]v3.PartialSecretMount, len((*source).SecretMounts))
-				for q := 0; q < len((*source).SecretMounts); q++ {
-					consolePartialRenderValues.SecretMounts[q] = v1alpha2SecretMountToConsolePartialSecretMount((*source).SecretMounts[q])
+				for r := 0; r < len((*source).SecretMounts); r++ {
+					consolePartialRenderValues.SecretMounts[r] = v1alpha2SecretMountToConsolePartialSecretMount((*source).SecretMounts[r])
 				}
 			}
 			consolePartialRenderValues.Secret = v1alpha2SecretConfigToPConsolePartialSecretConfig((*source).Secret)

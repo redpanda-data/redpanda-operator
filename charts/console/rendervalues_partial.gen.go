@@ -48,6 +48,7 @@ type PartialRenderValues struct {
 	ExtraVolumes                 []corev1.Volume                   "json:\"extraVolumes,omitempty\""
 	ExtraVolumeMounts            []corev1.VolumeMount              "json:\"extraVolumeMounts,omitempty\""
 	ExtraContainers              []corev1.Container                "json:\"extraContainers,omitempty\""
+	ExtraContainerPorts          []corev1.ContainerPort            "json:\"extraContainerPorts,omitempty\""
 	InitContainers               *PartialInitContainers            "json:\"initContainers,omitempty\""
 	SecretMounts                 []PartialSecretMount              "json:\"secretMounts,omitempty\""
 	Secret                       *PartialSecretConfig              "json:\"secret,omitempty\""
