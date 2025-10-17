@@ -675,9 +675,13 @@ spec:
                   rule: self == oldSelf
               principals:
                 description: |-
-                  Principals defines the list of users assigned to this role.
-                  Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+                  Principals lists Redpanda user principals directly assigned to this role.
+                  The operator manages only principals declared here; RoleBinding aggregation
+                  is not implemented yet. Leave empty to manage membership outside the operator.
+                  Format: Type:Name (e.g., User:alice). If type omitted, defaults to User.
+                  Supported types: currently only User (either explicit 'User:' prefix or no prefix).
                 items:
+                  pattern: ^(User:.+|[^:]+)$
                   type: string
                 maxItems: 1024
                 type: array
@@ -765,6 +769,15 @@ spec:
                 description: Specifies the last observed generation.
                 format: int64
                 type: integer
+              principals:
+                description: |-
+                  Principals is the last successfully synced list of principals for this role.
+                  It mirrors the normalized spec.principals currently supported; RoleBinding
+                  aggregation is not yet implemented.
+                items:
+                  type: string
+                maxItems: 1024
+                type: array
             type: object
         required:
         - spec

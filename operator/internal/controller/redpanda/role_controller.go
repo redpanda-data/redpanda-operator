@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,10 +50,15 @@ func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha
 
 func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (client.Patch, error) {
 	role := request.object
+	// SyncResource ensures the role exists, applies ACLs if Authorization is set,
+	// and synchronizes inline principals from spec.principals. Aggregation from
+	// RoleBindings is not yet implemented.
 	hasManagedACLs, hasManagedRole := role.HasManagedACLs(), role.HasManagedRole()
 	shouldManageACLs, shouldManageRole := role.ShouldManageACLs(), role.ShouldManageRole()
 
-	createPatch := func(err error) (client.Patch, error) {
+	var syncedPrincipals []string // Track what we successfully synced
+
+	createPatch := func(syncedPrincipals []string, err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.RedpandaRole(role.Name, role.Namespace)
 
@@ -68,6 +72,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithObservedGeneration(role.Generation).
 			WithManagedRole(hasManagedRole).
 			WithManagedACLs(hasManagedACLs).
+			WithPrincipals(syncedPrincipals...).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -75,40 +80,41 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 	rolesClient, syncer, hasRole, err := r.roleAndACLClients(ctx, request)
 	if err != nil {
-		return createPatch(err)
+		return createPatch(syncedPrincipals, err)
 	}
 	defer rolesClient.Close()
 	defer syncer.Close()
 
 	if !hasRole && shouldManageRole {
-		if err := rolesClient.Create(ctx, role); err != nil {
-			return createPatch(err)
+		syncedPrincipals, err = rolesClient.Create(ctx, role)
+		if err != nil {
+			return createPatch(syncedPrincipals, err)
 		}
 		hasManagedRole = true
 	}
 
-	if hasRole && !shouldManageRole {
-		if err := rolesClient.Delete(ctx, role); err != nil {
-			return createPatch(err)
+	if hasRole && (len(role.Spec.Principals) > 0 || len(role.Status.Principals) > 0) {
+		syncedPrincipals, err = rolesClient.Update(ctx, role)
+		if err != nil {
+			return createPatch(syncedPrincipals, err)
 		}
-		hasManagedRole = false
 	}
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, role); err != nil {
-			return createPatch(err)
+			return createPatch(syncedPrincipals, err)
 		}
 		hasManagedACLs = true
 	}
 
 	if !shouldManageACLs && hasManagedACLs {
 		if err := syncer.DeleteAll(ctx, role); err != nil {
-			return createPatch(err)
+			return createPatch(syncedPrincipals, err)
 		}
 		hasManagedACLs = false
 	}
 
-	return createPatch(nil)
+	return createPatch(syncedPrincipals, nil)
 }
 
 func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) error {
@@ -167,8 +173,7 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1, inclu
 	factory := internalclient.NewFactory(config, c)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.RedpandaRole{}).
-		Owns(&corev1.Secret{})
+		For(&redpandav1alpha2.RedpandaRole{})
 
 	if includeV1 {
 		enqueueV1Role, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "role_v1", &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})

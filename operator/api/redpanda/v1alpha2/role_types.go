@@ -81,9 +81,14 @@ type RoleSpec struct {
 	// +kubebuilder:validation:XValidation:message="spec.cluster.staticConfiguration.kafka: required value",rule=`!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)`
 	// +required
 	ClusterSource *ClusterSource `json:"cluster"`
-	// Principals defines the list of users assigned to this role.
-	// Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+	// Principals lists Redpanda user principals directly assigned to this role.
+	// The operator manages only principals declared here; RoleBinding aggregation
+	// is not implemented yet. Leave empty to manage membership outside the operator.
+	// Format: Type:Name (e.g., User:alice). If type omitted, defaults to User.
+	// Supported types: currently only User (either explicit 'User:' prefix or no prefix).
 	// +kubebuilder:validation:MaxItems=1024
+	// +kubebuilder:validation:items:Pattern=`^(User:.+|[^:]+)$`
+	// +optional
 	Principals []string `json:"principals,omitempty"`
 	// Authorization rules defined for this role. If specified, the operator will manage ACLs for this role.
 	// If omitted, ACLs should be managed separately using Redpanda's ACL management.
@@ -109,6 +114,12 @@ type RoleStatus struct {
 	// ManagedRole returns whether the role has been created in Redpanda and needs
 	// to be cleaned up.
 	ManagedRole bool `json:"managedRole,omitempty"`
+	// Principals is the last successfully synced list of principals for this role.
+	// It mirrors the normalized spec.principals currently supported; RoleBinding
+	// aggregation is not yet implemented.
+	// +kubebuilder:validation:MaxItems=1024
+	// +optional
+	Principals []string `json:"principals,omitempty"`
 }
 
 // RedpandaRoleList contains a list of Redpanda role objects.
