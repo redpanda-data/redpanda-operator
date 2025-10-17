@@ -12,6 +12,7 @@ resources:
 - bases/cluster.redpanda.com_schemas.yaml
 - bases/cluster.redpanda.com_topics.yaml
 - bases/cluster.redpanda.com_users.yaml
+- bases/cluster.redpanda.com_shadowlinks.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
