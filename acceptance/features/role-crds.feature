@@ -108,3 +108,87 @@ Feature: Role CRDs
     And I delete the CRD role "travis-role"
     Then there should still be role "travis-role" in cluster "sasl"
     And there should be no ACLs for role "travis-role" in cluster "sasl"
+
+  @skip:gke @skip:aks @skip:eks
+  Scenario: Update role principals by removal
+    Given there is no role "update-role" in cluster "sasl"
+    And there are the following pre-existing users in cluster "sasl"
+      | name  | password | mechanism     |
+      | alice | password | SCRAM-SHA-256 |
+      | bob   | password | SCRAM-SHA-256 |
+    When I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: update-role
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      principals:
+        - alice
+        - User:bob
+    """
+    And role "update-role" is successfully synced
+    Then role "update-role" should have members "alice and bob" in cluster "sasl"
+    And role "update-role" should have status principals "User:alice,User:bob"
+    When I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: update-role
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      principals:
+        - alice
+    """
+    And role "update-role" is successfully synced
+    Then role "update-role" should have members "alice" in cluster "sasl"
+    And role "update-role" should not have member "bob" in cluster "sasl"
+    And role "update-role" should have status principals "User:alice"
+
+  @skip:gke @skip:aks @skip:eks
+  Scenario: Manual membership preservation
+    Given there is no role "manual-role" in cluster "sasl"
+    And there are the following pre-existing users in cluster "sasl"
+      | name  | password | mechanism     |
+      | alice | password | SCRAM-SHA-256 |
+      | bob   | password | SCRAM-SHA-256 |
+    When I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: manual-role
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      principals:
+        - alice
+    """
+    And role "manual-role" is successfully synced
+    Then role "manual-role" should have members "alice" in cluster "sasl"
+    And role "manual-role" should have status principals "User:alice"
+    When I manually assign member "bob" to role "manual-role" in cluster "sasl"
+    Then role "manual-role" should have members "alice and bob" in cluster "sasl"
+    When I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: manual-role
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      principals: []
+    """
+    And role "manual-role" is successfully synced
+    Then role "manual-role" should have members "bob" in cluster "sasl"
+    And role "manual-role" should not have member "alice" in cluster "sasl"
+    And role "manual-role" should have status principals ""
