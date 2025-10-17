@@ -11,6 +11,7 @@ package steps
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"time"
 
@@ -258,4 +259,68 @@ func thereIsAPreExistingRole(ctx context.Context, role, version, cluster string)
 
 func thereShouldStillBeRole(ctx context.Context, role, version, cluster string) {
 	versionedClientsForCluster(ctx, version, cluster).ExpectRole(ctx, role)
+}
+
+func roleShouldHaveNoMembersInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	adminClient := clients.RedpandaAdmin(ctx)
+	defer adminClient.Close()
+
+	membersResp, err := adminClient.RoleMembers(ctx, role)
+	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			t.Fatalf("Role %q not found when checking for no members: %v", role, err)
+		}
+		t.Fatalf("Failed to get members for role %q: %v", role, err)
+	}
+
+	require.Empty(t, membersResp.Members, "Role %q should have no members", role)
+}
+
+func iManuallyAssignMemberToRole(ctx context.Context, t framework.TestingT, member, role, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	adminClient := clients.RedpandaAdmin(ctx)
+	defer adminClient.Close()
+
+	// Assign member manually (User principal)
+	_, err := adminClient.AssignRole(ctx, role, []rpadmin.RoleMember{{
+		Name:          member,
+		PrincipalType: "User",
+	}})
+	require.NoError(t, err, "Failed to manually assign member %q to role %q", member, role)
+}
+
+func roleShouldHaveStatusPrincipals(ctx context.Context, t framework.TestingT, role, expected string) {
+	var roleObject redpandav1alpha2.RedpandaRole
+	require.NoError(t, t.Get(ctx, t.ResourceKey(role), &roleObject))
+
+	// Split expected by commas and trim
+	expected = strings.TrimSpace(expected)
+	var expectedList []string
+	if expected != "" {
+		for _, p := range strings.Split(expected, ",") {
+			p = strings.TrimSpace(p)
+			if p != "" {
+				expectedList = append(expectedList, p)
+			}
+		}
+	}
+
+	// Normalize expected (User: prefix if missing)
+	for i, p := range expectedList {
+		if !strings.Contains(p, ":") {
+			expectedList[i] = "User:" + p
+		}
+	}
+
+	// Sort both slices for comparison ignoring order
+	slices.Sort(expectedList)
+	if len(expectedList) == 0 {
+		// normalize nil vs empty slice for comparison
+		expectedList = []string{}
+	}
+	actual := append([]string{}, roleObject.Status.Principals...)
+	slices.Sort(actual)
+
+	require.Equal(t, expectedList, actual, "Status principals mismatch for role %q", role)
 }
