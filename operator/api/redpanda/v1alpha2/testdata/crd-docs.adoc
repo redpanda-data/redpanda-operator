@@ -2893,8 +2893,11 @@ RoleSpec defines the configuration of a Redpanda role.
 | Field | Description | Default | Validation
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the role should be created. +
 It is used in constructing the client created to configure a cluster. + |  | 
-| *`principals`* __string array__ | Principals defines the list of users assigned to this role. +
-Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. + |  | MaxItems: 1024 +
+| *`principals`* __string array__ | Principals lists Redpanda user principals directly assigned to this role. +
+The operator manages only principals declared here; RoleBinding aggregation +
+is not implemented yet. Leave empty to manage membership outside the operator. +
+Format: Type:Name (e.g., User:alice). If type omitted, defaults to User. +
+Supported types: currently only User (either explicit 'User:' prefix or no prefix). + |  | MaxItems: 1024 +
 
 | *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]__ | Authorization rules defined for this role. If specified, the operator will manage ACLs for this role. +
 If omitted, ACLs should be managed separately using Redpanda's ACL management. + |  | 
@@ -2924,6 +2927,10 @@ RoleStatus defines the observed state of a Redpanda role
 to be cleaned up. + |  | 
 | *`managedRole`* __boolean__ | ManagedRole returns whether the role has been created in Redpanda and needs +
 to be cleaned up. + |  | 
+| *`principals`* __string array__ | Principals is the last successfully synced list of principals for this role. +
+It mirrors the normalized spec.principals currently supported; RoleBinding +
+aggregation is not yet implemented. + |  | MaxItems: 1024 +
+
 |===
 
 
