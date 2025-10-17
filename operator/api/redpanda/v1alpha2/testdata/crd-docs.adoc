@@ -940,6 +940,7 @@ ConsoleCreateObj represents configuration options for creating Kubernetes object
 | *`extraVolumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volume-v1-core[$$Volume$$] array__ |  |  | 
 | *`extraVolumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volumemount-v1-core[$$VolumeMount$$] array__ |  |  | 
 | *`extraContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#container-v1-core[$$Container$$] array__ |  |  | 
+| *`extraContainerPorts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#containerport-v1-core[$$ContainerPort$$] array__ |  |  | 
 | *`secretMounts`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretmount[$$SecretMount$$] array__ |  |  | 
 | *`secret`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretconfig[$$SecretConfig$$]__ |  |  | 
 | *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ |  |  | 

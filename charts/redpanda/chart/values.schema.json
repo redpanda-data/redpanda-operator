@@ -1015,6 +1015,37 @@
         "enabled": {
           "type": "boolean"
         },
+        "extraContainerPorts": {
+          "oneOf": [
+            {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "containerPort": {
+                    "type": "integer"
+                  },
+                  "hostIP": {
+                    "type": "string"
+                  },
+                  "hostPort": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "protocol": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "extraContainers": {
           "oneOf": [
             {
