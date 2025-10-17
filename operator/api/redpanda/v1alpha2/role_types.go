@@ -82,8 +82,12 @@ type RoleSpec struct {
 	// +required
 	ClusterSource *ClusterSource `json:"cluster"`
 	// Principals defines the list of users assigned to this role.
+	// This field is optional. Leave empty to manage role membership manually via RoleBindings or outside the operator.
 	// Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
-	// +kubebuilder:validation:MaxItems=1024
+	// Only "User:" prefix or no prefix is currently supported.
+	// +kubebuilder:validation:MaxItems=4096
+	// +kubebuilder:validation:items:Pattern=`^(User:.+|[^:]+)$`
+	// +optional
 	Principals []string `json:"principals,omitempty"`
 	// Authorization rules defined for this role. If specified, the operator will manage ACLs for this role.
 	// If omitted, ACLs should be managed separately using Redpanda's ACL management.
@@ -109,6 +113,12 @@ type RoleStatus struct {
 	// ManagedRole returns whether the role has been created in Redpanda and needs
 	// to be cleaned up.
 	ManagedRole bool `json:"managedRole,omitempty"`
+	// Principals contains the list of principals that were last successfully
+	// synced to Redpanda. This includes principals from both the Role's spec
+	// and all RoleBindings that reference this Role.
+	// +kubebuilder:validation:MaxItems=1024
+	// +optional
+	Principals []string `json:"principals,omitempty"`
 }
 
 // RedpandaRoleList contains a list of Redpanda role objects.
