@@ -125,13 +125,13 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 							SecurityContext: &state.Values.SecurityContext,
 							Image:           containerImage(state),
 							ImagePullPolicy: state.Values.Image.PullPolicy,
-							Ports: []corev1.ContainerPort{
+							Ports: append([]corev1.ContainerPort{
 								{
 									Name:          "http",
 									ContainerPort: ContainerPort(state),
 									Protocol:      corev1.ProtocolTCP,
 								},
-							},
+							}, state.Values.ExtraContainerPorts...),
 							VolumeMounts: volumeMounts,
 							LivenessProbe: &corev1.Probe{
 								InitialDelaySeconds: state.Values.LivenessProbe.InitialDelaySeconds, // TODO what to do with this??

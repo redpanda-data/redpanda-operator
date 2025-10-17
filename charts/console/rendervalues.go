@@ -50,6 +50,7 @@ type RenderValues struct {
 	ExtraVolumes      []corev1.Volume           `json:"extraVolumes"`
 	ExtraVolumeMounts []corev1.VolumeMount      `json:"extraVolumeMounts"`
 	ExtraContainers   []corev1.Container        `json:"extraContainers"`
+	ExtraContainerPorts []corev1.ContainerPort  `json:"extraContainerPorts"`
 	InitContainers    InitContainers            `json:"initContainers"`
 	SecretMounts      []SecretMount             `json:"secretMounts"`
 	Secret            SecretConfig              `json:"secret"`
