@@ -22,6 +22,7 @@ type RoleStatusApplyConfiguration struct {
 	Conditions         []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 	ManagedACLs        *bool                            `json:"managedAcls,omitempty"`
 	ManagedRole        *bool                            `json:"managedRole,omitempty"`
+	Principals         []string                         `json:"principals,omitempty"`
 }
 
 // RoleStatusApplyConfiguration constructs a declarative configuration of the RoleStatus type for use with
@@ -64,5 +65,15 @@ func (b *RoleStatusApplyConfiguration) WithManagedACLs(value bool) *RoleStatusAp
 // If called multiple times, the ManagedRole field is set to the value of the last call.
 func (b *RoleStatusApplyConfiguration) WithManagedRole(value bool) *RoleStatusApplyConfiguration {
 	b.ManagedRole = &value
+	return b
+}
+
+// WithPrincipals adds the given value to the Principals field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Principals field.
+func (b *RoleStatusApplyConfiguration) WithPrincipals(values ...string) *RoleStatusApplyConfiguration {
+	for i := range values {
+		b.Principals = append(b.Principals, values[i])
+	}
 	return b
 }
