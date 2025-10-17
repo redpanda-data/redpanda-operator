@@ -166,6 +166,14 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - redpandarolebindings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
   - redpandaroles
   - schemas
   - shadowlinks

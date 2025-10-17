@@ -30,9 +30,12 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+
+	reconciler := &RoleReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
-	})
+	}
+	environment := InitializeResourceReconcilerTest(t, ctx, reconciler)
+	reconciler.client = environment.Factory.Client
 
 	authorizationSpec := &redpandav1alpha2.RoleAuthorizationSpec{
 		ACLs: []redpandav1alpha2.ACLRule{{
@@ -228,9 +231,11 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+	reconciler := &RoleReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
-	})
+	}
+	environment := InitializeResourceReconcilerTest(t, ctx, reconciler)
+	reconciler.client = environment.Factory.Client
 
 	// Test different role configurations
 	testCases := []struct {
@@ -376,9 +381,11 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+	reconciler := &RoleReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
-	})
+	}
+	environment := InitializeResourceReconcilerTest(t, ctx, reconciler)
+	reconciler.client = environment.Factory.Client
 
 	role := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
@@ -541,4 +548,235 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, role)))
 	})
+}
+
+// TestRolePrincipalStatusTracking tests status.principals field tracking
+// in a comprehensive table-driven test.
+func TestRolePrincipalStatusTracking(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	reconciler := &RoleReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	}
+	environment := InitializeResourceReconcilerTest(t, ctx, reconciler)
+	reconciler.client = environment.Factory.Client
+
+	tests := []struct {
+		name                      string
+		initialPrincipals         []string
+		updatePrincipals          []string // non-nil means do update
+		authorization             *redpandav1alpha2.RoleAuthorizationSpec
+		addRoleBinding            bool
+		roleBindingPrincipals     []string
+		expectedInitialPrincipals []string
+		expectedFinalPrincipals   []string
+		validateRedpandaInitial   []string // member names in Redpanda after create
+		validateRedpandaFinal     []string // member names after update (if any)
+	}{
+		{
+			name:                      "status.principals populated on create",
+			initialPrincipals:         []string{"User:alice", "User:bob"},
+			expectedInitialPrincipals: []string{"User:alice", "User:bob"},
+			validateRedpandaInitial:   []string{"alice", "bob"},
+		},
+		{
+			name:                      "status.principals updated on change",
+			initialPrincipals:         []string{"User:alice"},
+			updatePrincipals:          []string{"User:bob", "User:charlie"},
+			expectedInitialPrincipals: []string{"User:alice"},
+			expectedFinalPrincipals:   []string{"User:bob", "User:charlie"},
+			validateRedpandaInitial:   []string{"alice"},
+			validateRedpandaFinal:     []string{"bob", "charlie"},
+		},
+		{
+			name:              "no principals - status.principals empty",
+			initialPrincipals: []string{},
+			authorization: &redpandav1alpha2.RoleAuthorizationSpec{
+				ACLs: []redpandav1alpha2.ACLRule{{
+					Type: redpandav1alpha2.ACLTypeAllow,
+					Resource: redpandav1alpha2.ACLResourceSpec{
+						Type: redpandav1alpha2.ResourceTypeTopic,
+						Name: "test-topic",
+					},
+					Operations: []redpandav1alpha2.ACLOperation{
+						redpandav1alpha2.ACLOperationRead,
+					},
+				}},
+			},
+			expectedInitialPrincipals: []string{},
+			validateRedpandaInitial:   []string{},
+		},
+		{
+			name:                      "status.principals includes rolebinding principals",
+			initialPrincipals:         []string{"User:alice"},
+			addRoleBinding:            true,
+			roleBindingPrincipals:     []string{"User:bob", "User:charlie"},
+			expectedInitialPrincipals: []string{"User:alice"},
+			expectedFinalPrincipals:   []string{"User:alice", "User:bob", "User:charlie"},
+			validateRedpandaInitial:   []string{"alice"},
+			validateRedpandaFinal:     []string{"alice", "bob", "charlie"},
+		},
+		{
+			name:                      "transition from managed to unmanaged principals",
+			initialPrincipals:         []string{"User:dave"},
+			updatePrincipals:          []string{}, // Remove all principals (enter manual mode)
+			expectedInitialPrincipals: []string{"User:dave"},
+			expectedFinalPrincipals:   []string{},
+			validateRedpandaInitial:   []string{"dave"},
+			validateRedpandaFinal:     []string{}, // Cleaned up when entering manual mode
+		},
+		{
+			name:                      "rolebinding without inline principals",
+			initialPrincipals:         []string{},
+			addRoleBinding:            true,
+			roleBindingPrincipals:     []string{"User:charlie"},
+			expectedInitialPrincipals: []string{},
+			expectedFinalPrincipals:   []string{"User:charlie"},
+			validateRedpandaInitial:   []string{},
+			validateRedpandaFinal:     []string{"charlie"},
+		},
+		{
+			name:                      "unprefixed principals normalized to User type",
+			initialPrincipals:         []string{"alice@test.foo", "bob.smith"},
+			expectedInitialPrincipals: []string{"User:alice@test.foo", "User:bob.smith"}, // Normalized with prefix
+			validateRedpandaInitial:   []string{"alice@test.foo", "bob.smith"},
+		},
+		{
+			name:                      "duplicate principals with and without prefix deduplicated in status",
+			initialPrincipals:         []string{"alice", "User:alice", "User:bob", "bob"},
+			expectedInitialPrincipals: []string{"User:alice", "User:bob"}, // Only 2 unique principals
+			validateRedpandaInitial:   []string{"alice", "bob"},           // Only 2 members in Redpanda
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			role := &redpandav1alpha2.RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: metav1.NamespaceDefault,
+					Name:      "role-status-" + strconv.Itoa(int(time.Now().UnixNano())),
+				},
+				Spec: redpandav1alpha2.RoleSpec{
+					ClusterSource: environment.ClusterSourceValid,
+					Principals:    tt.initialPrincipals,
+					Authorization: tt.authorization,
+				},
+			}
+
+			key := client.ObjectKeyFromObject(role)
+			req := ctrl.Request{NamespacedName: key}
+
+			// Create role with initial configuration
+			require.NoError(t, environment.Factory.Create(ctx, role))
+			_, err := environment.Reconciler.Reconcile(ctx, req)
+			require.NoError(t, err)
+
+			// Validate initial status
+			require.NoError(t, environment.Factory.Get(ctx, key, role))
+			require.ElementsMatch(t, tt.expectedInitialPrincipals, role.Status.Principals, "initial status.principals should match expected")
+
+			// Validate initial Redpanda state if specified
+			if tt.validateRedpandaInitial != nil {
+				adminClient, err := environment.Factory.RedpandaAdminClient(ctx, role)
+				require.NoError(t, err)
+				defer adminClient.Close()
+
+				members, err := adminClient.RoleMembers(ctx, role.Name)
+				require.NoError(t, err)
+				require.Len(t, members.Members, len(tt.validateRedpandaInitial), "Redpanda should have expected number of members initially")
+
+				if len(tt.validateRedpandaInitial) > 0 {
+					actualMembers := make([]string, len(members.Members))
+					for i, member := range members.Members {
+						actualMembers[i] = member.Name
+					}
+					require.ElementsMatch(t, tt.validateRedpandaInitial, actualMembers, "Redpanda members should match expected initially")
+				}
+			}
+
+			// Handle RoleBinding if specified
+			var rb *redpandav1alpha2.RedpandaRoleBinding
+			if tt.addRoleBinding {
+				rb = &redpandav1alpha2.RedpandaRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: metav1.NamespaceDefault,
+						Name:      "binding-" + role.Name,
+					},
+					Spec: redpandav1alpha2.RedpandaRoleBindingSpec{
+						RoleRef: redpandav1alpha2.RoleRef{
+							Name: role.Name,
+						},
+						Principals: tt.roleBindingPrincipals,
+					},
+				}
+				require.NoError(t, environment.Factory.Create(ctx, rb))
+
+				// Reconcile again to aggregate RoleBinding principals
+				_, err = environment.Reconciler.Reconcile(ctx, req)
+				require.NoError(t, err)
+
+				require.NoError(t, environment.Factory.Get(ctx, key, role))
+				require.ElementsMatch(t, tt.expectedFinalPrincipals, role.Status.Principals, "status.principals should include RoleBinding principals")
+
+				// Validate final Redpanda state after RoleBinding
+				if tt.validateRedpandaFinal != nil {
+					adminClient, err := environment.Factory.RedpandaAdminClient(ctx, role)
+					require.NoError(t, err)
+					defer adminClient.Close()
+
+					members, err := adminClient.RoleMembers(ctx, role.Name)
+					require.NoError(t, err)
+					require.Len(t, members.Members, len(tt.validateRedpandaFinal), "Redpanda should have expected number of members after RoleBinding")
+
+					if len(tt.validateRedpandaFinal) > 0 {
+						actualMembers := make([]string, len(members.Members))
+						for i, member := range members.Members {
+							actualMembers[i] = member.Name
+						}
+						require.ElementsMatch(t, tt.validateRedpandaFinal, actualMembers, "Redpanda members should match expected after RoleBinding")
+					}
+				}
+			}
+
+			// Handle update if specified
+			if tt.updatePrincipals != nil {
+				role.Spec.Principals = tt.updatePrincipals
+				require.NoError(t, environment.Factory.Update(ctx, role))
+				_, err = environment.Reconciler.Reconcile(ctx, req)
+				require.NoError(t, err)
+
+				require.NoError(t, environment.Factory.Get(ctx, key, role))
+				require.ElementsMatch(t, tt.expectedFinalPrincipals, role.Status.Principals, "status.principals should update correctly")
+
+				// Validate final Redpanda state after update
+				if tt.validateRedpandaFinal != nil {
+					adminClient, err := environment.Factory.RedpandaAdminClient(ctx, role)
+					require.NoError(t, err)
+					defer adminClient.Close()
+
+					members, err := adminClient.RoleMembers(ctx, role.Name)
+					require.NoError(t, err)
+					require.Len(t, members.Members, len(tt.validateRedpandaFinal), "Redpanda should have expected number of members after update")
+
+					if len(tt.validateRedpandaFinal) > 0 {
+						actualMembers := make([]string, len(members.Members))
+						for i, member := range members.Members {
+							actualMembers[i] = member.Name
+						}
+						require.ElementsMatch(t, tt.validateRedpandaFinal, actualMembers, "Redpanda members should match expected after update")
+					}
+				}
+			}
+
+			// Cleanup
+			if rb != nil {
+				require.NoError(t, environment.Factory.Delete(ctx, rb))
+			}
+			require.NoError(t, environment.Factory.Delete(ctx, role))
+			_, err = environment.Reconciler.Reconcile(ctx, req)
+			require.NoError(t, err)
+		})
+	}
 }
