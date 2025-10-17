@@ -16,6 +16,7 @@
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebinding[$$RedpandaRoleBinding$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic[$$Topic$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user[$$User$$]
@@ -2672,6 +2673,93 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebinding"]
+==== RedpandaRoleBinding
+
+
+
+RedpandaRoleBinding defines the CRD for binding principals to a Redpanda role.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `RedpandaRoleBinding` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebindingspec[$$RedpandaRoleBindingSpec$$]__ | Defines the desired state of the RoleBinding. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebindingstatus[$$RedpandaRoleBindingStatus$$]__ | Represents the current status of the RoleBinding. + | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Synced]] } | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebindingspec"]
+==== RedpandaRoleBindingSpec
+
+
+
+RedpandaRoleBindingSpec defines the configuration of a RoleBinding.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebinding[$$RedpandaRoleBinding$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`roleRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleref[$$RoleRef$$]__ | RoleRef references the Role this binding applies to. +
+The referenced Role must exist in the same namespace. + |  | 
+| *`principals`* __string array__ | Principals defines the list of users assigned to the referenced role. +
+At least one principal is required. A RoleBinding without principals serves no purpose. +
+Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. +
+These principals are merged with any principals from the Role's own principals field. +
+Only "User:" prefix or no prefix is currently supported. + |  | MaxItems: 1024 +
+MinItems: 1 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebindingstatus"]
+==== RedpandaRoleBindingStatus
+
+
+
+RedpandaRoleBindingStatus defines the observed state of a RoleBinding
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebinding[$$RedpandaRoleBinding$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the RoleBinding. +
+Supported condition type: +
+- "Synced": Indicates whether the RoleBinding's principals have been validated +
+and synced to the referenced Role. This will be False if the Role doesn't exist +
+or if principals haven't been synced yet. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandasecrets"]
 ==== RedpandaSecrets
 
@@ -2873,6 +2961,28 @@ RoleAuthorizationSpec defines authorization rules for this role.
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleref"]
+==== RoleRef
+
+
+
+RoleRef references a Role by name.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarolebindingspec[$$RedpandaRoleBindingSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name of the Role. + |  | MinLength: 1 +
+
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec"]
 ==== RoleSpec
 
@@ -2893,7 +3003,9 @@ RoleSpec defines the configuration of a Redpanda role.
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the role should be created. +
 It is used in constructing the client created to configure a cluster. + |  | 
 | *`principals`* __string array__ | Principals defines the list of users assigned to this role. +
-Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. + |  | MaxItems: 1024 +
+This field is optional. Leave empty to manage role membership manually via RoleBindings or outside the operator. +
+Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. +
+Only "User:" prefix or no prefix is currently supported. + |  | MaxItems: 4096 +
 
 | *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]__ | Authorization rules defined for this role. If specified, the operator will manage ACLs for this role. +
 If omitted, ACLs should be managed separately using Redpanda's ACL management. + |  | 
@@ -2923,6 +3035,10 @@ RoleStatus defines the observed state of a Redpanda role
 to be cleaned up. + |  | 
 | *`managedRole`* __boolean__ | ManagedRole returns whether the role has been created in Redpanda and needs +
 to be cleaned up. + |  | 
+| *`principals`* __string array__ | Principals contains the list of principals that were last successfully +
+synced to Redpanda. This includes principals from both the Role's spec +
+and all RoleBindings that reference this Role. + |  | MaxItems: 1024 +
+
 |===
 
 

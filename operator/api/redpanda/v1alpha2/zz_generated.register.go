@@ -61,6 +61,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Redpanda{},
 		&RedpandaList{},
 		&RedpandaRole{},
+		&RedpandaRoleBinding{},
+		&RedpandaRoleBindingList{},
 		&RedpandaRoleList{},
 		&Schema{},
 		&SchemaList{},

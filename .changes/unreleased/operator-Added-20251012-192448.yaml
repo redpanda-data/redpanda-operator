@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: "Add `RoleBinding` resource to manage Redpanda Role <-> User associations"
+time: 2025-10-12T19:24:48.819519575+02:00
