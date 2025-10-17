@@ -493,7 +493,7 @@ func Run(
 	}
 
 	if err := redpandacontrollers.SetupRoleController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Role")
+		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
 
