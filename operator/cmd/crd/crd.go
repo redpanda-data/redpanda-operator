@@ -34,6 +34,7 @@ var (
 		crds.Console(),
 		crds.Redpanda(),
 		crds.Role(),
+		crds.RoleBinding(),
 		crds.Schema(),
 		crds.Topic(),
 		crds.User(),
