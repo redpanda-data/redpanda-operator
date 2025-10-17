@@ -1,4 +1,4 @@
 project: charts/console
 kind: Added
-body: Adding extraContainerPorts for console deloyment to add extra container ports.
+body: Added the ability to specify additional container ports on the rendered Deployment.
 time: 2025-10-17T11:26:46.370791-06:00
