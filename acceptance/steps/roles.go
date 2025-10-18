@@ -62,11 +62,27 @@ func iDeleteTheCRDRole(ctx context.Context, t framework.TestingT, role string) {
 			t.Logf("Role %q already deleted", role)
 			return
 		}
-		t.Fatalf("Error deleting role %q: %v", role, err)
+		// unexpected error
+		t.Fatalf("Error fetching role %q for deletion: %v", role, err)
 	}
 
 	t.Logf("Found role %q, deleting it", role)
 	require.NoError(t, t.Delete(ctx, &roleObject))
+
+	// Wait for the CRD to actually disappear to avoid leakage between scenarios
+	require.Eventually(t, func() bool {
+		// reuse the same object variable
+		getErr := t.Get(ctx, t.ResourceKey(role), &roleObject)
+		if apierrors.IsNotFound(getErr) {
+			return true
+		}
+		if getErr != nil {
+			// transient API errors: keep retrying
+			return false
+		}
+		return false
+	}, 30*time.Second, 1*time.Second, "Role %q was not deleted from the API server in time", role)
+
 	t.Logf("Successfully deleted role %q CRD", role)
 }
 
@@ -75,29 +91,30 @@ func roleShouldExistInCluster(ctx context.Context, t framework.TestingT, role, v
 }
 
 func thereShouldBeNoRoleInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
-	t.Logf("Checking that role %q does not exist in cluster %q", role, cluster)
-
-	// Add retry logic for role deletion timing issues
-	require.Eventually(t, func() bool {
-		defer func() {
-			if r := recover(); r != nil {
-				t.Logf("Recovered from panic during role check: %v", r)
-			}
-		}()
-		versionedClientsForCluster(ctx, version, cluster).ExpectNoRole(ctx, role)
-		return true
-	}, 60*time.Second, 5*time.Second, "Role %q should be deleted from cluster %q", role, cluster)
+	// Reuse existing polling logic inside ExpectNoRole instead of custom loop
+	versionedClientsForCluster(ctx, version, cluster).ExpectNoRole(ctx, role)
 }
 
-func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT, role string, members string, version, cluster string) {
+// helper to retrieve list of role member names
+func getRoleMembers(ctx context.Context, t framework.TestingT, role, version, cluster string) []string {
 	clients := versionedClientsForCluster(ctx, version, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
 	defer adminClient.Close()
+	resp, err := adminClient.RoleMembers(ctx, role)
+	if err != nil {
+		t.Fatalf("Failed to get members for role %q: %v", role, err)
+	}
+	var members []string
+	for _, m := range resp.Members {
+		members = append(members, m.Name)
+	}
+	return members
+}
 
+func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT, role string, members string, version, cluster string) {
 	// Parse the members string (e.g., "alice" or "alice" and "bob")
 	var expectedMembers []string
 	if strings.Contains(members, " and ") {
-		// Handle "alice" and "bob" format
 		parts := strings.Split(members, " and ")
 		for _, part := range parts {
 			part = strings.Trim(part, `"`)
@@ -106,124 +123,86 @@ func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT
 			}
 		}
 	} else {
-		// Handle single member
 		expectedMembers = []string{strings.Trim(members, `"`)}
 	}
 
-	// Get role members from Redpanda
-	membersResp, err := adminClient.RoleMembers(ctx, role)
-	if err != nil {
-		t.Fatalf("Failed to get members for role %q: %v", role, err)
-	}
-
-	// Check that expected members are present
-	actualMembers := make(map[string]bool)
-	for _, member := range membersResp.Members {
-		actualMembers[member.Name] = true
-	}
-
-	// Verify all expected members are present
-	for _, expectedMember := range expectedMembers {
-		require.True(t, actualMembers[expectedMember],
-			"Expected member %q not found in role %q", expectedMember, role)
-	}
-
-	// Verify we have exactly the expected number of members
-	require.Equal(t, len(expectedMembers), len(actualMembers),
-		"Role %q should have exactly %d members, got %d", role, len(expectedMembers), len(actualMembers))
+	require.Eventually(t, func() bool {
+		actualMembers := getRoleMembers(ctx, t, role, version, cluster)
+		if len(actualMembers) != len(expectedMembers) {
+			return false
+		}
+		actualSet := make(map[string]struct{}, len(actualMembers))
+		for _, m := range actualMembers {
+			actualSet[m] = struct{}{}
+		}
+		for _, em := range expectedMembers {
+			if _, ok := actualSet[em]; !ok {
+				return false
+			}
+		}
+		return true
+	}, 30*time.Second, 1*time.Second, "Role %q did not have expected members %v in time", role, expectedMembers)
 }
 
 func roleShouldNotHaveMemberInCluster(ctx context.Context, t framework.TestingT, role, member, version, cluster string) {
-	clients := versionedClientsForCluster(ctx, version, cluster)
-	adminClient := clients.RedpandaAdmin(ctx)
-	defer adminClient.Close()
+	require.Eventually(t, func() bool {
+		actualMembers := getRoleMembers(ctx, t, role, version, cluster)
+		return !slices.Contains(actualMembers, member)
+	}, 30*time.Second, 1*time.Second, "Member %q still present in role %q", member, role)
+}
 
-	// Get role members from Redpanda
-	membersResp, err := adminClient.RoleMembers(ctx, role)
-	if err != nil {
-		t.Fatalf("Failed to get members for role %q: %v", role, err)
-	}
-
-	// Check that the member is not present
-	for _, m := range membersResp.Members {
-		require.NotEqual(t, member, m.Name,
-			"Member %q should not be in role %q", member, role)
-	}
+func roleShouldHaveNoMembersInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
+	require.Eventually(t, func() bool {
+		actualMembers := getRoleMembers(ctx, t, role, version, cluster)
+		return len(actualMembers) == 0
+	}, 30*time.Second, 1*time.Second, "Role %q still has members", role)
 }
 
 func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework.TestingT, role, pattern, version, cluster string) {
 	t.Logf("Checking ACLs for role %q in cluster %q", role, cluster)
 
-	// Add a small delay to ensure cluster is fully ready
-	time.Sleep(5 * time.Second)
-
 	clients := versionedClientsForCluster(ctx, version, cluster)
-	t.Logf("Created cluster clients for %q", cluster)
-
 	aclClient := clients.ACLs(ctx)
 	defer aclClient.Close()
-	t.Logf("Created ACL client for cluster %q", cluster)
 
-	// Create a role object for ACL checking
-	roleObj := &redpandav1alpha2.RedpandaRole{
-		ObjectMeta: metav1.ObjectMeta{Name: role},
-	}
+	roleObj := &redpandav1alpha2.RedpandaRole{ObjectMeta: metav1.ObjectMeta{Name: role}}
 
-	// List ACLs for the role
-	t.Logf("Listing ACLs for role %q principal %q", role, roleObj.GetPrincipal())
+	require.Eventually(t, func() bool {
+		rules, err := aclClient.ListACLs(ctx, roleObj.GetPrincipal())
+		if err != nil {
+			return false
+		}
+		for _, rule := range rules {
+			if rule.Resource.Type == redpandav1alpha2.ResourceTypeTopic &&
+				rule.Resource.Name == pattern &&
+				ptr.Deref(rule.Resource.PatternType, redpandav1alpha2.PatternTypeLiteral) == redpandav1alpha2.PatternTypePrefixed {
+				return true
+			}
+		}
+		return false
+	}, 30*time.Second, 1*time.Second, "Role %q did not have ACL for topic pattern %q in time", role, pattern)
+}
+
+// unified helper for asserting zero ACLs for a role principal
+func assertNoACLsForRole(ctx context.Context, t framework.TestingT, role, version, cluster, message string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	aclClient := clients.ACLs(ctx)
+	defer aclClient.Close()
+
+	roleObj := &redpandav1alpha2.RedpandaRole{ObjectMeta: metav1.ObjectMeta{Name: role}}
 	rules, err := aclClient.ListACLs(ctx, roleObj.GetPrincipal())
 	if err != nil {
 		t.Fatalf("Failed to list ACLs for role %q: %v", role, err)
 	}
-	require.NotEmpty(t, rules, "Role %q should have ACLs", role)
-
-	// Check for topic pattern ACL
-	found := false
-	for _, rule := range rules {
-		if rule.Resource.Type == redpandav1alpha2.ResourceTypeTopic &&
-			rule.Resource.Name == pattern &&
-			ptr.Deref(rule.Resource.PatternType, redpandav1alpha2.PatternTypeLiteral) == redpandav1alpha2.PatternTypePrefixed {
-			found = true
-			break
-		}
-	}
-	require.True(t, found, "Role %q should have ACL for topic pattern %q", role, pattern)
+	require.Empty(t, rules, message, role)
 }
 
 func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
-	clients := versionedClientsForCluster(ctx, version, cluster)
-	aclClient := clients.ACLs(ctx)
-	defer aclClient.Close()
-
-	// Create a role object for ACL checking
-	roleObj := &redpandav1alpha2.RedpandaRole{
-		ObjectMeta: metav1.ObjectMeta{Name: role},
-	}
-
-	// List ACLs for the role
-	rules, err := aclClient.ListACLs(ctx, roleObj.GetPrincipal())
-	if err != nil {
-		t.Fatalf("Failed to list ACLs for role %q: %v", role, err)
-	}
-	require.Empty(t, rules, "Role %q should have no managed ACLs", role)
+	assertNoACLsForRole(ctx, t, role, version, cluster, "Role %q should have no managed ACLs")
 }
 
 func thereShouldBeNoACLsForRoleInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
-	clients := versionedClientsForCluster(ctx, version, cluster)
-	aclClient := clients.ACLs(ctx)
-	defer aclClient.Close()
-
-	// Create a role object for ACL checking
-	roleObj := &redpandav1alpha2.RedpandaRole{
-		ObjectMeta: metav1.ObjectMeta{Name: role},
-	}
-
-	// List ACLs for the role
-	rules, err := aclClient.ListACLs(ctx, roleObj.GetPrincipal())
-	if err != nil {
-		t.Fatalf("Failed to list ACLs for role %q: %v", role, err)
-	}
-	require.Empty(t, rules, "There should be no ACLs for role %q", role)
+	assertNoACLsForRole(ctx, t, role, version, cluster, "There should be no ACLs for role %q")
 }
 
 func thereIsNoRole(ctx context.Context, role, version, cluster string) {
@@ -261,22 +240,6 @@ func thereShouldStillBeRole(ctx context.Context, role, version, cluster string) 
 	versionedClientsForCluster(ctx, version, cluster).ExpectRole(ctx, role)
 }
 
-func roleShouldHaveNoMembersInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
-	clients := versionedClientsForCluster(ctx, version, cluster)
-	adminClient := clients.RedpandaAdmin(ctx)
-	defer adminClient.Close()
-
-	membersResp, err := adminClient.RoleMembers(ctx, role)
-	if err != nil {
-		if strings.Contains(err.Error(), "404") {
-			t.Fatalf("Role %q not found when checking for no members: %v", role, err)
-		}
-		t.Fatalf("Failed to get members for role %q: %v", role, err)
-	}
-
-	require.Empty(t, membersResp.Members, "Role %q should have no members", role)
-}
-
 func iManuallyAssignMemberToRole(ctx context.Context, t framework.TestingT, member, role, version, cluster string) {
 	clients := versionedClientsForCluster(ctx, version, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
@@ -291,10 +254,7 @@ func iManuallyAssignMemberToRole(ctx context.Context, t framework.TestingT, memb
 }
 
 func roleShouldHaveStatusPrincipals(ctx context.Context, t framework.TestingT, role, expected string) {
-	var roleObject redpandav1alpha2.RedpandaRole
-	require.NoError(t, t.Get(ctx, t.ResourceKey(role), &roleObject))
-
-	// Split expected by commas and trim
+	// Parse expected principals
 	expected = strings.TrimSpace(expected)
 	var expectedList []string
 	if expected != "" {
@@ -305,22 +265,31 @@ func roleShouldHaveStatusPrincipals(ctx context.Context, t framework.TestingT, r
 			}
 		}
 	}
-
-	// Normalize expected (User: prefix if missing)
 	for i, p := range expectedList {
 		if !strings.Contains(p, ":") {
 			expectedList[i] = "User:" + p
 		}
 	}
-
-	// Sort both slices for comparison ignoring order
 	slices.Sort(expectedList)
 	if len(expectedList) == 0 {
-		// normalize nil vs empty slice for comparison
 		expectedList = []string{}
 	}
-	actual := append([]string{}, roleObject.Status.Principals...)
-	slices.Sort(actual)
 
-	require.Equal(t, expectedList, actual, "Status principals mismatch for role %q", role)
+	require.Eventually(t, func() bool {
+		var roleObject redpandav1alpha2.RedpandaRole
+		if err := t.Get(ctx, t.ResourceKey(role), &roleObject); err != nil {
+			return false
+		}
+		actual := append([]string{}, roleObject.Status.Principals...)
+		slices.Sort(actual)
+		if len(actual) != len(expectedList) {
+			return false
+		}
+		for i := range actual {
+			if actual[i] != expectedList[i] {
+				return false
+			}
+		}
+		return true
+	}, 30*time.Second, 1*time.Second, "Status principals mismatch for role %q", role)
 }
