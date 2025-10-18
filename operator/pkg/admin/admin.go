@@ -199,6 +199,8 @@ type AdminAPIClient interface {
 	UpdateRoleMembership(ctx context.Context, roleName string, add, remove []rpadmin.RoleMember, dryRun bool) (rpadmin.PatchRoleResponse, error)
 	RoleMembers(ctx context.Context, roleName string) (rpadmin.RoleMemberResponse, error)
 
+	GetLeaderID(ctx context.Context) (*int, error)
+
 	Close()
 }
 

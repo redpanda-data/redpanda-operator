@@ -167,6 +167,7 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 	}
 
 	namespace := r.Release.Namespace
+	// TODO Should the prefix be included in the TLS Server Name?
 	serverName := InternalDomain(r)
 
 	rootCertName, rootCertKey, clientCertName := certificatesFor(r, listener.Cert)

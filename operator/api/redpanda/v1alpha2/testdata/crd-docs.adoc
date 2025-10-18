@@ -2251,6 +2251,10 @@ RPC configures settings for the RPC API listeners.
 | Field | Description | Default | Validation
 | *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of +
+Services. This field accepts a string template that dynamically +
+constructs Service addresses based on various parameters such as Service +
+name and port number. + |  | 
 |===
 
 
