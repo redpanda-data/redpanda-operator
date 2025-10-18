@@ -11,6 +11,8 @@ package roles
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"os"
 	"strconv"
 	"testing"
@@ -68,7 +70,8 @@ func TestClient(t *testing.T) {
 		roleName := "test-role-" + strconv.Itoa(int(time.Now().UnixNano()))
 		role := &redpandav1alpha2.RedpandaRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: roleName,
+				Name:      roleName,
+				Namespace: metav1.NamespaceDefault,
 			},
 			Spec: redpandav1alpha2.RoleSpec{
 				Principals: []string{"User:testuser1", "User:testuser2"},
@@ -82,8 +85,9 @@ func TestClient(t *testing.T) {
 		})
 
 		t.Run("CreateRole", func(t *testing.T) {
-			err := rolesClient.Create(ctx, role)
+			principals, err := rolesClient.Create(ctx, role)
 			require.NoError(t, err)
+			require.ElementsMatch(t, []string{"User:testuser1", "User:testuser2"}, principals)
 		})
 
 		t.Run("ExistsAfterCreate", func(t *testing.T) {
@@ -93,24 +97,67 @@ func TestClient(t *testing.T) {
 		})
 
 		t.Run("UpdateRoleMembership", func(t *testing.T) {
-			// Update principals
+			// Update principals and set status to simulate what controller would do
 			role.Spec.Principals = []string{"User:newuser1", "User:newuser2", "User:newuser3"}
-			err := rolesClient.Update(ctx, role)
+			role.Status.Principals = []string{"User:testuser1", "User:testuser2"} // Previously synced
+			principals, err := rolesClient.Update(ctx, role)
 			require.NoError(t, err)
+			require.ElementsMatch(t, []string{"User:newuser1", "User:newuser2", "User:newuser3"}, principals)
 		})
 
 		t.Run("UpdateRemoveAllMembers", func(t *testing.T) {
-			// Remove all principals
+			// Remove all principals - should clean up previously managed ones
 			role.Spec.Principals = []string{}
-			err := rolesClient.Update(ctx, role)
+			role.Status.Principals = []string{"User:newuser1", "User:newuser2", "User:newuser3"} // Previously synced
+			principals, err := rolesClient.Update(ctx, role)
 			require.NoError(t, err)
+			require.Empty(t, principals, "Should return empty slice when all principals removed")
+			// Verify principals were actually removed from Redpanda
+			members, err := rpadminClient.RoleMembers(ctx, roleName)
+			require.NoError(t, err)
+			require.Empty(t, members.Members, "All previously managed principals should be removed from Redpanda")
 		})
 
-		t.Run("UpdateAddMembersAgain", func(t *testing.T) {
-			// Add principals back
-			role.Spec.Principals = []string{"User:finaluser"}
-			err := rolesClient.Update(ctx, role)
+		t.Run("RemoveManagedPrincipalsProtectsManual", func(t *testing.T) {
+			// Update role to add operator-managed principals
+			role.Spec.Principals = []string{"User:operator1", "User:operator2"}
+			principals, err := rolesClient.Update(ctx, role)
 			require.NoError(t, err)
+			require.ElementsMatch(t, []string{"User:operator1", "User:operator2"}, principals)
+
+			// Update status to reflect what we just synced (simulating controller behavior)
+			role.Status.Principals = principals
+
+			// Manually add a principal directly to Redpanda (outside operator control)
+			_, err = rpadminClient.UpdateRoleMembership(
+				ctx,
+				roleName,
+				[]rpadmin.RoleMember{{Name: "manual-user", PrincipalType: "User"}},
+				[]rpadmin.RoleMember{},
+				false,
+			)
+			require.NoError(t, err)
+
+			// Verify all 3 principals exist in Redpanda
+			members, err := rpadminClient.RoleMembers(ctx, roleName)
+			require.NoError(t, err)
+			require.Len(t, members.Members, 3, "Should have operator1, operator2, and manual-user")
+
+			// Remove all operator-managed principals (transition to manual mode)
+			role.Spec.Principals = []string{}
+			// Status still tracks what we previously managed
+			role.Status.Principals = []string{"User:operator1", "User:operator2"}
+
+			// Update should remove only the managed principals
+			principals, err = rolesClient.Update(ctx, role)
+			require.NoError(t, err)
+			require.Empty(t, principals, "Should return empty when entering manual mode")
+
+			// Verify only manual-user remains, operator principals removed
+			members, err = rpadminClient.RoleMembers(ctx, roleName)
+			require.NoError(t, err)
+			require.Len(t, members.Members, 1, "Only manual-user should remain")
+			require.Equal(t, "manual-user", members.Members[0].Name, "Manual principal should be protected")
 		})
 
 		t.Run("DeleteRole", func(t *testing.T) {
@@ -122,6 +169,14 @@ func TestClient(t *testing.T) {
 			has, err := rolesClient.Has(ctx, role)
 			require.NoError(t, err)
 			require.False(t, has)
+
+			// Verify directly with admin API that the role doesn't exist in Redpanda
+			_, err = rpadminClient.Role(ctx, roleName)
+			require.Error(t, err, "Role should not exist in Redpanda")
+			// Verify it's a 404 error (role not found)
+			var httpErr *rpadmin.HTTPResponseError
+			require.True(t, errors.As(err, &httpErr), "Error should be HTTPResponseError")
+			require.Equal(t, http.StatusNotFound, httpErr.Response.StatusCode, "Should be 404 Not Found")
 		})
 
 		t.Run("DeleteNonExistentRole", func(t *testing.T) {
@@ -178,67 +233,4 @@ func TestClient(t *testing.T) {
 
 		test(t, container)
 	})
-}
-
-// Test utility functions
-func TestCalculateMembershipChanges(t *testing.T) {
-	tests := []struct {
-		name           string
-		current        []string
-		desired        []string
-		expectedAdd    []string
-		expectedRemove []string
-	}{
-		{
-			name:           "no changes needed",
-			current:        []string{"User:alice", "User:bob"},
-			desired:        []string{"User:alice", "User:bob"},
-			expectedAdd:    []string{},
-			expectedRemove: []string{},
-		},
-		{
-			name:           "add new members",
-			current:        []string{"User:alice"},
-			desired:        []string{"User:alice", "User:bob", "User:charlie"},
-			expectedAdd:    []string{"User:bob", "User:charlie"},
-			expectedRemove: []string{},
-		},
-		{
-			name:           "remove members",
-			current:        []string{"User:alice", "User:bob", "User:charlie"},
-			desired:        []string{"User:alice"},
-			expectedAdd:    []string{},
-			expectedRemove: []string{"User:bob", "User:charlie"},
-		},
-		{
-			name:           "replace all members",
-			current:        []string{"User:alice", "User:bob"},
-			desired:        []string{"User:charlie", "User:dave"},
-			expectedAdd:    []string{"User:charlie", "User:dave"},
-			expectedRemove: []string{"User:alice", "User:bob"},
-		},
-		{
-			name:           "empty to some",
-			current:        []string{},
-			desired:        []string{"User:alice"},
-			expectedAdd:    []string{"User:alice"},
-			expectedRemove: []string{},
-		},
-		{
-			name:           "some to empty",
-			current:        []string{"User:alice"},
-			desired:        []string{},
-			expectedAdd:    []string{},
-			expectedRemove: []string{"User:alice"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			toAdd, toRemove := calculateMembershipChanges(tt.current, tt.desired)
-
-			require.ElementsMatch(t, tt.expectedAdd, toAdd, "toAdd should match expected")
-			require.ElementsMatch(t, tt.expectedRemove, toRemove, "toRemove should match expected")
-		})
-	}
 }
