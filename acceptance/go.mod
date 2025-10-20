@@ -200,7 +200,7 @@ require (
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
-	github.com/redpanda-data/common-go/secrets v0.1.3 // indirect
+	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20250915195818-3cd9fabec94b // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.2.0 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0 // indirect

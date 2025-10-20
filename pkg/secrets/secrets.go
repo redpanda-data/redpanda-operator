@@ -55,10 +55,16 @@ func NewCloudExpander(
 		)
 
 	case cloudConfig.GCPProjectID != "":
+		// Updated for common-go/secrets v0.1.4 API compatibility.
+		// The 4th parameter is the audience for federated secrets authentication.
+		// Set to empty string to use default authentication without federation.
+		// This secret expander fetches config values from cloud secret stores
+		// when external secret references are used in Redpanda configurations.
 		secretsAPI, err = secrets.NewGCPSecretsManager(
 			ctx,
 			slogLogger,
 			cloudConfig.GCPProjectID,
+			"", // audience for federated secrets - empty uses default authentication
 		)
 
 	case cloudConfig.AzureKeyVaultURI != "":

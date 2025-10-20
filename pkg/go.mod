@@ -15,7 +15,7 @@ require (
 	github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/redpanda-data/common-go/rpadmin v0.1.17-0.20250918052456-493894730cb7
-	github.com/redpanda-data/common-go/secrets v0.1.3
+	github.com/redpanda-data/common-go/secrets v0.1.4
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/stretchr/testify v1.10.0
