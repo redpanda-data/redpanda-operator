@@ -396,7 +396,6 @@ func TestTemplate(t *testing.T) {
 	goldens := testutil.NewTxTar(t, "testdata/template-cases.golden.txtar")
 
 	for _, tc := range append(casesArchive.Files, generatedCasesArchive.Files...) {
-		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {
 			t.Parallel()
 

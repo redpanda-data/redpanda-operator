@@ -155,7 +155,7 @@
 {{- end -}}
 {{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
 {{- $flags := (coalesce nil) -}}
-{{- range $key, $value := (merge (dict) $defaults $userProvided) -}}
+{{- range $key, $value := (merge (dict) $userProvided $defaults) -}}
 {{- if (eq $value "") -}}
 {{- $flags = (concat (default (list) $flags) (list $key)) -}}
 {{- else -}}
