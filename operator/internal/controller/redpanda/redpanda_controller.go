@@ -470,14 +470,13 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			return ctrl.Result{}, errors.Wrap(err, "fetching broker")
 		}
 
-		brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
-		brokerMap[brokerTokens[0]] = brokerID
+		brokerMap[broker.InternalRPCAddress] = brokerID
 	}
 
 	// next scale down any over-provisioned pools, patching them to use the new spec
 	// and decommissioning any nodes as needed
 	for _, set := range state.pools.ToScaleDown() {
-		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap)
+		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap, state)
 		return ctrl.Result{Requeue: requeue}, err
 	}
 
@@ -850,11 +849,26 @@ func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpad
 // scaleDown contains the majority of the logic for scaling down a statefulset incrementally, first
 // decommissioning the broker with the last pod ordinal and then patching the statefulset with
 // a single less replica.
-func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.ClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
+func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.ClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int, state *clusterReconciliationState) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].scaleDown", *cluster))
 	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
-	brokerID, ok := brokerMap[set.LastPod.GetName()]
+	dot, err := state.cluster.Redpanda.GetDot(r.KubeConfig)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	// The most reliable way to get the correct and full cluster config is to
+	// "envsubst" the bootstrap file itself as various components feed into the
+	// final cluster config and they may be referencing values stored in
+	// configmaps or secrets.
+	s, err := redpanda.RenderStateFromDot(dot)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	fqdn := fmt.Sprintf("%s.%s", set.LastPod.GetName(), ptr.Deref(s.Values.Listeners.RPC.PrefixTemplate, redpanda.InternalDomain(s)))
+	brokerID, ok := brokerMap[fqdn]
 	if ok {
 		// decommission if we have a brokerID, if not
 		// then the node has already been fully removed from
@@ -863,7 +877,7 @@ func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.Admin
 
 		requeue, err := r.decommissionBroker(ctx, admin, cluster, set, brokerID)
 		if err != nil {
-			return false, err
+			return false, errors.WithStack(err)
 		}
 
 		if requeue {
