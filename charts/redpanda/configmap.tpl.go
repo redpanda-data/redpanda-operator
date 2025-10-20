@@ -367,9 +367,9 @@ func brokersFor(state *RenderState, pool Pool, port int32) []string {
 
 	for i := int32(0); i < pool.Statefulset.Replicas; i++ {
 		if port == -1 {
-			bl = append(bl, fmt.Sprintf("%s%s-%d.%s", Fullname(state), pool.Suffix(), i, InternalDomain(state)))
+			bl = append(bl, fmt.Sprintf("%s%s-%d.%s", Fullname(state), pool.Suffix(), i, ptr.Deref(state.Values.Listeners.Kafka.PrefixTemplate, InternalDomain(state))))
 		} else {
-			bl = append(bl, fmt.Sprintf("%s%s-%d.%s:%d", Fullname(state), pool.Suffix(), i, InternalDomain(state), port))
+			bl = append(bl, fmt.Sprintf("%s%s-%d.%s:%d", Fullname(state), pool.Suffix(), i, ptr.Deref(state.Values.Listeners.Kafka.PrefixTemplate, InternalDomain(state)), port))
 		}
 	}
 	return bl

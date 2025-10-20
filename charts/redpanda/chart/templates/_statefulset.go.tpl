@@ -381,7 +381,7 @@
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $internalAdvertiseAddress := (printf "%s.%s" "$(SERVICE_NAME)" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
+{{- $internalAdvertiseAddress := (printf "%s.%s" "$(SERVICE_NAME)" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.rpc.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r")) -}}
 {{- $container := (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "redpanda" "image" (printf `%s:%s` $state.Values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) "env" (get (fromJson (include "redpanda.bootstrapEnvVars" (dict "a" (list $state (get (fromJson (include "redpanda.statefulSetRedpandaEnv" (dict "a" (list)))) "r"))))) "r") "lifecycle" (mustMergeOverwrite (dict) (dict "postStart" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "post-start" ((div $pool.Statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "bash" "-x" "/var/lifecycle/postStart.sh"))))) "r"))))) "preStop" (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (get (fromJson (include "redpanda.wrapLifecycleHook" (dict "a" (list "pre-stop" ((div $pool.Statefulset.podTemplate.spec.terminationGracePeriodSeconds (2 | int64)) | int64) (list "bash" "-x" "/var/lifecycle/preStop.sh"))))) "r"))))))) "startupProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (list `/bin/sh` `-c` (join "\n" (list `set -e` (printf `RESULT=$(curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready")` (get (fromJson (include "redpanda.adminTLSCurlFlags" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.adminApiURLs" (dict "a" (list $state)))) "r")) `echo $RESULT` `echo $RESULT | grep ready` ``))))))) (dict "failureThreshold" (120 | int) "initialDelaySeconds" (1 | int) "periodSeconds" (10 | int))) "livenessProbe" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "exec" (mustMergeOverwrite (dict) (dict "command" (list `/bin/sh` `-c` (printf `curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready"` (get (fromJson (include "redpanda.adminTLSCurlFlags" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.adminInternalHTTPProtocol" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.adminApiURLs" (dict "a" (list $state)))) "r"))))))) (dict "failureThreshold" (3 | int) "initialDelaySeconds" (10 | int) "periodSeconds" (10 | int))) "command" (list `rpk` `redpanda` `start` (printf `--advertise-rpc-addr=%s:%d` $internalAdvertiseAddress ($state.Values.listeners.rpc.port | int))) "volumeMounts" (get (fromJson (include "redpanda.StatefulSetVolumeMounts" (dict "a" (list $state)))) "r") "resources" (get (fromJson (include "redpanda.RedpandaResources.GetResourceRequirements" (dict "a" (list $state.Values.resources)))) "r"))) -}}
 {{- $_ := (set $container "ports" (concat (default (list) $container.ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "admin" "containerPort" ($state.Values.listeners.admin.port | int)))))) -}}
 {{- range $externalName, $external := $state.Values.listeners.admin.external -}}
@@ -438,7 +438,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (printf `${SERVICE_NAME}.%s:%d` (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r") ($state.Values.listeners.admin.port | int))) | toJson -}}
+{{- (dict "r" (printf `${SERVICE_NAME}.%s:%d` (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.admin.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r") ($state.Values.listeners.admin.port | int))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -448,7 +448,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (printf `$(SERVICE_NAME).%s:%d` (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r") ($state.Values.listeners.admin.port | int))) | toJson -}}
+{{- (dict "r" (printf `$(SERVICE_NAME).%s:%d` (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.admin.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r") ($state.Values.listeners.admin.port | int))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

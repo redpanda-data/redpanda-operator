@@ -962,7 +962,7 @@ func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain s
 	for i := int32(0); i < replicas; i++ {
 		result = append(result, map[string]any{
 			"host": map[string]any{
-				"address": fmt.Sprintf("%s-%d.%s", fullname, i, internalDomain),
+				"address": fmt.Sprintf("%s-%d.%s", fullname, i, ptr.Deref(l.RPC.PrefixTemplate, internalDomain)),
 				"port":    l.RPC.Port,
 			},
 		})

@@ -70,7 +70,7 @@
 {{- if $adminAuthEnabled -}}
 {{- $adminAuth = (mustMergeOverwrite (dict "passwordSecretRef" (dict "name" "")) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict "name" "") (dict "namespace" $r.Release.Namespace "name" $passwordRef.name "key" $passwordRef.key)))) -}}
 {{- end -}}
-{{- $adminSpec := (mustMergeOverwrite (dict "urls" (coalesce nil)) (dict "tls" $adminTLS "sasl" $adminAuth "urls" (list (printf "%s://%s:%d" $adminSchema (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $r)))) "r") ($r.Values.listeners.admin.port | int))))) -}}
+{{- $adminSpec := (mustMergeOverwrite (dict "urls" (coalesce nil)) (dict "tls" $adminTLS "sasl" $adminAuth "urls" (list (printf "%s://%s:%d" $adminSchema (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $r.Values.listeners.admin.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $r)))) "r"))))) "r") ($r.Values.listeners.admin.port | int))))) -}}
 {{- $schemaRegistrySpec := (coalesce nil) -}}
 {{- if $r.Values.listeners.schemaRegistry.enabled -}}
 {{- $schemaTLS := (coalesce nil) -}}

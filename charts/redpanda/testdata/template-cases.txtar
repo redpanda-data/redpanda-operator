@@ -1227,3 +1227,11 @@ statefulset:
       - name: "3rd-party-certs"
         secret:
           secretName: "redpanda-external-cert"
+
+-- internal-advertised-name-change --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+clusterDomain: "clusterset.local."
+listeners:
+  rpc:
+    prefixTemplate: "cluster-1.redpanda.svc.clusterset.local"

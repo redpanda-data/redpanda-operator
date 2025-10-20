@@ -115,7 +115,7 @@
 {{- end -}}
 {{- $_ := (set $redpanda "seed_servers" $servers) -}}
 {{- end -}}
-{{- $redpanda = (merge (dict) $redpanda (get (fromJson (include "redpanda.NodeConfig.Translate" (dict "a" (list $state.Values.config.node)))) "r")) -}}
+{{- $redpanda = (merge (dict) (get (fromJson (include "redpanda.NodeConfig.Translate" (dict "a" (list $state.Values.config.node)))) "r") $redpanda) -}}
 {{- $_ := (get (fromJson (include "redpanda.configureListeners" (dict "a" (list $redpanda $state)))) "r") -}}
 {{- $redpandaYaml := (dict "redpanda" $redpanda "schema_registry" (get (fromJson (include "redpanda.schemaRegistry" (dict "a" (list $state)))) "r") "pandaproxy" (get (fromJson (include "redpanda.pandaProxyListener" (dict "a" (list $state)))) "r") "config_file" "/etc/redpanda/redpanda.yaml") -}}
 {{- if $includeNonHashableItems -}}
@@ -352,9 +352,9 @@
 {{- $bl := (coalesce nil) -}}
 {{- range $_, $i := untilStep (((0 | int) | int)|int) (($pool.Statefulset.replicas | int)|int) (1|int) -}}
 {{- if (eq $port -1) -}}
-{{- $bl = (concat (default (list) $bl) (list (printf "%s%s-%d.%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r") $i (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")))) -}}
+{{- $bl = (concat (default (list) $bl) (list (printf "%s%s-%d.%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r") $i (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.kafka.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r")))) -}}
 {{- else -}}
-{{- $bl = (concat (default (list) $bl) (list (printf "%s%s-%d.%s:%d" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r") $i (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r") $port))) -}}
+{{- $bl = (concat (default (list) $bl) (list (printf "%s%s-%d.%s:%d" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r") $i (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.kafka.prefixTemplate (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r"))))) "r") $port))) -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}

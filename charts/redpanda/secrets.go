@@ -358,7 +358,7 @@ func SecretConfigurator(state *RenderState, pool Pool) *corev1.Secret {
 }
 
 func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset) []string {
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
+	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", ptr.Deref(state.Values.Listeners.Kafka.PrefixTemplate, InternalDomain(state)))
 
 	var snippet []string
 
@@ -434,7 +434,7 @@ func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset) []string
 }
 
 func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset) []string {
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
+	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", ptr.Deref(state.Values.Listeners.HTTP.PrefixTemplate, InternalDomain(state)))
 
 	var snippet []string
 
@@ -583,7 +583,7 @@ func adminInternalURL(state *RenderState) string {
 	return fmt.Sprintf("%s://%s.%s:%d",
 		adminInternalHTTPProtocol(state),
 		`${SERVICE_NAME}`,
-		strings.TrimSuffix(InternalDomain(state), "."),
+		strings.TrimSuffix(ptr.Deref(state.Values.Listeners.Admin.PrefixTemplate, InternalDomain(state)), "."),
 		state.Values.Listeners.Admin.Port,
 	)
 }
