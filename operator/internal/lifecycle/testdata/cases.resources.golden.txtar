@@ -900,7 +900,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.1.0
+      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -917,7 +917,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.1.0
+      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-console
@@ -2335,7 +2335,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: console-3.1.0
+      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-console
@@ -2352,7 +2352,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: console-3.1.0
+      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-console
@@ -3855,7 +3855,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: console-3.1.0
+      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-console
@@ -3872,7 +3872,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: console-3.1.0
+      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-console
