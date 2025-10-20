@@ -65,12 +65,6 @@ var suites = []TestSuite{
 		Condition:    `build.pull_request.labels includes "run-kuttl-v1"`,
 		Retry:        ptr.To(3),
 	},
-	{
-		Name:         "kuttl-v1-nodepools",
-		Required:     true,
-		Timeout:      30 * time.Minute,
-		JUnitPattern: ptr.To("work/operator/tests/_e2e_with_flags_artifacts/kuttl-report.xml"),
-	},
 }
 
 func Cmd() *cobra.Command {

@@ -52,13 +52,6 @@ tasks:
       - 'echo "~~~ Running kuttl V1 tests :k8s:"'
       - task: run-kuttl-tests
 
-  test:kuttl-v1-nodepools:
-    cmds:
-      - 'echo "~~~ Running kuttl V1 Nodepools tests :k8s:"'
-      - task: run-kuttl-tests
-        vars:
-          KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
-
   test:kuttl-v2:
     cmds:
       - 'echo "~~~ Running kuttl V2 tests :k8s:"'

@@ -68,10 +68,8 @@ func (p *K3DProvider) Teardown(_ context.Context) error {
 }
 
 func (p *K3DProvider) LoadImages(_ context.Context, images []string) error {
-	for _, image := range images {
-		if err := p.cluster.ImportImage(image); err != nil {
-			return err
-		}
+	if err := p.cluster.ImportImage(images...); err != nil {
+		return err
 	}
 	return nil
 }

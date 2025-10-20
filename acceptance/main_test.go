@@ -127,6 +127,11 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						// broker list is pruned.
 						"--cluster-connection-timeout=500ms",
 						"--enable-shadowlinks",
+						// This flag affects vectorized controllers only and is
+						// required for the nodepool tests to work.
+						"--auto-delete-pvcs",
+						// Enable the STS Decommissioner for vectorized clusters.
+						"--enable-ghost-broker-decommissioner",
 					},
 				},
 			})
