@@ -134,7 +134,7 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool P
 		redpanda["seed_servers"] = servers
 	}
 
-	redpanda = helmette.Merge(redpanda, state.Values.Config.Node.Translate())
+	redpanda = helmette.Merge(state.Values.Config.Node.Translate(), redpanda)
 
 	configureListeners(redpanda, state)
 
