@@ -28,7 +28,7 @@ require (
 	github.com/redpanda-data/common-go/rpadmin v0.1.17-0.20250918052456-493894730cb7
 	github.com/redpanda-data/console/backend v0.0.0-20250915195818-3cd9fabec94b
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250718150737-e01f8476d560
-	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.2.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.0.0
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
