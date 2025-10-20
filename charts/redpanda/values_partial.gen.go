@@ -232,8 +232,9 @@ type PartialListeners struct {
 	Kafka          *PartialListenerConfig[KafkaAuthenticationMethod] "json:\"kafka,omitempty\" jsonschema:\"required\""
 	SchemaRegistry *PartialListenerConfig[NoAuth]                    "json:\"schemaRegistry,omitempty\" jsonschema:\"required\""
 	RPC            *struct {
-		Port *int32              "json:\"port,omitempty\" jsonschema:\"required\""
-		TLS  *PartialInternalTLS "json:\"tls,omitempty\" jsonschema:\"required\""
+		Port           *int32              "json:\"port,omitempty\" jsonschema:\"required\""
+		TLS            *PartialInternalTLS "json:\"tls,omitempty\" jsonschema:\"required\""
+		PrefixTemplate *string             "json:\"prefixTemplate,omitempty\""
 	} "json:\"rpc,omitempty\" jsonschema:\"required\""
 }
 
@@ -332,6 +333,7 @@ type PartialListenerConfig[T ~string] struct {
 	TLS                  *PartialInternalTLS                   "json:\"tls,omitempty\" jsonschema:\"required\""
 	AppProtocol          *string                               "json:\"appProtocol,omitempty\""
 	AuthenticationMethod *T                                    "json:\"authenticationMethod,omitempty\""
+	PrefixTemplate       *string                               "json:\"prefixTemplate,omitempty\""
 }
 
 type PartialInternalTLS struct {

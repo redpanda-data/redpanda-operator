@@ -892,8 +892,9 @@ type Listeners struct {
 	Kafka          ListenerConfig[KafkaAuthenticationMethod] `json:"kafka" jsonschema:"required"`
 	SchemaRegistry ListenerConfig[NoAuth]                    `json:"schemaRegistry" jsonschema:"required"`
 	RPC            struct {
-		Port int32       `json:"port" jsonschema:"required"`
-		TLS  InternalTLS `json:"tls" jsonschema:"required"`
+		Port           int32       `json:"port" jsonschema:"required"`
+		TLS            InternalTLS `json:"tls" jsonschema:"required"`
+		PrefixTemplate *string     `json:"prefixTemplate,omitempty"`
 	} `json:"rpc" jsonschema:"required"`
 }
 
@@ -1626,6 +1627,7 @@ type ListenerConfig[T ~string] struct {
 
 	AppProtocol          *string `json:"appProtocol,omitempty"`
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
+	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
 }
 
 func (l *ListenerConfig[T]) AsString() ListenerConfig[string] {
