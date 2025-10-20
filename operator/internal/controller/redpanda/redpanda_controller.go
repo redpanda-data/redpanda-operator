@@ -899,12 +899,12 @@ func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.Admin
 // decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
 func (r *RedpandaReconciler) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.ClusterWithPools, set *lifecycle.ScaleDownSet, brokerID int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].decommissionBroker", *cluster))
-	logger.V(log.TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+	logger.V(log.TraceLevel).Info("checking decommissioning status for pod", "BrokerId", brokerID, "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "is not decommissioning") {
-			logger.V(log.TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+			logger.V(log.TraceLevel).Info("decommissioning broker", "BrokerId", brokerID, "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
 				return false, errors.Wrap(err, "decommissioning broker")
@@ -916,7 +916,7 @@ func (r *RedpandaReconciler) decommissionBroker(ctx context.Context, admin *rpad
 		}
 	}
 	if !decommissionStatus.Finished {
-		logger.V(log.TraceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+		logger.V(log.TraceLevel).Info("decommissioning in progress", "BrokerId", brokerID, "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 		// just requeue since we're still decommissioning
 		return true, nil
