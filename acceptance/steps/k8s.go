@@ -12,6 +12,7 @@ package steps
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/jsonpath"
@@ -83,6 +85,17 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 	}))
 
 	t.Logf("Object has cluster owner reference for %q", clusterName)
+}
+
+func kubernetesObjectJSONPathMatchesDocString(ctx context.Context, t framework.TestingT, path, gvk, name string, expected *godog.DocString) {
+	kubernetesObjectJSONPathMatches(ctx, t, path, gvk, name, expected.Content)
+}
+
+func kubernetesObjectJSONPathMatches(ctx context.Context, t framework.TestingT, path, gvk, name, expected string) {
+	result := execJSONPath(ctx, t, path, gvk, name)
+	marshalled, err := json.Marshal(result)
+	require.NoError(t, err)
+	require.JSONEq(t, expected, string(marshalled))
 }
 
 type recordedVariable string
@@ -226,4 +239,19 @@ func execInPod(
 
 		assert.Equal(collect, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
 	}, 5*time.Minute, 5*time.Second)
+}
+
+func kubernetesResourceIsEventuallyDeleted(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName string) {
+	gvk, _ := schema.ParseKindArg(groupVersionKind)
+	obj, err := t.Scheme().New(*gvk)
+	require.NoError(t, err)
+
+	t.Logf("Checking resource %s %q is eventually deleted", groupVersionKind, resourceName)
+	require.Eventually(t, func() bool {
+		err := t.Get(ctx, t.ResourceKey(resourceName), obj.(client.Object))
+		deleted := apierrors.IsNotFound(err)
+		t.Logf("Checking resource %s %q is deleted? %v", groupVersionKind, resourceName, deleted)
+		return deleted
+	}, 5*time.Minute, 5*time.Second, "Resource %s %q was never deleted", groupVersionKind, resourceName)
+	t.Logf("Resource %s %q successfully deleted", groupVersionKind, resourceName)
 }

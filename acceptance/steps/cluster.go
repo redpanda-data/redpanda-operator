@@ -48,7 +48,9 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 			Status: corev1.ConditionTrue,
 		}, cluster.Status.Conditions)
 
-		hasCondition := hasConditionQuiescent
+		// V1 sets ObservedGeneration on the status as a whole. That must be
+		// observed to be == .Generate to ensure the status is up to date.
+		hasCondition := hasConditionQuiescent && cluster.Generation == cluster.Status.ObservedGeneration
 
 		t.Logf(`Checking cluster resource conditions contains "OperatorQuiescent"? %v`, hasCondition)
 		return hasCondition
