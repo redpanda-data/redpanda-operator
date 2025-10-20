@@ -16,7 +16,7 @@ require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/invopop/jsonschema v0.12.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
-	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.1.0
+	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.2.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.1.1-beta3
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250528175436-e8cca0053dc6
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6

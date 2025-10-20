@@ -37,7 +37,7 @@ kubeVersion: ">= 1.25.0-0"
 dependencies:
   - name: console
     condition: console.enabled
-    version: ">=3.1.0-0"
+    version: ">=3.2.0-0"
     repository: file://../../console/chart
 
 icon: https://go.redpanda.com/hubfs/Redpandas/skate-stand-panda.svg

@@ -1,6 +1,6 @@
 dependencies:
 - name: console
   repository: file://../../console/chart
-  version: 3.1.0
-digest: sha256:e027e4c7f763095d3ba37adb9ad0bb75da52d7ccb70ba3c0382c019342563d4e
-generated: "2025-09-02T10:43:57.277917-04:00"
+  version: 3.2.0
+digest: sha256:4ad52f1ffd0d0089ac725ba4b799d93afb63d0163547e047aced607f93968796
+generated: "2025-10-20T11:34:12.271401-04:00"
