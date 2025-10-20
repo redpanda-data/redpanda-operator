@@ -96,3 +96,10 @@ additionalCmdFlags:
 - --configurator-base-image=my.repo.com/configurator
 - --configurator-tag=XYZ
 - --configurator-image-pull-policy=IfNotPresent
+
+-- cli-flags --
+additionalCmdFlags:
+- --enable-console=false
+- --leader-elect=helloworld
+- --log-level=info
+- --a-fake-flag
