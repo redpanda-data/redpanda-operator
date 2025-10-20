@@ -166,14 +166,6 @@ func Keys[K comparable, V any](m map[K]V) []K {
 }
 
 // Merge is a go equivalent of sprig's `merge`.
-//
-// It merges two or more maps into one, giving precedence from left
-// to right.
-//
-// Unlink sprig, a modified map is returned rather than modifying the left most
-// map.
-//
-//	Merge(map[int]int{1:1,2:2},map[int]int{1:2,2:3,3:4}) // map[int]int{1:1,2:2,3:4}
 func Merge[K comparable, V any](sources ...map[K]V) map[K]V {
 	dst := map[K]V{}
 	for _, src := range sources {
