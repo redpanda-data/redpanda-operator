@@ -39,6 +39,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -52,6 +53,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
@@ -84,6 +86,51 @@ var (
 	_ suite.SetupAllSuite  = (*RedpandaControllerSuite)(nil)
 	_ suite.SetupTestSuite = (*RedpandaControllerSuite)(nil)
 )
+
+func (s *RedpandaControllerSuite) TestMergerOfRedpandas() {
+	disableRPCTLS := &redpandav1alpha2.Listeners{
+		RPC: &redpandav1alpha2.RPC{
+			TLS: &redpandav1alpha2.ListenerTLS{
+				Enabled: ptr.To(false),
+			},
+		},
+	}
+
+	rp := s.minimalRP()
+	rp.Spec.ClusterSpec.Listeners = disableRPCTLS
+
+	s.applyAndWait(rp)
+
+	rpSecond := s.minimalRP()
+	rpSecond.Spec.ClusterSpec.Listeners = disableRPCTLS
+
+	// Override seed_servers with the first cluster DNS
+	var cm corev1.ConfigMap
+	s.Require().NoError(s.client.Get(s.ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &cm))
+
+	var rpConfig map[string]map[string]any
+	yaml.Unmarshal([]byte(cm.Data[clusterconfiguration.RedpandaYamlTemplateFile]), &rpConfig)
+
+	rpSecond.Spec.ClusterSpec.Config.Node = s.ConvertToRawExtension(map[string]any{
+		"seed_servers": rpConfig["redpanda"]["seed_servers"],
+	})
+
+	s.applyAndWait(rpSecond)
+
+	adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
+	s.Require().NoError(err)
+	defer adminClient.Close()
+
+	br, err := adminClient.Brokers(s.ctx)
+	s.Require().NoError(err)
+
+	s.Require().Len(br, 2)
+	s.Require().Contains(br[0].InternalRPCAddress, rp.Name)
+	s.Require().Contains(br[1].InternalRPCAddress, rpSecond.Name)
+
+	s.deleteAndWait(rp)
+	s.deleteAndWait(rpSecond)
+}
 
 func (s *RedpandaControllerSuite) TestManaged() {
 	rp := s.minimalRP()

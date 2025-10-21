@@ -940,6 +940,11 @@ type RPC struct {
 	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
 	TLS *ListenerTLS `json:"tls,omitempty"`
+	// Specifies the template used for generating the advertised addresses of
+	// Services. This field accepts a string template that dynamically
+	// constructs Service addresses based on various parameters such as Service
+	// name and port number.
+	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
 }
 
 type Listener struct {

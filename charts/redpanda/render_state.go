@@ -151,7 +151,7 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 		Auth: adminAuth,
 		URLs: []string{
 			// NB: Console uses SRV based service discovery and doesn't require a full list of addresses.
-			fmt.Sprintf("%s://%s:%d", adminSchema, InternalDomain(r), r.Values.Listeners.Admin.Port),
+			fmt.Sprintf("%s://%s:%d", adminSchema, ptr.Deref(r.Values.Listeners.Admin.PrefixTemplate, InternalDomain(r)), r.Values.Listeners.Admin.Port),
 		},
 	}
 

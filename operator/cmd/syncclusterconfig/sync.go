@@ -243,7 +243,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 
 	schema, err := s.Client.ClusterConfigSchema(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// 1. Normalize the desired config.
@@ -254,7 +254,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	// 2. Compute values to be removed.
 	status, err := s.Client.ClusterConfigStatus(ctx, true)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
@@ -283,7 +283,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	if s.Mode == SyncerModeDeclarative {
 		current, err := s.Client.Config(ctx, false)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 
 		for key := range current {
@@ -303,7 +303,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	} else {
 		result, err := s.Client.PatchClusterConfig(ctx, normalized, toRemove)
 		if err != nil {
-			return nil, err
+			return nil, errors.WithStack(err)
 		}
 
 		configVersion = int64(result.ConfigVersion)
@@ -317,7 +317,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	// Use of this hash is slated for removal.
 	hashOfConfigsThatNeedRestart, err := hashConfigsThatNeedRestart(desired, schema)
 	if err != nil {
-		return nil, fmt.Errorf("failed to hash config: %w", err)
+		return nil, errors.Wrap(err, "failed to hash config")
 	}
 
 	status, err = s.Client.ClusterConfigStatus(ctx, true)

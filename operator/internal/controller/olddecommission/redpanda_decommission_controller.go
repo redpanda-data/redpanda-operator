@@ -643,12 +643,18 @@ func createBrokerURLs(release, namespace string, replicas int32, ordinal *int, v
 		return brokerList, fmt.Errorf("could not retrieve clusterDomain: %s; error: %w", domain, err)
 	}
 
+	suffix := fmt.Sprintf("%s.%s.svc.%s:%d", serviceName, namespace, domain, port)
+	prefixTemplate, ok, err := unstructured.NestedString(values, "listeners", "admin", "prefixTemplate")
+	if ok && err == nil {
+		suffix = fmt.Sprintf("%s:%d", prefixTemplate, port)
+	}
+
 	if ordinal == nil {
 		for i := 0; i < int(replicas); i++ {
-			brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, i, serviceName, namespace, domain, port))
+			brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s", release, i, suffix))
 		}
 	} else {
-		brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, *ordinal, serviceName, namespace, domain, port))
+		brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s", release, *ordinal, suffix))
 	}
 
 	return brokerList, nil

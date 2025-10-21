@@ -2656,6 +2656,13 @@ spec:
                             description: Specifies the container port number for the
                               internal listener.
                             type: integer
+                          prefixTemplate:
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
+                              name and port number.
+                            type: string
                           tls:
                             description: Configures TLS settings for the internal
                               listener.
@@ -23766,6 +23773,13 @@ spec:
                             description: Specifies the container port number for the
                               internal listener.
                             type: integer
+                          prefixTemplate:
+                            description: |-
+                              Specifies the template used for generating the advertised addresses of
+                              Services. This field accepts a string template that dynamically
+                              constructs Service addresses based on various parameters such as Service
+                              name and port number.
+                            type: string
                           tls:
                             description: Configures TLS settings for the internal
                               listener.
