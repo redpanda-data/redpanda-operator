@@ -12,17 +12,18 @@ package decommissioning
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -34,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -44,11 +44,7 @@ const (
 	eventReasonBroker                        = "DecommissioningBroker"
 	eventReasonUnboundPersistentVolumeClaims = "DecommissioningUnboundPersistentVolumeClaims"
 
-	k8sManagedByLabelKey = "app.kubernetes.io/managed-by"
-	k8sInstanceLabelKey  = "app.kubernetes.io/instance"
-	k8sComponentLabelKey = "app.kubernetes.io/component"
-	k8sNameLabelKey      = "app.kubernetes.io/name"
-	datadirVolume        = "datadir"
+	datadirVolume = "datadir"
 
 	traceLevel = 2
 	debugLevel = 1
@@ -62,24 +58,9 @@ const (
 	defaultDelayedMaxCacheCount = 2
 )
 
+var datadirRE = regexp.MustCompile(`^datadir-(.+)-\d+$`)
+
 type Option func(*StatefulSetDecomissioner)
-
-func FilterStatefulSetOwner(ownerNamespace, ownerName string) func(ctx context.Context, set *appsv1.StatefulSet) (bool, error) {
-	filter := filterOwner(ownerNamespace, ownerName)
-	return func(ctx context.Context, set *appsv1.StatefulSet) (bool, error) {
-		return filter(set), nil
-	}
-}
-
-func filterOwner(ownerNamespace, ownerName string) func(o client.Object) bool {
-	return func(o client.Object) bool {
-		labels := o.GetLabels()
-		if o.GetNamespace() == ownerNamespace && labels != nil && labels[k8sInstanceLabelKey] == ownerName {
-			return true
-		}
-		return false
-	}
-}
 
 func WithDecommisionOnTooHighOrdinal(val bool) Option {
 	return func(decommissioner *StatefulSetDecomissioner) {
@@ -93,15 +74,15 @@ func WithDesiredReplicasFetcher(desiredReplicasFetcher func(ctx context.Context,
 	}
 }
 
-func WithFilter(filter func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)) Option {
+func WithSelector(selector labels.Selector) Option {
 	return func(decommissioner *StatefulSetDecomissioner) {
-		decommissioner.filter = filter
+		decommissioner.selector = selector
 	}
 }
 
-func WithFactory(factory internalclient.ClientFactory) Option {
+func WithFilter(fn func(context.Context, *appsv1.StatefulSet) (bool, error)) Option {
 	return func(decommissioner *StatefulSetDecomissioner) {
-		decommissioner.factory = factory
+		decommissioner.filter = fn
 	}
 }
 
@@ -135,38 +116,40 @@ func WithSyncPeriod(d time.Duration) Option {
 	}
 }
 
+type ClientGetter func(context.Context, *appsv1.StatefulSet) (*rpadmin.AdminAPI, error)
+
 type StatefulSetDecomissioner struct {
 	client               client.Client
-	factory              internalclient.ClientFactory
-	fetcher              Fetcher
+	getAdminClient       ClientGetter
 	recorder             record.EventRecorder
 	requeueTimeout       time.Duration
 	delayedCacheInterval time.Duration
 	delayedCacheMaxCount int
 	delayedBrokerIDCache *CategorizedDelayedCache[types.NamespacedName, int]
 	delayedVolumeCache   *CategorizedDelayedCache[types.NamespacedName, types.NamespacedName]
-	filter               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error)
 	cleanupPVCs          bool
 	syncPeriod           time.Duration
+	selector             labels.Selector
+	filter               func(context.Context, *appsv1.StatefulSet) (bool, error)
 
 	// decommissionOnTooHighOrdinal allows the decommissioner to decommission a node, if it has an
 	decommissionOnTooHighOrdinal bool
 	desiredReplicasFetcher       func(ctx context.Context, set *appsv1.StatefulSet) (int32, error)
 }
 
-func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...Option) *StatefulSetDecomissioner {
+func NewStatefulSetDecommissioner(mgr ctrl.Manager, getter ClientGetter, options ...Option) *StatefulSetDecomissioner {
 	k8sClient := mgr.GetClient()
 
 	decommissioner := &StatefulSetDecomissioner{
 		recorder:             mgr.GetEventRecorderFor("broker-decommissioner"),
 		client:               k8sClient,
-		fetcher:              fetcher,
-		factory:              internalclient.NewFactory(mgr.GetConfig(), k8sClient),
+		getAdminClient:       getter,
 		requeueTimeout:       defaultRequeueTimeout,
 		delayedCacheInterval: defaultDelayedCacheInterval,
 		delayedCacheMaxCount: defaultDelayedMaxCacheCount,
-		filter:               func(ctx context.Context, set *appsv1.StatefulSet) (bool, error) { return true, nil },
 		cleanupPVCs:          true,
+		// By default don't match anything.
+		selector: labels.Nothing(),
 		// By default, just look at the single STS
 		// If multiple nodePools are supported, we can use Cluster CR to the the total desired replicas.
 		desiredReplicasFetcher: func(ctx context.Context, set *appsv1.StatefulSet) (int32, error) {
@@ -194,58 +177,47 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, fetcher Fetcher, options ...
 // +kubebuilder:rbac:groups=core,namespace=default,resources=secrets,verbs=get;list;watch
 
 func (s *StatefulSetDecomissioner) SetupWithManager(mgr ctrl.Manager) error {
-	pvcPredicate, err := predicate.LabelSelectorPredicate(
-		metav1.LabelSelector{
-			MatchExpressions: []metav1.LabelSelectorRequirement{{
-				Key:      k8sNameLabelKey, // make sure we have a name
-				Operator: metav1.LabelSelectorOpExists,
-			}, {
-				Key:      k8sComponentLabelKey, // make sure we have a component label
-				Operator: metav1.LabelSelectorOpExists,
-			}, {
-				Key:      k8sInstanceLabelKey, // make sure we have a cluster name
-				Operator: metav1.LabelSelectorOpExists,
-			}},
-		},
-	)
-	if err != nil {
-		return err
-	}
+	selectorPredicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		lbls := object.GetLabels()
+		if lbls == nil {
+			lbls = map[string]string{}
+		}
+		return s.selector.Matches(labels.Set(lbls))
+	})
 
 	return ctrl.NewControllerManagedBy(mgr).
+		Named("statefulset_decommissioner").
 		For(&appsv1.StatefulSet{}).
 		Owns(&corev1.Pod{}).
 		// PVCs don't have a "true" owner ref, so instead we attempt to map backwards via labels
 		Watches(&corev1.PersistentVolumeClaim{}, handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o client.Object) []ctrl.Request {
 			claim := o.(*corev1.PersistentVolumeClaim)
-			labels := claim.GetLabels()
+			lbls := claim.GetLabels()
+			if lbls == nil {
+				lbls = map[string]string{}
+			}
 
-			// a bit of defensive programming, but we should always have labels due to our use
-			// of a predicate
-			if labels == nil {
-				// we have no labels, so we can't map anything
+			// Validate that this PVC is within our purview by making sure it
+			// satisfies our label selector. (This selector MUST match both PVCs and
+			// STSs.)
+			if !s.selector.Matches(labels.Set(lbls)) {
 				return nil
 			}
 
-			release := labels[k8sInstanceLabelKey]
-			if release == "" {
-				// we have an invalid release name, so skip
-				return nil
-			}
-
-			if !strings.HasPrefix(claim.Name, datadirVolume+"-") {
-				// we only care about the datadir volume
+			// Extract the STS name by parsing the naming convention $VOL-$STS-$ORDINAL.
+			match := datadirRE.FindStringSubmatch(claim.Name)
+			if match == nil {
 				return nil
 			}
 
 			// if we are here, it means we can map to a real stateful set
 			return []ctrl.Request{
 				{NamespacedName: types.NamespacedName{
-					Name:      release,
+					Name:      match[1],
 					Namespace: claim.Namespace,
 				}},
 			}
-		}), builder.WithPredicates(pvcPredicate)).
+		}), builder.WithPredicates(selectorPredicate)).
 		Complete(s)
 }
 
@@ -274,6 +246,18 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 		log.V(traceLevel).Info("StatefulSet is currently deleted, skipping")
 
 		return ctrl.Result{}, nil
+	}
+
+	// If a filter function has been provided, run it.
+	if s.filter != nil {
+		inbounds, err := s.filter(ctx, set)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if !inbounds {
+			return ctrl.Result{}, nil
+		}
 	}
 
 	requeue, err := s.Decommission(ctx, set)
@@ -340,17 +324,6 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 
 	log := ctrl.LoggerFrom(ctx, "namespace", set.Namespace, "name", set.Name).WithName("StatefulSetDecommissioner.Decomission")
 
-	keep, err := s.filter(ctx, set)
-	if err != nil {
-		log.Error(err, "error filtering StatefulSet")
-		return false, err
-	}
-
-	if !keep {
-		log.V(traceLevel).Info("skipping decommission, StatefulSet filtered out")
-		return false, nil
-	}
-
 	setCacheKey := client.ObjectKeyFromObject(set)
 	if s.cleanupPVCs {
 		unboundVolumeClaims, err := s.findUnboundVolumeClaims(ctx, set)
@@ -373,7 +346,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 			s.delayedVolumeCache.Mark(setCacheKey, client.ObjectKeyFromObject(claim))
 		}
 
-		// now we attempt to clean up the first of the PVCs that meets the treshold of the cache,
+		// now we attempt to clean up the first of the PVCs that meets the threshold of the cache,
 		// ensuring that their PVs have a retain policy, and short-circuiting the rest of reconciliation
 		// if we actually delete a claim
 		for _, claim := range unboundVolumeClaims {
@@ -761,24 +734,6 @@ func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, 
 	})
 
 	return unbound, nil
-}
-
-// getAdminClient initializes an admin API client for a cluster that a statefulset manages. It does this by
-// delegating to a "fetcher" which fetches the equivalent values.yaml map from either a Redpanda CR or an
-// installed helm release. It then effectively turns this into a Redpanda CR that can be used for initializing
-// clients based on existing factory code.
-func (s *StatefulSetDecomissioner) getAdminClient(ctx context.Context, set *appsv1.StatefulSet) (*rpadmin.AdminAPI, error) {
-	release, ok := set.Labels[k8sInstanceLabelKey]
-	if !ok {
-		return nil, errors.New("unable to get release name")
-	}
-
-	fetched, err := s.fetcher.FetchLatest(ctx, release, set.Namespace)
-	if err != nil {
-		return nil, fmt.Errorf("fetching latest values: %w", err)
-	}
-
-	return s.factory.RedpandaAdminClient(ctx, fetched)
 }
 
 // podNameFromFQDN takes a hostname and attempt to map the
