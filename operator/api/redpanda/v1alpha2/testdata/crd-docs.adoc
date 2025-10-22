@@ -2929,7 +2929,8 @@ to be cleaned up. + |  |
 to be cleaned up. + |  | 
 | *`principals`* __string array__ | Principals is the last successfully synced list of principals for this role. +
 It mirrors the normalized spec.principals currently supported; RoleBinding +
-aggregation is not yet implemented. + |  | MaxItems: 1024 +
+aggregation is not yet implemented. +
+Pattern validation ensures entries are in normalized "Type:Name" format. + |  | MaxItems: 1024 +
 
 |===
 

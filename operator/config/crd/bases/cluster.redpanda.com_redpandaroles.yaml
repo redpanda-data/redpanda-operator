@@ -774,7 +774,9 @@ spec:
                   Principals is the last successfully synced list of principals for this role.
                   It mirrors the normalized spec.principals currently supported; RoleBinding
                   aggregation is not yet implemented.
+                  Pattern validation ensures entries are in normalized "Type:Name" format.
                 items:
+                  pattern: ^(User:.+|[^:]+)$
                   type: string
                 maxItems: 1024
                 type: array

@@ -125,7 +125,9 @@ type RoleStatus struct {
 	// Principals is the last successfully synced list of principals for this role.
 	// It mirrors the normalized spec.principals currently supported; RoleBinding
 	// aggregation is not yet implemented.
+	// Pattern validation ensures entries are in normalized "Type:Name" format.
 	// +kubebuilder:validation:MaxItems=1024
+	// +kubebuilder:validation:items:Pattern=`^(User:.+|[^:]+)$`
 	// +optional
 	Principals []string `json:"principals,omitempty"`
 }

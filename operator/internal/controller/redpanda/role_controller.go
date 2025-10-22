@@ -98,6 +98,19 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 		}
 	}
 
+	// Handle transition when role should no longer be managed.
+	// Note: Currently ShouldManageRole() always returns true, so this branch won't execute.
+	// However, we include it for:
+	// 1. Pattern consistency with ACL cleanup handling
+	// 2. Future-proofing if ShouldManageRole() logic becomes conditional
+	// 3. Clear documentation of expected behavior
+	// TODO: Decide if we should also delete the role from Redpanda when management stops.
+	// Currently we only update the status to reflect the change in management state.
+	if !shouldManageRole && hasManagedRole {
+		request.logger.V(2).Info("Role should no longer be managed, updating status")
+		hasManagedRole = false
+	}
+
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, role); err != nil {
 			return createPatch(syncedPrincipals, hasManagedRole, hasManagedACLs, err)
