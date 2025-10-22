@@ -196,6 +196,8 @@ func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, namespace st
 		return settings, ErrEmptyBrokerList
 	}
 
+	settings.BootstrapServers = spec.Brokers
+
 	if spec.SASL != nil {
 		auth, err := c.remoteClusterAuthSettingsForSpec(ctx, namespace, spec)
 		if err != nil {
