@@ -3,7 +3,7 @@ module github.com/redpanda-data/redpanda-operator/operator
 go 1.24.3
 
 require (
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.9-20251007130208-16fea41f579f.1
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.10-20251021160320-d44d783528c8.1
 	connectrpc.com/connect v1.19.0
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -50,7 +50,7 @@ require (
 	golang.org/x/sync v0.16.0
 	golang.org/x/time v0.11.0
 	golang.org/x/tools v0.34.0
-	google.golang.org/protobuf v1.36.9
+	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.5
 	k8s.io/api v0.33.3

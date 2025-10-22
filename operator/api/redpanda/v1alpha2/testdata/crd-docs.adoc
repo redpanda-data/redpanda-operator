@@ -626,6 +626,13 @@ CommonTLS specifies TLS configuration settings for Redpanda clusters that have a
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enabled tells any connections derived from this configuration to leverage TLS even if no +
+certificate configuration is specified. It *only* is relevant if no other field is specified +
+in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification +
+results in attempting to create a connection using TLS - specifying "false" in such a case does +
+*not* disable TLS from being used. Leveraging this option is to support the use-case where a +
+connection is served by publically issued TLS certificates that don't require any additional certificate +
+specification. + |  | 
 | *`caCertSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | CaCert is the reference for certificate authority used to establish TLS connection to Redpanda + |  | 
 | *`certSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Cert is the reference for client public certificate to establish mTLS connection to Redpanda + |  | 
 | *`keySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Key is the reference for client private certificate to establish mTLS connection to Redpanda + |  | 

@@ -130,6 +130,14 @@ type KafkaSASLAWSMskIam struct {
 
 // CommonTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
 type CommonTLS struct {
+	// Enabled tells any connections derived from this configuration to leverage TLS even if no
+	// certificate configuration is specified. It *only* is relevant if no other field is specified
+	// in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+	// results in attempting to create a connection using TLS - specifying "false" in such a case does
+	// *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+	// connection is served by publically issued TLS certificates that don't require any additional certificate
+	// specification.
+	Enabled bool `json:"enabled,omitempty"`
 	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
 	CaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
 	// Cert is the reference for client public certificate to establish mTLS connection to Redpanda
