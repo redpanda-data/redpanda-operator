@@ -11,12 +11,12 @@ package roles
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -36,7 +36,7 @@ func NewClient(ctx context.Context, adminClient *rpadmin.AdminAPI) (*Client, err
 	// Verify admin client connectivity (similar to how users client verifies API versions)
 	_, err := adminClient.Brokers(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to verify admin client connectivity: %w", err)
+		return nil, errors.Wrap(err, "failed to verify admin client connectivity")
 	}
 
 	return &Client{
@@ -58,7 +58,7 @@ func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.RedpandaRole) (
 			return false, nil
 		}
 		// Return the error if it's not a "not found" error
-		return false, fmt.Errorf("checking if role %s exists: %w", role.Name, err)
+		return false, errors.Wrapf(err, "checking if role %s exists", role.Name)
 	}
 	return true, nil
 }
@@ -108,7 +108,7 @@ func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.RedpandaRole
 			// Role already doesn't exist, consider deletion successful
 			return nil
 		}
-		return fmt.Errorf("deleting role %s: %w", role.Name, err)
+		return errors.Wrapf(err, "deleting role %s", role.Name)
 	}
 	return nil
 }

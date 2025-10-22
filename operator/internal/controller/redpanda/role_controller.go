@@ -83,6 +83,8 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer rolesClient.Close()
 	defer syncer.Close()
 
+	var syncedPrincipals []string // Track what we successfully synced
+
 	if !hasRole && shouldManageRole {
 		syncedPrincipals, err = rolesClient.Create(ctx, role)
 		if err != nil {
