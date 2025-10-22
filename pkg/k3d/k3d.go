@@ -260,13 +260,16 @@ func (c *Cluster) RESTConfig() *kube.RESTConfig {
 func (c *Cluster) ImportImage(images ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if out, err := exec.Command(
-		"k3d",
+
+	args := []string{
 		"image",
 		"import",
 		fmt.Sprintf("--cluster=%s", c.Name),
-		strings.Join(images, " "),
-	).CombinedOutput(); err != nil {
+	}
+
+	args = append(args, images...)
+
+	if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
 	}
 	return nil

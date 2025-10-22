@@ -12,6 +12,7 @@ package steps
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/jsonpath"
@@ -35,6 +37,15 @@ import (
 // that reports sigs.k8s.io/controller-runtime/pkg/client as unused when it's solely used
 // for type assertions
 var _ client.Object = (client.Object)(nil)
+
+func podWillEventuallyBeInPhase(ctx context.Context, t framework.TestingT, podName string, phase string) {
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		var pod corev1.Pod
+		require.NoError(c, t.Get(ctx, t.ResourceKey(podName), &pod))
+
+		require.Equal(c, corev1.PodPhase(phase), pod.Status.Phase)
+	}, 5*time.Minute, 5*time.Second)
+}
 
 func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName, clusterName string) {
 	var cluster redpandav1alpha2.Redpanda
@@ -74,6 +85,17 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 	}))
 
 	t.Logf("Object has cluster owner reference for %q", clusterName)
+}
+
+func kubernetesObjectJSONPathMatchesDocString(ctx context.Context, t framework.TestingT, path, gvk, name string, expected *godog.DocString) {
+	kubernetesObjectJSONPathMatches(ctx, t, path, gvk, name, expected.Content)
+}
+
+func kubernetesObjectJSONPathMatches(ctx context.Context, t framework.TestingT, path, gvk, name, expected string) {
+	result := execJSONPath(ctx, t, path, gvk, name)
+	marshalled, err := json.Marshal(result)
+	require.NoError(t, err)
+	require.JSONEq(t, expected, string(marshalled))
 }
 
 type recordedVariable string
@@ -163,7 +185,23 @@ func execJSONPath(ctx context.Context, t framework.TestingT, jsonPath, groupVers
 	return nil
 }
 
-func iExecInPodMatching(
+func execInPodEventuallyMatches(
+	ctx context.Context,
+	t framework.TestingT,
+	podName string,
+	cmd string,
+	expected *godog.DocString,
+) {
+	ctl, err := kube.FromRESTConfig(t.RestConfig())
+	require.NoError(t, err)
+
+	pod, err := kube.Get[corev1.Pod](ctx, ctl, kube.ObjectKey{Namespace: t.Namespace(), Name: podName})
+	require.NoErrorf(t, err, "Pod with name %q not found", podName)
+
+	execInPod(t, ctx, ctl, pod, cmd, expected)
+}
+
+func execInPodMatchingEventuallyMatches(
 	ctx context.Context,
 	t framework.TestingT,
 	cmd,
@@ -181,11 +219,39 @@ func iExecInPodMatching(
 
 	require.True(t, len(pods.Items) > 0, "selector %q found no Pods", selector.String())
 
-	var stdout bytes.Buffer
-	require.NoError(t, ctl.Exec(ctx, &pods.Items[0], kube.ExecOptions{
-		Command: []string{"sh", "-c", cmd},
-		Stdout:  &stdout,
-	}))
+	execInPod(t, ctx, ctl, &pods.Items[0], cmd, expected)
+}
 
-	assert.Equal(t, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
+func execInPod(
+	t framework.TestingT,
+	ctx context.Context,
+	ctl *kube.Ctl,
+	pod *corev1.Pod,
+	cmd string,
+	expected *godog.DocString,
+) {
+	require.EventuallyWithT(t, func(collect *assert.CollectT) {
+		var stdout bytes.Buffer
+		require.NoError(collect, ctl.Exec(ctx, pod, kube.ExecOptions{
+			Command: []string{"sh", "-c", cmd},
+			Stdout:  &stdout,
+		}))
+
+		assert.Equal(collect, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
+	}, 5*time.Minute, 5*time.Second)
+}
+
+func kubernetesResourceIsEventuallyDeleted(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName string) {
+	gvk, _ := schema.ParseKindArg(groupVersionKind)
+	obj, err := t.Scheme().New(*gvk)
+	require.NoError(t, err)
+
+	t.Logf("Checking resource %s %q is eventually deleted", groupVersionKind, resourceName)
+	require.Eventually(t, func() bool {
+		err := t.Get(ctx, t.ResourceKey(resourceName), obj.(client.Object))
+		deleted := apierrors.IsNotFound(err)
+		t.Logf("Checking resource %s %q is deleted? %v", groupVersionKind, resourceName, deleted)
+		return deleted
+	}, 5*time.Minute, 5*time.Second, "Resource %s %q was never deleted", groupVersionKind, resourceName)
+	t.Logf("Resource %s %q successfully deleted", groupVersionKind, resourceName)
 }
