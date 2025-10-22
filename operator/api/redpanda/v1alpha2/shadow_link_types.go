@@ -242,10 +242,6 @@ type ShadowLinkSecuritySettingsSyncOptions struct {
 	Interval metav1.Duration `json:"interval,omitempty"`
 	// Whether or not it's enabled
 	Enabled bool `json:"enabled,omitempty"`
-	// Role filters
-	RoleFilters []NameFilter `json:"roleFilters,omitempty"`
-	// SCRAM credential filters
-	ScramCredentialFilters []NameFilter `json:"scramCredFilters,omitempty"`
 	// ACL filters
 	ACLFilters []ACLFilter `json:"aclFilters,omitempty"`
 }

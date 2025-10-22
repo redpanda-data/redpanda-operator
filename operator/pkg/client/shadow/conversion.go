@@ -144,7 +144,10 @@ func convertCRDToAPIShadowLinkTopicMetadataSyncOptions(options *redpandav1alpha2
 	return &adminv2api.TopicMetadataSyncOptions{
 		Interval:                     durationpb.New(options.Interval.Duration),
 		AutoCreateShadowTopicFilters: functional.MapFn(convertCRDToAPINameFilter, options.AutoCreateShadowTopicFilters),
-		ShadowedTopicProperties:      options.ShadowedTopicProperties,
+		SyncedShadowTopicProperties:  options.ShadowedTopicProperties,
+		// TODO: looks like the following were recently added
+		// ExcludeDefault
+		// StartOffset
 	}
 }
 
@@ -234,11 +237,12 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 		return nil
 	}
 	return &adminv2api.SecuritySettingsSyncOptions{
-		Interval:         durationpb.New(options.Interval.Duration),
-		Enabled:          options.Enabled,
-		RoleFilters:      functional.MapFn(convertCRDToAPINameFilter, options.RoleFilters),
-		ScramCredFilters: functional.MapFn(convertCRDToAPINameFilter, options.ScramCredentialFilters),
-		AclFilters:       functional.MapFn(convertCRDToAPIACLFilter, options.ACLFilters),
+		Interval: durationpb.New(options.Interval.Duration),
+		Enabled:  options.Enabled,
+		// TODO: the following were recently (temporarily?) removed
+		// RoleFilters:      functional.MapFn(convertCRDToAPINameFilter, options.RoleFilters),
+		// ScramCredFilters: functional.MapFn(convertCRDToAPINameFilter, options.ScramCredentialFilters),
+		AclFilters: functional.MapFn(convertCRDToAPIACLFilter, options.ACLFilters),
 	}
 }
 
@@ -246,7 +250,7 @@ func convertAPIToCRDStatus(status *adminv2api.ShadowLinkStatus) redpandav1alpha2
 	return redpandav1alpha2.ShadowLinkStatus{
 		State:               convertAPIToCRDState(status.State),
 		TaskStatuses:        functional.MapFn(convertAPIToCRDTaskStatus, sortByName(status.TaskStatuses)),
-		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, sortByName(status.ShadowTopicStatuses)),
+		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, sortByName(status.ShadowTopics)),
 	}
 }
 
@@ -276,11 +280,11 @@ func convertAPIToCRDTaskStatusState(state adminv2api.TaskState) redpandav1alpha2
 	}[state]
 }
 
-func convertAPIToCRDTopicStatus(status *adminv2api.ShadowTopicStatus) redpandav1alpha2.ShadowTopicStatus {
+func convertAPIToCRDTopicStatus(status *adminv2api.ShadowTopic) redpandav1alpha2.ShadowTopicStatus {
 	return redpandav1alpha2.ShadowTopicStatus{
 		Name:    status.Name,
 		TopicID: status.TopicId,
-		State:   convertAPIToCRDTopicStatusState(status.State),
+		State:   convertAPIToCRDTopicStatusState(status.Status.State),
 	}
 }
 

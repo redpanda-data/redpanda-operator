@@ -41,7 +41,7 @@ func getTestImage() string {
 	// this is the latest nightly image that contains shadow links, once a release
 	// with shadow links is actually cut, we can switch to the typical release
 	// images
-	return "redpandadata/redpanda-nightly:v0.0.0-20251008git7a18f63"
+	return "redpandadata/redpanda-nightly:v0.0.0-20251022gitd94b19f"
 }
 
 func TestSyncer(t *testing.T) {
@@ -266,16 +266,16 @@ func (c *cluster) hasActiveMirroredTopics(t *testing.T, ctx context.Context, lin
 	}))
 	require.NoError(t, err)
 
-	if len(response.Msg.ShadowLink.Status.ShadowTopicStatuses) != len(topicNames) {
+	if len(response.Msg.ShadowLink.Status.ShadowTopics) != len(topicNames) {
 		return false
 	}
 
 	// check that we've marked all topics as syncing
 	for _, topicName := range topicNames {
 		found := false
-		for _, topic := range response.Msg.ShadowLink.Status.ShadowTopicStatuses {
+		for _, topic := range response.Msg.ShadowLink.Status.ShadowTopics {
 			if topic.Name == topicName {
-				found = topic.Name == topicName && topic.State == adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_ACTIVE
+				found = topic.Name == topicName && topic.Status.State == adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_ACTIVE
 				break
 			}
 		}

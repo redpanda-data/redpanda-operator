@@ -4851,16 +4851,6 @@ func (in *ShadowLinkList) DeepCopyObject() runtime.Object {
 func (in *ShadowLinkSecuritySettingsSyncOptions) DeepCopyInto(out *ShadowLinkSecuritySettingsSyncOptions) {
 	*out = *in
 	out.Interval = in.Interval
-	if in.RoleFilters != nil {
-		in, out := &in.RoleFilters, &out.RoleFilters
-		*out = make([]NameFilter, len(*in))
-		copy(*out, *in)
-	}
-	if in.ScramCredentialFilters != nil {
-		in, out := &in.ScramCredentialFilters, &out.ScramCredentialFilters
-		*out = make([]NameFilter, len(*in))
-		copy(*out, *in)
-	}
 	if in.ACLFilters != nil {
 		in, out := &in.ACLFilters, &out.ACLFilters
 		*out = make([]ACLFilter, len(*in))
