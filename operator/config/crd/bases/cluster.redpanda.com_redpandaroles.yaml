@@ -293,6 +293,16 @@ spec:
                                 required:
                                 - name
                                 type: object
+                              enabled:
+                                description: |-
+                                  Enabled tells any connections derived from this configuration to leverage TLS even if no
+                                  certificate configuration is specified. It *only* is relevant if no other field is specified
+                                  in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+                                  results in attempting to create a connection using TLS - specifying "false" in such a case does
+                                  *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+                                  connection is served by publically issued TLS certificates that don't require any additional certificate
+                                  specification.
+                                type: boolean
                               insecureSkipTlsVerify:
                                 description: InsecureSkipTLSVerify can skip verifying
                                   Redpanda self-signed certificate when establish
@@ -525,6 +535,16 @@ spec:
                                 required:
                                 - name
                                 type: object
+                              enabled:
+                                description: |-
+                                  Enabled tells any connections derived from this configuration to leverage TLS even if no
+                                  certificate configuration is specified. It *only* is relevant if no other field is specified
+                                  in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+                                  results in attempting to create a connection using TLS - specifying "false" in such a case does
+                                  *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+                                  connection is served by publically issued TLS certificates that don't require any additional certificate
+                                  specification.
+                                type: boolean
                               insecureSkipTlsVerify:
                                 description: InsecureSkipTLSVerify can skip verifying
                                   Redpanda self-signed certificate when establish
@@ -632,6 +652,16 @@ spec:
                                 required:
                                 - name
                                 type: object
+                              enabled:
+                                description: |-
+                                  Enabled tells any connections derived from this configuration to leverage TLS even if no
+                                  certificate configuration is specified. It *only* is relevant if no other field is specified
+                                  in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+                                  results in attempting to create a connection using TLS - specifying "false" in such a case does
+                                  *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+                                  connection is served by publically issued TLS certificates that don't require any additional certificate
+                                  specification.
+                                type: boolean
                               insecureSkipTlsVerify:
                                 description: InsecureSkipTLSVerify can skip verifying
                                   Redpanda self-signed certificate when establish

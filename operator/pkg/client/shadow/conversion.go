@@ -15,6 +15,8 @@ import (
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/common"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"k8s.io/utils/ptr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -141,11 +143,32 @@ func convertCRDToAPIShadowLinkTopicMetadataSyncOptions(options *redpandav1alpha2
 	if options == nil {
 		return nil
 	}
-	return &adminv2api.TopicMetadataSyncOptions{
+	return setStartOffsetFromCRD(&adminv2api.TopicMetadataSyncOptions{
 		Interval:                     durationpb.New(options.Interval.Duration),
 		AutoCreateShadowTopicFilters: functional.MapFn(convertCRDToAPINameFilter, options.AutoCreateShadowTopicFilters),
-		ShadowedTopicProperties:      options.ShadowedTopicProperties,
+		SyncedShadowTopicProperties:  options.SyncedShadowTopicProperties,
+		ExcludeDefault:               options.ExcludeDefault,
+	}, options)
+}
+
+func setStartOffsetFromCRD(payload *adminv2api.TopicMetadataSyncOptions, options *redpandav1alpha2.ShadowLinkTopicMetadataSyncOptions) *adminv2api.TopicMetadataSyncOptions {
+	if options.StartOffset == nil {
+		return payload
 	}
+
+	switch *options.StartOffset {
+	case redpandav1alpha2.TopicMetadataSyncOffsetEarliest:
+		payload.SetEarliest(ptr.To(adminv2api.TopicMetadataSyncOptions_EarliestOffset{}))
+	case redpandav1alpha2.TopicMetadataSyncOffsetLatest:
+		payload.SetLatest(ptr.To(adminv2api.TopicMetadataSyncOptions_LatestOffset{}))
+	case redpandav1alpha2.TopicMetadataSyncOffsetTimestamp:
+		if options.StartOffsetTimestamp == nil {
+			return payload
+		}
+		payload.SetTimestamp(timestamppb.New(options.StartOffsetTimestamp.Time))
+	}
+
+	return payload
 }
 
 func convertCRDToCommonPatternType(patternType *redpandav1alpha2.PatternType) common.ACLPattern {
@@ -234,11 +257,12 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 		return nil
 	}
 	return &adminv2api.SecuritySettingsSyncOptions{
-		Interval:         durationpb.New(options.Interval.Duration),
-		Enabled:          options.Enabled,
-		RoleFilters:      functional.MapFn(convertCRDToAPINameFilter, options.RoleFilters),
-		ScramCredFilters: functional.MapFn(convertCRDToAPINameFilter, options.ScramCredentialFilters),
-		AclFilters:       functional.MapFn(convertCRDToAPIACLFilter, options.ACLFilters),
+		Interval: durationpb.New(options.Interval.Duration),
+		Enabled:  options.Enabled,
+		// TODO: the following were recently (temporarily?) removed
+		// RoleFilters:      functional.MapFn(convertCRDToAPINameFilter, options.RoleFilters),
+		// ScramCredFilters: functional.MapFn(convertCRDToAPINameFilter, options.ScramCredentialFilters),
+		AclFilters: functional.MapFn(convertCRDToAPIACLFilter, options.ACLFilters),
 	}
 }
 
@@ -246,7 +270,7 @@ func convertAPIToCRDStatus(status *adminv2api.ShadowLinkStatus) redpandav1alpha2
 	return redpandav1alpha2.ShadowLinkStatus{
 		State:               convertAPIToCRDState(status.State),
 		TaskStatuses:        functional.MapFn(convertAPIToCRDTaskStatus, sortByName(status.TaskStatuses)),
-		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, sortByName(status.ShadowTopicStatuses)),
+		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, sortByName(status.ShadowTopics)),
 	}
 }
 
@@ -276,11 +300,11 @@ func convertAPIToCRDTaskStatusState(state adminv2api.TaskState) redpandav1alpha2
 	}[state]
 }
 
-func convertAPIToCRDTopicStatus(status *adminv2api.ShadowTopicStatus) redpandav1alpha2.ShadowTopicStatus {
+func convertAPIToCRDTopicStatus(status *adminv2api.ShadowTopic) redpandav1alpha2.ShadowTopicStatus {
 	return redpandav1alpha2.ShadowTopicStatus{
 		Name:    status.Name,
 		TopicID: status.TopicId,
-		State:   convertAPIToCRDTopicStatusState(status.State),
+		State:   convertAPIToCRDTopicStatusState(status.Status.State),
 	}
 }
 

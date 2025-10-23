@@ -26,15 +26,15 @@ require (
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.36.6-20221127060915-a1ecdc58eccd.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.6-20250616170632-3de895655308.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.6-20250623133515-cbe59d22e104.1 // indirect
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.0-20251007130208-16fea41f579f.1 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.9-20251007130208-16fea41f579f.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20251023115415-1f602d02339b.2 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.10-20251023115415-1f602d02339b.1 // indirect
 	cel.dev/expr v0.24.0 // indirect
 	cloud.google.com/go/auth v0.16.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/iam v1.5.2 // indirect
 	cloud.google.com/go/secretmanager v1.14.7 // indirect
-	connectrpc.com/connect v1.19.0 // indirect
+	connectrpc.com/connect v1.19.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	emperror.dev/errors v0.8.1 // indirect
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
@@ -273,7 +273,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250908214217-97024824d090 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250826171959-ef028d996bc1 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -218,6 +218,8 @@ func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, namespace st
 }
 
 func (c *Factory) remoteClusterTLSSettingsForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.CommonTLS) (*shadow.TLSSettings, error) {
+	// NB: we elide the check of the `Enabled` field because if any field is set, `Enabled` included, the spec is not nil
+	// and we should be leveraging TLS.
 	settings := &shadow.TLSSettings{}
 
 	// Root CA

@@ -14,6 +14,7 @@ package v1alpha2
 // CommonTLSApplyConfiguration represents a declarative configuration of the CommonTLS type for use
 // with apply.
 type CommonTLSApplyConfiguration struct {
+	Enabled               *bool                           `json:"enabled,omitempty"`
 	CaCert                *SecretKeyRefApplyConfiguration `json:"caCertSecretRef,omitempty"`
 	Cert                  *SecretKeyRefApplyConfiguration `json:"certSecretRef,omitempty"`
 	Key                   *SecretKeyRefApplyConfiguration `json:"keySecretRef,omitempty"`
@@ -24,6 +25,14 @@ type CommonTLSApplyConfiguration struct {
 // apply.
 func CommonTLS() *CommonTLSApplyConfiguration {
 	return &CommonTLSApplyConfiguration{}
+}
+
+// WithEnabled sets the Enabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Enabled field is set to the value of the last call.
+func (b *CommonTLSApplyConfiguration) WithEnabled(value bool) *CommonTLSApplyConfiguration {
+	b.Enabled = &value
+	return b
 }
 
 // WithCaCert sets the CaCert field in the declarative configuration to the given value
