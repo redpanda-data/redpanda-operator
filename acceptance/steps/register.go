@@ -63,6 +63,12 @@ func init() {
 	framework.RegisterStep(`^role "([^"]*)" should have members "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveMembersAndInCluster)
 	framework.RegisterStep(`^there is a pre-existing role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsAPreExistingRole)
 	framework.RegisterStep(`^there should still be role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldStillBeRole)
+	framework.RegisterStep(`^role "([^"]*)" should have removed principals "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveRemovedPrincipals)
+
+	// RoleBinding scenario steps
+	framework.RegisterStep(`^rolebinding "([^"]*)" is successfully synced$`, roleBindingIsSuccessfullySynced)
+	framework.RegisterStep(`^rolebinding "([^"]*)" condition "([^"]*)" should be "([^"]*)"$`, roleBindingConditionShouldBe)
+	framework.RegisterStep(`^I delete the CRD rolebinding "([^"]*)"$`, iDeleteTheCRDRoleBinding)
 
 	// Metrics scenario steps
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)

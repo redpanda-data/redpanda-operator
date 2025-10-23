@@ -17,6 +17,7 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -88,6 +89,17 @@ func thereShouldBeNoRoleInCluster(ctx context.Context, t framework.TestingT, rol
 	}, 60*time.Second, 5*time.Second, "Role %q should be deleted from cluster %q", role, cluster)
 }
 
+// principalsContainMember checks if a member exists in the principals list.
+// Principals are in the format "User:name" or just "name", so we check if any principal contains the member name.
+func principalsContainMember(principals []string, member string) bool {
+	for _, p := range principals {
+		if strings.Contains(p, member) {
+			return true
+		}
+	}
+	return false
+}
+
 func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT, role string, members string, version, cluster string) {
 	clients := versionedClientsForCluster(ctx, version, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
@@ -133,6 +145,32 @@ func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT
 }
 
 func roleShouldNotHaveMemberInCluster(ctx context.Context, t framework.TestingT, role, member, version, cluster string) {
+	var roleObject redpandav1alpha2.RedpandaRole
+
+	t.Logf("Verifying role %q does not have member %q", role, member)
+
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, t.ResourceKey(role), &roleObject); err != nil {
+			t.Logf("Error getting role: %v", err)
+			return false
+		}
+
+		if principalsContainMember(roleObject.Status.Principals, member) {
+			t.Logf("Member %q still in role %q status", member, role)
+			return false
+		}
+
+		syncedCondition := apimeta.FindStatusCondition(roleObject.Status.Conditions, redpandav1alpha2.ResourceConditionTypeSynced)
+		if syncedCondition == nil || syncedCondition.Status != metav1.ConditionTrue {
+			t.Logf("Role not synced yet, waiting...")
+			return false
+		}
+
+		return true
+	}, 60*time.Second, 5*time.Second, "Member %q should not be in role %q status", member, role)
+
+	t.Logf("Verified member %q is not in role %q status", member, role)
+
 	clients := versionedClientsForCluster(ctx, version, cluster)
 	adminClient := clients.RedpandaAdmin(ctx)
 	defer adminClient.Close()
@@ -146,8 +184,10 @@ func roleShouldNotHaveMemberInCluster(ctx context.Context, t framework.TestingT,
 	// Check that the member is not present
 	for _, m := range membersResp.Members {
 		require.NotEqual(t, member, m.Name,
-			"Member %q should not be in role %q", member, role)
+			"Member %q should not be in role %q in Redpanda cluster", member, role)
 	}
+
+	t.Logf("Verified member %q is not in role %q in Redpanda cluster", member, role)
 }
 
 func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework.TestingT, role, pattern, version, cluster string) {
@@ -242,8 +282,6 @@ func thereIsAPreExistingRole(ctx context.Context, role, version, cluster string)
 		t.Fatalf("Failed to create pre-existing role %q: %v", role, err)
 	}
 
-	// Then assign the travis user to the role
-	// TODO: Add role membership assignment if needed for the test
 	_, err = adminClient.AssignRole(ctx, role, []rpadmin.RoleMember{
 		{
 			Name:          "travis",
@@ -258,4 +296,75 @@ func thereIsAPreExistingRole(ctx context.Context, role, version, cluster string)
 
 func thereShouldStillBeRole(ctx context.Context, role, version, cluster string) {
 	versionedClientsForCluster(ctx, version, cluster).ExpectRole(ctx, role)
+}
+
+func roleShouldHaveRemovedPrincipals(ctx context.Context, t framework.TestingT, role, members, version, cluster string) {
+	var roleObject redpandav1alpha2.RedpandaRole
+
+	t.Logf("Waiting for role %q to remove principals: %s", role, members)
+
+	// Parse the members string (e.g., "alice and bob")
+	var expectedRemovedMembers []string
+	if strings.Contains(members, " and ") {
+		parts := strings.Split(members, " and ")
+		for _, part := range parts {
+			part = strings.Trim(strings.TrimSpace(part), `"`)
+			if part != "" {
+				expectedRemovedMembers = append(expectedRemovedMembers, part)
+			}
+		}
+	} else {
+		expectedRemovedMembers = []string{strings.Trim(strings.TrimSpace(members), `"`)}
+	}
+
+	t.Logf("Expecting principals to be removed: %v", expectedRemovedMembers)
+
+	// Wait for principals to be removed from Role status
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, t.ResourceKey(role), &roleObject); err != nil {
+			t.Logf("Error getting role: %v", err)
+			return false
+		}
+
+		// Check if all expected members are removed from status
+		for _, member := range expectedRemovedMembers {
+			if principalsContainMember(roleObject.Status.Principals, member) {
+				t.Logf("Principal %q still in role status", member)
+				return false
+			}
+		}
+
+		// Verify role is synced after the change
+		syncedCondition := apimeta.FindStatusCondition(roleObject.Status.Conditions, redpandav1alpha2.ResourceConditionTypeSynced)
+		if syncedCondition == nil || syncedCondition.Status != metav1.ConditionTrue {
+			t.Logf("Role not synced yet, waiting...")
+			return false
+		}
+
+		return true
+	}, 60*time.Second, 2*time.Second, "Role %q did not remove principals %v", role, expectedRemovedMembers)
+
+	t.Logf("Role %q status updated, principals removed: %v", role, expectedRemovedMembers)
+
+	// Verify principals are actually removed from Redpanda cluster
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	adminClient := clients.RedpandaAdmin(ctx)
+	defer adminClient.Close()
+
+	membersResp, err := adminClient.RoleMembers(ctx, role)
+	require.NoError(t, err, "Failed to get members for role %q", role)
+
+	// Build map of actual members
+	actualMembers := make(map[string]bool)
+	for _, member := range membersResp.Members {
+		actualMembers[member.Name] = true
+	}
+
+	// Verify each expected member is NOT in Redpanda
+	for _, expectedMember := range expectedRemovedMembers {
+		require.False(t, actualMembers[expectedMember],
+			"Principal %q should be removed from role %q in Redpanda cluster", expectedMember, role)
+	}
+
+	t.Logf("Verified principals %v are removed from role %q in Redpanda", expectedRemovedMembers, role)
 }

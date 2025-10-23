@@ -114,6 +114,11 @@ func Role() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("redpandaroles.cluster.redpanda.com"))
 }
 
+// RoleBinding returns the RoleBinding CustomResourceDefinition.
+func RoleBinding() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("redpandarolebindings.cluster.redpanda.com"))
+}
+
 // NodePool returns the NodePool CustomResourceDefinition.
 func NodePool() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("nodepools.cluster.redpanda.com"))

@@ -676,10 +676,13 @@ spec:
               principals:
                 description: |-
                   Principals defines the list of users assigned to this role.
+                  This field is optional. Leave empty to manage role membership manually via RoleBindings or outside the operator.
                   Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+                  Only "User:" prefix or no prefix is currently supported.
                 items:
+                  pattern: ^(User:.+|[^:]+)$
                   type: string
-                maxItems: 1024
+                maxItems: 4096
                 type: array
             required:
             - cluster
@@ -765,6 +768,15 @@ spec:
                 description: Specifies the last observed generation.
                 format: int64
                 type: integer
+              principals:
+                description: |-
+                  Principals contains the list of principals that were last successfully
+                  synced to Redpanda. This includes principals from both the Role's spec
+                  and all RoleBindings that reference this Role.
+                items:
+                  type: string
+                maxItems: 1024
+                type: array
             type: object
         required:
         - spec
