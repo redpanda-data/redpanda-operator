@@ -21,9 +21,9 @@ require (
 )
 
 require (
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.0-20251007130208-16fea41f579f.1 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.10-20251021160320-d44d783528c8.1 // indirect
-	connectrpc.com/connect v1.19.0 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20251023115415-1f602d02339b.2 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.10-20251023115415-1f602d02339b.1 // indirect
+	connectrpc.com/connect v1.19.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect

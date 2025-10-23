@@ -1209,7 +1209,18 @@ spec:
                 description: Topic metadata sync options
                 properties:
                   autoCreateShadowTopicFilters:
-                    description: The topic filters to use
+                    description: |-
+                      List of filters that indicate which topics should be automatically
+                      created as shadow topics on the shadow cluster.  This only controls
+                      automatic creation of shadow topics and does not effect the state of the
+                      mirror topic once it is created.
+                      Literal filters for __consumer_offsets and _redpanda.audit_log will be
+                      rejected as well as prefix filters to match topics prefixed with
+                      _redpanda or __redpanda.
+                      Wildcard `*` is permitted only for literal filters and will _not_ match
+                      any topics that start with _redpanda or __redpanda.  If users wish to
+                      shadow topics that start with _redpanda or __redpanda, they should
+                      provide a literal filter for those topics.
                     items:
                       description: A filter based on the name of a resource
                       properties:
@@ -1243,26 +1254,85 @@ spec:
                       - filterType
                       type: object
                     type: array
+                  excludeDefault:
+                    description: |-
+                      If false, then the following topic properties will be synced by default:
+                      - `compression.type`
+                      - `retention.bytes`
+                      - `retention.ms`
+                      - `delete.retention.ms`
+                      - Replication Factor
+                      - `min.compaction.lag.ms`
+                      - `max.compaction.lag.ms`
+
+                      If this is true, then only the properties listed in
+                      `synced_shadow_topic_properties` will be synced.
+                    type: boolean
                   interval:
                     default: 30s
                     description: |-
                       How often to sync metadata
                       If 0 provided, defaults to 30 seconds
                     type: string
-                  shadowedTopicProperties:
+                  startOffset:
+                    default: earliest
                     description: |-
-                      Additional topic properties to shadow
-                      Partition count, `max.message.bytes`, `cleanup.policy` and
-                      `timestamp.type` will always be replicated
+                      The starting offset for new shadow topic partitions.
+                      Defaults to earliest.
+                      Only applies if the shadow partition is empty.
+                    enum:
+                    - earliest
+                    - latest
+                    - timestamp
+                    type: string
+                  startOffsetTimestamp:
+                    description: |-
+                      The timestamp to start at if `startOffset`` is set to "timestamp".
+                      Not providing this when setting `startOffset` to "timestamp" is
+                      an error.
+                    format: date-time
+                    type: string
+                  syncedShadowTopicProperties:
+                    description: |-
+                      List of topic properties that should be synced from the source topic.
+                      The following properties will always be replicated
+                      - Partition count
+                      - `max.message.bytes`
+                      - `cleanup.policy`
+                      - `timestamp.type`
+
+                      The following properties are not allowed to be replicated and adding them
+                      to this list will result in an error:
+                      - `redpanda.remote.readreplica`
+                      - `redpanda.remote.recovery`
+                      - `redpanda.remote.allowgaps`
+                      - `redpanda.virtual.cluster.id`
+                      - `redpanda.leaders.preference`
+                      - `redpanda.cloud_topic.enabled`
+
+                      This list is a list of properties in addition to the default properties
+                      that will be synced.  See `excludeDefault`.
                     items:
                       type: string
                     type: array
                 type: object
+                x-kubernetes-validations:
+                - message: startOffsetTimestamp must be specified when startOffset
+                    is set to timestamp
+                  rule: has(self.startOffset) && ((self.startOffset != 'timestamp')
+                    || has(self.startOffsetTimestamp))
             required:
             - shadowCluster
             - sourceCluster
             type: object
           status:
+            default:
+              conditions:
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: Pending
+                status: Unknown
+                type: Synced
             description: ShadowLinkStatus defines the observed state of any node pools
               tied to this cluster
             properties:

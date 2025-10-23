@@ -71,7 +71,7 @@ func TestShadowLinkClusterSettings_BootstrapRegression(t *testing.T) {
 
 	settings, err := factory.RemoteClusterSettings(ctx, &redpandav1alpha2.ShadowLink{
 		Spec: redpandav1alpha2.ShadowLinkSpec{
-			SourceCluster: redpandav1alpha2.ClusterSource{
+			SourceCluster: &redpandav1alpha2.ClusterSource{
 				StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
 					Kafka: &redpandav1alpha2.KafkaAPISpec{
 						Brokers: []string{kafkaAddress},

@@ -41,7 +41,7 @@ func getTestImage() string {
 	// this is the latest nightly image that contains shadow links, once a release
 	// with shadow links is actually cut, we can switch to the typical release
 	// images
-	return "redpandadata/redpanda-nightly:v0.0.0-20251022gitd94b19f"
+	return "redpandadata/redpanda-nightly:v0.0.0-20251023git2fede32"
 }
 
 func TestSyncer(t *testing.T) {
@@ -52,7 +52,7 @@ func TestSyncer(t *testing.T) {
 	// winds up with the maximum sync interval -- choosing 2s works around that to speed up tests
 	// see https://github.com/redpanda-data/redpanda/pull/27941 which has been merged but is not yet available
 	// in nightly builds.
-	syncTime := metav1.Duration{Duration: 2 * time.Second}
+	syncTime := ptr.To(metav1.Duration{Duration: 2 * time.Second})
 	linkName := "link"
 	topicName := "topic"
 	topicTwo := "other"
@@ -82,12 +82,12 @@ func TestSyncer(t *testing.T) {
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: redpandav1alpha2.ShadowLinkSpec{
-			ShadowCluster: redpandav1alpha2.ClusterSource{
+			ShadowCluster: &redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{
 					Name: "bogus",
 				},
 			},
-			SourceCluster: redpandav1alpha2.ClusterSource{
+			SourceCluster: &redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{
 					Name: "bogus",
 				},
@@ -144,7 +144,9 @@ func TestSyncer(t *testing.T) {
 	}, syncRetryPeriod, 1*time.Second, "shadow link never synchronized")
 
 	// check all the data has been synced over
-	require.True(t, clusterTwo.hasACL(t, ctx, user))
+	require.Eventually(t, func() bool {
+		return clusterTwo.hasACL(t, ctx, user)
+	}, syncRetryPeriod, 1*time.Second, "cluster two never had ACL synchronized")
 
 	var clusterOneOffset int64
 	var clusterTwoOffset int64

@@ -12,15 +12,19 @@
 package v1alpha2
 
 import (
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ShadowLinkTopicMetadataSyncOptionsApplyConfiguration represents a declarative configuration of the ShadowLinkTopicMetadataSyncOptions type for use
 // with apply.
 type ShadowLinkTopicMetadataSyncOptionsApplyConfiguration struct {
-	Interval                     *v1.Duration                   `json:"interval,omitempty"`
-	AutoCreateShadowTopicFilters []NameFilterApplyConfiguration `json:"autoCreateShadowTopicFilters,omitempty"`
-	ShadowedTopicProperties      []string                       `json:"shadowedTopicProperties,omitempty"`
+	Interval                     *v1.Duration                              `json:"interval,omitempty"`
+	AutoCreateShadowTopicFilters []NameFilterApplyConfiguration            `json:"autoCreateShadowTopicFilters,omitempty"`
+	SyncedShadowTopicProperties  []string                                  `json:"syncedShadowTopicProperties,omitempty"`
+	ExcludeDefault               *bool                                     `json:"excludeDefault,omitempty"`
+	StartOffset                  *redpandav1alpha2.TopicMetadataSyncOffset `json:"startOffset,omitempty"`
+	StartOffsetTimestamp         *v1.Time                                  `json:"startOffsetTimestamp,omitempty"`
 }
 
 // ShadowLinkTopicMetadataSyncOptionsApplyConfiguration constructs a declarative configuration of the ShadowLinkTopicMetadataSyncOptions type for use with
@@ -50,12 +54,36 @@ func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithAutoCreateSha
 	return b
 }
 
-// WithShadowedTopicProperties adds the given value to the ShadowedTopicProperties field in the declarative configuration
+// WithSyncedShadowTopicProperties adds the given value to the SyncedShadowTopicProperties field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ShadowedTopicProperties field.
-func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithShadowedTopicProperties(values ...string) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the SyncedShadowTopicProperties field.
+func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithSyncedShadowTopicProperties(values ...string) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
 	for i := range values {
-		b.ShadowedTopicProperties = append(b.ShadowedTopicProperties, values[i])
+		b.SyncedShadowTopicProperties = append(b.SyncedShadowTopicProperties, values[i])
 	}
+	return b
+}
+
+// WithExcludeDefault sets the ExcludeDefault field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ExcludeDefault field is set to the value of the last call.
+func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithExcludeDefault(value bool) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
+	b.ExcludeDefault = &value
+	return b
+}
+
+// WithStartOffset sets the StartOffset field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StartOffset field is set to the value of the last call.
+func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithStartOffset(value redpandav1alpha2.TopicMetadataSyncOffset) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
+	b.StartOffset = &value
+	return b
+}
+
+// WithStartOffsetTimestamp sets the StartOffsetTimestamp field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StartOffsetTimestamp field is set to the value of the last call.
+func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithStartOffsetTimestamp(value v1.Time) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
+	b.StartOffsetTimestamp = &value
 	return b
 }

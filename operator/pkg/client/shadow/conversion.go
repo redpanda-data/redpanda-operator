@@ -15,6 +15,8 @@ import (
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/common"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"k8s.io/utils/ptr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -141,14 +143,32 @@ func convertCRDToAPIShadowLinkTopicMetadataSyncOptions(options *redpandav1alpha2
 	if options == nil {
 		return nil
 	}
-	return &adminv2api.TopicMetadataSyncOptions{
+	return setStartOffsetFromCRD(&adminv2api.TopicMetadataSyncOptions{
 		Interval:                     durationpb.New(options.Interval.Duration),
 		AutoCreateShadowTopicFilters: functional.MapFn(convertCRDToAPINameFilter, options.AutoCreateShadowTopicFilters),
-		SyncedShadowTopicProperties:  options.ShadowedTopicProperties,
-		// TODO: looks like the following were recently added
-		// ExcludeDefault
-		// StartOffset
+		SyncedShadowTopicProperties:  options.SyncedShadowTopicProperties,
+		ExcludeDefault:               options.ExcludeDefault,
+	}, options)
+}
+
+func setStartOffsetFromCRD(payload *adminv2api.TopicMetadataSyncOptions, options *redpandav1alpha2.ShadowLinkTopicMetadataSyncOptions) *adminv2api.TopicMetadataSyncOptions {
+	if options.StartOffset == nil {
+		return payload
 	}
+
+	switch *options.StartOffset {
+	case redpandav1alpha2.TopicMetadataSyncOffsetEarliest:
+		payload.SetEarliest(ptr.To(adminv2api.TopicMetadataSyncOptions_EarliestOffset{}))
+	case redpandav1alpha2.TopicMetadataSyncOffsetLatest:
+		payload.SetLatest(ptr.To(adminv2api.TopicMetadataSyncOptions_LatestOffset{}))
+	case redpandav1alpha2.TopicMetadataSyncOffsetTimestamp:
+		if options.StartOffsetTimestamp == nil {
+			return payload
+		}
+		payload.SetTimestamp(timestamppb.New(options.StartOffsetTimestamp.Time))
+	}
+
+	return payload
 }
 
 func convertCRDToCommonPatternType(patternType *redpandav1alpha2.PatternType) common.ACLPattern {
