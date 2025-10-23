@@ -20,7 +20,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
-// Redpanda defines the CRD for Redpanda clusters.
+// Console defines the CRD for Redpanda Console instances.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=consoles
