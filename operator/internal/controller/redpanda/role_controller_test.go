@@ -175,7 +175,7 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 						require.NoError(t, err)
 						require.NoError(t, environment.Factory.Get(ctx, key, role))
 						require.True(t, role.Status.ManagedRole)
-
+						require.ElementsMatch(t, []string{"User:newuser1", "User:newuser2"}, role.Status.Principals)
 					}
 
 					if role.ShouldManageACLs() {
@@ -333,6 +333,7 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 			require.Equal(t, []string{FinalizerKey}, role.Finalizers)
 			require.Len(t, role.Status.Conditions, 1)
 			require.Equal(t, environment.SyncedCondition.Status, role.Status.Conditions[0].Status)
+			require.ElementsMatch(t, tt.principals, role.Status.Principals, tt.description)
 
 			// Verify management flags
 			require.Equal(t, tt.shouldManageRole, role.ShouldManageRole(), tt.description)
@@ -471,8 +472,9 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 
 	// Phase 3: Update principals
 	t.Run("update_principals", func(t *testing.T) {
+		principals := []string{"User:lifecycle-user", "User:additional-user"}
 		require.NoError(t, environment.Factory.Get(ctx, key, role))
-		role.Spec.Principals = []string{"User:lifecycle-user", "User:additional-user"}
+		role.Spec.Principals = principals
 
 		require.NoError(t, environment.Factory.Update(ctx, role))
 		_, err := environment.Reconciler.Reconcile(ctx, req)
@@ -481,7 +483,10 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 		require.NoError(t, environment.Factory.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedACLs)
-		require.Equal(t, []string{"User:lifecycle-user", "User:additional-user"}, role.Spec.Principals)
+		// spec shouldn't change during reconcile
+		require.Equal(t, principals, role.Spec.Principals)
+		// status should match updated principals
+		require.ElementsMatch(t, principals, role.Status.Principals)
 
 		// Verify role still exists with updated principals and ACLs remain
 		rolesClient, err := environment.Factory.Roles(ctx, role)

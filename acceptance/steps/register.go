@@ -61,6 +61,9 @@ func init() {
 	framework.RegisterStep(`^role "([^"]*)" should have no managed ACLs in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveNoManagedACLsInCluster)
 	framework.RegisterStep(`^there should be no ACLs for role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldBeNoACLsForRoleInCluster)
 	framework.RegisterStep(`^role "([^"]*)" should have members "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveMembersAndInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should have no members in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveNoMembersInCluster)
+	framework.RegisterStep(`^I manually assign member "([^"]*)" to role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, iManuallyAssignMemberToRole)
+	framework.RegisterStep(`^role "([^"]*)" should have status principals "([^"]*)"$`, roleShouldHaveStatusPrincipals)
 	framework.RegisterStep(`^there is a pre-existing role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsAPreExistingRole)
 	framework.RegisterStep(`^there should still be role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldStillBeRole)
 
