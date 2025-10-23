@@ -856,7 +856,7 @@ never used. Prefer Create. + |  |
 
 
 
-Redpanda defines the CRD for Redpanda clusters.
+Console defines the CRD for Redpanda Console instances.
 
 
 

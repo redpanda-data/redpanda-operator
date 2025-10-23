@@ -17,7 +17,7 @@ spec:
   - name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: Redpanda defines the CRD for Redpanda clusters.
+        description: Console defines the CRD for Redpanda Console instances.
         properties:
           apiVersion:
             description: |-
