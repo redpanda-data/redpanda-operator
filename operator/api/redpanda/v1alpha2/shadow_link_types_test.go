@@ -88,6 +88,29 @@ func TestShadowLinkValidation(t *testing.T) {
 				}
 			},
 		},
+		"no errors on update when using SASL on static config": {
+			doUpdate: true,
+			rawManifest: `
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: ShadowLink
+metadata:
+  namespace: default
+spec:
+  shadowCluster:
+    clusterRef:
+      name: bar
+  sourceCluster:
+    staticConfiguration:
+      kafka:
+        brokers:
+        - foo:9093
+        sasl:
+          username: user
+          mechanism: scram-sha-512
+          passwordSecretRef:
+            name: sasl-password
+            key: password`,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			runValidationTest(ctx, t, tt, c, &baseLink)

@@ -348,7 +348,7 @@ func TestIntegrationClientFactory(t *testing.T) {
 
 					spec.SASL = &redpandav1alpha2.KafkaSASL{
 						Username: tt.Auth.Name,
-						Password: redpandav1alpha2.SecretKeyRef{
+						Password: &redpandav1alpha2.SecretKeyRef{
 							Name: "secret",
 							Key:  "password",
 						},

@@ -20,7 +20,9 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,18 +36,37 @@ type copyableObject[T client.Object] interface {
 }
 
 type validationTestCase[T copyableObject[T]] struct {
-	mutate func(object T)
-	errors []string
+	rawManifest  string
+	mutate       func(object T)
+	mutateUpdate func(object T)
+	doUpdate     bool
+	errors       []string
+	updateErrors []string
 }
 
 func runValidationTest[T copyableObject[T]](ctx context.Context, t *testing.T, tt validationTestCase[T], c client.Client, object T) {
+	name := fmt.Sprintf("name-%v", time.Now().UnixNano())
 	objectCopy := object.DeepCopy()
-	objectCopy.SetName(fmt.Sprintf("name-%v", time.Now().UnixNano()))
+	objectCopy.SetName(name)
 
 	if tt.mutate != nil {
 		tt.mutate(objectCopy)
 	}
-	err := c.Create(ctx, objectCopy)
+
+	var err error
+	if tt.rawManifest != "" {
+		var obj unstructured.Unstructured
+		require.NoError(t, yaml.Unmarshal([]byte(tt.rawManifest), &obj.Object))
+		_, ok := obj.Object["metadata"]
+		if !ok {
+			obj.Object["metadata"] = map[string]any{}
+		}
+		meta := obj.Object["metadata"].(map[string]any)
+		meta["name"] = name
+		err = c.Create(ctx, &obj)
+	} else {
+		err = c.Create(ctx, objectCopy)
+	}
 
 	if len(tt.errors) != 0 {
 		require.Error(t, err)
@@ -55,6 +76,26 @@ func runValidationTest[T copyableObject[T]](ctx context.Context, t *testing.T, t
 
 	for _, expected := range tt.errors {
 		assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(expected))
+	}
+
+	if tt.doUpdate || tt.mutateUpdate != nil {
+		require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(objectCopy), objectCopy))
+
+		if tt.mutateUpdate != nil {
+			tt.mutateUpdate(objectCopy)
+		}
+
+		err = c.Update(ctx, objectCopy)
+
+		if len(tt.updateErrors) != 0 {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
+
+		for _, expected := range tt.updateErrors {
+			assert.Contains(t, strings.ToLower(err.Error()), strings.ToLower(expected))
+		}
 	}
 }
 

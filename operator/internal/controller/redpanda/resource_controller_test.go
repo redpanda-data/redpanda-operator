@@ -126,7 +126,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				Brokers: []string{kafkaAddress},
 				SASL: &redpandav1alpha2.KafkaSASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
+					Password: &redpandav1alpha2.SecretKeyRef{
 						Name: "superuser",
 						Key:  "password",
 					},
@@ -164,7 +164,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				Brokers: []string{kafkaAddress},
 				SASL: &redpandav1alpha2.KafkaSASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
+					Password: &redpandav1alpha2.SecretKeyRef{
 						Name: "invalidsuperuser",
 						Key:  "password",
 					},
