@@ -48,7 +48,9 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 			Status: corev1.ConditionTrue,
 		}, cluster.Status.Conditions)
 
-		hasCondition := hasConditionQuiescent
+		// V1 sets ObservedGeneration on the status as a whole. That must be
+		// observed to be == .Generate to ensure the status is up to date.
+		hasCondition := hasConditionQuiescent && cluster.Generation == cluster.Status.ObservedGeneration
 
 		t.Logf(`Checking cluster resource conditions contains "OperatorQuiescent"? %v`, hasCondition)
 		return hasCondition
@@ -162,6 +164,25 @@ func shutdownRandomClusterNode(ctx context.Context, t framework.TestingT, cluste
 
 	index := rand.IntN(len(pods.Items)) // nolint:gosec
 	pod := pods.Items[index]
+
+	t.ShutdownNode(ctx, pod.Spec.NodeName)
+}
+
+func shutdownNodeOfPod(ctx context.Context, t framework.TestingT, podName string) {
+	t.ResourceKey(podName)
+
+	var pod corev1.Pod
+	require.NoError(t, t.Get(ctx, t.ResourceKey(podName), &pod))
+
+	var node corev1.Node
+	require.NoError(t, t.Get(ctx, t.ResourceKey(pod.Spec.NodeName), &node))
+
+	node.Spec.Taints = append(node.Spec.Taints, corev1.Taint{
+		Key:    "node.kubernetes.io/out-of-service",
+		Effect: corev1.TaintEffectNoExecute,
+	})
+
+	require.NoError(t, t.Update(ctx, &node))
 
 	t.ShutdownNode(ctx, pod.Spec.NodeName)
 }

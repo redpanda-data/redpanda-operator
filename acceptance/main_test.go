@@ -93,7 +93,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				return
 			}
 			t.Log("Installing default Redpanda operator chart")
-			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+			t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 				Name:      "redpanda-operator",
 				Namespace: namespace,
 				Values: operatorchart.PartialValues{
@@ -127,6 +127,11 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 						// broker list is pruned.
 						"--cluster-connection-timeout=500ms",
 						"--enable-shadowlinks",
+						// This flag affects vectorized controllers only and is
+						// required for the nodepool tests to work.
+						"--auto-delete-pvcs",
+						// Enable the STS Decommissioner for vectorized clusters.
+						"--enable-ghost-broker-decommissioner",
 					},
 				},
 			})
@@ -205,7 +210,7 @@ func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) cont
 	}
 
 	t.Logf("Installing Redpanda operator chart: %q", name)
-	t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+	t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 		Name:       "redpanda-operator",
 		Namespace:  t.Namespace(),
 		ValuesFile: filepath.Join("operator", fmt.Sprintf("%s.yaml", name)),
