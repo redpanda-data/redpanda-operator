@@ -68,15 +68,15 @@ type KafkaSASL struct {
 	Username string `json:"username,omitempty"`
 	// Specifies the password.
 	// +optional
-	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Password *SecretKeyRef `json:"passwordSecretRef,omitempty"`
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
 	// +optional
-	OAUth KafkaSASLOAuthBearer `json:"oauth,omitempty"`
+	OAUth *KafkaSASLOAuthBearer `json:"oauth,omitempty"`
 	// +optional
-	GSSAPIConfig KafkaSASLGSSAPI `json:"gssapi,omitempty"`
+	GSSAPIConfig *KafkaSASLGSSAPI `json:"gssapi,omitempty"`
 	// +optional
-	AWSMskIam KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
+	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 }
 
 type AuthUser struct {

@@ -122,7 +122,9 @@ func (m *configMapper) configureKafka(kafka *ir.KafkaAPISpec) *PartialKafka {
 			Mechanism: ptr.To(string(kafka.SASL.Mechanism)),
 			// TODO all the other ones......
 		}
-		m.addEnv("KAFKA_SASL_PASSWORD", kafka.SASL.Password)
+		if kafka.SASL.Password != nil {
+			m.addEnv("KAFKA_SASL_PASSWORD", *kafka.SASL.Password)
+		}
 	}
 
 	return cfg

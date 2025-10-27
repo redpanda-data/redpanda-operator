@@ -116,7 +116,7 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 	if r.Values.Auth.IsSASLEnabled() {
 		kafkaSpec.SASL = &ir.KafkaSASL{
 			Username: username,
-			Password: ir.SecretKeyRef{
+			Password: &ir.SecretKeyRef{
 				Namespace: r.Release.Namespace,
 				Name:      passwordRef.Name,
 				Key:       passwordRef.Key,

@@ -55,7 +55,7 @@
 {{- $_ := (set $kafkaSpec "tls" (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.kafka.tls $r $r.Values.tls)))) "r")) -}}
 {{- end -}}
 {{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $r.Values.auth)))) "r") -}}
-{{- $_ := (set $kafkaSpec "sasl" (mustMergeOverwrite (dict "passwordSecretRef" (dict "name" "") "mechanism" "" "oauth" (dict "tokenSecretRef" (dict "name" "")) "gssapi" (dict "authType" "" "keyTabPath" "" "kerberosConfigPath" "" "serviceName" "" "username" "" "passwordSecretRef" (dict "name" "") "realm" "" "enableFast" false) "awsMskIam" (dict "accessKey" "" "secretKeySecretRef" (dict "name" "") "sessionTokenSecretRef" (dict "name" "") "userAgent" "")) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict "name" "") (dict "namespace" $r.Release.Namespace "name" $passwordRef.name "key" $passwordRef.key)) "mechanism" (toString (get (fromJson (include "redpanda.BootstrapUser.GetMechanism" (dict "a" (list $r.Values.auth.sasl.bootstrapUser)))) "r"))))) -}}
+{{- $_ := (set $kafkaSpec "sasl" (mustMergeOverwrite (dict "mechanism" "") (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict "name" "") (dict "namespace" $r.Release.Namespace "name" $passwordRef.name "key" $passwordRef.key)) "mechanism" (toString (get (fromJson (include "redpanda.BootstrapUser.GetMechanism" (dict "a" (list $r.Values.auth.sasl.bootstrapUser)))) "r"))))) -}}
 {{- end -}}
 {{- $adminTLS := (coalesce nil) -}}
 {{- $adminSchema := "http" -}}

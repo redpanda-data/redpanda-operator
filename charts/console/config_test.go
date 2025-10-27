@@ -98,7 +98,7 @@ func TestStaticConfig(t *testing.T) {
 					Brokers: []string{"broker:9092"},
 					SASL: &ir.KafkaSASL{
 						Username:  "test-user",
-						Password:  ir.SecretKeyRef{Name: "kafka-sasl", Key: "password"},
+						Password:  &ir.SecretKeyRef{Name: "kafka-sasl", Key: "password"},
 						Mechanism: "PLAIN",
 					},
 				},
@@ -383,7 +383,7 @@ func TestStaticConfig(t *testing.T) {
 					},
 					SASL: &ir.KafkaSASL{
 						Username:  "kafka-user",
-						Password:  ir.SecretKeyRef{Name: "kafka-auth", Key: "password"},
+						Password:  &ir.SecretKeyRef{Name: "kafka-auth", Key: "password"},
 						Mechanism: "SCRAM-SHA-256",
 					},
 				},
@@ -609,7 +609,6 @@ func TestStaticConfig(t *testing.T) {
 					Brokers: []string{"kafka:9092"},
 					SASL: &ir.KafkaSASL{
 						Username: "user",
-						Password: ir.SecretKeyRef{},
 					},
 				},
 				Admin: &ir.AdminAPISpec{

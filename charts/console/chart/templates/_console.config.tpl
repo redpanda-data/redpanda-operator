@@ -79,7 +79,9 @@
 {{- end -}}
 {{- if (ne (toJson $kafka.sasl) "null") -}}
 {{- $_ := (set $cfg "sasl" (mustMergeOverwrite (dict) (dict "enabled" true "username" $kafka.sasl.username "mechanism" (toString $kafka.sasl.mechanism)))) -}}
+{{- if (ne (toJson $kafka.sasl.passwordSecretRef) "null") -}}
 {{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "KAFKA_SASL_PASSWORD" $kafka.sasl.passwordSecretRef)))) "r") -}}
+{{- end -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $cfg) | toJson -}}
@@ -198,9 +200,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_236___ok_12 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_236___ok_12 0) -}}
-{{- $ok_12 := (index $_236___ok_12 1) -}}
+{{- $_238___ok_12 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_238___ok_12 0) -}}
+{{- $ok_12 := (index $_238___ok_12 1) -}}
 {{- if (not $ok_12) -}}
 {{- $_ := (set $v.ConfigMaps $ref.name (dict)) -}}
 {{- end -}}
@@ -221,9 +223,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_248___ok_13 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_248___ok_13 0) -}}
-{{- $ok_13 := (index $_248___ok_13 1) -}}
+{{- $_250___ok_13 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_250___ok_13 0) -}}
+{{- $ok_13 := (index $_250___ok_13 1) -}}
 {{- if (not $ok_13) -}}
 {{- $_ := (set $v.Secrets $ref.name (dict)) -}}
 {{- end -}}

@@ -824,16 +824,53 @@ func pV1alpha2KafkaAPISpecToPIrKafkaAPISpec(source *KafkaAPISpec, context string
 	}
 	return pIrKafkaAPISpec
 }
+func pV1alpha2KafkaSASLAWSMskIamToPIrKafkaSASLAWSMskIam(source *KafkaSASLAWSMskIam, context string) *ir.KafkaSASLAWSMskIam {
+	var pIrKafkaSASLAWSMskIam *ir.KafkaSASLAWSMskIam
+	if source != nil {
+		var irKafkaSASLAWSMskIam ir.KafkaSASLAWSMskIam
+		irKafkaSASLAWSMskIam.AccessKey = (*source).AccessKey
+		irKafkaSASLAWSMskIam.SecretKey = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).SecretKey, context)
+		irKafkaSASLAWSMskIam.SessionToken = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).SessionToken, context)
+		irKafkaSASLAWSMskIam.UserAgent = (*source).UserAgent
+		pIrKafkaSASLAWSMskIam = &irKafkaSASLAWSMskIam
+	}
+	return pIrKafkaSASLAWSMskIam
+}
+func pV1alpha2KafkaSASLGSSAPIToPIrKafkaSASLGSSAPI(source *KafkaSASLGSSAPI, context string) *ir.KafkaSASLGSSAPI {
+	var pIrKafkaSASLGSSAPI *ir.KafkaSASLGSSAPI
+	if source != nil {
+		var irKafkaSASLGSSAPI ir.KafkaSASLGSSAPI
+		irKafkaSASLGSSAPI.AuthType = (*source).AuthType
+		irKafkaSASLGSSAPI.KeyTabPath = (*source).KeyTabPath
+		irKafkaSASLGSSAPI.KerberosConfigPath = (*source).KerberosConfigPath
+		irKafkaSASLGSSAPI.ServiceName = (*source).ServiceName
+		irKafkaSASLGSSAPI.Username = (*source).Username
+		irKafkaSASLGSSAPI.Password = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).Password, context)
+		irKafkaSASLGSSAPI.Realm = (*source).Realm
+		irKafkaSASLGSSAPI.EnableFast = (*source).EnableFast
+		pIrKafkaSASLGSSAPI = &irKafkaSASLGSSAPI
+	}
+	return pIrKafkaSASLGSSAPI
+}
+func pV1alpha2KafkaSASLOAuthBearerToPIrKafkaSASLOAuthBearer(source *KafkaSASLOAuthBearer, context string) *ir.KafkaSASLOAuthBearer {
+	var pIrKafkaSASLOAuthBearer *ir.KafkaSASLOAuthBearer
+	if source != nil {
+		var irKafkaSASLOAuthBearer ir.KafkaSASLOAuthBearer
+		irKafkaSASLOAuthBearer.Token = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).Token, context)
+		pIrKafkaSASLOAuthBearer = &irKafkaSASLOAuthBearer
+	}
+	return pIrKafkaSASLOAuthBearer
+}
 func pV1alpha2KafkaSASLToPIrKafkaSASL(source *KafkaSASL, context string) *ir.KafkaSASL {
 	var pIrKafkaSASL *ir.KafkaSASL
 	if source != nil {
 		var irKafkaSASL ir.KafkaSASL
 		irKafkaSASL.Username = (*source).Username
-		irKafkaSASL.Password = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).Password, context)
+		irKafkaSASL.Password = pV1alpha2SecretKeyRefToPIrSecretKeyRef((*source).Password, context)
 		irKafkaSASL.Mechanism = ir.SASLMechanism((*source).Mechanism)
-		irKafkaSASL.OAUth = v1alpha2KafkaSASLOAuthBearerToIrKafkaSASLOAuthBearer((*source).OAUth, context)
-		irKafkaSASL.GSSAPIConfig = v1alpha2KafkaSASLGSSAPIToIrKafkaSASLGSSAPI((*source).GSSAPIConfig, context)
-		irKafkaSASL.AWSMskIam = v1alpha2KafkaSASLAWSMskIamToIrKafkaSASLAWSMskIam((*source).AWSMskIam, context)
+		irKafkaSASL.OAUth = pV1alpha2KafkaSASLOAuthBearerToPIrKafkaSASLOAuthBearer((*source).OAUth, context)
+		irKafkaSASL.GSSAPIConfig = pV1alpha2KafkaSASLGSSAPIToPIrKafkaSASLGSSAPI((*source).GSSAPIConfig, context)
+		irKafkaSASL.AWSMskIam = pV1alpha2KafkaSASLAWSMskIamToPIrKafkaSASLAWSMskIam((*source).AWSMskIam, context)
 		pIrKafkaSASL = &irKafkaSASL
 	}
 	return pIrKafkaSASL
@@ -1314,31 +1351,6 @@ func v1alpha2IngressPathToConsolePartialIngressPath(source IngressPath) v3.Parti
 		consolePartialIngressPath.PathType = &v1PathType
 	}
 	return consolePartialIngressPath
-}
-func v1alpha2KafkaSASLAWSMskIamToIrKafkaSASLAWSMskIam(source KafkaSASLAWSMskIam, context string) ir.KafkaSASLAWSMskIam {
-	var irKafkaSASLAWSMskIam ir.KafkaSASLAWSMskIam
-	irKafkaSASLAWSMskIam.AccessKey = source.AccessKey
-	irKafkaSASLAWSMskIam.SecretKey = autoconv_SecretKeyRef_To_ir_SecretKeyRef(source.SecretKey, context)
-	irKafkaSASLAWSMskIam.SessionToken = autoconv_SecretKeyRef_To_ir_SecretKeyRef(source.SessionToken, context)
-	irKafkaSASLAWSMskIam.UserAgent = source.UserAgent
-	return irKafkaSASLAWSMskIam
-}
-func v1alpha2KafkaSASLGSSAPIToIrKafkaSASLGSSAPI(source KafkaSASLGSSAPI, context string) ir.KafkaSASLGSSAPI {
-	var irKafkaSASLGSSAPI ir.KafkaSASLGSSAPI
-	irKafkaSASLGSSAPI.AuthType = source.AuthType
-	irKafkaSASLGSSAPI.KeyTabPath = source.KeyTabPath
-	irKafkaSASLGSSAPI.KerberosConfigPath = source.KerberosConfigPath
-	irKafkaSASLGSSAPI.ServiceName = source.ServiceName
-	irKafkaSASLGSSAPI.Username = source.Username
-	irKafkaSASLGSSAPI.Password = autoconv_SecretKeyRef_To_ir_SecretKeyRef(source.Password, context)
-	irKafkaSASLGSSAPI.Realm = source.Realm
-	irKafkaSASLGSSAPI.EnableFast = source.EnableFast
-	return irKafkaSASLGSSAPI
-}
-func v1alpha2KafkaSASLOAuthBearerToIrKafkaSASLOAuthBearer(source KafkaSASLOAuthBearer, context string) ir.KafkaSASLOAuthBearer {
-	var irKafkaSASLOAuthBearer ir.KafkaSASLOAuthBearer
-	irKafkaSASLOAuthBearer.Token = autoconv_SecretKeyRef_To_ir_SecretKeyRef(source.Token, context)
-	return irKafkaSASLOAuthBearer
 }
 func v1alpha2SecretConfigToPConsolePartialSecretConfig(source SecretConfig) *v3.PartialSecretConfig {
 	var consolePartialSecretConfig v3.PartialSecretConfig

@@ -58,7 +58,7 @@ func TestController(t *testing.T) {
 								SASL: &redpandav1alpha2.KafkaSASL{
 									Username:  "testuser",
 									Mechanism: redpandav1alpha2.SASLMechanismPlain,
-									Password: redpandav1alpha2.SecretKeyRef{
+									Password: &redpandav1alpha2.SecretKeyRef{
 										Name: "kafka-secret",
 										Key:  "password",
 									},
