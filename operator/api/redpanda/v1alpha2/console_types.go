@@ -54,6 +54,7 @@ func (c *ConsoleList) GetItems() []*Console {
 type ConsoleSpec struct {
 	ConsoleValues `json:",inline"`
 
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
 }
 

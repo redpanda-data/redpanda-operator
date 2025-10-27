@@ -343,7 +343,11 @@ spec:
                               format <host>:<port>
                             items:
                               type: string
+                            minItems: 1
                             type: array
+                            x-kubernetes-validations:
+                            - message: kafka brokers are immutable
+                              rule: self == oldSelf
                           sasl:
                             description: Defines authentication configuration settings
                               for Redpanda clusters that have authentication enabled.
@@ -501,6 +505,27 @@ spec:
                             required:
                             - mechanism
                             type: object
+                            x-kubernetes-validations:
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is plain
+                              rule: self.mechanism.lowerAscii() != 'plain' || (self.username
+                                != "" && has(self.passwordSecretRef))
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is sha-256
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-256'
+                                || (self.username != "" && has(self.passwordSecretRef))
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is sha-512
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-512'
+                                || (self.username != "" && has(self.passwordSecretRef))
+                            - message: oauth must be set when mechanism is oauth
+                              rule: self.mechanism.lowerAscii() != 'oauthbearer' ||
+                                has(self.oauth)
+                            - message: gssapi must be set when mechanism is gssapi
+                              rule: self.mechanism.lowerAscii() != 'gssapi' || has(self.gssapi)
+                            - message: awsMskIam must be set when mechanism is aws_msk_iam
+                              rule: self.mechanism.lowerAscii() != 'aws_msk_iam' ||
+                                has(self.awsMskIam)
                           tls:
                             description: Defines TLS configuration settings for Redpanda
                               clusters that have TLS enabled.
@@ -566,9 +591,15 @@ spec:
                                 - name
                                 type: object
                             type: object
+                            x-kubernetes-validations:
+                            - message: kafka tls settings are immutable
+                              rule: self == oldSelf
                         required:
                         - brokers
                         type: object
+                        x-kubernetes-validations:
+                        - message: kafka tls settings are immutable
+                          rule: has(self.tls) == has(oldSelf.tls)
                       schemaRegistry:
                         description: |-
                           SchemaRegistry is the configuration information for communicating with the Schema Registry
@@ -699,10 +730,10 @@ spec:
                   rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.admin)'
                 - message: 'spec.cluster.staticConfiguration.kafka: required value'
                   rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)'
-                - message: either clusterRef or staticConfiguration must be set
-                  rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable
                   rule: self == oldSelf
+                - message: either clusterRef or staticConfiguration must be set
+                  rule: has(self.clusterRef) || has(self.staticConfiguration)
               principals:
                 description: |-
                   Principals defines the list of users assigned to this role.

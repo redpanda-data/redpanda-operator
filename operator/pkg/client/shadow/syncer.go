@@ -84,7 +84,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 			// "configurations", "client_options", "tls_settings"
 			//
 			// update all fields
-			Paths: []string{"configurations.topic_metadata_sync_options", "configurations.consumer_offset_sync_options", "configurations.security_sync_options"},
+			Paths: []string{"configurations.client_options.authentication_configuration", "configurations.topic_metadata_sync_options", "configurations.consumer_offset_sync_options", "configurations.security_sync_options"},
 		},
 	}))
 	if err != nil {

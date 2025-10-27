@@ -1520,7 +1520,8 @@ KafkaAPISpec configures client configuration settings for connecting to Redpanda
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`brokers`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | 
+| *`brokers`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | MinItems: 1 +
+
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
 | *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
 |===

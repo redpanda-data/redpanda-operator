@@ -138,7 +138,10 @@ type ShadowLinkSpec struct {
 	// "configurations", "client_options", "bootstrap_servers"
 	// "configurations", "client_options", "tls_settings"
 
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	ShadowCluster *ClusterSource `json:"shadowCluster"`
+	// +kubebuilder:validation:XValidation:rule="(!has(self.clusterRef) && !has(oldSelf.clusterRef)) || (self.clusterRef == oldSelf.clusterRef)",message="ClusterSource clusterRef is immutable"
+	// +kubebuilder:validation:XValidation:rule="!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)",message="static configuration must contain a kafka block"
 	SourceCluster *ClusterSource `json:"sourceCluster"`
 
 	// Topic metadata sync options
