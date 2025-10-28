@@ -20,7 +20,7 @@ import (
 	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/log/global"
-	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 )
 
 // Most of this is heavily modified from:
