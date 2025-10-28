@@ -45,7 +45,7 @@ func getTestImage() string {
 }
 
 func TestSyncer(t *testing.T) {
-	syncRetryPeriod := 10 * time.Second
+	syncRetryPeriod := 60 * time.Second
 
 	// TODO: a current bug in duration parsing in core winds up considering duration intervals zigzag encoded
 	// we explicitly choose 2 seconds as that represents the value 1s in zigzag whereas 1s decodes to -1s and
