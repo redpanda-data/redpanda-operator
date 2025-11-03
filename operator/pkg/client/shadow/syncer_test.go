@@ -54,8 +54,8 @@ func TestSyncer(t *testing.T) {
 	// in nightly builds.
 	syncTime := ptr.To(metav1.Duration{Duration: 2 * time.Second})
 	linkName := "link"
-	topicName := "topic"
-	topicTwo := "other"
+	topicName := "foo-topic-sentinel"
+	topicTwo := "bar-topic-sentinel"
 	user := "user"
 	password := "password"
 
@@ -136,6 +136,12 @@ func TestSyncer(t *testing.T) {
 	// initial check that the link is active
 	require.Equal(t, redpandav1alpha2.ShadowLinkStateActive, status.State)
 
+	defer func() {
+		if t.Failed() {
+			clusterTwo.dumpLogs(t, ctx)
+		}
+	}()
+
 	// wrap in a retry since the update of state is asynchronous
 	require.Eventually(t, func() bool {
 		return clusterTwo.hasActiveMirroredTopics(t, ctx, linkName, topicName)
@@ -154,10 +160,6 @@ func TestSyncer(t *testing.T) {
 		t.Logf("checking cluster offsets, expected (cluster one): %d, actual (cluster two): %d", clusterOneOffset, clusterTwoOffset)
 		return clusterOneOffset == clusterTwoOffset
 	}, syncRetryPeriod, 1*time.Second, "cluster offsets not equal expected: %d, actual: %d", clusterOneOffset, clusterTwoOffset)
-
-	if t.Failed() {
-		clusterTwo.dumpLogs(t, ctx)
-	}
 
 	// Update
 	link.Spec.TopicMetadataSyncOptions.AutoCreateShadowTopicFilters[0].Name = topicTwo
