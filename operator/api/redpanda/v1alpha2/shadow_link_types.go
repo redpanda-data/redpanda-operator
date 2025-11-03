@@ -87,7 +87,7 @@ const (
 	// Task was paused
 	TaskStatePaused TaskState = "paused"
 	// Task is unable to communicate with source cluster
-	TaskStateUnavailable TaskState = "unvailable"
+	TaskStateUnavailable TaskState = "unavailable"
 	// Task is not running
 	TaskStateNotRunning TaskState = "not running"
 	// Task is faulted
