@@ -1,0 +1,49 @@
+-- empty --
+
+-- disabled --
+enabled: false
+
+-- configured --
+console:
+  login:
+    jwtSecret: secret123
+    useSecureCookies: true
+  roleBindings:
+  - roleName: admin
+    subjects:
+    - kind: user
+      provider: OIDC
+      name: devs
+
+-- config-and-console --
+# console should be migrated to V3's format and merged with config, if present.
+console:
+  login:
+    jwtSecret: secret123
+    useSecureCookies: true
+config:
+  authentication:
+    someOtherSetting: ["absolutely"]
+
+-- enterprise-and-license-ref --
+# Enterprise and licenseSecretRef refer to the same thing.
+# When both are provided, licenseSecretRef takes precedence.
+enterprise:
+  license:
+    name: enterprise-license
+    key: license
+licenseSecretRef:
+  name: license
+  key: license
+
+-- migration-warnings --
+# Fields that can't be migrated generate warnings on the new CR to indicate that
+# migration was not possible but doesn't not block the migration.
+
+console:
+  roleBindings:
+  - roleName: admin
+    subjects:
+    - kind: group
+      provider: OIDC
+      name: devs

@@ -103,7 +103,7 @@ func init() {
 				xstring := *(*source).PriorityClassName
 				consolePartialRenderValues.PriorityClassName = &xstring
 			}
-			mapStringUnknown, err := conv_runtime_RawExtension_To_mapany((*source).Config)
+			mapStringUnknown, err := conv_runtime_RawExtension_To_mapstringany((*source).Config)
 			if err != nil {
 				return nil, err
 			}
@@ -152,8 +152,16 @@ func init() {
 			}
 			consolePartialRenderValues.Secret = v1alpha2SecretConfigToPConsolePartialSecretConfig((*source).Secret)
 			consolePartialRenderValues.LicenseSecretRef = pV1SecretKeySelectorToPV1SecretKeySelector((*source).LicenseSecretRef)
-			consolePartialRenderValues.LivenessProbe = pV1ProbeToPV1Probe((*source).LivenessProbe)
-			consolePartialRenderValues.ReadinessProbe = pV1ProbeToPV1Probe((*source).ReadinessProbe)
+			pV1Probe, err := pV1alpha2ProbeApplyConfigurationToPV1Probe((*source).LivenessProbe)
+			if err != nil {
+				return nil, err
+			}
+			consolePartialRenderValues.LivenessProbe = pV1Probe
+			pV1Probe2, err := pV1alpha2ProbeApplyConfigurationToPV1Probe((*source).ReadinessProbe)
+			if err != nil {
+				return nil, err
+			}
+			consolePartialRenderValues.ReadinessProbe = pV1Probe2
 			consolePartialRenderValues.Deployment = autoconv_DeploymentConfig_console_PartialDeploymentConfig((*source).Deployment)
 			consolePartialRenderValues.Strategy = pV1DeploymentStrategyToPV1DeploymentStrategy((*source).Strategy)
 			pConsolePartialRenderValues = &consolePartialRenderValues
@@ -222,6 +230,212 @@ func init() {
 			pConsolePartialDeploymentConfig = &consolePartialDeploymentConfig
 		}
 		return pConsolePartialDeploymentConfig
+	}
+	autoconv_RedpandaConsole_To_ConsoleValues = func(source *RedpandaConsole) (*ConsoleValues, error) {
+		var pV1alpha2ConsoleValues *ConsoleValues
+		if source != nil {
+			var v1alpha2ConsoleValues ConsoleValues
+			if (*source).ReplicaCount != nil {
+				xint32 := *(*source).ReplicaCount
+				v1alpha2ConsoleValues.ReplicaCount = &xint32
+			}
+			pV1alpha2Image, err := conv_runtime_RawExtension_To_Image((*source).Image)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Image = pV1alpha2Image
+			if (*source).ImagePullSecrets != nil {
+				v1alpha2ConsoleValues.ImagePullSecrets = make([]v1.LocalObjectReference, len((*source).ImagePullSecrets))
+				for i := 0; i < len((*source).ImagePullSecrets); i++ {
+					v1LocalObjectReference, err := conv_runtime_RawExtension_To_corev1_LocalObjectReference((*source).ImagePullSecrets[i])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.ImagePullSecrets[i] = v1LocalObjectReference
+				}
+			}
+			if (*source).AutomountServiceAccountToken != nil {
+				xbool := *(*source).AutomountServiceAccountToken
+				v1alpha2ConsoleValues.AutomountServiceAccountToken = &xbool
+			}
+			pV1alpha2ServiceAccountConfig, err := conv_runtime_RawExtension_To_ServiceAccountConfig((*source).ServiceAccount)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.ServiceAccount = pV1alpha2ServiceAccountConfig
+			if (*source).CommonLabels != nil {
+				v1alpha2ConsoleValues.CommonLabels = make(map[string]string, len((*source).CommonLabels))
+				for key, value := range (*source).CommonLabels {
+					v1alpha2ConsoleValues.CommonLabels[key] = value
+				}
+			}
+			mapStringString, err := conv_runtime_RawExtension_To_mapstringstring((*source).Annotations)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Annotations = mapStringString
+			mapStringString2, err := conv_runtime_RawExtension_To_mapstringstring((*source).PodAnnotations)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.PodAnnotations = mapStringString2
+			mapStringString3, err := conv_runtime_RawExtension_To_mapstringstring((*source).PodLabels)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.PodLabels = mapStringString3
+			pV1PodSecurityContext, err := conv_runtime_RawExtension_To_corev1_PodSecurityContext((*source).PodSecurityContext)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.PodSecurityContext = pV1PodSecurityContext
+			pV1SecurityContext, err := conv_runtime_RawExtension_To_corev1_SecurityContext((*source).SecurityContext)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.SecurityContext = pV1SecurityContext
+			pV1alpha2ServiceConfig, err := conv_runtime_RawExtension_To_Service((*source).Service)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Service = pV1alpha2ServiceConfig
+			pV1alpha2IngressConfig, err := conv_runtime_RawExtension_To_Ingress((*source).Ingress)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Ingress = pV1alpha2IngressConfig
+			pV1ResourceRequirements, err := conv_runtime_RawExtension_To_corev1_Resources((*source).Resources)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Resources = pV1ResourceRequirements
+			pV1alpha2AutoScaling, err := conv_runtime_RawExtension_To_Autoscaling((*source).Autoscaling)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Autoscaling = pV1alpha2AutoScaling
+			mapStringString4, err := conv_runtime_RawExtension_To_mapstringstring((*source).NodeSelector)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.NodeSelector = mapStringString4
+			if (*source).Tolerations != nil {
+				v1alpha2ConsoleValues.Tolerations = make([]v1.Toleration, len((*source).Tolerations))
+				for j := 0; j < len((*source).Tolerations); j++ {
+					v1Toleration, err := conv_runtime_RawExtension_To_corev1_Tolerations((*source).Tolerations[j])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.Tolerations[j] = v1Toleration
+				}
+			}
+			pV1Affinity, err := conv_runtime_RawExtension_To_corev1_Affinity((*source).Affinity)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Affinity = pV1Affinity
+			v1TopologySpreadConstraintList, err := conv_runtime_RawExtension_To_corev1_TopologySpreadConstraints((*source).TopologySpreadConstraints)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.TopologySpreadConstraints = v1TopologySpreadConstraintList
+			if (*source).PriorityClassName != nil {
+				xstring := *(*source).PriorityClassName
+				v1alpha2ConsoleValues.PriorityClassName = &xstring
+			}
+			if (*source).ExtraEnv != nil {
+				v1alpha2ConsoleValues.ExtraEnv = make([]v1.EnvVar, len((*source).ExtraEnv))
+				for k := 0; k < len((*source).ExtraEnv); k++ {
+					v1EnvVar, err := conv_runtime_RawExtension_To_corev1_EnvVar((*source).ExtraEnv[k])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.ExtraEnv[k] = v1EnvVar
+				}
+			}
+			if (*source).ExtraEnvFrom != nil {
+				v1alpha2ConsoleValues.ExtraEnvFrom = make([]v1.EnvFromSource, len((*source).ExtraEnvFrom))
+				for l := 0; l < len((*source).ExtraEnvFrom); l++ {
+					v1EnvFromSource, err := conv_runtime_RawExtension_To_corev1_EnvFromSource((*source).ExtraEnvFrom[l])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.ExtraEnvFrom[l] = v1EnvFromSource
+				}
+			}
+			if (*source).ExtraVolumes != nil {
+				v1alpha2ConsoleValues.ExtraVolumes = make([]v1.Volume, len((*source).ExtraVolumes))
+				for m := 0; m < len((*source).ExtraVolumes); m++ {
+					v1Volume, err := conv_runtime_RawExtension_To_corev1_Volume((*source).ExtraVolumes[m])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.ExtraVolumes[m] = v1Volume
+				}
+			}
+			if (*source).ExtraVolumeMounts != nil {
+				v1alpha2ConsoleValues.ExtraVolumeMounts = make([]v1.VolumeMount, len((*source).ExtraVolumeMounts))
+				for n := 0; n < len((*source).ExtraVolumeMounts); n++ {
+					v1VolumeMount, err := conv_runtime_RawExtension_To_corev1_VolumeMount((*source).ExtraVolumeMounts[n])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.ExtraVolumeMounts[n] = v1VolumeMount
+				}
+			}
+			if (*source).ExtraContainers != nil {
+				v1alpha2ConsoleValues.ExtraContainers = make([]v1.Container, len((*source).ExtraContainers))
+				for o := 0; o < len((*source).ExtraContainers); o++ {
+					v1Container, err := conv_runtime_RawExtension_To_corev1_Container((*source).ExtraContainers[o])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.ExtraContainers[o] = v1Container
+				}
+			}
+			if (*source).SecretMounts != nil {
+				v1alpha2ConsoleValues.SecretMounts = make([]SecretMount, len((*source).SecretMounts))
+				for p := 0; p < len((*source).SecretMounts); p++ {
+					v1alpha2SecretMount, err := conv_runtime_RawExtension_To_SecretMounts((*source).SecretMounts[p])
+					if err != nil {
+						return nil, err
+					}
+					v1alpha2ConsoleValues.SecretMounts[p] = v1alpha2SecretMount
+				}
+			}
+			v1alpha2SecretConfig, err := conv_runtime_RawExtension_To_Secret((*source).Secret)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Secret = v1alpha2SecretConfig
+			pV1SecretKeySelector, err := convertConsoleLicenseSecretRef(source)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.LicenseSecretRef = pV1SecretKeySelector
+			pV1alpha2ProbeApplyConfiguration, err := conv_LivenessProbe_To_ProbeApplyConfiguration((*source).LivenessProbe)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.LivenessProbe = pV1alpha2ProbeApplyConfiguration
+			pV1alpha2ProbeApplyConfiguration2, err := conv_ReadinessProbe_To_ProbeApplyConfiguration((*source).ReadinessProbe)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.ReadinessProbe = pV1alpha2ProbeApplyConfiguration2
+			pV1alpha2DeploymentConfig, err := conv_runtime_RawExtension_To_Deployment((*source).Deployment)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Deployment = pV1alpha2DeploymentConfig
+			pV1DeploymentStrategy, err := conv_runtime_RawExtension_To_corev1_Strategy((*source).Strategy)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Strategy = pV1DeploymentStrategy
+			pV1alpha2ConsoleValues = &v1alpha2ConsoleValues
+		}
+		return pV1alpha2ConsoleValues, nil
 	}
 	autoconv_ServiceAccountConfig_To_console_PartialServiceAccountConfig = func(source *ServiceAccountConfig) *v3.PartialServiceAccountConfig {
 		var pConsolePartialServiceAccountConfig *v3.PartialServiceAccountConfig
@@ -893,6 +1107,17 @@ func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLogi
 		pConsolePartialOIDCLoginSecrets = &consolePartialOIDCLoginSecrets
 	}
 	return pConsolePartialOIDCLoginSecrets
+}
+func pV1alpha2ProbeApplyConfigurationToPV1Probe(source *ProbeApplyConfiguration) (*v1.Probe, error) {
+	var pV1Probe *v1.Probe
+	if source != nil {
+		v1Probe, err := conv_ProbeApplyConfiguration_To_corev1_Probe((*source))
+		if err != nil {
+			return nil, err
+		}
+		pV1Probe = &v1Probe
+	}
+	return pV1Probe, nil
 }
 func pV1alpha2RedpandaAdminAPISecretsToPConsolePartialRedpandaAdminAPISecrets(source *RedpandaAdminAPISecrets) *v3.PartialRedpandaAdminAPISecrets {
 	var pConsolePartialRedpandaAdminAPISecrets *v3.PartialRedpandaAdminAPISecrets

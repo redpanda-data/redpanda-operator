@@ -44,7 +44,7 @@ func deepCopy(v any) any {
 }
 
 func deepCopyElements(v []any) []any {
-	copied := make([]any, len(v))
+	copied := make([]any, 0, len(v))
 	for _, value := range v {
 		switch cast := value.(type) {
 		case map[string]any:
