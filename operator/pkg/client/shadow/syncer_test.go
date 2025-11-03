@@ -102,7 +102,6 @@ func TestSyncer(t *testing.T) {
 			},
 			ConsumerOffsetSyncOptions: &redpandav1alpha2.ShadowLinkConsumerOffsetSyncOptions{
 				Interval: syncTime,
-				Enabled:  true,
 				GroupFilters: []redpandav1alpha2.NameFilter{{
 					Name:        consumer,
 					FilterType:  redpandav1alpha2.FilterTypeInclude,
@@ -111,7 +110,6 @@ func TestSyncer(t *testing.T) {
 			},
 			SecuritySyncOptions: &redpandav1alpha2.ShadowLinkSecuritySettingsSyncOptions{
 				Interval: syncTime,
-				Enabled:  true,
 				ACLFilters: []redpandav1alpha2.ACLFilter{{
 					ResourceFilter: redpandav1alpha2.ACLResourceFilter{
 						Name: "*",

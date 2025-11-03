@@ -47,9 +47,6 @@ spec:
               consumerOffsetSyncOptions:
                 description: Consumer offset sync options
                 properties:
-                  enabled:
-                    description: Whether it's enabled
-                    type: boolean
                   groupFilters:
                     description: The filters
                     items:
@@ -90,6 +87,15 @@ spec:
                     description: |-
                       Sync interval
                       If 0 provided, defaults to 30 seconds
+                    type: string
+                  paused:
+                    description: Whether it's enabled
+                    type: boolean
+                type: object
+              schemaRegistrySyncOptions:
+                description: options for schema registry
+                properties:
+                  schema_registry_shadowing_mode:
                     type: string
                 type: object
               securitySyncOptions:
@@ -157,15 +163,15 @@ spec:
                       - resourceFilter
                       type: object
                     type: array
-                  enabled:
-                    description: Whether or not it's enabled
-                    type: boolean
                   interval:
                     default: 30s
                     description: |-
                       Sync interval
                       If 0 provided, defaults to 30 seconds
                     type: string
+                  paused:
+                    description: Whether or not it's enabled
+                    type: boolean
                 type: object
               shadowCluster:
                 description: ClusterSource defines how to connect to a particular
@@ -332,9 +338,6 @@ spec:
                               type: string
                             minItems: 1
                             type: array
-                            x-kubernetes-validations:
-                            - message: kafka brokers are immutable
-                              rule: self == oldSelf
                           sasl:
                             description: Defines authentication configuration settings
                               for Redpanda clusters that have authentication enabled.
@@ -578,9 +581,6 @@ spec:
                                 - name
                                 type: object
                             type: object
-                            x-kubernetes-validations:
-                            - message: kafka tls settings are immutable
-                              rule: self == oldSelf
                         required:
                         - brokers
                         type: object
@@ -882,9 +882,6 @@ spec:
                               type: string
                             minItems: 1
                             type: array
-                            x-kubernetes-validations:
-                            - message: kafka brokers are immutable
-                              rule: self == oldSelf
                           sasl:
                             description: Defines authentication configuration settings
                               for Redpanda clusters that have authentication enabled.
@@ -1128,9 +1125,6 @@ spec:
                                 - name
                                 type: object
                             type: object
-                            x-kubernetes-validations:
-                            - message: kafka tls settings are immutable
-                              rule: self == oldSelf
                         required:
                         - brokers
                         type: object

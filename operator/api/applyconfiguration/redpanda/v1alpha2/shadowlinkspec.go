@@ -19,6 +19,7 @@ type ShadowLinkSpecApplyConfiguration struct {
 	TopicMetadataSyncOptions  *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration    `json:"topicMetadataSyncOptions,omitempty"`
 	ConsumerOffsetSyncOptions *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration   `json:"consumerOffsetSyncOptions,omitempty"`
 	SecuritySyncOptions       *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration `json:"securitySyncOptions,omitempty"`
+	SchemaRegistrySyncOptions *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration   `json:"schemaRegistrySyncOptions,omitempty"`
 }
 
 // ShadowLinkSpecApplyConfiguration constructs a declarative configuration of the ShadowLinkSpec type for use with
@@ -64,5 +65,13 @@ func (b *ShadowLinkSpecApplyConfiguration) WithConsumerOffsetSyncOptions(value *
 // If called multiple times, the SecuritySyncOptions field is set to the value of the last call.
 func (b *ShadowLinkSpecApplyConfiguration) WithSecuritySyncOptions(value *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
 	b.SecuritySyncOptions = value
+	return b
+}
+
+// WithSchemaRegistrySyncOptions sets the SchemaRegistrySyncOptions field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SchemaRegistrySyncOptions field is set to the value of the last call.
+func (b *ShadowLinkSpecApplyConfiguration) WithSchemaRegistrySyncOptions(value *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration) *ShadowLinkSpecApplyConfiguration {
+	b.SchemaRegistrySyncOptions = value
 	return b
 }

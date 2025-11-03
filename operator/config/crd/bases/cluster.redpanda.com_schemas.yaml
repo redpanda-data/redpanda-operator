@@ -214,9 +214,6 @@ spec:
                               type: string
                             minItems: 1
                             type: array
-                            x-kubernetes-validations:
-                            - message: kafka brokers are immutable
-                              rule: self == oldSelf
                           sasl:
                             description: Defines authentication configuration settings
                               for Redpanda clusters that have authentication enabled.
@@ -460,9 +457,6 @@ spec:
                                 - name
                                 type: object
                             type: object
-                            x-kubernetes-validations:
-                            - message: kafka tls settings are immutable
-                              rule: self == oldSelf
                         required:
                         - brokers
                         type: object

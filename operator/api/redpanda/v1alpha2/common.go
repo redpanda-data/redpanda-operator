@@ -29,11 +29,9 @@ var ErrUnsupportedSASLMechanism = errors.New("unsupported SASL mechanism")
 // +kubebuilder:validation:XValidation:rule="has(self.tls) == has(oldSelf.tls)",message="kafka tls settings are immutable"
 type KafkaAPISpec struct {
 	// Specifies a list of broker addresses in the format <host>:<port>
-	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="kafka brokers are immutable"
 	// +kubebuilder:validation:MinItems=1
 	Brokers []string `json:"brokers"`
 	// Defines TLS configuration settings for Redpanda clusters that have TLS enabled.
-	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="kafka tls settings are immutable"
 	// +optional
 	TLS *CommonTLS `json:"tls,omitempty"`
 	// Defines authentication configuration settings for Redpanda clusters that have authentication enabled.

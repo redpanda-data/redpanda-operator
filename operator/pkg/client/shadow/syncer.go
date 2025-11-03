@@ -79,12 +79,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 	update, err := s.client.ShadowLinkService().UpdateShadowLink(ctx, connect.NewRequest(&adminv2api.UpdateShadowLinkRequest{
 		ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
 		UpdateMask: &fieldmaskpb.FieldMask{
-			// From: https://github.com/redpanda-data/redpanda/blob/60c590be34d5b2bd2934ac2143105ee7e2442388/src/v/redpanda/admin/services/shadow_link/shadow_link.cc#L64C1-L66C57
-			// "configurations", "client_options", "bootstrap_servers"
-			// "configurations", "client_options", "tls_settings"
-			//
-			// update all fields
-			Paths: []string{"configurations.client_options.authentication_configuration", "configurations.topic_metadata_sync_options", "configurations.consumer_offset_sync_options", "configurations.security_sync_options"},
+			Paths: []string{"configurations.client_options", "configurations.topic_metadata_sync_options", "configurations.consumer_offset_sync_options", "configurations.security_sync_options"},
 		},
 	}))
 	if err != nil {

@@ -150,6 +150,8 @@ type ShadowLinkSpec struct {
 	ConsumerOffsetSyncOptions *ShadowLinkConsumerOffsetSyncOptions `json:"consumerOffsetSyncOptions,omitempty"`
 	// Security settings sync options
 	SecuritySyncOptions *ShadowLinkSecuritySettingsSyncOptions `json:"securitySyncOptions,omitempty"`
+	// options for schema registry
+	SchemaRegistrySyncOptions *ShadowLinkSchemaRegistrySyncOptions `json:"schemaRegistrySyncOptions,omitempty"`
 }
 
 // FilterType specifies the type, either include or exclude of a consumer group filter.
@@ -289,7 +291,7 @@ type ShadowLinkConsumerOffsetSyncOptions struct {
 	// +kubebuilder:default="30s"
 	Interval *metav1.Duration `json:"interval,omitempty"`
 	// Whether it's enabled
-	Enabled bool `json:"enabled,omitempty"`
+	Paused bool `json:"paused,omitempty"`
 	// The filters
 	GroupFilters []NameFilter `json:"groupFilters,omitempty"`
 }
@@ -301,7 +303,19 @@ type ShadowLinkSecuritySettingsSyncOptions struct {
 	// +kubebuilder:default="30s"
 	Interval *metav1.Duration `json:"interval,omitempty"`
 	// Whether or not it's enabled
-	Enabled bool `json:"enabled,omitempty"`
+	Paused bool `json:"paused,omitempty"`
 	// ACL filters
 	ACLFilters []ACLFilter `json:"aclFilters,omitempty"`
+}
+
+type ShadowLinkSchemaRegistrySyncOptionsMode string
+
+const (
+	ShadowLinkSchemaRegistrySyncOptionsModeNone  ShadowLinkSchemaRegistrySyncOptionsMode = ""
+	ShadowLinkSchemaRegistrySyncOptionsModeTopic ShadowLinkSchemaRegistrySyncOptionsMode = "topic"
+)
+
+// Options for syncing schema registry settings
+type ShadowLinkSchemaRegistrySyncOptions struct {
+	Mode ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
 }

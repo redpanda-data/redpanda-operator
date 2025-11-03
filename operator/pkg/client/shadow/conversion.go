@@ -13,7 +13,7 @@ import (
 	"sort"
 
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
-	"buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/common"
+	commonv1 "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/common/v1"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"k8s.io/utils/ptr"
@@ -58,17 +58,30 @@ func convertCRDToAPIShadowLinkConfiguration(link *redpandav1alpha2.ShadowLink, r
 		TopicMetadataSyncOptions:  convertCRDToAPIShadowLinkTopicMetadataSyncOptions(link.Spec.TopicMetadataSyncOptions),
 		ConsumerOffsetSyncOptions: convertCRDToAPIShadowLinkConsumerOffsetSyncOptions(link.Spec.ConsumerOffsetSyncOptions),
 		SecuritySyncOptions:       convertCRDToAPIShadowLinkSecuritySyncOptions(link.Spec.SecuritySyncOptions),
+		SchemaRegistrySyncOptions: convertCRDToAPISchemaRegistrySyncOptions(link.Spec.SchemaRegistrySyncOptions),
 	}
 }
 
-func convertTLSSettingsToAPITLSConfig(tlsSettings *TLSSettings) *adminv2api.TLSSettings {
+func convertCRDToAPISchemaRegistrySyncOptions(options *redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions) *adminv2api.SchemaRegistrySyncOptions {
+	if options == nil {
+		return nil
+	}
+	apiOptions := &adminv2api.SchemaRegistrySyncOptions{}
+	switch options.Mode {
+	case redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeTopic:
+		apiOptions.SetShadowSchemaRegistryTopic(&adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryTopic{})
+	}
+	return apiOptions
+}
+
+func convertTLSSettingsToAPITLSConfig(tlsSettings *TLSSettings) *commonv1.TLSSettings {
 	if tlsSettings == nil {
 		return nil
 	}
-	settings := &adminv2api.TLSSettings{
+	settings := &commonv1.TLSSettings{
 		Enabled: true,
 	}
-	settings.SetTlsPemSettings(&adminv2api.TLSPEMSettings{
+	settings.SetTlsPemSettings(&commonv1.TLSPEMSettings{
 		Ca:             tlsSettings.CA,
 		Cert:           tlsSettings.Cert,
 		Key:            tlsSettings.Key,
@@ -112,7 +125,7 @@ func convertCRDToAPIShadowLinkConsumerOffsetSyncOptions(options *redpandav1alpha
 	}
 	return &adminv2api.ConsumerOffsetSyncOptions{
 		Interval:     durationpb.New(options.Interval.Duration),
-		Enabled:      options.Enabled,
+		Paused:       options.Paused,
 		GroupFilters: functional.MapFn(convertCRDToAPINameFilter, options.GroupFilters),
 	}
 }
@@ -158,73 +171,73 @@ func setStartOffsetFromCRD(payload *adminv2api.TopicMetadataSyncOptions, options
 
 	switch *options.StartOffset {
 	case redpandav1alpha2.TopicMetadataSyncOffsetEarliest:
-		payload.SetEarliest(ptr.To(adminv2api.TopicMetadataSyncOptions_EarliestOffset{}))
+		payload.SetStartAtEarliest(ptr.To(adminv2api.TopicMetadataSyncOptions_EarliestOffset{}))
 	case redpandav1alpha2.TopicMetadataSyncOffsetLatest:
-		payload.SetLatest(ptr.To(adminv2api.TopicMetadataSyncOptions_LatestOffset{}))
+		payload.SetStartAtLatest(ptr.To(adminv2api.TopicMetadataSyncOptions_LatestOffset{}))
 	case redpandav1alpha2.TopicMetadataSyncOffsetTimestamp:
 		if options.StartOffsetTimestamp == nil {
 			return payload
 		}
-		payload.SetTimestamp(timestamppb.New(options.StartOffsetTimestamp.Time))
+		payload.SetStartAtTimestamp(timestamppb.New(options.StartOffsetTimestamp.Time))
 	}
 
 	return payload
 }
 
-func convertCRDToCommonPatternType(patternType *redpandav1alpha2.PatternType) common.ACLPattern {
+func convertCRDToCommonPatternType(patternType *redpandav1alpha2.PatternType) commonv1.ACLPattern {
 	if patternType == nil {
-		return common.ACLPattern_ACL_PATTERN_ANY
+		return commonv1.ACLPattern_ACL_PATTERN_ANY
 	}
 
-	return map[redpandav1alpha2.PatternType]common.ACLPattern{
-		redpandav1alpha2.PatternTypeLiteral:  common.ACLPattern_ACL_PATTERN_LITERAL,
-		redpandav1alpha2.PatternTypePrefixed: common.ACLPattern_ACL_PATTERN_PREFIXED,
-		redpandav1alpha2.PatternTypeMatch:    common.ACLPattern_ACL_PATTERN_MATCH,
+	return map[redpandav1alpha2.PatternType]commonv1.ACLPattern{
+		redpandav1alpha2.PatternTypeLiteral:  commonv1.ACLPattern_ACL_PATTERN_LITERAL,
+		redpandav1alpha2.PatternTypePrefixed: commonv1.ACLPattern_ACL_PATTERN_PREFIXED,
+		redpandav1alpha2.PatternTypeMatch:    commonv1.ACLPattern_ACL_PATTERN_MATCH,
 	}[*patternType]
 }
 
-func convertCRDToCommonResourceType(resourceType *redpandav1alpha2.ResourceType) common.ACLResource {
+func convertCRDToCommonResourceType(resourceType *redpandav1alpha2.ResourceType) commonv1.ACLResource {
 	if resourceType == nil {
-		return common.ACLResource_ACL_RESOURCE_ANY
+		return commonv1.ACLResource_ACL_RESOURCE_ANY
 	}
 
-	return map[redpandav1alpha2.ResourceType]common.ACLResource{
-		redpandav1alpha2.ResourceTypeTopic:                  common.ACLResource_ACL_RESOURCE_TOPIC,
-		redpandav1alpha2.ResourceTypeGroup:                  common.ACLResource_ACL_RESOURCE_GROUP,
-		redpandav1alpha2.ResourceTypeCluster:                common.ACLResource_ACL_RESOURCE_CLUSTER,
-		redpandav1alpha2.ResourceTypeTransactionalID:        common.ACLResource_ACL_RESOURCE_TXN_ID,
-		redpandav1alpha2.ResourceTypeSchemaRegistrySubject:  common.ACLResource_ACL_RESOURCE_SR_SUBJECT,
-		redpandav1alpha2.ResourceTypeSchemaRegistryRegistry: common.ACLResource_ACL_RESOURCE_SR_REGISTRY,
+	return map[redpandav1alpha2.ResourceType]commonv1.ACLResource{
+		redpandav1alpha2.ResourceTypeTopic:                  commonv1.ACLResource_ACL_RESOURCE_TOPIC,
+		redpandav1alpha2.ResourceTypeGroup:                  commonv1.ACLResource_ACL_RESOURCE_GROUP,
+		redpandav1alpha2.ResourceTypeCluster:                commonv1.ACLResource_ACL_RESOURCE_CLUSTER,
+		redpandav1alpha2.ResourceTypeTransactionalID:        commonv1.ACLResource_ACL_RESOURCE_TXN_ID,
+		redpandav1alpha2.ResourceTypeSchemaRegistrySubject:  commonv1.ACLResource_ACL_RESOURCE_SR_SUBJECT,
+		redpandav1alpha2.ResourceTypeSchemaRegistryRegistry: commonv1.ACLResource_ACL_RESOURCE_SR_REGISTRY,
 	}[*resourceType]
 }
 
-func convertCRDToCommonOperationType(operationType *redpandav1alpha2.ACLOperation) common.ACLOperation {
+func convertCRDToCommonOperationType(operationType *redpandav1alpha2.ACLOperation) commonv1.ACLOperation {
 	if operationType == nil {
-		return common.ACLOperation_ACL_OPERATION_ANY
+		return commonv1.ACLOperation_ACL_OPERATION_ANY
 	}
 
-	return map[redpandav1alpha2.ACLOperation]common.ACLOperation{
-		redpandav1alpha2.ACLOperationRead:            common.ACLOperation_ACL_OPERATION_READ,
-		redpandav1alpha2.ACLOperationWrite:           common.ACLOperation_ACL_OPERATION_WRITE,
-		redpandav1alpha2.ACLOperationDelete:          common.ACLOperation_ACL_OPERATION_REMOVE,
-		redpandav1alpha2.ACLOperationAlter:           common.ACLOperation_ACL_OPERATION_ALTER,
-		redpandav1alpha2.ACLOperationDescribe:        common.ACLOperation_ACL_OPERATION_DESCRIBE,
-		redpandav1alpha2.ACLOperationIdempotentWrite: common.ACLOperation_ACL_OPERATION_IDEMPOTENT_WRITE,
-		redpandav1alpha2.ACLOperationClusterAction:   common.ACLOperation_ACL_OPERATION_CLUSTER_ACTION,
-		redpandav1alpha2.ACLOperationCreate:          common.ACLOperation_ACL_OPERATION_CREATE,
-		redpandav1alpha2.ACLOperationAlterConfigs:    common.ACLOperation_ACL_OPERATION_ALTER_CONFIGS,
-		redpandav1alpha2.ACLOperationDescribeConfigs: common.ACLOperation_ACL_OPERATION_DESCRIBE_CONFIGS,
+	return map[redpandav1alpha2.ACLOperation]commonv1.ACLOperation{
+		redpandav1alpha2.ACLOperationRead:            commonv1.ACLOperation_ACL_OPERATION_READ,
+		redpandav1alpha2.ACLOperationWrite:           commonv1.ACLOperation_ACL_OPERATION_WRITE,
+		redpandav1alpha2.ACLOperationDelete:          commonv1.ACLOperation_ACL_OPERATION_REMOVE,
+		redpandav1alpha2.ACLOperationAlter:           commonv1.ACLOperation_ACL_OPERATION_ALTER,
+		redpandav1alpha2.ACLOperationDescribe:        commonv1.ACLOperation_ACL_OPERATION_DESCRIBE,
+		redpandav1alpha2.ACLOperationIdempotentWrite: commonv1.ACLOperation_ACL_OPERATION_IDEMPOTENT_WRITE,
+		redpandav1alpha2.ACLOperationClusterAction:   commonv1.ACLOperation_ACL_OPERATION_CLUSTER_ACTION,
+		redpandav1alpha2.ACLOperationCreate:          commonv1.ACLOperation_ACL_OPERATION_CREATE,
+		redpandav1alpha2.ACLOperationAlterConfigs:    commonv1.ACLOperation_ACL_OPERATION_ALTER_CONFIGS,
+		redpandav1alpha2.ACLOperationDescribeConfigs: commonv1.ACLOperation_ACL_OPERATION_DESCRIBE_CONFIGS,
 	}[*operationType]
 }
 
-func convertCRDToCommonPermissionType(aclType *redpandav1alpha2.ACLType) common.ACLPermissionType {
+func convertCRDToCommonPermissionType(aclType *redpandav1alpha2.ACLType) commonv1.ACLPermissionType {
 	if aclType == nil {
-		return common.ACLPermissionType_ACL_PERMISSION_TYPE_ANY
+		return commonv1.ACLPermissionType_ACL_PERMISSION_TYPE_ANY
 	}
 
-	return map[redpandav1alpha2.ACLType]common.ACLPermissionType{
-		redpandav1alpha2.ACLTypeAllow: common.ACLPermissionType_ACL_PERMISSION_TYPE_ALLOW,
-		redpandav1alpha2.ACLTypeDeny:  common.ACLPermissionType_ACL_PERMISSION_TYPE_DENY,
+	return map[redpandav1alpha2.ACLType]commonv1.ACLPermissionType{
+		redpandav1alpha2.ACLTypeAllow: commonv1.ACLPermissionType_ACL_PERMISSION_TYPE_ALLOW,
+		redpandav1alpha2.ACLTypeDeny:  commonv1.ACLPermissionType_ACL_PERMISSION_TYPE_DENY,
 	}[*aclType]
 }
 
@@ -258,7 +271,7 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 	}
 	return &adminv2api.SecuritySettingsSyncOptions{
 		Interval: durationpb.New(options.Interval.Duration),
-		Enabled:  options.Enabled,
+		Paused:   options.Paused,
 		// TODO: the following were recently (temporarily?) removed
 		// RoleFilters:      functional.MapFn(convertCRDToAPINameFilter, options.RoleFilters),
 		// ScramCredFilters: functional.MapFn(convertCRDToAPINameFilter, options.ScramCredentialFilters),
