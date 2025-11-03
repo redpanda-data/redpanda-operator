@@ -163,7 +163,7 @@ func TestSyncer(t *testing.T) {
 
 	// Update
 	link.Spec.TopicMetadataSyncOptions.AutoCreateShadowTopicFilters[0].Name = topicTwo
-	_, err = syncer.Sync(ctx, link, clusterTwo.remoteClusterSettings())
+	_, err = syncer.Sync(ctx, link, clusterOne.remoteClusterSettings())
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool {
@@ -204,9 +204,9 @@ func runShadowLinkEnabledCluster(t *testing.T, ctx context.Context, name, userna
 	}, nil)
 	require.NoError(t, err)
 
+	require.NoError(t, rpadminClient.SetLogLevel(ctx, "kafka/client", "trace", 120))
 	require.NoError(t, rpadminClient.SetLogLevel(ctx, "cluster_link", "trace", 120))
 	require.NoError(t, rpadminClient.SetLogLevel(ctx, "shadow_link_service", "trace", 120))
-
 	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(kafkaAddress), kgo.SASL(scram.Auth{
 		User: username,
 		Pass: password,
