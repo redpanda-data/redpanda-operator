@@ -1,0 +1,64 @@
+-- 00-empty --
+config:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+secret: {}
+
+-- 01-disabled --
+null
+
+-- 02-configured --
+config:
+  authentication:
+    jwtSigningKey: secret123
+    useSecureCookies: true
+  authorization:
+    roleBindings:
+    - roleName: admin
+      users:
+      - loginType: oidc
+        name: devs
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+secret: {}
+
+-- 03-config-and-console --
+config:
+  authentication:
+    someOtherSetting:
+    - absolutely
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+secret: {}
+
+-- 04-enterprise-and-license-ref --
+config:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+licenseSecretRef:
+  key: license
+  name: license
+secret: {}
+
+-- 05-migration-warnings --
+config:
+  authorization:
+    roleBindings:
+    - roleName: admin
+      users: []
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+secret: {}
+warnings:
+- Removed group subject from role binding 'admin'. Groups are not supported in v3.
+

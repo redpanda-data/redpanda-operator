@@ -42,7 +42,8 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 
 	if spec != nil {
-		// normalize the spec by removing the connectors stanza which is deprecated
+		// normalize the spec by removing the connectors and console stanzas which are deprecated
+		spec.Console = nil
 		spec.Connectors = nil
 	}
 
@@ -58,7 +59,47 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		return nil, err
 	}
 
-	return redpanda.RenderResources(state)
+	resources, err := redpanda.RenderResources(state)
+	if err != nil {
+		return nil, err
+	}
+
+	console, err := m.consoleIntegration(cluster, spec.Console)
+	if err != nil {
+		return nil, err
+	}
+
+	if console != nil {
+		resources = append(resources, console)
+	}
+
+	return resources, err
+}
+
+func (m *V2SimpleResourceRenderer) consoleIntegration(
+	cluster *ClusterWithPools,
+	console *redpandav1alpha2.RedpandaConsole,
+) (*redpandav1alpha2.Console, error) {
+	values, err := redpandav1alpha2.ConvertConsoleSubchartToConsoleValues(console)
+	if err != nil {
+		return nil, err
+	}
+
+	// Values can be nil if console is disabled.
+	if values == nil {
+		return nil, nil
+	}
+
+	return &redpandav1alpha2.Console{
+		Spec: redpandav1alpha2.ConsoleSpec{
+			ConsoleValues: *values,
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{
+					Name: cluster.Name,
+				},
+			},
+		},
+	}, nil
 }
 
 // WatchedResourceTypes returns the list of all the resources that the cluster
