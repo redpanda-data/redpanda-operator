@@ -47,9 +47,6 @@ spec:
               consumerOffsetSyncOptions:
                 description: Consumer offset sync options
                 properties:
-                  enabled:
-                    description: Whether it's enabled
-                    type: boolean
                   groupFilters:
                     description: The filters
                     items:
@@ -90,6 +87,15 @@ spec:
                     description: |-
                       Sync interval
                       If 0 provided, defaults to 30 seconds
+                    type: string
+                  paused:
+                    description: Whether it's enabled
+                    type: boolean
+                type: object
+              schemaRegistrySyncOptions:
+                description: options for schema registry
+                properties:
+                  schema_registry_shadowing_mode:
                     type: string
                 type: object
               securitySyncOptions:
@@ -157,15 +163,15 @@ spec:
                       - resourceFilter
                       type: object
                     type: array
-                  enabled:
-                    description: Whether or not it's enabled
-                    type: boolean
                   interval:
                     default: 30s
                     description: |-
                       Sync interval
                       If 0 provided, defaults to 30 seconds
                     type: string
+                  paused:
+                    description: Whether or not it's enabled
+                    type: boolean
                 type: object
               shadowCluster:
                 description: ClusterSource defines how to connect to a particular
@@ -330,6 +336,7 @@ spec:
                               format <host>:<port>
                             items:
                               type: string
+                            minItems: 1
                             type: array
                           sasl:
                             description: Defines authentication configuration settings
@@ -488,6 +495,27 @@ spec:
                             required:
                             - mechanism
                             type: object
+                            x-kubernetes-validations:
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is plain
+                              rule: self.mechanism.lowerAscii() != 'plain' || (self.username
+                                != "" && has(self.passwordSecretRef))
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is sha-256
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-256'
+                                || (self.username != "" && has(self.passwordSecretRef))
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is sha-512
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-512'
+                                || (self.username != "" && has(self.passwordSecretRef))
+                            - message: oauth must be set when mechanism is oauth
+                              rule: self.mechanism.lowerAscii() != 'oauthbearer' ||
+                                has(self.oauth)
+                            - message: gssapi must be set when mechanism is gssapi
+                              rule: self.mechanism.lowerAscii() != 'gssapi' || has(self.gssapi)
+                            - message: awsMskIam must be set when mechanism is aws_msk_iam
+                              rule: self.mechanism.lowerAscii() != 'aws_msk_iam' ||
+                                has(self.awsMskIam)
                           tls:
                             description: Defines TLS configuration settings for Redpanda
                               clusters that have TLS enabled.
@@ -556,6 +584,9 @@ spec:
                         required:
                         - brokers
                         type: object
+                        x-kubernetes-validations:
+                        - message: kafka tls settings are immutable
+                          rule: has(self.tls) == has(oldSelf.tls)
                       schemaRegistry:
                         description: |-
                           SchemaRegistry is the configuration information for communicating with the Schema Registry
@@ -682,10 +713,10 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-validations:
-                - message: either clusterRef or staticConfiguration must be set
-                  rule: has(self.clusterRef) || has(self.staticConfiguration)
                 - message: ClusterSource is immutable
                   rule: self == oldSelf
+                - message: either clusterRef or staticConfiguration must be set
+                  rule: has(self.clusterRef) || has(self.staticConfiguration)
               sourceCluster:
                 description: ClusterSource defines how to connect to a particular
                   Redpanda cluster.
@@ -849,6 +880,7 @@ spec:
                               format <host>:<port>
                             items:
                               type: string
+                            minItems: 1
                             type: array
                           sasl:
                             description: Defines authentication configuration settings
@@ -1007,6 +1039,27 @@ spec:
                             required:
                             - mechanism
                             type: object
+                            x-kubernetes-validations:
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is plain
+                              rule: self.mechanism.lowerAscii() != 'plain' || (self.username
+                                != "" && has(self.passwordSecretRef))
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is sha-256
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-256'
+                                || (self.username != "" && has(self.passwordSecretRef))
+                            - message: username and passwordSecretRef must be set
+                                when mechanism is sha-512
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-512'
+                                || (self.username != "" && has(self.passwordSecretRef))
+                            - message: oauth must be set when mechanism is oauth
+                              rule: self.mechanism.lowerAscii() != 'oauthbearer' ||
+                                has(self.oauth)
+                            - message: gssapi must be set when mechanism is gssapi
+                              rule: self.mechanism.lowerAscii() != 'gssapi' || has(self.gssapi)
+                            - message: awsMskIam must be set when mechanism is aws_msk_iam
+                              rule: self.mechanism.lowerAscii() != 'aws_msk_iam' ||
+                                has(self.awsMskIam)
                           tls:
                             description: Defines TLS configuration settings for Redpanda
                               clusters that have TLS enabled.
@@ -1075,6 +1128,9 @@ spec:
                         required:
                         - brokers
                         type: object
+                        x-kubernetes-validations:
+                        - message: kafka tls settings are immutable
+                          rule: has(self.tls) == has(oldSelf.tls)
                       schemaRegistry:
                         description: |-
                           SchemaRegistry is the configuration information for communicating with the Schema Registry
@@ -1201,10 +1257,13 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-validations:
+                - message: ClusterSource clusterRef is immutable
+                  rule: (!has(self.clusterRef) && !has(oldSelf.clusterRef)) || (self.clusterRef
+                    == oldSelf.clusterRef)
+                - message: static configuration must contain a kafka block
+                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)'
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
-                - message: ClusterSource is immutable
-                  rule: self == oldSelf
               topicMetadataSyncOptions:
                 description: Topic metadata sync options
                 properties:

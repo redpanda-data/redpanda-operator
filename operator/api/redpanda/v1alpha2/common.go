@@ -26,8 +26,10 @@ import (
 var ErrUnsupportedSASLMechanism = errors.New("unsupported SASL mechanism")
 
 // KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
+// +kubebuilder:validation:XValidation:rule="has(self.tls) == has(oldSelf.tls)",message="kafka tls settings are immutable"
 type KafkaAPISpec struct {
 	// Specifies a list of broker addresses in the format <host>:<port>
+	// +kubebuilder:validation:MinItems=1
 	Brokers []string `json:"brokers"`
 	// Defines TLS configuration settings for Redpanda clusters that have TLS enabled.
 	// +optional
@@ -38,6 +40,12 @@ type KafkaAPISpec struct {
 }
 
 // KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+// +kubebuilder:validation:XValidation:message="username and passwordSecretRef must be set when mechanism is plain",rule="self.mechanism.lowerAscii() != 'plain' || (self.username != \"\" && has(self.passwordSecretRef))"
+// +kubebuilder:validation:XValidation:message="username and passwordSecretRef must be set when mechanism is sha-256",rule="self.mechanism.lowerAscii() != 'scram-sha-256' || (self.username != \"\" && has(self.passwordSecretRef))"
+// +kubebuilder:validation:XValidation:message="username and passwordSecretRef must be set when mechanism is sha-512",rule="self.mechanism.lowerAscii() != 'scram-sha-512' || (self.username != \"\" && has(self.passwordSecretRef))"
+// +kubebuilder:validation:XValidation:message="oauth must be set when mechanism is oauth",rule="self.mechanism.lowerAscii() != 'oauthbearer' || has(self.oauth)"
+// +kubebuilder:validation:XValidation:message="gssapi must be set when mechanism is gssapi",rule="self.mechanism.lowerAscii() != 'gssapi' || has(self.gssapi)"
+// +kubebuilder:validation:XValidation:message="awsMskIam must be set when mechanism is aws_msk_iam",rule="self.mechanism.lowerAscii() != 'aws_msk_iam' || has(self.awsMskIam)"
 type KafkaSASL struct {
 	// Specifies the username.
 	// +optional
@@ -312,7 +320,6 @@ type StaticConfigurationSource struct {
 
 // ClusterSource defines how to connect to a particular Redpanda cluster.
 // +kubebuilder:validation:XValidation:message="either clusterRef or staticConfiguration must be set",rule="has(self.clusterRef) || has(self.staticConfiguration)"
-// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 type ClusterSource struct {
 	// ClusterRef is a reference to the cluster where the object should be created.
 	// It is used in constructing the client created to configure a cluster.

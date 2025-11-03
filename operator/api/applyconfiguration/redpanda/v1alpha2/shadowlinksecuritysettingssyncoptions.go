@@ -19,7 +19,7 @@ import (
 // with apply.
 type ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration struct {
 	Interval   *v1.Duration                  `json:"interval,omitempty"`
-	Enabled    *bool                         `json:"enabled,omitempty"`
+	Paused     *bool                         `json:"paused,omitempty"`
 	ACLFilters []ACLFilterApplyConfiguration `json:"aclFilters,omitempty"`
 }
 
@@ -37,11 +37,11 @@ func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithInterval(v
 	return b
 }
 
-// WithEnabled sets the Enabled field in the declarative configuration to the given value
+// WithPaused sets the Paused field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Enabled field is set to the value of the last call.
-func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithEnabled(value bool) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
-	b.Enabled = &value
+// If called multiple times, the Paused field is set to the value of the last call.
+func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithPaused(value bool) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
+	b.Paused = &value
 	return b
 }
 

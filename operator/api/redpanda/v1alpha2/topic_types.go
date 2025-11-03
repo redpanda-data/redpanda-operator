@@ -48,6 +48,7 @@ type TopicSpec struct {
 	// ClusterSource is a reference to the cluster where the user should be created.
 	// It is used in constructing the client created to configure a cluster.
 	// +kubebuilder:validation:XValidation:message="spec.cluster.staticConfiguration.kafka: required value",rule=`!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
 
 	// Defines client configuration for connecting to Redpanda brokers.

@@ -88,6 +88,46 @@ func TestShadowLinkValidation(t *testing.T) {
 				}
 			},
 		},
+		"error on changing shadow cluster clusterRef": {
+			mutateUpdate: func(link *ShadowLink) {
+				link.Spec.ShadowCluster = &ClusterSource{
+					ClusterRef: &ClusterRef{
+						Name: "different-cluster",
+					},
+				}
+			},
+			updateErrors: []string{`ClusterSource is immutable`},
+		},
+		"error on changing source cluster clusterRef": {
+			mutateUpdate: func(link *ShadowLink) {
+				link.Spec.SourceCluster = &ClusterSource{
+					ClusterRef: &ClusterRef{
+						Name: "different-cluster",
+					},
+				}
+			},
+			updateErrors: []string{`ClusterSource clusterRef is immutable`},
+		},
+		"error on setting no static kafka brokers": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SourceCluster = &ClusterSource{
+					StaticConfiguration: &StaticConfigurationSource{
+						Kafka: &KafkaAPISpec{
+							Brokers: []string{},
+						},
+					},
+				}
+			},
+			errors: []string{`should have at least 1 item`},
+		},
+		"error on not setting static kafka block": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SourceCluster = &ClusterSource{
+					StaticConfiguration: &StaticConfigurationSource{},
+				}
+			},
+			errors: []string{`static configuration must contain a kafka block`},
+		},
 		"no errors on update when using SASL on static config": {
 			doUpdate: true,
 			rawManifest: `

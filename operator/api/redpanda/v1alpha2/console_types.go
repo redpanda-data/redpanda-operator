@@ -53,7 +53,6 @@ func (c *ConsoleList) GetItems() []*Console {
 
 type ConsoleSpec struct {
 	ConsoleValues `json:",inline"`
-
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
 }
 
