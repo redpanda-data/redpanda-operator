@@ -145,8 +145,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda-unstable
-    tag: v25.3.1-rc2
+    repository: docker.io/ivotronrp/redpanda
+    tag: 25.3.1-rc2-trixie
   license_key: ""
   listeners:
     admin:
@@ -735,8 +735,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda-unstable
-    tag: v25.3.1-rc2
+    repository: docker.io/ivotronrp/redpanda
+    tag: 25.3.1-rc2-trixie
   license_key: ""
   listeners:
     admin:
@@ -1054,12 +1054,12 @@ pools:
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
         containers:
-        - image: redpandadata/redpanda-unstable:v25.3.1-rc2
+        - image: docker.io/ivotronrp/redpanda:25.3.1-rc2-trixie
           name: redpanda
         initContainers:
-        - image: redpandadata/redpanda-unstable:v25.3.1-rc2
+        - image: docker.io/ivotronrp/redpanda:25.3.1-rc2-trixie
           name: redpanda-configurator
-        - image: redpandadata/redpanda-unstable:v25.3.1-rc2
+        - image: docker.io/ivotronrp/redpanda:25.3.1-rc2-trixie
           name: tuning
         priorityClassName: ""
         securityContext: {}
@@ -1133,12 +1133,12 @@ pools:
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
         containers:
-        - image: redpandadata/redpanda-unstable:v25.3.1-rc2
+        - image: docker.io/ivotronrp/redpanda:25.3.1-rc2-trixie
           name: redpanda
         initContainers:
-        - image: redpandadata/redpanda-unstable:v25.3.1-rc2
+        - image: docker.io/ivotronrp/redpanda:25.3.1-rc2-trixie
           name: redpanda-configurator
-        - image: redpandadata/redpanda-unstable:v25.3.1-rc2
+        - image: docker.io/ivotronrp/redpanda:25.3.1-rc2-trixie
           name: tuning
         priorityClassName: ""
         securityContext: {}
@@ -1323,8 +1323,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda-unstable
-    tag: v25.3.1-rc2
+    repository: docker.io/ivotronrp/redpanda
+    tag: 25.3.1-rc2-trixie
   license_key: ""
   listeners:
     admin:

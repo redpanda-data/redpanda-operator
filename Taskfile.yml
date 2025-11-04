@@ -218,8 +218,8 @@ tasks:
   test:pull-images:
     vars:
       DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
-      DEFAULT_TEST_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
-      DEFAULT_TEST_REDPANDA_VERSION: v25.2.1
+      DEFAULT_TEST_REDPANDA_REPO: docker.io/ivotronrp/redpanda
+      DEFAULT_TEST_REDPANDA_VERSION: 25.3.1-rc2-trixie
       DEFAULT_TEST_UPGRADE_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
       DEFAULT_TEST_UPGRADE_REDPANDA_VERSION: v24.3.11
       DEFAULT_TEST_UPGRADE_OPERATOR_VERSION: v2.3.9-24.3.11

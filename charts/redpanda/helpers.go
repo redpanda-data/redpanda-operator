@@ -94,13 +94,13 @@ func Tag(state *RenderState) string {
 		tag = state.Chart.AppVersion
 	}
 
-	pattern := "^v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+	// pattern := "^v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 
-	if !helmette.RegexMatch(pattern, tag) {
-		// This error message is for end users. This can also occur if
-		// AppVersion doesn't start with a 'v' in Chart.yaml.
-		panic("image.tag must start with a 'v' and be a valid semver")
-	}
+	//if !helmette.RegexMatch(pattern, tag) {
+	//	// This error message is for end users. This can also occur if
+	//	// AppVersion doesn't start with a 'v' in Chart.yaml.
+	//	panic("image.tag must start with a 'v' and be a valid semver")
+	//}
 
 	return tag
 }

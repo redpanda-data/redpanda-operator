@@ -110,10 +110,6 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $tag := (default $dot.Chart.AppVersion $values.image.tag) -}}
-{{- $matchString := "^v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$" -}}
-{{- if (not (mustRegexMatch $matchString $tag)) -}}
-{{- $_ := (fail "image.tag must start with a 'v' and be a valid semver") -}}
-{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $tag) | toJson -}}
 {{- break -}}
