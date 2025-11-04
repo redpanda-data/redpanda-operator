@@ -200,7 +200,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "tuning" "image" (printf "%s:%s" $values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $dot)))) "r")) "command" (list `/bin/bash` `-c` `rpk redpanda tune all`) "securityContext" (mustMergeOverwrite (dict) (dict "capabilities" (mustMergeOverwrite (dict) (dict "add" (list `SYS_RESOURCE`))) "privileged" true "runAsUser" ((0 | int64) | int64) "runAsGroup" ((0 | int64) | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/etc/redpanda"))))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "tuning" "image" (printf "%s:%s" $values.image.repository (get (fromJson (include "redpanda.Tag" (dict "a" (list $dot)))) "r")) "command" (list `/bin/bash` `-c` `rpk redpanda tune all`) "securityContext" (mustMergeOverwrite (dict) (dict "capabilities" (mustMergeOverwrite (dict) (dict "add" (list `SYS_RESOURCE`))) "privileged" true "runAsNonRoot" false "runAsUser" ((0 | int64) | int64) "runAsGroup" ((0 | int64) | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/etc/redpanda"))))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -215,9 +215,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_404_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership")))) "r") -}}
-{{- $uid := ((index $_404_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_404_uid_gid 1) | int64) -}}
+{{- $_405_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-datadir-ownership")))) "r") -}}
+{{- $uid := ((index $_405_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_405_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $values.statefulset.initContainerImage.repository $values.statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
 {{- break -}}
@@ -230,12 +230,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $_432_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
-{{- $gid := (index $_432_gid_uid 0) -}}
-{{- $uid := (index $_432_gid_uid 1) -}}
-{{- $_433_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
-{{- $sgid := (index $_433_sgid_suid 0) -}}
-{{- $suid := (index $_433_sgid_suid 1) -}}
+{{- $_433_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.podTemplate "redpanda")))) "r") -}}
+{{- $gid := (index $_433_gid_uid 0) -}}
+{{- $uid := (index $_433_gid_uid 1) -}}
+{{- $_434_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $values.statefulset.podTemplate "redpanda")))) "r") -}}
+{{- $sgid := (index $_434_sgid_suid 0) -}}
+{{- $suid := (index $_434_sgid_suid 1) -}}
 {{- if (ne (toJson $sgid) "null") -}}
 {{- $gid = $sgid -}}
 {{- end -}}
@@ -312,9 +312,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_516_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
-{{- $uid := ((index $_516_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_516_uid_gid 1) | int64) -}}
+{{- $_517_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $dot "set-tiered-storage-cache-dir-ownership")))) "r") -}}
+{{- $uid := ((index $_517_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_517_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $values.storage $dot)))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $dot)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")))) -}}
