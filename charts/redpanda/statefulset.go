@@ -371,9 +371,10 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{`SYS_RESOURCE`},
 			},
-			Privileged: ptr.To(true),
-			RunAsUser:  ptr.To(int64(0)),
-			RunAsGroup: ptr.To(int64(0)),
+			Privileged:   ptr.To(true),
+			RunAsNonRoot: ptr.To(false),
+			RunAsUser:    ptr.To(int64(0)),
+			RunAsGroup:   ptr.To(int64(0)),
 		},
 		VolumeMounts: append(
 			CommonMounts(state),
