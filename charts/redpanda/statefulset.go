@@ -395,9 +395,10 @@ func statefulSetInitContainerTuning(dot *helmette.Dot) *corev1.Container {
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{`SYS_RESOURCE`},
 			},
-			Privileged: ptr.To(true),
-			RunAsUser:  ptr.To(int64(0)),
-			RunAsGroup: ptr.To(int64(0)),
+			Privileged:   ptr.To(true),
+			RunAsNonRoot: ptr.To(false),
+			RunAsUser:    ptr.To(int64(0)),
+			RunAsGroup:   ptr.To(int64(0)),
 		},
 		VolumeMounts: append(append(CommonMounts(dot),
 			templateToVolumeMounts(dot, values.Statefulset.InitContainers.Tuning.ExtraVolumeMounts)...),

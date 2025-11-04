@@ -240,6 +240,7 @@ auth:
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.privileged}", false]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.runAsGroup}", 6767]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.runAsUser}", 5656]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[0].securityContext.runAsNonRoot}", false]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.metadata.labels.label}", "rp-sts"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.metadata.annotations.anno}", "rp-sts"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].env[?(@.name==\"HELLO\")].value}", "WORLD"]
