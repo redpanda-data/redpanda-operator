@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Fixed
+body: |
+    Fix `CreateContainerConfigError: Error: container's runAsUser breaks non-root policy...` error with `statefulset.podTemplate.spec.securityContext.runAsNonRoot: true`
+time: 2025-11-03T20:51:45.198677+02:00
