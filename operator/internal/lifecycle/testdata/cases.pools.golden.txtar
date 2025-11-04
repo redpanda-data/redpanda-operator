@@ -214,6 +214,7 @@
               - SYS_RESOURCE
             privileged: true
             runAsGroup: 0
+            runAsNonRoot: false
             runAsUser: 0
           volumeMounts:
           - mountPath: /etc/tls/certs/default
@@ -1365,6 +1366,7 @@
               - SYS_RESOURCE
             privileged: true
             runAsGroup: 0
+            runAsNonRoot: false
             runAsUser: 0
           volumeMounts:
           - mountPath: /etc/tls/certs/default
@@ -1727,6 +1729,7 @@
               - SYS_RESOURCE
             privileged: true
             runAsGroup: 0
+            runAsNonRoot: false
             runAsUser: 0
           volumeMounts:
           - mountPath: /etc/tls/certs/default
@@ -2088,6 +2091,7 @@
               - SYS_RESOURCE
             privileged: true
             runAsGroup: 0
+            runAsNonRoot: false
             runAsUser: 0
           volumeMounts:
           - mountPath: /etc/tls/certs/default
@@ -2449,6 +2453,7 @@
               - SYS_RESOURCE
             privileged: true
             runAsGroup: 0
+            runAsNonRoot: false
             runAsUser: 0
           volumeMounts:
           - mountPath: /etc/tls/certs/default
