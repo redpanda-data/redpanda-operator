@@ -167,6 +167,7 @@ func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
 	}
 
 	namespace := r.Release.Namespace
+	// TODO Decide how to handle TLS configuration in stretch cluster setup
 	serverName := InternalDomain(r)
 
 	rootCertName, rootCertKey, clientCertName := certificatesFor(r, listener.Cert)

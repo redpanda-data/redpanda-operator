@@ -892,8 +892,9 @@ type Listeners struct {
 	Kafka          ListenerConfig[KafkaAuthenticationMethod] `json:"kafka" jsonschema:"required"`
 	SchemaRegistry ListenerConfig[NoAuth]                    `json:"schemaRegistry" jsonschema:"required"`
 	RPC            struct {
-		Port int32       `json:"port" jsonschema:"required"`
-		TLS  InternalTLS `json:"tls" jsonschema:"required"`
+		Port           int32       `json:"port" jsonschema:"required"`
+		TLS            InternalTLS `json:"tls" jsonschema:"required"`
+		PrefixTemplate *string     `json:"prefixTemplate,omitempty"`
 	} `json:"rpc" jsonschema:"required"`
 }
 
@@ -961,7 +962,7 @@ func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain s
 	for i := int32(0); i < replicas; i++ {
 		result = append(result, map[string]any{
 			"host": map[string]any{
-				"address": fmt.Sprintf("%s-%d.%s", fullname, i, internalDomain),
+				"address": fmt.Sprintf("%s-%d.%s", fullname, i, ptr.Deref(l.RPC.PrefixTemplate, internalDomain)),
 				"port":    l.RPC.Port,
 			},
 		})
@@ -1626,6 +1627,7 @@ type ListenerConfig[T ~string] struct {
 
 	AppProtocol          *string `json:"appProtocol,omitempty"`
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
+	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
 }
 
 func (l *ListenerConfig[T]) AsString() ListenerConfig[string] {
@@ -1850,8 +1852,10 @@ func (c *NodeConfig) Translate() map[string]any {
 				result[k] = v
 			} else if helmette.KindIs("bool", v) {
 				result[k] = v
+			} else if helmette.KindIs("slice", v) {
+				result[k] = v
 			} else {
-				result[k] = helmette.ToYaml(v)
+				result[k] = v
 			}
 		}
 	}
