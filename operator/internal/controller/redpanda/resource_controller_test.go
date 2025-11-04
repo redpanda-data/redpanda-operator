@@ -69,7 +69,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 		_ = testEnv.Stop()
 	})
 
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:"+os.Getenv("TEST_REDPANDA_VERSION"),
+	container, err := redpanda.Run(ctx, os.Getenv("TEST_REDPANDA_REPO")+":"+os.Getenv("TEST_REDPANDA_VERSION"),
 		redpanda.WithEnableSchemaRegistryHTTPBasicAuth(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),

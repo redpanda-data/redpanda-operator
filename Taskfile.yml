@@ -211,10 +211,12 @@ tasks:
   test:pull-images:
     vars:
       DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
+      DEFAULT_TEST_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
       DEFAULT_TEST_REDPANDA_VERSION: v25.2.1
       DEFAULT_TEST_UPGRADE_REDPANDA_VERSION: v24.3.11
       DEFAULT_TEST_UPGRADE_OPERATOR_VERSION: v2.3.9-24.3.11
       TEST_CERTMANAGER_VERSION: '{{ .TEST_CERTMANAGER_VERSION | default .DEFAULT_TEST_CERTMANAGER_VERSION }}'
+      TEST_REDPANDA_REPO: '{{ .TEST_REDPANDA_REPO | default .DEFAULT_TEST_REDPANDA_REPO }}'
       TEST_REDPANDA_VERSION: '{{ .TEST_REDPANDA_VERSION | default .DEFAULT_TEST_REDPANDA_VERSION }}'
       TEST_UPGRADE_REDPANDA_VERSION: '{{ .TEST_UPGRADE_REDPANDA_VERSION | default .DEFAULT_TEST_UPGRADE_REDPANDA_VERSION }}'
       TEST_UPGRADE_OPERATOR_VERSION: '{{ .TEST_UPGRADE_OPERATOR_VERSION | default .DEFAULT_TEST_UPGRADE_OPERATOR_VERSION }}'
@@ -223,8 +225,8 @@ tasks:
       - quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
-      - docker.redpanda.com/redpandadata/redpanda:{{.TEST_REDPANDA_VERSION}}
-      - docker.redpanda.com/redpandadata/redpanda:{{.TEST_UPGRADE_REDPANDA_VERSION}}
+      - {{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}
+      - {{.TEST_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}
       - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
 
     cmds:

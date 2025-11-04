@@ -25,6 +25,7 @@ type ShadowLinkTopicMetadataSyncOptionsApplyConfiguration struct {
 	ExcludeDefault               *bool                                     `json:"excludeDefault,omitempty"`
 	StartOffset                  *redpandav1alpha2.TopicMetadataSyncOffset `json:"startOffset,omitempty"`
 	StartOffsetTimestamp         *v1.Time                                  `json:"startOffsetTimestamp,omitempty"`
+	Paused                       *bool                                     `json:"paused,omitempty"`
 }
 
 // ShadowLinkTopicMetadataSyncOptionsApplyConfiguration constructs a declarative configuration of the ShadowLinkTopicMetadataSyncOptions type for use with
@@ -85,5 +86,13 @@ func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithStartOffset(v
 // If called multiple times, the StartOffsetTimestamp field is set to the value of the last call.
 func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithStartOffsetTimestamp(value v1.Time) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
 	b.StartOffsetTimestamp = &value
+	return b
+}
+
+// WithPaused sets the Paused field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Paused field is set to the value of the last call.
+func (b *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration) WithPaused(value bool) *ShadowLinkTopicMetadataSyncOptionsApplyConfiguration {
+	b.Paused = &value
 	return b
 }

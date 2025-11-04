@@ -161,6 +161,7 @@ func convertCRDToAPIShadowLinkTopicMetadataSyncOptions(options *redpandav1alpha2
 		AutoCreateShadowTopicFilters: functional.MapFn(convertCRDToAPINameFilter, options.AutoCreateShadowTopicFilters),
 		SyncedShadowTopicProperties:  options.SyncedShadowTopicProperties,
 		ExcludeDefault:               options.ExcludeDefault,
+		Paused:                       options.Paused,
 	}, options)
 }
 
@@ -323,10 +324,13 @@ func convertAPIToCRDTopicStatus(status *adminv2api.ShadowTopic) redpandav1alpha2
 
 func convertAPIToCRDTopicStatusState(state adminv2api.ShadowTopicState) redpandav1alpha2.ShadowTopicState {
 	return map[adminv2api.ShadowTopicState]redpandav1alpha2.ShadowTopicState{
-		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_ACTIVE:   redpandav1alpha2.ShadowTopicStateActive,
-		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_FAULTED:  redpandav1alpha2.ShadowTopicStateFaulted,
-		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_PAUSED:   redpandav1alpha2.ShadowTopicStatePaused,
-		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_PROMOTED: redpandav1alpha2.ShadowTopicStatePromoted,
+		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_ACTIVE:       redpandav1alpha2.ShadowTopicStateActive,
+		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_FAULTED:      redpandav1alpha2.ShadowTopicStateFaulted,
+		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_PAUSED:       redpandav1alpha2.ShadowTopicStatePaused,
+		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_FAILING_OVER: redpandav1alpha2.ShadowTopicStateFailingOver,
+		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_FAILED_OVER:  redpandav1alpha2.ShadowTopicStateFailedOver,
+		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_PROMOTING:    redpandav1alpha2.ShadowTopicStatePromoting,
+		adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_PROMOTED:     redpandav1alpha2.ShadowTopicStatePromoted,
 	}[state]
 }
 

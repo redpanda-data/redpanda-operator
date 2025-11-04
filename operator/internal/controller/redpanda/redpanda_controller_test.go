@@ -910,7 +910,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
 			ClientFactory: s.clientFactory,
 			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(
-				lifecycle.Image{Repository: "redpandadata/redpanda", Tag: os.Getenv("TEST_REDPANDA_VERSION")},
+				lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
 				lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),

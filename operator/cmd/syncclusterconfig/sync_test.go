@@ -43,7 +43,7 @@ func TestSync(t *testing.T) {
 	// No auth is easy, only test on a cluster with auth on admin API.
 	container, err := redpanda.Run(
 		ctx,
-		"docker.redpanda.com/redpandadata/redpanda:"+os.Getenv("TEST_REDPANDA_VERSION"),
+		os.Getenv("TEST_REDPANDA_REPO")+":"+os.Getenv("TEST_REDPANDA_VERSION"),
 		// TODO: Upgrade to testcontainers 0.33.0 so we get
 		// WithBootstrapConfig. For whatever reason, it seems to not get along
 		// with CI.
