@@ -1004,23 +1004,31 @@ func (s *RedpandaControllerSuite) setupRBAC() string {
 }
 
 func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
-	return &redpandav1alpha2.Redpanda{
+	rp := &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "rp-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
 			Annotations: make(map[string]string),
 		},
 		Spec: redpandav1alpha2.MinimalRedpandaSpec(),
 	}
+
+	rp.Spec.ClusterSpec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+
+	return rp
 }
 
 func (s *RedpandaControllerSuite) minimalNodePool(cluster *redpandav1alpha2.Redpanda) *redpandav1alpha2.NodePool {
-	return &redpandav1alpha2.NodePool{
+	np := &redpandav1alpha2.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "pool-" + testenv.RandString(6), // GenerateName doesn't play nice with SSA.
 			Annotations: make(map[string]string),
 		},
 		Spec: redpandav1alpha2.MinimalNodePoolSpec(cluster),
 	}
+
+	np.Spec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+
+	return np
 }
 
 func (s *RedpandaControllerSuite) deleteAndWait(obj client.Object) {
