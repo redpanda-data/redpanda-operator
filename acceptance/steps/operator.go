@@ -11,6 +11,10 @@ package steps
 
 import (
 	"context"
+<<<<<<< HEAD
+=======
+	"regexp"
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"

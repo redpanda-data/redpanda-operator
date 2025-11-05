@@ -149,8 +149,12 @@ tasks:
   build:charts:
     desc: "Run helm dep build for all charts"
     cmds:
+<<<<<<< HEAD
       - helm repo add redpanda https://charts.redpanda.com
       - helm dep build ./charts/redpanda
+=======
+      - helm dep build ./charts/redpanda/chart
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 
   test:unit:
     desc: "Run all unit tests (~5m)"
@@ -166,8 +170,17 @@ tasks:
     deps:
     # The operator image is required to test the configurator and sidecar.
     # In integration tests, the operator itself will be run from the go test process.
+<<<<<<< HEAD
     - build:image
     - build:charts
+=======
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
+    vars:
+      RUN: '{{ default `"^TestIntegration"` .RUN }}'
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
     cmds:
     - task: charts:kind-cluster
     - kind load docker-image localhost/redpanda-operator:dev
@@ -180,8 +193,16 @@ tasks:
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
     deps:
+<<<<<<< HEAD
     - build:image
     - build:charts
+=======
+    - task: test:pull-images
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
     vars:
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
       CLI_ARGS: '{{.CLI_ARGS}} -tags=acceptance -run "^TestAcceptance" -timeout 20m -v'

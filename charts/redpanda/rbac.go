@@ -24,10 +24,17 @@ func Roles(dot *helmette.Dot) []*rbacv1.Role {
 
 	// path of static role definition -> Enabled
 	mapping := map[string]bool{
+<<<<<<< HEAD
 		"files/sidecar.Role.yaml":          values.RBAC.Enabled && values.Statefulset.SideCars.Controllers.CreateRBAC,
 		"files/pvcunbinder.Role.yaml":      values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.PVCUnbinderEnabled(),
 		"files/decommission.Role.yaml":     values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
 		"files/rpk-debug-bundle.Role.yaml": values.RBAC.Enabled && values.RBAC.RPKDebugBundle,
+=======
+		"files/sidecar.Role.yaml":          state.Values.RBAC.Enabled,
+		"files/pvcunbinder.Role.yaml":      state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.PVCUnbinder.Enabled,
+		"files/decommission.Role.yaml":     state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.BrokerDecommissioner.Enabled,
+		"files/rpk-debug-bundle.Role.yaml": state.Values.RBAC.Enabled && state.Values.RBAC.RPKDebugBundle,
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 	}
 
 	var roles []*rbacv1.Role
@@ -59,9 +66,15 @@ func ClusterRoles(dot *helmette.Dot) []*rbacv1.ClusterRole {
 
 	// path of static ClusterRole definition -> Enabled
 	mapping := map[string]bool{
+<<<<<<< HEAD
 		"files/pvcunbinder.ClusterRole.yaml":    values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.PVCUnbinderEnabled(),
 		"files/decommission.ClusterRole.yaml":   values.Statefulset.SideCars.ShouldCreateRBAC() && values.Statefulset.SideCars.BrokerDecommissionerEnabled(),
 		"files/rack-awareness.ClusterRole.yaml": values.RBAC.Enabled && values.RackAwareness.Enabled,
+=======
+		"files/pvcunbinder.ClusterRole.yaml":    state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.PVCUnbinder.Enabled,
+		"files/decommission.ClusterRole.yaml":   state.Values.RBAC.Enabled && state.Values.Statefulset.SideCars.BrokerDecommissioner.Enabled,
+		"files/rack-awareness.ClusterRole.yaml": state.Values.RBAC.Enabled && state.Values.RackAwareness.Enabled,
+>>>>>>> 13aeda85 (charts/redpanda: use new sidecar --selector flag)
 	}
 
 	var clusterRoles []*rbacv1.ClusterRole
