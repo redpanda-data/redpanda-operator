@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Changed
-body: Client certificates are now named `$FULLNAME-$CERT-client-cert`.
-time: 2025-09-18T15:27:41.700988-04:00
