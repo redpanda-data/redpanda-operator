@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -35,7 +35,7 @@
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
-          helm.sh/chart: redpanda-5.10.4
+          helm.sh/chart: redpanda-5.10.5
           redpanda.com/poddisruptionbudget: basic-test
       spec:
         affinity:
@@ -67,7 +67,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           lifecycle:
             postStart:
               exec:
@@ -205,7 +205,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           name: tuning
           resources: {}
           securityContext:
@@ -243,7 +243,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           name: redpanda-configurator
           resources: {}
           securityContext:
@@ -375,7 +375,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir
@@ -399,7 +399,7 @@
           app.kubernetes.io/instance: chown-datadir
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
-          helm.sh/chart: redpanda-5.10.4
+          helm.sh/chart: redpanda-5.10.5
           redpanda.com/poddisruptionbudget: chown-datadir
       spec:
         affinity:
@@ -431,7 +431,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           lifecycle:
             postStart:
               exec:
@@ -569,7 +569,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           name: tuning
           resources: {}
           securityContext:
@@ -621,7 +621,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           name: redpanda-configurator
           resources: {}
           securityContext:
@@ -753,7 +753,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness
@@ -777,7 +777,7 @@
           app.kubernetes.io/instance: rack-awareness
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
-          helm.sh/chart: redpanda-5.10.4
+          helm.sh/chart: redpanda-5.10.5
           redpanda.com/poddisruptionbudget: rack-awareness
       spec:
         affinity:
@@ -809,7 +809,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           lifecycle:
             postStart:
               exec:
@@ -947,7 +947,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           name: tuning
           resources: {}
           securityContext:
@@ -985,7 +985,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.7
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.12
           name: redpanda-configurator
           resources: {}
           securityContext:

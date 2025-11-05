@@ -11,7 +11,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external
@@ -60,7 +60,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -91,7 +91,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -108,7 +108,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
       monitoring.redpanda.com/enabled: "false"
@@ -320,7 +320,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -361,7 +361,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk
@@ -378,7 +378,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-selfsigned-issuer
@@ -398,7 +398,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-issuer
@@ -419,7 +419,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-selfsigned-issuer
@@ -439,7 +439,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-issuer
@@ -460,7 +460,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-certificate
@@ -490,7 +490,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-certificate
@@ -520,7 +520,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-cert
@@ -561,7 +561,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-cert
@@ -602,7 +602,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk-debug-bundle
@@ -637,7 +637,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar
@@ -667,7 +667,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk-debug-bundle
@@ -692,7 +692,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar
@@ -717,7 +717,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sts-lifecycle
@@ -813,7 +813,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-configurator
@@ -1064,7 +1064,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-external
@@ -1113,7 +1113,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir
@@ -1144,7 +1144,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir
@@ -1161,7 +1161,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
       monitoring.redpanda.com/enabled: "false"
@@ -1373,7 +1373,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir
@@ -1414,7 +1414,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-rpk
@@ -1431,7 +1431,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-default-selfsigned-issuer
@@ -1451,7 +1451,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-default-root-issuer
@@ -1472,7 +1472,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-external-selfsigned-issuer
@@ -1492,7 +1492,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-external-root-issuer
@@ -1513,7 +1513,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-default-root-certificate
@@ -1543,7 +1543,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-external-root-certificate
@@ -1573,7 +1573,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-default-cert
@@ -1614,7 +1614,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-external-cert
@@ -1655,7 +1655,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-rpk-debug-bundle
@@ -1690,7 +1690,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-sidecar
@@ -1720,7 +1720,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-rpk-debug-bundle
@@ -1745,7 +1745,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-sidecar
@@ -1770,7 +1770,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-sts-lifecycle
@@ -1866,7 +1866,7 @@
       cluster.redpanda.com/namespace: chown-datadir
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: chown-datadir
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: chown-datadir
       helm.toolkit.fluxcd.io/namespace: chown-datadir
     name: chown-datadir-configurator
@@ -2117,7 +2117,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-external
@@ -2166,7 +2166,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness
@@ -2197,7 +2197,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness
@@ -2214,7 +2214,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
       monitoring.redpanda.com/enabled: "false"
@@ -2426,7 +2426,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness
@@ -2467,7 +2467,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-rpk
@@ -2484,7 +2484,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-default-selfsigned-issuer
@@ -2504,7 +2504,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-default-root-issuer
@@ -2525,7 +2525,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-external-selfsigned-issuer
@@ -2545,7 +2545,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-external-root-issuer
@@ -2566,7 +2566,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-default-root-certificate
@@ -2596,7 +2596,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-external-root-certificate
@@ -2626,7 +2626,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-default-cert
@@ -2667,7 +2667,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-external-cert
@@ -2708,7 +2708,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-rpk-debug-bundle
@@ -2743,7 +2743,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-sidecar
@@ -2773,7 +2773,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-rack-awareness-rack-awareness
@@ -2796,7 +2796,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-rpk-debug-bundle
@@ -2821,7 +2821,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-sidecar
@@ -2846,7 +2846,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-rack-awareness-rack-awareness
@@ -2870,7 +2870,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-sts-lifecycle
@@ -2966,7 +2966,7 @@
       cluster.redpanda.com/namespace: rack-awareness
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: rack-awareness
-      helm.sh/chart: redpanda-5.10.4
+      helm.sh/chart: redpanda-5.10.5
       helm.toolkit.fluxcd.io/name: rack-awareness
       helm.toolkit.fluxcd.io/namespace: rack-awareness
     name: rack-awareness-configurator
