@@ -238,6 +238,12 @@ func (s *StatefulSetDecommissionerSuite) installChart(name string, overrides map
 	values := map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 1,
+			"sideCars": map[string]any{
+				"image": map[string]any{
+					"repository": "localhost/redpanda-operator",
+					"tag":        "dev",
+				},
+			},
 		},
 		"console": map[string]any{
 			"enabled": false,
