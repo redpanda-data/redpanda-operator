@@ -46,9 +46,8 @@ func getSuite(t *testing.T) *framework.Suite {
 }
 
 var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
-	// For now we need to use nightly images so that we can use shadow links
-	steps.DefaultRedpandaRepo = "redpandadata/redpanda-nightly"
-	steps.DefaultRedpandaTag = "v0.0.0-20251103git2470d86"
+	steps.DefaultRedpandaRepo = os.Getenv("TEST_REDPANDA_REPO")
+	steps.DefaultRedpandaTag = os.Getenv("TEST_REDPANDA_VERSION")
 
 	return framework.SuiteBuilderFromFlags().
 		Strict().

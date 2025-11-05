@@ -68,7 +68,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -204,7 +204,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -242,7 +242,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -429,7 +429,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -585,7 +585,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -957,7 +957,7 @@
             xfs & wait $!
           command:
           - /bin/sh
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: fs-validator
           resources:
             limits:
@@ -1216,7 +1216,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -1352,7 +1352,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -1390,7 +1390,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1578,7 +1578,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -1712,7 +1712,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -1750,7 +1750,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1938,7 +1938,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -2072,7 +2072,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -2110,7 +2110,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:

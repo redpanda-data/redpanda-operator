@@ -89,7 +89,10 @@ spec:
                       If 0 provided, defaults to 30 seconds
                     type: string
                   paused:
-                    description: Whether it's enabled
+                    description: |-
+                      Allows user to pause the consumer offset sync task.  If paused, then
+                      the task will enter the 'paused' state and not sync consumer offsets from
+                      the source cluster
                     type: boolean
                 type: object
               schemaRegistrySyncOptions:
@@ -170,7 +173,10 @@ spec:
                       If 0 provided, defaults to 30 seconds
                     type: string
                   paused:
-                    description: Whether or not it's enabled
+                    description: |-
+                      Allows user to pause the security settings sync task.  If paused,
+                      then the task will enter the 'paused' state and will not sync security
+                      settings from the source cluster
                     type: boolean
                 type: object
               shadowCluster:
@@ -1333,6 +1339,12 @@ spec:
                       How often to sync metadata
                       If 0 provided, defaults to 30 seconds
                     type: string
+                  paused:
+                    description: |-
+                      Allows user to pause the topic sync task.  If paused, then
+                      the task will enter the 'paused' state and not sync topics or their
+                      properties from the source cluster
+                    type: boolean
                   startOffset:
                     default: earliest
                     description: |-

@@ -14,6 +14,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -38,10 +39,7 @@ import (
 )
 
 func getTestImage() string {
-	// this is the latest nightly image that contains shadow links, once a release
-	// with shadow links is actually cut, we can switch to the typical release
-	// images
-	return "redpandadata/redpanda-nightly:v0.0.0-20251103git2470d86"
+	return os.Getenv("TEST_REDPANDA_REPO") + ":" + os.Getenv("TEST_REDPANDA_VERSION")
 }
 
 func TestSyncer(t *testing.T) {

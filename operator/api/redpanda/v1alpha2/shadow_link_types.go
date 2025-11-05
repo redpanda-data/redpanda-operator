@@ -113,12 +113,18 @@ const (
 	ShadowTopicStateUnknown ShadowTopicState = ""
 	// Shadow topic is active
 	ShadowTopicStateActive ShadowTopicState = "active"
-	// Shadow topic has been promoted
-	ShadowTopicStatePromoted ShadowTopicState = "promoted"
 	// Shadow topic has faulted
 	ShadowTopicStateFaulted ShadowTopicState = "faulted"
 	// Shadow topic has been paused
 	ShadowTopicStatePaused ShadowTopicState = "paused"
+	// Shadow topic is in the process of failing over
+	ShadowTopicStateFailingOver ShadowTopicState = "failng over"
+	// Shadow topic is in the process of being promoted
+	ShadowTopicStateFailedOver ShadowTopicState = "failed over"
+	// Shadow topic is in the process of being promoted
+	ShadowTopicStatePromoting ShadowTopicState = "promoting"
+	// Shadow topic has failed over successfully
+	ShadowTopicStatePromoted ShadowTopicState = "promoted"
 )
 
 // Status of a ShadowTopic
@@ -282,6 +288,10 @@ type ShadowLinkTopicMetadataSyncOptions struct {
 	// Not providing this when setting `startOffset` to "timestamp" is
 	// an error.
 	StartOffsetTimestamp *metav1.Time `json:"startOffsetTimestamp,omitempty"`
+	// Allows user to pause the topic sync task.  If paused, then
+	// the task will enter the 'paused' state and not sync topics or their
+	// properties from the source cluster
+	Paused bool `json:"paused,omitempty"`
 }
 
 // Options for syncing consumer offsets
@@ -290,7 +300,9 @@ type ShadowLinkConsumerOffsetSyncOptions struct {
 	// If 0 provided, defaults to 30 seconds
 	// +kubebuilder:default="30s"
 	Interval *metav1.Duration `json:"interval,omitempty"`
-	// Whether it's enabled
+	// Allows user to pause the consumer offset sync task.  If paused, then
+	// the task will enter the 'paused' state and not sync consumer offsets from
+	// the source cluster
 	Paused bool `json:"paused,omitempty"`
 	// The filters
 	GroupFilters []NameFilter `json:"groupFilters,omitempty"`
@@ -302,7 +314,9 @@ type ShadowLinkSecuritySettingsSyncOptions struct {
 	// If 0 provided, defaults to 30 seconds
 	// +kubebuilder:default="30s"
 	Interval *metav1.Duration `json:"interval,omitempty"`
-	// Whether or not it's enabled
+	// Allows user to pause the security settings sync task.  If paused,
+	// then the task will enter the 'paused' state and will not sync security
+	// settings from the source cluster
 	Paused bool `json:"paused,omitempty"`
 	// ACL filters
 	ACLFilters []ACLFilter `json:"aclFilters,omitempty"`
