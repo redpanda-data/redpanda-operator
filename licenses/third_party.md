@@ -125,6 +125,8 @@ run `task generate:third-party-licenses-list`
 | github.com/huandu/xstrings | [MIT](https://github.com/huandu/xstrings/blob/v1.5.0/LICENSE) |
 | github.com/imdario/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v0.3.16/LICENSE) |
 | github.com/invopop/jsonschema | [MIT](https://github.com/invopop/jsonschema/blob/v0.12.0/COPYING) |
+| github.com/itchyny/gojq | [MIT](https://github.com/itchyny/gojq/blob/v0.12.17/LICENSE) |
+| github.com/itchyny/timefmt-go | [MIT](https://github.com/itchyny/timefmt-go/blob/v0.1.6/LICENSE) |
 | github.com/jcmturner/aescts/v2 | [Apache-2.0](https://github.com/jcmturner/aescts/blob/v2.0.0/v2/LICENSE) |
 | github.com/jcmturner/dnsutils/v2 | [Apache-2.0](https://github.com/jcmturner/dnsutils/blob/v2.0.0/v2/LICENSE) |
 | github.com/jcmturner/gofork | [BSD-3-Clause](https://github.com/jcmturner/gofork/blob/v1.7.6/LICENSE) |
