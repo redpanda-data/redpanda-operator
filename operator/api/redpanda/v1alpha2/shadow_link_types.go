@@ -118,7 +118,7 @@ const (
 	// Shadow topic has been paused
 	ShadowTopicStatePaused ShadowTopicState = "paused"
 	// Shadow topic is in the process of failing over
-	ShadowTopicStateFailingOver ShadowTopicState = "failng over"
+	ShadowTopicStateFailingOver ShadowTopicState = "failing over"
 	// Shadow topic is in the process of being promoted
 	ShadowTopicStateFailedOver ShadowTopicState = "failed over"
 	// Shadow topic is in the process of being promoted
