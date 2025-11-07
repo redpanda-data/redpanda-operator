@@ -196,7 +196,7 @@ type RedpandaConsole struct {
 	// Specifies whether the Redpanda Console subchart should be deployed.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Sets the number of replicas for the Redpanda Console Deployment resource.
-	ReplicaCount *int `json:"replicaCount,omitempty"`
+	ReplicaCount *int32 `json:"replicaCount,omitempty"`
 	// Specifies a custom name for the Redpanda Console resources, overriding the default naming convention.
 	NameOverride *string `json:"nameOverride,omitempty"`
 	// Specifies a full custom name, which overrides the entire naming convention including release name and chart name.

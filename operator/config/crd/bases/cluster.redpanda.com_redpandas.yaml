@@ -1736,6 +1736,7 @@ spec:
                       replicaCount:
                         description: Sets the number of replicas for the Redpanda
                           Console Deployment resource.
+                        format: int32
                         type: integer
                       resources:
                         description: Configures resource requests and limits for the
@@ -22846,6 +22847,7 @@ spec:
                       replicaCount:
                         description: Sets the number of replicas for the Redpanda
                           Console Deployment resource.
+                        format: int32
                         type: integer
                       resources:
                         description: Configures resource requests and limits for the
