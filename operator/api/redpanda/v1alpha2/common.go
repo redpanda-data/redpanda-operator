@@ -52,7 +52,8 @@ type KafkaSASL struct {
 	Username string `json:"username,omitempty"`
 	// Specifies the password.
 	// +optional
-	Password *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Password *ValueSource `json:"password,omitempty"`
+
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
 	// +optional
@@ -61,6 +62,9 @@ type KafkaSASL struct {
 	GSSAPIConfig *KafkaSASLGSSAPI `json:"gssapi,omitempty"`
 	// +optional
 	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
+
+	// Deprecated: used `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
 }
 
 // SASLMechanism specifies a SASL auth mechanism.
@@ -98,7 +102,9 @@ func (s *SASLMechanism) ScramToKafka() (kadm.ScramMechanism, error) {
 
 // KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 type KafkaSASLOAuthBearer struct {
-	Token SecretKeyRef `json:"tokenSecretRef"`
+	Token *ValueSource `json:"token,omitempty"`
+	// Deprecated: use `token` instead
+	DeprecatedToken *SecretKeyRef `json:"tokenSecretRef,omitempty"`
 }
 
 // KafkaSASLGSSAPI represents the Kafka Kerberos config.
@@ -108,8 +114,10 @@ type KafkaSASLGSSAPI struct {
 	KerberosConfigPath string       `json:"kerberosConfigPath"`
 	ServiceName        string       `json:"serviceName"`
 	Username           string       `json:"username"`
-	Password           SecretKeyRef `json:"passwordSecretRef"`
-	Realm              string       `json:"realm"`
+	Password           *ValueSource `json:"password,omitempty"`
+	// Deprecated: use `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Realm              string        `json:"realm"`
 
 	// EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
 	// It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
@@ -121,11 +129,16 @@ type KafkaSASLGSSAPI struct {
 // see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
 type KafkaSASLAWSMskIam struct {
 	AccessKey string       `json:"accessKey"`
-	SecretKey SecretKeyRef `json:"secretKeySecretRef"`
+	SecretKey *ValueSource `json:"secretKey,omitempty"`
+	// Deprecated: use `secretKey` instead
+	DeprecatedSecretKey *SecretKeyRef `json:"secretKeySecretRef,omitempty"`
 
 	// SessionToken, if non-empty, is a session / security token to use for authentication.
 	// See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
-	SessionToken SecretKeyRef `json:"sessionTokenSecretRef"`
+	SessionToken *ValueSource `json:"sessionToken,omitempty"`
+
+	// Deprecated: use `sessionToken` instead
+	DeprecatedSessionToken *SecretKeyRef `json:"sessionTokenSecretRef,omitempty"`
 
 	// UserAgent is the user agent to for the client to use when connecting
 	// to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>".
@@ -147,17 +160,48 @@ type CommonTLS struct {
 	// specification.
 	Enabled bool `json:"enabled,omitempty"`
 	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
-	CaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
+	CaCert *ValueSource `json:"caCert,omitempty"`
 	// Cert is the reference for client public certificate to establish mTLS connection to Redpanda
-	Cert *SecretKeyRef `json:"certSecretRef,omitempty"`
+	Cert *ValueSource `json:"cert,omitempty"`
 	// Key is the reference for client private certificate to establish mTLS connection to Redpanda
-	Key *SecretKeyRef `json:"keySecretRef,omitempty"`
+	Key *ValueSource `json:"key,omitempty"`
+
+	// Deprecated: replaced by "caCert".
+	DeprecatedCaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
+	// Deprecated: replaced by "cert".
+	DeprecatedCert *SecretKeyRef `json:"certSecretRef,omitempty"`
+	// Deprecated: replaced by "key".
+	DeprecatedKey *SecretKeyRef `json:"keySecretRef,omitempty"`
+
 	// InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda
 	// +optional
 	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify,omitempty"`
 }
 
-// SecretKeyRef contains enough information to inspect or modify the referred Secret data
+// ValueSource represents where a value can be pulled from
+// +structType=atomic
+type ValueSource struct {
+	// Inline is the raw value specified inline.
+	Inline *string `json:"inline,omitempty"`
+	// If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+	// For target values, the string value fetched from the source will be treated as
+	// a raw string.
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Should the value be contained in a k8s secret rather than configmap, we can refer
+	// to it here.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// If the value is supplied by an external source, coordinates are embedded here.
+	// Note: we interpret all fetched external secrets as raw string values
+	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRef,omitempty"`
+}
+
+// ExternalSecretKeySelector selects a key of an external Secret.
+// +structType=atomic
+type ExternalSecretKeySelector struct {
+	Name string `json:"name"`
+}
+
+// Deprecated: SecretKeyRef contains enough information to inspect or modify the referred Secret data
 // See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
 type SecretKeyRef struct {
 	// Name of the referent.
@@ -218,14 +262,19 @@ type AdminSASL struct {
 	// Specifies the username.
 	// +optional
 	Username string `json:"username,omitempty"`
-	// Specifies the password.
-	// +optional
-	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
+	// Specifies the password.
+	// +optional
+	Password *ValueSource `json:"password,omitempty"`
 	// Specifies token for token-based authentication (only used if no username/password are provided).
 	// +optional
-	AuthToken SecretKeyRef `json:"token,omitempty"`
+	AuthToken *ValueSource `json:"authToken,omitempty"`
+
+	// Deprecated: use `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	// Deprecated: use `authToken` instead
+	DeprecatedAuthToken *SecretKeyRef `json:"token,omitempty"`
 }
 
 // SchemaRegistrySpec defines client configuration for connecting to Redpanda's admin API.
@@ -247,11 +296,16 @@ type SchemaRegistrySASL struct {
 	Username string `json:"username,omitempty"`
 	// Specifies the password.
 	// +optional
-	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Password *ValueSource `json:"password,omitempty"`
+	// +optional
+	AuthToken *ValueSource `json:"authToken,omitempty"`
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
-	// +optional
-	AuthToken SecretKeyRef `json:"token,omitempty"`
+
+	// Deprecated: use `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	// Deprecated: use `authToken` instead
+	DeprecatedAuthToken *SecretKeyRef `json:"token,omitempty"`
 }
 
 // ClusterRef represents a reference to a cluster that is being targeted.

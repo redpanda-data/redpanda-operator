@@ -18,10 +18,12 @@ import (
 // AdminSASLApplyConfiguration represents a declarative configuration of the AdminSASL type for use
 // with apply.
 type AdminSASLApplyConfiguration struct {
-	Username  *string                         `json:"username,omitempty"`
-	Password  *SecretKeyRefApplyConfiguration `json:"passwordSecretRef,omitempty"`
-	Mechanism *redpandav1alpha2.SASLMechanism `json:"mechanism,omitempty"`
-	AuthToken *SecretKeyRefApplyConfiguration `json:"token,omitempty"`
+	Username            *string                         `json:"username,omitempty"`
+	Mechanism           *redpandav1alpha2.SASLMechanism `json:"mechanism,omitempty"`
+	Password            *ValueSourceApplyConfiguration  `json:"password,omitempty"`
+	AuthToken           *ValueSourceApplyConfiguration  `json:"authToken,omitempty"`
+	DeprecatedPassword  *SecretKeyRefApplyConfiguration `json:"passwordSecretRef,omitempty"`
+	DeprecatedAuthToken *SecretKeyRefApplyConfiguration `json:"token,omitempty"`
 }
 
 // AdminSASLApplyConfiguration constructs a declarative configuration of the AdminSASL type for use with
@@ -38,14 +40,6 @@ func (b *AdminSASLApplyConfiguration) WithUsername(value string) *AdminSASLApply
 	return b
 }
 
-// WithPassword sets the Password field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Password field is set to the value of the last call.
-func (b *AdminSASLApplyConfiguration) WithPassword(value *SecretKeyRefApplyConfiguration) *AdminSASLApplyConfiguration {
-	b.Password = value
-	return b
-}
-
 // WithMechanism sets the Mechanism field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Mechanism field is set to the value of the last call.
@@ -54,10 +48,34 @@ func (b *AdminSASLApplyConfiguration) WithMechanism(value redpandav1alpha2.SASLM
 	return b
 }
 
+// WithPassword sets the Password field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Password field is set to the value of the last call.
+func (b *AdminSASLApplyConfiguration) WithPassword(value *ValueSourceApplyConfiguration) *AdminSASLApplyConfiguration {
+	b.Password = value
+	return b
+}
+
 // WithAuthToken sets the AuthToken field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the AuthToken field is set to the value of the last call.
-func (b *AdminSASLApplyConfiguration) WithAuthToken(value *SecretKeyRefApplyConfiguration) *AdminSASLApplyConfiguration {
+func (b *AdminSASLApplyConfiguration) WithAuthToken(value *ValueSourceApplyConfiguration) *AdminSASLApplyConfiguration {
 	b.AuthToken = value
+	return b
+}
+
+// WithDeprecatedPassword sets the DeprecatedPassword field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedPassword field is set to the value of the last call.
+func (b *AdminSASLApplyConfiguration) WithDeprecatedPassword(value *SecretKeyRefApplyConfiguration) *AdminSASLApplyConfiguration {
+	b.DeprecatedPassword = value
+	return b
+}
+
+// WithDeprecatedAuthToken sets the DeprecatedAuthToken field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedAuthToken field is set to the value of the last call.
+func (b *AdminSASLApplyConfiguration) WithDeprecatedAuthToken(value *SecretKeyRefApplyConfiguration) *AdminSASLApplyConfiguration {
+	b.DeprecatedAuthToken = value
 	return b
 }

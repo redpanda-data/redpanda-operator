@@ -123,7 +123,7 @@ func (m *configMapper) configureKafka(kafka *ir.KafkaAPISpec) *PartialKafka {
 			// TODO all the other ones......
 		}
 		if kafka.SASL.Password != nil {
-			m.addEnv("KAFKA_SASL_PASSWORD", *kafka.SASL.Password)
+			m.addEnv("KAFKA_SASL_PASSWORD", kafka.SASL.Password)
 		}
 	}
 
@@ -187,7 +187,12 @@ func (m *configMapper) configureTLS(tls *ir.CommonTLS) *PartialTLS {
 	return out
 }
 
-func (m *configMapper) addEnv(name string, ref ir.SecretKeyRef) {
+func (m *configMapper) addEnv(name string, secretRef *ir.ValueSource) {
+	if secretRef == nil || secretRef.SecretKeyRef == nil {
+		return
+	}
+	ref := secretRef.SecretKeyRef
+
 	if ref.Key == "" || ref.Name == "" {
 		return
 	}
@@ -212,7 +217,7 @@ type volumes struct {
 	ConfigMaps map[string]map[string]bool
 }
 
-func (v *volumes) MaybeAdd(ref *ir.ObjectKeyRef) *string {
+func (v *volumes) MaybeAdd(ref *ir.ValueSource) *string {
 	if ref == nil {
 		return nil
 	}
@@ -222,9 +227,11 @@ func (v *volumes) MaybeAdd(ref *ir.ObjectKeyRef) *string {
 	}
 
 	if skr := ref.SecretKeyRef; skr != nil {
-		return v.MaybeAddSecret(&ir.SecretKeyRef{
-			Name: skr.Name,
-			Key:  skr.Key,
+		return v.MaybeAddSecret(&ir.ValueSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: skr.Name},
+				Key:                  skr.Key,
+			},
 		})
 	}
 
@@ -242,7 +249,12 @@ func (v *volumes) MaybeAddConfigMap(ref *corev1.ConfigMapKeySelector) *string {
 	return ptr.To(fmt.Sprintf("%s/configmaps/%s/%s", v.Dir, ref.Name, ref.Key))
 }
 
-func (v *volumes) MaybeAddSecret(ref *ir.SecretKeyRef) *string {
+func (v *volumes) MaybeAddSecret(secretRef *ir.ValueSource) *string {
+	if secretRef.SecretKeyRef == nil {
+		return nil
+	}
+	ref := secretRef.SecretKeyRef
+
 	if ref == nil || (ref.Key == "" && ref.Name == "") {
 		return nil
 	}

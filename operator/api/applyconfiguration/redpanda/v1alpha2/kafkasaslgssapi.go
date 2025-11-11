@@ -19,7 +19,8 @@ type KafkaSASLGSSAPIApplyConfiguration struct {
 	KerberosConfigPath *string                         `json:"kerberosConfigPath,omitempty"`
 	ServiceName        *string                         `json:"serviceName,omitempty"`
 	Username           *string                         `json:"username,omitempty"`
-	Password           *SecretKeyRefApplyConfiguration `json:"passwordSecretRef,omitempty"`
+	Password           *ValueSourceApplyConfiguration  `json:"password,omitempty"`
+	DeprecatedPassword *SecretKeyRefApplyConfiguration `json:"passwordSecretRef,omitempty"`
 	Realm              *string                         `json:"realm,omitempty"`
 	EnableFast         *bool                           `json:"enableFast,omitempty"`
 }
@@ -73,8 +74,16 @@ func (b *KafkaSASLGSSAPIApplyConfiguration) WithUsername(value string) *KafkaSAS
 // WithPassword sets the Password field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Password field is set to the value of the last call.
-func (b *KafkaSASLGSSAPIApplyConfiguration) WithPassword(value *SecretKeyRefApplyConfiguration) *KafkaSASLGSSAPIApplyConfiguration {
+func (b *KafkaSASLGSSAPIApplyConfiguration) WithPassword(value *ValueSourceApplyConfiguration) *KafkaSASLGSSAPIApplyConfiguration {
 	b.Password = value
+	return b
+}
+
+// WithDeprecatedPassword sets the DeprecatedPassword field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedPassword field is set to the value of the last call.
+func (b *KafkaSASLGSSAPIApplyConfiguration) WithDeprecatedPassword(value *SecretKeyRefApplyConfiguration) *KafkaSASLGSSAPIApplyConfiguration {
+	b.DeprecatedPassword = value
 	return b
 }
 

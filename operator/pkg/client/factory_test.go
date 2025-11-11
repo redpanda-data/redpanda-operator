@@ -348,18 +348,22 @@ func TestIntegrationClientFactory(t *testing.T) {
 
 					spec.SASL = &redpandav1alpha2.KafkaSASL{
 						Username: tt.Auth.Name,
-						Password: &redpandav1alpha2.SecretKeyRef{
-							Name: "secret",
-							Key:  "password",
+						Password: &redpandav1alpha2.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "secret"},
+								Key:                  "password",
+							},
 						},
 						Mechanism: redpandav1alpha2.SASLMechanism(tt.Auth.Mechanism),
 					}
 				}
 				if tt.TLS {
 					spec.TLS = &redpandav1alpha2.CommonTLS{
-						CaCert: &redpandav1alpha2.SecretKeyRef{
-							Name: fmt.Sprintf("%s-default-root-certificate", name),
-							Key:  corev1.TLSCertKey,
+						CaCert: &redpandav1alpha2.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-default-root-certificate", name)},
+								Key:                  corev1.TLSCertKey,
+							},
 						},
 					}
 				}

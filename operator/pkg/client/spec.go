@@ -12,30 +12,34 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
-	"github.com/redpanda-data/console/backend/pkg/config"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 // KafkaForSpec returns a simple kgo.Client able to communicate with the given cluster specified via KafkaAPISpec.
-func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricNamespace *string, spec *redpandav1alpha2.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricNamespace *string, spec *ir.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
 	logger := log.FromContext(ctx)
 
-	if len(spec.Brokers) == 0 {
+	configuration, err := spec.Load(ctx, c.Client)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(configuration.Brokers) == 0 {
 		return nil, ErrEmptyBrokerList
 	}
 	kopts := []kgo.Opt{
-		kgo.SeedBrokers(spec.Brokers...),
+		kgo.SeedBrokers(configuration.Brokers...),
 	}
 
 	metricsLabel := "redpanda_operator"
@@ -49,7 +53,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	kopts = append(kopts, kgo.WithLogger(wrapLogger(logger)), kgo.WithHooks(hooks))
 
 	if spec.SASL != nil {
-		saslOpt, err := c.configureKafkaSpecSASL(ctx, namespace, spec)
+		saslOpt, err := spec.SASL.AsOption(ctx, c.Client)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +71,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	}
 
 	if spec.TLS != nil {
-		tlsConfig, err := c.configureSpecTLS(ctx, namespace, spec.TLS)
+		tlsConfig, err := spec.TLS.Config(ctx, c.Client)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +92,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	return kgo.NewClient(append(opts, kopts...)...)
 }
 
-func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.AdminAPISpec) (*rpadmin.AdminAPI, error) {
+func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, spec *ir.AdminAPISpec) (*rpadmin.AdminAPI, error) {
 	if len(spec.URLs) == 0 {
 		return nil, ErrEmptyURLList
 	}
@@ -96,7 +100,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 	var err error
 	var tlsConfig *tls.Config
 	if spec.TLS != nil {
-		tlsConfig, err = c.configureSpecTLS(ctx, namespace, spec.TLS)
+		tlsConfig, err = spec.TLS.Config(ctx, c.Client)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +108,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 
 	var auth rpadmin.Auth
 	var username, password, token string
-	username, password, token, err = c.configureAdminSpecSASL(ctx, namespace, spec)
+	username, password, token, err = spec.Auth.AsCredentials(ctx, c.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +142,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 	return client, nil
 }
 
-func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.SchemaRegistrySpec) (*sr.Client, error) {
+func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, spec *ir.SchemaRegistrySpec) (*sr.Client, error) {
 	if len(spec.URLs) == 0 {
 		return nil, ErrEmptyURLList
 	}
@@ -159,7 +163,7 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 	var err error
 	var tlsConfig *tls.Config
 	if spec.TLS != nil {
-		tlsConfig, err = c.configureSpecTLS(ctx, namespace, spec.TLS)
+		tlsConfig, err = spec.TLS.Config(ctx, c.Client)
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +177,7 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 		}),
 	}
 
-	authOpt, err := c.configureSchemaRegistrySpecSASL(ctx, namespace, spec)
+	authOpt, err := spec.SASL.AsOption(ctx, c.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -189,84 +193,35 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 	return sr.NewClient(opts...)
 }
 
-func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (shadow.RemoteClusterSettings, error) {
+func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, namespace string, spec *ir.KafkaAPISpec) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
-	if len(spec.Brokers) == 0 {
+	configuration, err := spec.Load(ctx, c.Client)
+	if err != nil {
+		return settings, err
+	}
+
+	if len(configuration.Brokers) == 0 {
 		return settings, ErrEmptyBrokerList
 	}
 
-	settings.BootstrapServers = spec.Brokers
+	settings.BootstrapServers = configuration.Brokers
 
-	if spec.SASL != nil {
-		auth, err := c.remoteClusterAuthSettingsForSpec(ctx, namespace, spec)
-		if err != nil {
-			return settings, err
+	if configuration.SASL != nil {
+		settings.Authentication = &shadow.AuthenticationSettings{
+			Username:  configuration.SASL.Username,
+			Password:  configuration.SASL.Password,
+			Mechanism: redpandav1alpha2.SASLMechanism(configuration.SASL.Mechanism),
 		}
-		settings.Authentication = auth
 	}
 
-	if spec.TLS != nil {
-		tls, err := c.remoteClusterTLSSettingsForSpec(ctx, namespace, spec.TLS)
-		if err != nil {
-			return settings, err
+	if configuration.TLS != nil {
+		settings.TLSSettings = &shadow.TLSSettings{
+			CA:   configuration.TLS.CA,
+			Cert: configuration.TLS.Cert,
+			Key:  configuration.TLS.Key,
 		}
-		settings.TLSSettings = tls
-	}
-
-	return settings, nil
-}
-
-func (c *Factory) remoteClusterTLSSettingsForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.CommonTLS) (*shadow.TLSSettings, error) {
-	// NB: we elide the check of the `Enabled` field because if any field is set, `Enabled` included, the spec is not nil
-	// and we should be leveraging TLS.
-	settings := &shadow.TLSSettings{}
-
-	// Root CA
-	if spec.CaCert != nil {
-		ca, err := spec.CaCert.GetValue(ctx, c.Client, namespace, "ca.crt")
-		if err != nil {
-			return nil, fmt.Errorf("failed to read ca certificate secret: %w", err)
-		}
-
-		settings.CA = string(ca)
-	}
-
-	// If configured load TLS cert & key - Mutual TLS
-	if spec.Cert != nil && spec.Key != nil {
-		// 1. Read certificates
-		cert, err := spec.Cert.GetValue(ctx, c.Client, namespace, "tls.crt")
-		if err != nil {
-			return nil, fmt.Errorf("failed to read certificate secret: %w", err)
-		}
-
-		settings.Cert = string(cert)
-
-		key, err := spec.Cert.GetValue(ctx, c.Client, namespace, "tls.key")
-		if err != nil {
-			return nil, fmt.Errorf("failed to read key certificate secret: %w", err)
-		}
-
-		settings.Key = string(key)
 	}
 
 	return settings, nil
-}
-
-func (c *Factory) remoteClusterAuthSettingsForSpec(ctx context.Context, namespace string, spec *redpandav1alpha2.KafkaAPISpec) (*shadow.AuthenticationSettings, error) {
-	switch spec.SASL.Mechanism {
-	case config.SASLMechanismPlain, config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
-		p, err := spec.SASL.Password.GetValue(ctx, c.Client, namespace, "password")
-		if err != nil {
-			return nil, fmt.Errorf("unable to fetch sasl plain password: %w", err)
-		}
-
-		return &shadow.AuthenticationSettings{
-			Username:  spec.SASL.Username,
-			Password:  string(p),
-			Mechanism: spec.SASL.Mechanism,
-		}, nil
-	}
-
-	return nil, fmt.Errorf("unsupported sasl mechanism: %s", spec.SASL.Mechanism)
 }

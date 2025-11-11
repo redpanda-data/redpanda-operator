@@ -15,9 +15,12 @@ package v1alpha2
 // with apply.
 type CommonTLSApplyConfiguration struct {
 	Enabled               *bool                           `json:"enabled,omitempty"`
-	CaCert                *SecretKeyRefApplyConfiguration `json:"caCertSecretRef,omitempty"`
-	Cert                  *SecretKeyRefApplyConfiguration `json:"certSecretRef,omitempty"`
-	Key                   *SecretKeyRefApplyConfiguration `json:"keySecretRef,omitempty"`
+	CaCert                *ValueSourceApplyConfiguration  `json:"caCert,omitempty"`
+	Cert                  *ValueSourceApplyConfiguration  `json:"cert,omitempty"`
+	Key                   *ValueSourceApplyConfiguration  `json:"key,omitempty"`
+	DeprecatedCaCert      *SecretKeyRefApplyConfiguration `json:"caCertSecretRef,omitempty"`
+	DeprecatedCert        *SecretKeyRefApplyConfiguration `json:"certSecretRef,omitempty"`
+	DeprecatedKey         *SecretKeyRefApplyConfiguration `json:"keySecretRef,omitempty"`
 	InsecureSkipTLSVerify *bool                           `json:"insecureSkipTlsVerify,omitempty"`
 }
 
@@ -38,7 +41,7 @@ func (b *CommonTLSApplyConfiguration) WithEnabled(value bool) *CommonTLSApplyCon
 // WithCaCert sets the CaCert field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CaCert field is set to the value of the last call.
-func (b *CommonTLSApplyConfiguration) WithCaCert(value *SecretKeyRefApplyConfiguration) *CommonTLSApplyConfiguration {
+func (b *CommonTLSApplyConfiguration) WithCaCert(value *ValueSourceApplyConfiguration) *CommonTLSApplyConfiguration {
 	b.CaCert = value
 	return b
 }
@@ -46,7 +49,7 @@ func (b *CommonTLSApplyConfiguration) WithCaCert(value *SecretKeyRefApplyConfigu
 // WithCert sets the Cert field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Cert field is set to the value of the last call.
-func (b *CommonTLSApplyConfiguration) WithCert(value *SecretKeyRefApplyConfiguration) *CommonTLSApplyConfiguration {
+func (b *CommonTLSApplyConfiguration) WithCert(value *ValueSourceApplyConfiguration) *CommonTLSApplyConfiguration {
 	b.Cert = value
 	return b
 }
@@ -54,8 +57,32 @@ func (b *CommonTLSApplyConfiguration) WithCert(value *SecretKeyRefApplyConfigura
 // WithKey sets the Key field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Key field is set to the value of the last call.
-func (b *CommonTLSApplyConfiguration) WithKey(value *SecretKeyRefApplyConfiguration) *CommonTLSApplyConfiguration {
+func (b *CommonTLSApplyConfiguration) WithKey(value *ValueSourceApplyConfiguration) *CommonTLSApplyConfiguration {
 	b.Key = value
+	return b
+}
+
+// WithDeprecatedCaCert sets the DeprecatedCaCert field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedCaCert field is set to the value of the last call.
+func (b *CommonTLSApplyConfiguration) WithDeprecatedCaCert(value *SecretKeyRefApplyConfiguration) *CommonTLSApplyConfiguration {
+	b.DeprecatedCaCert = value
+	return b
+}
+
+// WithDeprecatedCert sets the DeprecatedCert field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedCert field is set to the value of the last call.
+func (b *CommonTLSApplyConfiguration) WithDeprecatedCert(value *SecretKeyRefApplyConfiguration) *CommonTLSApplyConfiguration {
+	b.DeprecatedCert = value
+	return b
+}
+
+// WithDeprecatedKey sets the DeprecatedKey field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedKey field is set to the value of the last call.
+func (b *CommonTLSApplyConfiguration) WithDeprecatedKey(value *SecretKeyRefApplyConfiguration) *CommonTLSApplyConfiguration {
+	b.DeprecatedKey = value
 	return b
 }
 

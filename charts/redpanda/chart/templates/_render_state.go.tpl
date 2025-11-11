@@ -55,7 +55,7 @@
 {{- $_ := (set $kafkaSpec "tls" (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.kafka.tls $r $r.Values.tls)))) "r")) -}}
 {{- end -}}
 {{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $r.Values.auth)))) "r") -}}
-{{- $_ := (set $kafkaSpec "sasl" (mustMergeOverwrite (dict "mechanism" "") (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict "name" "") (dict "namespace" $r.Release.Namespace "name" $passwordRef.name "key" $passwordRef.key)) "mechanism" (toString (get (fromJson (include "redpanda.BootstrapUser.GetMechanism" (dict "a" (list $r.Values.auth.sasl.bootstrapUser)))) "r"))))) -}}
+{{- $_ := (set $kafkaSpec "sasl" (mustMergeOverwrite (dict "mechanism" "") (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict) (dict "namespace" $r.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key)))) "mechanism" (toString (get (fromJson (include "redpanda.BootstrapUser.GetMechanism" (dict "a" (list $r.Values.auth.sasl.bootstrapUser)))) "r"))))) -}}
 {{- end -}}
 {{- $adminTLS := (coalesce nil) -}}
 {{- $adminSchema := "http" -}}
@@ -64,11 +64,11 @@
 {{- $adminTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.admin.tls $r $r.Values.tls)))) "r") -}}
 {{- end -}}
 {{- $adminAuth := (coalesce nil) -}}
-{{- $_142_adminAuthEnabled__ := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" (index $r.Values.config.cluster "admin_api_require_auth") false)))) "r") -}}
-{{- $adminAuthEnabled := (index $_142_adminAuthEnabled__ 0) -}}
-{{- $_ := (index $_142_adminAuthEnabled__ 1) -}}
+{{- $_144_adminAuthEnabled__ := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" (index $r.Values.config.cluster "admin_api_require_auth") false)))) "r") -}}
+{{- $adminAuthEnabled := (index $_144_adminAuthEnabled__ 0) -}}
+{{- $_ := (index $_144_adminAuthEnabled__ 1) -}}
 {{- if $adminAuthEnabled -}}
-{{- $adminAuth = (mustMergeOverwrite (dict "passwordSecretRef" (dict "name" "")) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict "name" "") (dict "namespace" $r.Release.Namespace "name" $passwordRef.name "key" $passwordRef.key)))) -}}
+{{- $adminAuth = (mustMergeOverwrite (dict) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict) (dict "namespace" $r.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key)))))) -}}
 {{- end -}}
 {{- $adminSpec := (mustMergeOverwrite (dict "urls" (coalesce nil)) (dict "tls" $adminTLS "sasl" $adminAuth "urls" (list (printf "%s://%s:%d" $adminSchema (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $r)))) "r") ($r.Values.listeners.admin.port | int))))) -}}
 {{- $schemaRegistrySpec := (coalesce nil) -}}
@@ -89,7 +89,7 @@
 {{- end -}}
 {{- $schemaRegistrySpec = (mustMergeOverwrite (dict "urls" (coalesce nil)) (dict "urls" $schemaURLs "tls" $schemaTLS)) -}}
 {{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $r.Values.auth)))) "r") -}}
-{{- $_ := (set $schemaRegistrySpec "sasl" (mustMergeOverwrite (dict "passwordSecretRef" (dict "name" "") "token" (dict "name" "")) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict "name" "") (dict "namespace" $r.Release.Namespace "name" $passwordRef.name "key" $passwordRef.key))))) -}}
+{{- $_ := (set $schemaRegistrySpec "sasl" (mustMergeOverwrite (dict) (dict "username" $username "password" (mustMergeOverwrite (dict) (dict "namespace" $r.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key))))))) -}}
 {{- end -}}
 {{- end -}}
 {{- $_is_returning = true -}}

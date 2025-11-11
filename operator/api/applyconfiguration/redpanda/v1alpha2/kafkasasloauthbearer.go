@@ -14,7 +14,8 @@ package v1alpha2
 // KafkaSASLOAuthBearerApplyConfiguration represents a declarative configuration of the KafkaSASLOAuthBearer type for use
 // with apply.
 type KafkaSASLOAuthBearerApplyConfiguration struct {
-	Token *SecretKeyRefApplyConfiguration `json:"tokenSecretRef,omitempty"`
+	Token           *ValueSourceApplyConfiguration  `json:"token,omitempty"`
+	DeprecatedToken *SecretKeyRefApplyConfiguration `json:"tokenSecretRef,omitempty"`
 }
 
 // KafkaSASLOAuthBearerApplyConfiguration constructs a declarative configuration of the KafkaSASLOAuthBearer type for use with
@@ -26,7 +27,15 @@ func KafkaSASLOAuthBearer() *KafkaSASLOAuthBearerApplyConfiguration {
 // WithToken sets the Token field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Token field is set to the value of the last call.
-func (b *KafkaSASLOAuthBearerApplyConfiguration) WithToken(value *SecretKeyRefApplyConfiguration) *KafkaSASLOAuthBearerApplyConfiguration {
+func (b *KafkaSASLOAuthBearerApplyConfiguration) WithToken(value *ValueSourceApplyConfiguration) *KafkaSASLOAuthBearerApplyConfiguration {
 	b.Token = value
+	return b
+}
+
+// WithDeprecatedToken sets the DeprecatedToken field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedToken field is set to the value of the last call.
+func (b *KafkaSASLOAuthBearerApplyConfiguration) WithDeprecatedToken(value *SecretKeyRefApplyConfiguration) *KafkaSASLOAuthBearerApplyConfiguration {
+	b.DeprecatedToken = value
 	return b
 }
