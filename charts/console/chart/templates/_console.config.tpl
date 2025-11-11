@@ -224,7 +224,7 @@
 {{- $secretRef := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (eq (toJson $secretRef.secretKeyRef) "null") -}}
+{{- if (or (eq (toJson $secretRef) "null") (eq (toJson $secretRef.secretKeyRef) "null")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}

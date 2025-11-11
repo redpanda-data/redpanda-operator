@@ -250,7 +250,7 @@ func (v *volumes) MaybeAddConfigMap(ref *corev1.ConfigMapKeySelector) *string {
 }
 
 func (v *volumes) MaybeAddSecret(secretRef *ir.ValueSource) *string {
-	if secretRef.SecretKeyRef == nil {
+	if secretRef == nil || secretRef.SecretKeyRef == nil {
 		return nil
 	}
 	ref := secretRef.SecretKeyRef

@@ -393,7 +393,7 @@ func TestStaticConfig(t *testing.T) {
 							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-tls"}, Key: "tls.crt"},
 						},
 						Key: &ir.ValueSource{
-							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "admin-cert"}, Key: "tls.key"},
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-tls"}, Key: "tls.key"},
 						},
 					},
 					SASL: &ir.KafkaSASL{
