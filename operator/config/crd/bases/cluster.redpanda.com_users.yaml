@@ -376,6 +376,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               mechanism:
                                 description: Specifies the SASL/SCRAM authentication
                                   mechanism.
@@ -452,6 +477,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               passwordSecretRef:
                                 description: 'Deprecated: use `password` instead'
                                 properties:
@@ -563,6 +613,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               caCertSecretRef:
                                 description: 'Deprecated: replaced by "caCert".'
                                 properties:
@@ -650,6 +725,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               certSecretRef:
                                 description: 'Deprecated: replaced by "cert".'
                                 properties:
@@ -752,6 +852,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               keySecretRef:
                                 description: 'Deprecated: replaced by "key".'
                                 properties:
@@ -873,6 +998,31 @@ spec:
                                         x-kubernetes-map-type: atomic
                                     type: object
                                     x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
                                   secretKeySecretRef:
                                     description: 'Deprecated: use `secretKey` instead'
                                     properties:
@@ -963,6 +1113,31 @@ spec:
                                         x-kubernetes-map-type: atomic
                                     type: object
                                     x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
                                   sessionTokenSecretRef:
                                     description: 'Deprecated: use `sessionToken` instead'
                                     properties:
@@ -1081,6 +1256,31 @@ spec:
                                         x-kubernetes-map-type: atomic
                                     type: object
                                     x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
                                   passwordSecretRef:
                                     description: 'Deprecated: use `password` instead'
                                     properties:
@@ -1193,6 +1393,31 @@ spec:
                                         x-kubernetes-map-type: atomic
                                     type: object
                                     x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
                                   tokenSecretRef:
                                     description: 'Deprecated: use `token` instead'
                                     properties:
@@ -1281,6 +1506,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               passwordSecretRef:
                                 description: 'Deprecated: used `password` instead'
                                 properties:
@@ -1302,18 +1552,20 @@ spec:
                             - mechanism
                             type: object
                             x-kubernetes-validations:
-                            - message: username and passwordSecretRef must be set
-                                when mechanism is plain
+                            - message: username and password must be set when mechanism
+                                is plain
                               rule: self.mechanism.lowerAscii() != 'plain' || (self.username
-                                != "" && has(self.passwordSecretRef))
-                            - message: username and passwordSecretRef must be set
-                                when mechanism is sha-256
+                                != "" && (has(self.passwordSecretRef) || has(self.password)))
+                            - message: username and password must be set when mechanism
+                                is sha-256
                               rule: self.mechanism.lowerAscii() != 'scram-sha-256'
-                                || (self.username != "" && has(self.passwordSecretRef))
-                            - message: username and passwordSecretRef must be set
-                                when mechanism is sha-512
+                                || (self.username != "" && (has(self.passwordSecretRef)
+                                || has(self.password)))
+                            - message: username and password must be set when mechanism
+                                is sha-512
                               rule: self.mechanism.lowerAscii() != 'scram-sha-512'
-                                || (self.username != "" && has(self.passwordSecretRef))
+                                || (self.username != "" && (has(self.passwordSecretRef)
+                                || has(self.password)))
                             - message: oauth must be set when mechanism is oauth
                               rule: self.mechanism.lowerAscii() != 'oauthbearer' ||
                                 has(self.oauth)
@@ -1399,6 +1651,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               caCertSecretRef:
                                 description: 'Deprecated: replaced by "caCert".'
                                 properties:
@@ -1486,6 +1763,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               certSecretRef:
                                 description: 'Deprecated: replaced by "cert".'
                                 properties:
@@ -1588,6 +1890,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               keySecretRef:
                                 description: 'Deprecated: replaced by "key".'
                                 properties:
@@ -1606,9 +1933,6 @@ spec:
                         required:
                         - brokers
                         type: object
-                        x-kubernetes-validations:
-                        - message: kafka tls settings are immutable
-                          rule: has(self.tls) == has(oldSelf.tls)
                       schemaRegistry:
                         description: |-
                           SchemaRegistry is the configuration information for communicating with the Schema Registry
@@ -1691,6 +2015,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               mechanism:
                                 description: Specifies the SASL/SCRAM authentication
                                   mechanism.
@@ -1767,6 +2116,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               passwordSecretRef:
                                 description: 'Deprecated: use `password` instead'
                                 properties:
@@ -1878,6 +2252,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               caCertSecretRef:
                                 description: 'Deprecated: replaced by "caCert".'
                                 properties:
@@ -1965,6 +2364,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               certSecretRef:
                                 description: 'Deprecated: replaced by "cert".'
                                 properties:
@@ -2067,6 +2491,31 @@ spec:
                                     x-kubernetes-map-type: atomic
                                 type: object
                                 x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
                               keySecretRef:
                                 description: 'Deprecated: replaced by "key".'
                                 properties:

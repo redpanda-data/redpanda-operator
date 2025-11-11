@@ -26,7 +26,6 @@ import (
 var ErrUnsupportedSASLMechanism = errors.New("unsupported SASL mechanism")
 
 // KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
-// +kubebuilder:validation:XValidation:rule="has(self.tls) == has(oldSelf.tls)",message="kafka tls settings are immutable"
 type KafkaAPISpec struct {
 	// Specifies a list of broker addresses in the format <host>:<port>
 	// +kubebuilder:validation:MinItems=1
@@ -40,9 +39,9 @@ type KafkaAPISpec struct {
 }
 
 // KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
-// +kubebuilder:validation:XValidation:message="username and passwordSecretRef must be set when mechanism is plain",rule="self.mechanism.lowerAscii() != 'plain' || (self.username != \"\" && has(self.passwordSecretRef))"
-// +kubebuilder:validation:XValidation:message="username and passwordSecretRef must be set when mechanism is sha-256",rule="self.mechanism.lowerAscii() != 'scram-sha-256' || (self.username != \"\" && has(self.passwordSecretRef))"
-// +kubebuilder:validation:XValidation:message="username and passwordSecretRef must be set when mechanism is sha-512",rule="self.mechanism.lowerAscii() != 'scram-sha-512' || (self.username != \"\" && has(self.passwordSecretRef))"
+// +kubebuilder:validation:XValidation:message="username and password must be set when mechanism is plain",rule="self.mechanism.lowerAscii() != 'plain' || (self.username != \"\" && (has(self.passwordSecretRef) || has(self.password)))"
+// +kubebuilder:validation:XValidation:message="username and password must be set when mechanism is sha-256",rule="self.mechanism.lowerAscii() != 'scram-sha-256' || (self.username != \"\" && (has(self.passwordSecretRef) || has(self.password)))"
+// +kubebuilder:validation:XValidation:message="username and password must be set when mechanism is sha-512",rule="self.mechanism.lowerAscii() != 'scram-sha-512' || (self.username != \"\" && (has(self.passwordSecretRef) || has(self.password)))"
 // +kubebuilder:validation:XValidation:message="oauth must be set when mechanism is oauth",rule="self.mechanism.lowerAscii() != 'oauthbearer' || has(self.oauth)"
 // +kubebuilder:validation:XValidation:message="gssapi must be set when mechanism is gssapi",rule="self.mechanism.lowerAscii() != 'gssapi' || has(self.gssapi)"
 // +kubebuilder:validation:XValidation:message="awsMskIam must be set when mechanism is aws_msk_iam",rule="self.mechanism.lowerAscii() != 'aws_msk_iam' || has(self.awsMskIam)"
@@ -180,6 +179,11 @@ type CommonTLS struct {
 
 // ValueSource represents where a value can be pulled from
 // +structType=atomic
+// +kubebuilder:validation:XValidation:message="one of inline, configMapKeyRef, secretKeyRef, or externalSecretRef must be set",rule="has(self.inline) || has(self.configMapKeyRef) || has(self.secretKeyRef) || has(self.externalSecretRef)"
+// +kubebuilder:validation:XValidation:message="if inline is set no other field can be set",rule="!has(self.inline) || (has(self.inline) && !(has(self.configMapKeyRef) || has(self.secretKeyRef) || has(self.externalSecretRef)))"
+// +kubebuilder:validation:XValidation:message="if configMapKeyRef is set no other field can be set",rule="!has(self.configMapKeyRef) || (has(self.configMapKeyRef) && !(has(self.inline) || has(self.secretKeyRef) || has(self.externalSecretRef)))"
+// +kubebuilder:validation:XValidation:message="if secretKeyRef is set no other field can be set",rule="!has(self.secretKeyRef) || (has(self.secretKeyRef) && !(has(self.configMapKeyRef) || has(self.inline) || has(self.externalSecretRef)))"
+// +kubebuilder:validation:XValidation:message="if externalSecretRef is set no other field can be set",rule="!has(self.externalSecretRef) || (has(self.externalSecretRef) && !(has(self.configMapKeyRef) || has(self.secretKeyRef) || has(self.inline)))"
 type ValueSource struct {
 	// Inline is the raw value specified inline.
 	Inline *string `json:"inline,omitempty"`
