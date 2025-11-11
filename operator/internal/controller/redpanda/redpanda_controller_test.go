@@ -897,7 +897,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
 			Client: mgr.GetClient(),

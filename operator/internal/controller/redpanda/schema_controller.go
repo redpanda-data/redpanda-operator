@@ -25,6 +25,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=schemas,verbs=get;list;watch;update;patch
@@ -83,10 +84,10 @@ func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceR
 	return nil
 }
 
-func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
+func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c)
+	factory := internalclient.NewFactory(config, c, expander)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Schema{})

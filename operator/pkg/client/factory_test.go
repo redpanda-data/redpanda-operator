@@ -130,7 +130,7 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 
 	env.SetupManager("test", func(mgr ctrl.Manager) error {
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		clientFactory = NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+		clientFactory = NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
 
 		r = &vectorized.ClusterReconciler{
 			Client:                mgr.GetClient(),
@@ -251,7 +251,7 @@ func TestIntegrationClientFactory(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, helmClient.RepoAdd(ctx, "redpandadata", "https://charts.redpanda.com"))
 
-	factory := NewFactory(restcfg, kubeClient).WithDialer(kube.NewPodDialer(restcfg).DialContext)
+	factory := NewFactory(restcfg, kubeClient, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
 	type credentials struct {
 		Name      string
@@ -441,7 +441,7 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	factory := NewFactory(restcfg, kubeClient).WithDialer(kube.NewPodDialer(restcfg).DialContext)
+	factory := NewFactory(restcfg, kubeClient, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
 	values := map[string]any{}
 	ensureMapAndSetValue(values, "tls", map[string]any{

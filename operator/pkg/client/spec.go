@@ -27,10 +27,10 @@ import (
 )
 
 // KafkaForSpec returns a simple kgo.Client able to communicate with the given cluster specified via KafkaAPISpec.
-func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricNamespace *string, spec *ir.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) kafkaForSpec(ctx context.Context, metricNamespace *string, spec *ir.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
 	logger := log.FromContext(ctx)
 
-	configuration, err := spec.Load(ctx, c.Client)
+	configuration, err := spec.Load(ctx, c.Client, c.secretExpander)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	kopts = append(kopts, kgo.WithLogger(wrapLogger(logger)), kgo.WithHooks(hooks))
 
 	if spec.SASL != nil {
-		saslOpt, err := spec.SASL.AsOption(ctx, c.Client)
+		saslOpt, err := spec.SASL.AsOption(ctx, c.Client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	}
 
 	if spec.TLS != nil {
-		tlsConfig, err := spec.TLS.Config(ctx, c.Client)
+		tlsConfig, err := spec.TLS.Config(ctx, c.Client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, namespace string, metricName
 	return kgo.NewClient(append(opts, kopts...)...)
 }
 
-func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, spec *ir.AdminAPISpec) (*rpadmin.AdminAPI, error) {
+func (c *Factory) redpandaAdminForSpec(ctx context.Context, spec *ir.AdminAPISpec) (*rpadmin.AdminAPI, error) {
 	if len(spec.URLs) == 0 {
 		return nil, ErrEmptyURLList
 	}
@@ -100,7 +100,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 	var err error
 	var tlsConfig *tls.Config
 	if spec.TLS != nil {
-		tlsConfig, err = spec.TLS.Config(ctx, c.Client)
+		tlsConfig, err = spec.TLS.Config(ctx, c.Client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 
 	var auth rpadmin.Auth
 	var username, password, token string
-	username, password, token, err = spec.Auth.AsCredentials(ctx, c.Client)
+	username, password, token, err = spec.Auth.AsCredentials(ctx, c.Client, c.secretExpander)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, namespace string, sp
 	return client, nil
 }
 
-func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, spec *ir.SchemaRegistrySpec) (*sr.Client, error) {
+func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegistrySpec) (*sr.Client, error) {
 	if len(spec.URLs) == 0 {
 		return nil, ErrEmptyURLList
 	}
@@ -163,7 +163,7 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 	var err error
 	var tlsConfig *tls.Config
 	if spec.TLS != nil {
-		tlsConfig, err = spec.TLS.Config(ctx, c.Client)
+		tlsConfig, err = spec.TLS.Config(ctx, c.Client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +177,7 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 		}),
 	}
 
-	authOpt, err := spec.SASL.AsOption(ctx, c.Client)
+	authOpt, err := spec.SASL.AsOption(ctx, c.Client, c.secretExpander)
 	if err != nil {
 		return nil, err
 	}
@@ -193,10 +193,10 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, namespace string, s
 	return sr.NewClient(opts...)
 }
 
-func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, namespace string, spec *ir.KafkaAPISpec) (shadow.RemoteClusterSettings, error) {
+func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, spec *ir.KafkaAPISpec) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
-	configuration, err := spec.Load(ctx, c.Client)
+	configuration, err := spec.Load(ctx, c.Client, c.secretExpander)
 	if err != nil {
 		return settings, err
 	}

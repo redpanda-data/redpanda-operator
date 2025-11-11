@@ -782,7 +782,7 @@ func getTLSConfig(
 	if err != nil {
 		return nil, err
 	}
-	return commonTLS.Config(ctx, k8sClient)
+	return commonTLS.Config(ctx, k8sClient, nil)
 }
 
 func getTLSConfigValues(
@@ -792,7 +792,7 @@ func getTLSConfigValues(
 	if err != nil {
 		return nil, err
 	}
-	return commonTLS.Load(ctx, k8sClient)
+	return commonTLS.Load(ctx, k8sClient, nil)
 }
 
 func getCommonTLS(certs *apiCertificates) (*ir.CommonTLS, error) {

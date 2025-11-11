@@ -103,7 +103,7 @@ func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request Resou
 func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c)
+	factory := internalclient.NewFactory(config, c, nil)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.ShadowLink{})

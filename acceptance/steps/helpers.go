@@ -370,7 +370,7 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
-	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	factory := client.NewFactory(t.RestConfig(), t, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
 	clients := &clusterClients{
 		resourceTarget: referencer,
@@ -415,7 +415,7 @@ func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake v1 user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
-	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	factory := client.NewFactory(t.RestConfig(), t, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
 	clients := &clusterClients{
 		resourceTarget: referencer,

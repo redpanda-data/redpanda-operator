@@ -36,6 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 const (
@@ -118,12 +119,12 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return result, err
 }
 
-func SetupTopicController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
+func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	r := &TopicReconciler{
 		Client:        c,
-		Factory:       internalclient.NewFactory(config, c),
+		Factory:       internalclient.NewFactory(config, c, expander),
 		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
 	}

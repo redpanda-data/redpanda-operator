@@ -31,6 +31,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 // KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
@@ -51,19 +53,19 @@ type KafkaAPIConfiguration struct {
 	SASL    *AuthUser
 }
 
-func (k *KafkaAPISpec) Load(ctx context.Context, client client.Reader) (*KafkaAPIConfiguration, error) {
+func (k *KafkaAPISpec) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*KafkaAPIConfiguration, error) {
 	config := &KafkaAPIConfiguration{
 		Brokers: k.Brokers,
 	}
 	if k.TLS != nil {
-		tls, err := k.TLS.Load(ctx, client)
+		tls, err := k.TLS.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
 		config.TLS = tls
 	}
 	if k.SASL != nil {
-		sasl, err := k.SASL.Load(ctx, client)
+		sasl, err := k.SASL.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -90,11 +92,11 @@ type KafkaSASL struct {
 	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 }
 
-func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader) (kgo.Opt, error) {
+func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (kgo.Opt, error) {
 	switch s.Mechanism {
 	// SASL Plain
 	case config.SASLMechanismPlain:
-		p, err := s.Password.Load(ctx, client)
+		p, err := s.Password.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +108,7 @@ func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader) (kgo.Opt
 
 	// SASL SCRAM
 	case config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
-		p, err := s.Password.Load(ctx, client)
+		p, err := s.Password.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +131,7 @@ func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader) (kgo.Opt
 
 	// OAuth Bearer
 	case config.SASLMechanismOAuthBearer:
-		t, err := s.OAUth.Token.Load(ctx, client)
+		t, err := s.OAUth.Token.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch token: %w", err)
 		}
@@ -149,7 +151,7 @@ func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader) (kgo.Opt
 
 		switch s.GSSAPIConfig.AuthType {
 		case "USER_AUTH":
-			p, err := s.GSSAPIConfig.Password.Load(ctx, client)
+			p, err := s.GSSAPIConfig.Password.Load(ctx, client, expander)
 			if err != nil {
 				return nil, errors.Newf("unable to fetch sasl gssapi password: %w", err)
 			}
@@ -185,12 +187,12 @@ func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader) (kgo.Opt
 
 	// AWS MSK IAM
 	case config.SASLMechanismAWSManagedStreamingIAM:
-		key, err := s.AWSMskIam.SecretKey.Load(ctx, client)
+		key, err := s.AWSMskIam.SecretKey.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch aws msk secret key: %w", err)
 		}
 
-		t, err := s.AWSMskIam.SessionToken.Load(ctx, client)
+		t, err := s.AWSMskIam.SessionToken.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch aws msk secret key: %w", err)
 		}
@@ -212,8 +214,8 @@ type AuthUser struct {
 	Mechanism string
 }
 
-func (k *KafkaSASL) Load(ctx context.Context, client client.Reader) (*AuthUser, error) {
-	password, err := k.Password.Load(ctx, client)
+func (k *KafkaSASL) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*AuthUser, error) {
+	password, err := k.Password.Load(ctx, client, expander)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +299,7 @@ type ValueSource struct {
 	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRef,omitempty"`
 }
 
-func (v *ValueSource) Load(ctx context.Context, client client.Reader) (string, error) {
+func (v *ValueSource) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (string, error) {
 	if v.Inline != nil {
 		return *v.Inline, nil
 	}
@@ -308,8 +310,10 @@ func (v *ValueSource) Load(ctx context.Context, client client.Reader) (string, e
 		return loadSecret(ctx, client, v.SecretKeyRef.Name, v.Namespace, v.SecretKeyRef.Key)
 	}
 	if v.ExternalSecretRefSelector != nil {
-		// TODO: handle external secret
-		return "", errors.New("unimplemented")
+		if expander == nil {
+			return "", errors.New("attempted to expand an external secret without enabling external secrets in the operator")
+		}
+		return expander.Expand(ctx, v.ExternalSecretRefSelector.Name)
 	}
 	return "", errors.New("called Load on an unset ValueSource")
 }
@@ -320,8 +324,8 @@ type ExternalSecretKeySelector struct {
 }
 
 // Config returns the materialized tls.Config for the CommonTLS object
-func (c *CommonTLS) Config(ctx context.Context, client client.Reader) (*tls.Config, error) {
-	config, err := c.Load(ctx, client)
+func (c *CommonTLS) Config(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*tls.Config, error) {
+	config, err := c.Load(ctx, client, expander)
 	if err != nil {
 		return nil, err
 	}
@@ -370,11 +374,11 @@ func (c *CommonTLS) Config(ctx context.Context, client client.Reader) (*tls.Conf
 }
 
 // Load returns the materialized TLSConfig for the CommonTLS object
-func (c *CommonTLS) Load(ctx context.Context, client client.Reader) (*TLSConfig, error) {
+func (c *CommonTLS) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*TLSConfig, error) {
 	tls := &TLSConfig{}
 
 	if c.CaCert != nil {
-		cert, err := c.CaCert.Load(ctx, client)
+		cert, err := c.CaCert.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -382,7 +386,7 @@ func (c *CommonTLS) Load(ctx context.Context, client client.Reader) (*TLSConfig,
 	}
 
 	if c.Cert != nil {
-		cert, err := c.Cert.Load(ctx, client)
+		cert, err := c.Cert.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -390,7 +394,7 @@ func (c *CommonTLS) Load(ctx context.Context, client client.Reader) (*TLSConfig,
 	}
 
 	if c.Key != nil {
-		key, err := c.Key.Load(ctx, client)
+		key, err := c.Key.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -426,13 +430,13 @@ type AdminAuth struct {
 }
 
 // TODO: Move this to an AsOption method?
-func (a *AdminAuth) AsCredentials(ctx context.Context, client client.Reader) (username, password, token string, err error) {
+func (a *AdminAuth) AsCredentials(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (username, password, token string, err error) {
 	if a == nil {
 		return "", "", "", nil
 	}
 
 	if a.Password != nil {
-		p, err := a.Password.Load(ctx, client)
+		p, err := a.Password.Load(ctx, client, expander)
 		if err != nil {
 			return "", "", "", errors.Newf("unable to fetch sasl password: %w", err)
 		}
@@ -441,7 +445,7 @@ func (a *AdminAuth) AsCredentials(ctx context.Context, client client.Reader) (us
 	}
 
 	if a.AuthToken != nil {
-		token, err := a.AuthToken.Load(ctx, client)
+		token, err := a.AuthToken.Load(ctx, client, expander)
 		if err != nil {
 			return "", "", "", errors.Newf("unable to fetch sasl token: %w", err)
 		}
@@ -475,13 +479,13 @@ type SchemaRegistrySASL struct {
 	AuthToken *ValueSource `json:"token,omitempty"`
 }
 
-func (s *SchemaRegistrySASL) AsOption(ctx context.Context, client client.Reader) (sr.ClientOpt, error) {
+func (s *SchemaRegistrySASL) AsOption(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (sr.ClientOpt, error) {
 	if s == nil {
 		return nil, nil
 	}
 
 	if s.Password != nil {
-		p, err := s.Password.Load(ctx, client)
+		p, err := s.Password.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch sasl password: %w", err)
 		}
@@ -490,7 +494,7 @@ func (s *SchemaRegistrySASL) AsOption(ctx context.Context, client client.Reader)
 	}
 
 	if s.AuthToken != nil {
-		token, err := s.AuthToken.Load(ctx, client)
+		token, err := s.AuthToken.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch sasl token: %w", err)
 		}

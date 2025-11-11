@@ -41,6 +41,7 @@ import (
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 var _ Resource = &StatefulSetResource{}
@@ -100,6 +101,7 @@ type StatefulSetResource struct {
 	k8sclient.Client
 	scheme                 *runtime.Scheme
 	pandaCluster           *vectorizedv1alpha1.Cluster
+	expander               *secrets.CloudExpander
 	serviceFQDN            string
 	serviceName            string
 	nodePortName           types.NamespacedName

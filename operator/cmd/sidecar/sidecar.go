@@ -275,7 +275,7 @@ func Run(
 
 		server, err := probes.NewServer(probes.Config{
 			Prober: probes.NewProber(
-				internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+				internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil),
 				redpandaYAMLPath,
 				probes.WithLogger(mgr.GetLogger().WithName("Prober")),
 			),
