@@ -92,38 +92,38 @@ type KafkaSASL struct {
 	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 }
 
-func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (kgo.Opt, error) {
-	switch s.Mechanism {
+func (k *KafkaSASL) AsOption(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (kgo.Opt, error) {
+	switch k.Mechanism {
 	// SASL Plain
 	case config.SASLMechanismPlain:
-		p, err := s.Password.Load(ctx, client, expander)
+		p, err := k.Password.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
 
 		return kgo.SASL(plain.Auth{
-			User: s.Username,
+			User: k.Username,
 			Pass: p,
 		}.AsMechanism()), nil
 
 	// SASL SCRAM
 	case config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
-		p, err := s.Password.Load(ctx, client, expander)
+		p, err := k.Password.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
 
 		var mechanism sasl.Mechanism
 		scramAuth := scram.Auth{
-			User: s.Username,
+			User: k.Username,
 			Pass: p,
 		}
 
-		if s.Mechanism == config.SASLMechanismScramSHA256 {
+		if k.Mechanism == config.SASLMechanismScramSHA256 {
 			mechanism = scramAuth.AsSha256Mechanism()
 		}
 
-		if s.Mechanism == config.SASLMechanismScramSHA512 {
+		if k.Mechanism == config.SASLMechanismScramSHA512 {
 			mechanism = scramAuth.AsSha512Mechanism()
 		}
 
@@ -131,7 +131,7 @@ func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader, expander
 
 	// OAuth Bearer
 	case config.SASLMechanismOAuthBearer:
-		t, err := s.OAUth.Token.Load(ctx, client, expander)
+		t, err := k.OAUth.Token.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch token: %w", err)
 		}
@@ -144,68 +144,68 @@ func (s *KafkaSASL) AsOption(ctx context.Context, client client.Reader, expander
 	case config.SASLMechanismGSSAPI:
 		var krbClient *krbclient.Client
 
-		kerbCfg, err := krbconfig.Load(s.GSSAPIConfig.KerberosConfigPath)
+		kerbCfg, err := krbconfig.Load(k.GSSAPIConfig.KerberosConfigPath)
 		if err != nil {
-			return nil, errors.Newf("creating kerberos config from specified config (%s) filepath: %w", s.GSSAPIConfig.KerberosConfigPath, err)
+			return nil, errors.Newf("creating kerberos config from specified config (%s) filepath: %w", k.GSSAPIConfig.KerberosConfigPath, err)
 		}
 
-		switch s.GSSAPIConfig.AuthType {
+		switch k.GSSAPIConfig.AuthType {
 		case "USER_AUTH":
-			p, err := s.GSSAPIConfig.Password.Load(ctx, client, expander)
+			p, err := k.GSSAPIConfig.Password.Load(ctx, client, expander)
 			if err != nil {
 				return nil, errors.Newf("unable to fetch sasl gssapi password: %w", err)
 			}
 
 			krbClient = krbclient.NewWithPassword(
-				s.GSSAPIConfig.Username,
-				s.GSSAPIConfig.Realm,
+				k.GSSAPIConfig.Username,
+				k.GSSAPIConfig.Realm,
 				p,
 				kerbCfg,
-				krbclient.DisablePAFXFAST(!s.GSSAPIConfig.EnableFast),
+				krbclient.DisablePAFXFAST(!k.GSSAPIConfig.EnableFast),
 			)
 
 		case "KEYTAB_AUTH":
-			ktb, err := keytab.Load(s.GSSAPIConfig.KeyTabPath)
+			ktb, err := keytab.Load(k.GSSAPIConfig.KeyTabPath)
 			if err != nil {
-				return nil, errors.Newf("loading keytab from (%s) key tab path: %w", s.GSSAPIConfig.KeyTabPath, err)
+				return nil, errors.Newf("loading keytab from (%s) key tab path: %w", k.GSSAPIConfig.KeyTabPath, err)
 			}
 
 			krbClient = krbclient.NewWithKeytab(
-				s.GSSAPIConfig.Username,
-				s.GSSAPIConfig.Realm,
+				k.GSSAPIConfig.Username,
+				k.GSSAPIConfig.Realm,
 				ktb,
 				kerbCfg,
-				krbclient.DisablePAFXFAST(!s.GSSAPIConfig.EnableFast),
+				krbclient.DisablePAFXFAST(!k.GSSAPIConfig.EnableFast),
 			)
 		}
 
 		return kgo.SASL(kerberos.Auth{
 			Client:           krbClient,
-			Service:          s.GSSAPIConfig.ServiceName,
+			Service:          k.GSSAPIConfig.ServiceName,
 			PersistAfterAuth: true,
 		}.AsMechanism()), nil
 
 	// AWS MSK IAM
 	case config.SASLMechanismAWSManagedStreamingIAM:
-		key, err := s.AWSMskIam.SecretKey.Load(ctx, client, expander)
+		key, err := k.AWSMskIam.SecretKey.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch aws msk secret key: %w", err)
 		}
 
-		t, err := s.AWSMskIam.SessionToken.Load(ctx, client, expander)
+		t, err := k.AWSMskIam.SessionToken.Load(ctx, client, expander)
 		if err != nil {
 			return nil, errors.Newf("unable to fetch aws msk secret key: %w", err)
 		}
 
 		return kgo.SASL(aws.Auth{
-			AccessKey:    s.AWSMskIam.AccessKey,
+			AccessKey:    k.AWSMskIam.AccessKey,
 			SecretKey:    key,
 			SessionToken: t,
-			UserAgent:    s.AWSMskIam.UserAgent,
+			UserAgent:    k.AWSMskIam.UserAgent,
 		}.AsManagedStreamingIAMMechanism()), nil
 	}
 
-	return nil, errors.Newf("unsupported sasl mechanism: %s", s.Mechanism)
+	return nil, errors.Newf("unsupported sasl mechanism: %s", k.Mechanism)
 }
 
 type AuthUser struct {
