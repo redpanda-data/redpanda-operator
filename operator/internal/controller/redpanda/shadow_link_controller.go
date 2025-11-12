@@ -24,6 +24,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 // maxTopicAndTaskStatusEntries artificially limits the number of individual
@@ -100,10 +101,10 @@ func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request Resou
 	return nil
 }
 
-func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
+func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c, nil)
+	factory := internalclient.NewFactory(config, c, expander)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.ShadowLink{})

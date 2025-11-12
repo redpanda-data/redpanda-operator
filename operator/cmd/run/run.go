@@ -442,7 +442,7 @@ func Run(
 
 	// ShadowLink Reconciler
 	if opts.enableShadowLinksController {
-		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
 		}
