@@ -176,7 +176,7 @@ func (s *ProberSuite) SetupSuite() {
 		s.manager = mgr
 		s.helm = helmClient
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
 
 		return nil
 	})

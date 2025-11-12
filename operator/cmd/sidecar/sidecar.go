@@ -275,7 +275,9 @@ func Run(
 
 		server, err := probes.NewServer(probes.Config{
 			Prober: probes.NewProber(
-				internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+				// NB: no need for cloud expansion here due to the fact that the sidecar probes are
+				// meant to function via resolving connection params from the rpk file on disk.
+				internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil),
 				redpandaYAMLPath,
 				probes.WithLogger(mgr.GetLogger().WithName("Prober")),
 			),

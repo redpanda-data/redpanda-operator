@@ -12,15 +12,20 @@ require (
 	github.com/google/cel-go v0.25.0
 	github.com/homeport/dyff v1.7.1
 	github.com/invopop/jsonschema v0.12.0
+	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/redpanda-data/common-go/rpadmin v0.1.17-0.20250918052456-493894730cb7
 	github.com/redpanda-data/common-go/secrets v0.1.4
+	github.com/redpanda-data/console/backend v0.0.0-20250915195818-3cd9fabec94b
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/pflag v1.0.7
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.39.0
+	github.com/twmb/franz-go v1.19.5
+	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
+	github.com/twmb/franz-go/pkg/sr v1.5.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/collector/pdata v1.32.0
 	go.opentelemetry.io/contrib/bridges/prometheus v0.61.0
@@ -110,6 +115,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
+	github.com/cloudhut/common v0.11.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
@@ -118,11 +124,9 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
-	github.com/creack/pty v1.1.20 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/docker/docker v28.3.3+incompatible // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -136,6 +140,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.8.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
+	github.com/go-chi/chi/v5 v5.2.2 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -143,6 +148,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
@@ -154,7 +160,6 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20250607225305-033d6d78b36a // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -166,14 +171,25 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/golang-lru/arc/v2 v2.0.7 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
+	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
+	github.com/jcmturner/gofork v1.7.6 // indirect
+	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/knadh/koanf/maps v0.1.2 // indirect
+	github.com/knadh/koanf/parsers/yaml v1.0.0 // indirect
+	github.com/knadh/koanf/providers/confmap v1.0.0 // indirect
+	github.com/knadh/koanf/providers/env v1.1.0 // indirect
+	github.com/knadh/koanf/providers/file v1.2.0 // indirect
+	github.com/knadh/koanf/v2 v2.2.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -243,7 +259,6 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
-	github.com/twmb/franz-go v1.19.5 // indirect
 	github.com/twmb/franz-go/pkg/kadm v1.16.0 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.11.2 // indirect
 	github.com/twmb/tlscfg v1.2.1 // indirect

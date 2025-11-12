@@ -36,6 +36,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 var (
@@ -113,21 +115,23 @@ type Factory struct {
 	adminClientTimeout time.Duration
 	dialer             redpanda.DialContextFunc
 	userAuth           *UserAuth
+	secretExpander     *pkgsecrets.CloudExpander
 }
 
 var _ ClientFactory = (*Factory)(nil)
 
-func NewFactory(config *rest.Config, kubeclient client.Client) *Factory {
+func NewFactory(config *rest.Config, kubeclient client.Client, expander *pkgsecrets.CloudExpander) *Factory {
 	return &Factory{
 		config:             rest.CopyConfig(config),
 		fs:                 afero.NewOsFs(),
 		Client:             kubeclient,
+		secretExpander:     expander,
 		adminClientTimeout: 10 * time.Second,
 	}
 }
 
 func NewRPKOnlyFactory() *Factory {
-	return NewFactory(&rest.Config{}, nil)
+	return NewFactory(&rest.Config{}, nil, nil)
 }
 
 func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
@@ -209,7 +213,7 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 	}
 
 	if spec := c.getKafkaSpec(o); spec != nil {
-		return c.kafkaForSpec(ctx, o.GetNamespace(), c.getKafkaMetricNamespace(o), spec, opts...)
+		return c.kafkaForSpec(ctx, c.getKafkaMetricNamespace(o), spec, opts...)
 	}
 
 	return nil, ErrInvalidKafkaClientObject
@@ -253,7 +257,7 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.Ad
 	}
 
 	if spec := c.getAdminSpec(o); spec != nil {
-		return c.redpandaAdminForSpec(ctx, o.GetNamespace(), spec)
+		return c.redpandaAdminForSpec(ctx, spec)
 	}
 
 	return nil, ErrInvalidRedpandaClientObject
@@ -297,7 +301,7 @@ func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client
 	}
 
 	if spec := c.getSchemaRegistrySpec(o); spec != nil {
-		return c.schemaRegistryForSpec(ctx, o.GetNamespace(), spec)
+		return c.schemaRegistryForSpec(ctx, spec)
 	}
 
 	return nil, ErrInvalidSchemaRegistryClientObject
@@ -380,7 +384,7 @@ func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha
 	}
 
 	if spec := c.getRemoteKafkaSpec(o); spec != nil {
-		return c.remoteClusterSettingsForSpec(ctx, o.GetNamespace(), spec)
+		return c.remoteClusterSettingsForSpec(ctx, spec)
 	}
 
 	return settings, ErrInvalidKafkaClientObject
@@ -482,32 +486,32 @@ func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object) (*r
 	return nil, nil
 }
 
-func (c *Factory) getKafkaSpec(obj client.Object) *redpandav1alpha2.KafkaAPISpec {
+func (c *Factory) getKafkaSpec(obj client.Object) *ir.KafkaAPISpec {
 	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
 		if source := o.GetClusterSource(); source != nil {
 			if spec := source.GetKafkaAPISpec(); spec != nil {
-				return spec
+				return redpandav1alpha2.ConvertKafkaAPISpecToIR(obj.GetNamespace(), spec)
 			}
 		}
 	}
 
 	if o, ok := obj.(redpandav1alpha2.KafkaConnectedObject); ok {
-		return o.GetKafkaAPISpec()
+		return redpandav1alpha2.ConvertKafkaAPISpecToIR(o.GetNamespace(), o.GetKafkaAPISpec())
 	}
 	return nil
 }
 
-func (c *Factory) getRemoteKafkaSpec(obj client.Object) *redpandav1alpha2.KafkaAPISpec {
+func (c *Factory) getRemoteKafkaSpec(obj client.Object) *ir.KafkaAPISpec {
 	if o, ok := obj.(redpandav1alpha2.RemoteClusterReferencingObject); ok {
 		if source := o.GetRemoteClusterSource(); source != nil {
 			if spec := source.GetKafkaAPISpec(); spec != nil {
-				return spec
+				return redpandav1alpha2.ConvertKafkaAPISpecToIR(obj.GetNamespace(), spec)
 			}
 		}
 	}
 
 	if o, ok := obj.(redpandav1alpha2.KafkaConnectedObject); ok {
-		return o.GetKafkaAPISpec()
+		return redpandav1alpha2.ConvertKafkaAPISpecToIR(o.GetNamespace(), o.GetKafkaAPISpec())
 	}
 	return nil
 }
@@ -519,20 +523,20 @@ func (c *Factory) getKafkaMetricNamespace(obj client.Object) *string {
 	return nil
 }
 
-func (c *Factory) getAdminSpec(obj client.Object) *redpandav1alpha2.AdminAPISpec {
+func (c *Factory) getAdminSpec(obj client.Object) *ir.AdminAPISpec {
 	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
 		if source := o.GetClusterSource(); source != nil {
-			return source.GetAdminAPISpec()
+			return redpandav1alpha2.ConvertAdminAPISpecToIR(obj.GetNamespace(), source.GetAdminAPISpec())
 		}
 	}
 
 	return nil
 }
 
-func (c *Factory) getSchemaRegistrySpec(obj client.Object) *redpandav1alpha2.SchemaRegistrySpec {
+func (c *Factory) getSchemaRegistrySpec(obj client.Object) *ir.SchemaRegistrySpec {
 	if o, ok := obj.(redpandav1alpha2.ClusterReferencingObject); ok {
 		if source := o.GetClusterSource(); source != nil {
-			return source.GetSchemaRegistrySpec()
+			return redpandav1alpha2.ConvertSchemaRegistrySpecToIR(o.GetNamespace(), source.GetSchemaRegistrySpec())
 		}
 	}
 

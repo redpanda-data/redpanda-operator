@@ -14,12 +14,25 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
+	krbclient "github.com/jcmturner/gokrb5/v8/client"
+	krbconfig "github.com/jcmturner/gokrb5/v8/config"
+	"github.com/jcmturner/gokrb5/v8/keytab"
+	"github.com/redpanda-data/console/backend/pkg/config"
+	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
+	"github.com/twmb/franz-go/pkg/sasl/aws"
+	"github.com/twmb/franz-go/pkg/sasl/kerberos"
+	"github.com/twmb/franz-go/pkg/sasl/oauth"
+	"github.com/twmb/franz-go/pkg/sasl/plain"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
+	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 // KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
@@ -40,19 +53,19 @@ type KafkaAPIConfiguration struct {
 	SASL    *AuthUser
 }
 
-func (k *KafkaAPISpec) Load(ctx context.Context, client client.Reader) (*KafkaAPIConfiguration, error) {
+func (k *KafkaAPISpec) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*KafkaAPIConfiguration, error) {
 	config := &KafkaAPIConfiguration{
 		Brokers: k.Brokers,
 	}
 	if k.TLS != nil {
-		tls, err := k.TLS.Load(ctx, client)
+		tls, err := k.TLS.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
 		config.TLS = tls
 	}
 	if k.SASL != nil {
-		sasl, err := k.SASL.Load(ctx, client)
+		sasl, err := k.SASL.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +81,7 @@ type KafkaSASL struct {
 	Username string `json:"username,omitempty"`
 	// Specifies the password.
 	// +optional
-	Password *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Password *ValueSource `json:"passwordSecretRef,omitempty"`
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
 	// +optional
@@ -79,14 +92,130 @@ type KafkaSASL struct {
 	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 }
 
+func (k *KafkaSASL) AsOption(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (kgo.Opt, error) {
+	switch k.Mechanism {
+	// SASL Plain
+	case config.SASLMechanismPlain:
+		p, err := k.Password.Load(ctx, client, expander)
+		if err != nil {
+			return nil, err
+		}
+
+		return kgo.SASL(plain.Auth{
+			User: k.Username,
+			Pass: p,
+		}.AsMechanism()), nil
+
+	// SASL SCRAM
+	case config.SASLMechanismScramSHA256, config.SASLMechanismScramSHA512:
+		p, err := k.Password.Load(ctx, client, expander)
+		if err != nil {
+			return nil, err
+		}
+
+		var mechanism sasl.Mechanism
+		scramAuth := scram.Auth{
+			User: k.Username,
+			Pass: p,
+		}
+
+		if k.Mechanism == config.SASLMechanismScramSHA256 {
+			mechanism = scramAuth.AsSha256Mechanism()
+		}
+
+		if k.Mechanism == config.SASLMechanismScramSHA512 {
+			mechanism = scramAuth.AsSha512Mechanism()
+		}
+
+		return kgo.SASL(mechanism), nil
+
+	// OAuth Bearer
+	case config.SASLMechanismOAuthBearer:
+		t, err := k.OAUth.Token.Load(ctx, client, expander)
+		if err != nil {
+			return nil, errors.Newf("unable to fetch token: %w", err)
+		}
+
+		return kgo.SASL(oauth.Auth{
+			Token: t,
+		}.AsMechanism()), nil
+
+	// Kerberos
+	case config.SASLMechanismGSSAPI:
+		var krbClient *krbclient.Client
+
+		kerbCfg, err := krbconfig.Load(k.GSSAPIConfig.KerberosConfigPath)
+		if err != nil {
+			return nil, errors.Newf("creating kerberos config from specified config (%s) filepath: %w", k.GSSAPIConfig.KerberosConfigPath, err)
+		}
+
+		switch k.GSSAPIConfig.AuthType {
+		case "USER_AUTH":
+			p, err := k.GSSAPIConfig.Password.Load(ctx, client, expander)
+			if err != nil {
+				return nil, errors.Newf("unable to fetch sasl gssapi password: %w", err)
+			}
+
+			krbClient = krbclient.NewWithPassword(
+				k.GSSAPIConfig.Username,
+				k.GSSAPIConfig.Realm,
+				p,
+				kerbCfg,
+				krbclient.DisablePAFXFAST(!k.GSSAPIConfig.EnableFast),
+			)
+
+		case "KEYTAB_AUTH":
+			ktb, err := keytab.Load(k.GSSAPIConfig.KeyTabPath)
+			if err != nil {
+				return nil, errors.Newf("loading keytab from (%s) key tab path: %w", k.GSSAPIConfig.KeyTabPath, err)
+			}
+
+			krbClient = krbclient.NewWithKeytab(
+				k.GSSAPIConfig.Username,
+				k.GSSAPIConfig.Realm,
+				ktb,
+				kerbCfg,
+				krbclient.DisablePAFXFAST(!k.GSSAPIConfig.EnableFast),
+			)
+		}
+
+		return kgo.SASL(kerberos.Auth{
+			Client:           krbClient,
+			Service:          k.GSSAPIConfig.ServiceName,
+			PersistAfterAuth: true,
+		}.AsMechanism()), nil
+
+	// AWS MSK IAM
+	case config.SASLMechanismAWSManagedStreamingIAM:
+		key, err := k.AWSMskIam.SecretKey.Load(ctx, client, expander)
+		if err != nil {
+			return nil, errors.Newf("unable to fetch aws msk secret key: %w", err)
+		}
+
+		t, err := k.AWSMskIam.SessionToken.Load(ctx, client, expander)
+		if err != nil {
+			return nil, errors.Newf("unable to fetch aws msk secret key: %w", err)
+		}
+
+		return kgo.SASL(aws.Auth{
+			AccessKey:    k.AWSMskIam.AccessKey,
+			SecretKey:    key,
+			SessionToken: t,
+			UserAgent:    k.AWSMskIam.UserAgent,
+		}.AsManagedStreamingIAMMechanism()), nil
+	}
+
+	return nil, errors.Newf("unsupported sasl mechanism: %s", k.Mechanism)
+}
+
 type AuthUser struct {
 	Username  string
 	Password  string
 	Mechanism string
 }
 
-func (k *KafkaSASL) Load(ctx context.Context, client client.Reader) (*AuthUser, error) {
-	password, err := loadSecret(ctx, client, k.Password.Name, k.Password.Namespace, k.Password.Key)
+func (k *KafkaSASL) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*AuthUser, error) {
+	password, err := k.Password.Load(ctx, client, expander)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +231,7 @@ type SASLMechanism string
 
 // KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 type KafkaSASLOAuthBearer struct {
-	Token SecretKeyRef `json:"tokenSecretRef"`
+	Token *ValueSource `json:"token"`
 }
 
 // KafkaSASLGSSAPI represents the Kafka Kerberos config.
@@ -112,7 +241,7 @@ type KafkaSASLGSSAPI struct {
 	KerberosConfigPath string       `json:"kerberosConfigPath"`
 	ServiceName        string       `json:"serviceName"`
 	Username           string       `json:"username"`
-	Password           SecretKeyRef `json:"passwordSecretRef"`
+	Password           *ValueSource `json:"password"`
 	Realm              string       `json:"realm"`
 
 	// EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
@@ -125,11 +254,11 @@ type KafkaSASLGSSAPI struct {
 // see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
 type KafkaSASLAWSMskIam struct {
 	AccessKey string       `json:"accessKey"`
-	SecretKey SecretKeyRef `json:"secretKeySecretRef"`
+	SecretKey *ValueSource `json:"secretKey"`
 
 	// SessionToken, if non-empty, is a session / security token to use for authentication.
 	// See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
-	SessionToken SecretKeyRef `json:"sessionTokenSecretRef"`
+	SessionToken *ValueSource `json:"sessionToken"`
 
 	// UserAgent is the user agent to for the client to use when connecting
 	// to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>".
@@ -143,19 +272,60 @@ type KafkaSASLAWSMskIam struct {
 // CommonTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
 type CommonTLS struct {
 	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
-	CaCert *ObjectKeyRef `json:"caCertSecretRef,omitempty"`
+	CaCert *ValueSource `json:"caCert,omitempty"`
 	// Cert is the reference for client public certificate to establish mTLS connection to Redpanda
-	Cert *SecretKeyRef `json:"certSecretRef,omitempty"`
+	Cert *ValueSource `json:"cert,omitempty"`
 	// Key is the reference for client private certificate to establish mTLS connection to Redpanda
-	Key *SecretKeyRef `json:"keySecretRef,omitempty"`
+	Key *ValueSource `json:"key,omitempty"`
 	// InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda
 	// +optional
-	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify"`
+	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify,omitempty"`
+}
+
+type ValueSource struct {
+	// Namespace of where the value comes from used in resolving kubernetes objects.
+	Namespace string `json:"namespace,omitempty"`
+	// Inline is the raw value specified inline.
+	Inline *string `json:"inline,omitempty"`
+	// If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+	// For target values, the string value fetched from the source will be treated as
+	// a raw string.
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Should the value be contained in a k8s secret rather than configmap, we can refer
+	// to it here.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// If the value is supplied by an external source, coordinates are embedded here.
+	// Note: we interpret all fetched external secrets as raw string values
+	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRef,omitempty"`
+}
+
+func (v *ValueSource) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (string, error) {
+	if v.Inline != nil {
+		return *v.Inline, nil
+	}
+	if v.ConfigMapKeyRef != nil {
+		return loadConfigMap(ctx, client, v.ConfigMapKeyRef.Name, v.Namespace, v.ConfigMapKeyRef.Key)
+	}
+	if v.SecretKeyRef != nil {
+		return loadSecret(ctx, client, v.SecretKeyRef.Name, v.Namespace, v.SecretKeyRef.Key)
+	}
+	if v.ExternalSecretRefSelector != nil {
+		if expander == nil {
+			return "", errors.New("attempted to expand an external secret without enabling external secrets in the operator")
+		}
+		return expander.Expand(ctx, v.ExternalSecretRefSelector.Name)
+	}
+	return "", errors.New("called Load on an unset ValueSource")
+}
+
+// ExternalSecretKeySelector selects a key of an external Secret.
+type ExternalSecretKeySelector struct {
+	Name string `json:"name"`
 }
 
 // Config returns the materialized tls.Config for the CommonTLS object
-func (c *CommonTLS) Config(ctx context.Context, client client.Reader) (*tls.Config, error) {
-	config, err := c.Load(ctx, client)
+func (c *CommonTLS) Config(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*tls.Config, error) {
+	config, err := c.Load(ctx, client, expander)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +361,7 @@ func (c *CommonTLS) Config(ctx context.Context, client client.Reader) (*tls.Conf
 
 		tlsCert, err := tls.X509KeyPair(certData, keyData)
 		if err != nil {
-			return nil, fmt.Errorf("cannot parse pem: %w", err)
+			return nil, errors.Newf("cannot parse pem: %w", err)
 		}
 		certificates = []tls.Certificate{tlsCert}
 	}
@@ -204,38 +374,19 @@ func (c *CommonTLS) Config(ctx context.Context, client client.Reader) (*tls.Conf
 }
 
 // Load returns the materialized TLSConfig for the CommonTLS object
-func (c *CommonTLS) Load(ctx context.Context, client client.Reader) (*TLSConfig, error) {
+func (c *CommonTLS) Load(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (*TLSConfig, error) {
 	tls := &TLSConfig{}
 
 	if c.CaCert != nil {
-		key := "ca.crt"
-		if c.CaCert.ConfigMapKeyRef != nil {
-			if c.CaCert.ConfigMapKeyRef.Key != "" {
-				key = c.CaCert.ConfigMapKeyRef.Key
-			}
-			ca, err := loadConfigMap(ctx, client, c.CaCert.ConfigMapKeyRef.Name, c.CaCert.Namespace, key)
-			if err != nil {
-				return nil, err
-			}
-			tls.CA = ca
-		} else if c.CaCert.SecretKeyRef != nil {
-			if c.CaCert.SecretKeyRef.Key != "" {
-				key = c.CaCert.SecretKeyRef.Key
-			}
-			ca, err := loadSecret(ctx, client, c.CaCert.SecretKeyRef.Name, c.CaCert.Namespace, key)
-			if err != nil {
-				return nil, err
-			}
-			tls.CA = ca
+		cert, err := c.CaCert.Load(ctx, client, expander)
+		if err != nil {
+			return nil, err
 		}
+		tls.CA = cert
 	}
 
 	if c.Cert != nil {
-		key := "tls.crt"
-		if c.Cert.Key != "" {
-			key = c.Cert.Key
-		}
-		cert, err := loadSecret(ctx, client, c.Cert.Name, c.Cert.Namespace, key)
+		cert, err := c.Cert.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -243,11 +394,7 @@ func (c *CommonTLS) Load(ctx context.Context, client client.Reader) (*TLSConfig,
 	}
 
 	if c.Key != nil {
-		key := "tls.key"
-		if c.Key.Key != "" {
-			key = c.Key.Key
-		}
-		key, err := loadSecret(ctx, client, c.Key.Name, c.Key.Namespace, key)
+		key, err := c.Key.Load(ctx, client, expander)
 		if err != nil {
 			return nil, err
 		}
@@ -255,26 +402,6 @@ func (c *CommonTLS) Load(ctx context.Context, client client.Reader) (*TLSConfig,
 	}
 
 	return tls, nil
-}
-
-type ObjectKeyRef struct {
-	Namespace       string                       `json:"namespace,omitempty"`
-	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
-	SecretKeyRef    *corev1.SecretKeySelector    `json:"secretKeyRef,omitempty"`
-}
-
-// SecretKeyRef contains enough information to inspect or modify the referred Secret data
-// See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
-type SecretKeyRef struct {
-	Namespace string `json:"namespace,omitempty"`
-
-	// Name of the referent.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-	Name string `json:"name"`
-
-	// +optional
-	// Key in Secret data to get value from
-	Key string `json:"key,omitempty"`
 }
 
 // AdminAPISpec defines client configuration for connecting to Redpanda's admin API.
@@ -296,7 +423,36 @@ type AdminAuth struct {
 	Username string `json:"username,omitempty"`
 	// Specifies the password.
 	// +optional
-	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Password *ValueSource `json:"passwordSecretRef,omitempty"`
+	// Specifies an auth token.
+	// +optional
+	AuthToken *ValueSource `json:"token,omitempty"`
+}
+
+// TODO: Move this to an AsOption method?
+func (a *AdminAuth) AsCredentials(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (username, password, token string, err error) {
+	if a == nil {
+		return "", "", "", nil
+	}
+
+	if a.Password != nil {
+		p, err := a.Password.Load(ctx, client, expander)
+		if err != nil {
+			return "", "", "", errors.Newf("unable to fetch sasl password: %w", err)
+		}
+
+		return a.Username, p, "", nil
+	}
+
+	if a.AuthToken != nil {
+		token, err := a.AuthToken.Load(ctx, client, expander)
+		if err != nil {
+			return "", "", "", errors.Newf("unable to fetch sasl token: %w", err)
+		}
+		return "", "", token, nil
+	}
+
+	return "", "", "", errors.New("unsupported SASL mechanism, either password or auth token must be specified")
 }
 
 // SchemaRegistrySpec defines client configuration for connecting to Redpanda's admin API.
@@ -318,9 +474,34 @@ type SchemaRegistrySASL struct {
 	Username string `json:"username,omitempty"`
 	// Specifies the password.
 	// +optional
-	Password SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Password *ValueSource `json:"password,omitempty"`
 	// +optional
-	AuthToken SecretKeyRef `json:"token,omitempty"`
+	AuthToken *ValueSource `json:"token,omitempty"`
+}
+
+func (s *SchemaRegistrySASL) AsOption(ctx context.Context, client client.Reader, expander *secrets.CloudExpander) (sr.ClientOpt, error) {
+	if s == nil {
+		return nil, nil
+	}
+
+	if s.Password != nil {
+		p, err := s.Password.Load(ctx, client, expander)
+		if err != nil {
+			return nil, errors.Newf("unable to fetch sasl password: %w", err)
+		}
+
+		return sr.BasicAuth(s.Username, p), nil
+	}
+
+	if s.AuthToken != nil {
+		token, err := s.AuthToken.Load(ctx, client, expander)
+		if err != nil {
+			return nil, errors.Newf("unable to fetch sasl token: %w", err)
+		}
+		return sr.BearerToken(token), nil
+	}
+
+	return nil, errors.New("could not determine SASL mechanism")
 }
 
 // ClusterRef represents a reference to a cluster that is being targeted.
@@ -371,12 +552,12 @@ type TLSConfig struct {
 func loadConfigMap(ctx context.Context, client client.Reader, name, namespace, key string) (string, error) {
 	config := &corev1.ConfigMap{}
 	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, config); err != nil {
-		return "", fmt.Errorf("getting ConfigMap %s/%s: %w", namespace, name, err)
+		return "", errors.Newf("getting ConfigMap %s/%s: %w", namespace, name, err)
 	}
 
 	value, ok := config.Data[key]
 	if !ok {
-		return "", fmt.Errorf("getting value from ConfigMap %s/%s: key %s not found", namespace, name, key) //nolint:goerr113 // no need to declare new error type
+		return "", errors.Newf("getting value from ConfigMap %s/%s: key %s not found", namespace, name, key) //nolint:goerr113 // no need to declare new error type
 	}
 	return value, nil
 }
@@ -384,12 +565,12 @@ func loadConfigMap(ctx context.Context, client client.Reader, name, namespace, k
 func loadSecret(ctx context.Context, client client.Reader, name, namespace, key string) (string, error) {
 	secret := &corev1.Secret{}
 	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
-		return "", fmt.Errorf("getting Secret %s/%s: %w", namespace, name, err)
+		return "", errors.Newf("getting Secret %s/%s: %w", namespace, name, err)
 	}
 
 	value, ok := secret.Data[key]
 	if !ok {
-		return "", fmt.Errorf("getting value from Secret %s/%s: key %s not found", namespace, name, key) //nolint:goerr113 // no need to declare new error type
+		return "", errors.Newf("getting value from Secret %s/%s: key %s not found", namespace, name, key) //nolint:goerr113 // no need to declare new error type
 	}
 	return string(value), nil
 }

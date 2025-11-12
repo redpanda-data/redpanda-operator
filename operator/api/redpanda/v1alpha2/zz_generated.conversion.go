@@ -14,6 +14,22 @@ import (
 )
 
 func init() {
+	ConvertAdminAPISpecToIR = func(context string, source *AdminAPISpec) *ir.AdminAPISpec {
+		var pIrAdminAPISpec *ir.AdminAPISpec
+		if source != nil {
+			var irAdminAPISpec ir.AdminAPISpec
+			if (*source).URLs != nil {
+				irAdminAPISpec.URLs = make([]string, len((*source).URLs))
+				for i := 0; i < len((*source).URLs); i++ {
+					irAdminAPISpec.URLs[i] = (*source).URLs[i]
+				}
+			}
+			irAdminAPISpec.TLS = conv_CommonTLS_To_ir_CommonTLS((*source).TLS, context)
+			irAdminAPISpec.Auth = conv_AdminSASL_To_ir_AdminAuth((*source).SASL, context)
+			pIrAdminAPISpec = &irAdminAPISpec
+		}
+		return pIrAdminAPISpec
+	}
 	ConvertConsoleToConsolePartialRenderValues = func(source *ConsoleValues) (*v3.PartialRenderValues, error) {
 		var pConsolePartialRenderValues *v3.PartialRenderValues
 		if source != nil {
@@ -144,44 +160,48 @@ func init() {
 		}
 		return pConsolePartialRenderValues, nil
 	}
+	ConvertKafkaAPISpecToIR = func(context string, source *KafkaAPISpec) *ir.KafkaAPISpec {
+		var pIrKafkaAPISpec *ir.KafkaAPISpec
+		if source != nil {
+			var irKafkaAPISpec ir.KafkaAPISpec
+			if (*source).Brokers != nil {
+				irKafkaAPISpec.Brokers = make([]string, len((*source).Brokers))
+				for i := 0; i < len((*source).Brokers); i++ {
+					irKafkaAPISpec.Brokers[i] = (*source).Brokers[i]
+				}
+			}
+			irKafkaAPISpec.TLS = conv_CommonTLS_To_ir_CommonTLS((*source).TLS, context)
+			irKafkaAPISpec.SASL = conv_KafkaSASL_To_ir_KafkaSASL((*source).SASL, context)
+			pIrKafkaAPISpec = &irKafkaAPISpec
+		}
+		return pIrKafkaAPISpec
+	}
+	ConvertSchemaRegistrySpecToIR = func(context string, source *SchemaRegistrySpec) *ir.SchemaRegistrySpec {
+		var pIrSchemaRegistrySpec *ir.SchemaRegistrySpec
+		if source != nil {
+			var irSchemaRegistrySpec ir.SchemaRegistrySpec
+			if (*source).URLs != nil {
+				irSchemaRegistrySpec.URLs = make([]string, len((*source).URLs))
+				for i := 0; i < len((*source).URLs); i++ {
+					irSchemaRegistrySpec.URLs[i] = (*source).URLs[i]
+				}
+			}
+			irSchemaRegistrySpec.TLS = conv_CommonTLS_To_ir_CommonTLS((*source).TLS, context)
+			irSchemaRegistrySpec.SASL = conv_SchemaRegistrySASL_To_ir_SchemaRegistrySASL((*source).SASL, context)
+			pIrSchemaRegistrySpec = &irSchemaRegistrySpec
+		}
+		return pIrSchemaRegistrySpec
+	}
 	ConvertStaticConfigToIR = func(context string, source *StaticConfigurationSource) *ir.StaticConfigurationSource {
 		var pIrStaticConfigurationSource *ir.StaticConfigurationSource
 		if source != nil {
 			var irStaticConfigurationSource ir.StaticConfigurationSource
-			irStaticConfigurationSource.Kafka = pV1alpha2KafkaAPISpecToPIrKafkaAPISpec((*source).Kafka, context)
-			irStaticConfigurationSource.Admin = autoconv_AdminAPISpec_To_ir_AdminAPISpec((*source).Admin, context)
-			irStaticConfigurationSource.SchemaRegistry = pV1alpha2SchemaRegistrySpecToPIrSchemaRegistrySpec((*source).SchemaRegistry, context)
+			irStaticConfigurationSource.Kafka = ConvertKafkaAPISpecToIR(context, (*source).Kafka)
+			irStaticConfigurationSource.Admin = ConvertAdminAPISpecToIR(context, (*source).Admin)
+			irStaticConfigurationSource.SchemaRegistry = ConvertSchemaRegistrySpecToIR(context, (*source).SchemaRegistry)
 			pIrStaticConfigurationSource = &irStaticConfigurationSource
 		}
 		return pIrStaticConfigurationSource
-	}
-	autoconv_AdminAPISpec_To_ir_AdminAPISpec = func(source *AdminAPISpec, context string) *ir.AdminAPISpec {
-		var pIrAdminAPISpec *ir.AdminAPISpec
-		if source != nil {
-			var irAdminAPISpec ir.AdminAPISpec
-			if (*source).URLs != nil {
-				irAdminAPISpec.URLs = make([]string, len((*source).URLs))
-				for i := 0; i < len((*source).URLs); i++ {
-					irAdminAPISpec.URLs[i] = (*source).URLs[i]
-				}
-			}
-			irAdminAPISpec.TLS = autoconv_CommonTLS_To_ir_CommonTLS((*source).TLS, context)
-			irAdminAPISpec.Auth = pV1alpha2AdminSASLToPIrAdminAuth((*source).SASL, context)
-			pIrAdminAPISpec = &irAdminAPISpec
-		}
-		return pIrAdminAPISpec
-	}
-	autoconv_CommonTLS_To_ir_CommonTLS = func(source *CommonTLS, context string) *ir.CommonTLS {
-		var pIrCommonTLS *ir.CommonTLS
-		if source != nil {
-			var irCommonTLS ir.CommonTLS
-			irCommonTLS.CaCert = conv_SecretKeyRef_To_ir_ObjectKeyRef((*source).CaCert, context)
-			irCommonTLS.Cert = pV1alpha2SecretKeyRefToPIrSecretKeyRef((*source).Cert, context)
-			irCommonTLS.Key = pV1alpha2SecretKeyRefToPIrSecretKeyRef((*source).Key, context)
-			irCommonTLS.InsecureSkipTLSVerify = (*source).InsecureSkipTLSVerify
-			pIrCommonTLS = &irCommonTLS
-		}
-		return pIrCommonTLS
 	}
 	autoconv_DeploymentConfig_console_PartialDeploymentConfig = func(source *DeploymentConfig) *v3.PartialDeploymentConfig {
 		var pConsolePartialDeploymentConfig *v3.PartialDeploymentConfig
@@ -202,13 +222,6 @@ func init() {
 			pConsolePartialDeploymentConfig = &consolePartialDeploymentConfig
 		}
 		return pConsolePartialDeploymentConfig
-	}
-	autoconv_SecretKeyRef_To_ir_SecretKeyRef = func(source SecretKeyRef, context string) ir.SecretKeyRef {
-		var irSecretKeyRef ir.SecretKeyRef
-		irSecretKeyRef.Namespace = getNamespace(context)
-		irSecretKeyRef.Name = source.Name
-		irSecretKeyRef.Key = source.Key
-		return irSecretKeyRef
 	}
 	autoconv_ServiceAccountConfig_To_console_PartialServiceAccountConfig = func(source *ServiceAccountConfig) *v3.PartialServiceAccountConfig {
 		var pConsolePartialServiceAccountConfig *v3.PartialServiceAccountConfig
@@ -231,6 +244,22 @@ func init() {
 			pConsolePartialServiceAccountConfig = &consolePartialServiceAccountConfig
 		}
 		return pConsolePartialServiceAccountConfig
+	}
+	autoconv_ValueSource_To_ir_ValueSource = func(source *ValueSource, context string) *ir.ValueSource {
+		var pIrValueSource *ir.ValueSource
+		if source != nil {
+			var irValueSource ir.ValueSource
+			irValueSource.Namespace = getNamespace(context)
+			if (*source).Inline != nil {
+				xstring := *(*source).Inline
+				irValueSource.Inline = &xstring
+			}
+			irValueSource.ConfigMapKeyRef = pV1ConfigMapKeySelectorToPV1ConfigMapKeySelector((*source).ConfigMapKeyRef)
+			irValueSource.SecretKeyRef = pV1SecretKeySelectorToPV1SecretKeySelector((*source).SecretKeyRef)
+			irValueSource.ExternalSecretRefSelector = pV1alpha2ExternalSecretKeySelectorToPIrExternalSecretKeySelector((*source).ExternalSecretRefSelector)
+			pIrValueSource = &irValueSource
+		}
+		return pIrValueSource
 	}
 }
 func intstrIntOrStringToIntstrIntOrString(source intstr.IntOrString) intstr.IntOrString {
@@ -304,6 +333,20 @@ func pV1ConfigMapEnvSourceToPV1ConfigMapEnvSource(source *v1.ConfigMapEnvSource)
 		pV1ConfigMapEnvSource = &v1ConfigMapEnvSource
 	}
 	return pV1ConfigMapEnvSource
+}
+func pV1ConfigMapKeySelectorToPV1ConfigMapKeySelector(source *v1.ConfigMapKeySelector) *v1.ConfigMapKeySelector {
+	var pV1ConfigMapKeySelector *v1.ConfigMapKeySelector
+	if source != nil {
+		var v1ConfigMapKeySelector v1.ConfigMapKeySelector
+		v1ConfigMapKeySelector.LocalObjectReference = v1LocalObjectReferenceToV1LocalObjectReference((*source).LocalObjectReference)
+		v1ConfigMapKeySelector.Key = (*source).Key
+		if (*source).Optional != nil {
+			xbool := *(*source).Optional
+			v1ConfigMapKeySelector.Optional = &xbool
+		}
+		pV1ConfigMapKeySelector = &v1ConfigMapKeySelector
+	}
+	return pV1ConfigMapKeySelector
 }
 func pV1DeploymentStrategyToPV1DeploymentStrategy(source *v11.DeploymentStrategy) *v11.DeploymentStrategy {
 	var pV1DeploymentStrategy *v11.DeploymentStrategy
@@ -699,16 +742,6 @@ func pV1WindowsSecurityContextOptionsToPV1WindowsSecurityContextOptions(source *
 	}
 	return pV1WindowsSecurityContextOptions
 }
-func pV1alpha2AdminSASLToPIrAdminAuth(source *AdminSASL, context string) *ir.AdminAuth {
-	var pIrAdminAuth *ir.AdminAuth
-	if source != nil {
-		var irAdminAuth ir.AdminAuth
-		irAdminAuth.Username = (*source).Username
-		irAdminAuth.Password = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).Password, context)
-		pIrAdminAuth = &irAdminAuth
-	}
-	return pIrAdminAuth
-}
 func pV1alpha2AuthenticationSecretsToPConsolePartialAuthenticationSecrets(source *AuthenticationSecrets) *v3.PartialAuthenticationSecrets {
 	var pConsolePartialAuthenticationSecrets *v3.PartialAuthenticationSecrets
 	if source != nil {
@@ -749,6 +782,15 @@ func pV1alpha2AutoScalingToPConsolePartialAutoScaling(source *AutoScaling) *v3.P
 		pConsolePartialAutoScaling = &consolePartialAutoScaling
 	}
 	return pConsolePartialAutoScaling
+}
+func pV1alpha2ExternalSecretKeySelectorToPIrExternalSecretKeySelector(source *ExternalSecretKeySelector) *ir.ExternalSecretKeySelector {
+	var pIrExternalSecretKeySelector *ir.ExternalSecretKeySelector
+	if source != nil {
+		var irExternalSecretKeySelector ir.ExternalSecretKeySelector
+		irExternalSecretKeySelector.Name = (*source).Name
+		pIrExternalSecretKeySelector = &irExternalSecretKeySelector
+	}
+	return pIrExternalSecretKeySelector
 }
 func pV1alpha2ImageToPConsolePartialImage(source *Image) *v3.PartialImage {
 	var pConsolePartialImage *v3.PartialImage
@@ -807,73 +849,6 @@ func pV1alpha2IngressConfigToPConsolePartialIngressConfig(source *IngressConfig)
 		pConsolePartialIngressConfig = &consolePartialIngressConfig
 	}
 	return pConsolePartialIngressConfig
-}
-func pV1alpha2KafkaAPISpecToPIrKafkaAPISpec(source *KafkaAPISpec, context string) *ir.KafkaAPISpec {
-	var pIrKafkaAPISpec *ir.KafkaAPISpec
-	if source != nil {
-		var irKafkaAPISpec ir.KafkaAPISpec
-		if (*source).Brokers != nil {
-			irKafkaAPISpec.Brokers = make([]string, len((*source).Brokers))
-			for i := 0; i < len((*source).Brokers); i++ {
-				irKafkaAPISpec.Brokers[i] = (*source).Brokers[i]
-			}
-		}
-		irKafkaAPISpec.TLS = autoconv_CommonTLS_To_ir_CommonTLS((*source).TLS, context)
-		irKafkaAPISpec.SASL = pV1alpha2KafkaSASLToPIrKafkaSASL((*source).SASL, context)
-		pIrKafkaAPISpec = &irKafkaAPISpec
-	}
-	return pIrKafkaAPISpec
-}
-func pV1alpha2KafkaSASLAWSMskIamToPIrKafkaSASLAWSMskIam(source *KafkaSASLAWSMskIam, context string) *ir.KafkaSASLAWSMskIam {
-	var pIrKafkaSASLAWSMskIam *ir.KafkaSASLAWSMskIam
-	if source != nil {
-		var irKafkaSASLAWSMskIam ir.KafkaSASLAWSMskIam
-		irKafkaSASLAWSMskIam.AccessKey = (*source).AccessKey
-		irKafkaSASLAWSMskIam.SecretKey = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).SecretKey, context)
-		irKafkaSASLAWSMskIam.SessionToken = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).SessionToken, context)
-		irKafkaSASLAWSMskIam.UserAgent = (*source).UserAgent
-		pIrKafkaSASLAWSMskIam = &irKafkaSASLAWSMskIam
-	}
-	return pIrKafkaSASLAWSMskIam
-}
-func pV1alpha2KafkaSASLGSSAPIToPIrKafkaSASLGSSAPI(source *KafkaSASLGSSAPI, context string) *ir.KafkaSASLGSSAPI {
-	var pIrKafkaSASLGSSAPI *ir.KafkaSASLGSSAPI
-	if source != nil {
-		var irKafkaSASLGSSAPI ir.KafkaSASLGSSAPI
-		irKafkaSASLGSSAPI.AuthType = (*source).AuthType
-		irKafkaSASLGSSAPI.KeyTabPath = (*source).KeyTabPath
-		irKafkaSASLGSSAPI.KerberosConfigPath = (*source).KerberosConfigPath
-		irKafkaSASLGSSAPI.ServiceName = (*source).ServiceName
-		irKafkaSASLGSSAPI.Username = (*source).Username
-		irKafkaSASLGSSAPI.Password = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).Password, context)
-		irKafkaSASLGSSAPI.Realm = (*source).Realm
-		irKafkaSASLGSSAPI.EnableFast = (*source).EnableFast
-		pIrKafkaSASLGSSAPI = &irKafkaSASLGSSAPI
-	}
-	return pIrKafkaSASLGSSAPI
-}
-func pV1alpha2KafkaSASLOAuthBearerToPIrKafkaSASLOAuthBearer(source *KafkaSASLOAuthBearer, context string) *ir.KafkaSASLOAuthBearer {
-	var pIrKafkaSASLOAuthBearer *ir.KafkaSASLOAuthBearer
-	if source != nil {
-		var irKafkaSASLOAuthBearer ir.KafkaSASLOAuthBearer
-		irKafkaSASLOAuthBearer.Token = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).Token, context)
-		pIrKafkaSASLOAuthBearer = &irKafkaSASLOAuthBearer
-	}
-	return pIrKafkaSASLOAuthBearer
-}
-func pV1alpha2KafkaSASLToPIrKafkaSASL(source *KafkaSASL, context string) *ir.KafkaSASL {
-	var pIrKafkaSASL *ir.KafkaSASL
-	if source != nil {
-		var irKafkaSASL ir.KafkaSASL
-		irKafkaSASL.Username = (*source).Username
-		irKafkaSASL.Password = pV1alpha2SecretKeyRefToPIrSecretKeyRef((*source).Password, context)
-		irKafkaSASL.Mechanism = ir.SASLMechanism((*source).Mechanism)
-		irKafkaSASL.OAUth = pV1alpha2KafkaSASLOAuthBearerToPIrKafkaSASLOAuthBearer((*source).OAUth, context)
-		irKafkaSASL.GSSAPIConfig = pV1alpha2KafkaSASLGSSAPIToPIrKafkaSASLGSSAPI((*source).GSSAPIConfig, context)
-		irKafkaSASL.AWSMskIam = pV1alpha2KafkaSASLAWSMskIamToPIrKafkaSASLAWSMskIam((*source).AWSMskIam, context)
-		pIrKafkaSASL = &irKafkaSASL
-	}
-	return pIrKafkaSASL
 }
 func pV1alpha2KafkaSecretsToPConsolePartialKafkaSecrets(source *KafkaSecrets) *v3.PartialKafkaSecrets {
 	var pConsolePartialKafkaSecrets *v3.PartialKafkaSecrets
@@ -952,17 +927,6 @@ func pV1alpha2RedpandaSecretsToPConsolePartialRedpandaSecrets(source *RedpandaSe
 	}
 	return pConsolePartialRedpandaSecrets
 }
-func pV1alpha2SchemaRegistrySASLToPIrSchemaRegistrySASL(source *SchemaRegistrySASL, context string) *ir.SchemaRegistrySASL {
-	var pIrSchemaRegistrySASL *ir.SchemaRegistrySASL
-	if source != nil {
-		var irSchemaRegistrySASL ir.SchemaRegistrySASL
-		irSchemaRegistrySASL.Username = (*source).Username
-		irSchemaRegistrySASL.Password = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).Password, context)
-		irSchemaRegistrySASL.AuthToken = autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source).AuthToken, context)
-		pIrSchemaRegistrySASL = &irSchemaRegistrySASL
-	}
-	return pIrSchemaRegistrySASL
-}
 func pV1alpha2SchemaRegistrySecretsToPConsolePartialSchemaRegistrySecrets(source *SchemaRegistrySecrets) *v3.PartialSchemaRegistrySecrets {
 	var pConsolePartialSchemaRegistrySecrets *v3.PartialSchemaRegistrySecrets
 	if source != nil {
@@ -990,30 +954,6 @@ func pV1alpha2SchemaRegistrySecretsToPConsolePartialSchemaRegistrySecrets(source
 		pConsolePartialSchemaRegistrySecrets = &consolePartialSchemaRegistrySecrets
 	}
 	return pConsolePartialSchemaRegistrySecrets
-}
-func pV1alpha2SchemaRegistrySpecToPIrSchemaRegistrySpec(source *SchemaRegistrySpec, context string) *ir.SchemaRegistrySpec {
-	var pIrSchemaRegistrySpec *ir.SchemaRegistrySpec
-	if source != nil {
-		var irSchemaRegistrySpec ir.SchemaRegistrySpec
-		if (*source).URLs != nil {
-			irSchemaRegistrySpec.URLs = make([]string, len((*source).URLs))
-			for i := 0; i < len((*source).URLs); i++ {
-				irSchemaRegistrySpec.URLs[i] = (*source).URLs[i]
-			}
-		}
-		irSchemaRegistrySpec.TLS = autoconv_CommonTLS_To_ir_CommonTLS((*source).TLS, context)
-		irSchemaRegistrySpec.SASL = pV1alpha2SchemaRegistrySASLToPIrSchemaRegistrySASL((*source).SASL, context)
-		pIrSchemaRegistrySpec = &irSchemaRegistrySpec
-	}
-	return pIrSchemaRegistrySpec
-}
-func pV1alpha2SecretKeyRefToPIrSecretKeyRef(source *SecretKeyRef, context string) *ir.SecretKeyRef {
-	var pIrSecretKeyRef *ir.SecretKeyRef
-	if source != nil {
-		irSecretKeyRef := autoconv_SecretKeyRef_To_ir_SecretKeyRef((*source), context)
-		pIrSecretKeyRef = &irSecretKeyRef
-	}
-	return pIrSecretKeyRef
 }
 func pV1alpha2SerdeSecretsToPConsolePartialSerdeSecrets(source *SerdeSecrets) *v3.PartialSerdeSecrets {
 	var pConsolePartialSerdeSecrets *v3.PartialSerdeSecrets

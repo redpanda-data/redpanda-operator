@@ -167,7 +167,7 @@ func (c *Factory) remoteClusterSettingsForCluster(ctx context.Context, cluster *
 		return settings, err
 	}
 
-	config, err := state.AsStaticConfigSource().Kafka.Load(ctx, c.Client)
+	config, err := state.AsStaticConfigSource().Kafka.Load(ctx, c.Client, c.secretExpander)
 	if err != nil {
 		return settings, err
 	}

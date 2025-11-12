@@ -368,7 +368,7 @@ func Run(
 
 	// Configure controllers that are always enabled (Redpanda, Topic, User, Schema).
 
-	factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(opts.rpClientTimeout)
+	factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout)
 
 	cloudSecrets := lifecycle.CloudSecretsFlags{
 		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
@@ -442,28 +442,28 @@ func Run(
 
 	// ShadowLink Reconciler
 	if opts.enableShadowLinksController {
-		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
 		}
 	}
 
-	if err := redpandacontrollers.SetupTopicController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupUserController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}

@@ -116,10 +116,12 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 	if r.Values.Auth.IsSASLEnabled() {
 		kafkaSpec.SASL = &ir.KafkaSASL{
 			Username: username,
-			Password: &ir.SecretKeyRef{
+			Password: &ir.ValueSource{
 				Namespace: r.Release.Namespace,
-				Name:      passwordRef.Name,
-				Key:       passwordRef.Key,
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: passwordRef.Name},
+					Key:                  passwordRef.Key,
+				},
 			},
 			Mechanism: ir.SASLMechanism(r.Values.Auth.SASL.BootstrapUser.GetMechanism()),
 		}
@@ -138,10 +140,12 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 	if adminAuthEnabled {
 		adminAuth = &ir.AdminAuth{
 			Username: username,
-			Password: ir.SecretKeyRef{
+			Password: &ir.ValueSource{
 				Namespace: r.Release.Namespace,
-				Name:      passwordRef.Name,
-				Key:       passwordRef.Key,
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: passwordRef.Name},
+					Key:                  passwordRef.Key,
+				},
 			},
 		}
 	}
@@ -181,10 +185,12 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 		if r.Values.Auth.IsSASLEnabled() {
 			schemaRegistrySpec.SASL = &ir.SchemaRegistrySASL{
 				Username: username,
-				Password: ir.SecretKeyRef{
+				Password: &ir.ValueSource{
 					Namespace: r.Release.Namespace,
-					Name:      passwordRef.Name,
-					Key:       passwordRef.Key,
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: passwordRef.Name},
+						Key:                  passwordRef.Key,
+					},
 				},
 			}
 		}

@@ -15,7 +15,6 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/google/gofuzz v1.2.0
 	github.com/imdario/mergo v0.3.16
-	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/json-iterator/go v1.1.12
 	github.com/moby/moby v24.0.7+incompatible
 	github.com/moby/sys/mountinfo v0.7.2
@@ -43,7 +42,6 @@ require (
 	github.com/twmb/franz-go v1.19.5
 	github.com/twmb/franz-go/pkg/kadm v1.16.0
 	github.com/twmb/franz-go/pkg/kmsg v1.11.2
-	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
 	github.com/twmb/franz-go/pkg/sr v1.5.0
 	go.opentelemetry.io/otel v1.36.0
 	go.uber.org/zap v1.27.0
@@ -191,6 +189,7 @@ require (
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
 	github.com/jcmturner/gofork v1.7.6 // indirect
+	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -276,6 +275,7 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
+	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0 // indirect
 	github.com/twmb/tlscfg v1.2.1 // indirect
 	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
