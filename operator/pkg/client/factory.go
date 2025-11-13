@@ -11,6 +11,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -97,17 +98,19 @@ type Factory struct {
 	config *rest.Config
 	fs     afero.Fs
 
-	dialer   redpanda.DialContextFunc
-	userAuth *UserAuth
+	adminClientTimeout time.Duration
+	dialer             redpanda.DialContextFunc
+	userAuth           *UserAuth
 }
 
 var _ ClientFactory = (*Factory)(nil)
 
 func NewFactory(config *rest.Config, kubeclient client.Client) *Factory {
 	return &Factory{
-		config: rest.CopyConfig(config),
-		fs:     afero.NewOsFs(),
-		Client: kubeclient,
+		config:             rest.CopyConfig(config),
+		fs:                 afero.NewOsFs(),
+		Client:             kubeclient,
+		adminClientTimeout: 10 * time.Second,
 	}
 }
 
@@ -122,6 +125,17 @@ func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 		userAuth: c.userAuth,
 		fs:       c.fs,
 		dialer:   dialer,
+	}
+}
+
+func (c *Factory) WithAdminClientTimeout(timeout time.Duration) *Factory {
+	return &Factory{
+		Client:             c.Client,
+		config:             c.config,
+		userAuth:           c.userAuth,
+		fs:                 c.fs,
+		dialer:             c.dialer,
+		adminClientTimeout: timeout,
 	}
 }
 

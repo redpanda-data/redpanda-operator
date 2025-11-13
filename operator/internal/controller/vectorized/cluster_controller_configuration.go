@@ -72,7 +72,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return delay, nil
 	}
 
-	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider(), r.Dialer)
+	adminAPI, err := r.AdminAPIClientFactory(ctx, r, redpandaCluster, fqdn, pki.AdminAPIConfigProvider(), r.Dialer, r.Timeout)
 	if err != nil {
 		return 0, errorWithContext(err, "error creating the admin API client")
 	}

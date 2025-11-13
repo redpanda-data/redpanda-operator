@@ -49,6 +49,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("aks", framework.NoopProvider).
 		RegisterProvider("k3d", framework.NoopProvider).
 		WithDefaultProvider("k3d").
+		WithImportedImages([]string{
+			"localhost/redpanda-operator:dev",
+			"docker.redpanda.com/redpandadata/redpanda-operator:v2.3.9-24.3.11",
+			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
+			"docker.redpanda.com/redpandadata/redpanda:v24.3.11",
+			"quay.io/jetstack/cert-manager-controller:v1.14.2",
+			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
+			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
+			"quay.io/jetstack/cert-manager-webhook:v1.14.2",
+		}...).
 		WithSchemeFunctions(
 			redpandav1alpha1.AddToScheme,
 			redpandav1alpha2.AddToScheme,
@@ -61,11 +71,20 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			CreateNamespace: true,
 			Values: map[string]any{
 				"installCRDs": true,
+				"global": map[string]any{
+					// Make leader election more aggressive as cert-manager appears to
+					// not release it when uninstalled.
+					"leaderElection": map[string]any{
+						"renewDeadline": "10s",
+						"retryPeriod":   "5s",
+					},
+				},
 			},
 		}).
 		WithCRDDirectory("../operator/config/crd/bases").
 		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
+			// this actually switches namespaces, run it first
 			namespace := t.IsolateNamespace(ctx)
 
 			t.Log("Installing Redpanda operator chart")
@@ -77,6 +96,18 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 					"image": map[string]any{
 						"tag":        imageTag,
 						"repository": imageRepo,
+					},
+					"additionalCmdFlags": []string{
+						// This is set to a lower timeout due to the way that our internal
+						// admin client handles retries to brokers that are gone but still
+						// remain in its internal broker list in-memory. Eventually the client
+						// figures out which brokers are still active, but not until a large
+						// chunk of time has past and a connection a no longer existing broker
+						// times out. This makes the timeout substantially faster so that in
+						// tests where brokers might intentionally go away we aren't sitting
+						// for and additional 30+ seconds every reconciliation before the client's
+						// broker list is pruned.
+						"--cluster-connection-timeout=500ms",
 					},
 				},
 			})
