@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type contextKey struct{}
+type testingContext struct{}
 
 type TerminationError struct {
 	Message  string
@@ -33,8 +33,8 @@ type TerminationError struct {
 }
 
 var (
-	testingContextKey contextKey = struct{}{}
-	TerminationChan              = make(chan TerminationError)
+	testingContextKey = testingContext{}
+	TerminationChan   = make(chan TerminationError)
 )
 
 type ExitBehavior string
