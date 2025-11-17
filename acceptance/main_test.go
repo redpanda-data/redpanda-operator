@@ -49,6 +49,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("aks", framework.NoopProvider).
 		RegisterProvider("k3d", framework.NoopProvider).
 		WithDefaultProvider("k3d").
+		WithImportedImages([]string{
+			"localhost/redpanda-operator:dev",
+			"docker.redpanda.com/redpandadata/redpanda-operator:v2.3.9-24.3.11",
+			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
+			"docker.redpanda.com/redpandadata/redpanda:v24.3.11",
+			"quay.io/jetstack/cert-manager-controller:v1.14.2",
+			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
+			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
+			"quay.io/jetstack/cert-manager-webhook:v1.14.2",
+		}...).
 		WithSchemeFunctions(
 			redpandav1alpha1.AddToScheme,
 			redpandav1alpha2.AddToScheme,

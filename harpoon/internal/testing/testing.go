@@ -17,6 +17,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -63,6 +64,8 @@ type TestingOptions struct {
 	SchemeRegisterers []func(s *runtime.Scheme) error
 	// ExitBehavior tells the test what to do if a test fails
 	ExitBehavior ExitBehavior
+	// Images says the base images to import any time a new node comes up
+	Images []string
 }
 
 func (o *TestingOptions) Clone() *TestingOptions {
@@ -74,6 +77,7 @@ func (o *TestingOptions) Clone() *TestingOptions {
 		Provider:          o.Provider,
 		SchemeRegisterers: o.SchemeRegisterers,
 		ExitBehavior:      o.ExitBehavior,
+		Images:            o.Images,
 	}
 }
 
@@ -121,6 +125,10 @@ func T(ctx context.Context) *TestingT {
 
 func (t *TestingT) IntoContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, testingContextKey, t)
+}
+
+func (t *TestingT) Provider(ctx context.Context) PartialProvider {
+	return ctx.Value(providerContextKey).(PartialProvider)
 }
 
 func (t *TestingT) SetMessagePrefix(prefix string) {
@@ -231,6 +239,49 @@ func (t *TestingT) ApplyManifest(ctx context.Context, fileOrDirectory string) {
 // ApplyFixture applies a set of kubernetes manifests via kubectl.
 func (t *TestingT) ApplyFixture(ctx context.Context, fileOrDirectory string) {
 	t.ApplyManifest(ctx, filepath.Join("fixtures", fileOrDirectory))
+}
+
+// Delete a node from the Kube API server
+func (t *TestingT) DeleteNode(ctx context.Context, name string) {
+	t.Logf("Deleting node %q in Kubernetes", name)
+	require.NoError(t, t.Delete(ctx, &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}))
+}
+
+// Shutdown a node until the end of a test and then bring it back
+func (t *TestingT) ShutdownNode(ctx context.Context, name string) {
+	provider := t.Provider(ctx)
+
+	t.Logf("Deleting provider node %q", name)
+	require.NoError(t, provider.DeleteNode(ctx, name))
+	t.Cleanup(func(ctx context.Context) {
+		t.Logf("Recreating deleted provider node %q", name)
+		require.NoError(t, provider.AddNode(ctx, name))
+		require.NoError(t, provider.LoadImages(ctx, t.options.Images))
+	})
+}
+
+// Add a new node to the cluster temporarily until the end of the test
+// when it will be deleted
+func (t *TestingT) AddNode(ctx context.Context, name string) {
+	provider := t.Provider(ctx)
+
+	t.Logf("Adding temporary node %q", name)
+	require.NoError(t, provider.AddNode(ctx, name))
+	require.NoError(t, provider.LoadImages(ctx, t.options.Images))
+
+	t.Cleanup(func(ctx context.Context) {
+		t.Logf("Deleting temporary node %q", name)
+		require.NoError(t, provider.DeleteNode(ctx, name))
+		require.NoError(t, t.Delete(ctx, &corev1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}))
+	})
 }
 
 // ResourceKey returns a types.NamespaceName that can be used with the Kubernetes client,
