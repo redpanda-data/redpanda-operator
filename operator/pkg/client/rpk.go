@@ -43,7 +43,7 @@ func (c *Factory) redpandaAdminForRPKProfile(profile *rpkconfig.RpkProfile) (*rp
 		return nil, fmt.Errorf("unable to create admin api tls config: %v", err)
 	}
 
-	client, err := rpadmin.NewAdminAPIWithDialer(profile.AdminAPI.Addresses, getAdminAuth(profile), tls, c.dialer)
+	client, err := rpadmin.NewAdminAPIWithDialer(profile.AdminAPI.Addresses, getAdminAuth(profile), tls, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, fmt.Errorf("initializing admin client: %w", err)
 	}

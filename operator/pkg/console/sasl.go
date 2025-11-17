@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -42,6 +43,7 @@ type KafkaSA struct {
 	superUsersResource *resources.SuperUsersResource
 	log                logr.Logger
 	dialer             redpanda.DialContextFunc
+	timeout            time.Duration
 }
 
 // NewKafkaSA instantiates a new KafkaSA
@@ -117,7 +119,7 @@ func (k *KafkaSA) Ensure(ctx context.Context) error {
 	username := string(secret.Data[corev1.BasicAuthUsernameKey])
 	password := string(secret.Data[corev1.BasicAuthPasswordKey])
 
-	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.dialer, k.log)
+	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.dialer, k.timeout, k.log)
 	if err != nil {
 		return err
 	}
@@ -163,7 +165,7 @@ func (k *KafkaSA) Cleanup(ctx context.Context) error {
 		return k.Update(ctx, k.consoleobj)
 	}
 
-	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.dialer, k.log)
+	adminAPI, err := NewAdminAPI(ctx, k.Client, k.scheme, k.clusterobj, k.clusterDomain, k.adminAPI, k.dialer, k.timeout, k.log)
 	if err != nil {
 		return err
 	}
