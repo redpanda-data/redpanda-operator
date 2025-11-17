@@ -11,6 +11,7 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -36,6 +37,8 @@ func checkClusterAvailability(ctx context.Context, t framework.TestingT, cluster
 
 		t.Logf(`Checking cluster resource conditions contains "RedpandaClusterDeployed"? %v`, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, `Cluster %q never contained the condition reason "RedpandaClusterDeployed", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
+	}, 15*time.Minute, 5*time.Second, delayLog(func() string {
+		return fmt.Sprintf(`Cluster %q never contained the condition reason "RedpandaClusterDeployed", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
+	}))
 	t.Logf("Cluster %q is ready!", clusterName)
 }
