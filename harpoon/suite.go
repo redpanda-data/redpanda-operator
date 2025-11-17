@@ -15,9 +15,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,8 +48,9 @@ type SuiteBuilder struct {
 	output                string
 	opts                  godog.Options
 	registry              *internaltesting.TagRegistry
-	providers             map[string]Provider
+	providers             map[string]FullProvider
 	defaultProvider       string
+	images                []string
 	injectors             []func(context.Context) context.Context
 	crdDirectories        []string
 	helmCharts            []helmChart
@@ -92,7 +96,7 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 		output:      output,
 		opts:        godogOpts,
 		registry:    registry,
-		providers:   make(map[string]Provider),
+		providers:   make(map[string]FullProvider),
 	}
 
 	builder.RegisterTag("isolated", -1000, isolatedTag)
@@ -114,7 +118,7 @@ func (b *SuiteBuilder) RegisterTag(tag string, priority int, handler TagHandler)
 	return b
 }
 
-func (b *SuiteBuilder) RegisterProvider(name string, provider Provider) *SuiteBuilder {
+func (b *SuiteBuilder) RegisterProvider(name string, provider FullProvider) *SuiteBuilder {
 	b.providers[name] = provider
 	return b
 }
@@ -126,6 +130,11 @@ func (b *SuiteBuilder) InjectContext(fn func(context.Context) context.Context) *
 
 func (b *SuiteBuilder) WithSchemeFunctions(fns ...func(s *runtime.Scheme) error) *SuiteBuilder {
 	b.testingOpts.SchemeRegisterers = append(b.testingOpts.SchemeRegisterers, fns...)
+	return b
+}
+
+func (b *SuiteBuilder) WithImportedImages(images ...string) *SuiteBuilder {
+	b.images = images
 	return b
 }
 
@@ -236,6 +245,14 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 				suiteContext.BeforeSuite(func() {
 					err = provider.Setup(ctx)
 					setupErrorCheck(ctx, err, cleanup)
+
+					err = pullImages(b.images)
+					setupErrorCheck(ctx, err, cleanup)
+
+					err = provider.LoadImages(ctx, b.images)
+					setupErrorCheck(ctx, err, cleanup)
+
+					b.testingOpts.Images = b.images
 
 					// now add helm charts
 					for _, chart := range b.helmCharts {
@@ -372,4 +389,16 @@ func writeTestLog(buffer bytes.Buffer, path string) {
 		fmt.Println("Error writing test output log to disk, writing to stdout")
 		fmt.Println(buffer.String())
 	}
+}
+
+func pullImages(images []string) error {
+	for _, image := range images {
+		if !strings.HasPrefix(image, "localhost") {
+			//nolint:gosec // this code is for tests
+			if output, err := exec.Command("docker", "pull", image).CombinedOutput(); err != nil {
+				return errors.Wrapf(err, "output: %s", output)
+			}
+		}
+	}
+	return nil
 }
