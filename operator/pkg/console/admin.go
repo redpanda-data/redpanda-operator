@@ -15,6 +15,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -40,6 +41,7 @@ func NewAdminAPI(
 	clusterDomain string,
 	adminAPI adminutils.NodePoolAdminAPIClientFactory,
 	dialer redpanda.DialContextFunc,
+	timeout time.Duration,
 	log logr.Logger,
 ) (adminutils.AdminAPIClient, error) {
 	headlessSvc := resources.NewHeadlessService(cl, cluster, scheme, nil, log)
@@ -64,6 +66,7 @@ func NewAdminAPI(
 		headlessSvc.HeadlessServiceFQDN(clusterDomain),
 		adminTLSConfigProvider,
 		dialer,
+		timeout,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("creating AdminAPIClient: %w", err)
