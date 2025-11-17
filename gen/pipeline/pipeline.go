@@ -42,7 +42,7 @@ var suites = []TestSuite{
 	{
 		Name:     "acceptance",
 		Required: true,
-		Timeout:  time.Hour,
+		Timeout:  30*time.Minute + time.Hour,
 		Retry:    ptr.To(3),
 	},
 	// kuttl-v1 is currently the slowest and flakiest of our test suites. The

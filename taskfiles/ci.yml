@@ -29,7 +29,6 @@ tasks:
 
   test:integration:
     cmds:
-      - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/integration-tests-*.xml"'
       - 'echo "--- Running integration tests"'
       - task: :test:integration
@@ -39,7 +38,6 @@ tasks:
 
   test:acceptance:
     cmds:
-      - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/acceptance-tests-*.xml"'
       - 'echo "--- Running acceptance tests"'
       - task: :test:acceptance
