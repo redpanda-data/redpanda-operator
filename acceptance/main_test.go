@@ -71,11 +71,20 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			CreateNamespace: true,
 			Values: map[string]any{
 				"installCRDs": true,
+				"global": map[string]any{
+					// Make leader election more aggressive as cert-manager appears to
+					// not release it when uninstalled.
+					"leaderElection": map[string]any{
+						"renewDeadline": "10s",
+						"retryPeriod":   "5s",
+					},
+				},
 			},
 		}).
 		WithCRDDirectory("../operator/config/crd/bases").
 		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
 		OnFeature(func(ctx context.Context, t framework.TestingT) {
+			// this actually switches namespaces, run it first
 			namespace := t.IsolateNamespace(ctx)
 
 			t.Log("Installing Redpanda operator chart")
