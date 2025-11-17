@@ -20,6 +20,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
@@ -238,6 +239,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 					fqdn string,
 					adminTLSProvider types.AdminTLSConfigProvider,
 					_ redpanda.DialContextFunc,
+					timeout time.Duration,
 					pods ...string,
 				) (adminutils.AdminAPIClient, error) {
 					return &adminutils.MockAdminAPI{

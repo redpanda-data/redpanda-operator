@@ -116,6 +116,7 @@ func Command() *cobra.Command {
 		configuratorImagePullPolicy         string
 		decommissionWaitInterval            time.Duration
 		metricsTimeout                      time.Duration
+		rpClientTimeout                     time.Duration
 		restrictToRedpandaVersion           string
 		namespace                           string
 		additionalControllers               []string
@@ -212,6 +213,7 @@ func Command() *cobra.Command {
 				cloudSecretsAWSRoleARN,
 				cloudSecretsGCPProjectID,
 				cloudSecretsAzureKeyVaultURI,
+				rpClientTimeout,
 			)
 		},
 	}
@@ -232,6 +234,7 @@ func Command() *cobra.Command {
 	cmd.Flags().StringVar(&configuratorImagePullPolicy, "configurator-image-pull-policy", "Always", "Set the configurator image pull policy")
 	cmd.Flags().DurationVar(&decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
 	cmd.Flags().DurationVar(&metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
+	cmd.Flags().DurationVar(&rpClientTimeout, "cluster-connection-timeout", 10*time.Second, "Set the timeout for internal clients used to connect to Redpanda clusters")
 	cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowDownscalingInWebhook, "allow-downscaling", true, "Allow to reduce the number of replicas in existing clusters")
 	cmd.Flags().Bool("allow-pvc-deletion", false, "Deprecated: Ignored if specified")
 	cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowConsoleAnyNamespace, "allow-console-any-ns", false, "Allow to create Console in any namespace. Allowing this copies Redpanda SchemaRegistry TLS Secret to namespace (alpha feature)")
@@ -322,6 +325,7 @@ func Run(
 	cloudSecretsAWSRoleARN string,
 	cloudSecretsGCPProjectID string,
 	cloudSecretsAzureKeyVaultURI string,
+	rpClientTimeout time.Duration,
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
@@ -493,6 +497,7 @@ func Run(
 			GhostDecommissioning:      ghostbuster,
 			AutoDeletePVCs:            autoDeletePVCs,
 			CloudSecretsExpander:      cloudExpander,
+			Timeout:                   rpClientTimeout,
 		}).WithClusterDomain(clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Unable to create controller", "controller", "Cluster")
 			return err
@@ -519,7 +524,7 @@ func Run(
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
-			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(rpClientTimeout),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
 		}).SetupWithManager(mgr); err != nil {
@@ -564,13 +569,15 @@ func Run(
 			}
 		}
 
+		factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(rpClientTimeout)
+
 		// Redpanda Reconciler
 		if err = (&redpandacontrollers.RedpandaReconciler{
 			KubeConfig:           mgr.GetConfig(),
 			Client:               mgr.GetClient(),
 			Scheme:               mgr.GetScheme(),
 			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
-			ClientFactory:        internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
 			DefaultDisableFlux:   forceDefluxedMode,
 			HelmRepositoryURL:    helmRepositoryURL,
@@ -581,7 +588,7 @@ func Run(
 
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
-			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()),
+			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
 		}).SetupWithManager(mgr); err != nil {
