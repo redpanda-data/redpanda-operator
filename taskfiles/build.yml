@@ -54,6 +54,24 @@ tasks:
         -ldflags='{{.LD_FLAGS}}'
         ./cmd/main.go
 
+  plugin:
+    cmds:
+    - CGO_ENABLED=0 go build -C ./plugin
+    - for:
+        matrix:
+          GOOS: ["linux", "darwin"]
+          GOARCH: ["arm64", "amd64"]
+      # Can't nest tasks in for loops, so pulling these out into vars doesn't work.
+      # Instead >- will join and strip whitespace for us.
+      cmd: >-
+        CGO_ENABLED=0
+        GOOS={{.ITEM.GOOS}}
+        GOARCH={{.ITEM.GOARCH}}
+        go build
+        -C ./plugin
+        -o ../.build/k8s-plugin-{{.ITEM.GOOS}}-{{.ITEM.GOARCH}}
+        ./main.go
+
   alias:
     cmds:
     - for:

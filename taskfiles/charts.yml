@@ -7,6 +7,7 @@ tasks:
       - task: generate:console
       - task: generate:operator
       - task: generate:redpanda
+      - task: generate:multicluster
       - task: generate:connectors
       # Generate chart README.md's
       - helm-docs --chart-to-generate charts/connectors,charts/console/chart,operator/chart,charts/redpanda/chart
@@ -35,6 +36,16 @@ tasks:
       vars: { CHART: operator, DIR: operator/chart }
     - task: gotohelm
       vars: { CHART: operator, DIR: operator/chart, BUNDLE: ['github.com/redpanda-data/redpanda-operator/pkg/chartutil']}
+
+  generate:multicluster:
+    desc: "Generate files for the multicluster operator Helm chart"
+    cmds:
+    - task: genpartial
+      vars: { CHART: multicluster }
+    - task: genschema
+      vars: { CHART: multicluster }
+    - task: gotohelm
+      vars: { CHART: multicluster, BUNDLE: ['github.com/redpanda-data/redpanda-operator/pkg/chartutil']}
 
   generate:redpanda:
     desc: "Generate files for the redpanda Helm chart"

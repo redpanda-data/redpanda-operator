@@ -1,0 +1,47 @@
+# -- Container image settings.
+image:
+  # -- Sets the repository from which to pull the `redpanda-operator` image.
+  repository: docker.redpanda.com/redpandadata/redpanda-operator
+  # -- Sets the image version.
+  # See DockerHub for [all stable versions](https://hub.docker.com/r/redpandadata/redpanda-operator/tags).
+  # @default -- `Chart.appVersion`.
+  # tag:
+
+# -- Log level
+# Valid values (from least to most verbose) are: `warn`, `info`, `debug`, and `trace`.
+logLevel: "info"
+
+# -- Flags to control CRD installation.
+installCRDs: true
+
+# -- Sets almost all fields of operator Deployment PodTemplate
+# For details,
+# see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec).
+podTemplate:
+  metadata: {}
+    # -- Additional labels to apply to the Pods of the StatefulSet.
+    # labels: {}
+    # -- Additional annotations to apply to the Pods of the StatefulSet.
+    # annotations: {}
+  # -- A subset of Kubernetes' PodSpec type that will be merged into the
+  # final PodSpec. See [Merge Semantics](#merging-semantics) for details.
+  spec:
+    securityContext:
+      runAsUser: 65532
+    containers:
+      - name: manager
+        resources: {}
+        # securityContext: {}
+        # env: []
+
+# -- Sets resources requests/limits for Redpanda Multicluster Operator Pods.
+# By default requests and limits are not set to increase the chances that the charts run on environments with few
+# resources, such as Minikube. To specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after `resources`.
+resources: {}
+#  limits:
+#   cpu: 100m
+#   memory: 30Mi
+#  requests:
+#   cpu: 100m
+#   memory: 20Mi

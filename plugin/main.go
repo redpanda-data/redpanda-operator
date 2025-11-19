@@ -1,0 +1,36 @@
+// Copyright 2025 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/redpanda-data/redpanda-operator/plugin/cmd/multicluster"
+)
+
+var rootCmd = cobra.Command{
+	Use: "k8s",
+}
+
+func init() {
+	rootCmd.AddCommand(
+		multicluster.Command(),
+	)
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
+}

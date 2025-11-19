@@ -53,3 +53,51 @@ tasks:
   update-licenses:
     cmds:
       - go run ./licenseupdater ./... -config .licenseupdater.yaml
+
+  install-local-plugin:
+    cmds:
+      - task: :build:plugin
+      - go run -C ./plugin -tags install install.go
+
+  cluster-fleet:
+    cmds:
+      - task: :build:images
+      - task: :build:plugin
+      # - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 left --network multicluster-dev
+      # - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 middle --network multicluster-dev
+      # - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 right --network multicluster-dev
+      - k3d image import --cluster left localhost/redpanda-operator:dev
+      - k3d image import --cluster middle localhost/redpanda-operator:dev
+      - k3d image import --cluster right localhost/redpanda-operator:dev
+
+  multicluster:
+    vars:
+      LEFT_IP:
+        sh: kubectl get svc --context k3d-left -n kube-system traefik --template {{ "'{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}'" }}
+      MIDDLE_IP:
+        sh: kubectl get svc --context k3d-middle -n kube-system traefik --template {{ "'{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}'" }}
+      RIGHT_IP:
+        sh: kubectl get svc --context k3d-right -n kube-system traefik --template {{ "'{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}'" }}
+    cmds:
+      - rpk k8s multicluster rotate-certificates --cluster k3d-middle://{{ .MIDDLE_IP }} --cluster k3d-left://{{ .LEFT_IP }} --cluster k3d-right://{{ .RIGHT_IP }}
+      - helm install --kube-context k3d-left --namespace=redpanda-system redpanda-multicluster-operator ./charts/multicluster --set="node=left" --set="apiServerExternalAddress=https://{{ .LEFT_IP }}:6443" --set="peers[0].name=left" --set="peers[0].address={{ .LEFT_IP }}" --set="peers[1].name=middle" --set="peers[1].address={{ .MIDDLE_IP }}" --set="peers[2].name=right" --set="peers[2].address={{ .RIGHT_IP }}" --set="image.tag=dev" --set="image.repository=localhost/redpanda-operator"
+      - helm install --kube-context k3d-middle --namespace=redpanda-system redpanda-multicluster-operator ./charts/multicluster --set="node=middle" --set="apiServerExternalAddress=https://{{ .MIDDLE_IP }}:6443" --set="peers[0].name=left" --set="peers[0].address={{ .LEFT_IP }}" --set="peers[1].name=middle" --set="peers[1].address={{ .MIDDLE_IP }}" --set="peers[2].name=right" --set="peers[2].address={{ .RIGHT_IP }}" --set="image.tag=dev" --set="image.repository=localhost/redpanda-operator"
+      - helm install --kube-context k3d-right --namespace=redpanda-system redpanda-multicluster-operator ./charts/multicluster --set="node=right" --set="apiServerExternalAddress=https://{{ .RIGHT_IP }}:6443" --set="peers[0].name=left" --set="peers[0].address={{ .LEFT_IP }}" --set="peers[1].name=middle" --set="peers[1].address={{ .MIDDLE_IP }}" --set="peers[2].name=right" --set="peers[2].address={{ .RIGHT_IP }}" --set="image.tag=dev" --set="image.repository=localhost/redpanda-operator"
+
+  multicluster-fixtures:
+    cmds:
+      - kubectl apply -f ./charts/multicluster/fixtures/cluster.yaml --context k3d-left
+      - kubectl apply -f ./charts/multicluster/fixtures/cluster.yaml --context k3d-right
+      - kubectl apply -f ./charts/multicluster/fixtures/cluster.yaml --context k3d-middle
+
+  rm-multicluster-fixtures:
+    cmds:
+      - kubectl delete -f ./charts/multicluster/fixtures/cluster.yaml --context k3d-left
+      - kubectl delete -f ./charts/multicluster/fixtures/cluster.yaml --context k3d-right
+      - kubectl delete -f ./charts/multicluster/fixtures/cluster.yaml --context k3d-middle
+
+  rm-multicluster:
+    cmds:
+      - helm delete --kube-context k3d-left --namespace=redpanda-system redpanda-multicluster-operator
+      - helm delete --kube-context k3d-middle --namespace=redpanda-system redpanda-multicluster-operator
+      - helm delete --kube-context k3d-right --namespace=redpanda-system redpanda-multicluster-operator

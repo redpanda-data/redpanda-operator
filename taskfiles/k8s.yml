@@ -56,6 +56,8 @@ tasks:
           PATH: ./cmd/run
         - NAME: crd-installation
           PATH: ./cmd/crd
+        - NAME: multicluster-bootstrap
+          PATH: ./cmd/multicluster
         cmd: |
           controller-gen \
             paths={{ .ITEM.PATH }} \
@@ -93,6 +95,16 @@ tasks:
           ./config/rbac/itemized/v1-manager.yaml \
           ./config/rbac/itemized/v2-manager.yaml \
           ./config/rbac/itemized/console.yaml
+
+      # And once more for the Multicluster Operator's chart.
+      - mkdir -p ../charts/multicluster/files/rbac/ && (rm ../charts/multicluster/files/rbac/*.yaml || true)
+      - |
+        yq e \
+          --split-exp '"../charts/multicluster/files/rbac/\( .metadata.name ).\( .kind ).yaml"' \
+          '.' \
+          ./config/rbac/itemized/multicluster-bootstrap.yaml \
+          ./config/rbac/itemized/crd-installation.yaml \
+          ./config/rbac/itemized/v2-manager.yaml
 
       # Some integration tests use their RBAC declarations but generally
       # require some additional permissions (e.g. leader election, running
