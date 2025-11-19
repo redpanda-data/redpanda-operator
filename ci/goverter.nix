@@ -1,8 +1,8 @@
-{ buildGoModule, lib, fetchFromGitHub }:
+{ buildGo125Module, lib, fetchFromGitHub }:
 
-buildGoModule rec {
+buildGo125Module rec {
   pname = "goverter";
-  version = "1.9.1";
+  version = "1.9.2";
 
   src = fetchFromGitHub {
     owner = "jmattheis";

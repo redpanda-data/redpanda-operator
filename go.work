@@ -1,10 +1,11 @@
-go 1.24.3
+go 1.25.4
 
 use (
 	./acceptance
 	./alias
 	./charts/connectors
 	./charts/console
+	./charts/multicluster
 	./charts/redpanda
 	./gen
 	./gotohelm
@@ -13,4 +14,5 @@ use (
 	./licenseupdater
 	./operator
 	./pkg
+	./plugin
 )

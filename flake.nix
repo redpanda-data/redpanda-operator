@@ -1,5 +1,6 @@
 {
   inputs = {
+    nixpkgsStable.url = "nixpkgs/nixos-25.05";
     nixpkgs.url = "nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     devshell = {
@@ -14,6 +15,7 @@
     , devshell
     , flake-parts
     , nixpkgs
+    , nixpkgsStable
     , otel-tui
     }: flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [ "aarch64-darwin" "x86_64-linux" "aarch64-linux" ];
@@ -25,6 +27,15 @@
       perSystem = { self', system, ... }:
         let
           lib = pkgs.lib;
+          stablePkgs = import nixpkgsStable {
+            inherit system;
+            overlays = [
+              # Load in various overrides for custom packages and version pinning.
+              (import ./ci/overlay.nix {
+                pkgs = stablePkgs;
+              })
+            ];
+          };
           pkgs = import nixpkgs {
             inherit system;
             overlays = [
@@ -42,7 +53,7 @@
 
           devshells.default = {
             env = [
-              { name = "GOROOT"; value = "${pkgs.go_1_24}/share/go"; }
+              { name = "GOROOT"; value = "${stablePkgs.go_1_25}/share/go"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
@@ -71,11 +82,11 @@
               pkgs.go-licenses
               pkgs.go-task
               pkgs.go-tools
-              pkgs.go_1_24
+              stablePkgs.go_1_25
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.gotestsum
-              pkgs.goverter
+              stablePkgs.goverter
               pkgs.helm-3-10-3
               pkgs.helm-docs
               pkgs.jq

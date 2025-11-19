@@ -86,6 +86,21 @@
         "type": "github"
       }
     },
+    "nixpkgsStable": {
+      "locked": {
+        "lastModified": 1763334038,
+        "narHash": "sha256-LBVOyaH6NFzQ3X/c6vfMZ9k4SV2ofhpxeL9YnhHNJQQ=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "4c8cdd5b1a630e8f72c9dd9bf582b1afb3127d2c",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-25.05",
+        "type": "indirect"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1741379970,
@@ -126,6 +141,7 @@
         "devshell": "devshell",
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs",
+        "nixpkgsStable": "nixpkgsStable",
         "otel-tui": "otel-tui"
       }
     },

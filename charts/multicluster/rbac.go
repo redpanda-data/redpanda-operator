@@ -1,0 +1,127 @@
+// Copyright 2025 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+// +gotohelm:filename=_rbac.go.tpl
+package multicluster
+
+import (
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+)
+
+type RBACBundle struct {
+	Enabled     bool
+	Name        string
+	Subject     string
+	RuleFiles   map[string]bool
+	Annotations map[string]string
+}
+
+func rbacBundles(dot *helmette.Dot) []RBACBundle {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	return []RBACBundle{
+		{
+			Name:    Fullname(dot),
+			Enabled: true,
+			Subject: ServiceAccountName(dot),
+			RuleFiles: map[string]bool{
+				"files/rbac/console.ClusterRole.yaml":                true,
+				"files/rbac/v2-manager.ClusterRole.yaml":             true,
+				"files/rbac/multicluster-bootstrap.ClusterRole.yaml": true,
+			},
+		},
+		// ClusterRole for the CRD installation Job.
+		{
+			Name:    CRDJobServiceAccountName(dot),
+			Enabled: values.InstallCRDs,
+			Subject: CRDJobServiceAccountName(dot),
+			Annotations: map[string]string{
+				"helm.sh/hook":               "pre-install,pre-upgrade",
+				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
+				"helm.sh/hook-weight":        "-10",
+			},
+			RuleFiles: map[string]bool{
+				"files/rbac/crd-installation.ClusterRole.yaml": true,
+			},
+		},
+	}
+}
+
+func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
+	clusterRoles := []rbacv1.ClusterRole{}
+
+	for _, bundle := range rbacBundles(dot) {
+		if !bundle.Enabled {
+			continue
+		}
+
+		var rules []rbacv1.PolicyRule
+		for file, enabled := range helmette.SortedMap(bundle.RuleFiles) {
+			if !enabled {
+				continue
+			}
+
+			clusterRole := helmette.FromYaml[rbacv1.ClusterRole](dot.Files.Get(file))
+			rules = append(rules, clusterRole.Rules...)
+		}
+
+		clusterRoles = append(clusterRoles, rbacv1.ClusterRole{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "rbac.authorization.k8s.io/v1",
+				Kind:       "ClusterRole",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        bundle.Name + "-" + dot.Release.Namespace,
+				Labels:      Labels(dot),
+				Annotations: helmette.Default(map[string]string{}, bundle.Annotations),
+			},
+			Rules: rules,
+		})
+	}
+
+	return clusterRoles
+}
+
+func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
+	var bindings []rbacv1.ClusterRoleBinding
+	for _, bundle := range rbacBundles(dot) {
+		if !bundle.Enabled {
+			continue
+		}
+
+		bindings = append(bindings, rbacv1.ClusterRoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "rbac.authorization.k8s.io/v1",
+				Kind:       "ClusterRoleBinding",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        bundle.Name + "-" + dot.Release.Namespace,
+				Labels:      Labels(dot),
+				Annotations: helmette.Default(map[string]string{}, bundle.Annotations),
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     bundle.Name + "-" + dot.Release.Namespace,
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      bundle.Subject,
+					Namespace: dot.Release.Namespace,
+				},
+			},
+		})
+	}
+
+	return bindings
+}

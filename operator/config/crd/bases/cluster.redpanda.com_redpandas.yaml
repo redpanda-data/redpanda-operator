@@ -671,8 +671,8 @@ spec:
                               most preferred is the one with the greatest sum of weights, i.e.
                               for each node that meets all of the scheduling requirements (resource
                               request, requiredDuringScheduling anti-affinity expressions, etc.),
-                              compute a sum by iterating through the elements of this field and adding
-                              "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+                              compute a sum by iterating through the elements of this field and subtracting
+                              "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
                               node(s) with the highest sum are the most preferred.
                             items:
                               description: The weights of all of the matched WeightedPodAffinityTerm
@@ -3618,8 +3618,8 @@ spec:
                                   most preferred is the one with the greatest sum of weights, i.e.
                                   for each node that meets all of the scheduling requirements (resource
                                   request, requiredDuringScheduling anti-affinity expressions, etc.),
-                                  compute a sum by iterating through the elements of this field and adding
-                                  "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+                                  compute a sum by iterating through the elements of this field and subtracting
+                                  "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
                                   node(s) with the highest sum are the most preferred.
                                 items:
                                   description: The weights of all of the matched WeightedPodAffinityTerm
@@ -4537,6 +4537,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -5017,8 +5031,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -5337,6 +5380,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -5817,8 +5874,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -6080,6 +6166,8 @@ spec:
                                 type: boolean
                               hostname:
                                 type: string
+                              hostnameOverride:
+                                type: string
                               imagePullSecrets:
                                 items:
                                   description: |-
@@ -6139,6 +6227,20 @@ spec:
                                                   apiVersion:
                                                     type: string
                                                   fieldPath:
+                                                    type: string
+                                                type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
                                                     type: string
                                                 type: object
                                               resourceFieldRef:
@@ -6621,8 +6723,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -7898,6 +8029,25 @@ spec:
                                                       type: object
                                                     type: array
                                                 type: object
+                                              podCertificate:
+                                                description: |-
+                                                  PodCertificateProjectionApplyConfiguration represents a declarative configuration of the PodCertificateProjection type for use
+                                                  with apply.
+                                                properties:
+                                                  certificateChainPath:
+                                                    type: string
+                                                  credentialBundlePath:
+                                                    type: string
+                                                  keyPath:
+                                                    type: string
+                                                  keyType:
+                                                    type: string
+                                                  maxExpirationSeconds:
+                                                    format: int32
+                                                    type: integer
+                                                  signerName:
+                                                    type: string
+                                                type: object
                                               secret:
                                                 description: |-
                                                   SecretProjectionApplyConfiguration represents a declarative configuration of the SecretProjection type for use
@@ -8096,7 +8246,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -8926,8 +9076,8 @@ spec:
                                   most preferred is the one with the greatest sum of weights, i.e.
                                   for each node that meets all of the scheduling requirements (resource
                                   request, requiredDuringScheduling anti-affinity expressions, etc.),
-                                  compute a sum by iterating through the elements of this field and adding
-                                  "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+                                  compute a sum by iterating through the elements of this field and subtracting
+                                  "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
                                   node(s) with the highest sum are the most preferred.
                                 items:
                                   description: The weights of all of the matched WeightedPodAffinityTerm
@@ -9295,8 +9445,9 @@ spec:
                             in a Container.
                           properties:
                             name:
-                              description: Name of the environment variable. Must
-                                be a C_IDENTIFIER.
+                              description: |-
+                                Name of the environment variable.
+                                May consist of any printable ASCII characters except '='.
                               type: string
                             value:
                               description: |-
@@ -9352,6 +9503,43 @@ spec:
                                       type: string
                                   required:
                                   - fieldPath
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                fileKeyRef:
+                                  description: |-
+                                    FileKeyRef selects a key of the env file.
+                                    Requires the EnvFiles feature gate to be enabled.
+                                  properties:
+                                    key:
+                                      description: |-
+                                        The key within the env file. An invalid key will prevent the pod from starting.
+                                        The keys defined within a source may consist of any printable ASCII characters except '='.
+                                        During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+                                      type: string
+                                    optional:
+                                      default: false
+                                      description: |-
+                                        Specify whether the file or its key must be defined. If the file or key
+                                        does not exist, then the env var is not published.
+                                        If optional is set to true and the specified key does not exist,
+                                        the environment variable will not be set in the Pod's containers.
+
+                                        If optional is set to false and the specified key does not exist,
+                                        an error will be returned during Pod creation.
+                                      type: boolean
+                                    path:
+                                      description: |-
+                                        The path within the volume from which to select the file.
+                                        Must be relative and may not contain the '..' path or start with '..'.
+                                      type: string
+                                    volumeName:
+                                      description: The name of the volume mount containing
+                                        the env file.
+                                      type: string
+                                  required:
+                                  - key
+                                  - path
+                                  - volumeName
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 resourceFieldRef:
@@ -9435,8 +9623,9 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             prefix:
-                              description: Optional text to prepend to the name of
-                                each environment variable. Must be a C_IDENTIFIER.
+                              description: |-
+                                Optional text to prepend to the name of each environment variable.
+                                May consist of any printable ASCII characters except '='.
                               type: string
                             secretRef:
                               description: The Secret to select from
@@ -10019,6 +10208,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -10499,8 +10702,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -10819,6 +11051,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -11299,8 +11545,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -11562,6 +11837,8 @@ spec:
                                 type: boolean
                               hostname:
                                 type: string
+                              hostnameOverride:
+                                type: string
                               imagePullSecrets:
                                 items:
                                   description: |-
@@ -11621,6 +11898,20 @@ spec:
                                                   apiVersion:
                                                     type: string
                                                   fieldPath:
+                                                    type: string
+                                                type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
                                                     type: string
                                                 type: object
                                               resourceFieldRef:
@@ -12103,8 +12394,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -13380,6 +13700,25 @@ spec:
                                                       type: object
                                                     type: array
                                                 type: object
+                                              podCertificate:
+                                                description: |-
+                                                  PodCertificateProjectionApplyConfiguration represents a declarative configuration of the PodCertificateProjection type for use
+                                                  with apply.
+                                                properties:
+                                                  certificateChainPath:
+                                                    type: string
+                                                  credentialBundlePath:
+                                                    type: string
+                                                  keyPath:
+                                                    type: string
+                                                  keyType:
+                                                    type: string
+                                                  maxExpirationSeconds:
+                                                    format: int32
+                                                    type: integer
+                                                  signerName:
+                                                    type: string
+                                                type: object
                                               secret:
                                                 description: |-
                                                   SecretProjectionApplyConfiguration represents a declarative configuration of the SecretProjection type for use
@@ -13578,7 +13917,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -14058,7 +14397,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -14132,7 +14471,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -14206,7 +14545,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -14275,7 +14614,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -14359,7 +14698,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -15392,6 +15731,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -15872,8 +16225,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -16192,6 +16574,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -16672,8 +17068,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -16935,6 +17360,8 @@ spec:
                                 type: boolean
                               hostname:
                                 type: string
+                              hostnameOverride:
+                                type: string
                               imagePullSecrets:
                                 items:
                                   description: |-
@@ -16994,6 +17421,20 @@ spec:
                                                   apiVersion:
                                                     type: string
                                                   fieldPath:
+                                                    type: string
+                                                type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
                                                     type: string
                                                 type: object
                                               resourceFieldRef:
@@ -17476,8 +17917,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -18753,6 +19223,25 @@ spec:
                                                       type: object
                                                     type: array
                                                 type: object
+                                              podCertificate:
+                                                description: |-
+                                                  PodCertificateProjectionApplyConfiguration represents a declarative configuration of the PodCertificateProjection type for use
+                                                  with apply.
+                                                properties:
+                                                  certificateChainPath:
+                                                    type: string
+                                                  credentialBundlePath:
+                                                    type: string
+                                                  keyPath:
+                                                    type: string
+                                                  keyType:
+                                                    type: string
+                                                  maxExpirationSeconds:
+                                                    format: int32
+                                                    type: integer
+                                                  signerName:
+                                                    type: string
+                                                type: object
                                               secret:
                                                 description: |-
                                                   SecretProjectionApplyConfiguration represents a declarative configuration of the SecretProjection type for use
@@ -19197,7 +19686,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -19487,7 +19976,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -19768,7 +20257,7 @@ spec:
                                   Claims lists the names of resources, defined in spec.resourceClaims,
                                   that are used by this container.
 
-                                  This is an alpha field and requires enabling the
+                                  This field depends on the
                                   DynamicResourceAllocation feature gate.
 
                                   This field is immutable. It can only be set for containers.
@@ -19836,7 +20325,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -20756,7 +21245,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -21781,8 +22270,8 @@ spec:
                               most preferred is the one with the greatest sum of weights, i.e.
                               for each node that meets all of the scheduling requirements (resource
                               request, requiredDuringScheduling anti-affinity expressions, etc.),
-                              compute a sum by iterating through the elements of this field and adding
-                              "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+                              compute a sum by iterating through the elements of this field and subtracting
+                              "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
                               node(s) with the highest sum are the most preferred.
                             items:
                               description: The weights of all of the matched WeightedPodAffinityTerm
@@ -24728,8 +25217,8 @@ spec:
                                   most preferred is the one with the greatest sum of weights, i.e.
                                   for each node that meets all of the scheduling requirements (resource
                                   request, requiredDuringScheduling anti-affinity expressions, etc.),
-                                  compute a sum by iterating through the elements of this field and adding
-                                  "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+                                  compute a sum by iterating through the elements of this field and subtracting
+                                  "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
                                   node(s) with the highest sum are the most preferred.
                                 items:
                                   description: The weights of all of the matched WeightedPodAffinityTerm
@@ -25647,6 +26136,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -26127,8 +26630,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -26447,6 +26979,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -26927,8 +27473,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -27190,6 +27765,8 @@ spec:
                                 type: boolean
                               hostname:
                                 type: string
+                              hostnameOverride:
+                                type: string
                               imagePullSecrets:
                                 items:
                                   description: |-
@@ -27249,6 +27826,20 @@ spec:
                                                   apiVersion:
                                                     type: string
                                                   fieldPath:
+                                                    type: string
+                                                type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
                                                     type: string
                                                 type: object
                                               resourceFieldRef:
@@ -27731,8 +28322,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -29008,6 +29628,25 @@ spec:
                                                       type: object
                                                     type: array
                                                 type: object
+                                              podCertificate:
+                                                description: |-
+                                                  PodCertificateProjectionApplyConfiguration represents a declarative configuration of the PodCertificateProjection type for use
+                                                  with apply.
+                                                properties:
+                                                  certificateChainPath:
+                                                    type: string
+                                                  credentialBundlePath:
+                                                    type: string
+                                                  keyPath:
+                                                    type: string
+                                                  keyType:
+                                                    type: string
+                                                  maxExpirationSeconds:
+                                                    format: int32
+                                                    type: integer
+                                                  signerName:
+                                                    type: string
+                                                type: object
                                               secret:
                                                 description: |-
                                                   SecretProjectionApplyConfiguration represents a declarative configuration of the SecretProjection type for use
@@ -29206,7 +29845,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -30036,8 +30675,8 @@ spec:
                                   most preferred is the one with the greatest sum of weights, i.e.
                                   for each node that meets all of the scheduling requirements (resource
                                   request, requiredDuringScheduling anti-affinity expressions, etc.),
-                                  compute a sum by iterating through the elements of this field and adding
-                                  "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+                                  compute a sum by iterating through the elements of this field and subtracting
+                                  "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
                                   node(s) with the highest sum are the most preferred.
                                 items:
                                   description: The weights of all of the matched WeightedPodAffinityTerm
@@ -30405,8 +31044,9 @@ spec:
                             in a Container.
                           properties:
                             name:
-                              description: Name of the environment variable. Must
-                                be a C_IDENTIFIER.
+                              description: |-
+                                Name of the environment variable.
+                                May consist of any printable ASCII characters except '='.
                               type: string
                             value:
                               description: |-
@@ -30462,6 +31102,43 @@ spec:
                                       type: string
                                   required:
                                   - fieldPath
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                fileKeyRef:
+                                  description: |-
+                                    FileKeyRef selects a key of the env file.
+                                    Requires the EnvFiles feature gate to be enabled.
+                                  properties:
+                                    key:
+                                      description: |-
+                                        The key within the env file. An invalid key will prevent the pod from starting.
+                                        The keys defined within a source may consist of any printable ASCII characters except '='.
+                                        During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+                                      type: string
+                                    optional:
+                                      default: false
+                                      description: |-
+                                        Specify whether the file or its key must be defined. If the file or key
+                                        does not exist, then the env var is not published.
+                                        If optional is set to true and the specified key does not exist,
+                                        the environment variable will not be set in the Pod's containers.
+
+                                        If optional is set to false and the specified key does not exist,
+                                        an error will be returned during Pod creation.
+                                      type: boolean
+                                    path:
+                                      description: |-
+                                        The path within the volume from which to select the file.
+                                        Must be relative and may not contain the '..' path or start with '..'.
+                                      type: string
+                                    volumeName:
+                                      description: The name of the volume mount containing
+                                        the env file.
+                                      type: string
+                                  required:
+                                  - key
+                                  - path
+                                  - volumeName
                                   type: object
                                   x-kubernetes-map-type: atomic
                                 resourceFieldRef:
@@ -30545,8 +31222,9 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             prefix:
-                              description: Optional text to prepend to the name of
-                                each environment variable. Must be a C_IDENTIFIER.
+                              description: |-
+                                Optional text to prepend to the name of each environment variable.
+                                May consist of any printable ASCII characters except '='.
                               type: string
                             secretRef:
                               description: The Secret to select from
@@ -31129,6 +31807,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -31609,8 +32301,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -31929,6 +32650,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -32409,8 +33144,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -32672,6 +33436,8 @@ spec:
                                 type: boolean
                               hostname:
                                 type: string
+                              hostnameOverride:
+                                type: string
                               imagePullSecrets:
                                 items:
                                   description: |-
@@ -32731,6 +33497,20 @@ spec:
                                                   apiVersion:
                                                     type: string
                                                   fieldPath:
+                                                    type: string
+                                                type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
                                                     type: string
                                                 type: object
                                               resourceFieldRef:
@@ -33213,8 +33993,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -34490,6 +35299,25 @@ spec:
                                                       type: object
                                                     type: array
                                                 type: object
+                                              podCertificate:
+                                                description: |-
+                                                  PodCertificateProjectionApplyConfiguration represents a declarative configuration of the PodCertificateProjection type for use
+                                                  with apply.
+                                                properties:
+                                                  certificateChainPath:
+                                                    type: string
+                                                  credentialBundlePath:
+                                                    type: string
+                                                  keyPath:
+                                                    type: string
+                                                  keyType:
+                                                    type: string
+                                                  maxExpirationSeconds:
+                                                    format: int32
+                                                    type: integer
+                                                  signerName:
+                                                    type: string
+                                                type: object
                                               secret:
                                                 description: |-
                                                   SecretProjectionApplyConfiguration represents a declarative configuration of the SecretProjection type for use
@@ -34688,7 +35516,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -35168,7 +35996,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -35242,7 +36070,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -35316,7 +36144,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -35385,7 +36213,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -35469,7 +36297,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -36502,6 +37330,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -36982,8 +37824,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -37302,6 +38173,20 @@ spec:
                                                   fieldPath:
                                                     type: string
                                                 type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
+                                                    type: string
+                                                type: object
                                               resourceFieldRef:
                                                 description: |-
                                                   ResourceFieldSelectorApplyConfiguration represents a declarative configuration of the ResourceFieldSelector type for use
@@ -37782,8 +38667,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -38045,6 +38959,8 @@ spec:
                                 type: boolean
                               hostname:
                                 type: string
+                              hostnameOverride:
+                                type: string
                               imagePullSecrets:
                                 items:
                                   description: |-
@@ -38104,6 +39020,20 @@ spec:
                                                   apiVersion:
                                                     type: string
                                                   fieldPath:
+                                                    type: string
+                                                type: object
+                                              fileKeyRef:
+                                                description: |-
+                                                  FileKeySelectorApplyConfiguration represents a declarative configuration of the FileKeySelector type for use
+                                                  with apply.
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  optional:
+                                                    type: boolean
+                                                  path:
+                                                    type: string
+                                                  volumeName:
                                                     type: string
                                                 type: object
                                               resourceFieldRef:
@@ -38586,8 +39516,37 @@ spec:
                                     restartPolicy:
                                       description: |-
                                         ContainerRestartPolicy is the restart policy for a single container.
-                                        This may only be set for init containers and only allowed value is "Always".
+                                        The only allowed values are "Always", "Never", and "OnFailure".
                                       type: string
+                                    restartPolicyRules:
+                                      items:
+                                        description: |-
+                                          ContainerRestartRuleApplyConfiguration represents a declarative configuration of the ContainerRestartRule type for use
+                                          with apply.
+                                        properties:
+                                          action:
+                                            description: |-
+                                              ContainerRestartRuleAction describes the action to take when the
+                                              container exits.
+                                            type: string
+                                          exitCodes:
+                                            description: |-
+                                              ContainerRestartRuleOnExitCodesApplyConfiguration represents a declarative configuration of the ContainerRestartRuleOnExitCodes type for use
+                                              with apply.
+                                            properties:
+                                              operator:
+                                                description: |-
+                                                  ContainerRestartRuleOnExitCodesOperator describes the operator
+                                                  to take for the exit codes.
+                                                type: string
+                                              values:
+                                                items:
+                                                  format: int32
+                                                  type: integer
+                                                type: array
+                                            type: object
+                                        type: object
+                                      type: array
                                     securityContext:
                                       description: |-
                                         SecurityContextApplyConfiguration represents a declarative configuration of the SecurityContext type for use
@@ -39863,6 +40822,25 @@ spec:
                                                       type: object
                                                     type: array
                                                 type: object
+                                              podCertificate:
+                                                description: |-
+                                                  PodCertificateProjectionApplyConfiguration represents a declarative configuration of the PodCertificateProjection type for use
+                                                  with apply.
+                                                properties:
+                                                  certificateChainPath:
+                                                    type: string
+                                                  credentialBundlePath:
+                                                    type: string
+                                                  keyPath:
+                                                    type: string
+                                                  keyType:
+                                                    type: string
+                                                  maxExpirationSeconds:
+                                                    format: int32
+                                                    type: integer
+                                                  signerName:
+                                                    type: string
+                                                type: object
                                               secret:
                                                 description: |-
                                                   SecretProjectionApplyConfiguration represents a declarative configuration of the SecretProjection type for use
@@ -40307,7 +41285,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -40597,7 +41575,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -40878,7 +41856,7 @@ spec:
                                   Claims lists the names of resources, defined in spec.resourceClaims,
                                   that are used by this container.
 
-                                  This is an alpha field and requires enabling the
+                                  This field depends on the
                                   DynamicResourceAllocation feature gate.
 
                                   This field is immutable. It can only be set for containers.
@@ -40946,7 +41924,7 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
-                                      This is an alpha field and requires enabling the
+                                      This field depends on the
                                       DynamicResourceAllocation feature gate.
 
                                       This field is immutable. It can only be set for containers.
@@ -41866,7 +42844,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
