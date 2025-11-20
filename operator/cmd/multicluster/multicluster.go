@@ -152,6 +152,7 @@ func Run(
 		Logger:              log,
 		Metrics:             true,
 		RestConfig:          k8sConfig,
+		Meta:                []byte("node-name=" + opts.Name),
 		Scheme:              controller.MulticlusterScheme,
 		CAFile:              opts.CAFile,
 		CertificateFile:     opts.CertificateFile,

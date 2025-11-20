@@ -70,9 +70,12 @@ func ChartName(dot *helmette.Dot) string {
 
 // Common labels
 func Labels(dot *helmette.Dot) map[string]string {
+	values := helmette.Unwrap[Values](dot.Values)
+
 	labels := map[string]string{
-		"helm.sh/chart":                ChartName(dot),
-		"app.kubernetes.io/managed-by": dot.Release.Service,
+		"helm.sh/chart":                             ChartName(dot),
+		"app.kubernetes.io/managed-by":              dot.Release.Service,
+		"cluster.redpanda.com/multicluster-node-id": values.Node,
 	}
 
 	if dot.Chart.AppVersion != "" {

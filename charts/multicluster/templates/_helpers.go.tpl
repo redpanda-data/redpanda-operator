@@ -70,7 +70,8 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $labels := (dict "helm.sh/chart" (get (fromJson (include "multicluster.ChartName" (dict "a" (list $dot)))) "r") "app.kubernetes.io/managed-by" $dot.Release.Service) -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $labels := (dict "helm.sh/chart" (get (fromJson (include "multicluster.ChartName" (dict "a" (list $dot)))) "r") "app.kubernetes.io/managed-by" $dot.Release.Service "cluster.redpanda.com/multicluster-node-id" $values.node) -}}
 {{- if (ne $dot.Chart.AppVersion "") -}}
 {{- $_ := (set $labels "app.kubernetes.io/version" $dot.Chart.AppVersion) -}}
 {{- end -}}
@@ -143,9 +144,9 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $vol := $original.spec.volumes -}}
-{{- $_175_overrideVol_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideVolumes $vol.name (dict "name" ""))))) "r") -}}
-{{- $overrideVol_1 := (index $_175_overrideVol_1_ok_2 0) -}}
-{{- $ok_2 := (index $_175_overrideVol_1_ok_2 1) -}}
+{{- $_178_overrideVol_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideVolumes $vol.name (dict "name" ""))))) "r") -}}
+{{- $overrideVol_1 := (index $_178_overrideVol_1_ok_2 0) -}}
+{{- $ok_2 := (index $_178_overrideVol_1_ok_2 1) -}}
 {{- if $ok_2 -}}
 {{- $newVolumes = (concat (default (list) $newVolumes) (list $overrideVol_1)) -}}
 {{- $_ := (unset $overrideVolumes $vol.name) -}}
@@ -249,9 +250,9 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $container := $original.spec.containers -}}
-{{- $_314_override_3_ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
-{{- $override_3 := (index $_314_override_3_ok_4 0) -}}
-{{- $ok_4 := (index $_314_override_3_ok_4 1) -}}
+{{- $_317_override_3_ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
+{{- $override_3 := (index $_317_override_3_ok_4 0) -}}
+{{- $ok_4 := (index $_317_override_3_ok_4 1) -}}
 {{- if $ok_4 -}}
 {{- $env := (concat (default (list) $container.env) (default (list) $override_3.env)) -}}
 {{- $container = (merge (dict) $override_3 $container) -}}
@@ -276,9 +277,9 @@
 {{- end -}}
 {{- $merged = (list) -}}
 {{- range $_, $container := $original.spec.initContainers -}}
-{{- $_345_override_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
-{{- $override_5 := (index $_345_override_5_ok_6 0) -}}
-{{- $ok_6 := (index $_345_override_5_ok_6 1) -}}
+{{- $_348_override_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
+{{- $override_5 := (index $_348_override_5_ok_6 0) -}}
+{{- $ok_6 := (index $_348_override_5_ok_6 1) -}}
 {{- if $ok_6 -}}
 {{- $env := (concat (default (list) $container.env) (default (list) $override_5.env)) -}}
 {{- $container = (merge (dict) $override_5 $container) -}}
@@ -303,9 +304,9 @@
 {{- end -}}
 {{- $mergedEphemeralContainers := (coalesce nil) -}}
 {{- range $_, $container := $original.spec.ephemeralContainers -}}
-{{- $_376_override_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideEphemeralContainers $container.name (coalesce nil))))) "r") -}}
-{{- $override_7 := (index $_376_override_7_ok_8 0) -}}
-{{- $ok_8 := (index $_376_override_7_ok_8 1) -}}
+{{- $_379_override_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideEphemeralContainers $container.name (coalesce nil))))) "r") -}}
+{{- $override_7 := (index $_379_override_7_ok_8 0) -}}
+{{- $ok_8 := (index $_379_override_7_ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- $env := (concat (default (list) $container.env) (default (list) $override_7.env)) -}}
 {{- $container = (merge (dict) $override_7 $container) -}}

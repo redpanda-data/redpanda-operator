@@ -7,7 +7,7 @@ require (
 	connectrpc.com/connect v1.19.1
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/Masterminds/sprig/v3 v3.3.0
-	github.com/andrewstucki/locking v0.0.0-20251119234641-97a4f7dc5aeb
+	github.com/andrewstucki/locking v0.0.0-20251120013231-29866e56c597
 	github.com/cert-manager/cert-manager v1.14.5
 	github.com/cisco-open/k8s-objectmatcher v1.9.0
 	github.com/cockroachdb/errors v1.11.3

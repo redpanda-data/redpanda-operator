@@ -83,6 +83,10 @@ func RunRotateCertificates(
 	opts *RotateCertificatesOptions,
 	multiclusterOpts *MulticlusterOptions,
 ) error {
+	if err := multiclusterOpts.Validate(); err != nil {
+		return err
+	}
+
 	if err := opts.Validate(); err != nil {
 		return err
 	}
