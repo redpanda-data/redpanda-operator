@@ -30,12 +30,12 @@ type scenarioHookTracker struct {
 	registry *internaltesting.TagRegistry
 	opts     *internaltesting.TestingOptions
 
-	onScenarios []func(context.Context, *internaltesting.TestingT)
+	onScenarios []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
 	scenarios   map[string]*scenario
 	mutex       sync.Mutex
 }
 
-func newScenarioHookTracker(registry *internaltesting.TagRegistry, opts *internaltesting.TestingOptions, onScenarios []func(context.Context, *internaltesting.TestingT)) *scenarioHookTracker {
+func newScenarioHookTracker(registry *internaltesting.TagRegistry, opts *internaltesting.TestingOptions, onScenarios []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)) *scenarioHookTracker {
 	return &scenarioHookTracker{
 		registry:    registry,
 		opts:        opts,
@@ -57,13 +57,15 @@ func (s *scenarioHookTracker) start(ctx context.Context, isFirst bool, sc *godog
 
 	feature.t.PropagateError(isFirst, t)
 
+	parsed := s.registry.Handlers(tags.flatten())
+
 	// we process the configured hooks first and then tags
 	for _, fn := range s.onScenarios {
 		t.SetMessagePrefix("Scenario Hook Failure: ")
-		internaltesting.WrapWithPanicHandler(true, internaltesting.ExitBehaviorNone, fn)(ctx, t)
+		internaltesting.WrapWithPanicHandler(true, internaltesting.ExitBehaviorNone, fn)(ctx, t, internaltesting.ParsedTags(parsed))
 	}
 
-	for _, fn := range s.registry.Handlers(tags.flatten()) {
+	for _, fn := range parsed {
 		// iteratively inject tag handler context
 		t.SetMessagePrefix("Scenario Tag Failure: ")
 		ctx = internaltesting.WrapWithPanicHandler(true, internaltesting.ExitBehaviorNone, fn.Handler)(ctx, t, fn.Arguments)

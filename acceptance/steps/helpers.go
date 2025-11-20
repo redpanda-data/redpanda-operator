@@ -171,12 +171,28 @@ func (c *clusterClients) checkSchema(ctx context.Context, schema string, exists 
 		t.Logf("Pulling list of schema subjects from cluster")
 		schemaRegistry := c.SchemaRegistry(ctx)
 		subjects, err = schemaRegistry.Subjects(ctx)
-		require.NoError(t, err)
+		if err != nil {
+			// just retry on error, sometimes v1 stuff is slow to come up even after
+			// the broker is marked as healthy
+			return false
+		}
 
 		return exists == slices.Contains(subjects, schema)
 	}, 10*time.Second, 1*time.Second, message) {
+		require.NoError(t, err)
 		t.Errorf("Final list of schema subjects: %v", subjects)
 	}
+}
+
+func (c *clusterClients) CreateTopic(ctx context.Context, topic string) {
+	t := framework.T(ctx)
+
+	admin := kadm.NewClient(c.Kafka(ctx))
+	defer admin.Close()
+
+	response, err := admin.CreateTopic(ctx, 1, 1, map[string]*string{}, topic)
+	require.NoError(t, err)
+	require.NoError(t, response.Err)
 }
 
 func (c *clusterClients) ExpectTopic(ctx context.Context, topic string) {
@@ -193,6 +209,16 @@ func (c *clusterClients) ExpectNoTopic(ctx context.Context, topic string) {
 	t.Logf("Checking that topic %q does not exist in cluster %q", topic, c.cluster)
 	c.checkTopic(ctx, topic, false, fmt.Sprintf("Topic %q still exists in cluster %q", topic, c.cluster))
 	t.Logf("Found no topic %q in cluster %q", topic, c.cluster)
+}
+
+// Set log level for given logger.
+func (c *clusterClients) SetLogLevel(ctx context.Context, level, logger string) {
+	t := framework.T(ctx)
+
+	admin := c.RedpandaAdmin(ctx)
+	defer admin.Close()
+
+	require.NoError(t, admin.SetLogLevel(ctx, logger, level, 0))
 }
 
 func (c *clusterClients) checkTopic(ctx context.Context, topic string, exists bool, message string) {
@@ -238,10 +264,21 @@ func (c *clusterClients) checkUser(ctx context.Context, user string, exists bool
 func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t := framework.T(ctx)
 
+	t.Logf("Creating clients for cluster %q in namespace %q", cluster, t.Namespace())
+
+	// First verify the cluster exists
+	var testCluster redpandav1alpha2.Redpanda
+	clusterKey := t.ResourceKey(cluster)
+	if err := t.Get(ctx, clusterKey, &testCluster); err != nil {
+		t.Fatalf("Failed to find cluster %q in namespace %q: %v", cluster, t.Namespace(), err)
+	}
+	t.Logf("Found cluster %q with status: %+v", cluster, testCluster.Status)
+
 	// we construct a fake user to grab all of the clients for the cluster
 	referencer := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: t.Namespace(),
+			Name:      "test-user-" + cluster, // Add a name for debugging
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource: &redpandav1alpha2.ClusterSource{
@@ -252,13 +289,19 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 		},
 	}
 
+	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
+	t.Logf("Fake user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
+
 	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
-	return &clusterClients{
+	clients := &clusterClients{
 		resourceTarget: referencer,
 		cluster:        cluster,
 		factory:        factory,
 	}
+
+	t.Logf("Successfully created clients for cluster %q", cluster)
+	return clients
 }
 
 func usersFromACLTable(t framework.TestingT, cluster string, table *godog.Table) []*redpandav1alpha2.User {
@@ -329,6 +372,7 @@ func userFromRow(t framework.TestingT, cluster, name, password, mechanism, acls 
 			},
 		},
 	}
+
 	if mechanism != "" || password != "" {
 		user.Spec.Authentication = &redpandav1alpha2.UserAuthenticationSpec{
 			Type: ptr.To(redpandav1alpha2.SASLMechanism(mechanism)),

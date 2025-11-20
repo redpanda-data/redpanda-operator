@@ -941,10 +941,21 @@ func (s *RedpandaControllerSuite) setupRBAC() string {
 	clusterRole := roles[0].(*rbacv1.ClusterRole)
 
 	// Inject additional permissions required for running in testenv.
-	role.Rules = append(role.Rules, rbacv1.PolicyRule{
+	clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
 		APIGroups: []string{""},
 		Resources: []string{"pods/portforward"},
 		Verbs:     []string{"*"},
+	})
+
+	// Inject additional permission required for service lookup.
+	// After merging https://github.com/redpanda-data/redpanda-operator/pull/1029 service discovery
+	// for client construction backport and changing the helm chart dependency the operator integration
+	// test suite requires ClusterRole to be able to list pods. In 25.1.x and main that permission is
+	// already present as operator by default is cluster scoped.
+	clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
+		APIGroups: []string{""},
+		Resources: []string{"pods"},
+		Verbs:     []string{"list"},
 	})
 
 	name := "testenv-" + testenv.RandString(6)

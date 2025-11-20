@@ -171,7 +171,7 @@ func TestIntegrationChart(t *testing.T) {
 			Values: partial,
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := &Client{Ctl: env.Ctl(), Release: &rpRelease}
 
 		dot := &helmette.Dot{
 			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
@@ -246,7 +246,7 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := &Client{Ctl: env.Ctl(), Release: &rpRelease}
 
 		dot := &helmette.Dot{
 			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
@@ -305,7 +305,7 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := &Client{Ctl: env.Ctl(), Release: &rpRelease}
 
 		dot := &helmette.Dot{
 			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
@@ -368,7 +368,7 @@ func TestIntegrationChart(t *testing.T) {
 			Namespace: env.Namespace(),
 		})
 
-		rpk := Client{Ctl: env.Ctl(), Release: &rpRelease}
+		rpk := &Client{Ctl: env.Ctl(), Release: &rpRelease}
 
 		dot := &helmette.Dot{
 			Values:  *helmette.UnmarshalInto[*helmette.Values](partial),
@@ -507,7 +507,7 @@ func TieredStorageSecretRefs(t *testing.T, secret *corev1.Secret) redpanda.Parti
 	}
 }
 
-func kafkaListenerTest(ctx context.Context, rpk Client) error {
+func kafkaListenerTest(ctx context.Context, rpk *Client) error {
 	input := "test-input"
 	topicName := "testTopic"
 	_, err := rpk.CreateTopic(ctx, topicName)
@@ -532,7 +532,7 @@ func kafkaListenerTest(ctx context.Context, rpk Client) error {
 	return nil
 }
 
-func adminListenerTest(ctx context.Context, rpk Client) error {
+func adminListenerTest(ctx context.Context, rpk *Client) error {
 	deadline := time.After(1 * time.Minute)
 	for {
 		select {
@@ -553,7 +553,7 @@ func adminListenerTest(ctx context.Context, rpk Client) error {
 	}
 }
 
-func superuserTest(ctx context.Context, rpk Client, superusers ...string) error {
+func superuserTest(ctx context.Context, rpk *Client, superusers ...string) error {
 	deadline := time.After(1 * time.Minute)
 	for {
 		select {
@@ -594,7 +594,7 @@ func equalElements[T comparable](a, b []T) bool {
 	return true
 }
 
-func schemaRegistryListenerTest(ctx context.Context, rpk Client) ([]byte, string, error) {
+func schemaRegistryListenerTest(ctx context.Context, rpk *Client) ([]byte, string, error) {
 	// Test schema registry
 	// Based on https://docs.redpanda.com/current/manage/schema-reg/schema-reg-api/
 	formats, err := rpk.QuerySupportedFormats(ctx)
@@ -677,7 +677,7 @@ type HTTPResponse []struct {
 	Offset    int     `json:"offset"`
 }
 
-func httpProxyListenerTest(ctx context.Context, rpk Client) error {
+func httpProxyListenerTest(ctx context.Context, rpk *Client) error {
 	// Test http proxy
 	// Based on https://docs.redpanda.com/current/develop/http-proxy/
 	_, err := rpk.ListTopics(ctx)
@@ -902,6 +902,28 @@ func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues 
 			Replicas: ptr.To[int32](1),
 			PodTemplate: &redpanda.PartialPodTemplate{
 				Spec: applycorev1.PodSpec().WithTerminationGracePeriodSeconds(10),
+			},
+			SideCars: &redpanda.PartialSidecars{
+				Image: &redpanda.PartialImage{
+					Repository: ptr.To("localhost/redpanda-operator"),
+					Tag:        ptr.To("dev"),
+				},
+				Controllers: &struct {
+					DeprecatedImage    *redpanda.PartialImage  "json:\"image,omitempty\""
+					Enabled            *bool                   "json:\"enabled,omitempty\""
+					CreateRBAC         *bool                   "json:\"createRBAC,omitempty\""
+					Resources          any                     "json:\"resources,omitempty\""
+					SecurityContext    *corev1.SecurityContext "json:\"securityContext,omitempty\""
+					HealthProbeAddress *string                 "json:\"healthProbeAddress,omitempty\""
+					MetricsAddress     *string                 "json:\"metricsAddress,omitempty\""
+					PprofAddress       *string                 "json:\"pprofAddress,omitempty\""
+					Run                []string                "json:\"run,omitempty\""
+				}{
+					DeprecatedImage: &redpanda.PartialImage{
+						Repository: ptr.To("localhost/redpanda-operator"),
+						Tag:        ptr.To("dev"),
+					},
+				},
 			},
 		},
 	}
