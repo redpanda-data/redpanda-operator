@@ -39,8 +39,9 @@ import (
 )
 
 const (
-	DefaultK3sImage = `rancher/k3s:v1.29.6-k3s2`
-	K3sImageEnv     = `K3S_IMAGE`
+	DefaultK3sImage   = `rancher/k3s:v1.29.6-k3s2`
+	K3sImageEnv       = `K3S_IMAGE`
+	SharedClusterName = "testenv"
 )
 
 var (
@@ -59,9 +60,10 @@ var (
 type Cluster struct {
 	Name string
 
-	mu           sync.Mutex
-	restConfig   *kube.RESTConfig
-	agentCounter int32
+	mu            sync.Mutex
+	restConfig    *kube.RESTConfig
+	agentCounter  int32
+	skipManifests bool
 }
 
 type ClusterOpt interface {
@@ -75,9 +77,11 @@ func (c clusterOpt) apply(config *clusterConfig) {
 }
 
 type clusterConfig struct {
-	agents  int
-	timeout time.Duration
-	image   string
+	agents           int
+	timeout          time.Duration
+	image            string
+	skipManifests    bool
+	serverNoSchedule bool
 }
 
 func defaultClusterConfig() *clusterConfig {
@@ -99,6 +103,18 @@ func WithAgents(agents int) clusterOpt {
 	}
 }
 
+func WithServerNoSchedule() clusterOpt {
+	return func(config *clusterConfig) {
+		config.serverNoSchedule = true
+	}
+}
+
+func SkipManifestInstallation() clusterOpt {
+	return func(config *clusterConfig) {
+		config.skipManifests = true
+	}
+}
+
 func WithImage(image string) clusterOpt {
 	return func(config *clusterConfig) {
 		config.image = image
@@ -109,6 +125,14 @@ func WithTimeout(timeout time.Duration) clusterOpt {
 	return func(config *clusterConfig) {
 		config.timeout = timeout
 	}
+}
+
+// GetShared gets or creates the shared "testenv" k3d cluster. Most tests
+// should use this method in combination with [vcluster.New].
+//
+// If your test needs to delete Nodes, DO NOT USE THE SHARED CLUSTER.
+func GetShared() (*Cluster, error) {
+	return GetOrCreate(SharedClusterName)
 }
 
 func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
@@ -162,7 +186,19 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		// Pod eviction happens in a timely fashion.
 		`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
 		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
+		// Disable the traefik Ingress controller. We don't use Ingress for
+		// anything and will install a standalone version if one is required.
+		`--k3s-arg`, `--disable=traefik@server:*`,
 		`--verbose`,
+	}
+
+	if config.serverNoSchedule {
+		args = append(args, []string{
+			// This can be useful for tests in which we don't want to accidentally
+			// kill the API server when we delete arbitrary nodes to simulate
+			// hardware failures
+			`--k3s-arg`, `--node-taint=server=true:NoSchedule@server:*`,
+		}...)
 	}
 
 	out, err := exec.Command("k3d", args...).CombinedOutput()
@@ -204,9 +240,10 @@ func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
 	}
 
 	cluster := &Cluster{
-		Name:         name,
-		restConfig:   cfg,
-		agentCounter: int32(config.agents),
+		Name:          name,
+		restConfig:    cfg,
+		agentCounter:  int32(config.agents),
+		skipManifests: config.skipManifests,
 	}
 
 	if err := cluster.waitForJobs(context.Background()); err != nil {
@@ -216,7 +253,11 @@ func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
 	return cluster, nil
 }
 
-func (c *Cluster) ImportImage(image string) error {
+func (c *Cluster) RESTConfig() *kube.RESTConfig {
+	return c.restConfig
+}
+
+func (c *Cluster) ImportImage(images ...string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if out, err := exec.Command(
@@ -224,15 +265,11 @@ func (c *Cluster) ImportImage(image string) error {
 		"image",
 		"import",
 		fmt.Sprintf("--cluster=%s", c.Name),
-		image,
+		strings.Join(images, " "),
 	).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
 	}
 	return nil
-}
-
-func (c *Cluster) RESTConfig() *kube.RESTConfig {
-	return c.restConfig
 }
 
 func (c *Cluster) DeleteNode(name string) error {
@@ -255,11 +292,15 @@ func (c *Cluster) CreateNode() error {
 
 	c.agentCounter += 1
 
+	return c.CreateNodeWithName(fmt.Sprintf("%s-agent-%d", c.Name, c.agentCounter))
+}
+
+func (c *Cluster) CreateNodeWithName(name string) error {
 	if out, err := exec.Command(
 		"k3d",
 		"node",
 		"create",
-		fmt.Sprintf("k3d-%s-agent-%d", c.Name, c.agentCounter),
+		name,
 		fmt.Sprintf("--cluster=%s", c.Name),
 		"--wait",
 		"--role=agent",
@@ -304,16 +345,18 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		return err
 	}
 
-	// NB: Originally this functionality was achieved via the --volume flag to
-	// k3d but CI runs via a docker in docker setup which makes it unreasonable
-	// to use --volume.
-	// Alternatively, we could make our own k3s images and directly copy in the
-	// manifests in the Dockerfile.
-	for _, obj := range startupManifests() {
-		// we deep copy so we don't modify the startup manifests when multiple k3d objects are created
-		cloned := obj.DeepCopyObject().(client.Object)
-		if err := cl.Patch(ctx, cloned, client.Apply, client.FieldOwner(fmt.Sprintf("k3d-setup-%s", c.Name)), client.ForceOwnership); err != nil {
-			return errors.WithStack(err)
+	if !c.skipManifests {
+		// NB: Originally this functionality was achieved via the --volume flag to
+		// k3d but CI runs via a docker in docker setup which makes it unreasonable
+		// to use --volume.
+		// Alternatively, we could make our own k3s images and directly copy in the
+		// manifests in the Dockerfile.
+		for _, obj := range startupManifests() {
+			// we deep copy so we don't modify the startup manifests when multiple k3d objects are created
+			cloned := obj.DeepCopyObject().(client.Object)
+			if err := cl.Patch(ctx, cloned, client.Apply, client.FieldOwner(fmt.Sprintf("k3d-setup-%s", c.Name)), client.ForceOwnership); err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	}
 
