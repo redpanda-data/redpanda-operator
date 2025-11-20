@@ -15,7 +15,10 @@ import (
 
 type MulticlusterOptions struct{}
 
-func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
+func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {}
+
+func (o *MulticlusterOptions) Validate() error {
+	return nil
 }
 
 func Command() *cobra.Command {

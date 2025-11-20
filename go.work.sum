@@ -745,7 +745,8 @@ github.com/alexflint/go-filemutex v0.0.0-20171022225611-72bdc8eae2ae/go.mod h1:C
 github.com/alexflint/go-filemutex v1.1.0/go.mod h1:7P4iRhttt/nUvUOrYIhcpMzv2G6CY9UnI16Z+UJqRyk=
 github.com/alexflint/go-filemutex v1.2.0/go.mod h1:mYyQSWvw9Tx2/H2n9qXPb52tTYfE0pZAWcBq5mK025c=
 github.com/andrew-d/go-termutil v0.0.0-20150726205930-009166a695a2/go.mod h1:jnzFpU88PccN/tPPhCpnNU8mZphvKxYM9lLNkd8e+os=
-github.com/andrewstucki/locking v0.0.0-20251119234641-97a4f7dc5aeb/go.mod h1:7se8qLPGg5dHOZr/gLbWvHQtZ5xX/F8l5QXHC/rWEwo=
+github.com/andrewstucki/locking v0.0.0-20251120013231-29866e56c597 h1:5+N+O0IrLnuCdLfK1UVKhLVzKm10zvPl0WrwgenTeJw=
+github.com/andrewstucki/locking v0.0.0-20251120013231-29866e56c597/go.mod h1:7se8qLPGg5dHOZr/gLbWvHQtZ5xX/F8l5QXHC/rWEwo=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=
 github.com/andybalholm/brotli v1.0.5 h1:8uQZIdzKmjc/iuPu7O2ioW48L81FgatrcpfFmiq/cCs=
 github.com/andybalholm/brotli v1.0.5/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=

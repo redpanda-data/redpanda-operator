@@ -62,10 +62,10 @@ tasks:
   cluster-fleet:
     cmds:
       - task: :build:images
-      - task: :build:plugin
-      - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 left --network multicluster-dev
-      - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 middle --network multicluster-dev
-      - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 right --network multicluster-dev
+      - task: :dev:install-local-plugin
+      - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 left --network multicluster-dev -p "9443:9443@loadbalancer"
+      - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 middle --network multicluster-dev -p "9444:9443@loadbalancer"
+      - k3d cluster create --image rancher/k3s:v1.34.1-k3s1 right --network multicluster-dev -p "9445:9443@loadbalancer"
       - k3d image import --cluster left localhost/redpanda-operator:dev
       - k3d image import --cluster middle localhost/redpanda-operator:dev
       - k3d image import --cluster right localhost/redpanda-operator:dev
