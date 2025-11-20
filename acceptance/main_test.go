@@ -16,6 +16,7 @@ import (
 	"sync"
 	"testing"
 
+	helmv2beta2 "github.com/fluxcd/helm-controller/api/v2beta2"
 	sourcev1beta2 "github.com/fluxcd/source-controller/api/v1beta2"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
@@ -63,6 +64,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			redpandav1alpha1.AddToScheme,
 			redpandav1alpha2.AddToScheme,
 			sourcev1beta2.AddToScheme,
+			helmv2beta2.AddToScheme,
 		).
 		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
 			Name:            "cert-manager",
@@ -116,6 +118,17 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				})
 				if err != nil && !apierrors.IsNotFound(err) {
 					require.NoError(t, err)
+				}
+				t.Log("removing finalizer for any Helm Release")
+				var hrl helmv2beta2.HelmReleaseList
+				err = t.List(ctx, &hrl)
+				if err != nil && !apierrors.IsNotFound(err) {
+					require.NoError(t, err)
+				}
+				for _, hr := range hrl.Items {
+					hr.Finalizers = []string{}
+					// Ignore update errors
+					t.Update(ctx, &hr)
 				}
 			})
 		}).

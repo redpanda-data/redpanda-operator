@@ -4,6 +4,7 @@ go 1.23.8
 
 require (
 	github.com/cucumber/godog v0.14.1
+	github.com/fluxcd/helm-controller/api v0.37.2
 	github.com/fluxcd/source-controller/api v1.2.3
 	github.com/go-logr/logr v1.4.2
 	github.com/prometheus/common v0.55.0
@@ -76,7 +77,6 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fluxcd/helm-controller/api v0.37.2 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
 	github.com/fluxcd/pkg/apis/kustomize v1.2.0 // indirect
 	github.com/fluxcd/pkg/apis/meta v1.2.0 // indirect
