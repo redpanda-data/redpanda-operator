@@ -31,6 +31,11 @@ type (
 	FullProvider = internaltesting.Provider
 )
 
+type ParsedTag struct {
+	Name      string
+	Arguments []string
+}
+
 type TestingT interface {
 	godog.TestingT
 	client.Client
@@ -49,8 +54,9 @@ type TestingT interface {
 
 	IsolateNamespace(ctx context.Context) string
 
-	InstallHelmChart(ctx context.Context, url, repo, chart string, options helm.InstallOptions)
-	InstallLocalHelmChart(ctx context.Context, path string, options helm.InstallOptions, deps ...helm.Dependency)
+	AddHelmRepo(ctx context.Context, name, url string)
+	InstallHelmChart(ctx context.Context, chart string, options helm.InstallOptions)
+	UpgradeHelmChart(ctx context.Context, release, chart string, options helm.UpgradeOptions)
 
 	Namespace() string
 	RestConfig() *rest.Config

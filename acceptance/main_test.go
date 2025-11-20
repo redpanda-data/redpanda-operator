@@ -11,8 +11,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"testing"
 
@@ -26,6 +28,7 @@ import (
 
 	_ "github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
@@ -48,7 +51,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
-		RegisterProvider("k3d", framework.NoopProvider).
+		RegisterProvider("k3d", providers.NewK3D(5).RetainCluster()).
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
 			"localhost/redpanda-operator:dev",
@@ -85,12 +88,15 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		}).
 		WithCRDDirectory("../operator/config/crd/bases").
 		WithCRDDirectory("../operator/config/crd/bases/toolkit.fluxcd.io").
-		OnFeature(func(ctx context.Context, t framework.TestingT) {
+		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
 			namespace := t.IsolateNamespace(ctx)
 
-			t.Log("Installing Redpanda operator chart")
-			t.InstallLocalHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+			if slices.ContainsFunc(tags, shouldSkipOperatorInstall) {
+				return
+			}
+			t.Log("Installing default Redpanda operator chart")
+			t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
 				Name:      "redpanda-operator",
 				Namespace: namespace,
 				Values: map[string]any{
@@ -144,7 +150,8 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				}
 			})
 		}).
-		RegisterTag("cluster", 1, ClusterTag).
+		RegisterTag("operator", 1, OperatorTag).
+		RegisterTag("cluster", 2, ClusterTag).
 		ExitOnCleanupFailures().
 		Build()
 })
@@ -169,4 +176,26 @@ func ClusterTag(ctx context.Context, t framework.TestingT, args ...string) conte
 	t.Logf("Finished installing cluster %q", name)
 
 	return ctx
+}
+
+func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {
+	require.Greater(t, len(args), 0, "operator tags can only be used with additional arguments")
+	name := args[0]
+	if name == "none" {
+		t.Log("Skipping Redpanda operator installation")
+		return ctx
+	}
+
+	t.Logf("Installing Redpanda operator chart: %q", name)
+	t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
+		Name:       "redpanda-operator",
+		Namespace:  t.Namespace(),
+		ValuesFile: filepath.Join("operator", fmt.Sprintf("%s.yaml", name)),
+	})
+
+	return ctx
+}
+
+func shouldSkipOperatorInstall(tag framework.ParsedTag) bool {
+	return tag.Name == "operator"
 }

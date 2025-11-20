@@ -54,8 +54,8 @@ type SuiteBuilder struct {
 	injectors             []func(context.Context) context.Context
 	crdDirectories        []string
 	helmCharts            []helmChart
-	onFeatures            []func(context.Context, *internaltesting.TestingT)
-	onScenarios           []func(context.Context, *internaltesting.TestingT)
+	onFeatures            []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
+	onScenarios           []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
 	exitOnCleanupFailures bool
 }
 
@@ -138,18 +138,32 @@ func (b *SuiteBuilder) WithImportedImages(images ...string) *SuiteBuilder {
 	return b
 }
 
-func (b *SuiteBuilder) OnFeature(fn func(context.Context, TestingT)) *SuiteBuilder {
-	b.onFeatures = append(b.onFeatures, func(ctx context.Context, tt *internaltesting.TestingT) {
+func (b *SuiteBuilder) OnFeature(fn func(context.Context, TestingT, ...ParsedTag)) *SuiteBuilder {
+	b.onFeatures = append(b.onFeatures, func(ctx context.Context, tt *internaltesting.TestingT, tags []internaltesting.ParsedTag) {
+		parsed := []ParsedTag{}
+		for _, tag := range tags {
+			parsed = append(parsed, ParsedTag{
+				Name:      tag.Name,
+				Arguments: tag.Arguments,
+			})
+		}
 		// wrap since we move into the internal implementation of the interface
-		fn(ctx, tt)
+		fn(ctx, tt, parsed...)
 	})
 	return b
 }
 
-func (b *SuiteBuilder) OnScenario(fn func(context.Context, TestingT)) *SuiteBuilder {
-	b.onScenarios = append(b.onScenarios, func(ctx context.Context, tt *internaltesting.TestingT) {
+func (b *SuiteBuilder) OnScenario(fn func(context.Context, TestingT, ...ParsedTag)) *SuiteBuilder {
+	b.onScenarios = append(b.onScenarios, func(ctx context.Context, tt *internaltesting.TestingT, tags []internaltesting.ParsedTag) {
+		parsed := []ParsedTag{}
+		for _, tag := range tags {
+			parsed = append(parsed, ParsedTag{
+				Name:      tag.Name,
+				Arguments: tag.Arguments,
+			})
+		}
 		// wrap since we move into the internal implementation of the interface
-		fn(ctx, tt)
+		fn(ctx, tt, parsed...)
 	})
 	return b
 }
@@ -171,6 +185,11 @@ func (b *SuiteBuilder) ExitOnCleanupFailures() *SuiteBuilder {
 
 func (b *SuiteBuilder) WithCRDDirectory(directory string) *SuiteBuilder {
 	b.crdDirectories = append(b.crdDirectories, directory)
+	return b
+}
+
+func (b *SuiteBuilder) Strict() *SuiteBuilder {
+	b.opts.Strict = true
 	return b
 }
 
@@ -201,49 +220,61 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 		return nil, err
 	}
 	ctx := provider.GetBaseContext()
+	ctx = internaltesting.ProviderIntoContext(ctx, provider)
+
 	opts.DefaultContext = ctx
 	opts.Tags = fmt.Sprintf("~@skip:%s", providerName)
 
-	restConfig, err := b.testingOpts.KubectlOptions.RestConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	helmClient, err := helm.New(helm.Options{
-		KubeConfig: restConfig,
-	})
-	if err != nil {
-		return nil, err
-	}
-
+	var kubeOptions *internaltesting.KubectlOptions
+	var helmClient *helm.Client
 	return &Suite{
 		output: b.output,
 		suite: &godog.TestSuite{
 			Name: "acceptance",
 			TestSuiteInitializer: func(suiteContext *godog.TestSuiteContext) {
 				cleanup := func(ctx context.Context) {
-					// teardown in reverse order from setup
-					for _, directory := range b.crdDirectories {
-						_, err := internaltesting.KubectlDelete(ctx, directory, b.testingOpts.KubectlOptions)
-						if err != nil {
-							fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
+					if kubeOptions != nil {
+						// teardown in reverse order from setup
+						for _, directory := range b.crdDirectories {
+							_, err := internaltesting.KubectlDelete(ctx, directory, kubeOptions)
+							if err != nil {
+								fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
+							}
 						}
 					}
-					for _, chart := range b.helmCharts {
-						if err := helmClient.Uninstall(ctx, helm.Release{
-							Namespace: chart.options.Namespace,
-							Name:      chart.options.Name,
-						}); err != nil {
-							fmt.Printf("WARNING: error uninstalling helm chart: %v\n", err)
+
+					if helmClient != nil {
+						for _, chart := range b.helmCharts {
+							if err := helmClient.Uninstall(ctx, helm.Release{
+								Namespace: chart.options.Namespace,
+								Name:      chart.options.Name,
+							}); err != nil {
+								fmt.Printf("WARNING: error uninstalling helm chart: %v\n", err)
+							}
 						}
 					}
+
 					if err := provider.Teardown(ctx); err != nil {
 						fmt.Printf("WARNING: error running provider teardown: %v\n", err)
 					}
 				}
 
 				suiteContext.BeforeSuite(func() {
-					err = provider.Setup(ctx)
+					err := provider.Setup(ctx)
+					setupErrorCheck(ctx, err, cleanup)
+
+					if provisioned, ok := provider.(internaltesting.ProvisionedProvider); ok {
+						fmt.Printf("Using Kubernetes configuration at: %v\n", provisioned.ConfigPath())
+						b.testingOpts.KubectlOptions = internaltesting.NewKubectlOptions(provisioned.ConfigPath())
+					}
+					kubeOptions = b.testingOpts.KubectlOptions
+
+					restConfig, err := b.testingOpts.KubectlOptions.RestConfig()
+					setupErrorCheck(ctx, err, cleanup)
+
+					helmClient, err = helm.New(helm.Options{
+						KubeConfig: restConfig,
+					})
 					setupErrorCheck(ctx, err, cleanup)
 
 					err = pullImages(b.images)

@@ -51,12 +51,12 @@ type FeatureHookTracker struct {
 	registry    *internaltesting.TagRegistry
 	opts        *internaltesting.TestingOptions
 
-	onFeatures []func(context.Context, *internaltesting.TestingT)
+	onFeatures []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
 	features   map[string]*feature
 	mutex      sync.RWMutex
 }
 
-func NewFeatureHookTracker(registry *internaltesting.TagRegistry, opts *internaltesting.TestingOptions, onFeatures, onScenarios []func(context.Context, *internaltesting.TestingT)) *FeatureHookTracker {
+func NewFeatureHookTracker(registry *internaltesting.TagRegistry, opts *internaltesting.TestingOptions, onFeatures, onScenarios []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)) *FeatureHookTracker {
 	return &FeatureHookTracker{
 		scenarios:  newScenarioHookTracker(registry, opts, onScenarios),
 		onFeatures: onFeatures,
@@ -84,13 +84,15 @@ func (f *FeatureHookTracker) Scenario(ctx context.Context, scenario *godog.Scena
 		features.Cleaner = cleaner
 		features.t = t
 
+		tags := f.registry.Handlers(features.tags.flatten())
+
 		// we process the configured hooks first and then tags
 		for _, fn := range f.onFeatures {
 			t.SetMessagePrefix("Feature Hook Failure: ")
-			internaltesting.WrapWithPanicHandler(false, internaltesting.ExitBehaviorNone, fn)(ctx, t)
+			internaltesting.WrapWithPanicHandler(false, internaltesting.ExitBehaviorNone, fn)(ctx, t, internaltesting.ParsedTags(tags))
 		}
 
-		for _, fn := range f.registry.Handlers(features.tags.flatten()) {
+		for _, fn := range tags {
 			// iteratively inject tag handler context
 			t.SetMessagePrefix("Feature Tag Failure: ")
 			ctx = internaltesting.WrapWithPanicHandler(false, internaltesting.ExitBehaviorNone, fn.Handler)(ctx, t, fn.Arguments)
@@ -114,10 +116,12 @@ func (f *FeatureHookTracker) ScenarioFinished(ctx context.Context, scenario *god
 	f.features[scenario.Uri] = features
 
 	f.scenarios.finish(ctx, scenario)
+	features.t.Logf("finished feature scenario, %d scenarios left", features.scenariosToRun)
 	if features.scenariosToRun <= 0 {
 		delete(f.features, scenario.Uri)
 
 		features.t.SetMessagePrefix(fmt.Sprintf("Feature (%s) Cleanup Failure: ", features.name))
+		features.t.Log("running cleanup handlers")
 		internaltesting.WrapWithPanicHandler(false, f.opts.ExitBehavior, features.DoCleanup)(ctx, features.hasStepFailure)
 	}
 }
@@ -169,8 +173,7 @@ func (f *FeatureHookTracker) TestRunStarted() {}
 func (f *FeatureHookTracker) Defined(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition) {
 }
 
-func (f *FeatureHookTracker) Pickle(pickle *messages.Pickle) {
-}
+func (f *FeatureHookTracker) Pickle(*messages.Pickle) {}
 
 func (f *FeatureHookTracker) Failed(*messages.Pickle, *messages.PickleStep, *formatters.StepDefinition, error) {
 }

@@ -934,7 +934,10 @@ type Sidecars struct {
 		SecurityContext   *corev1.SecurityContext `json:"securityContext"`
 	} `json:"configWatcher"`
 	Controllers struct {
-		Image              Image                   `json:"image"`
+		DeprecatedImage *Image `json:"image"`
+		// Enabled use to act as a global toggle for sidecar controllers. It
+		// was confusing and is no longer used.
+		// Deprecated.
 		Enabled            bool                    `json:"enabled"`
 		CreateRBAC         bool                    `json:"createRBAC"`
 		Resources          any                     `json:"resources"`
@@ -942,24 +945,10 @@ type Sidecars struct {
 		HealthProbeAddress string                  `json:"healthProbeAddress"`
 		MetricsAddress     string                  `json:"metricsAddress"`
 		PprofAddress       string                  `json:"pprofAddress"`
-		Run                []string                `json:"run"`
+		// Run used to be a string list of additional controllers to run. It is no longer used.
+		// Deprecated.
+		Run []string `json:"run"`
 	} `json:"controllers"`
-}
-
-func (s *Sidecars) PVCUnbinderEnabled() bool {
-	return s.Controllers.Enabled && s.PVCUnbinder.Enabled
-}
-
-func (s *Sidecars) BrokerDecommissionerEnabled() bool {
-	return s.Controllers.Enabled && s.BrokerDecommissioner.Enabled
-}
-
-func (s *Sidecars) ShouldCreateRBAC() bool {
-	return (s.Controllers.Enabled && s.Controllers.CreateRBAC) || s.AdditionalSidecarControllersEnabled()
-}
-
-func (s *Sidecars) AdditionalSidecarControllersEnabled() bool {
-	return s.PVCUnbinder.Enabled || s.BrokerDecommissioner.Enabled
 }
 
 type Listeners struct {

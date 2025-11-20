@@ -33,8 +33,8 @@ func bootstrapYamlTemplater(dot *helmette.Dot) corev1.Container {
 	env = append(env, additionalEnv...)
 
 	image := fmt.Sprintf(`%s:%s`,
-		values.Statefulset.SideCars.Controllers.Image.Repository,
-		values.Statefulset.SideCars.Controllers.Image.Tag,
+		values.Statefulset.SideCars.Controllers.DeprecatedImage.Repository,
+		values.Statefulset.SideCars.Controllers.DeprecatedImage.Tag,
 	)
 
 	return corev1.Container{
@@ -81,8 +81,8 @@ func PostInstallUpgradeJob(dot *helmette.Dot) *batchv1.Job {
 	}
 
 	image := fmt.Sprintf(`%s:%s`,
-		values.Statefulset.SideCars.Controllers.Image.Repository,
-		values.Statefulset.SideCars.Controllers.Image.Tag,
+		values.Statefulset.SideCars.Controllers.DeprecatedImage.Repository,
+		values.Statefulset.SideCars.Controllers.DeprecatedImage.Tag,
 	)
 
 	job := &batchv1.Job{
