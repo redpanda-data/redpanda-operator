@@ -33,8 +33,8 @@ tasks:
       - 'echo "--- Running integration tests"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
-          CLI_ARGS: '-json {{.CLI_ARGS}}'
+#          GO_TEST_RUNNER: gotestsum --raw-command --junitfile=integration-tests-%.xml -- go test
+          CLI_ARGS: '-v'
 
   test:acceptance:
     cmds:

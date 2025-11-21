@@ -15,7 +15,10 @@ import (
 	"os"
 	"os/exec"
 	"slices"
+	"strings"
+	"time"
 
+	"github.com/cockroachdb/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -115,11 +118,15 @@ func KubectlApply(ctx context.Context, fileOrDirectory string, options ...*Kubec
 }
 
 func kubectl(ctx context.Context, options *KubectlOptions, args ...string) (string, error) {
-	command := exec.Command("kubectl", options.args(args)...) //nolint:gosec // This is just test code.
+	fmt.Println("--- kubectl command")
+	fmt.Println("command to be performed: kubectl", strings.Join(args, " "))
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
+	defer cancel()
+	command := exec.CommandContext(ctx, "kubectl", options.args(args)...) //nolint:gosec // This is just test code.
 	command.Env = options.environment()
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	//ctx, cancel := context.WithCancel(ctx)
+	//defer cancel()
 
 	go func() {
 		// signal a cancel on the command to make
@@ -132,7 +139,7 @@ func kubectl(ctx context.Context, options *KubectlOptions, args ...string) (stri
 
 	output, err := command.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", string(output), err)
+		return "", errors.Wrapf(err, "kubectl command errors out : %s", string(output))
 	}
 
 	return string(output), nil
