@@ -17,8 +17,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
