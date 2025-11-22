@@ -173,7 +173,7 @@ run `task generate:third-party-licenses-list`
 | github.com/go-openapi/runtime/middleware/denco | [MIT](https://github.com/go-openapi/runtime/blob/v0.26.0/middleware/denco/LICENSE) |
 | github.com/go-openapi/spec | [Apache-2.0](https://github.com/go-openapi/spec/blob/v0.20.11/LICENSE) |
 | github.com/go-openapi/strfmt | [Apache-2.0](https://github.com/go-openapi/strfmt/blob/v0.21.9/LICENSE) |
-| github.com/go-openapi/swag | [Apache-2.0](https://github.com/go-openapi/swag/blob/v0.23.0/LICENSE) |
+| github.com/go-openapi/swag | [Apache-2.0](https://github.com/go-openapi/swag/blob/v0.23.1/LICENSE) |
 | github.com/go-openapi/validate | [Apache-2.0](https://github.com/go-openapi/validate/blob/v0.22.3/LICENSE) |
 | github.com/go-viper/mapstructure/v2 | [MIT](https://github.com/go-viper/mapstructure/blob/v2.3.0/LICENSE) |
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
@@ -258,7 +258,7 @@ run `task generate:third-party-licenses-list`
 | github.com/lucasb-eyer/go-colorful | [MIT](https://github.com/lucasb-eyer/go-colorful/blob/v1.2.0/LICENSE) |
 | github.com/lucasjones/reggen | [MIT](https://github.com/lucasjones/reggen/blob/37ba4fa293bb/LICENSE) |
 | github.com/magiconair/properties | [BSD-2-Clause](https://github.com/magiconair/properties/blob/v1.8.7/LICENSE.md) |
-| github.com/mailru/easyjson | [MIT](https://github.com/mailru/easyjson/blob/v0.7.7/LICENSE) |
+| github.com/mailru/easyjson | [MIT](https://github.com/mailru/easyjson/blob/v0.9.0/LICENSE) |
 | github.com/mattn/go-ciede2000 | [MIT](https://github.com/mattn/go-ciede2000/blob/782e8c62fec3/LICENSE) |
 | github.com/mattn/go-colorable | [MIT](https://github.com/mattn/go-colorable/blob/v0.1.13/LICENSE) |
 | github.com/mattn/go-isatty | [MIT](https://github.com/mattn/go-isatty/blob/v0.0.20/LICENSE) |
