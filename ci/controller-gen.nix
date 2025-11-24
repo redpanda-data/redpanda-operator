@@ -2,16 +2,16 @@
 
 buildGoModule rec {
   pname = "controller-tools";
-  version = "0.16.3";
+  version = "0.19.0";
 
   src = fetchFromGitHub {
     owner = "kubernetes-sigs";
     repo = pname;
-    rev = "v${version}";
-    sha256 = "sha256-Txvzp8OcRTDCAB8nFrqj93X+Kk/sNPSSLOI07J3DwcM=";
+    tag = "v${version}";
+    sha256 = "sha256-NPyX89Hr1MAUdMafEEvcf/geQD1PxkDFSRPCFZBh29g=";
   };
 
-  vendorHash = "sha256-nwzXlsSG7JF145bf/AJZB1GbGJRHJC7Q73Jty6mHc/w=";
+  vendorHash = "sha256-97FtwBaN8rMTsz9XbTEB1PSC454N2SLSWyOzXSWld9Y=";
 
   ldflags = [
     "-s"
@@ -23,6 +23,7 @@ buildGoModule rec {
 
   subPackages = [
     "cmd/controller-gen"
+    "cmd/type-scaffold"
     "cmd/helpgen"
   ];
 
