@@ -33,3 +33,15 @@ func consoleIsHealthy(ctx context.Context, t framework.TestingT, name string) {
 		return upToDate && hasHealthyReplicas
 	}, time.Minute, 10*time.Second)
 }
+
+func consoleHasWarnings(ctx context.Context, t framework.TestingT, name string, expected int) {
+	key := t.ResourceKey(name)
+
+	t.Logf("Checking console %q has %d warning(s)", name, expected)
+	require.Eventually(t, func() bool {
+		var console redpandav1alpha2.Console
+		require.NoError(t, t.Get(ctx, key, &console))
+
+		return len(console.Spec.Warnings) == expected
+	}, time.Minute, 10*time.Second)
+}

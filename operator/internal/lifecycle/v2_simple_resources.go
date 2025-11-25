@@ -12,6 +12,8 @@ package lifecycle
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -42,8 +44,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 
 	if spec != nil {
-		// normalize the spec by removing the connectors and console stanzas which are deprecated
-		spec.Console = nil
+		// normalize the spec by removing the connectors stanza since it's deprecated
 		spec.Connectors = nil
 	}
 
@@ -58,6 +59,9 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 	if err != nil {
 		return nil, err
 	}
+
+	// disable the console spec components so we don't try to render it twice
+	state.Values.Console.Enabled = ptr.To(false)
 
 	resources, err := redpanda.RenderResources(state)
 	if err != nil {
@@ -91,6 +95,14 @@ func (m *V2SimpleResourceRenderer) consoleIntegration(
 	}
 
 	return &redpandav1alpha2.Console{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Console",
+			APIVersion: redpandav1alpha2.GroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
+		},
 		Spec: redpandav1alpha2.ConsoleSpec{
 			ConsoleValues: *values,
 			ClusterSource: &redpandav1alpha2.ClusterSource{
@@ -106,4 +118,17 @@ func (m *V2SimpleResourceRenderer) consoleIntegration(
 // controller needs to watch.
 func (m *V2SimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return redpanda.Types()
+}
+
+// MigratingResources returns a list of resources that need to be migrated
+// away from being managed by the Redpanda CRD.
+func (m *V2SimpleResourceRenderer) MigratingResources() []client.Object {
+	return []client.Object{
+		&redpandav1alpha2.Console{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Console",
+				APIVersion: redpandav1alpha2.GroupVersion.String(),
+			},
+		},
+	}
 }

@@ -251,11 +251,13 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 		// if we have an error or an explicit requeue from one of our
 		// sub reconcilers, then just early return
 		if err != nil || result.Requeue || result.RequeueAfter > 0 {
+			log.FromContext(ctx).V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeue", result.Requeue, "requeueAfter", result.RequeueAfter)
 			return r.syncStatus(ctx, state, result, err)
 		}
 	}
 
 	// we're at the end of reconciliation, so sync back our status
+	log.FromContext(ctx).V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, state, ctrl.Result{}, nil)
 }
 
@@ -820,7 +822,9 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 // syncStatus updates the status of the Redpanda cluster at the end of reconciliation when
 // no more reconciliation should occur.
 func (r *RedpandaReconciler) syncStatus(ctx context.Context, state *clusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
+	original := state.cluster.Redpanda.Status.DeepCopy()
 	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) {
+		log.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.Redpanda.Status)
 		syncErr := r.Client.Status().Update(ctx, state.cluster.Redpanda)
 		err = errors.Join(syncErr, err)
 	}
