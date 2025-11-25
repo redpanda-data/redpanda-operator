@@ -11,7 +11,6 @@ Feature: Upgrading the operator with Console installed
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Redpanda
     metadata:
-      namespace: redpanda-system
       name: operator-console-upgrade
     spec:
       clusterSpec:
@@ -51,7 +50,6 @@ Feature: Upgrading the operator with Console installed
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Redpanda
     metadata:
-      namespace: redpanda-system
       name: operator-console-upgrade-warnings
     spec:
       clusterSpec:
