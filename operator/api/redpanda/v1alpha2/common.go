@@ -62,7 +62,7 @@ type KafkaSASL struct {
 	// +optional
 	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 
-	// Deprecated: used `password` instead
+	// Deprecated: use `password` instead
 	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
 }
 
