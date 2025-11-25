@@ -1103,8 +1103,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda
-    tag: v25.2.1
+    repository: redpandadata/redpanda-unstable
+    tag: v25.3.1-rc2
   license_key: ""
   listeners:
     admin:

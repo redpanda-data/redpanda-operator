@@ -860,148 +860,18 @@
 
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
   type: Opaque
-- apiVersion: v1
-  data:
-    config.yaml: |
-      # from .Values.config
-      kafka:
-        brokers:
-        - basic-test-0.basic-test.basic-test.svc.cluster.local.:9093
-        - basic-test-1.basic-test.basic-test.svc.cluster.local.:9093
-        - basic-test-2.basic-test.basic-test.svc.cluster.local.:9093
-        tls:
-          caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
-          enabled: true
-      redpanda:
-        adminApi:
-          enabled: true
-          tls:
-            caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
-            enabled: true
-          urls:
-          - https://basic-test.basic-test.svc.cluster.local.:9644
-      schemaRegistry:
-        enabled: true
-        tls:
-          caFilepath: /etc/tls/certs/secrets/basic-test-default-cert/ca.crt
-          enabled: true
-        urls:
-        - https://basic-test-0.basic-test.basic-test.svc.cluster.local.:8081
-        - https://basic-test-1.basic-test.basic-test.svc.cluster.local.:8081
-        - https://basic-test-2.basic-test.basic-test.svc.cluster.local.:8081
-  kind: ConfigMap
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: Console
   metadata:
     creationTimestamp: null
     labels:
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-console
+    name: basic-test
     namespace: basic-test
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: console-3.2.0
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-console
-    namespace: basic-test
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app.kubernetes.io/instance: basic-test
-        app.kubernetes.io/name: console
-    strategy: {}
-    template:
-      metadata:
-        annotations:
-          checksum/config: a3d974367947aee56c3c1d7882e25166b4838fe7da7d082b35e96060e3cc8533
-        creationTimestamp: null
-        labels:
-          app.kubernetes.io/instance: basic-test
-          app.kubernetes.io/name: console
-      spec:
-        affinity: {}
-        automountServiceAccountToken: false
-        containers:
-        - args:
-          - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /admin/health
-              port: http
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          name: console
-          ports:
-          - containerPort: 8080
-            name: http
-            protocol: TCP
-          readinessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /admin/health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources: {}
-          securityContext:
-            runAsNonRoot: true
-          volumeMounts:
-          - mountPath: /etc/console/configs
-            name: configs
-            readOnly: true
-          - mountPath: /etc/tls/certs
-            name: redpanda-certificates
-        securityContext:
-          fsGroup: 99
-          fsGroupChangePolicy: Always
-          runAsUser: 99
-        serviceAccountName: basic-test-console
-        volumes:
-        - configMap:
-            name: basic-test-console
-          name: configs
-        - name: redpanda-certificates
-          projected:
-            sources:
-            - secret:
-                items:
-                - key: ca.crt
-                  path: secrets/basic-test-default-cert/ca.crt
-                name: basic-test-default-cert
-  status: {}
-- metadata:
-    creationTimestamp: null
-    labels:
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
   spec:
     cluster:
       clusterRef:
@@ -2297,160 +2167,18 @@
 
       echo "passed"
   type: Opaque
-- apiVersion: v1
-  data:
-    config.yaml: |
-      # from .Values.config
-      kafka:
-        brokers:
-        - compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:9093
-        - compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:9093
-        tls:
-          caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
-          enabled: true
-      redpanda:
-        adminApi:
-          enabled: true
-          tls:
-            caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
-            enabled: true
-          urls:
-          - https://compat-test.compat-test.svc.cluster.local.:9644
-      schemaRegistry:
-        enabled: true
-        tls:
-          caFilepath: /etc/tls/certs/secrets/compat-test-default-cert/ca.crt
-          enabled: true
-        urls:
-        - https://compat-test-pool-0.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-1.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-2.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-3.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-4.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-5.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-6.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-7.compat-test.compat-test.svc.cluster.local.:8081
-        - https://compat-test-pool-8.compat-test.compat-test.svc.cluster.local.:8081
-  kind: ConfigMap
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: Console
   metadata:
     creationTimestamp: null
     labels:
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
-    name: compat-test-console
+    name: compat-test
     namespace: compat-test
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
-      cluster.redpanda.com/namespace: compat-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: console-3.2.0
-      helm.toolkit.fluxcd.io/name: compat-test
-      helm.toolkit.fluxcd.io/namespace: compat-test
-    name: compat-test-console
-    namespace: compat-test
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app.kubernetes.io/instance: compat-test
-        app.kubernetes.io/name: console
-    strategy: {}
-    template:
-      metadata:
-        annotations:
-          checksum/config: b5ebe68cfb837a39b35d01298571830506efbee4eb27a57d95b68da52a2af45f
-        creationTimestamp: null
-        labels:
-          app.kubernetes.io/instance: compat-test
-          app.kubernetes.io/name: console
-      spec:
-        affinity: {}
-        automountServiceAccountToken: false
-        containers:
-        - args:
-          - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /admin/health
-              port: http
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          name: console
-          ports:
-          - containerPort: 8080
-            name: http
-            protocol: TCP
-          readinessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /admin/health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources: {}
-          securityContext:
-            runAsNonRoot: true
-          volumeMounts:
-          - mountPath: /etc/console/configs
-            name: configs
-            readOnly: true
-          - mountPath: /etc/tls/certs
-            name: redpanda-certificates
-        securityContext:
-          fsGroup: 99
-          fsGroupChangePolicy: Always
-          runAsUser: 99
-        serviceAccountName: compat-test-console
-        volumes:
-        - configMap:
-            name: compat-test-console
-          name: configs
-        - name: redpanda-certificates
-          projected:
-            sources:
-            - secret:
-                items:
-                - key: ca.crt
-                  path: secrets/compat-test-default-cert/ca.crt
-                name: compat-test-default-cert
-  status: {}
-- metadata:
-    creationTimestamp: null
-    labels:
-      cluster.redpanda.com/namespace: compat-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: compat-test
-      helm.toolkit.fluxcd.io/name: compat-test
-      helm.toolkit.fluxcd.io/namespace: compat-test
   spec:
     cluster:
       clusterRef:
@@ -3319,20 +3047,6 @@
 
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
   type: Opaque
-- metadata:
-    creationTimestamp: null
-    labels:
-      cluster.redpanda.com/namespace: console-disabled
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: console-disabled
-      helm.toolkit.fluxcd.io/name: console-disabled
-      helm.toolkit.fluxcd.io/namespace: console-disabled
-  spec:
-    cluster:
-      clusterRef:
-        name: console-disabled
-    secret: {}
-  status: {}
 -- nodepool-basic-test --
 - apiVersion: v1
   kind: Service
@@ -4715,152 +4429,18 @@
 
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
   type: Opaque
-- apiVersion: v1
-  data:
-    config.yaml: |
-      # from .Values.config
-      kafka:
-        brokers:
-        - nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        - nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        - nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-        tls:
-          caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
-          enabled: true
-      redpanda:
-        adminApi:
-          enabled: true
-          tls:
-            caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
-            enabled: true
-          urls:
-          - https://nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
-      schemaRegistry:
-        enabled: true
-        tls:
-          caFilepath: /etc/tls/certs/secrets/nodepool-basic-test-default-cert/ca.crt
-          enabled: true
-        urls:
-        - https://nodepool-basic-test-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-        - https://nodepool-basic-test-1.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-        - https://nodepool-basic-test-2.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-        - https://nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-        - https://nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-  kind: ConfigMap
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: Console
   metadata:
     creationTimestamp: null
     labels:
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: console-3.2.0
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test-console
+    name: nodepool-basic-test
     namespace: nodepool-basic-test
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    creationTimestamp: null
-    labels:
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
-      cluster.redpanda.com/namespace: nodepool-basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: console-3.2.0
-      helm.toolkit.fluxcd.io/name: nodepool-basic-test
-      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test-console
-    namespace: nodepool-basic-test
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app.kubernetes.io/instance: nodepool-basic-test
-        app.kubernetes.io/name: console
-    strategy: {}
-    template:
-      metadata:
-        annotations:
-          checksum/config: c85e1818140a237fff8a40f9f195dade651942089e551fb9a093fb5e82bd14ec
-        creationTimestamp: null
-        labels:
-          app.kubernetes.io/instance: nodepool-basic-test
-          app.kubernetes.io/name: console
-      spec:
-        affinity: {}
-        automountServiceAccountToken: false
-        containers:
-        - args:
-          - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /admin/health
-              port: http
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          name: console
-          ports:
-          - containerPort: 8080
-            name: http
-            protocol: TCP
-          readinessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /admin/health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          resources: {}
-          securityContext:
-            runAsNonRoot: true
-          volumeMounts:
-          - mountPath: /etc/console/configs
-            name: configs
-            readOnly: true
-          - mountPath: /etc/tls/certs
-            name: redpanda-certificates
-        securityContext:
-          fsGroup: 99
-          fsGroupChangePolicy: Always
-          runAsUser: 99
-        serviceAccountName: nodepool-basic-test-console
-        volumes:
-        - configMap:
-            name: nodepool-basic-test-console
-          name: configs
-        - name: redpanda-certificates
-          projected:
-            sources:
-            - secret:
-                items:
-                - key: ca.crt
-                  path: secrets/nodepool-basic-test-default-cert/ca.crt
-                name: nodepool-basic-test-default-cert
-  status: {}
-- metadata:
-    creationTimestamp: null
-    labels:
-      cluster.redpanda.com/namespace: nodepool-basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: nodepool-basic-test
-      helm.toolkit.fluxcd.io/name: nodepool-basic-test
-      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
   spec:
     cluster:
       clusterRef:

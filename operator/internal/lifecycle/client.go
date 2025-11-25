@@ -71,6 +71,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 		statusUpdater:          statusUpdater,
 		nodePoolRenderer:       nodePoolRenderer,
 		simpleResourceRenderer: simpleResourceRenderer,
+		traceLogging:           true,
 	}
 }
 
@@ -79,6 +80,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 type ResourceClient[T any, U Cluster[T]] struct {
 	ctl                    *kube.Ctl
 	logger                 logr.Logger
+	traceLogging           bool
 	ownershipResolver      OwnershipResolver[T, U]
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
@@ -247,8 +249,12 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 	builder.For(cluster)
 
 	owns := func(obj client.Object) {
-		loggingHandler := wrapLoggingHandler(obj, handler.EnqueueRequestForOwner(r.ctl.Scheme(), r.ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()))
-		builder.Watches(obj, loggingHandler)
+		if r.traceLogging {
+			loggingHandler := wrapLoggingHandler(obj, handler.EnqueueRequestForOwner(r.ctl.Scheme(), r.ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()))
+			builder.Watches(obj, loggingHandler)
+		} else {
+			builder.Owns(obj)
+		}
 	}
 
 	// set an Owns on node pool statefulsets
@@ -282,15 +288,18 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 
 		// since resources are cluster-scoped we need to call a Watch on them with some
 		// custom mappings
-		builder.Watches(resourceType, wrapLoggingHandler(resourceType, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		watchHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 			if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
 				return []reconcile.Request{{
 					NamespacedName: *owner,
 				}}
 			}
 			return nil
-		})))
-
+		})
+		if r.traceLogging {
+			watchHandler = wrapLoggingHandler(resourceType, watchHandler)
+		}
+		builder.Watches(resourceType, watchHandler)
 	}
 
 	return nil

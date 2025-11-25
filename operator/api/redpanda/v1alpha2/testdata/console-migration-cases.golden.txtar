@@ -29,8 +29,10 @@ secret: {}
 -- 03-config-and-console --
 config:
   authentication:
+    jwtSigningKey: secret123
     someOtherSetting:
     - absolutely
+    useSecureCookies: true
   kafka:
     sasl:
       enabled: true

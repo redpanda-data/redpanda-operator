@@ -1219,7 +1219,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -1309,6 +1309,7 @@
           - console-disabled
           - --redpanda-cluster-name
           - console-disabled
+          - --selector=helm.sh/chart=redpanda-25.1.1-beta3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=console-disabled
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).console-disabled.console-disabled.svc.cluster.local.:9644
@@ -1355,7 +1356,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -1393,7 +1394,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
