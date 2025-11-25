@@ -230,7 +230,7 @@ func TestGoModLint(t *testing.T) {
 	for _, modFile := range modFiles {
 		localReferences := map[string]struct{}{}
 		for _, r := range modFile.Require {
-			if !strings.HasPrefix(r.Mod.Path, modPrefix) {
+			if r.Indirect || !strings.HasPrefix(r.Mod.Path, modPrefix) {
 				continue
 			}
 			localReferences[r.Mod.Path] = struct{}{}

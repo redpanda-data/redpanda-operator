@@ -1,0 +1,228 @@
+-- 01-auth-jwt-and-secure-cookies --
+login:
+  jwtSecret: secret123
+  useSecureCookies: true
+
+-- 02-plain-auth-enabled --
+login:
+  plain:
+    enabled: true
+
+-- 03-oidc-provider --
+login:
+  oidc:
+    enabled: true
+    clientId: client123
+    clientSecret: secret456
+    issuerUrl: https://issuer.example.com
+
+-- 04-google-oauth --
+login:
+  google:
+    enabled: true
+    clientId: google-client
+    clientSecret: google-secret
+
+-- 05-oidc-with-realm --
+login:
+  oidc:
+    enabled: true
+    clientId: client123
+    realm: myrealm
+    directory: mydir
+
+-- 06-kafka-schema-registry-basic-auth --
+kafka:
+  brokers:
+    - localhost:9092
+  schemaRegistry:
+    enabled: true
+    urls:
+      - http://localhost:8081
+    username: sruser
+    password: srpass
+
+-- 07-kafka-schema-registry-bearer-token --
+kafka:
+  brokers:
+    - localhost:9092
+  schemaRegistry:
+    enabled: true
+    urls:
+      - http://localhost:8081
+    bearerToken: token123
+
+-- 08-kafka-serde-settings --
+kafka:
+  brokers:
+    - localhost:9092
+  protobuf:
+    enabled: true
+  cbor:
+    enabled: true
+  messagePack:
+    enabled: true
+
+-- 09-connect-to-kafka-connect --
+connect:
+  enabled: true
+  clusters:
+    - name: local
+      url: http://localhost:8083
+
+-- 10-console-max-payload --
+console:
+  maxDeserializationPayloadSize: 1048576
+
+-- 11-rolebindings-users --
+roleBindings:
+  - roleName: admin
+    subjects:
+      - kind: user
+        provider: Plain
+        name: alice
+      - kind: user
+        provider: OIDC
+        name: bob
+
+-- 12-rolebindings-with-groups --
+roleBindings:
+  - roleName: viewer
+    subjects:
+      - kind: user
+        provider: Plain
+        name: alice
+      - kind: group
+        provider: OIDC
+        name: devs
+
+-- 13-redpanda-adminapi-with-creds --
+redpanda:
+  adminApi:
+    enabled: true
+    urls:
+      - http://localhost:9644
+    username: admin
+    password: adminpass
+
+-- 14-redpanda-adminapi-no-creds --
+redpanda:
+  adminApi:
+    enabled: true
+    urls:
+      - http://localhost:9644
+
+-- 15-complex-config --
+login:
+  jwtSecret: jwt-secret
+  useSecureCookies: true
+  oidc:
+    enabled: true
+    clientId: client
+    clientSecret: secret
+kafka:
+  brokers:
+    - localhost:9092
+  schemaRegistry:
+    enabled: true
+    urls:
+      - http://localhost:8081
+    username: sruser
+    password: srpass
+  protobuf:
+    enabled: true
+connect:
+  enabled: true
+console:
+  maxDeserializationPayloadSize: 2097152
+roleBindings:
+  - roleName: admin
+    subjects:
+      - kind: user
+        provider: OIDC
+        name: admin@example.com
+redpanda:
+  adminApi:
+    enabled: true
+    urls:
+      - http://localhost:9644
+    username: rpuser
+    password: rppass
+
+-- 16-fallback-authentication --
+authentication:
+  jwtSigningKey: existing-key
+
+-- 17-remaining-fields --
+server:
+  listenPort: 8080
+logger:
+  level: info
+
+-- 18-okta-provider --
+login:
+  okta:
+    enabled: true
+    clientId: okta-client
+    clientSecret: okta-secret
+    directory: okta-dir
+
+-- 19-azuread-provider --
+login:
+  azureAd:
+    enabled: true
+    clientId: azure-client
+    clientSecret: azure-secret
+
+-- 20-github-provider --
+login:
+  github:
+    enabled: true
+    clientId: github-client
+    clientSecret: github-secret
+
+-- 21-keycloak-provider --
+login:
+  keycloak:
+    enabled: true
+    clientId: keycloak-client
+    clientSecret: keycloak-secret
+    realm: myrealm
+
+-- 22-empty-config --
+{}
+
+-- 23-kafka-with-tls --
+kafka:
+  brokers:
+    - localhost:9093
+  tls:
+    enabled: true
+    caFilepath: /etc/certs/ca.crt
+
+-- 24-redpanda-with-extra-fields --
+redpanda:
+  adminApi:
+    enabled: true
+    urls:
+      - http://localhost:9644
+    username: admin
+    password: adminpass
+  extraField: extraValue
+  nested:
+    field: value
+
+-- 25-multiple-login-providers --
+login:
+  oidc:
+    enabled: true
+    realm: "oidc realm"
+  github:
+    enabled: true
+    directory: "github directory"
+  google:
+    enabled: true
+  keycloak:
+    enabled: true
+    realm: "keycloak realm"
+    directory: "keycloak directory"
