@@ -45,6 +45,18 @@ const (
 	mode = packages.NeedTypes | packages.NeedName | packages.NeedSyntax | packages.NeedTypesInfo | packages.NeedImports
 )
 
+type partialImport struct {
+	Name string
+	Path string
+}
+
+var packagePartials = map[string]partialImport{
+	"k8s.io/api/core/v1": {
+		Name: "applycorev1",
+		Path: "k8s.io/client-go/applyconfigurations/core/v1",
+	},
+}
+
 func Cmd() *cobra.Command {
 	var outFlag string
 	var headerFlag string
@@ -127,7 +139,7 @@ func (g *Generator) Generate(t types.Type) []ast.Node {
 		// reference needs to be a pointer or changed to a newly generated
 		// type. Partialization of (anonymous) structs, is generation of a new
 		// struct type.
-		partialized := g.partialize(named.Underlying())
+		partialized := g.partialize(named.Underlying(), nil)
 
 		var params *ast.FieldList
 		if named.TypeParams().Len() > 0 {
@@ -185,22 +197,22 @@ func (g *Generator) typeToNode(t types.Type) ast.Node {
 	return node
 }
 
-func (g *Generator) partialize(t types.Type) types.Type {
+func (g *Generator) partialize(t types.Type, tag *StructTag) types.Type {
 	// TODO cache me.
 
 	switch t := t.(type) {
 	case *types.Basic, *types.Interface, *types.Alias:
 		return t
 	case *types.Pointer:
-		return types.NewPointer(g.partialize(t.Elem()))
+		return types.NewPointer(g.partialize(t.Elem(), tag))
 	case *types.Map:
-		return types.NewMap(t.Key(), g.partialize(t.Elem()))
+		return types.NewMap(t.Key(), g.partialize(t.Elem(), nil))
 	case *types.Slice:
-		return types.NewSlice(g.partialize(t.Elem()))
+		return types.NewSlice(g.partialize(t.Elem(), tag))
 	case *types.Struct:
 		return g.partializeStruct(t)
 	case *types.Named:
-		return g.partializeNamed(t)
+		return g.partializeNamed(t, tag)
 	case *types.TypeParam:
 		return t // TODO this isn't super easy to fully support without a lot of additional information......
 	default:
@@ -214,7 +226,7 @@ func (g *Generator) partializeStruct(t *types.Struct) *types.Struct {
 	for i := 0; i < t.NumFields(); i++ {
 		field := t.Field(i)
 
-		partialized := g.partialize(field.Type())
+		partialized := g.partialize(field.Type(), parseTag(t.Tag(i)).Named("partial"))
 		switch partialized.Underlying().(type) {
 		case *types.Basic:
 			partialized = types.NewPointer(partialized)
@@ -240,7 +252,7 @@ func (g *Generator) partializeStruct(t *types.Struct) *types.Struct {
 	return types.NewStruct(fields, tags)
 }
 
-func (g *Generator) partializeNamed(t *types.Named) types.Type {
+func (g *Generator) partializeNamed(t *types.Named, tag *StructTag) types.Type {
 	// If there exists a Partial___ variant of the type, we'll use this. This
 	// allows Partial structs to references partial structs from other packages
 	// that contain Partialized structs and/or allows end users to provide
@@ -266,6 +278,38 @@ func (g *Generator) partializeNamed(t *types.Named) types.Type {
 	// NB: This check MUST match the check in FindAllNames.
 	isPartialized := inPkg && !IsType[*types.Basic](t.Underlying())
 	if !isPartialized {
+		if tag != nil {
+			for _, value := range tag.Values {
+				if value == "builtin" {
+					path := t.Obj().Pkg().Path()
+					if override, ok := packagePartials[path]; ok {
+						var args []types.Type
+						for i := 0; i < t.TypeArgs().Len(); i++ {
+							args = append(args, g.partialize(t.TypeArgs().At(i), nil))
+						}
+
+						params := make([]*types.TypeParam, t.TypeParams().Len())
+						for i := 0; i < t.TypeParams().Len(); i++ {
+							param := t.TypeParams().At(i)
+							// Might need to clone the typename here
+							params[i] = types.NewTypeParam(param.Obj(), param.Constraint())
+						}
+
+						named := types.NewNamed(types.NewTypeName(0, types.NewPackage(override.Path, override.Name), t.Obj().Name()+"ApplyConfiguration", t.Underlying()), t.Underlying(), nil)
+						if len(args) < 1 {
+							return named
+						}
+						named.SetTypeParams(params)
+						result, err := types.Instantiate(nil, named, args, true)
+						if err != nil {
+							panic(err)
+						}
+						return result
+					}
+				}
+			}
+		}
+
 		// If we haven't partialized this type, there's nothing we can do. Noop.
 		return t
 	}
@@ -277,7 +321,7 @@ func (g *Generator) partializeNamed(t *types.Named) types.Type {
 
 	var args []types.Type
 	for i := 0; i < t.TypeArgs().Len(); i++ {
-		args = append(args, g.partialize(t.TypeArgs().At(i)))
+		args = append(args, g.partialize(t.TypeArgs().At(i), nil))
 	}
 
 	params := make([]*types.TypeParam, t.TypeParams().Len())
@@ -368,6 +412,14 @@ func GeneratePartial(pkg *packages.Package, structName string, outPackage string
 
 				if pkg, ok := originalImports[parent.Name]; ok {
 					imports[parent.Name] = pkg
+				}
+
+				for _, pkg := range packagePartials {
+					if pkg.Name == parent.Name {
+						// NB: we don't actually use the import name below, so
+						// we just set it to empty here
+						imports[pkg.Name] = types.NewPackage(pkg.Path, "")
+					}
 				}
 			}
 			return true
@@ -524,6 +576,9 @@ func EnsureOmitEmpty(tag string) string {
 
 	var out strings.Builder
 	for i, p := range parts {
+		if p.Name == "partial" {
+			continue
+		}
 		if i > 0 {
 			_, _ = out.WriteRune(' ')
 		}
@@ -547,7 +602,18 @@ func IsType[T types.Type](typ types.Type) bool {
 
 var tagRe = regexp.MustCompile(`([a-z_]+):"([^"]+)"`)
 
-func parseTag(tag string) []StructTag {
+type StructTags []StructTag
+
+func (t StructTags) Named(name string) *StructTag {
+	for i, tag := range t {
+		if tag.Name == name {
+			return &t[i]
+		}
+	}
+	return nil
+}
+
+func parseTag(tag string) StructTags {
 	matches := tagRe.FindAllStringSubmatch(tag, -1)
 
 	tags := make([]StructTag, len(matches))

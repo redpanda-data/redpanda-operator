@@ -16,6 +16,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
@@ -299,12 +300,11 @@ var (
 	conv_runtime_RawExtension_To_corev1_Volume                    = convertRuntimeRawExtension[corev1.Volume]
 	conv_runtime_RawExtension_To_corev1_VolumeMount               = convertRuntimeRawExtension[corev1.VolumeMount]
 
-	// TODO THIS IS BAD AND BROKEN (Will write 0s for unspecified fields and generate invalid options).
-	// ConsolePartialValues really needs to have ApplyConfigs for most k8s types.
-	// Upgrade gen partial to pull an overridden type from a comment or field tag?
-	conv_LivenessProbe_To_ProbeApplyConfiguration  = convertViaMarshaling[*LivenessProbe, *ProbeApplyConfiguration]
-	conv_ProbeApplyConfiguration_To_corev1_Probe   = convertViaMarshaling[ProbeApplyConfiguration, corev1.Probe]
-	conv_ReadinessProbe_To_ProbeApplyConfiguration = convertViaMarshaling[*ReadinessProbe, *ProbeApplyConfiguration]
+	// LivenessProbe/ReadinessProbe conversions (RedpandaConsole -> Console)
+
+	conv_LivenessProbe_To_ProbeApplyConfiguration           = convertViaMarshaling[*LivenessProbe, *ProbeApplyConfiguration]
+	conv_ReadinessProbe_To_ProbeApplyConfiguration          = convertViaMarshaling[*ReadinessProbe, *ProbeApplyConfiguration]
+	conv_ProbeApplyConfiguration_To_ProbeApplyConfiguration = convertViaMarshaling[*ProbeApplyConfiguration, *applycorev1.ProbeApplyConfiguration]
 )
 
 type deepCopier[T any] interface {

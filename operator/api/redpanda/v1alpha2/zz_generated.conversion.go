@@ -152,16 +152,16 @@ func init() {
 			}
 			consolePartialRenderValues.Secret = v1alpha2SecretConfigToPConsolePartialSecretConfig((*source).Secret)
 			consolePartialRenderValues.LicenseSecretRef = pV1SecretKeySelectorToPV1SecretKeySelector((*source).LicenseSecretRef)
-			pV1Probe, err := pV1alpha2ProbeApplyConfigurationToPV1Probe((*source).LivenessProbe)
+			pV1ProbeApplyConfiguration, err := conv_ProbeApplyConfiguration_To_ProbeApplyConfiguration((*source).LivenessProbe)
 			if err != nil {
 				return nil, err
 			}
-			consolePartialRenderValues.LivenessProbe = pV1Probe
-			pV1Probe2, err := pV1alpha2ProbeApplyConfigurationToPV1Probe((*source).ReadinessProbe)
+			consolePartialRenderValues.LivenessProbe = pV1ProbeApplyConfiguration
+			pV1ProbeApplyConfiguration2, err := conv_ProbeApplyConfiguration_To_ProbeApplyConfiguration((*source).ReadinessProbe)
 			if err != nil {
 				return nil, err
 			}
-			consolePartialRenderValues.ReadinessProbe = pV1Probe2
+			consolePartialRenderValues.ReadinessProbe = pV1ProbeApplyConfiguration2
 			consolePartialRenderValues.Deployment = autoconv_DeploymentConfig_console_PartialDeploymentConfig((*source).Deployment)
 			consolePartialRenderValues.Strategy = pV1DeploymentStrategyToPV1DeploymentStrategy((*source).Strategy)
 			pConsolePartialRenderValues = &consolePartialRenderValues
@@ -1107,17 +1107,6 @@ func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLogi
 		pConsolePartialOIDCLoginSecrets = &consolePartialOIDCLoginSecrets
 	}
 	return pConsolePartialOIDCLoginSecrets
-}
-func pV1alpha2ProbeApplyConfigurationToPV1Probe(source *ProbeApplyConfiguration) (*v1.Probe, error) {
-	var pV1Probe *v1.Probe
-	if source != nil {
-		v1Probe, err := conv_ProbeApplyConfiguration_To_corev1_Probe((*source))
-		if err != nil {
-			return nil, err
-		}
-		pV1Probe = &v1Probe
-	}
-	return pV1Probe, nil
 }
 func pV1alpha2RedpandaAdminAPISecretsToPConsolePartialRedpandaAdminAPISecrets(source *RedpandaAdminAPISecrets) *v3.PartialRedpandaAdminAPISecrets {
 	var pConsolePartialRedpandaAdminAPISecrets *v3.PartialRedpandaAdminAPISecrets

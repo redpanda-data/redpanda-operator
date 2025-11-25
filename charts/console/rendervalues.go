@@ -55,8 +55,8 @@ type RenderValues struct {
 	SecretMounts        []SecretMount             `json:"secretMounts"`
 	Secret              SecretConfig              `json:"secret"`
 	LicenseSecretRef    *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
-	LivenessProbe       corev1.Probe              `json:"livenessProbe"`
-	ReadinessProbe      corev1.Probe              `json:"readinessProbe"`
+	LivenessProbe       corev1.Probe              `json:"livenessProbe" partial:"builtin"`
+	ReadinessProbe      corev1.Probe              `json:"readinessProbe" partial:"builtin"`
 	ConfigMap           Creatable                 `json:"configmap"`
 	Deployment          DeploymentConfig          `json:"deployment"`
 	Strategy            appsv1.DeploymentStrategy `json:"strategy"`
