@@ -18,10 +18,12 @@ import (
 // SchemaRegistrySASLApplyConfiguration represents a declarative configuration of the SchemaRegistrySASL type for use
 // with apply.
 type SchemaRegistrySASLApplyConfiguration struct {
-	Username  *string                         `json:"username,omitempty"`
-	Password  *SecretKeyRefApplyConfiguration `json:"passwordSecretRef,omitempty"`
-	Mechanism *redpandav1alpha2.SASLMechanism `json:"mechanism,omitempty"`
-	AuthToken *SecretKeyRefApplyConfiguration `json:"token,omitempty"`
+	Username            *string                         `json:"username,omitempty"`
+	Password            *ValueSourceApplyConfiguration  `json:"password,omitempty"`
+	AuthToken           *ValueSourceApplyConfiguration  `json:"authToken,omitempty"`
+	Mechanism           *redpandav1alpha2.SASLMechanism `json:"mechanism,omitempty"`
+	DeprecatedPassword  *SecretKeyRefApplyConfiguration `json:"passwordSecretRef,omitempty"`
+	DeprecatedAuthToken *SecretKeyRefApplyConfiguration `json:"token,omitempty"`
 }
 
 // SchemaRegistrySASLApplyConfiguration constructs a declarative configuration of the SchemaRegistrySASL type for use with
@@ -41,8 +43,16 @@ func (b *SchemaRegistrySASLApplyConfiguration) WithUsername(value string) *Schem
 // WithPassword sets the Password field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Password field is set to the value of the last call.
-func (b *SchemaRegistrySASLApplyConfiguration) WithPassword(value *SecretKeyRefApplyConfiguration) *SchemaRegistrySASLApplyConfiguration {
+func (b *SchemaRegistrySASLApplyConfiguration) WithPassword(value *ValueSourceApplyConfiguration) *SchemaRegistrySASLApplyConfiguration {
 	b.Password = value
+	return b
+}
+
+// WithAuthToken sets the AuthToken field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AuthToken field is set to the value of the last call.
+func (b *SchemaRegistrySASLApplyConfiguration) WithAuthToken(value *ValueSourceApplyConfiguration) *SchemaRegistrySASLApplyConfiguration {
+	b.AuthToken = value
 	return b
 }
 
@@ -54,10 +64,18 @@ func (b *SchemaRegistrySASLApplyConfiguration) WithMechanism(value redpandav1alp
 	return b
 }
 
-// WithAuthToken sets the AuthToken field in the declarative configuration to the given value
+// WithDeprecatedPassword sets the DeprecatedPassword field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the AuthToken field is set to the value of the last call.
-func (b *SchemaRegistrySASLApplyConfiguration) WithAuthToken(value *SecretKeyRefApplyConfiguration) *SchemaRegistrySASLApplyConfiguration {
-	b.AuthToken = value
+// If called multiple times, the DeprecatedPassword field is set to the value of the last call.
+func (b *SchemaRegistrySASLApplyConfiguration) WithDeprecatedPassword(value *SecretKeyRefApplyConfiguration) *SchemaRegistrySASLApplyConfiguration {
+	b.DeprecatedPassword = value
+	return b
+}
+
+// WithDeprecatedAuthToken sets the DeprecatedAuthToken field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedAuthToken field is set to the value of the last call.
+func (b *SchemaRegistrySASLApplyConfiguration) WithDeprecatedAuthToken(value *SecretKeyRefApplyConfiguration) *SchemaRegistrySASLApplyConfiguration {
+	b.DeprecatedAuthToken = value
 	return b
 }

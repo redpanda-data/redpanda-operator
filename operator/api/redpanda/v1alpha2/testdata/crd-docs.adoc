@@ -266,9 +266,11 @@ AdminSASL configures credentials to connect to Redpanda cluster that has authent
 |===
 | Field | Description | Default | Validation
 | *`username`* __string__ | Specifies the username. + |  | 
-| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies the password. + |  | 
 | *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
-| *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies token for token-based authentication (only used if no username/password are provided). + |  | 
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | 
+| *`authToken`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies token for token-based authentication (only used if no username/password are provided). + |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `password` instead + |  | 
+| *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `authToken` instead + |  | 
 |===
 
 
@@ -626,9 +628,19 @@ CommonTLS specifies TLS configuration settings for Redpanda clusters that have a
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`caCertSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | CaCert is the reference for certificate authority used to establish TLS connection to Redpanda + |  | 
-| *`certSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Cert is the reference for client public certificate to establish mTLS connection to Redpanda + |  | 
-| *`keySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Key is the reference for client private certificate to establish mTLS connection to Redpanda + |  | 
+| *`enabled`* __boolean__ | Enabled tells any connections derived from this configuration to leverage TLS even if no +
+certificate configuration is specified. It *only* is relevant if no other field is specified +
+in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification +
+results in attempting to create a connection using TLS - specifying "false" in such a case does +
+*not* disable TLS from being used. Leveraging this option is to support the use-case where a +
+connection is served by publically issued TLS certificates that don't require any additional certificate +
+specification. + |  | 
+| *`caCert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | CaCert is the reference for certificate authority used to establish TLS connection to Redpanda + |  | 
+| *`cert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Cert is the reference for client public certificate to establish mTLS connection to Redpanda + |  | 
+| *`key`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Key is the reference for client private certificate to establish mTLS connection to Redpanda + |  | 
+| *`caCertSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "caCert". + |  | 
+| *`certSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "cert". + |  | 
+| *`keySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "key". + |  | 
 | *`insecureSkipTlsVerify`* __boolean__ | InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda + |  | 
 |===
 
@@ -849,7 +861,7 @@ never used. Prefer Create. + |  |
 
 
 
-Redpanda defines the CRD for Redpanda clusters.
+Console defines the CRD for Redpanda Console instances.
 
 
 
@@ -1201,6 +1213,27 @@ on internal listeners. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalsecretkeyselector"]
+==== ExternalSecretKeySelector
+
+
+
+ExternalSecretKeySelector selects a key of an external Secret.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalservice"]
 ==== ExternalService
 
@@ -1513,7 +1546,8 @@ KafkaAPISpec configures client configuration settings for connecting to Redpanda
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`brokers`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | 
+| *`brokers`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | MinItems: 1 +
+
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
 | *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
 |===
@@ -1541,11 +1575,12 @@ KafkaSASL configures credentials to connect to Redpanda cluster that has authent
 |===
 | Field | Description | Default | Validation
 | *`username`* __string__ | Specifies the username. + |  | 
-| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies the password. + |  | 
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | 
 | *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
 | *`oauth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]__ |  |  | 
 | *`gssapi`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]__ |  |  | 
 | *`awsMskIam`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]__ |  |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: used `password` instead + |  | 
 |===
 
 
@@ -1568,9 +1603,11 @@ see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.ht
 |===
 | Field | Description | Default | Validation
 | *`accessKey`* __string__ |  |  | 
-| *`secretKeySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
-| *`sessionTokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | SessionToken, if non-empty, is a session / security token to use for authentication. +
+| *`secretKey`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ |  |  | 
+| *`secretKeySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `secretKey` instead + |  | 
+| *`sessionToken`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | SessionToken, if non-empty, is a session / security token to use for authentication. +
 See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html + |  | 
+| *`sessionTokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `sessionToken` instead + |  | 
 | *`userAgent`* __string__ | UserAgent is the user agent to for the client to use when connecting +
 to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>". +
 
@@ -1603,7 +1640,8 @@ KafkaSASLGSSAPI represents the Kafka Kerberos config.
 | *`kerberosConfigPath`* __string__ |  |  | 
 | *`serviceName`* __string__ |  |  | 
 | *`username`* __string__ |  |  | 
-| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ |  |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `password` instead + |  | 
 | *`realm`* __string__ |  |  | 
 | *`enableFast`* __boolean__ | EnableFAST enables FAST, which is a pre-authentication framework for Kerberos. +
 It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages. +
@@ -1628,7 +1666,8 @@ KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`tokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+| *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ |  |  | 
+| *`tokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `token` instead + |  | 
 |===
 
 
@@ -3082,9 +3121,11 @@ SchemaRegistrySASL configures credentials to connect to Redpanda cluster that ha
 |===
 | Field | Description | Default | Validation
 | *`username`* __string__ | Specifies the username. + |  | 
-| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Specifies the password. + |  | 
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | 
+| *`authToken`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ |  |  | 
 | *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
-| *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ |  |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `password` instead + |  | 
+| *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `authToken` instead + |  | 
 |===
 
 
@@ -3238,7 +3279,7 @@ SchemaType specifies the type of the given schema.
 
 
 
-SecretKeyRef contains enough information to inspect or modify the referred Secret data
+Deprecated: SecretKeyRef contains enough information to inspect or modify the referred Secret data
 See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
 
 
@@ -3825,6 +3866,8 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec"]
 ==== TopicSpec
 
@@ -4200,6 +4243,40 @@ UsersItems configures a list of superusers in the Helm values.
 | *`mechanism`* __string__ | Specifies the authentication mechanism to use for superusers. Overrides the default in `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
 | *`name`* __string__ | Specifies the name of the superuser. + |  | 
 | *`password`* __string__ | Specifies the superuser password. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource"]
+==== ValueSource
+
+
+
+ValueSource represents where a value can be pulled from
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl[$$AdminSASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`inline`* __string__ | Inline is the raw value specified inline. + |  | 
+| *`configMapKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#configmapkeyselector-v1-core[$$ConfigMapKeySelector$$]__ | If the value is supplied by a kubernetes object reference, coordinates are embedded here. +
+For target values, the string value fetched from the source will be treated as +
+a raw string. + |  | 
+| *`secretKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | Should the value be contained in a k8s secret rather than configmap, we can refer +
+to it here. + |  | 
+| *`externalSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externalsecretkeyselector[$$ExternalSecretKeySelector$$]__ | If the value is supplied by an external source, coordinates are embedded here. +
+Note: we interpret all fetched external secrets as raw string values + |  | 
 |===
 
 

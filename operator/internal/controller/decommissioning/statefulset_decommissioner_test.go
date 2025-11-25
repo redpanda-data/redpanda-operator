@@ -199,7 +199,7 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 
 		s.helm = helmClient
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
 
 		decommissioner := decommissioning.NewStatefulSetDecommissioner(
 			mgr,
@@ -239,6 +239,12 @@ func (s *StatefulSetDecommissionerSuite) installChart(name string, overrides map
 	values := map[string]any{
 		"statefulset": map[string]any{
 			"replicas": 1,
+			"sideCars": map[string]any{
+				"image": map[string]any{
+					"repository": "localhost/redpanda-operator",
+					"tag":        "dev",
+				},
+			},
 		},
 		"console": map[string]any{
 			"enabled": false,

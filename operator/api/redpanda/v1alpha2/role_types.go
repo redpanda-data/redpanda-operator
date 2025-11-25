@@ -79,6 +79,7 @@ type RoleSpec struct {
 	// It is used in constructing the client created to configure a cluster.
 	// +kubebuilder:validation:XValidation:message="spec.cluster.staticConfiguration.admin: required value",rule=`!has(self.staticConfiguration) || has(self.staticConfiguration.admin)`
 	// +kubebuilder:validation:XValidation:message="spec.cluster.staticConfiguration.kafka: required value",rule=`!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	// +required
 	ClusterSource *ClusterSource `json:"cluster"`
 	// Principals defines the list of users assigned to this role.

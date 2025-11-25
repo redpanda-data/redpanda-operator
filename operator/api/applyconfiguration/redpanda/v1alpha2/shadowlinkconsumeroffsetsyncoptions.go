@@ -19,7 +19,7 @@ import (
 // with apply.
 type ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration struct {
 	Interval     *v1.Duration                   `json:"interval,omitempty"`
-	Enabled      *bool                          `json:"enabled,omitempty"`
+	Paused       *bool                          `json:"paused,omitempty"`
 	GroupFilters []NameFilterApplyConfiguration `json:"groupFilters,omitempty"`
 }
 
@@ -37,11 +37,11 @@ func (b *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration) WithInterval(val
 	return b
 }
 
-// WithEnabled sets the Enabled field in the declarative configuration to the given value
+// WithPaused sets the Paused field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Enabled field is set to the value of the last call.
-func (b *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration) WithEnabled(value bool) *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration {
-	b.Enabled = &value
+// If called multiple times, the Paused field is set to the value of the last call.
+func (b *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration) WithPaused(value bool) *ShadowLinkConsumerOffsetSyncOptionsApplyConfiguration {
+	b.Paused = &value
 	return b
 }
 

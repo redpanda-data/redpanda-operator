@@ -32,9 +32,7 @@ import (
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -372,7 +370,7 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
-	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	factory := client.NewFactory(t.RestConfig(), t, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
 	clients := &clusterClients{
 		resourceTarget: referencer,
@@ -417,7 +415,7 @@ func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake v1 user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
-	factory := client.NewFactory(t.RestConfig(), t).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	factory := client.NewFactory(t.RestConfig(), t, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
 	clients := &clusterClients{
 		resourceTarget: referencer,
@@ -648,20 +646,6 @@ func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName
 			TLSClientConfig: &tlsCfg,
 			DialContext:     kube.NewPodDialer(t.RestConfig()).DialContext,
 		}},
-	}
-}
-
-func removeAllFinalizers(ctx context.Context, t framework.TestingT, gvk schema.GroupVersionKind) {
-	list := &unstructured.UnstructuredList{}
-	list.SetGroupVersionKind(gvk)
-
-	// swallow errors for non-existent crds
-	if err := t.List(ctx, list); err == nil {
-		for i := range list.Items {
-			item := list.Items[i]
-			item.SetFinalizers(nil)
-			require.NoError(t, t.Update(ctx, &item))
-		}
 	}
 }
 

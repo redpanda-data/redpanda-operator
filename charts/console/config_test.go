@@ -40,12 +40,11 @@ func TestStaticConfig(t *testing.T) {
 				Kafka: &ir.KafkaAPISpec{
 					Brokers: []string{"broker-0.svc.cluster.local", "broker-1.svc.cluster.local"},
 					TLS: &ir.CommonTLS{
-						Key: &ir.SecretKeyRef{Name: "kafka-cert", Key: "tls.key"},
-						CaCert: &ir.ObjectKeyRef{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-cert"},
-								Key:                  "ca.crt",
-							},
+						Key: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-cert"}, Key: "tls.key"},
+						},
+						CaCert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-cert"}, Key: "ca.crt"},
 						},
 						InsecureSkipTLSVerify: true,
 					},
@@ -97,8 +96,13 @@ func TestStaticConfig(t *testing.T) {
 				Kafka: &ir.KafkaAPISpec{
 					Brokers: []string{"broker:9092"},
 					SASL: &ir.KafkaSASL{
-						Username:  "test-user",
-						Password:  ir.SecretKeyRef{Name: "kafka-sasl", Key: "password"},
+						Username: "test-user",
+						Password: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-sasl"},
+								Key:                  "password",
+							},
+						},
 						Mechanism: "PLAIN",
 					},
 				},
@@ -134,19 +138,25 @@ func TestStaticConfig(t *testing.T) {
 				Admin: &ir.AdminAPISpec{
 					URLs: []string{"https://admin:9644"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "admin-ca"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "admin-ca"}, Key: "ca.crt"},
 						},
-						Cert:                  &ir.SecretKeyRef{Name: "admin-cert", Key: "tls.crt"},
-						Key:                   &ir.SecretKeyRef{Name: "admin-cert", Key: "tls.key"},
+						Cert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "admin-cert"}, Key: "tls.crt"},
+						},
+						Key: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "admin-cert"}, Key: "tls.key"},
+						},
 						InsecureSkipTLSVerify: true,
 					},
 					Auth: &ir.AdminAuth{
 						Username: "admin-user",
-						Password: ir.SecretKeyRef{Name: "admin-creds", Key: "password"},
+						Password: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "admin-creds"},
+								Key:                  "password",
+							},
+						},
 					},
 				},
 			},
@@ -224,17 +234,24 @@ func TestStaticConfig(t *testing.T) {
 				SchemaRegistry: &ir.SchemaRegistrySpec{
 					URLs: []string{"https://schema:8081"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "schema-ca"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "schema-ca"}, Key: "ca.crt"},
 						},
 					},
 					SASL: &ir.SchemaRegistrySASL{
-						Username:  "schema-user",
-						Password:  ir.SecretKeyRef{Name: "schema-creds", Key: "password"},
-						AuthToken: ir.SecretKeyRef{Name: "schema-creds", Key: "token"},
+						Username: "schema-user",
+						Password: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "schema-creds"},
+								Key:                  "password",
+							},
+						},
+						AuthToken: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "schema-creds"},
+								Key:                  "token",
+							},
+						},
 					},
 				},
 				Kafka: &ir.KafkaAPISpec{
@@ -314,11 +331,8 @@ func TestStaticConfig(t *testing.T) {
 				SchemaRegistry: &ir.SchemaRegistrySpec{
 					URLs: []string{"https://schema:8081"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "schema-ca"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "schema-ca"}, Key: "ca.crt"},
 						},
 						InsecureSkipTLSVerify: true,
 					},
@@ -372,44 +386,49 @@ func TestStaticConfig(t *testing.T) {
 				Kafka: &ir.KafkaAPISpec{
 					Brokers: []string{"kafka-0:9092", "kafka-1:9092"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-tls"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-tls"}, Key: "ca.crt"},
 						},
-						Cert: &ir.SecretKeyRef{Name: "kafka-tls", Key: "tls.crt"},
-						Key:  &ir.SecretKeyRef{Name: "kafka-tls", Key: "tls.key"},
+						Cert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-tls"}, Key: "tls.crt"},
+						},
+						Key: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-tls"}, Key: "tls.key"},
+						},
 					},
 					SASL: &ir.KafkaSASL{
-						Username:  "kafka-user",
-						Password:  ir.SecretKeyRef{Name: "kafka-auth", Key: "password"},
+						Username: "kafka-user",
+						Password: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-auth"},
+								Key:                  "password",
+							},
+						},
 						Mechanism: "SCRAM-SHA-256",
 					},
 				},
 				Admin: &ir.AdminAPISpec{
 					URLs: []string{"https://admin:9644"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "admin-tls"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "admin-tls"}, Key: "ca.crt"},
 						},
 					},
 					Auth: &ir.AdminAuth{
 						Username: "admin",
-						Password: ir.SecretKeyRef{Name: "admin-auth", Key: "password"},
+						Password: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "admin-auth"},
+								Key:                  "password",
+							},
+						},
 					},
 				},
 				SchemaRegistry: &ir.SchemaRegistrySpec{
 					URLs: []string{"https://schema:8081"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "schema-tls"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "schema-tls"}, Key: "ca.crt"},
 						},
 					},
 				},
@@ -527,22 +546,16 @@ func TestStaticConfig(t *testing.T) {
 				Kafka: &ir.KafkaAPISpec{
 					Brokers: []string{"kafka:9092"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-ca-config"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-ca-config"}, Key: "ca.crt"},
 						},
 					},
 				},
 				Admin: &ir.AdminAPISpec{
 					URLs: []string{"https://admin:9644"},
 					TLS: &ir.CommonTLS{
-						CaCert: &ir.ObjectKeyRef{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "admin-ca-config"},
-								Key:                  "ca.crt",
-							},
+						CaCert: &ir.ValueSource{
+							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "admin-ca-config"}, Key: "ca.crt"},
 						},
 					},
 				},
@@ -609,7 +622,7 @@ func TestStaticConfig(t *testing.T) {
 					Brokers: []string{"kafka:9092"},
 					SASL: &ir.KafkaSASL{
 						Username: "user",
-						Password: ir.SecretKeyRef{},
+						Password: &ir.ValueSource{},
 					},
 				},
 				Admin: &ir.AdminAPISpec{
@@ -619,8 +632,8 @@ func TestStaticConfig(t *testing.T) {
 					URLs: []string{"schema:8081"},
 					SASL: &ir.SchemaRegistrySASL{
 						Username:  "schema-user",
-						Password:  ir.SecretKeyRef{},
-						AuthToken: ir.SecretKeyRef{},
+						Password:  &ir.ValueSource{},
+						AuthToken: &ir.ValueSource{},
 					},
 				},
 			},
@@ -667,9 +680,11 @@ func TestConfigMapper_addEnv(t *testing.T) {
 	mapper := &configMapper{}
 
 	// Test with valid secret ref
-	mapper.addEnv("TEST_VAR", ir.SecretKeyRef{
-		Name: "test-secret",
-		Key:  "test-key",
+	mapper.addEnv("TEST_VAR", &ir.ValueSource{
+		SecretKeyRef: &corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+			Key:                  "test-key",
+		},
 	})
 
 	require.Len(t, mapper.Env, 1)
@@ -678,15 +693,23 @@ func TestConfigMapper_addEnv(t *testing.T) {
 	require.Equal(t, "test-key", mapper.Env[0].ValueFrom.SecretKeyRef.Key)
 
 	// Test with empty secret ref (should not add)
-	mapper.addEnv("EMPTY_VAR", ir.SecretKeyRef{})
+	mapper.addEnv("EMPTY_VAR", &ir.ValueSource{})
 	require.Len(t, mapper.Env, 1)
 
 	// Test with empty name
-	mapper.addEnv("EMPTY_NAME", ir.SecretKeyRef{Key: "key"})
+	mapper.addEnv("EMPTY_NAME", &ir.ValueSource{
+		SecretKeyRef: &corev1.SecretKeySelector{
+			Key: "key",
+		},
+	})
 	require.Len(t, mapper.Env, 1)
 
 	// Test with empty key
-	mapper.addEnv("EMPTY_KEY", ir.SecretKeyRef{Name: "name"})
+	mapper.addEnv("EMPTY_KEY", &ir.ValueSource{
+		SecretKeyRef: &corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{Name: "name"},
+		},
+	})
 	require.Len(t, mapper.Env, 1)
 }
 
@@ -704,7 +727,7 @@ func TestVolumes_MaybeAdd(t *testing.T) {
 	require.Empty(t, v.Secrets)
 
 	// Test with valid ref
-	result = v.MaybeAdd(&ir.ObjectKeyRef{
+	result = v.MaybeAdd(&ir.ValueSource{
 		SecretKeyRef: &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: "secret-name"},
 			Key:                  "secret-key",
@@ -716,7 +739,7 @@ func TestVolumes_MaybeAdd(t *testing.T) {
 	require.Equal(t, map[string]bool{"secret-key": true}, v.Secrets["secret-name"])
 
 	// Test adding another key to same secret
-	result2 := v.MaybeAdd(&ir.ObjectKeyRef{
+	result2 := v.MaybeAdd(&ir.ValueSource{
 		SecretKeyRef: &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: "secret-name"},
 			Key:                  "another-key",
@@ -727,7 +750,7 @@ func TestVolumes_MaybeAdd(t *testing.T) {
 	require.Equal(t, map[string]bool{"secret-key": true, "another-key": true}, v.Secrets["secret-name"])
 
 	// Test with ConfigMap reference
-	result3 := v.MaybeAdd(&ir.ObjectKeyRef{
+	result3 := v.MaybeAdd(&ir.ValueSource{
 		ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: "config-name"},
 			Key:                  "config-key",

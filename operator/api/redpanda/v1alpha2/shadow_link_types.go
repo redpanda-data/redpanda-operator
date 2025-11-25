@@ -27,16 +27,17 @@ type ShadowLink struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ShadowLinkSpec   `json:"spec,omitempty"`
+	Spec ShadowLinkSpec `json:"spec,omitempty"`
+	// +kubebuilder:default={conditions: {{type: "Synced", status: "Unknown", reason:"Pending", message:"Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
 	Status ShadowLinkStatus `json:"status,omitempty"`
 }
 
 func (n *ShadowLink) GetClusterSource() *ClusterSource {
-	return &n.Spec.ShadowCluster
+	return n.Spec.ShadowCluster
 }
 
 func (n *ShadowLink) GetRemoteClusterSource() *ClusterSource {
-	return &n.Spec.SourceCluster
+	return n.Spec.SourceCluster
 }
 
 // +kubebuilder:object:root=true
@@ -86,7 +87,7 @@ const (
 	// Task was paused
 	TaskStatePaused TaskState = "paused"
 	// Task is unable to communicate with source cluster
-	TaskStateUnavailable TaskState = "unvailable"
+	TaskStateUnavailable TaskState = "unavailable"
 	// Task is not running
 	TaskStateNotRunning TaskState = "not running"
 	// Task is faulted
@@ -112,12 +113,18 @@ const (
 	ShadowTopicStateUnknown ShadowTopicState = ""
 	// Shadow topic is active
 	ShadowTopicStateActive ShadowTopicState = "active"
-	// Shadow topic has been promoted
-	ShadowTopicStatePromoted ShadowTopicState = "promoted"
 	// Shadow topic has faulted
 	ShadowTopicStateFaulted ShadowTopicState = "faulted"
 	// Shadow topic has been paused
 	ShadowTopicStatePaused ShadowTopicState = "paused"
+	// Shadow topic is in the process of failing over
+	ShadowTopicStateFailingOver ShadowTopicState = "failing over"
+	// Shadow topic is in the process of being promoted
+	ShadowTopicStateFailedOver ShadowTopicState = "failed over"
+	// Shadow topic is in the process of being promoted
+	ShadowTopicStatePromoting ShadowTopicState = "promoting"
+	// Shadow topic has failed over successfully
+	ShadowTopicStatePromoted ShadowTopicState = "promoted"
 )
 
 // Status of a ShadowTopic
@@ -137,8 +144,11 @@ type ShadowLinkSpec struct {
 	// "configurations", "client_options", "bootstrap_servers"
 	// "configurations", "client_options", "tls_settings"
 
-	ShadowCluster ClusterSource `json:"shadowCluster"`
-	SourceCluster ClusterSource `json:"sourceCluster"`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
+	ShadowCluster *ClusterSource `json:"shadowCluster"`
+	// +kubebuilder:validation:XValidation:rule="(!has(self.clusterRef) && !has(oldSelf.clusterRef)) || (self.clusterRef == oldSelf.clusterRef)",message="ClusterSource clusterRef is immutable"
+	// +kubebuilder:validation:XValidation:rule="!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)",message="static configuration must contain a kafka block"
+	SourceCluster *ClusterSource `json:"sourceCluster"`
 
 	// Topic metadata sync options
 	TopicMetadataSyncOptions *ShadowLinkTopicMetadataSyncOptions `json:"topicMetadataSyncOptions,omitempty"`
@@ -146,6 +156,8 @@ type ShadowLinkSpec struct {
 	ConsumerOffsetSyncOptions *ShadowLinkConsumerOffsetSyncOptions `json:"consumerOffsetSyncOptions,omitempty"`
 	// Security settings sync options
 	SecuritySyncOptions *ShadowLinkSecuritySettingsSyncOptions `json:"securitySyncOptions,omitempty"`
+	// options for schema registry
+	SchemaRegistrySyncOptions *ShadowLinkSchemaRegistrySyncOptions `json:"schemaRegistrySyncOptions,omitempty"`
 }
 
 // FilterType specifies the type, either include or exclude of a consumer group filter.
@@ -208,18 +220,78 @@ type ACLFilter struct {
 	ResourceFilter ACLResourceFilter `json:"resourceFilter"`
 }
 
+// +kubebuilder:validation:Enum=earliest;latest;timestamp
+type TopicMetadataSyncOffset string
+
+const (
+	TopicMetadataSyncOffsetEarliest  TopicMetadataSyncOffset = "earliest"
+	TopicMetadataSyncOffsetLatest    TopicMetadataSyncOffset = "latest"
+	TopicMetadataSyncOffsetTimestamp TopicMetadataSyncOffset = "timestamp"
+)
+
 // Options for syncing topic metadata
+// +kubebuilder:validation:XValidation:message="startOffsetTimestamp must be specified when startOffset is set to timestamp",rule="has(self.startOffset) && ((self.startOffset != 'timestamp') || has(self.startOffsetTimestamp))"
 type ShadowLinkTopicMetadataSyncOptions struct {
 	// How often to sync metadata
 	// If 0 provided, defaults to 30 seconds
 	// +kubebuilder:default="30s"
-	Interval metav1.Duration `json:"interval,omitempty"`
-	// The topic filters to use
+	Interval *metav1.Duration `json:"interval,omitempty"`
+	// List of filters that indicate which topics should be automatically
+	// created as shadow topics on the shadow cluster.  This only controls
+	// automatic creation of shadow topics and does not effect the state of the
+	// mirror topic once it is created.
+	// Literal filters for __consumer_offsets and _redpanda.audit_log will be
+	// rejected as well as prefix filters to match topics prefixed with
+	// _redpanda or __redpanda.
+	// Wildcard `*` is permitted only for literal filters and will _not_ match
+	// any topics that start with _redpanda or __redpanda.  If users wish to
+	// shadow topics that start with _redpanda or __redpanda, they should
+	// provide a literal filter for those topics.
 	AutoCreateShadowTopicFilters []NameFilter `json:"autoCreateShadowTopicFilters,omitempty"`
-	// Additional topic properties to shadow
-	// Partition count, `max.message.bytes`, `cleanup.policy` and
-	// `timestamp.type` will always be replicated
-	ShadowedTopicProperties []string `json:"shadowedTopicProperties,omitempty"`
+	// List of topic properties that should be synced from the source topic.
+	// The following properties will always be replicated
+	// - Partition count
+	// - `max.message.bytes`
+	// - `cleanup.policy`
+	// - `timestamp.type`
+	//
+	// The following properties are not allowed to be replicated and adding them
+	// to this list will result in an error:
+	// - `redpanda.remote.readreplica`
+	// - `redpanda.remote.recovery`
+	// - `redpanda.remote.allowgaps`
+	// - `redpanda.virtual.cluster.id`
+	// - `redpanda.leaders.preference`
+	// - `redpanda.cloud_topic.enabled`
+	//
+	// This list is a list of properties in addition to the default properties
+	// that will be synced.  See `excludeDefault`.
+	SyncedShadowTopicProperties []string `json:"syncedShadowTopicProperties,omitempty"`
+	// If false, then the following topic properties will be synced by default:
+	// - `compression.type`
+	// - `retention.bytes`
+	// - `retention.ms`
+	// - `delete.retention.ms`
+	// - Replication Factor
+	// - `min.compaction.lag.ms`
+	// - `max.compaction.lag.ms`
+	//
+	// If this is true, then only the properties listed in
+	// `synced_shadow_topic_properties` will be synced.
+	ExcludeDefault bool `json:"excludeDefault,omitempty"`
+	// The starting offset for new shadow topic partitions.
+	// Defaults to earliest.
+	// Only applies if the shadow partition is empty.
+	// +kubebuilder:default="earliest"
+	StartOffset *TopicMetadataSyncOffset `json:"startOffset,omitempty"`
+	// The timestamp to start at if `startOffset`` is set to "timestamp".
+	// Not providing this when setting `startOffset` to "timestamp" is
+	// an error.
+	StartOffsetTimestamp *metav1.Time `json:"startOffsetTimestamp,omitempty"`
+	// Allows user to pause the topic sync task.  If paused, then
+	// the task will enter the 'paused' state and not sync topics or their
+	// properties from the source cluster
+	Paused bool `json:"paused,omitempty"`
 }
 
 // Options for syncing consumer offsets
@@ -227,9 +299,11 @@ type ShadowLinkConsumerOffsetSyncOptions struct {
 	// Sync interval
 	// If 0 provided, defaults to 30 seconds
 	// +kubebuilder:default="30s"
-	Interval metav1.Duration `json:"interval,omitempty"`
-	// Whether it's enabled
-	Enabled bool `json:"enabled,omitempty"`
+	Interval *metav1.Duration `json:"interval,omitempty"`
+	// Allows user to pause the consumer offset sync task.  If paused, then
+	// the task will enter the 'paused' state and not sync consumer offsets from
+	// the source cluster
+	Paused bool `json:"paused,omitempty"`
 	// The filters
 	GroupFilters []NameFilter `json:"groupFilters,omitempty"`
 }
@@ -239,13 +313,23 @@ type ShadowLinkSecuritySettingsSyncOptions struct {
 	// Sync interval
 	// If 0 provided, defaults to 30 seconds
 	// +kubebuilder:default="30s"
-	Interval metav1.Duration `json:"interval,omitempty"`
-	// Whether or not it's enabled
-	Enabled bool `json:"enabled,omitempty"`
-	// Role filters
-	RoleFilters []NameFilter `json:"roleFilters,omitempty"`
-	// SCRAM credential filters
-	ScramCredentialFilters []NameFilter `json:"scramCredFilters,omitempty"`
+	Interval *metav1.Duration `json:"interval,omitempty"`
+	// Allows user to pause the security settings sync task.  If paused,
+	// then the task will enter the 'paused' state and will not sync security
+	// settings from the source cluster
+	Paused bool `json:"paused,omitempty"`
 	// ACL filters
 	ACLFilters []ACLFilter `json:"aclFilters,omitempty"`
+}
+
+type ShadowLinkSchemaRegistrySyncOptionsMode string
+
+const (
+	ShadowLinkSchemaRegistrySyncOptionsModeNone  ShadowLinkSchemaRegistrySyncOptionsMode = ""
+	ShadowLinkSchemaRegistrySyncOptionsModeTopic ShadowLinkSchemaRegistrySyncOptionsMode = "topic"
+)
+
+// Options for syncing schema registry settings
+type ShadowLinkSchemaRegistrySyncOptions struct {
+	Mode ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
 }

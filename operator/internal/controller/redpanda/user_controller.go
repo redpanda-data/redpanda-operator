@@ -29,6 +29,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=users,verbs=get;list;watch;update;patch
@@ -161,10 +162,10 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
-func SetupUserController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
+func SetupUserController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c)
+	factory := internalclient.NewFactory(config, c, expander)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.User{}).

@@ -14,10 +14,12 @@ package v1alpha2
 // KafkaSASLAWSMskIamApplyConfiguration represents a declarative configuration of the KafkaSASLAWSMskIam type for use
 // with apply.
 type KafkaSASLAWSMskIamApplyConfiguration struct {
-	AccessKey    *string                         `json:"accessKey,omitempty"`
-	SecretKey    *SecretKeyRefApplyConfiguration `json:"secretKeySecretRef,omitempty"`
-	SessionToken *SecretKeyRefApplyConfiguration `json:"sessionTokenSecretRef,omitempty"`
-	UserAgent    *string                         `json:"userAgent,omitempty"`
+	AccessKey              *string                         `json:"accessKey,omitempty"`
+	SecretKey              *ValueSourceApplyConfiguration  `json:"secretKey,omitempty"`
+	DeprecatedSecretKey    *SecretKeyRefApplyConfiguration `json:"secretKeySecretRef,omitempty"`
+	SessionToken           *ValueSourceApplyConfiguration  `json:"sessionToken,omitempty"`
+	DeprecatedSessionToken *SecretKeyRefApplyConfiguration `json:"sessionTokenSecretRef,omitempty"`
+	UserAgent              *string                         `json:"userAgent,omitempty"`
 }
 
 // KafkaSASLAWSMskIamApplyConfiguration constructs a declarative configuration of the KafkaSASLAWSMskIam type for use with
@@ -37,16 +39,32 @@ func (b *KafkaSASLAWSMskIamApplyConfiguration) WithAccessKey(value string) *Kafk
 // WithSecretKey sets the SecretKey field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SecretKey field is set to the value of the last call.
-func (b *KafkaSASLAWSMskIamApplyConfiguration) WithSecretKey(value *SecretKeyRefApplyConfiguration) *KafkaSASLAWSMskIamApplyConfiguration {
+func (b *KafkaSASLAWSMskIamApplyConfiguration) WithSecretKey(value *ValueSourceApplyConfiguration) *KafkaSASLAWSMskIamApplyConfiguration {
 	b.SecretKey = value
+	return b
+}
+
+// WithDeprecatedSecretKey sets the DeprecatedSecretKey field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedSecretKey field is set to the value of the last call.
+func (b *KafkaSASLAWSMskIamApplyConfiguration) WithDeprecatedSecretKey(value *SecretKeyRefApplyConfiguration) *KafkaSASLAWSMskIamApplyConfiguration {
+	b.DeprecatedSecretKey = value
 	return b
 }
 
 // WithSessionToken sets the SessionToken field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SessionToken field is set to the value of the last call.
-func (b *KafkaSASLAWSMskIamApplyConfiguration) WithSessionToken(value *SecretKeyRefApplyConfiguration) *KafkaSASLAWSMskIamApplyConfiguration {
+func (b *KafkaSASLAWSMskIamApplyConfiguration) WithSessionToken(value *ValueSourceApplyConfiguration) *KafkaSASLAWSMskIamApplyConfiguration {
 	b.SessionToken = value
+	return b
+}
+
+// WithDeprecatedSessionToken sets the DeprecatedSessionToken field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedSessionToken field is set to the value of the last call.
+func (b *KafkaSASLAWSMskIamApplyConfiguration) WithDeprecatedSessionToken(value *SecretKeyRefApplyConfiguration) *KafkaSASLAWSMskIamApplyConfiguration {
+	b.DeprecatedSessionToken = value
 	return b
 }
 

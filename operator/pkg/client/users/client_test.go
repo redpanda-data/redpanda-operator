@@ -33,11 +33,10 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
-const redpandaTestContainerImage = "docker.redpanda.com/redpandadata/redpanda:"
-
 func getTestImage() string {
+	containerRepo := os.Getenv("TEST_REDPANDA_REPO")
 	containerTag := os.Getenv("TEST_REDPANDA_VERSION")
-	return redpandaTestContainerImage + containerTag
+	return containerRepo + ":" + containerTag
 }
 
 func TestClient(t *testing.T) {

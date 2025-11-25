@@ -69,7 +69,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 		_ = testEnv.Stop()
 	})
 
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:"+os.Getenv("TEST_REDPANDA_VERSION"),
+	container, err := redpanda.Run(ctx, os.Getenv("TEST_REDPANDA_REPO")+":"+os.Getenv("TEST_REDPANDA_VERSION"),
 		redpanda.WithEnableSchemaRegistryHTTPBasicAuth(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),
@@ -95,7 +95,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	factory := internalclient.NewFactory(cfg, c)
+	factory := internalclient.NewFactory(cfg, c, nil)
 
 	// ensure we have a secret which we can pull a password from
 	err = c.Create(ctx, &corev1.Secret{
@@ -126,9 +126,13 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				Brokers: []string{kafkaAddress},
 				SASL: &redpandav1alpha2.KafkaSASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
-						Name: "superuser",
-						Key:  "password",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "superuser",
+							},
+							Key: "password",
+						},
 					},
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},
@@ -137,9 +141,13 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				URLs: []string{adminAPI},
 				SASL: &redpandav1alpha2.AdminSASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
-						Name: "superuser",
-						Key:  "password",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "superuser",
+							},
+							Key: "password",
+						},
 					},
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},
@@ -148,9 +156,13 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				URLs: []string{schemaRegistry},
 				SASL: &redpandav1alpha2.SchemaRegistrySASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
-						Name: "superuser",
-						Key:  "password",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "superuser",
+							},
+							Key: "password",
+						},
 					},
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},
@@ -164,9 +176,13 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				Brokers: []string{kafkaAddress},
 				SASL: &redpandav1alpha2.KafkaSASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
-						Name: "invalidsuperuser",
-						Key:  "password",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "invalidsuperuser",
+							},
+							Key: "password",
+						},
 					},
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},
@@ -175,9 +191,13 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				URLs: []string{adminAPI},
 				SASL: &redpandav1alpha2.AdminSASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
-						Name: "invalidsuperuser",
-						Key:  "password",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "invalidsuperuser",
+							},
+							Key: "password",
+						},
 					},
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},
@@ -186,9 +206,13 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 				URLs: []string{schemaRegistry},
 				SASL: &redpandav1alpha2.SchemaRegistrySASL{
 					Username: "superuser",
-					Password: redpandav1alpha2.SecretKeyRef{
-						Name: "invalidsuperuser",
-						Key:  "password",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "invalidsuperuser",
+							},
+							Key: "password",
+						},
 					},
 					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
 				},

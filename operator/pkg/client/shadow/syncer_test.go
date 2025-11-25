@@ -14,6 +14,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -38,10 +39,7 @@ import (
 )
 
 func getTestImage() string {
-	// this is the latest nightly image that contains shadow links, once a release
-	// with shadow links is actually cut, we can switch to the typical release
-	// images
-	return "redpandadata/redpanda-nightly:v0.0.0-20251008git7a18f63"
+	return os.Getenv("TEST_REDPANDA_REPO") + ":" + os.Getenv("TEST_REDPANDA_VERSION")
 }
 
 func TestSyncer(t *testing.T) {
@@ -52,10 +50,10 @@ func TestSyncer(t *testing.T) {
 	// winds up with the maximum sync interval -- choosing 2s works around that to speed up tests
 	// see https://github.com/redpanda-data/redpanda/pull/27941 which has been merged but is not yet available
 	// in nightly builds.
-	syncTime := metav1.Duration{Duration: 2 * time.Second}
+	syncTime := ptr.To(metav1.Duration{Duration: 2 * time.Second})
 	linkName := "link"
-	topicName := "topic"
-	topicTwo := "other"
+	topicName := "foo-topic-sentinel"
+	topicTwo := "bar-topic-sentinel"
 	user := "user"
 	password := "password"
 
@@ -82,12 +80,12 @@ func TestSyncer(t *testing.T) {
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: redpandav1alpha2.ShadowLinkSpec{
-			ShadowCluster: redpandav1alpha2.ClusterSource{
+			ShadowCluster: &redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{
 					Name: "bogus",
 				},
 			},
-			SourceCluster: redpandav1alpha2.ClusterSource{
+			SourceCluster: &redpandav1alpha2.ClusterSource{
 				ClusterRef: &redpandav1alpha2.ClusterRef{
 					Name: "bogus",
 				},
@@ -102,7 +100,6 @@ func TestSyncer(t *testing.T) {
 			},
 			ConsumerOffsetSyncOptions: &redpandav1alpha2.ShadowLinkConsumerOffsetSyncOptions{
 				Interval: syncTime,
-				Enabled:  true,
 				GroupFilters: []redpandav1alpha2.NameFilter{{
 					Name:        consumer,
 					FilterType:  redpandav1alpha2.FilterTypeInclude,
@@ -111,7 +108,6 @@ func TestSyncer(t *testing.T) {
 			},
 			SecuritySyncOptions: &redpandav1alpha2.ShadowLinkSecuritySettingsSyncOptions{
 				Interval: syncTime,
-				Enabled:  true,
 				ACLFilters: []redpandav1alpha2.ACLFilter{{
 					ResourceFilter: redpandav1alpha2.ACLResourceFilter{
 						Name: "*",
@@ -138,13 +134,21 @@ func TestSyncer(t *testing.T) {
 	// initial check that the link is active
 	require.Equal(t, redpandav1alpha2.ShadowLinkStateActive, status.State)
 
+	defer func() {
+		if t.Failed() {
+			clusterTwo.dumpLogs(t, ctx)
+		}
+	}()
+
 	// wrap in a retry since the update of state is asynchronous
 	require.Eventually(t, func() bool {
 		return clusterTwo.hasActiveMirroredTopics(t, ctx, linkName, topicName)
 	}, syncRetryPeriod, 1*time.Second, "shadow link never synchronized")
 
 	// check all the data has been synced over
-	require.True(t, clusterTwo.hasACL(t, ctx, user))
+	require.Eventually(t, func() bool {
+		return clusterTwo.hasACL(t, ctx, user)
+	}, syncRetryPeriod, 1*time.Second, "cluster two never had ACL synchronized")
 
 	var clusterOneOffset int64
 	var clusterTwoOffset int64
@@ -155,13 +159,9 @@ func TestSyncer(t *testing.T) {
 		return clusterOneOffset == clusterTwoOffset
 	}, syncRetryPeriod, 1*time.Second, "cluster offsets not equal expected: %d, actual: %d", clusterOneOffset, clusterTwoOffset)
 
-	if t.Failed() {
-		clusterTwo.dumpLogs(t, ctx)
-	}
-
 	// Update
 	link.Spec.TopicMetadataSyncOptions.AutoCreateShadowTopicFilters[0].Name = topicTwo
-	_, err = syncer.Sync(ctx, link, clusterTwo.remoteClusterSettings())
+	_, err = syncer.Sync(ctx, link, clusterOne.remoteClusterSettings())
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool {
@@ -202,9 +202,9 @@ func runShadowLinkEnabledCluster(t *testing.T, ctx context.Context, name, userna
 	}, nil)
 	require.NoError(t, err)
 
+	require.NoError(t, rpadminClient.SetLogLevel(ctx, "kafka/client", "trace", 120))
 	require.NoError(t, rpadminClient.SetLogLevel(ctx, "cluster_link", "trace", 120))
 	require.NoError(t, rpadminClient.SetLogLevel(ctx, "shadow_link_service", "trace", 120))
-
 	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(kafkaAddress), kgo.SASL(scram.Auth{
 		User: username,
 		Pass: password,
@@ -266,16 +266,16 @@ func (c *cluster) hasActiveMirroredTopics(t *testing.T, ctx context.Context, lin
 	}))
 	require.NoError(t, err)
 
-	if len(response.Msg.ShadowLink.Status.ShadowTopicStatuses) != len(topicNames) {
+	if len(response.Msg.ShadowLink.Status.ShadowTopics) != len(topicNames) {
 		return false
 	}
 
 	// check that we've marked all topics as syncing
 	for _, topicName := range topicNames {
 		found := false
-		for _, topic := range response.Msg.ShadowLink.Status.ShadowTopicStatuses {
+		for _, topic := range response.Msg.ShadowLink.Status.ShadowTopics {
 			if topic.Name == topicName {
-				found = topic.Name == topicName && topic.State == adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_ACTIVE
+				found = topic.Name == topicName && topic.Status.State == adminv2api.ShadowTopicState_SHADOW_TOPIC_STATE_ACTIVE
 				break
 			}
 		}

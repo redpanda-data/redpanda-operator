@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Deprecated
+body: '`statefulset.sideCars.controllers.run` has been unused for many releases and is now deprecated. Individual controllers may be enabled/disabled by setting their enabled field: `statefulset.sideCars.pvcUnbinder.enabled`, `statefulset.sideCars.brokerDecommissioner.enabled`.'
+time: 2025-10-21T14:44:13.331483-04:00

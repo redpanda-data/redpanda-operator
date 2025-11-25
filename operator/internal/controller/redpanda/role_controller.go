@@ -29,6 +29,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandaroles,verbs=get;list;watch;update;patch
@@ -161,10 +162,10 @@ func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request Resource
 	return rolesClient, syncer, hasRole, nil
 }
 
-func SetupRoleController(ctx context.Context, mgr ctrl.Manager, includeV1, includeV2 bool) error {
+func SetupRoleController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c)
+	factory := internalclient.NewFactory(config, c, expander)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.RedpandaRole{}).

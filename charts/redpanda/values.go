@@ -860,30 +860,19 @@ type Sidecars struct {
 		Enabled bool `json:"enabled"`
 	} `json:"configWatcher"`
 	Controllers struct {
-		DeprecatedImage    *Image   `json:"image"`
-		Enabled            bool     `json:"enabled"`
-		CreateRBAC         bool     `json:"createRBAC"`
-		HealthProbeAddress string   `json:"healthProbeAddress"`
-		MetricsAddress     string   `json:"metricsAddress"`
-		PprofAddress       string   `json:"pprofAddress"`
-		Run                []string `json:"run"`
+		DeprecatedImage *Image `json:"image"`
+		// Enabled use to act as a global toggle for sidecar controllers. It
+		// was confusing and is no longer used.
+		// Deprecated.
+		Enabled            bool   `json:"enabled"`
+		CreateRBAC         bool   `json:"createRBAC"`
+		HealthProbeAddress string `json:"healthProbeAddress"`
+		MetricsAddress     string `json:"metricsAddress"`
+		PprofAddress       string `json:"pprofAddress"`
+		// Run used to be a string list of additional controllers to run. It is no longer used.
+		// Deprecated.
+		Run []string `json:"run"`
 	} `json:"controllers"`
-}
-
-func (s *Sidecars) PVCUnbinderEnabled() bool {
-	return s.Controllers.Enabled && s.PVCUnbinder.Enabled
-}
-
-func (s *Sidecars) BrokerDecommissionerEnabled() bool {
-	return s.Controllers.Enabled && s.BrokerDecommissioner.Enabled
-}
-
-func (s *Sidecars) ShouldCreateRBAC() bool {
-	return (s.Controllers.Enabled && s.Controllers.CreateRBAC) || s.AdditionalSidecarControllersEnabled()
-}
-
-func (s *Sidecars) AdditionalSidecarControllersEnabled() bool {
-	return s.PVCUnbinder.Enabled || s.BrokerDecommissioner.Enabled
 }
 
 type Listeners struct {
@@ -1526,13 +1515,13 @@ func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
 	if t.TrustStore != nil {
 		// Only one of ConfigMapKeyRef or SecretKeyRef should actually be set.
 		// Copy both to simplify the logic.
-		spec.CaCert = &ir.ObjectKeyRef{
+		spec.CaCert = &ir.ValueSource{
 			Namespace:       state.Release.Namespace,
 			ConfigMapKeyRef: t.TrustStore.ConfigMapKeyRef,
 			SecretKeyRef:    t.TrustStore.SecretKeyRef,
 		}
 	} else if cert.CAEnabled {
-		spec.CaCert = &ir.ObjectKeyRef{
+		spec.CaCert = &ir.ValueSource{
 			Namespace: state.Release.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -1542,7 +1531,7 @@ func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
 			},
 		}
 	} else {
-		spec.CaCert = &ir.ObjectKeyRef{
+		spec.CaCert = &ir.ValueSource{
 			Namespace: state.Release.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -1557,16 +1546,20 @@ func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
 	if t.RequireClientAuth {
 		clientSecretName := cert.ClientSecretName(state, t.Cert)
 
-		spec.Cert = &ir.SecretKeyRef{
+		spec.Cert = &ir.ValueSource{
 			Namespace: state.Release.Namespace,
-			Name:      clientSecretName,
-			Key:       "tls.crt",
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: clientSecretName},
+				Key:                  "tls.crt",
+			},
 		}
 
-		spec.Key = &ir.SecretKeyRef{
+		spec.Key = &ir.ValueSource{
 			Namespace: state.Release.Namespace,
-			Name:      clientSecretName,
-			Key:       "tls.key",
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: clientSecretName},
+				Key:                  "tls.key",
+			},
 		}
 	}
 

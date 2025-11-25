@@ -124,6 +124,7 @@ type SchemaSpec struct {
 	// It is used in constructing the client created to configure a cluster.
 	// +required
 	// +kubebuilder:validation:XValidation:message="spec.cluster.staticConfiguration.schemaRegistry: required value",rule=`!has(self.staticConfiguration) || has(self.staticConfiguration.schemaRegistry)`
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	ClusterSource *ClusterSource `json:"cluster"`
 	// Text is the actual unescaped text of a schema.
 	// +required

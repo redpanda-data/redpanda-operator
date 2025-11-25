@@ -18,12 +18,13 @@ import (
 // KafkaSASLApplyConfiguration represents a declarative configuration of the KafkaSASL type for use
 // with apply.
 type KafkaSASLApplyConfiguration struct {
-	Username     *string                                 `json:"username,omitempty"`
-	Password     *SecretKeyRefApplyConfiguration         `json:"passwordSecretRef,omitempty"`
-	Mechanism    *redpandav1alpha2.SASLMechanism         `json:"mechanism,omitempty"`
-	OAUth        *KafkaSASLOAuthBearerApplyConfiguration `json:"oauth,omitempty"`
-	GSSAPIConfig *KafkaSASLGSSAPIApplyConfiguration      `json:"gssapi,omitempty"`
-	AWSMskIam    *KafkaSASLAWSMskIamApplyConfiguration   `json:"awsMskIam,omitempty"`
+	Username           *string                                 `json:"username,omitempty"`
+	Password           *ValueSourceApplyConfiguration          `json:"password,omitempty"`
+	Mechanism          *redpandav1alpha2.SASLMechanism         `json:"mechanism,omitempty"`
+	OAUth              *KafkaSASLOAuthBearerApplyConfiguration `json:"oauth,omitempty"`
+	GSSAPIConfig       *KafkaSASLGSSAPIApplyConfiguration      `json:"gssapi,omitempty"`
+	AWSMskIam          *KafkaSASLAWSMskIamApplyConfiguration   `json:"awsMskIam,omitempty"`
+	DeprecatedPassword *SecretKeyRefApplyConfiguration         `json:"passwordSecretRef,omitempty"`
 }
 
 // KafkaSASLApplyConfiguration constructs a declarative configuration of the KafkaSASL type for use with
@@ -43,7 +44,7 @@ func (b *KafkaSASLApplyConfiguration) WithUsername(value string) *KafkaSASLApply
 // WithPassword sets the Password field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Password field is set to the value of the last call.
-func (b *KafkaSASLApplyConfiguration) WithPassword(value *SecretKeyRefApplyConfiguration) *KafkaSASLApplyConfiguration {
+func (b *KafkaSASLApplyConfiguration) WithPassword(value *ValueSourceApplyConfiguration) *KafkaSASLApplyConfiguration {
 	b.Password = value
 	return b
 }
@@ -77,5 +78,13 @@ func (b *KafkaSASLApplyConfiguration) WithGSSAPIConfig(value *KafkaSASLGSSAPIApp
 // If called multiple times, the AWSMskIam field is set to the value of the last call.
 func (b *KafkaSASLApplyConfiguration) WithAWSMskIam(value *KafkaSASLAWSMskIamApplyConfiguration) *KafkaSASLApplyConfiguration {
 	b.AWSMskIam = value
+	return b
+}
+
+// WithDeprecatedPassword sets the DeprecatedPassword field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DeprecatedPassword field is set to the value of the last call.
+func (b *KafkaSASLApplyConfiguration) WithDeprecatedPassword(value *SecretKeyRefApplyConfiguration) *KafkaSASLApplyConfiguration {
+	b.DeprecatedPassword = value
 	return b
 }

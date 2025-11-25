@@ -18,11 +18,9 @@ import (
 // ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration represents a declarative configuration of the ShadowLinkSecuritySettingsSyncOptions type for use
 // with apply.
 type ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration struct {
-	Interval               *v1.Duration                   `json:"interval,omitempty"`
-	Enabled                *bool                          `json:"enabled,omitempty"`
-	RoleFilters            []NameFilterApplyConfiguration `json:"roleFilters,omitempty"`
-	ScramCredentialFilters []NameFilterApplyConfiguration `json:"scramCredFilters,omitempty"`
-	ACLFilters             []ACLFilterApplyConfiguration  `json:"aclFilters,omitempty"`
+	Interval   *v1.Duration                  `json:"interval,omitempty"`
+	Paused     *bool                         `json:"paused,omitempty"`
+	ACLFilters []ACLFilterApplyConfiguration `json:"aclFilters,omitempty"`
 }
 
 // ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration constructs a declarative configuration of the ShadowLinkSecuritySettingsSyncOptions type for use with
@@ -39,37 +37,11 @@ func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithInterval(v
 	return b
 }
 
-// WithEnabled sets the Enabled field in the declarative configuration to the given value
+// WithPaused sets the Paused field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Enabled field is set to the value of the last call.
-func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithEnabled(value bool) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
-	b.Enabled = &value
-	return b
-}
-
-// WithRoleFilters adds the given value to the RoleFilters field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the RoleFilters field.
-func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithRoleFilters(values ...*NameFilterApplyConfiguration) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithRoleFilters")
-		}
-		b.RoleFilters = append(b.RoleFilters, *values[i])
-	}
-	return b
-}
-
-// WithScramCredentialFilters adds the given value to the ScramCredentialFilters field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ScramCredentialFilters field.
-func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithScramCredentialFilters(values ...*NameFilterApplyConfiguration) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithScramCredentialFilters")
-		}
-		b.ScramCredentialFilters = append(b.ScramCredentialFilters, *values[i])
-	}
+// If called multiple times, the Paused field is set to the value of the last call.
+func (b *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration) WithPaused(value bool) *ShadowLinkSecuritySettingsSyncOptionsApplyConfiguration {
+	b.Paused = &value
 	return b
 }
 

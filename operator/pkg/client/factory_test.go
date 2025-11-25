@@ -130,7 +130,7 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 
 	env.SetupManager("test", func(mgr ctrl.Manager) error {
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		clientFactory = NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+		clientFactory = NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
 
 		r = &vectorized.ClusterReconciler{
 			Client:                mgr.GetClient(),
@@ -251,7 +251,7 @@ func TestIntegrationClientFactory(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, helmClient.RepoAdd(ctx, "redpandadata", "https://charts.redpanda.com"))
 
-	factory := NewFactory(restcfg, kubeClient).WithDialer(kube.NewPodDialer(restcfg).DialContext)
+	factory := NewFactory(restcfg, kubeClient, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
 	type credentials struct {
 		Name      string
@@ -348,18 +348,22 @@ func TestIntegrationClientFactory(t *testing.T) {
 
 					spec.SASL = &redpandav1alpha2.KafkaSASL{
 						Username: tt.Auth.Name,
-						Password: redpandav1alpha2.SecretKeyRef{
-							Name: "secret",
-							Key:  "password",
+						Password: &redpandav1alpha2.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "secret"},
+								Key:                  "password",
+							},
 						},
 						Mechanism: redpandav1alpha2.SASLMechanism(tt.Auth.Mechanism),
 					}
 				}
 				if tt.TLS {
 					spec.TLS = &redpandav1alpha2.CommonTLS{
-						CaCert: &redpandav1alpha2.SecretKeyRef{
-							Name: fmt.Sprintf("%s-default-root-certificate", name),
-							Key:  corev1.TLSCertKey,
+						CaCert: &redpandav1alpha2.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-default-root-certificate", name)},
+								Key:                  corev1.TLSCertKey,
+							},
 						},
 					}
 				}
@@ -437,7 +441,7 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	factory := NewFactory(restcfg, kubeClient).WithDialer(kube.NewPodDialer(restcfg).DialContext)
+	factory := NewFactory(restcfg, kubeClient, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
 	values := map[string]any{}
 	ensureMapAndSetValue(values, "tls", map[string]any{

@@ -68,7 +68,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -158,6 +158,7 @@
           - basic-test
           - --redpanda-cluster-name
           - basic-test
+          - --selector=helm.sh/chart=redpanda-25.1.1-beta3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).basic-test.basic-test.svc.cluster.local.:9644
@@ -204,7 +205,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -242,7 +243,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -429,7 +430,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -519,6 +520,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
+          - --selector=helm.sh/chart=redpanda-25.1.1-beta3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -585,7 +587,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -885,6 +887,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
+          - --selector=helm.sh/chart=redpanda-25.1.1-beta3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -957,7 +960,7 @@
             xfs & wait $!
           command:
           - /bin/sh
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: fs-validator
           resources:
             limits:
@@ -1216,7 +1219,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -1306,6 +1309,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
+          - --selector=helm.sh/chart=redpanda-25.1.1-beta3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -1352,7 +1356,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -1390,7 +1394,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1578,7 +1582,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -1668,6 +1672,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
+          - --selector=helm.sh/chart=redpanda-25.1.1-beta3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -1712,7 +1717,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -1750,7 +1755,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1938,7 +1943,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
               exec:
@@ -2028,6 +2033,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
+          - --selector=helm.sh/chart=redpanda-25.1.1-beta3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -2072,7 +2078,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: tuning
           resources: {}
           securityContext:
@@ -2110,7 +2116,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v25.2.1
+          image: redpandadata/redpanda-unstable:v25.3.1-rc2
           name: redpanda-configurator
           resources: {}
           volumeMounts:
