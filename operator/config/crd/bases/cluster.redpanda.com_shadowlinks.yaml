@@ -1448,7 +1448,7 @@ spec:
                                     && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                     || has(self.inline)))'
                               passwordSecretRef:
-                                description: 'Deprecated: used `password` instead'
+                                description: 'Deprecated: use `password` instead'
                                 properties:
                                   key:
                                     description: Key in Secret data to get value from
@@ -3732,7 +3732,7 @@ spec:
                                     && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                     || has(self.inline)))'
                               passwordSecretRef:
-                                description: 'Deprecated: used `password` instead'
+                                description: 'Deprecated: use `password` instead'
                                 properties:
                                   key:
                                     description: Key in Secret data to get value from

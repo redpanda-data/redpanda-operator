@@ -1580,7 +1580,7 @@ KafkaSASL configures credentials to connect to Redpanda cluster that has authent
 | *`oauth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]__ |  |  | 
 | *`gssapi`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]__ |  |  | 
 | *`awsMskIam`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]__ |  |  | 
-| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: used `password` instead + |  | 
+| *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `password` instead + |  | 
 |===
 
 
