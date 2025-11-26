@@ -28,7 +28,7 @@ Feature: Upgrading the operator with Console installed
               repository: localhost/redpanda-operator
     """
     And cluster "operator-console-upgrade" is available
-    Then I can upgrade to the latest operator with the values:
+    Then I can helm upgrade "redpanda-operator" "../operator/chart" with values:
     """
     image:
       tag: dev
@@ -74,7 +74,7 @@ Feature: Upgrading the operator with Console installed
               repository: localhost/redpanda-operator
     """
     And cluster "operator-console-upgrade-warnings" is available
-    Then I can upgrade to the latest operator with the values:
+    Then I can helm upgrade "redpanda-operator" "../operator/chart" with values:
     """
     image:
       tag: dev
