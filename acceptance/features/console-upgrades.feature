@@ -37,7 +37,7 @@ Feature: Upgrading the operator with Console installed
       experimental: true
     """
     And cluster "operator-console-upgrade" should be stable with 1 nodes
-    And the migrated console cluster "operator-console-upgrade-console" should have 0 warnings
+    And the migrated console cluster "operator-console-upgrade" should have 0 warnings
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Console v2 to v3 with warnings
@@ -83,4 +83,4 @@ Feature: Upgrading the operator with Console installed
       experimental: true
     """
     And cluster "operator-console-upgrade-warnings" should be stable with 1 nodes
-    And the migrated console cluster "operator-console-upgrade-console" should have 1 warning
+    And the migrated console cluster "operator-console-upgrade-warnings" should have 1 warning
