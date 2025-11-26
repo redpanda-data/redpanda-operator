@@ -6,11 +6,12 @@ package v1alpha2
 import (
 	v3 "github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	ir "github.com/redpanda-data/redpanda-operator/pkg/ir"
-	v11 "k8s.io/api/apps/v1"
+	v12 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	v13 "k8s.io/api/networking/v1"
-	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v14 "k8s.io/api/networking/v1"
+	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	intstr "k8s.io/apimachinery/pkg/util/intstr"
+	v11 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 func init() {
@@ -74,8 +75,8 @@ func init() {
 					consolePartialRenderValues.PodLabels[key4] = value4
 				}
 			}
-			consolePartialRenderValues.PodSecurityContext = pV1PodSecurityContextToPV1PodSecurityContext((*source).PodSecurityContext)
-			consolePartialRenderValues.SecurityContext = pV1SecurityContextToPV1SecurityContext((*source).SecurityContext)
+			consolePartialRenderValues.PodSecurityContext = pV1PodSecurityContextToPV1PodSecurityContextApplyConfiguration((*source).PodSecurityContext)
+			consolePartialRenderValues.SecurityContext = pV1SecurityContextToPV1SecurityContextApplyConfiguration((*source).SecurityContext)
 			consolePartialRenderValues.Service = pV1alpha2ServiceConfigToPConsolePartialServiceConfig((*source).Service)
 			consolePartialRenderValues.Ingress = pV1alpha2IngressConfigToPConsolePartialIngressConfig((*source).Ingress)
 			consolePartialRenderValues.Resources = pV1ResourceRequirementsToPV1ResourceRequirements((*source).Resources)
@@ -506,7 +507,7 @@ func pV1AppArmorProfileToPV1AppArmorProfile(source *v1.AppArmorProfile) *v1.AppA
 	var pV1AppArmorProfile *v1.AppArmorProfile
 	if source != nil {
 		var v1AppArmorProfile v1.AppArmorProfile
-		v1AppArmorProfile.Type = v1.AppArmorProfileType((*source).Type)
+		v1AppArmorProfile.Type = v1AppArmorProfileTypeToV1AppArmorProfileType((*source).Type)
 		if (*source).LocalhostProfile != nil {
 			xstring := *(*source).LocalhostProfile
 			v1AppArmorProfile.LocalhostProfile = &xstring
@@ -514,6 +515,20 @@ func pV1AppArmorProfileToPV1AppArmorProfile(source *v1.AppArmorProfile) *v1.AppA
 		pV1AppArmorProfile = &v1AppArmorProfile
 	}
 	return pV1AppArmorProfile
+}
+func pV1AppArmorProfileToPV1AppArmorProfileApplyConfiguration(source *v1.AppArmorProfile) *v11.AppArmorProfileApplyConfiguration {
+	var pV1AppArmorProfileApplyConfiguration *v11.AppArmorProfileApplyConfiguration
+	if source != nil {
+		var v1AppArmorProfileApplyConfiguration v11.AppArmorProfileApplyConfiguration
+		pV1AppArmorProfileType := v1AppArmorProfileTypeToV1AppArmorProfileType((*source).Type)
+		v1AppArmorProfileApplyConfiguration.Type = &pV1AppArmorProfileType
+		if (*source).LocalhostProfile != nil {
+			xstring := *(*source).LocalhostProfile
+			v1AppArmorProfileApplyConfiguration.LocalhostProfile = &xstring
+		}
+		pV1AppArmorProfileApplyConfiguration = &v1AppArmorProfileApplyConfiguration
+	}
+	return pV1AppArmorProfileApplyConfiguration
 }
 func pV1CapabilitiesToPV1Capabilities(source *v1.Capabilities) *v1.Capabilities {
 	var pV1Capabilities *v1.Capabilities
@@ -534,6 +549,26 @@ func pV1CapabilitiesToPV1Capabilities(source *v1.Capabilities) *v1.Capabilities 
 		pV1Capabilities = &v1Capabilities
 	}
 	return pV1Capabilities
+}
+func pV1CapabilitiesToPV1CapabilitiesApplyConfiguration(source *v1.Capabilities) *v11.CapabilitiesApplyConfiguration {
+	var pV1CapabilitiesApplyConfiguration *v11.CapabilitiesApplyConfiguration
+	if source != nil {
+		var v1CapabilitiesApplyConfiguration v11.CapabilitiesApplyConfiguration
+		if (*source).Add != nil {
+			v1CapabilitiesApplyConfiguration.Add = make([]v1.Capability, len((*source).Add))
+			for i := 0; i < len((*source).Add); i++ {
+				v1CapabilitiesApplyConfiguration.Add[i] = v1CapabilityToV1Capability((*source).Add[i])
+			}
+		}
+		if (*source).Drop != nil {
+			v1CapabilitiesApplyConfiguration.Drop = make([]v1.Capability, len((*source).Drop))
+			for j := 0; j < len((*source).Drop); j++ {
+				v1CapabilitiesApplyConfiguration.Drop[j] = v1CapabilityToV1Capability((*source).Drop[j])
+			}
+		}
+		pV1CapabilitiesApplyConfiguration = &v1CapabilitiesApplyConfiguration
+	}
+	return pV1CapabilitiesApplyConfiguration
 }
 func pV1ConfigMapEnvSourceToPV1ConfigMapEnvSource(source *v1.ConfigMapEnvSource) *v1.ConfigMapEnvSource {
 	var pV1ConfigMapEnvSource *v1.ConfigMapEnvSource
@@ -562,11 +597,11 @@ func pV1ConfigMapKeySelectorToPV1ConfigMapKeySelector(source *v1.ConfigMapKeySel
 	}
 	return pV1ConfigMapKeySelector
 }
-func pV1DeploymentStrategyToPV1DeploymentStrategy(source *v11.DeploymentStrategy) *v11.DeploymentStrategy {
-	var pV1DeploymentStrategy *v11.DeploymentStrategy
+func pV1DeploymentStrategyToPV1DeploymentStrategy(source *v12.DeploymentStrategy) *v12.DeploymentStrategy {
+	var pV1DeploymentStrategy *v12.DeploymentStrategy
 	if source != nil {
-		var v1DeploymentStrategy v11.DeploymentStrategy
-		v1DeploymentStrategy.Type = v11.DeploymentStrategyType((*source).Type)
+		var v1DeploymentStrategy v12.DeploymentStrategy
+		v1DeploymentStrategy.Type = v12.DeploymentStrategyType((*source).Type)
 		v1DeploymentStrategy.RollingUpdate = pV1RollingUpdateDeploymentToPV1RollingUpdateDeployment((*source).RollingUpdate)
 		pV1DeploymentStrategy = &v1DeploymentStrategy
 	}
@@ -617,10 +652,10 @@ func pV1HTTPGetActionToPV1HTTPGetAction(source *v1.HTTPGetAction) *v1.HTTPGetAct
 	}
 	return pV1HTTPGetAction
 }
-func pV1LabelSelectorToPV1LabelSelector(source *v12.LabelSelector) *v12.LabelSelector {
-	var pV1LabelSelector *v12.LabelSelector
+func pV1LabelSelectorToPV1LabelSelector(source *v13.LabelSelector) *v13.LabelSelector {
+	var pV1LabelSelector *v13.LabelSelector
 	if source != nil {
-		var v1LabelSelector v12.LabelSelector
+		var v1LabelSelector v13.LabelSelector
 		if (*source).MatchLabels != nil {
 			v1LabelSelector.MatchLabels = make(map[string]string, len((*source).MatchLabels))
 			for key, value := range (*source).MatchLabels {
@@ -628,7 +663,7 @@ func pV1LabelSelectorToPV1LabelSelector(source *v12.LabelSelector) *v12.LabelSel
 			}
 		}
 		if (*source).MatchExpressions != nil {
-			v1LabelSelector.MatchExpressions = make([]v12.LabelSelectorRequirement, len((*source).MatchExpressions))
+			v1LabelSelector.MatchExpressions = make([]v13.LabelSelectorRequirement, len((*source).MatchExpressions))
 			for i := 0; i < len((*source).MatchExpressions); i++ {
 				v1LabelSelector.MatchExpressions[i] = v1LabelSelectorRequirementToV1LabelSelectorRequirement((*source).MatchExpressions[i])
 			}
@@ -732,57 +767,57 @@ func pV1PodAntiAffinityToPV1PodAntiAffinity(source *v1.PodAntiAffinity) *v1.PodA
 	}
 	return pV1PodAntiAffinity
 }
-func pV1PodSecurityContextToPV1PodSecurityContext(source *v1.PodSecurityContext) *v1.PodSecurityContext {
-	var pV1PodSecurityContext *v1.PodSecurityContext
+func pV1PodSecurityContextToPV1PodSecurityContextApplyConfiguration(source *v1.PodSecurityContext) *v11.PodSecurityContextApplyConfiguration {
+	var pV1PodSecurityContextApplyConfiguration *v11.PodSecurityContextApplyConfiguration
 	if source != nil {
-		var v1PodSecurityContext v1.PodSecurityContext
-		v1PodSecurityContext.SELinuxOptions = pV1SELinuxOptionsToPV1SELinuxOptions((*source).SELinuxOptions)
-		v1PodSecurityContext.WindowsOptions = pV1WindowsSecurityContextOptionsToPV1WindowsSecurityContextOptions((*source).WindowsOptions)
+		var v1PodSecurityContextApplyConfiguration v11.PodSecurityContextApplyConfiguration
+		v1PodSecurityContextApplyConfiguration.SELinuxOptions = pV1SELinuxOptionsToPV1SELinuxOptionsApplyConfiguration((*source).SELinuxOptions)
+		v1PodSecurityContextApplyConfiguration.WindowsOptions = pV1WindowsSecurityContextOptionsToPV1WindowsSecurityContextOptionsApplyConfiguration((*source).WindowsOptions)
 		if (*source).RunAsUser != nil {
 			xint64 := *(*source).RunAsUser
-			v1PodSecurityContext.RunAsUser = &xint64
+			v1PodSecurityContextApplyConfiguration.RunAsUser = &xint64
 		}
 		if (*source).RunAsGroup != nil {
 			xint642 := *(*source).RunAsGroup
-			v1PodSecurityContext.RunAsGroup = &xint642
+			v1PodSecurityContextApplyConfiguration.RunAsGroup = &xint642
 		}
 		if (*source).RunAsNonRoot != nil {
 			xbool := *(*source).RunAsNonRoot
-			v1PodSecurityContext.RunAsNonRoot = &xbool
+			v1PodSecurityContextApplyConfiguration.RunAsNonRoot = &xbool
 		}
 		if (*source).SupplementalGroups != nil {
-			v1PodSecurityContext.SupplementalGroups = make([]int64, len((*source).SupplementalGroups))
+			v1PodSecurityContextApplyConfiguration.SupplementalGroups = make([]int64, len((*source).SupplementalGroups))
 			for i := 0; i < len((*source).SupplementalGroups); i++ {
-				v1PodSecurityContext.SupplementalGroups[i] = (*source).SupplementalGroups[i]
+				v1PodSecurityContextApplyConfiguration.SupplementalGroups[i] = (*source).SupplementalGroups[i]
 			}
 		}
 		if (*source).SupplementalGroupsPolicy != nil {
 			v1SupplementalGroupsPolicy := v1.SupplementalGroupsPolicy(*(*source).SupplementalGroupsPolicy)
-			v1PodSecurityContext.SupplementalGroupsPolicy = &v1SupplementalGroupsPolicy
+			v1PodSecurityContextApplyConfiguration.SupplementalGroupsPolicy = &v1SupplementalGroupsPolicy
 		}
 		if (*source).FSGroup != nil {
 			xint643 := *(*source).FSGroup
-			v1PodSecurityContext.FSGroup = &xint643
+			v1PodSecurityContextApplyConfiguration.FSGroup = &xint643
 		}
 		if (*source).Sysctls != nil {
-			v1PodSecurityContext.Sysctls = make([]v1.Sysctl, len((*source).Sysctls))
+			v1PodSecurityContextApplyConfiguration.Sysctls = make([]v11.SysctlApplyConfiguration, len((*source).Sysctls))
 			for j := 0; j < len((*source).Sysctls); j++ {
-				v1PodSecurityContext.Sysctls[j] = v1SysctlToV1Sysctl((*source).Sysctls[j])
+				v1PodSecurityContextApplyConfiguration.Sysctls[j] = v1SysctlToV1SysctlApplyConfiguration((*source).Sysctls[j])
 			}
 		}
 		if (*source).FSGroupChangePolicy != nil {
 			v1PodFSGroupChangePolicy := v1.PodFSGroupChangePolicy(*(*source).FSGroupChangePolicy)
-			v1PodSecurityContext.FSGroupChangePolicy = &v1PodFSGroupChangePolicy
+			v1PodSecurityContextApplyConfiguration.FSGroupChangePolicy = &v1PodFSGroupChangePolicy
 		}
-		v1PodSecurityContext.SeccompProfile = pV1SeccompProfileToPV1SeccompProfile((*source).SeccompProfile)
-		v1PodSecurityContext.AppArmorProfile = pV1AppArmorProfileToPV1AppArmorProfile((*source).AppArmorProfile)
+		v1PodSecurityContextApplyConfiguration.SeccompProfile = pV1SeccompProfileToPV1SeccompProfileApplyConfiguration((*source).SeccompProfile)
+		v1PodSecurityContextApplyConfiguration.AppArmorProfile = pV1AppArmorProfileToPV1AppArmorProfileApplyConfiguration((*source).AppArmorProfile)
 		if (*source).SELinuxChangePolicy != nil {
 			v1PodSELinuxChangePolicy := v1.PodSELinuxChangePolicy(*(*source).SELinuxChangePolicy)
-			v1PodSecurityContext.SELinuxChangePolicy = &v1PodSELinuxChangePolicy
+			v1PodSecurityContextApplyConfiguration.SELinuxChangePolicy = &v1PodSELinuxChangePolicy
 		}
-		pV1PodSecurityContext = &v1PodSecurityContext
+		pV1PodSecurityContextApplyConfiguration = &v1PodSecurityContextApplyConfiguration
 	}
-	return pV1PodSecurityContext
+	return pV1PodSecurityContextApplyConfiguration
 }
 func pV1ProbeToPV1Probe(source *v1.Probe) *v1.Probe {
 	var pV1Probe *v1.Probe
@@ -810,10 +845,10 @@ func pV1ResourceRequirementsToPV1ResourceRequirements(source *v1.ResourceRequire
 	}
 	return pV1ResourceRequirements
 }
-func pV1RollingUpdateDeploymentToPV1RollingUpdateDeployment(source *v11.RollingUpdateDeployment) *v11.RollingUpdateDeployment {
-	var pV1RollingUpdateDeployment *v11.RollingUpdateDeployment
+func pV1RollingUpdateDeploymentToPV1RollingUpdateDeployment(source *v12.RollingUpdateDeployment) *v12.RollingUpdateDeployment {
+	var pV1RollingUpdateDeployment *v12.RollingUpdateDeployment
 	if source != nil {
-		var v1RollingUpdateDeployment v11.RollingUpdateDeployment
+		var v1RollingUpdateDeployment v12.RollingUpdateDeployment
 		v1RollingUpdateDeployment.MaxUnavailable = pIntstrIntOrStringToPIntstrIntOrString((*source).MaxUnavailable)
 		v1RollingUpdateDeployment.MaxSurge = pIntstrIntOrStringToPIntstrIntOrString((*source).MaxSurge)
 		pV1RollingUpdateDeployment = &v1RollingUpdateDeployment
@@ -832,11 +867,27 @@ func pV1SELinuxOptionsToPV1SELinuxOptions(source *v1.SELinuxOptions) *v1.SELinux
 	}
 	return pV1SELinuxOptions
 }
+func pV1SELinuxOptionsToPV1SELinuxOptionsApplyConfiguration(source *v1.SELinuxOptions) *v11.SELinuxOptionsApplyConfiguration {
+	var pV1SELinuxOptionsApplyConfiguration *v11.SELinuxOptionsApplyConfiguration
+	if source != nil {
+		var v1SELinuxOptionsApplyConfiguration v11.SELinuxOptionsApplyConfiguration
+		pString := (*source).User
+		v1SELinuxOptionsApplyConfiguration.User = &pString
+		pString2 := (*source).Role
+		v1SELinuxOptionsApplyConfiguration.Role = &pString2
+		pString3 := (*source).Type
+		v1SELinuxOptionsApplyConfiguration.Type = &pString3
+		pString4 := (*source).Level
+		v1SELinuxOptionsApplyConfiguration.Level = &pString4
+		pV1SELinuxOptionsApplyConfiguration = &v1SELinuxOptionsApplyConfiguration
+	}
+	return pV1SELinuxOptionsApplyConfiguration
+}
 func pV1SeccompProfileToPV1SeccompProfile(source *v1.SeccompProfile) *v1.SeccompProfile {
 	var pV1SeccompProfile *v1.SeccompProfile
 	if source != nil {
 		var v1SeccompProfile v1.SeccompProfile
-		v1SeccompProfile.Type = v1.SeccompProfileType((*source).Type)
+		v1SeccompProfile.Type = v1SeccompProfileTypeToV1SeccompProfileType((*source).Type)
 		if (*source).LocalhostProfile != nil {
 			xstring := *(*source).LocalhostProfile
 			v1SeccompProfile.LocalhostProfile = &xstring
@@ -844,6 +895,20 @@ func pV1SeccompProfileToPV1SeccompProfile(source *v1.SeccompProfile) *v1.Seccomp
 		pV1SeccompProfile = &v1SeccompProfile
 	}
 	return pV1SeccompProfile
+}
+func pV1SeccompProfileToPV1SeccompProfileApplyConfiguration(source *v1.SeccompProfile) *v11.SeccompProfileApplyConfiguration {
+	var pV1SeccompProfileApplyConfiguration *v11.SeccompProfileApplyConfiguration
+	if source != nil {
+		var v1SeccompProfileApplyConfiguration v11.SeccompProfileApplyConfiguration
+		pV1SeccompProfileType := v1SeccompProfileTypeToV1SeccompProfileType((*source).Type)
+		v1SeccompProfileApplyConfiguration.Type = &pV1SeccompProfileType
+		if (*source).LocalhostProfile != nil {
+			xstring := *(*source).LocalhostProfile
+			v1SeccompProfileApplyConfiguration.LocalhostProfile = &xstring
+		}
+		pV1SeccompProfileApplyConfiguration = &v1SeccompProfileApplyConfiguration
+	}
+	return pV1SeccompProfileApplyConfiguration
 }
 func pV1SecretEnvSourceToPV1SecretEnvSource(source *v1.SecretEnvSource) *v1.SecretEnvSource {
 	var pV1SecretEnvSource *v1.SecretEnvSource
@@ -913,6 +978,47 @@ func pV1SecurityContextToPV1SecurityContext(source *v1.SecurityContext) *v1.Secu
 	}
 	return pV1SecurityContext
 }
+func pV1SecurityContextToPV1SecurityContextApplyConfiguration(source *v1.SecurityContext) *v11.SecurityContextApplyConfiguration {
+	var pV1SecurityContextApplyConfiguration *v11.SecurityContextApplyConfiguration
+	if source != nil {
+		var v1SecurityContextApplyConfiguration v11.SecurityContextApplyConfiguration
+		v1SecurityContextApplyConfiguration.Capabilities = pV1CapabilitiesToPV1CapabilitiesApplyConfiguration((*source).Capabilities)
+		if (*source).Privileged != nil {
+			xbool := *(*source).Privileged
+			v1SecurityContextApplyConfiguration.Privileged = &xbool
+		}
+		v1SecurityContextApplyConfiguration.SELinuxOptions = pV1SELinuxOptionsToPV1SELinuxOptionsApplyConfiguration((*source).SELinuxOptions)
+		v1SecurityContextApplyConfiguration.WindowsOptions = pV1WindowsSecurityContextOptionsToPV1WindowsSecurityContextOptionsApplyConfiguration((*source).WindowsOptions)
+		if (*source).RunAsUser != nil {
+			xint64 := *(*source).RunAsUser
+			v1SecurityContextApplyConfiguration.RunAsUser = &xint64
+		}
+		if (*source).RunAsGroup != nil {
+			xint642 := *(*source).RunAsGroup
+			v1SecurityContextApplyConfiguration.RunAsGroup = &xint642
+		}
+		if (*source).RunAsNonRoot != nil {
+			xbool2 := *(*source).RunAsNonRoot
+			v1SecurityContextApplyConfiguration.RunAsNonRoot = &xbool2
+		}
+		if (*source).ReadOnlyRootFilesystem != nil {
+			xbool3 := *(*source).ReadOnlyRootFilesystem
+			v1SecurityContextApplyConfiguration.ReadOnlyRootFilesystem = &xbool3
+		}
+		if (*source).AllowPrivilegeEscalation != nil {
+			xbool4 := *(*source).AllowPrivilegeEscalation
+			v1SecurityContextApplyConfiguration.AllowPrivilegeEscalation = &xbool4
+		}
+		if (*source).ProcMount != nil {
+			v1ProcMountType := v1.ProcMountType(*(*source).ProcMount)
+			v1SecurityContextApplyConfiguration.ProcMount = &v1ProcMountType
+		}
+		v1SecurityContextApplyConfiguration.SeccompProfile = pV1SeccompProfileToPV1SeccompProfileApplyConfiguration((*source).SeccompProfile)
+		v1SecurityContextApplyConfiguration.AppArmorProfile = pV1AppArmorProfileToPV1AppArmorProfileApplyConfiguration((*source).AppArmorProfile)
+		pV1SecurityContextApplyConfiguration = &v1SecurityContextApplyConfiguration
+	}
+	return pV1SecurityContextApplyConfiguration
+}
 func pV1SleepActionToPV1SleepAction(source *v1.SleepAction) *v1.SleepAction {
 	var pV1SleepAction *v1.SleepAction
 	if source != nil {
@@ -955,6 +1061,30 @@ func pV1WindowsSecurityContextOptionsToPV1WindowsSecurityContextOptions(source *
 		pV1WindowsSecurityContextOptions = &v1WindowsSecurityContextOptions
 	}
 	return pV1WindowsSecurityContextOptions
+}
+func pV1WindowsSecurityContextOptionsToPV1WindowsSecurityContextOptionsApplyConfiguration(source *v1.WindowsSecurityContextOptions) *v11.WindowsSecurityContextOptionsApplyConfiguration {
+	var pV1WindowsSecurityContextOptionsApplyConfiguration *v11.WindowsSecurityContextOptionsApplyConfiguration
+	if source != nil {
+		var v1WindowsSecurityContextOptionsApplyConfiguration v11.WindowsSecurityContextOptionsApplyConfiguration
+		if (*source).GMSACredentialSpecName != nil {
+			xstring := *(*source).GMSACredentialSpecName
+			v1WindowsSecurityContextOptionsApplyConfiguration.GMSACredentialSpecName = &xstring
+		}
+		if (*source).GMSACredentialSpec != nil {
+			xstring2 := *(*source).GMSACredentialSpec
+			v1WindowsSecurityContextOptionsApplyConfiguration.GMSACredentialSpec = &xstring2
+		}
+		if (*source).RunAsUserName != nil {
+			xstring3 := *(*source).RunAsUserName
+			v1WindowsSecurityContextOptionsApplyConfiguration.RunAsUserName = &xstring3
+		}
+		if (*source).HostProcess != nil {
+			xbool := *(*source).HostProcess
+			v1WindowsSecurityContextOptionsApplyConfiguration.HostProcess = &xbool
+		}
+		pV1WindowsSecurityContextOptionsApplyConfiguration = &v1WindowsSecurityContextOptionsApplyConfiguration
+	}
+	return pV1WindowsSecurityContextOptionsApplyConfiguration
 }
 func pV1alpha2AuthenticationSecretsToPConsolePartialAuthenticationSecrets(source *AuthenticationSecrets) *v3.PartialAuthenticationSecrets {
 	var pConsolePartialAuthenticationSecrets *v3.PartialAuthenticationSecrets
@@ -1055,7 +1185,7 @@ func pV1alpha2IngressConfigToPConsolePartialIngressConfig(source *IngressConfig)
 			}
 		}
 		if (*source).TLS != nil {
-			consolePartialIngressConfig.TLS = make([]v13.IngressTLS, len((*source).TLS))
+			consolePartialIngressConfig.TLS = make([]v14.IngressTLS, len((*source).TLS))
 			for j := 0; j < len((*source).TLS); j++ {
 				consolePartialIngressConfig.TLS[j] = v1IngressTLSToV1IngressTLS((*source).TLS[j])
 			}
@@ -1211,6 +1341,9 @@ func pV1alpha2ServiceConfigToPConsolePartialServiceConfig(source *ServiceConfig)
 	}
 	return pConsolePartialServiceConfig
 }
+func v1AppArmorProfileTypeToV1AppArmorProfileType(source v1.AppArmorProfileType) v1.AppArmorProfileType {
+	return v1.AppArmorProfileType(source)
+}
 func v1CapabilityToV1Capability(source v1.Capability) v1.Capability {
 	return v1.Capability(source)
 }
@@ -1313,8 +1446,8 @@ func v1HTTPHeaderToV1HTTPHeader(source v1.HTTPHeader) v1.HTTPHeader {
 	v1HTTPHeader.Value = source.Value
 	return v1HTTPHeader
 }
-func v1IngressTLSToV1IngressTLS(source v13.IngressTLS) v13.IngressTLS {
-	var v1IngressTLS v13.IngressTLS
+func v1IngressTLSToV1IngressTLS(source v14.IngressTLS) v14.IngressTLS {
+	var v1IngressTLS v14.IngressTLS
 	if source.Hosts != nil {
 		v1IngressTLS.Hosts = make([]string, len(source.Hosts))
 		for i := 0; i < len(source.Hosts); i++ {
@@ -1324,10 +1457,10 @@ func v1IngressTLSToV1IngressTLS(source v13.IngressTLS) v13.IngressTLS {
 	v1IngressTLS.SecretName = source.SecretName
 	return v1IngressTLS
 }
-func v1LabelSelectorRequirementToV1LabelSelectorRequirement(source v12.LabelSelectorRequirement) v12.LabelSelectorRequirement {
-	var v1LabelSelectorRequirement v12.LabelSelectorRequirement
+func v1LabelSelectorRequirementToV1LabelSelectorRequirement(source v13.LabelSelectorRequirement) v13.LabelSelectorRequirement {
+	var v1LabelSelectorRequirement v13.LabelSelectorRequirement
 	v1LabelSelectorRequirement.Key = source.Key
-	v1LabelSelectorRequirement.Operator = v12.LabelSelectorOperator(source.Operator)
+	v1LabelSelectorRequirement.Operator = v13.LabelSelectorOperator(source.Operator)
 	if source.Values != nil {
 		v1LabelSelectorRequirement.Values = make([]string, len(source.Values))
 		for i := 0; i < len(source.Values); i++ {
@@ -1411,11 +1544,16 @@ func v1ProbeHandlerToV1ProbeHandler(source v1.ProbeHandler) v1.ProbeHandler {
 	v1ProbeHandler.GRPC = pV1GRPCActionToPV1GRPCAction(source.GRPC)
 	return v1ProbeHandler
 }
-func v1SysctlToV1Sysctl(source v1.Sysctl) v1.Sysctl {
-	var v1Sysctl v1.Sysctl
-	v1Sysctl.Name = source.Name
-	v1Sysctl.Value = source.Value
-	return v1Sysctl
+func v1SeccompProfileTypeToV1SeccompProfileType(source v1.SeccompProfileType) v1.SeccompProfileType {
+	return v1.SeccompProfileType(source)
+}
+func v1SysctlToV1SysctlApplyConfiguration(source v1.Sysctl) v11.SysctlApplyConfiguration {
+	var v1SysctlApplyConfiguration v11.SysctlApplyConfiguration
+	pString := source.Name
+	v1SysctlApplyConfiguration.Name = &pString
+	pString2 := source.Value
+	v1SysctlApplyConfiguration.Value = &pString2
+	return v1SysctlApplyConfiguration
 }
 func v1TolerationToV1Toleration(source v1.Toleration) v1.Toleration {
 	var v1Toleration v1.Toleration
@@ -1501,7 +1639,7 @@ func v1alpha2IngressPathToConsolePartialIngressPath(source IngressPath) v3.Parti
 	pString := source.Path
 	consolePartialIngressPath.Path = &pString
 	if source.PathType != nil {
-		v1PathType := v13.PathType(*source.PathType)
+		v1PathType := v14.PathType(*source.PathType)
 		consolePartialIngressPath.PathType = &v1PathType
 	}
 	return consolePartialIngressPath

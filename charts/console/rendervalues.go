@@ -28,8 +28,8 @@ type RenderValues struct {
 	Annotations                  map[string]string                 `json:"annotations"`
 	PodAnnotations               map[string]string                 `json:"podAnnotations"`
 	PodLabels                    map[string]string                 `json:"podLabels"`
-	PodSecurityContext           corev1.PodSecurityContext         `json:"podSecurityContext"`
-	SecurityContext              corev1.SecurityContext            `json:"securityContext"`
+	PodSecurityContext           corev1.PodSecurityContext         `json:"podSecurityContext" partial:"builtin"`
+	SecurityContext              corev1.SecurityContext            `json:"securityContext" partial:"builtin"`
 	Service                      ServiceConfig                     `json:"service"`
 	Ingress                      IngressConfig                     `json:"ingress"`
 	Resources                    corev1.ResourceRequirements       `json:"resources"`
