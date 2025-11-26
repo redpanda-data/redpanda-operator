@@ -40,7 +40,11 @@ func consoleHasWarnings(ctx context.Context, t framework.TestingT, name string, 
 	t.Logf("Checking console %q has %d warning(s)", name, expected)
 	require.Eventually(t, func() bool {
 		var console redpandav1alpha2.Console
-		require.NoError(t, t.Get(ctx, key, &console))
+		if t.Get(ctx, key, &console) != nil {
+			// we have an error fetching, maybe have not yet reconciled,
+			// so just try again
+			return false
+		}
 
 		return len(console.Spec.Warnings) == expected
 	}, time.Minute, 10*time.Second)
