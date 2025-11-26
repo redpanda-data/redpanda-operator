@@ -329,6 +329,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -1102,6 +1103,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -1902,6 +1904,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -2846,6 +2849,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -3780,6 +3784,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -4567,6 +4572,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -5488,6 +5494,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -6477,6 +6484,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -7275,6 +7283,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -8067,6 +8076,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -8898,6 +8908,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -9526,6 +9537,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -10493,6 +10505,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -11332,6 +11345,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -11994,6 +12008,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -12793,6 +12808,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -13853,6 +13869,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -14860,6 +14877,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -15851,6 +15869,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -16909,6 +16928,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -17986,6 +18006,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -19023,6 +19044,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -19989,6 +20011,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -21201,6 +21224,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -22515,6 +22539,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -23541,6 +23566,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -24702,6 +24728,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -26171,6 +26198,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -27475,6 +27503,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -28431,6 +28460,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -31200,6 +31230,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -33225,6 +33256,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -35816,6 +35848,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -37262,6 +37295,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -39306,6 +39340,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -41137,6 +41172,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -42435,6 +42471,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -43855,6 +43892,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -45183,6 +45221,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -95507,6 +95546,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -96419,6 +96459,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -97330,6 +97371,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -98102,6 +98144,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -98891,6 +98934,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -99663,6 +99707,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -100435,6 +100480,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:
@@ -101343,6 +101389,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - consoles
   - nodepools
   - redpandas
   verbs:

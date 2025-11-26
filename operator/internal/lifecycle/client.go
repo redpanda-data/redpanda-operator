@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"reflect"
 	"slices"
 
 	"github.com/cockroachdb/errors"
@@ -21,9 +22,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -68,6 +71,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 		statusUpdater:          statusUpdater,
 		nodePoolRenderer:       nodePoolRenderer,
 		simpleResourceRenderer: simpleResourceRenderer,
+		traceLogging:           true,
 	}
 }
 
@@ -76,6 +80,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 type ResourceClient[T any, U Cluster[T]] struct {
 	ctl                    *kube.Ctl
 	logger                 logr.Logger
+	traceLogging           bool
 	ownershipResolver      OwnershipResolver[T, U]
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
@@ -115,12 +120,26 @@ func (r *renderer[T, U]) Types() []kube.Object {
 }
 
 func (r *ResourceClient[T, U]) syncer(owner U) *kube.Syncer {
+	migratingResources := map[string]struct{}{}
+	if mr, ok := r.simpleResourceRenderer.(MigratingRenderer); ok {
+		for _, resource := range mr.MigratingResources() {
+			gvk := resource.GetObjectKind().GroupVersionKind()
+			migratingResources[gvk.String()] = struct{}{}
+		}
+	}
+
 	return &kube.Syncer{
 		Ctl:       r.ctl,
 		Namespace: owner.GetNamespace(),
 		Renderer: &renderer[T, U]{
 			Cluster:                owner,
 			SimpleResourceRenderer: r.simpleResourceRenderer,
+		},
+		MigratedResource: func(o kube.Object) bool {
+			if _, ok := migratingResources[o.GetObjectKind().GroupVersionKind().String()]; ok {
+				return true
+			}
+			return false
 		},
 		OwnershipLabels: r.ownershipResolver.GetOwnerLabels(owner),
 		Preprocess: func(o kube.Object) {
@@ -181,13 +200,65 @@ type Builder interface {
 	Watches(object client.Object, eventHandler handler.EventHandler, opts ...builder.WatchesOption) *builder.Builder
 }
 
+type loggingHandler[T client.Object] struct {
+	handler.TypedEventHandler[T, reconcile.Request]
+}
+
+func (h *loggingHandler[T]) Create(ctx context.Context, evt event.TypedCreateEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	h.TypedEventHandler.Create(ctx, evt, wrapQueue(ctx, evt.Object, wq))
+}
+
+func (h *loggingHandler[T]) Update(ctx context.Context, evt event.TypedUpdateEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	h.TypedEventHandler.Update(ctx, evt, wrapQueue(ctx, evt.ObjectNew, wq))
+}
+
+func (h *loggingHandler[T]) Delete(ctx context.Context, evt event.TypedDeleteEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	h.TypedEventHandler.Delete(ctx, evt, wrapQueue(ctx, evt.Object, wq))
+}
+
+func (h *loggingHandler[T]) Generic(ctx context.Context, evt event.TypedGenericEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	h.TypedEventHandler.Generic(ctx, evt, wrapQueue(ctx, evt.Object, wq))
+}
+
+type wrappedAdder struct {
+	obj client.Object
+	ctx context.Context
+	workqueue.TypedRateLimitingInterface[reconcile.Request]
+}
+
+func wrapQueue(ctx context.Context, obj client.Object, wq workqueue.TypedRateLimitingInterface[reconcile.Request]) workqueue.TypedRateLimitingInterface[reconcile.Request] {
+	return &wrappedAdder{
+		obj:                        obj,
+		ctx:                        ctx,
+		TypedRateLimitingInterface: wq,
+	}
+}
+
+func (w *wrappedAdder) Add(item reconcile.Request) {
+	log.FromContext(w.ctx).V(log.TraceLevel).Info("[enqueue] adding reconciliation request", "request", item, "due-to", reflect.TypeOf(w.obj).String(), "name", client.ObjectKeyFromObject(w.obj))
+	w.TypedRateLimitingInterface.Add(item)
+}
+
+func wrapLoggingHandler[T client.Object](_ T, handler handler.TypedEventHandler[T, reconcile.Request]) handler.TypedEventHandler[T, reconcile.Request] {
+	return &loggingHandler[T]{TypedEventHandler: handler}
+}
+
 // WatchResources configures resource watching for the given cluster, including StatefulSets and other resources.
 func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object) error {
 	// set that this is for the cluster
 	builder.For(cluster)
 
+	owns := func(obj client.Object) {
+		if r.traceLogging {
+			loggingHandler := wrapLoggingHandler(obj, handler.EnqueueRequestForOwner(r.ctl.Scheme(), r.ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()))
+			builder.Watches(obj, loggingHandler)
+		} else {
+			builder.Owns(obj)
+		}
+	}
+
 	// set an Owns on node pool statefulsets
-	builder.Owns(&appsv1.StatefulSet{})
+	owns(&appsv1.StatefulSet{})
 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
 		gvk, err := kube.GVKFor(r.ctl.Scheme(), resourceType)
@@ -211,21 +282,24 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 
 		if mapping == apimeta.RESTScopeNameNamespace {
 			// we're working with a namespace scoped resource, so we can work with ownership
-			builder.Owns(resourceType)
+			owns(resourceType)
 			continue
 		}
 
 		// since resources are cluster-scoped we need to call a Watch on them with some
 		// custom mappings
-		builder.Watches(resourceType, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		watchHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 			if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
 				return []reconcile.Request{{
 					NamespacedName: *owner,
 				}}
 			}
 			return nil
-		}))
-
+		})
+		if r.traceLogging {
+			watchHandler = wrapLoggingHandler(resourceType, watchHandler)
+		}
+		builder.Watches(resourceType, watchHandler)
 	}
 
 	return nil

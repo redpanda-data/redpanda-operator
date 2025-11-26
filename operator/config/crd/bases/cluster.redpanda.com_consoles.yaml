@@ -6857,154 +6857,90 @@ spec:
                 x-kubernetes-map-type: atomic
               livenessProbe:
                 description: |-
-                  Probe describes a health check to be performed against a container to determine whether it is
-                  alive or ready to receive traffic.
+                  ProbeApplyConfiguration is a wrapper type that allows including a partial
+                  [corev1.Probe] in a CRD.
                 properties:
                   exec:
-                    description: Exec specifies a command to execute in the container.
+                    description: |-
+                      ExecActionApplyConfiguration represents a declarative configuration of the ExecAction type for use
+                      with apply.
                     properties:
                       command:
-                        description: |-
-                          Command is the command line to execute inside the container, the working directory for the
-                          command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
-                          not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
-                          a shell, you need to explicitly call out to that shell.
-                          Exit status of 0 is treated as live/healthy and non-zero is unhealthy.
                         items:
                           type: string
                         type: array
-                        x-kubernetes-list-type: atomic
                     type: object
                   failureThreshold:
-                    description: |-
-                      Minimum consecutive failures for the probe to be considered failed after having succeeded.
-                      Defaults to 3. Minimum value is 1.
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies a GRPC HealthCheckRequest.
+                    description: |-
+                      GRPCActionApplyConfiguration represents a declarative configuration of the GRPCAction type for use
+                      with apply.
                     properties:
                       port:
-                        description: Port number of the gRPC service. Number must
-                          be in the range 1 to 65535.
                         format: int32
                         type: integer
                       service:
-                        default: ""
-                        description: |-
-                          Service is the name of the service to place in the gRPC HealthCheckRequest
-                          (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
-                          If this is not specified, the default behavior is defined by gRPC.
                         type: string
-                    required:
-                    - port
                     type: object
                   httpGet:
-                    description: HTTPGet specifies an HTTP GET request to perform.
+                    description: |-
+                      HTTPGetActionApplyConfiguration represents a declarative configuration of the HTTPGetAction type for use
+                      with apply.
                     properties:
                       host:
-                        description: |-
-                          Host name to connect to, defaults to the pod IP. You probably want to set
-                          "Host" in httpHeaders instead.
                         type: string
                       httpHeaders:
-                        description: Custom headers to set in the request. HTTP allows
-                          repeated headers.
                         items:
-                          description: HTTPHeader describes a custom header to be
-                            used in HTTP probes
+                          description: |-
+                            HTTPHeaderApplyConfiguration represents a declarative configuration of the HTTPHeader type for use
+                            with apply.
                           properties:
                             name:
-                              description: |-
-                                The header field name.
-                                This will be canonicalized upon output, so case-variant names will be understood as the same header.
                               type: string
                             value:
-                              description: The header field value
                               type: string
-                          required:
-                          - name
-                          - value
                           type: object
                         type: array
-                        x-kubernetes-list-type: atomic
                       path:
-                        description: Path to access on the HTTP server.
                         type: string
                       port:
                         anyOf:
                         - type: integer
                         - type: string
-                        description: |-
-                          Name or number of the port to access on the container.
-                          Number must be in the range 1 to 65535.
-                          Name must be an IANA_SVC_NAME.
                         x-kubernetes-int-or-string: true
                       scheme:
-                        description: |-
-                          Scheme to use for connecting to the host.
-                          Defaults to HTTP.
+                        description: URIScheme identifies the scheme used for connection
+                          to a host for Get actions
                         type: string
-                    required:
-                    - port
                     type: object
                   initialDelaySeconds:
-                    description: |-
-                      Number of seconds after the container has started before liveness probes are initiated.
-                      More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
                     format: int32
                     type: integer
                   periodSeconds:
-                    description: |-
-                      How often (in seconds) to perform the probe.
-                      Default to 10 seconds. Minimum value is 1.
                     format: int32
                     type: integer
                   successThreshold:
-                    description: |-
-                      Minimum consecutive successes for the probe to be considered successful after having failed.
-                      Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
                     format: int32
                     type: integer
                   tcpSocket:
-                    description: TCPSocket specifies a connection to a TCP port.
+                    description: |-
+                      TCPSocketActionApplyConfiguration represents a declarative configuration of the TCPSocketAction type for use
+                      with apply.
                     properties:
                       host:
-                        description: 'Optional: Host name to connect to, defaults
-                          to the pod IP.'
                         type: string
                       port:
                         anyOf:
                         - type: integer
                         - type: string
-                        description: |-
-                          Number or name of the port to access on the container.
-                          Number must be in the range 1 to 65535.
-                          Name must be an IANA_SVC_NAME.
                         x-kubernetes-int-or-string: true
-                    required:
-                    - port
                     type: object
                   terminationGracePeriodSeconds:
-                    description: |-
-                      Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
-                      The grace period is the duration in seconds after the processes running in the pod are sent
-                      a termination signal and the time when the processes are forcibly halted with a kill signal.
-                      Set this value longer than the expected cleanup time for your process.
-                      If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
-                      value overrides the value provided by the pod spec.
-                      Value must be non-negative integer. The value zero indicates stop immediately via
-                      the kill signal (no opportunity to shut down).
-                      This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
-                      Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
                     format: int64
                     type: integer
                   timeoutSeconds:
-                    description: |-
-                      Number of seconds after which the probe times out.
-                      Defaults to 1 second. Minimum value is 1.
-                      More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
                     format: int32
                     type: integer
                 type: object
@@ -7259,154 +7195,90 @@ spec:
                 type: string
               readinessProbe:
                 description: |-
-                  Probe describes a health check to be performed against a container to determine whether it is
-                  alive or ready to receive traffic.
+                  ProbeApplyConfiguration is a wrapper type that allows including a partial
+                  [corev1.Probe] in a CRD.
                 properties:
                   exec:
-                    description: Exec specifies a command to execute in the container.
+                    description: |-
+                      ExecActionApplyConfiguration represents a declarative configuration of the ExecAction type for use
+                      with apply.
                     properties:
                       command:
-                        description: |-
-                          Command is the command line to execute inside the container, the working directory for the
-                          command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
-                          not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
-                          a shell, you need to explicitly call out to that shell.
-                          Exit status of 0 is treated as live/healthy and non-zero is unhealthy.
                         items:
                           type: string
                         type: array
-                        x-kubernetes-list-type: atomic
                     type: object
                   failureThreshold:
-                    description: |-
-                      Minimum consecutive failures for the probe to be considered failed after having succeeded.
-                      Defaults to 3. Minimum value is 1.
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies a GRPC HealthCheckRequest.
+                    description: |-
+                      GRPCActionApplyConfiguration represents a declarative configuration of the GRPCAction type for use
+                      with apply.
                     properties:
                       port:
-                        description: Port number of the gRPC service. Number must
-                          be in the range 1 to 65535.
                         format: int32
                         type: integer
                       service:
-                        default: ""
-                        description: |-
-                          Service is the name of the service to place in the gRPC HealthCheckRequest
-                          (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
-
-                          If this is not specified, the default behavior is defined by gRPC.
                         type: string
-                    required:
-                    - port
                     type: object
                   httpGet:
-                    description: HTTPGet specifies an HTTP GET request to perform.
+                    description: |-
+                      HTTPGetActionApplyConfiguration represents a declarative configuration of the HTTPGetAction type for use
+                      with apply.
                     properties:
                       host:
-                        description: |-
-                          Host name to connect to, defaults to the pod IP. You probably want to set
-                          "Host" in httpHeaders instead.
                         type: string
                       httpHeaders:
-                        description: Custom headers to set in the request. HTTP allows
-                          repeated headers.
                         items:
-                          description: HTTPHeader describes a custom header to be
-                            used in HTTP probes
+                          description: |-
+                            HTTPHeaderApplyConfiguration represents a declarative configuration of the HTTPHeader type for use
+                            with apply.
                           properties:
                             name:
-                              description: |-
-                                The header field name.
-                                This will be canonicalized upon output, so case-variant names will be understood as the same header.
                               type: string
                             value:
-                              description: The header field value
                               type: string
-                          required:
-                          - name
-                          - value
                           type: object
                         type: array
-                        x-kubernetes-list-type: atomic
                       path:
-                        description: Path to access on the HTTP server.
                         type: string
                       port:
                         anyOf:
                         - type: integer
                         - type: string
-                        description: |-
-                          Name or number of the port to access on the container.
-                          Number must be in the range 1 to 65535.
-                          Name must be an IANA_SVC_NAME.
                         x-kubernetes-int-or-string: true
                       scheme:
-                        description: |-
-                          Scheme to use for connecting to the host.
-                          Defaults to HTTP.
+                        description: URIScheme identifies the scheme used for connection
+                          to a host for Get actions
                         type: string
-                    required:
-                    - port
                     type: object
                   initialDelaySeconds:
-                    description: |-
-                      Number of seconds after the container has started before liveness probes are initiated.
-                      More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
                     format: int32
                     type: integer
                   periodSeconds:
-                    description: |-
-                      How often (in seconds) to perform the probe.
-                      Default to 10 seconds. Minimum value is 1.
                     format: int32
                     type: integer
                   successThreshold:
-                    description: |-
-                      Minimum consecutive successes for the probe to be considered successful after having failed.
-                      Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
                     format: int32
                     type: integer
                   tcpSocket:
-                    description: TCPSocket specifies a connection to a TCP port.
+                    description: |-
+                      TCPSocketActionApplyConfiguration represents a declarative configuration of the TCPSocketAction type for use
+                      with apply.
                     properties:
                       host:
-                        description: 'Optional: Host name to connect to, defaults
-                          to the pod IP.'
                         type: string
                       port:
                         anyOf:
                         - type: integer
                         - type: string
-                        description: |-
-                          Number or name of the port to access on the container.
-                          Number must be in the range 1 to 65535.
-                          Name must be an IANA_SVC_NAME.
                         x-kubernetes-int-or-string: true
-                    required:
-                    - port
                     type: object
                   terminationGracePeriodSeconds:
-                    description: |-
-                      Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
-                      The grace period is the duration in seconds after the processes running in the pod are sent
-                      a termination signal and the time when the processes are forcibly halted with a kill signal.
-                      Set this value longer than the expected cleanup time for your process.
-                      If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
-                      value overrides the value provided by the pod spec.
-                      Value must be non-negative integer. The value zero indicates stop immediately via
-                      the kill signal (no opportunity to shut down).
-                      This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
-                      Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
                     format: int64
                     type: integer
                   timeoutSeconds:
-                    description: |-
-                      Number of seconds after which the probe times out.
-                      Defaults to 1 second. Minimum value is 1.
-                      More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
                     format: int32
                     type: integer
                 type: object
@@ -8034,6 +7906,16 @@ spec:
                   - topologyKey
                   - whenUnsatisfiable
                   type: object
+                type: array
+              warnings:
+                description: |-
+                  Warnings is a slice of human readable warnings generated by the automatic
+                  migration of a Console V2 config to a Console V3 config. If warnings are
+                  present, they will describe which fields from the original config have
+                  been dropped and why.
+                  Setting this field has no effect.
+                items:
+                  type: string
                 type: array
             type: object
           status:

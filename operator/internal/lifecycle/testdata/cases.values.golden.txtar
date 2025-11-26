@@ -1018,6 +1018,372 @@ values:
         secretRef: null
     enabled: true
   tuning: {}
+-- console-disabled --
+pools: []
+values:
+  auditLogging:
+    clientMaxBufferSize: 16777216
+    enabled: false
+    enabledEventTypes: null
+    excludedPrincipals: null
+    excludedTopics: null
+    listener: internal
+    partitions: 12
+    queueDrainIntervalMs: 500
+    queueMaxBufferSizePerShard: 1048576
+    replicationFactor: 0
+  auth:
+    sasl:
+      bootstrapUser:
+        mechanism: SCRAM-SHA-256
+        name: null
+        password: null
+        secretKeyRef: null
+      enabled: false
+      mechanism: SCRAM-SHA-512
+      secretRef: redpanda-users
+      users: []
+  clusterDomain: cluster.local.
+  commonLabels: {}
+  config:
+    cluster: {}
+    extraClusterConfiguration: {}
+    node:
+      crash_loop_limit: 5
+    pandaproxy_client:
+      consumer_heartbeat_interval_ms: 0
+      consumer_rebalance_timeout_ms: 0
+      consumer_request_max_bytes: 0
+      consumer_request_timeout_ms: 0
+      consumer_session_timeout_ms: 0
+      produce_batch_delay_ms: 0
+      produce_batch_record_count: 0
+      produce_batch_size_bytes: 0
+      retries: 0
+      retry_base_backoff_ms: 0
+    rpk: {}
+    schema_registry_client:
+      consumer_heartbeat_interval_ms: 0
+      consumer_rebalance_timeout_ms: 0
+      consumer_request_max_bytes: 0
+      consumer_request_timeout_ms: 0
+      consumer_session_timeout_ms: 0
+      produce_batch_delay_ms: 0
+      produce_batch_record_count: 0
+      produce_batch_size_bytes: 0
+      retries: 0
+      retry_base_backoff_ms: 0
+    tunable:
+      compacted_log_segment_size: 67108864
+      kafka_connection_rate_limit: 1000
+      log_segment_size_max: 268435456
+      log_segment_size_min: 16777216
+      max_compacted_log_segment_size: 536870912
+  console:
+    configmap:
+      create: false
+    deployment:
+      create: false
+    enabled: false
+    secret:
+      create: false
+  enterprise:
+    license: ""
+  external:
+    addresses: null
+    annotations: null
+    domain: null
+    enabled: true
+    externalDns: null
+    prefixTemplate: ""
+    service:
+      enabled: true
+    sourceRanges: null
+    type: NodePort
+  force: false
+  fullnameOverride: ""
+  image:
+    repository: redpandadata/redpanda-unstable
+    tag: v25.3.1-rc2
+  license_key: ""
+  listeners:
+    admin:
+      enabled: false
+      external:
+        default:
+          advertisedPorts:
+          - 31644
+          enabled: null
+          nodePort: null
+          port: 9645
+          tls:
+            cert: external
+            enabled: null
+            requireClientAuth: null
+            trustStore: null
+      port: 9644
+      tls:
+        cert: default
+        enabled: null
+        requireClientAuth: false
+        trustStore: null
+    http:
+      enabled: true
+      external:
+        default:
+          advertisedPorts:
+          - 30082
+          enabled: null
+          nodePort: null
+          port: 8083
+          tls:
+            cert: external
+            enabled: null
+            requireClientAuth: false
+            trustStore: null
+      port: 8082
+      tls:
+        cert: default
+        enabled: null
+        requireClientAuth: false
+        trustStore: null
+    kafka:
+      enabled: false
+      external:
+        default:
+          advertisedPorts:
+          - 31092
+          enabled: null
+          nodePort: null
+          port: 9094
+          tls:
+            cert: external
+            enabled: null
+            requireClientAuth: null
+            trustStore: null
+      port: 9093
+      tls:
+        cert: default
+        enabled: null
+        requireClientAuth: false
+        trustStore: null
+    rpc:
+      port: 33145
+      tls:
+        cert: default
+        enabled: null
+        requireClientAuth: false
+        trustStore: null
+    schemaRegistry:
+      enabled: true
+      external:
+        default:
+          advertisedPorts:
+          - 30081
+          enabled: null
+          nodePort: null
+          port: 8084
+          tls:
+            cert: external
+            enabled: null
+            requireClientAuth: false
+            trustStore: null
+      port: 8081
+      tls:
+        cert: default
+        enabled: null
+        requireClientAuth: false
+        trustStore: null
+  logging:
+    logLevel: info
+    usageStats:
+      clusterId: null
+      enabled: true
+  monitoring:
+    enableHttp2: null
+    enabled: false
+    labels: {}
+    scrapeInterval: 30s
+    tlsConfig: null
+  nameOverride: ""
+  podTemplate:
+    spec:
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        runAsUser: 101
+  post_install_job:
+    annotations: null
+    enabled: true
+    labels: null
+    podTemplate:
+      spec:
+        containers:
+        - name: post-install
+          securityContext: {}
+        securityContext: {}
+  rackAwareness:
+    enabled: false
+    nodeAnnotation: topology.kubernetes.io/zone
+  rbac:
+    annotations: {}
+    enabled: true
+    rpkDebugBundle: true
+  resources:
+    cpu:
+      cores: "1"
+      overprovisioned: null
+    memory:
+      container:
+        max: 2560Mi
+        min: null
+      enable_memory_locking: null
+      redpanda: null
+  service: null
+  serviceAccount:
+    annotations: {}
+    create: true
+    name: ""
+  statefulset:
+    additionalRedpandaCmdFlags: []
+    additionalSelectorLabels: {}
+    budget:
+      maxUnavailable: 1
+    initContainerImage:
+      repository: busybox
+      tag: latest
+    initContainers:
+      configurator: {}
+      fsValidator:
+        enabled: false
+        expectedFS: xfs
+      setDataDirOwnership:
+        enabled: false
+    podAntiAffinity:
+      custom: {}
+      topologyKey: kubernetes.io/hostname
+      type: hard
+      weight: 100
+    podTemplate:
+      spec:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: '{{ include "redpanda.name" . }}-statefulset'
+                  app.kubernetes.io/instance: '{{ .Release.Name }}'
+                  app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
+              topologyKey: kubernetes.io/hostname
+        containers:
+        - name: redpanda
+        - name: sidecar
+          readinessProbe: {}
+          resources: {}
+          securityContext: {}
+        initContainers:
+        - name: redpanda-configurator
+          resources: {}
+        priorityClassName: ""
+        securityContext: {}
+        terminationGracePeriodSeconds: 90
+        topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: '{{ include "redpanda.name" . }}-statefulset'
+              app.kubernetes.io/instance: '{{ .Release.Name }}'
+              app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+    replicas: 3
+    sideCars:
+      args:
+      - --no-set-superusers
+      brokerDecommissioner:
+        decommissionAfter: 60s
+        decommissionRequeueTimeout: 10s
+        enabled: false
+      configWatcher:
+        enabled: true
+      controllers:
+        createRBAC: true
+        enabled: false
+        healthProbeAddress: :8085
+        image:
+          repository: localhost/redpanda-operator
+          tag: dev
+        metricsAddress: :9082
+        pprofAddress: :9083
+        run:
+        - all
+      image:
+        repository: localhost/redpanda-operator
+        tag: dev
+      pvcUnbinder:
+        enabled: false
+        unbindAfter: 60s
+    updateStrategy:
+      type: RollingUpdate
+  storage:
+    hostPath: ""
+    persistentVolume:
+      annotations: {}
+      enabled: true
+      labels: {}
+      nameOverwrite: ""
+      size: 20Gi
+      storageClass: ""
+    tiered:
+      config:
+        cloud_storage_cache_size: 5368709120
+        cloud_storage_enable_remote_read: true
+        cloud_storage_enable_remote_write: true
+        cloud_storage_enabled: false
+      credentialsSecretRef:
+        accessKey:
+          configurationKey: cloud_storage_access_key
+          key: ""
+          name: ""
+        secretKey:
+          configurationKey: cloud_storage_secret_key
+          key: ""
+          name: ""
+      hostPath: ""
+      mountType: none
+      persistentVolume:
+        annotations: {}
+        enabled: false
+        labels: {}
+        nameOverwrite: ""
+        size: ""
+        storageClass: ""
+    tieredConfig: null
+    tieredStorageHostPath: ""
+    tieredStoragePersistentVolume: null
+  tests:
+    enabled: true
+  tls:
+    certs:
+      default:
+        applyInternalDNSNames: null
+        caEnabled: true
+        clientSecretRef: null
+        duration: ""
+        enabled: null
+        issuerRef: null
+        secretRef: null
+      external:
+        applyInternalDNSNames: null
+        caEnabled: true
+        clientSecretRef: null
+        duration: ""
+        enabled: null
+        issuerRef: null
+        secretRef: null
+    enabled: true
+  tuning:
+    tune_aio_events: true
 -- nodepool-basic-test --
 pools:
 - Generation: "0"

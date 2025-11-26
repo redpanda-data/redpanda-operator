@@ -140,6 +140,7 @@ func (tt *clientTest) setupClient(ctx context.Context, t *testing.T) (*clientTes
 
 	resolver, updater, nodeRenderer, resourceRenderer, factory := MockResourceManagersSetup()
 	resourceClient := NewResourceClient(manager, factory)
+	resourceClient.traceLogging = false
 
 	return &clientTestInstances{
 		resolver:         resolver,
@@ -386,6 +387,7 @@ func TestClientWatchResources(t *testing.T) {
 
 			require.NoError(t, instances.resourceClient.WatchResources(builder, &MockCluster{}))
 			require.Equal(t, "*lifecycle.MockCluster", builder.Base())
+
 			require.ElementsMatch(t, tt.ownedResources, builder.Owned())
 			require.ElementsMatch(t, tt.watchedResources, builder.Watched())
 		})

@@ -55,6 +55,8 @@ type Syncer struct {
 	// OwnershipLabels CAN NOT be changed without abandoning objects.
 	OwnershipLabels map[string]string
 
+	MigratedResource func(Object) bool
+
 	// Preprocess, if provided, is run ahead of applying Objects. It may be
 	// used to add additional labels, annotation, etc uniformly.
 	Preprocess func(Object)
@@ -150,11 +152,19 @@ func (s *Syncer) DeleteAll(ctx context.Context) (bool, error) {
 	return alive > 0, nil
 }
 
+func (s *Syncer) skipItem(o Object) bool {
+	return s.MigratedResource != nil && s.MigratedResource(o)
+}
+
 func (s *Syncer) listInPurview(ctx context.Context) ([]Object, error) {
 	logger := log.FromContext(ctx)
 
 	var objects []Object
 	for _, t := range s.Renderer.Types() {
+		if s.skipItem(t) {
+			continue
+		}
+
 		gvk, err := GVKFor(s.Ctl.Scheme(), t)
 		if err != nil {
 			return nil, err
@@ -226,6 +236,12 @@ func (s *Syncer) toSync(ctx context.Context) ([]Object, error) {
 	}
 
 	for _, obj := range objs {
+		if s.skipItem(obj) {
+			// we only pre-process items that are not intentionally skipped
+			// for the purpose of migration
+			continue
+		}
+
 		// Ensure that all types returned are present in s.Types. If they aren't
 		// we'd potentially "leak" objects.
 		if _, ok := expectedTypes[reflect.TypeOf(obj)]; !ok {

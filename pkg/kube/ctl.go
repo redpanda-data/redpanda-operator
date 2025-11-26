@@ -148,6 +148,10 @@ func (c *Ctl) ScopeOf(gvk schema.GroupVersionKind) (meta.RESTScopeName, error) {
 	return mapping.Scope.Name(), nil
 }
 
+func (c *Ctl) RESTMapper() meta.RESTMapper {
+	return c.client.RESTMapper()
+}
+
 // Get fetches the latest state of an object into `obj` from Kubernetes.
 // Usage:
 //

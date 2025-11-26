@@ -657,3 +657,15 @@ func getVersion(t framework.TestingT, version string) string {
 
 	return t.Variant()
 }
+
+func sleepALongTime(ctx context.Context) error {
+	t := framework.T(ctx)
+
+	t.Log("Becoming debuggable by sleeping for 20 minutes")
+	select {
+	case <-time.After(20 * time.Minute):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
