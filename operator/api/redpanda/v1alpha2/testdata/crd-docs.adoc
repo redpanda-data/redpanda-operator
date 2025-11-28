@@ -137,7 +137,6 @@ a prefix. Prefixed patterns can only be specified when using types `topic`, `gro
 
 ACLRule defines an ACL rule applied to the given user.
 
-
 Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
 
 
@@ -518,18 +517,14 @@ Type: string +
 This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other +
 ChartRef fields to be ignored. +
 
-
 Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.21` or the corresponding +
 version of the Redpanda chart. +
-
 
 Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is +
 manually deleted. +
 
-
 To dynamically switch Flux controllers (HelmRelease and HelmRepository), setting `useFlux` to `false` +
 will suspend these resources instead of removing them. +
-
 
 References: +
 - https://fluxcd.io/flux/components/helm/helmreleases/#suspend +
@@ -574,7 +569,7 @@ ClusterRef represents a reference to a cluster that is being targeted.
 If unspecified, defaults to "cluster.redpanda.com". + |  | 
 | *`kind`* __string__ | Kind is used to override the object kind that this reference points to. +
 If unspecified, defaults to "Redpanda". + |  | 
-| *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: {} +
+| *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: \{} +
 
 |===
 
@@ -764,13 +759,11 @@ Configuration was copied from https://github.com/twmb/franz-go/blob/01651affd204
 the value will be null. + |  | 
 | *`readOnly`* __boolean__ | ReadOnly signifies whether this is not a dynamic config option. +
 
-
 Note that this field is not always correct, and you may need to check +
 whether the Source is any dynamic enum. See franz-go#91 for more details. + |  | 
 | *`isDefault`* __boolean__ | IsDefault is whether this is a default config option. This has been +
 replaced in favor of Source. + |  | 
 | *`source`* __string__ | Source is where this config entry is from. +
-
 
 This field has a default of -1. + |  | 
 | *`isSensitive`* __boolean__ | IsSensitive signifies whether this is a sensitive config key, which +
@@ -1611,7 +1604,6 @@ See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html + |  |
 | *`userAgent`* __string__ | UserAgent is the user agent to for the client to use when connecting +
 to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>". +
 
-
 Setting a UserAgent allows authorizing based on the aws:UserAgent +
 condition key; see the following link for more details: +
 https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-useragent + |  | 
@@ -1781,7 +1773,6 @@ ListenerTLS configures TLS configuration for each listener in the Helm values.
 | *`cert`* __string__ | References a specific certificate for the listener. + |  | 
 | *`enabled`* __boolean__ | Specifies whether TLS is enabled for the listener. + |  | 
 | *`secretRef`* __string__ | References a Secret resource containing TLS credentials for the listener. +
-
 
 Deprecated: Setting SecretRef has no affect and will be removed in +
 future releases. + |  | 
@@ -2654,13 +2645,10 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 
 RedpandaMemory allows you to optionally specify the memory size for the Redpanda process, including the Seastar subsystem. By default, this section is omitted, and memory sizes are calculated automatically based on the container's total memory allocation. When you configure this section and manually set the memory and reserveMemory values, the automatic calculation is disabled.
 
-
 If you are setting these values manually, follow these guidelines carefully. Incorrect settings can lead to performance degradation, instability, or even data loss. The total memory allocated to a container is determined as the sum of the following two areas:
-
 
 - Redpanda (including Seastar):
 Defined by the `--memory` parameter. Includes the memory used by the Redpanda process and the reserved memory allocated for Seastar. A minimum of 2Gi per core is required, and this value typically accounts for ~80% of the container’s total memory. For production, allocate at least 8Gi.
-
 
 - Operating system (OS):
 Defined by the `--reserve-memory` parameter. Represents the memory available for the operating system and other processes within the container.
@@ -2854,7 +2842,6 @@ https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcereq
 and parameters such as `--memory`, `--reserve-memory`, and `--smp`. This
 calculation supports two modes:
 
-
   - Explicit mode (recommended):  Activated when `Limits` and `Requests` are
     set. In this mode, the CLI flags are calculated directly based on the
     provided `Limits` and `Requests`. This mode ensures predictable resource
@@ -2862,13 +2849,11 @@ calculation supports two modes:
     tuning is required, the CLI flags can be manually overridden using
     `statefulset.additionalRedpandaCmdFlags`.
 
-
   - Legacy mode (default): Used when `Limits` and `Requests` are not set.
     In this mode, the container resources and CLI flags are calculated using
     built-in default logic, where 80% of the container's memory is allocated
     to Redpanda and the rest is reserved for system overhead. Legacy mode is
     intended for backward compatibility and less controlled environments.
-
 
 Explicit mode offers better control and aligns with Kubernetes best
 practices. Legacy mode is a fallback for users who have not defined `Limits`
@@ -3770,7 +3755,6 @@ Tiered configures storage for the Tiered Storage cache. See https://docs.redpand
 |===
 | Field | Description | Default | Validation
 | *`mountType`* __string__ | mountType can be one of: +
-
 
 - `none`: Does not mount a volume. Tiered storage will use the same volume as the one defined for the Redpanda data directory. +
 - `hostPath`: Uses the path specified in `hostPath` on the worker node that the Pod is running on. +

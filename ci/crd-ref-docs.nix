@@ -5,7 +5,7 @@
 
 buildGoModule rec {
   pname = "crd-ref-docs";
-  version = "0.1.0";
+  version = "0.2.0";
 
   # Don't run tests.
   doCheck = false;
@@ -15,7 +15,7 @@ buildGoModule rec {
     owner = "elastic";
     repo = pname;
     rev = "v${version}";
-    hash = "sha256-Vp4HrT6Fj+stj2xasyz7i+UuogsFHeHOT8Ro0HeoGpI=";
+    hash = "sha256-JKaph5QDIWFDNEI8k9ZKYxZyRRAaQLogLpZKVwoU0K0=";
   };
 
   subPackages = [
@@ -23,7 +23,7 @@ buildGoModule rec {
     "./config"
   ];
 
-  vendorHash = "sha256-kNynNSa7xi5BL2oWBq7A2SWtjm1E+CyJd5f0FXkHAII=";
+  vendorHash = "sha256-DJnhoqbOZ+808In5I45vpKoVgo4Comog+X2gAuQTirA=";
 
   meta = with lib; {
     description = "Generates Kubernetes CRD API reference documentation";

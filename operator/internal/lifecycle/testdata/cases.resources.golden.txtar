@@ -896,7 +896,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
+      app.kubernetes.io/version: v3.3.1
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -913,7 +913,7 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
+      app.kubernetes.io/version: v3.3.1
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
@@ -943,7 +943,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          image: docker.redpanda.com/redpandadata/console:v3.3.1
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -2331,7 +2331,7 @@
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
+      app.kubernetes.io/version: v3.3.1
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
@@ -2348,7 +2348,7 @@
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
+      app.kubernetes.io/version: v3.3.1
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
@@ -2378,7 +2378,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          image: docker.redpanda.com/redpandadata/console:v3.3.1
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -3851,7 +3851,7 @@
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
+      app.kubernetes.io/version: v3.3.1
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
@@ -3868,7 +3868,7 @@
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.2.2
+      app.kubernetes.io/version: v3.3.1
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
@@ -3898,7 +3898,7 @@
         containers:
         - args:
           - --config.filepath=/etc/console/configs/config.yaml
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          image: docker.redpanda.com/redpandadata/console:v3.3.1
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3

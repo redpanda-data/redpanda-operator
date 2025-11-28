@@ -3,4 +3,4 @@ dependencies:
   repository: file://../../console/chart
   version: 3.2.0
 digest: sha256:4ad52f1ffd0d0089ac725ba4b799d93afb63d0163547e047aced607f93968796
-generated: "2025-10-20T11:34:12.271401-04:00"
+generated: "2025-11-26T13:18:46.346405+01:00"

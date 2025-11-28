@@ -1,0 +1,4 @@
+project: charts/console
+kind: Changed
+body: Bumped `appVersion` to [`v3.3.1`](https://github.com/redpanda-data/console/releases/tag/v3.3.1).
+time: 2025-11-24T10:57:24.546882+01:00
