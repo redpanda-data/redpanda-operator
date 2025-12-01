@@ -3,7 +3,7 @@
 description: Find the default values and descriptions of settings in the Redpanda Helm chart.
 ---
 
-![Version: 5.9.29](https://img.shields.io/badge/Version-5.9.29-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v24.3.18](https://img.shields.io/badge/AppVersion-v24.3.18-informational?style=flat-square)
+![Version: 5.9.30](https://img.shields.io/badge/Version-5.9.30-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v24.3.18](https://img.shields.io/badge/AppVersion-v24.3.18-informational?style=flat-square)
 
 This page describes the official Redpanda Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/redpanda/values.yaml). Each of the settings is listed and described on this page, along with any default values.
 
@@ -995,7 +995,7 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 **Default:**
 
 ```
-{"createRBAC":true,"enabled":false,"healthProbeAddress":":8085","image":{"repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":"v2.3.14-24.3.17"},"metricsAddress":":9082","pprofAddress":":9083","resources":{},"run":["all"],"securityContext":{}}
+{"createRBAC":true,"enabled":false,"healthProbeAddress":":8085","image":{"repository":"docker.redpanda.com/redpandadata/redpanda-operator","tag":"v2.3.15-24.3.18"},"metricsAddress":":9082","pprofAddress":":9083","resources":{},"run":["all"],"securityContext":{}}
 ```
 
 ### [statefulset.sideCars.controllers.createRBAC](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.createRBAC)
@@ -1030,7 +1030,7 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 
 ### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
 
-**Default:** `"v2.3.14-24.3.17"`
+**Default:** `"v2.3.15-24.3.18"`
 
 ### [statefulset.sideCars.pvcUnbinder.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.enabled)
 
