@@ -97,6 +97,12 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 			s.T().Log("failed to fetch health overview", "error", err)
 			return false, nil
 		}
+
+		s.T().Log("cluster health overview", health)
+
+		brokers, _ := adminClient.Brokers(ctx)
+		s.T().Log("brokers", brokers)
+
 		// make sure that we've removed all stale nodes
 		return len(health.NodesDown) == 0, nil
 	})
@@ -289,6 +295,7 @@ func (s *StatefulSetDecommissionerSuite) adminClientFor(chart *chart) *rpadmin.A
 	}
 
 	err = json.Unmarshal(data, cluster)
+	s.T().Log("Creating Admin client for Redpanda CR", "Redapnda", cluster)
 	s.Require().NoError(err)
 
 	adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, cluster)
