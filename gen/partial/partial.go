@@ -280,6 +280,9 @@ func (g *Generator) partializeNamed(t *types.Named, tag *StructTag) types.Type {
 	if !isPartialized {
 		if tag != nil {
 			for _, value := range tag.Values {
+				// "builtin" is used for types that have pre-defined partialized
+				// variants, such as types that have pre-generated
+				// k8s.io/client-go/applyconfigurations types.
 				if value == "builtin" {
 					path := t.Obj().Pkg().Path()
 					if override, ok := packagePartials[path]; ok {

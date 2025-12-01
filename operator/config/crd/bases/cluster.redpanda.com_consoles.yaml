@@ -6857,8 +6857,8 @@ spec:
                 x-kubernetes-map-type: atomic
               livenessProbe:
                 description: |-
-                  ProbeApplyConfiguration is a wrapper type that allows including a partial
-                  [corev1.Probe] in a CRD.
+                  LivenessProbe describes a health check to be performed against a container to determine whether it is
+                  alive.
                 properties:
                   exec:
                     description: |-
@@ -7195,8 +7195,8 @@ spec:
                 type: string
               readinessProbe:
                 description: |-
-                  ProbeApplyConfiguration is a wrapper type that allows including a partial
-                  [corev1.Probe] in a CRD.
+                  ReadinessProbe describes a health check to be performed against a container to determine whether it is
+                  ready to receive traffic.
                 properties:
                   exec:
                     description: |-

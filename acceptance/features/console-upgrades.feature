@@ -15,6 +15,10 @@ Feature: Upgrading the operator with Console installed
     spec:
       clusterSpec:
         console:
+          # Old versions have broken chart rendering for the console stanza
+          # unless nameOverride is set due to mapping configmap values for
+          # both the console deployment and redpanda statefulset to the same
+          # name. Setting nameOverride to "broken" works around this.
           nameOverride: broken
         tls:
           enabled: false
