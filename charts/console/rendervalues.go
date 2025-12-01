@@ -28,8 +28,8 @@ type RenderValues struct {
 	Annotations                  map[string]string                 `json:"annotations"`
 	PodAnnotations               map[string]string                 `json:"podAnnotations"`
 	PodLabels                    map[string]string                 `json:"podLabels"`
-	PodSecurityContext           corev1.PodSecurityContext         `json:"podSecurityContext"`
-	SecurityContext              corev1.SecurityContext            `json:"securityContext"`
+	PodSecurityContext           corev1.PodSecurityContext         `json:"podSecurityContext" partial:"builtin"`
+	SecurityContext              corev1.SecurityContext            `json:"securityContext" partial:"builtin"`
 	Service                      ServiceConfig                     `json:"service"`
 	Ingress                      IngressConfig                     `json:"ingress"`
 	Resources                    corev1.ResourceRequirements       `json:"resources"`
@@ -55,8 +55,8 @@ type RenderValues struct {
 	SecretMounts        []SecretMount             `json:"secretMounts"`
 	Secret              SecretConfig              `json:"secret"`
 	LicenseSecretRef    *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
-	LivenessProbe       corev1.Probe              `json:"livenessProbe"`
-	ReadinessProbe      corev1.Probe              `json:"readinessProbe"`
+	LivenessProbe       corev1.Probe              `json:"livenessProbe" partial:"builtin"`
+	ReadinessProbe      corev1.Probe              `json:"readinessProbe" partial:"builtin"`
 	ConfigMap           Creatable                 `json:"configmap"`
 	Deployment          DeploymentConfig          `json:"deployment"`
 	Strategy            appsv1.DeploymentStrategy `json:"strategy"`

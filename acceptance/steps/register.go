@@ -113,4 +113,8 @@ func init() {
 
 	// Console scenario steps
 	framework.RegisterStep(`^Console "([^"]+)" will be healthy`, consoleIsHealthy)
+	framework.RegisterStep(`^the migrated console cluster "([^"]+)" should have (\d+) warning(s)?$`, consoleHasWarnings)
+
+	// Debug steps
+	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 }

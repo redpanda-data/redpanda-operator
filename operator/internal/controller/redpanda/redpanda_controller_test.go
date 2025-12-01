@@ -107,7 +107,19 @@ func (s *RedpandaControllerSuite) TestManaged() {
 
 func (s *RedpandaControllerSuite) TestObjectsGCed() {
 	rp := s.minimalRP()
-	rp.Spec.ClusterSpec.Console.Enabled = ptr.To(true)
+
+	// NB: this test originally tested GC behavior through Console deployments
+	// now that Console stanzas are migrated to their own CRD which we intentionally
+	// orphan, we need to test this with some other resource that gets GC'd, here
+	// namely an external service.
+	rp.Spec.ClusterSpec.External.Enabled = ptr.To(true)
+	rp.Spec.ClusterSpec.External.Service = &redpandav1alpha2.ExternalService{
+		Enabled: ptr.To(true),
+	}
+	rp.Spec.ClusterSpec.External.Type = ptr.To(string(corev1.ServiceTypeLoadBalancer))
+	for range *rp.Spec.ClusterSpec.Statefulset.Replicas {
+		rp.Spec.ClusterSpec.External.Addresses = append(rp.Spec.ClusterSpec.External.Addresses, "127.0.0.1:1234")
+	}
 
 	s.applyAndWait(rp)
 
@@ -151,22 +163,34 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 		s.Require().NoError(s.client.Create(s.ctx, secret))
 	}
 
-	// Assert that the console deployment exists
+	// Assert that the external service exists
 	s.EventuallyWithT(func(t *assert.CollectT) {
-		var deployments appsv1.DeploymentList
-		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "console"}))
-		assert.Len(t, deployments.Items, 1)
-	}, time.Minute, time.Second, "console deployment not scheduled")
+		var services corev1.ServiceList
+		assert.NoError(t, s.client.List(s.ctx, &services, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "redpanda"}))
+		found := false
+		for _, service := range services.Items {
+			if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+				found = true
+			}
+		}
+		assert.True(t, found)
+	}, time.Minute, time.Second, "external service not found")
 
-	rp.Spec.ClusterSpec.Console.Enabled = ptr.To(false)
+	rp.Spec.ClusterSpec.External.Enabled = ptr.To(false)
 	s.applyAndWait(rp)
 
-	// Assert that the console deployment has been garbage collected.
+	// Assert that the external service has been garbage collected.
 	s.EventuallyWithT(func(t *assert.CollectT) {
-		var deployments appsv1.DeploymentList
-		assert.NoError(t, s.client.List(s.ctx, &deployments, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "console"}))
-		assert.Len(t, deployments.Items, 0)
-	}, time.Minute, time.Second, "console deployment not GC'd")
+		var services corev1.ServiceList
+		assert.NoError(t, s.client.List(s.ctx, &services, client.MatchingLabels{"app.kubernetes.io/instance": rp.Name, "app.kubernetes.io/name": "redpanda"}))
+		found := false
+		for _, service := range services.Items {
+			if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+				found = true
+			}
+		}
+		assert.False(t, found)
+	}, time.Minute, time.Second, "external service not GC'd")
 
 	// Assert that our previously created secrets have not been GC'd.
 	for _, secret := range secrets {

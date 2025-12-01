@@ -1,4 +1,13 @@
 -- basic-test --
+-- console-disabled --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: compat-test
+spec:
+  clusterSpec:
+    console:
+      enabled: false
 -- nodepool-basic-test --
 ---
 apiVersion: cluster.redpanda.com/v1alpha2

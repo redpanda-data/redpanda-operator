@@ -104,6 +104,12 @@ type SimpleResourceRenderer[T any, U Cluster[T]] interface {
 	WatchedResourceTypes() []client.Object
 }
 
+// MigratingRenderer allows an implementation to render resources that they
+// don't actually want to watch due to them being temporary migrations.
+type MigratingRenderer interface {
+	MigratingResources() []client.Object
+}
+
 // NodePoolRender handles returning the node pools for a given cluster.
 // These are handled separately from "simple" resources because we need
 // to manage their lifecycle, decommissioning broker nodes and scaling

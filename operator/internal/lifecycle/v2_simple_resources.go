@@ -12,6 +12,8 @@ package lifecycle
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -42,7 +44,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 
 	if spec != nil {
-		// normalize the spec by removing the connectors stanza which is deprecated
+		// normalize the spec by removing the connectors stanza since it's deprecated
 		spec.Connectors = nil
 	}
 
@@ -58,11 +60,75 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		return nil, err
 	}
 
-	return redpanda.RenderResources(state)
+	// disable the console spec components so we don't try to render it twice
+	state.Values.Console.Enabled = ptr.To(false)
+
+	resources, err := redpanda.RenderResources(state)
+	if err != nil {
+		return nil, err
+	}
+
+	console, err := m.consoleIntegration(cluster, spec.Console)
+	if err != nil {
+		return nil, err
+	}
+
+	if console != nil {
+		resources = append(resources, console)
+	}
+
+	return resources, err
+}
+
+func (m *V2SimpleResourceRenderer) consoleIntegration(
+	cluster *ClusterWithPools,
+	console *redpandav1alpha2.RedpandaConsole,
+) (*redpandav1alpha2.Console, error) {
+	values, err := redpandav1alpha2.ConvertConsoleSubchartToConsoleValues(console)
+	if err != nil {
+		return nil, err
+	}
+
+	// Values can be nil if console is disabled.
+	if values == nil {
+		return nil, nil
+	}
+
+	return &redpandav1alpha2.Console{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Console",
+			APIVersion: redpandav1alpha2.GroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
+		},
+		Spec: redpandav1alpha2.ConsoleSpec{
+			ConsoleValues: *values,
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{
+					Name: cluster.Name,
+				},
+			},
+		},
+	}, nil
 }
 
 // WatchedResourceTypes returns the list of all the resources that the cluster
 // controller needs to watch.
 func (m *V2SimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return redpanda.Types()
+}
+
+// MigratingResources returns a list of resources that need to be migrated
+// away from being managed by the Redpanda CRD.
+func (m *V2SimpleResourceRenderer) MigratingResources() []client.Object {
+	return []client.Object{
+		&redpandav1alpha2.Console{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Console",
+				APIVersion: redpandav1alpha2.GroupVersion.String(),
+			},
+		},
+	}
 }
