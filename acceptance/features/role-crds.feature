@@ -83,6 +83,7 @@ Feature: Role CRDs
     # In this example manifest, a role CRD called "travis-role" manages ACLs for an existing role.
     # The role includes authorization rules that allow reading from topics with names starting with "some-topic".
     # This example assumes that you already have a role called "travis-role" in your cluster.
+    # Note: When the CRD is deleted, the operator will remove both the role and ACLs since it takes full ownership.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: RedpandaRole
@@ -106,8 +107,7 @@ Feature: Role CRDs
     """
     And role "travis-role" is successfully synced
     And I delete the CRD role "travis-role"
-    Then there should still be role "travis-role" in cluster "sasl"
-    And there should be no ACLs for role "travis-role" in cluster "sasl"
+    Then there should be no role "travis-role" in cluster "sasl"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Add managed principals to the role

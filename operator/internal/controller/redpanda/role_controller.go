@@ -104,6 +104,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			}
 			hasManagedPrincipals = false
 		}
+		// Always claim ownership when managing a role
 		hasManagedRole = true
 	}
 
