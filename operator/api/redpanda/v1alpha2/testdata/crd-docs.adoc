@@ -2963,6 +2963,8 @@ RoleStatus defines the observed state of a Redpanda role
 to be cleaned up. + |  | 
 | *`managedRole`* __boolean__ | ManagedRole returns whether the role has been created in Redpanda and needs +
 to be cleaned up. + |  | 
+| *`managedPrincipals`* __boolean__ | ManagedPrincipals returns whether the role has managed principals (membership) +
+that are being reconciled by the operator. + |  | 
 |===
 
 

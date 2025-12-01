@@ -65,6 +65,8 @@ func init() {
 	framework.RegisterStep(`^role "([^"]*)" should have members "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveMembersAndInCluster)
 	framework.RegisterStep(`^there is a pre-existing role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsAPreExistingRole)
 	framework.RegisterStep(`^there should still be role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldStillBeRole)
+	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have no members in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveNoMembersInCluster)
+	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have status field "([^"]*)" set to "([^"]*)"$`, redpandaRoleShouldHaveStatusFieldSetTo)
 
 	// Metrics scenario steps
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)

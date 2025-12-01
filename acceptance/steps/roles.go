@@ -259,3 +259,40 @@ func thereIsAPreExistingRole(ctx context.Context, role, version, cluster string)
 func thereShouldStillBeRole(ctx context.Context, role, version, cluster string) {
 	versionedClientsForCluster(ctx, version, cluster).ExpectRole(ctx, role)
 }
+
+func roleShouldHaveNoMembersInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
+	clients := versionedClientsForCluster(ctx, version, cluster)
+	adminClient := clients.RedpandaAdmin(ctx)
+	defer adminClient.Close()
+
+	// Get role members from Redpanda
+	membersResp, err := adminClient.RoleMembers(ctx, role)
+	if err != nil {
+		t.Fatalf("Failed to get members for role %q: %v", role, err)
+	}
+
+	// Check that there are no members
+	require.Empty(t, membersResp.Members, "Role %q should have no members", role)
+}
+
+func redpandaRoleShouldHaveStatusFieldSetTo(ctx context.Context, t framework.TestingT, roleName, field, value string) {
+	var roleObject redpandav1alpha2.RedpandaRole
+	require.NoError(t, t.Get(ctx, t.ResourceKey(roleName), &roleObject))
+
+	switch field {
+	case "managedPrincipals":
+		expectedValue := value == "true"
+		require.Equal(t, expectedValue, roleObject.Status.ManagedPrincipals,
+			"RedpandaRole %q status.managedPrincipals should be %v", roleName, expectedValue)
+	case "managedRole":
+		expectedValue := value == "true"
+		require.Equal(t, expectedValue, roleObject.Status.ManagedRole,
+			"RedpandaRole %q status.managedRole should be %v", roleName, expectedValue)
+	case "managedAcls":
+		expectedValue := value == "true"
+		require.Equal(t, expectedValue, roleObject.Status.ManagedACLs,
+			"RedpandaRole %q status.managedAcls should be %v", roleName, expectedValue)
+	default:
+		t.Fatalf("Unknown status field %q", field)
+	}
+}
