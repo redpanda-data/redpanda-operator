@@ -1,4 +1,0 @@
-project: operator
-kind: Deprecated
-body: Deprecated various fields in multiple CRDs for `kafka`, `adminAPI`, and `schemaRegistry` under the static configuration of `clusterSource` so that various fields that were only specifiable via an in-cluster secret can now be pulled via either external secret provider, in-cluster secret, config map, or inlined value.
-time: 2025-11-11T12:22:15.813496-05:00

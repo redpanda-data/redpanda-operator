@@ -1,8 +1,0 @@
-project: operator
-kind: Changed
-body: |-
-  By default, the operator now reconciles resources (`Redpanda`, `Topic`, etc) across _all namespaces_.
-
-    The `--namespace` flag may be used to scope the operator's watches to a single namespace.
-
-time: 2025-07-21T18:44:22.117328+02:00

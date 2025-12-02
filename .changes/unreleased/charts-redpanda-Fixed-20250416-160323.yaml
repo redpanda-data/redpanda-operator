@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Fixed
-body: Fixed the security contexts' of `set-datadir-ownership` and `set-tiered-storage-cache-dir-ownership`.
-time: 2025-04-16T16:03:23.265594-04:00
