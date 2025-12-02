@@ -1,0 +1,5 @@
+project: operator
+kind: Added
+body: |-
+    Added `status.managedPrincipals` field to RedpandaRole CRD to track whether the operator is managing role membership. The operator now properly reconciles membership changes when spec.principals is updated, including adding, removing, or clearing all principals.
+time: 2025-12-01T12:27:06.000000Z

@@ -2329,6 +2329,86 @@ and `Requests`.
 |===
 
 
+<<<<<<< HEAD
+=======
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec"]
+==== RoleAuthorizationSpec
+
+
+
+RoleAuthorizationSpec defines authorization rules for this role.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`acls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$] array__ | List of ACL rules which should be applied to this role. + |  | MaxItems: 1024 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec"]
+==== RoleSpec
+
+
+
+RoleSpec defines the configuration of a Redpanda role.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the role should be created. +
+It is used in constructing the client created to configure a cluster. + |  | 
+| *`principals`* __string array__ | Principals defines the list of users assigned to this role. +
+Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. + |  | MaxItems: 1024 +
+
+| *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]__ | Authorization rules defined for this role. If specified, the operator will manage ACLs for this role. +
+If omitted, ACLs should be managed separately using Redpanda's ACL management. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolestatus"]
+==== RoleStatus
+
+
+
+RoleStatus defines the observed state of a Redpanda role
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda role. + |  | 
+| *`managedAcls`* __boolean__ | ManagedACLs returns whether the role has managed ACLs that need +
+to be cleaned up. + |  | 
+| *`managedRole`* __boolean__ | ManagedRole returns whether the role has been created in Redpanda and needs +
+to be cleaned up. + |  | 
+| *`managedPrincipals`* __boolean__ | ManagedPrincipals returns whether the role has managed principals (membership) +
+that are being reconciled by the operator. + |  | 
+|===
+
+
+>>>>>>> 7b1c1df1 (feat(operator): implement role membership reconciliation (#1192))
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sasl"]
 ==== SASL
 

@@ -1,0 +1,2575 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.3
+  name: redpandaroles.cluster.redpanda.com
+spec:
+  group: cluster.redpanda.com
+  names:
+    kind: RedpandaRole
+    listKind: RedpandaRoleList
+    plural: redpandaroles
+    shortNames:
+    - rpr
+    singular: redpandarole
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Synced")].status
+      name: Synced
+      type: string
+    - jsonPath: .status.managedAcls
+      name: Managing ACLs
+      type: boolean
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: RedpandaRole defines the CRD for a Redpanda role.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Defines the desired state of the Redpanda role.
+            properties:
+              authorization:
+                description: |-
+                  Authorization rules defined for this role. If specified, the operator will manage ACLs for this role.
+                  If omitted, ACLs should be managed separately using Redpanda's ACL management.
+                properties:
+                  acls:
+                    description: List of ACL rules which should be applied to this
+                      role.
+                    items:
+                      description: |-
+                        ACLRule defines an ACL rule applied to the given user.
+
+                        Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
+                      properties:
+                        host:
+                          default: '*'
+                          description: |-
+                            The host from which the action described in the ACL rule is allowed or denied.
+                            If not set, it defaults to *, allowing or denying the action from any host.
+                          type: string
+                        operations:
+                          description: |-
+                            List of operations which will be allowed or denied. Valid values are resource type dependent, but include:
+                            - Read
+                            - Write
+                            - Delete
+                            - Alter
+                            - Describe
+                            - IdempotentWrite
+                            - ClusterAction
+                            - Create
+                            - AlterConfigs
+                            - DescribeConfigs
+                          items:
+                            description: ACLOperation specifies the type of operation
+                              for an ACL.
+                            type: string
+                          maxItems: 11
+                          minItems: 1
+                          type: array
+                        resource:
+                          description: Indicates the resource for which given ACL
+                            rule applies.
+                          properties:
+                            name:
+                              description: |-
+                                Name of resource for which given ACL rule applies. If using type `cluster` this must not be specified.
+                                Can be combined with patternType field to use prefix pattern.
+                              type: string
+                            patternType:
+                              default: literal
+                              description: |-
+                                Describes the pattern used in the resource field. The supported types are literal
+                                and prefixed. With literal pattern type, the resource field will be used as a definition
+                                of a full topic name. With prefix pattern type, the resource name will be used only as
+                                a prefix. Prefixed patterns can only be specified when using types `topic`, `group`, or
+                                `transactionalId`. Default value is literal. Valid values:
+                                - literal
+                                - prefixed
+                              enum:
+                              - literal
+                              - prefixed
+                              type: string
+                            type:
+                              description: |-
+                                Type specifies the type of resource an ACL is applied to. Valid values:
+                                - topic
+                                - group
+                                - cluster
+                                - transactionalId
+                              enum:
+                              - topic
+                              - group
+                              - cluster
+                              - transactionalId
+                              type: string
+                          required:
+                          - name
+                          - type
+                          type: object
+                          x-kubernetes-validations:
+                          - message: prefixed pattern type only supported for ['group',
+                              'topic', 'transactionalId']
+                            rule: 'self.type in [''group'', ''topic'', ''transactionalId'']
+                              ? true : !has(self.patternType) || self.patternType
+                              != ''prefixed'''
+                          - message: name must not be specified for type ['cluster']
+                            rule: 'self.type == "cluster" ? (self.name == "") : true'
+                          - message: acl rules on non-cluster resources must specify
+                              a name
+                            rule: 'self.type == "cluster" ? true : (self.name != "")'
+                        type:
+                          description: |-
+                            Type specifies the type of ACL rule to create. Valid values are:
+                            - allow
+                            - deny
+                          enum:
+                          - allow
+                          - deny
+                          type: string
+                      required:
+                      - operations
+                      - resource
+                      - type
+                      type: object
+                      x-kubernetes-validations:
+                      - message: supported topic operations are ['Alter', 'AlterConfigs',
+                          'Create', 'Delete', 'Describe', 'DescribeConfigs', 'Read',
+                          'Write']
+                        rule: 'self.resource.type == ''topic'' ? self.operations.all(o,
+                          o in [''Alter'', ''AlterConfigs'', ''Create'', ''Delete'',
+                          ''Describe'', ''DescribeConfigs'', ''Read'', ''Write''])
+                          : true'
+                      - message: supported group operations are ['Delete', 'Describe',
+                          'Read']
+                        rule: 'self.resource.type == ''group'' ? self.operations.all(o,
+                          o in [''Delete'', ''Describe'', ''Read'']) : true'
+                      - message: supported transactionalId operations are ['Describe',
+                          'Write']
+                        rule: 'self.resource.type == ''transactionalId'' ? self.operations.all(o,
+                          o in [''Describe'', ''Write'']) : true'
+                      - message: supported cluster operations are ['Alter', 'AlterConfigs',
+                          'ClusterAction', 'Create', 'Describe', 'DescribeConfigs',
+                          'IdempotentWrite']
+                        rule: 'self.resource.type == ''cluster'' ? self.operations.all(o,
+                          o in [''Alter'', ''AlterConfigs'', ''ClusterAction'', ''Create'',
+                          ''Describe'', ''DescribeConfigs'', ''IdempotentWrite''])
+                          : true'
+                    maxItems: 1024
+                    type: array
+                type: object
+              cluster:
+                description: |-
+                  ClusterSource is a reference to the cluster where the role should be created.
+                  It is used in constructing the client created to configure a cluster.
+                properties:
+                  clusterRef:
+                    description: |-
+                      ClusterRef is a reference to the cluster where the object should be created.
+                      It is used in constructing the client created to configure a cluster.
+                      This takes precedence over StaticConfigurationSource.
+                    properties:
+                      group:
+                        description: |-
+                          Group is used to override the object group that this reference points to.
+                          If unspecified, defaults to "cluster.redpanda.com".
+                        type: string
+                      kind:
+                        description: |-
+                          Kind is used to override the object kind that this reference points to.
+                          If unspecified, defaults to "Redpanda".
+                        type: string
+                      name:
+                        description: Name specifies the name of the cluster being
+                          referenced.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  staticConfiguration:
+                    description: StaticConfiguration holds connection parameters to
+                      Kafka and Admin APIs.
+                    properties:
+                      admin:
+                        description: |-
+                          AdminAPISpec is the configuration information for communicating with the Admin
+                          API of a Redpanda cluster where the object should be created.
+                        properties:
+                          sasl:
+                            description: Defines authentication configuration settings
+                              for Redpanda clusters that have authentication enabled.
+                            properties:
+                              authToken:
+                                description: Specifies token for token-based authentication
+                                  (only used if no username/password are provided).
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              mechanism:
+                                description: Specifies the SASL/SCRAM authentication
+                                  mechanism.
+                                type: string
+                              password:
+                                description: Specifies the password.
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              passwordSecretRef:
+                                description: 'Deprecated: use `password` instead'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              token:
+                                description: 'Deprecated: use `authToken` instead'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              username:
+                                description: Specifies the username.
+                                type: string
+                            required:
+                            - mechanism
+                            type: object
+                          tls:
+                            description: Defines TLS configuration settings for Redpanda
+                              clusters that have TLS enabled.
+                            properties:
+                              caCert:
+                                description: CaCert is the reference for certificate
+                                  authority used to establish TLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              caCertSecretRef:
+                                description: 'Deprecated: replaced by "caCert".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              cert:
+                                description: Cert is the reference for client public
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              certSecretRef:
+                                description: 'Deprecated: replaced by "cert".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              enabled:
+                                description: |-
+                                  Enabled tells any connections derived from this configuration to leverage TLS even if no
+                                  certificate configuration is specified. It *only* is relevant if no other field is specified
+                                  in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+                                  results in attempting to create a connection using TLS - specifying "false" in such a case does
+                                  *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+                                  connection is served by publically issued TLS certificates that don't require any additional certificate
+                                  specification.
+                                type: boolean
+                              insecureSkipTlsVerify:
+                                description: InsecureSkipTLSVerify can skip verifying
+                                  Redpanda self-signed certificate when establish
+                                  TLS connection to Redpanda
+                                type: boolean
+                              key:
+                                description: Key is the reference for client private
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              keySecretRef:
+                                description: 'Deprecated: replaced by "key".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                            type: object
+                          urls:
+                            description: Specifies a list of broker addresses in the
+                              format <host>:<port>
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - urls
+                        type: object
+                      kafka:
+                        description: |-
+                          Kafka is the configuration information for communicating with the Kafka
+                          API of a Redpanda cluster where the object should be created.
+                        properties:
+                          brokers:
+                            description: Specifies a list of broker addresses in the
+                              format <host>:<port>
+                            items:
+                              type: string
+                            minItems: 1
+                            type: array
+                          sasl:
+                            description: Defines authentication configuration settings
+                              for Redpanda clusters that have authentication enabled.
+                            properties:
+                              awsMskIam:
+                                description: |-
+                                  KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
+                                  see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+                                properties:
+                                  accessKey:
+                                    type: string
+                                  secretKey:
+                                    description: ValueSource represents where a value
+                                      can be pulled from
+                                    properties:
+                                      configMapKeyRef:
+                                        description: |-
+                                          If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                          For target values, the string value fetched from the source will be treated as
+                                          a raw string.
+                                        properties:
+                                          key:
+                                            description: The key to select.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the ConfigMap
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      externalSecretRef:
+                                        description: |-
+                                          If the value is supplied by an external source, coordinates are embedded here.
+                                          Note: we interpret all fetched external secrets as raw string values
+                                        properties:
+                                          name:
+                                            type: string
+                                        required:
+                                        - name
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      inline:
+                                        description: Inline is the raw value specified
+                                          inline.
+                                        type: string
+                                      secretKeyRef:
+                                        description: |-
+                                          Should the value be contained in a k8s secret rather than configmap, we can refer
+                                          to it here.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
+                                  secretKeySecretRef:
+                                    description: 'Deprecated: use `secretKey` instead'
+                                    properties:
+                                      key:
+                                        description: Key in Secret data to get value
+                                          from
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  sessionToken:
+                                    description: |-
+                                      SessionToken, if non-empty, is a session / security token to use for authentication.
+                                      See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
+                                    properties:
+                                      configMapKeyRef:
+                                        description: |-
+                                          If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                          For target values, the string value fetched from the source will be treated as
+                                          a raw string.
+                                        properties:
+                                          key:
+                                            description: The key to select.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the ConfigMap
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      externalSecretRef:
+                                        description: |-
+                                          If the value is supplied by an external source, coordinates are embedded here.
+                                          Note: we interpret all fetched external secrets as raw string values
+                                        properties:
+                                          name:
+                                            type: string
+                                        required:
+                                        - name
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      inline:
+                                        description: Inline is the raw value specified
+                                          inline.
+                                        type: string
+                                      secretKeyRef:
+                                        description: |-
+                                          Should the value be contained in a k8s secret rather than configmap, we can refer
+                                          to it here.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
+                                  sessionTokenSecretRef:
+                                    description: 'Deprecated: use `sessionToken` instead'
+                                    properties:
+                                      key:
+                                        description: Key in Secret data to get value
+                                          from
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  userAgent:
+                                    description: |-
+                                      UserAgent is the user agent to for the client to use when connecting
+                                      to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>".
+
+                                      Setting a UserAgent allows authorizing based on the aws:UserAgent
+                                      condition key; see the following link for more details:
+                                      https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-useragent
+                                    type: string
+                                required:
+                                - accessKey
+                                - userAgent
+                                type: object
+                              gssapi:
+                                description: KafkaSASLGSSAPI represents the Kafka
+                                  Kerberos config.
+                                properties:
+                                  authType:
+                                    type: string
+                                  enableFast:
+                                    description: |-
+                                      EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
+                                      It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
+                                      FAST provides increased resistance to passive password guessing attacks.
+                                    type: boolean
+                                  kerberosConfigPath:
+                                    type: string
+                                  keyTabPath:
+                                    type: string
+                                  password:
+                                    description: ValueSource represents where a value
+                                      can be pulled from
+                                    properties:
+                                      configMapKeyRef:
+                                        description: |-
+                                          If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                          For target values, the string value fetched from the source will be treated as
+                                          a raw string.
+                                        properties:
+                                          key:
+                                            description: The key to select.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the ConfigMap
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      externalSecretRef:
+                                        description: |-
+                                          If the value is supplied by an external source, coordinates are embedded here.
+                                          Note: we interpret all fetched external secrets as raw string values
+                                        properties:
+                                          name:
+                                            type: string
+                                        required:
+                                        - name
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      inline:
+                                        description: Inline is the raw value specified
+                                          inline.
+                                        type: string
+                                      secretKeyRef:
+                                        description: |-
+                                          Should the value be contained in a k8s secret rather than configmap, we can refer
+                                          to it here.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
+                                  passwordSecretRef:
+                                    description: 'Deprecated: use `password` instead'
+                                    properties:
+                                      key:
+                                        description: Key in Secret data to get value
+                                          from
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  realm:
+                                    type: string
+                                  serviceName:
+                                    type: string
+                                  username:
+                                    type: string
+                                required:
+                                - authType
+                                - enableFast
+                                - kerberosConfigPath
+                                - keyTabPath
+                                - realm
+                                - serviceName
+                                - username
+                                type: object
+                              mechanism:
+                                description: Specifies the SASL/SCRAM authentication
+                                  mechanism.
+                                type: string
+                              oauth:
+                                description: KafkaSASLOAuthBearer is the config struct
+                                  for the SASL OAuthBearer mechanism
+                                properties:
+                                  token:
+                                    description: ValueSource represents where a value
+                                      can be pulled from
+                                    properties:
+                                      configMapKeyRef:
+                                        description: |-
+                                          If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                          For target values, the string value fetched from the source will be treated as
+                                          a raw string.
+                                        properties:
+                                          key:
+                                            description: The key to select.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the ConfigMap
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      externalSecretRef:
+                                        description: |-
+                                          If the value is supplied by an external source, coordinates are embedded here.
+                                          Note: we interpret all fetched external secrets as raw string values
+                                        properties:
+                                          name:
+                                            type: string
+                                        required:
+                                        - name
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      inline:
+                                        description: Inline is the raw value specified
+                                          inline.
+                                        type: string
+                                      secretKeyRef:
+                                        description: |-
+                                          Should the value be contained in a k8s secret rather than configmap, we can refer
+                                          to it here.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                    x-kubernetes-validations:
+                                    - message: one of inline, configMapKeyRef, secretKeyRef,
+                                        or externalSecretRef must be set
+                                      rule: has(self.inline) || has(self.configMapKeyRef)
+                                        || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                    - message: if inline is set no other field can
+                                        be set
+                                      rule: '!has(self.inline) || (has(self.inline)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if configMapKeyRef is set no other
+                                        field can be set
+                                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                        && !(has(self.inline) || has(self.secretKeyRef)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if secretKeyRef is set no other field
+                                        can be set
+                                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                        && !(has(self.configMapKeyRef) || has(self.inline)
+                                        || has(self.externalSecretRef)))'
+                                    - message: if externalSecretRef is set no other
+                                        field can be set
+                                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                        || has(self.inline)))'
+                                  tokenSecretRef:
+                                    description: 'Deprecated: use `token` instead'
+                                    properties:
+                                      key:
+                                        description: Key in Secret data to get value
+                                          from
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name of the referent.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                type: object
+                              password:
+                                description: Specifies the password.
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              passwordSecretRef:
+                                description: 'Deprecated: use `password` instead'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              username:
+                                description: Specifies the username.
+                                type: string
+                            required:
+                            - mechanism
+                            type: object
+                            x-kubernetes-validations:
+                            - message: username and password must be set when mechanism
+                                is plain
+                              rule: self.mechanism.lowerAscii() != 'plain' || (self.username
+                                != "" && (has(self.passwordSecretRef) || has(self.password)))
+                            - message: username and password must be set when mechanism
+                                is sha-256
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-256'
+                                || (self.username != "" && (has(self.passwordSecretRef)
+                                || has(self.password)))
+                            - message: username and password must be set when mechanism
+                                is sha-512
+                              rule: self.mechanism.lowerAscii() != 'scram-sha-512'
+                                || (self.username != "" && (has(self.passwordSecretRef)
+                                || has(self.password)))
+                            - message: oauth must be set when mechanism is oauth
+                              rule: self.mechanism.lowerAscii() != 'oauthbearer' ||
+                                has(self.oauth)
+                            - message: gssapi must be set when mechanism is gssapi
+                              rule: self.mechanism.lowerAscii() != 'gssapi' || has(self.gssapi)
+                            - message: awsMskIam must be set when mechanism is aws_msk_iam
+                              rule: self.mechanism.lowerAscii() != 'aws_msk_iam' ||
+                                has(self.awsMskIam)
+                          tls:
+                            description: Defines TLS configuration settings for Redpanda
+                              clusters that have TLS enabled.
+                            properties:
+                              caCert:
+                                description: CaCert is the reference for certificate
+                                  authority used to establish TLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              caCertSecretRef:
+                                description: 'Deprecated: replaced by "caCert".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              cert:
+                                description: Cert is the reference for client public
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              certSecretRef:
+                                description: 'Deprecated: replaced by "cert".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              enabled:
+                                description: |-
+                                  Enabled tells any connections derived from this configuration to leverage TLS even if no
+                                  certificate configuration is specified. It *only* is relevant if no other field is specified
+                                  in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+                                  results in attempting to create a connection using TLS - specifying "false" in such a case does
+                                  *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+                                  connection is served by publically issued TLS certificates that don't require any additional certificate
+                                  specification.
+                                type: boolean
+                              insecureSkipTlsVerify:
+                                description: InsecureSkipTLSVerify can skip verifying
+                                  Redpanda self-signed certificate when establish
+                                  TLS connection to Redpanda
+                                type: boolean
+                              key:
+                                description: Key is the reference for client private
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              keySecretRef:
+                                description: 'Deprecated: replaced by "key".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                            type: object
+                        required:
+                        - brokers
+                        type: object
+                      schemaRegistry:
+                        description: |-
+                          SchemaRegistry is the configuration information for communicating with the Schema Registry
+                          API of a Redpanda cluster where the object should be created.
+                        properties:
+                          sasl:
+                            description: Defines authentication configuration settings
+                              for Redpanda clusters that have authentication enabled.
+                            properties:
+                              authToken:
+                                description: ValueSource represents where a value
+                                  can be pulled from
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              mechanism:
+                                description: Specifies the SASL/SCRAM authentication
+                                  mechanism.
+                                type: string
+                              password:
+                                description: Specifies the password.
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              passwordSecretRef:
+                                description: 'Deprecated: use `password` instead'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              token:
+                                description: 'Deprecated: use `authToken` instead'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              username:
+                                description: Specifies the username.
+                                type: string
+                            required:
+                            - mechanism
+                            type: object
+                          tls:
+                            description: Defines TLS configuration settings for Redpanda
+                              clusters that have TLS enabled.
+                            properties:
+                              caCert:
+                                description: CaCert is the reference for certificate
+                                  authority used to establish TLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              caCertSecretRef:
+                                description: 'Deprecated: replaced by "caCert".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              cert:
+                                description: Cert is the reference for client public
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              certSecretRef:
+                                description: 'Deprecated: replaced by "cert".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              enabled:
+                                description: |-
+                                  Enabled tells any connections derived from this configuration to leverage TLS even if no
+                                  certificate configuration is specified. It *only* is relevant if no other field is specified
+                                  in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+                                  results in attempting to create a connection using TLS - specifying "false" in such a case does
+                                  *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+                                  connection is served by publically issued TLS certificates that don't require any additional certificate
+                                  specification.
+                                type: boolean
+                              insecureSkipTlsVerify:
+                                description: InsecureSkipTLSVerify can skip verifying
+                                  Redpanda self-signed certificate when establish
+                                  TLS connection to Redpanda
+                                type: boolean
+                              key:
+                                description: Key is the reference for client private
+                                  certificate to establish mTLS connection to Redpanda
+                                properties:
+                                  configMapKeyRef:
+                                    description: |-
+                                      If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                                      For target values, the string value fetched from the source will be treated as
+                                      a raw string.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap
+                                          or its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  externalSecretRef:
+                                    description: |-
+                                      If the value is supplied by an external source, coordinates are embedded here.
+                                      Note: we interpret all fetched external secrets as raw string values
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  inline:
+                                    description: Inline is the raw value specified
+                                      inline.
+                                    type: string
+                                  secretKeyRef:
+                                    description: |-
+                                      Should the value be contained in a k8s secret rather than configmap, we can refer
+                                      to it here.
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select
+                                          from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or
+                                          its key must be defined
+                                        type: boolean
+                                    required:
+                                    - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                                x-kubernetes-map-type: atomic
+                                x-kubernetes-validations:
+                                - message: one of inline, configMapKeyRef, secretKeyRef,
+                                    or externalSecretRef must be set
+                                  rule: has(self.inline) || has(self.configMapKeyRef)
+                                    || has(self.secretKeyRef) || has(self.externalSecretRef)
+                                - message: if inline is set no other field can be
+                                    set
+                                  rule: '!has(self.inline) || (has(self.inline) &&
+                                    !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if configMapKeyRef is set no other field
+                                    can be set
+                                  rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                                    && !(has(self.inline) || has(self.secretKeyRef)
+                                    || has(self.externalSecretRef)))'
+                                - message: if secretKeyRef is set no other field can
+                                    be set
+                                  rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef)
+                                    && !(has(self.configMapKeyRef) || has(self.inline)
+                                    || has(self.externalSecretRef)))'
+                                - message: if externalSecretRef is set no other field
+                                    can be set
+                                  rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                                    && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
+                                    || has(self.inline)))'
+                              keySecretRef:
+                                description: 'Deprecated: replaced by "key".'
+                                properties:
+                                  key:
+                                    description: Key in Secret data to get value from
+                                    type: string
+                                  name:
+                                    description: |-
+                                      Name of the referent.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                            type: object
+                          urls:
+                            description: Specifies a list of broker addresses in the
+                              format <host>:<port>
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - urls
+                        type: object
+                    type: object
+                type: object
+                x-kubernetes-validations:
+                - message: 'spec.cluster.staticConfiguration.admin: required value'
+                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.admin)'
+                - message: 'spec.cluster.staticConfiguration.kafka: required value'
+                  rule: '!has(self.staticConfiguration) || has(self.staticConfiguration.kafka)'
+                - message: ClusterSource is immutable
+                  rule: self == oldSelf
+                - message: either clusterRef or staticConfiguration must be set
+                  rule: has(self.clusterRef) || has(self.staticConfiguration)
+              principals:
+                description: |-
+                  Principals defines the list of users assigned to this role.
+                  Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+                items:
+                  type: string
+                maxItems: 1024
+                type: array
+            required:
+            - cluster
+            type: object
+          status:
+            default:
+              conditions:
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: Pending
+                status: Unknown
+                type: Synced
+            description: Represents the current status of the Redpanda role.
+            properties:
+              conditions:
+                description: Conditions holds the conditions for the Redpanda role.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              managedAcls:
+                description: |-
+                  ManagedACLs returns whether the role has managed ACLs that need
+                  to be cleaned up.
+                type: boolean
+              managedPrincipals:
+                description: |-
+                  ManagedPrincipals returns whether the role has managed principals (membership)
+                  that are being reconciled by the operator.
+                type: boolean
+              managedRole:
+                description: |-
+                  ManagedRole returns whether the role has been created in Redpanda and needs
+                  to be cleaned up.
+                type: boolean
+              observedGeneration:
+                description: Specifies the last observed generation.
+                format: int64
+                type: integer
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

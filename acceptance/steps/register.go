@@ -33,6 +33,7 @@ func init() {
 	// User scenario steps
 	framework.RegisterStep(`^user "([^"]*)" is successfully synced$`, userIsSuccessfullySynced)
 
+<<<<<<< HEAD
 	framework.RegisterStep(`^there is no user "([^"]*)" in cluster "([^"]*)"$`, thereIsNoUser)
 	framework.RegisterStep(`^there are already the following ACLs in cluster "([^"]*)":$`, thereAreAlreadyTheFollowingACLsInCluster)
 	framework.RegisterStep(`^there are the following pre-existing users in cluster "([^"]*)"$`, thereAreTheFollowingPreexistingUsersInCluster)
@@ -43,6 +44,23 @@ func init() {
 	framework.RegisterStep(`^"([^"]*)" should exist and be able to authenticate to the "([^"]*)" cluster$`, shouldExistAndBeAbleToAuthenticateToTheCluster)
 	framework.RegisterStep(`^"([^"]*)" should be able to authenticate to the "([^"]*)" cluster with password "([^"]*)" and mechanism "([^"]*)"$`, shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism)
 	framework.RegisterStep(`^there should be ACLs in the cluster "([^"]*)" for user "([^"]*)"$`, thereShouldBeACLsInTheClusterForUser)
+=======
+	// Role scenario steps
+	framework.RegisterStep(`^role "([^"]*)" is successfully synced$`, roleIsSuccessfullySynced)
+	framework.RegisterStep(`^I delete the CRD role "([^"]*)"$`, iDeleteTheCRDRole)
+	framework.RegisterStep(`^there is no role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsNoRole)
+	framework.RegisterStep(`^role "([^"]*)" should exist in( vectorized)? cluster "([^"]*)"$`, roleShouldExistInCluster)
+	framework.RegisterStep(`^there should be no role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldBeNoRoleInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should not have member "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, roleShouldNotHaveMemberInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should have ACLs for topic pattern "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveACLsForTopicPatternInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should have no managed ACLs in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveNoManagedACLsInCluster)
+	framework.RegisterStep(`^there should be no ACLs for role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldBeNoACLsForRoleInCluster)
+	framework.RegisterStep(`^role "([^"]*)" should have members "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveMembersAndInCluster)
+	framework.RegisterStep(`^there is a pre-existing role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsAPreExistingRole)
+	framework.RegisterStep(`^there should still be role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldStillBeRole)
+	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have no members in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveNoMembersInCluster)
+	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have status field "([^"]*)" set to "([^"]*)"$`, redpandaRoleShouldHaveStatusFieldSetTo)
+>>>>>>> 7b1c1df1 (feat(operator): implement role membership reconciliation (#1192))
 
 	// Metrics scenario steps
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)
