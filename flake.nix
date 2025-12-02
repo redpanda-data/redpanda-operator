@@ -42,7 +42,7 @@
 
           devshells.default = {
             env = [
-              { name = "GOROOT"; value = "${pkgs.go_1_24}/share/go"; }
+              { name = "GOROOT"; value = "${pkgs.go}/share/go"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
@@ -71,7 +71,7 @@
               pkgs.go-licenses
               pkgs.go-task
               pkgs.go-tools
-              pkgs.go_1_24
+              pkgs.go
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.gotestsum

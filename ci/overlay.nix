@@ -6,7 +6,7 @@
   controller-gen = pkgs.callPackage ./controller-gen.nix { };
   crd-ref-docs = pkgs.callPackage ./crd-ref-docs.nix { };
   docker-tag-list = pkgs.callPackage ./docker-tag-list.nix { };
-  go-licenses = pkgs.callPackage ./go-licenses.nix { inherit prev; };
+  go-licenses = pkgs.callPackage ./go-licenses.nix { };
   goverter = pkgs.callPackage ./goverter.nix { };
   helm-3-10-3 = pkgs.callPackage ./helm.nix { };
   kuttl = pkgs.callPackage ./kuttl.nix { };
