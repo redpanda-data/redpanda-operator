@@ -52,8 +52,8 @@ func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha
 
 func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (client.Patch, error) {
 	role := request.object
-	hasManagedACLs, hasManagedRole := role.HasManagedACLs(), role.HasManagedRole()
-	shouldManageACLs, shouldManageRole := role.ShouldManageACLs(), role.ShouldManageRole()
+	hasManagedACLs, hasManagedRole, hasManagedPrincipals := role.HasManagedACLs(), role.HasManagedRole(), role.HasManagedPrincipals()
+	shouldManageACLs, shouldManageRole, shouldManagePrincipals := role.ShouldManageACLs(), role.ShouldManageRole(), role.ShouldManagePrincipals()
 
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
@@ -69,6 +69,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithObservedGeneration(role.Generation).
 			WithManagedRole(hasManagedRole).
 			WithManagedACLs(hasManagedACLs).
+			WithManagedPrincipals(hasManagedPrincipals).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -86,6 +87,25 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedRole = true
+		hasManagedPrincipals = shouldManagePrincipals
+	}
+
+	if hasRole && shouldManageRole {
+		// Update principals if we should manage them
+		if shouldManagePrincipals {
+			if err := rolesClient.Update(ctx, role); err != nil {
+				return createPatch(err)
+			}
+			hasManagedPrincipals = true
+		} else if hasManagedPrincipals {
+			// If we were managing principals but shouldn't anymore, clear them
+			if err := rolesClient.ClearPrincipals(ctx, role); err != nil {
+				return createPatch(err)
+			}
+			hasManagedPrincipals = false
+		}
+		// Always claim ownership when managing a role
+		hasManagedRole = true
 	}
 
 	if hasRole && !shouldManageRole {
@@ -93,6 +113,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedRole = false
+		hasManagedPrincipals = false
 	}
 
 	if shouldManageACLs {

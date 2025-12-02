@@ -158,6 +158,39 @@ func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.RedpandaRole
 	return nil
 }
 
+// ClearPrincipals removes all principals from a role, used when transitioning
+// from managed to unmanaged principals.
+func (c *Client) ClearPrincipals(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
+	if role == nil || role.Name == "" {
+		return fmt.Errorf("role is nil or has empty name")
+	}
+
+	// Get current role members
+	currentMembersResp, err := c.adminClient.RoleMembers(ctx, role.Name)
+	if err != nil {
+		return fmt.Errorf("getting current role members for %s: %w", role.Name, err)
+	}
+
+	// If there are no members, nothing to clear
+	if len(currentMembersResp.Members) == 0 {
+		return nil
+	}
+
+	// Convert all current members to string slice for removal
+	currentPrincipalNames := make([]string, len(currentMembersResp.Members))
+	for i, member := range currentMembersResp.Members {
+		currentPrincipalNames[i] = member.PrincipalType + ":" + member.Name
+	}
+
+	// Remove all current members
+	err = c.updateRoleMembers(ctx, role.Name, nil, currentPrincipalNames)
+	if err != nil {
+		return fmt.Errorf("clearing principals for role %s: %w", role.Name, err)
+	}
+
+	return nil
+}
+
 // updateRoleMembers updates role membership by adding and removing principals
 func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, toRemove []string) error {
 	if roleName == "" {

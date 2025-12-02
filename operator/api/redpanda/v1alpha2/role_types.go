@@ -73,6 +73,14 @@ func (r *RedpandaRole) HasManagedRole() bool {
 	return r.Status.ManagedRole
 }
 
+func (r *RedpandaRole) ShouldManagePrincipals() bool {
+	return len(r.Spec.Principals) > 0
+}
+
+func (r *RedpandaRole) HasManagedPrincipals() bool {
+	return r.Status.ManagedPrincipals
+}
+
 // RoleSpec defines the configuration of a Redpanda role.
 type RoleSpec struct {
 	// ClusterSource is a reference to the cluster where the role should be created.
@@ -110,6 +118,9 @@ type RoleStatus struct {
 	// ManagedRole returns whether the role has been created in Redpanda and needs
 	// to be cleaned up.
 	ManagedRole bool `json:"managedRole,omitempty"`
+	// ManagedPrincipals returns whether the role has managed principals (membership)
+	// that are being reconciled by the operator.
+	ManagedPrincipals bool `json:"managedPrincipals,omitempty"`
 }
 
 // RedpandaRoleList contains a list of Redpanda role objects.

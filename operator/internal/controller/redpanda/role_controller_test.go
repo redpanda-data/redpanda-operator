@@ -151,6 +151,7 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 				// set the management flags
 				require.Equal(t, role.ShouldManageACLs(), role.Status.ManagedACLs)
 				require.Equal(t, role.ShouldManageRole(), role.Status.ManagedRole)
+				require.Equal(t, role.ShouldManagePrincipals(), role.Status.ManagedPrincipals)
 
 				if role.ShouldManageRole() {
 					// make sure we actually have a role
@@ -339,6 +340,7 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 			require.Equal(t, tt.shouldManageACLs, role.ShouldManageACLs(), tt.description)
 			require.Equal(t, tt.shouldManageRole, role.Status.ManagedRole, tt.description)
 			require.Equal(t, tt.shouldManageACLs, role.Status.ManagedACLs, tt.description)
+			require.Equal(t, len(tt.principals) > 0, role.Status.ManagedPrincipals, tt.description)
 
 			// Verify role exists if managed
 			if tt.shouldManageRole {
@@ -404,8 +406,10 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 		require.NoError(t, environment.Factory.Get(ctx, key, role))
 		require.True(t, role.ShouldManageRole())
 		require.False(t, role.ShouldManageACLs())
+		require.True(t, role.ShouldManagePrincipals())
 		require.True(t, role.Status.ManagedRole)
 		require.False(t, role.Status.ManagedACLs)
+		require.True(t, role.Status.ManagedPrincipals)
 
 		// Verify role exists but no ACLs
 		rolesClient, err := environment.Factory.Roles(ctx, role)
@@ -448,8 +452,10 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 		require.NoError(t, environment.Factory.Get(ctx, key, role))
 		require.True(t, role.ShouldManageRole())
 		require.True(t, role.ShouldManageACLs())
+		require.True(t, role.ShouldManagePrincipals())
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedACLs)
+		require.True(t, role.Status.ManagedPrincipals)
 
 		// Verify both role and ACLs exist
 		rolesClient, err := environment.Factory.Roles(ctx, role)
@@ -481,6 +487,7 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 		require.NoError(t, environment.Factory.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedACLs)
+		require.True(t, role.Status.ManagedPrincipals)
 		require.Equal(t, []string{"User:lifecycle-user", "User:additional-user"}, role.Spec.Principals)
 
 		// Verify role still exists with updated principals and ACLs remain
@@ -513,8 +520,10 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 		require.NoError(t, environment.Factory.Get(ctx, key, role))
 		require.True(t, role.ShouldManageRole())
 		require.False(t, role.ShouldManageACLs())
+		require.True(t, role.ShouldManagePrincipals())
 		require.True(t, role.Status.ManagedRole)
 		require.False(t, role.Status.ManagedACLs)
+		require.True(t, role.Status.ManagedPrincipals)
 
 		// Verify role still exists but ACLs are removed
 		rolesClient, err := environment.Factory.Roles(ctx, role)
@@ -535,6 +544,156 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 	})
 
 	// Phase 5: Clean up
+	t.Run("cleanup", func(t *testing.T) {
+		require.NoError(t, environment.Factory.Delete(ctx, role))
+		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+		require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, role)))
+	})
+}
+
+func TestRoleMembershipReconciliation(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	// Create a role with initial members
+	role := &redpandav1alpha2.RedpandaRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceDefault,
+			Name:      "membership-role-" + strconv.Itoa(int(time.Now().UnixNano())),
+		},
+		Spec: redpandav1alpha2.RoleSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Principals:    []string{"User:alice", "User:bob"},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(role)
+	req := ctrl.Request{NamespacedName: key}
+
+	// Initial creation
+	t.Run("initial_creation", func(t *testing.T) {
+		require.NoError(t, environment.Factory.Create(ctx, role))
+		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.True(t, role.Status.ManagedPrincipals)
+		require.Equal(t, []string{"User:alice", "User:bob"}, role.Spec.Principals)
+
+		// Verify role exists with correct members
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole)
+	})
+
+	// Test 1: Add a new member
+	t.Run("add_member", func(t *testing.T) {
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:alice", "User:bob", "User:charlie"}
+
+		require.NoError(t, environment.Factory.Update(ctx, role))
+		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.True(t, role.Status.ManagedPrincipals)
+		require.Equal(t, []string{"User:alice", "User:bob", "User:charlie"}, role.Spec.Principals)
+
+		// Verify the role still exists and reconciliation was triggered
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should still exist after membership update")
+	})
+
+	// Test 2: Remove a member
+	t.Run("remove_member", func(t *testing.T) {
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:alice", "User:charlie"}
+
+		require.NoError(t, environment.Factory.Update(ctx, role))
+		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.True(t, role.Status.ManagedPrincipals)
+		require.Equal(t, []string{"User:alice", "User:charlie"}, role.Spec.Principals)
+
+		// Verify the role still exists after removing a member
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should still exist after member removal")
+	})
+
+	// Test 3: Replace all members
+	t.Run("replace_all_members", func(t *testing.T) {
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:dave", "User:eve"}
+
+		require.NoError(t, environment.Factory.Update(ctx, role))
+		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.True(t, role.Status.ManagedPrincipals)
+		require.Equal(t, []string{"User:dave", "User:eve"}, role.Spec.Principals)
+
+		// Verify the role still exists after replacing all members
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should still exist after member replacement")
+	})
+
+	// Test 4: Remove all members (empty principals list)
+	t.Run("remove_all_members", func(t *testing.T) {
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		role.Spec.Principals = nil
+
+		require.NoError(t, environment.Factory.Update(ctx, role))
+		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.False(t, role.Status.ManagedPrincipals) // No longer managing principals
+		require.Empty(t, role.Spec.Principals)
+
+		// Verify the role still exists even with no members
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should still exist with empty membership")
+	})
+
+	// Cleanup
 	t.Run("cleanup", func(t *testing.T) {
 		require.NoError(t, environment.Factory.Delete(ctx, role))
 		_, err := environment.Reconciler.Reconcile(ctx, req)

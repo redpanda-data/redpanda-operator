@@ -2551,6 +2551,11 @@ spec:
                   ManagedACLs returns whether the role has managed ACLs that need
                   to be cleaned up.
                 type: boolean
+              managedPrincipals:
+                description: |-
+                  ManagedPrincipals returns whether the role has managed principals (membership)
+                  that are being reconciled by the operator.
+                type: boolean
               managedRole:
                 description: |-
                   ManagedRole returns whether the role has been created in Redpanda and needs
