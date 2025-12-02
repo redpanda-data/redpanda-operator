@@ -11,6 +11,7 @@ package gotohelm
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,7 +26,6 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/context"
 	"golang.org/x/tools/go/packages"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
