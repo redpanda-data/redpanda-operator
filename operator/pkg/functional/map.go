@@ -63,6 +63,7 @@ func deepCopyElements(v []any) []any {
 // including merging arrays of matching keyed arrays. Note that
 // the array merging behavior is *not* the same as that of Helm
 // so this should not be used as a replacement for that.
+// Precedence is given to `second`.
 func MergeMaps(first, second map[string]any) map[string]any {
 	merged := deepCopyMap(first)
 	for k, v := range second {
@@ -72,11 +73,13 @@ func MergeMaps(first, second map[string]any) map[string]any {
 				// the types must match, otherwise we can't merge them
 				if vmap, ok := v.(map[string]any); ok {
 					merged[k] = MergeMaps(cast, deepCopyMap(vmap))
+					continue
 				}
 			case []any:
 				// the types must match, otherwise we can't merge them
 				if varray, ok := v.([]any); ok {
 					merged[k] = append(cast, deepCopyElements(varray))
+					continue
 				}
 			}
 		}

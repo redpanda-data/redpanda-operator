@@ -460,7 +460,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $args := (list `/redpanda-operator` `sidecar` `--redpanda-yaml` `/etc/redpanda/redpanda.yaml` `--redpanda-cluster-namespace` $dot.Release.Namespace `--redpanda-cluster-name` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") `--run-broker-probe` `--broker-probe-broker-url` (get (fromJson (include "redpanda.adminURLsCLI" (dict "a" (list $dot)))) "r")) -}}
+{{- $args := (list `/redpanda-operator` `sidecar` `--redpanda-yaml` `/etc/redpanda/redpanda.yaml` `--redpanda-cluster-namespace` $dot.Release.Namespace `--redpanda-cluster-name` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $dot)))) "r") (printf "--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" (get (fromJson (include "redpanda.ChartLabel" (dict "a" (list $dot)))) "r") (get (fromJson (include "redpanda.Name" (dict "a" (list $dot)))) "r") $dot.Release.Name) `--run-broker-probe` `--broker-probe-broker-url` (get (fromJson (include "redpanda.adminURLsCLI" (dict "a" (list $dot)))) "r")) -}}
 {{- if $values.statefulset.sideCars.brokerDecommissioner.enabled -}}
 {{- $args = (concat (default (list) $args) (default (list) (list `--run-decommissioner` (printf "--decommission-vote-interval=%s" $values.statefulset.sideCars.brokerDecommissioner.decommissionAfter) (printf "--decommission-requeue-timeout=%s" $values.statefulset.sideCars.brokerDecommissioner.decommissionRequeueTimeout) `--decommission-vote-count=2`))) -}}
 {{- end -}}
