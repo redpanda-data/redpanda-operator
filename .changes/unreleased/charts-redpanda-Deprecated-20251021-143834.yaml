@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Deprecated
-body: '- `statefulset.sideCars.controllers.createRBAC` is deprecated and no longer respected. In most cases, setting this field to `false` would result in a broken deployment. RBAC may be controlled via `rbac.enabled` or per controller via `statefulset.sideCars.controllers.{pvcUnbinder,brokerDecommissioner}.enabled`.'
-time: 2025-10-21T14:38:34.206376-04:00

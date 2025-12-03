@@ -1,4 +1,0 @@
-project: operator
-kind: Deprecated
-body: The entirety of the `spec.clusterSpec.console` block in the Redpanda CR is now deprecated and will be removed in the future. Any Redpanda CR that contains one will automatically be migrated to a standalone Console CR with a back reference to the parent Redpanda CR. Note that these will *not* be automatically deleted when the `console` stanza is removed or when the parent Redpanda CR is deleted.
-time: 2025-11-26T12:05:45.014863-05:00

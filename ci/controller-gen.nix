@@ -1,6 +1,6 @@
-{ buildGoModule, lib, fetchFromGitHub }:
+{ buildGo124Module, lib, fetchFromGitHub }:
 
-buildGoModule rec {
+buildGo124Module rec {
   pname = "controller-tools";
   version = "0.16.3";
 

@@ -212,6 +212,7 @@ type conditionType struct {
 	Reasons        []*reasonType
 	Final          bool
 	Rollup         []string
+	RateLimit      string
 
 	kind               string
 	defaultReason      *reasonType
@@ -251,6 +252,10 @@ func (c *conditionType) HasTransientError() bool {
 		}
 	}
 	return false
+}
+
+func (c *conditionType) HasRateLimit() bool {
+	return c.RateLimit != ""
 }
 
 func (c *conditionType) HasTerminalError() bool {
