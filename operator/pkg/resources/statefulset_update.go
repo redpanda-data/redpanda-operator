@@ -26,6 +26,7 @@ import (
 	"github.com/fluxcd/pkg/runtime/logger"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -879,7 +880,7 @@ func (r *StatefulSetResource) evaluateUnderReplicatedPartitions(
 		return fmt.Errorf("getting broker metrics (%s): %w", adminURL.String(), errRedpandaNotReady)
 	}
 
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.UTF8Validation)
 	metrics, err := parser.TextToMetricFamilies(resp.Body)
 	if err != nil {
 		return err

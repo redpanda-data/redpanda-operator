@@ -1,9 +1,9 @@
-{ buildGoModule
+{ buildGo124Module
 , fetchFromGitHub
 , lib
 }:
 
-buildGoModule rec {
+buildGo124Module rec {
   pname = "crd-ref-docs";
   version = "0.1.0";
 

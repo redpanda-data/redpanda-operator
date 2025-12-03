@@ -1,8 +1,0 @@
-project: charts/redpanda
-kind: Added
-body: |-
-    Added a chart wide `podTemplate` field which may be used to control Pod attributes chart wide.
-
-      This field has a lower precedence than `statefulset.podTemplate` and
-      `post_install_job.podTemplate` but will still be merged with them.
-time: 2025-03-28T15:34:10.945119-04:00

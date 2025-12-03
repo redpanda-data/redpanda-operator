@@ -86,6 +86,7 @@ func New(t *testing.T, options Options) *Env {
 	require.NoError(t, err)
 
 	for _, image := range options.ImportImages {
+		options.Logger.Info("importing image", "image", image)
 		require.NoError(t, host.ImportImage(image))
 	}
 

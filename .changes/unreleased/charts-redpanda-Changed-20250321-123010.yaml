@@ -1,8 +1,0 @@
-project: charts/redpanda
-kind: Changed
-body: |-
-    `values.schema.json` is now "closed" (`additionalProperties: false`)
-
-      Any unexpected values will result in a validation error,previously they would
-      have been ignored.
-time: 2025-03-21T12:30:10.318935-04:00
