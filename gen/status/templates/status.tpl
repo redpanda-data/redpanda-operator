@@ -28,6 +28,13 @@ import (
     "github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
+// ratelimitedCondition is a condition wrapped in some rate limiting configuration for doing
+// things like debouncing reconciliation.
+type ratelimitedCondition struct {
+    condition metav1.Condition
+    rate      time.Duration
+}
+
 {{ range $status := $.Statuses -}}{{/* Type Declarations */}}
 {{- range $condition := $status.Conditions }}
 {{ $condition.ConditionComment }}
@@ -82,7 +89,7 @@ func (s *{{ $status.GoName }}) UpdateConditions(o client.Object) bool {
     }
 
     updated := false
-    for _, condition := range s.getConditions(o.GetGeneration()) {
+    for _, condition := range s.getRateLimitedConditions(o.GetGeneration()) {
         if setStatusCondition(conditions, condition) {
             updated = true
         }
@@ -104,6 +111,33 @@ func (s *{{ $status.GoName }}) StatusConditionConfigs(o client.Object) []*applym
     }
 
     return utils.StatusConditionConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+}
+
+// getRateLimit returns the rate limiting configuration for a given condition
+func (s *{{ $status.GoName }}) getRateLimit(conditionType string) time.Duration {
+    switch conditionType {
+    {{- range $condition := $status.ManualConditions }}
+	{{- if $condition.HasRateLimit }}
+	case {{ $condition.GoName}}:
+        return {{ $condition.RateLimit }}
+    {{- end }}  
+    {{- end }}
+    }
+    return 0
+}
+
+// getRateLimitedConditions returns the rate limited aggregated status conditions of the {{ $status.GoName }}.
+func (s *{{ $status.GoName }}) getRateLimitedConditions(generation int64) []ratelimitedCondition {
+    conditions := []ratelimitedCondition{}
+    
+    for _, condition := range s.getConditions(generation) {
+        conditions = append(conditions, ratelimitedCondition{
+            condition: condition,
+            rate: s.getRateLimit(condition.Type),
+        })
+    }
+
+	return conditions
 }
 
 // conditions returns the aggregated status conditions of the {{ $status.GoName }}.
@@ -277,45 +311,51 @@ func GetConditions(o client.Object) []metav1.Condition {
 // than only change the .LastTransitionTime if the .Status field of the condition changes, it
 // sets it if .Status, .Reason, .Message, or .ObservedGeneration changes, which works nicely with our recent check leveraged
 // for rate limiting above. It also normalizes this to be the same as what utils.StatusConditionConfigs does
-func setStatusCondition(conditions *[]metav1.Condition, newCondition metav1.Condition) (changed bool) {
+func setStatusCondition(conditions *[]metav1.Condition, newCondition ratelimitedCondition) (changed bool) {
 	if conditions == nil {
 		return false
 	}
-	existingCondition := apimeta.FindStatusCondition(*conditions, newCondition.Type)
+	existingCondition := apimeta.FindStatusCondition(*conditions, newCondition.condition.Type)
 	if existingCondition == nil {
-		if newCondition.LastTransitionTime.IsZero() {
-			newCondition.LastTransitionTime = metav1.NewTime(time.Now())
+		if newCondition.condition.LastTransitionTime.IsZero() {
+			newCondition.condition.LastTransitionTime = metav1.NewTime(time.Now())
 		}
-		*conditions = append(*conditions, newCondition)
+		*conditions = append(*conditions, newCondition.condition)
 		return true
 	}
 
     setTransitionTime := func() {
-		if !newCondition.LastTransitionTime.IsZero() {
-			existingCondition.LastTransitionTime = newCondition.LastTransitionTime
+		if !newCondition.condition.LastTransitionTime.IsZero() {
+			existingCondition.LastTransitionTime = newCondition.condition.LastTransitionTime
 		} else {
 			existingCondition.LastTransitionTime = metav1.NewTime(time.Now())
 		}
     }
     
-	if existingCondition.Status != newCondition.Status {
-		existingCondition.Status = newCondition.Status
+    // we force an update of the transition time for the condition
+    if newCondition.rate >= 0 && (time.Since(existingCondition.LastTransitionTime.Time) > newCondition.rate) {
 		setTransitionTime()
 		changed = true
 	}
 
-	if existingCondition.Reason != newCondition.Reason {
-		existingCondition.Reason = newCondition.Reason
+	if existingCondition.Status != newCondition.condition.Status {
+		existingCondition.Status = newCondition.condition.Status
 		setTransitionTime()
 		changed = true
 	}
-	if existingCondition.Message != newCondition.Message {
-		existingCondition.Message = newCondition.Message
+
+	if existingCondition.Reason != newCondition.condition.Reason {
+		existingCondition.Reason = newCondition.condition.Reason
 		setTransitionTime()
 		changed = true
 	}
-	if existingCondition.ObservedGeneration != newCondition.ObservedGeneration {
-		existingCondition.ObservedGeneration = newCondition.ObservedGeneration
+	if existingCondition.Message != newCondition.condition.Message {
+		existingCondition.Message = newCondition.condition.Message
+		setTransitionTime()
+		changed = true
+	}
+	if existingCondition.ObservedGeneration != newCondition.condition.ObservedGeneration {
+		existingCondition.ObservedGeneration = newCondition.condition.ObservedGeneration
 		setTransitionTime()
 		changed = true
 	}

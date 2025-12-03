@@ -22,6 +22,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -594,7 +595,7 @@ func (c *operatorClients) ExpectCorrectMetricsResponse(ctx context.Context) {
 
 	defer resp.Body.Close()
 
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.UTF8Validation)
 	_, err = parser.TextToMetricFamilies(resp.Body)
 	require.NoError(t, err)
 }

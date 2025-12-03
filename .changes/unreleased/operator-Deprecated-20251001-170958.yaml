@@ -1,4 +1,0 @@
-project: operator
-kind: Deprecated
-body: The Redpanda console stanza (`.spec.clusterSpec.console`) is now deprecated in favor of the stand-alone Console CRD.
-time: 2025-10-01T17:09:58.327552-04:00

@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Fixed
-body: Fixed rack awareness by mounting a service account token to the initcontainer when rack awareness is enabled.
-time: 2025-04-16T14:02:07.309507-04:00

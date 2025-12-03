@@ -239,7 +239,7 @@ func resource_MustParse(repr any) any {
 	// NB: ToString is used here because it prints out float64's in a reasonable format.
 	// As far as I can tell, go's Sprintf can't print floats without trailing
 	// zero or truncating precision.
-	return fmt.Sprintf("%s%s", ToString(numeric), strs[idx])
+	return fmt.Sprintf("%s%s", ToString(numeric), strs[idx]) // nolint:gosec // G602: the bounds are controlled, so no need to check
 }
 
 func resource_Value(repr any) int64 {

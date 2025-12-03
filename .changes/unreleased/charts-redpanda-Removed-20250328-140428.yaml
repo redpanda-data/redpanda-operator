@@ -1,6 +1,0 @@
-project: charts/redpanda
-kind: Removed
-body: |-
-    Removed the deprecated fields `license_key` and `license_secret_ref` in favor
-    of `enterprise.license` and `enterprise.licenseSecretRef`, respectively.
-time: 2025-03-28T14:04:28.760398-04:00

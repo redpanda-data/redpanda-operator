@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: "Roles can be declaratively managed using Role CRD \n"
-time: 2025-08-26T18:08:37.665347+02:00

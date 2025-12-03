@@ -80,7 +80,7 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-cluster-ref-console
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -285,7 +285,7 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-jwt-set-console
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -469,7 +469,7 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-no-cluster-console
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -679,7 +679,7 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-static-console
-          image: docker.redpanda.com/redpandadata/console:v3.2.2
+          image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3

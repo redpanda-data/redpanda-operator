@@ -155,6 +155,9 @@ func TestSyncer(t *testing.T) {
 	assert.Eventually(t, func() bool {
 		clusterOneOffset = clusterOne.getConsumerOffset(t, ctx, topicName, consumer)
 		clusterTwoOffset = clusterTwo.getConsumerOffset(t, ctx, topicName, consumer)
+		if clusterOneOffset == -1 || clusterTwoOffset == -1 {
+			return false
+		}
 		t.Logf("checking cluster offsets, expected (cluster one): %d, actual (cluster two): %d", clusterOneOffset, clusterTwoOffset)
 		return clusterOneOffset == clusterTwoOffset
 	}, syncRetryPeriod, 1*time.Second, "cluster offsets not equal expected: %d, actual: %d", clusterOneOffset, clusterTwoOffset)
@@ -394,10 +397,8 @@ func (c *cluster) getConsumerOffset(t *testing.T, ctx context.Context, name, con
 		}
 	}
 
-	t.Errorf("unable to find consumer lag for topic %q and group %q on cluster %q", name, consumer, c.name)
-
 	// unreachable
-	return 0
+	return -1
 }
 
 func (c *cluster) hasTopic(t *testing.T, ctx context.Context, name string) bool {
