@@ -19,12 +19,10 @@ import (
 
 const DeprecatedPrefix = "Deprecated"
 
-// FindDeprecatedFieldWarnings inspects an arbitrary Kubernetes object (a
-// `client.Object`) and returns a slice of deprecation warning messages for any
-// struct fields (including nested structs that have a field whose name is prefixed
-// with "Deprecated" and whose value is not the zero value. The name shown in the
-// warning is taken from the field's `json` tag when present and contains the whole
-// json path to the field.
+// FindDeprecatedFieldWarnings inspects an arbitrary `client.Object` and returns a
+// deprecation warning messages for any deeply nested struct fields that have a field
+// prefixed with "Deprecated" and whose value is not the zero value. The name shown in the
+// warning is taken from the field's full json path from the root of the CRD.
 func FindDeprecatedFieldWarnings(obj client.Object) ([]string, error) {
 	v := reflect.ValueOf(obj)
 	if v.Kind() == reflect.Pointer {
