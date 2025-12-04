@@ -21,17 +21,12 @@ const DeprecatedPrefix = "Deprecated"
 
 // FindDeprecatedFieldWarnings inspects an arbitrary Kubernetes object (a
 // `client.Object`) and returns a slice of deprecation warning messages for any
-// struct fields (including nested structs, pointer-to-structs and slices of
-// structs) that have a field whose name is prefixed with "Deprecated" and
-// whose value is not the zero value. The name shown in the warning is taken
-// from the field's `json` tag when present, otherwise the Go field name is
-// used.
-//
-// The function returns an error if the provided object is not a struct (or a
-// pointer to a struct) that can be reflected into.
+// struct fields (including nested structs that have a field whose name is prefixed
+// with "Deprecated" and whose value is not the zero value. The name shown in the
+// warning is taken from the field's `json` tag when present and contains the whole
+// json path to the field.
 func FindDeprecatedFieldWarnings(obj client.Object) ([]string, error) {
 	v := reflect.ValueOf(obj)
-	// We expect a pointer to a struct (typical for Kubernetes objects).
 	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return nil, fmt.Errorf("object is a nil pointer")
@@ -43,137 +38,138 @@ func FindDeprecatedFieldWarnings(obj client.Object) ([]string, error) {
 		return nil, fmt.Errorf("object must be a struct or pointer to struct")
 	}
 
-	warnings := make([]string, 0)
-	visited := make(map[uintptr]struct{})
+	return deprecatedFields(v, v.Type(), "", make(map[uintptr]struct{})), nil
+}
 
-	var collect func(rv reflect.Value, rt reflect.Type, path string)
-	collect = func(rv reflect.Value, rt reflect.Type, path string) {
-		// Work with the concrete value (dereference pointers/interfaces)
-		for rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface {
-			if rv.IsNil() {
-				return
+func deprecatedFields(value reflect.Value, reflectType reflect.Type, path string, visited map[uintptr]struct{}) []string {
+	out := make([]string, 0)
+
+	for value.Kind() == reflect.Pointer || value.Kind() == reflect.Interface {
+		if value.IsNil() {
+			return out
+		}
+		// protect against cycles
+		if value.Kind() == reflect.Pointer {
+			ptr := value.Pointer()
+			if _, ok := visited[ptr]; ok {
+				return out
 			}
-			// protect against cycles
-			if rv.Kind() == reflect.Pointer {
-				ptr := rv.Pointer()
-				if _, ok := visited[ptr]; ok {
-					return
-				}
-				visited[ptr] = struct{}{}
-			}
-			rv = rv.Elem()
-			rt = rv.Type()
+			visited[ptr] = struct{}{}
 		}
 
-		if rv.Kind() == reflect.Struct {
-			for i := 0; i < rv.NumField(); i++ {
-				sf := rt.Field(i)
+		// use concrete types
+		value = value.Elem()
+		reflectType = value.Type()
+	}
 
-				// Skip unexported fields.
-				if sf.PkgPath != "" {
-					continue
-				}
+	if value.Kind() == reflect.Struct {
+		for i := 0; i < value.NumField(); i++ {
+			structField := reflectType.Field(i)
 
-				fv := rv.Field(i)
+			// Skip unexported fields.
+			if structField.PkgPath != "" {
+				continue
+			}
 
-				// Determine json name and whether this field is inlined.
-				tag := sf.Tag.Get("json")
-				inline := strings.Contains(tag, "inline")
-				jsonName := ""
-				if tag == "" {
-					jsonName = sf.Name
+			fieldValue := value.Field(i)
+
+			nextPath := getNextPath(structField, path)
+			if warning := checkFieldUsage(structField, fieldValue, path); warning != "" {
+				out = append(out, warning)
+			}
+
+			switch fieldValue.Kind() {
+			case reflect.Struct:
+				out = append(out, deprecatedFields(fieldValue, fieldValue.Type(), nextPath, visited)...)
+			case reflect.Pointer, reflect.Interface:
+				if fieldValue.IsNil() {
+					// the pointer is nil, so we don't need to traverse since that's the 0 value
 				} else {
-					parts := strings.Split(tag, ",")
-					tag := parts[0]
-					switch tag {
-					case "-":
-						jsonName = sf.Name
-					case "":
-						// tag like `json:\",inline\"` -> treat as inline
-						jsonName = sf.Name
-					default:
-						jsonName = tag
+					out = append(out, deprecatedFields(fieldValue, fieldValue.Type(), nextPath, visited)...)
+				}
+			case reflect.Slice, reflect.Array:
+				elemKind := fieldValue.Type().Elem().Kind()
+				if elemKind == reflect.Struct || elemKind == reflect.Pointer || elemKind == reflect.Interface {
+					for j := 0; j < fieldValue.Len(); j++ {
+						value := fieldValue.Index(j)
+						out = append(out, deprecatedFields(value, value.Type(), nextPath, visited)...)
 					}
 				}
-
-				// compute next path unless this is an inline field
-				nextPath := path
-				if !inline {
-					if nextPath == "" {
-						nextPath = jsonName
-					} else {
-						nextPath = nextPath + "." + jsonName
-					}
-				}
-
-				// If this field's name starts with Deprecated and it's not a
-				// zero value, emit a warning using the full json path.
-				if strings.HasPrefix(sf.Name, DeprecatedPrefix) {
-					// Only check values we can interface with.
-					if fv.IsValid() && fv.CanInterface() {
-						isZero := fv.IsZero()
-						if !isZero {
-							// For deprecated fields we want the json name of the field
-							// itself. It may differ from the computed jsonName above
-							// (which is the container field's name). So compute the
-							// field's own json name.
-							fieldTag := sf.Tag.Get("json")
-							fieldJSON := ""
-							if fieldTag == "" {
-								fieldJSON = sf.Name
-							} else {
-								parts := strings.Split(fieldTag, ",")
-								if parts[0] == "-" || parts[0] == "" {
-									fieldJSON = sf.Name
-								} else {
-									fieldJSON = parts[0]
-								}
-							}
-
-							// assemble full path
-							fullPath := fieldJSON
-							if path != "" {
-								fullPath = path + "." + fieldJSON
-							}
-
-							warnings = append(warnings, fmt.Sprintf("field '%s' is deprecated and set", fullPath))
-						}
-					}
-				}
-
-				// Recurse into supported container types to find nested Deprecated fields.
-				switch fv.Kind() {
-				case reflect.Struct:
-					collect(fv, fv.Type(), nextPath)
-				case reflect.Pointer, reflect.Interface:
-					if fv.IsNil() {
-						// nothing to do
-					} else {
-						collect(fv, fv.Type(), nextPath)
-					}
-				case reflect.Slice, reflect.Array:
-					elemKind := fv.Type().Elem().Kind()
-					if elemKind == reflect.Struct || elemKind == reflect.Pointer || elemKind == reflect.Interface {
-						for j := 0; j < fv.Len(); j++ {
-							el := fv.Index(j)
-							collect(el, el.Type(), nextPath)
-						}
-					}
-				case reflect.Map:
-					// If the map has struct or pointer-to-struct values, inspect them.
-					elemKind := fv.Type().Elem().Kind()
-					if elemKind == reflect.Struct || elemKind == reflect.Pointer || elemKind == reflect.Interface {
-						for _, key := range fv.MapKeys() {
-							val := fv.MapIndex(key)
-							collect(val, val.Type(), nextPath)
-						}
+			case reflect.Map:
+				elemKind := fieldValue.Type().Elem().Kind()
+				if elemKind == reflect.Struct || elemKind == reflect.Pointer || elemKind == reflect.Interface {
+					for _, key := range fieldValue.MapKeys() {
+						value := fieldValue.MapIndex(key)
+						out = append(out, deprecatedFields(value, value.Type(), nextPath, visited)...)
 					}
 				}
 			}
 		}
 	}
 
-	collect(v, v.Type(), "")
+	return out
+}
 
-	return warnings, nil
+func checkFieldUsage(field reflect.StructField, value reflect.Value, path string) string {
+	// If this field's name starts with Deprecated and it's not a
+	// zero value, emit a warning using the full json path.
+	if strings.HasPrefix(field.Name, DeprecatedPrefix) {
+		// Only check values we can interface with.
+		if value.IsValid() && value.CanInterface() {
+			isZero := value.IsZero()
+			if !isZero {
+				fullPath := getJSONName(field)
+				if path != "" {
+					fullPath = path + "." + fullPath
+				}
+				return fmt.Sprintf("field '%s' is deprecated and set", fullPath)
+			}
+		}
+	}
+
+	return ""
+}
+
+func getJSONName(field reflect.StructField) string {
+	fieldTag := field.Tag.Get("json")
+	if fieldTag == "" {
+		return field.Name
+	}
+	parts := strings.Split(fieldTag, ",")
+	if parts[0] == "-" || parts[0] == "" {
+		return field.Name
+	}
+	return parts[0]
+}
+
+func getNextPath(field reflect.StructField, path string) string {
+	tag := field.Tag.Get("json")
+	inline := strings.Contains(tag, ",inline")
+
+	nextPath := func(name string) string {
+		if inline {
+			return path
+		}
+
+		if path == "" {
+			return name
+		}
+		return path + "." + name
+	}
+
+	if tag == "" {
+		return nextPath(field.Name)
+	}
+
+	parts := strings.Split(tag, ",")
+	tag = parts[0]
+
+	switch tag {
+	case "-":
+		return nextPath(field.Name)
+	case "":
+		return nextPath(tag)
+	default:
+		return nextPath(tag)
+	}
 }
