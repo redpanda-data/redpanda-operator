@@ -12,6 +12,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/redpanda-data/redpanda-operator/gen/deprecations"
 	"github.com/redpanda-data/redpanda-operator/gen/partial"
 	"github.com/redpanda-data/redpanda-operator/gen/pipeline"
 	"github.com/redpanda-data/redpanda-operator/gen/schema"
@@ -29,6 +30,7 @@ func main() {
 		pipeline.Cmd(),
 		schema.Cmd(),
 		status.Cmd(),
+		deprecations.Cmd(),
 	)
 
 	if err := root.Execute(); err != nil {

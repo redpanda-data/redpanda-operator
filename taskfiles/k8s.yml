@@ -24,6 +24,7 @@ tasks:
           output:rbac:artifacts:config=config/rbac/bases/operator
 
       - task: generate:statuses
+      - task: generate:deprecations
       - task: generate:crd-docs
 
       # For each controller (or really itemizable RBAC source), generate an
@@ -137,6 +138,14 @@ tasks:
       --source-path ./api/redpanda/v1alpha2/ \
       --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc \
       --templates-dir=./crd-docs-templates/
+
+  generate:deprecations:
+    label: "generate:deprecations"
+    desc: "Generate the deprecation tests for our deprecation warnings."
+    cmds:
+    - gen deprecations -v --directory ./operator/api/redpanda/v1alpha2
+    deps:
+    - task: :build:gen
 
   generate:statuses:
     run: when_changed
