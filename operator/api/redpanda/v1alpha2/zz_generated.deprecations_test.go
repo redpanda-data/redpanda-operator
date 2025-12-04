@@ -16,13 +16,8 @@ package v1alpha2
 // this package:
 //
 // - Redpanda:
-//   - Migration
-//   - ClusterSpec.LicenseKey
-//   - ClusterSpec.LicenseSecretRef
 //   - ClusterSpec.Console
 //   - ClusterSpec.Connectors
-//   - ClusterSpec.Console.Console
-//   - ClusterSpec.Console.Enterprise
 //   - ClusterSpec.Connectors.Test.Enabled
 //   - ClusterSpec.Logging.UsageStats.Organization
 //   - ClusterSpec.Storage.Tiered.Config.CloudStorageReconciliationIntervalMs
@@ -45,6 +40,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/deprecations"
@@ -60,52 +57,52 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			name: "Console",
 			obj: &Console{
 				Spec: ConsoleSpec{
-					ClusterSource: &ClusterSource{
-						StaticConfiguration: &StaticConfigurationSource{
-							Admin: &AdminAPISpec{
-								SASL: &AdminSASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							Kafka: &KafkaAPISpec{
-								SASL: &KafkaSASL{
-									AWSMskIam: &KafkaSASLAWSMskIam{
-										DeprecatedSecretKey:    &SecretKeyRef{},
-										DeprecatedSessionToken: &SecretKeyRef{},
-									},
-									DeprecatedPassword: &SecretKeyRef{},
-									GSSAPIConfig: &KafkaSASLGSSAPI{
-										DeprecatedPassword: &SecretKeyRef{},
-									},
-									OAUth: &KafkaSASLOAuthBearer{
-										DeprecatedToken: &SecretKeyRef{},
-									},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							SchemaRegistry: &SchemaRegistrySpec{
-								SASL: &SchemaRegistrySASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-						},
-					},
+					ClusterSource: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
 				},
 			},
 			wantWarnings: []string{
@@ -133,69 +130,83 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			name: "Redpanda",
 			obj: &Redpanda{
 				Spec: RedpandaSpec{
-					ClusterSpec: &RedpandaClusterSpec{
-						Console: &RedpandaConsole{
-							DeprecatedConfigMap: &ConsoleCreateObj{},
-						},
+					ClusterSpec: ptr.To(RedpandaClusterSpec{
+						Console: ptr.To(RedpandaConsole{
+							DeprecatedConfigMap:  ptr.To(ConsoleCreateObj{}),
+							DeprecatedConsole:    ptr.To(runtime.RawExtension{}),
+							DeprecatedEnterprise: ptr.To(runtime.RawExtension{}),
+							DeprecatedTests:      ptr.To(DeprecatedEnablable{}),
+						}),
 						DeprecatedFullNameOverride: "deprecated",
-					},
+						DeprecatedLicenseKey:       ptr.To("deprecated"),
+						DeprecatedLicenseSecretRef: ptr.To(LicenseSecretRef{}),
+						DeprecatedTests:            ptr.To(DeprecatedEnablable{}),
+					}),
+					DeprecatedMigration: ptr.To(DeprecatedMigration{}),
 				},
 			},
 			wantWarnings: []string{
 				"field 'spec.clusterSpec.fullNameOverride' is deprecated and set",
 				"field 'spec.clusterSpec.console.configmap' is deprecated and set",
+				"field 'spec.clusterSpec.console.console' is deprecated and set",
+				"field 'spec.clusterSpec.console.enterprise' is deprecated and set",
+				"field 'spec.clusterSpec.console.tests' is deprecated and set",
+				"field 'spec.clusterSpec.license_key' is deprecated and set",
+				"field 'spec.clusterSpec.license_secret_ref' is deprecated and set",
+				"field 'spec.clusterSpec.tests' is deprecated and set",
+				"field 'spec.migration' is deprecated and set",
 			},
 		},
 		{
 			name: "RedpandaRole",
 			obj: &RedpandaRole{
 				Spec: RoleSpec{
-					ClusterSource: &ClusterSource{
-						StaticConfiguration: &StaticConfigurationSource{
-							Admin: &AdminAPISpec{
-								SASL: &AdminSASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							Kafka: &KafkaAPISpec{
-								SASL: &KafkaSASL{
-									AWSMskIam: &KafkaSASLAWSMskIam{
-										DeprecatedSecretKey:    &SecretKeyRef{},
-										DeprecatedSessionToken: &SecretKeyRef{},
-									},
-									DeprecatedPassword: &SecretKeyRef{},
-									GSSAPIConfig: &KafkaSASLGSSAPI{
-										DeprecatedPassword: &SecretKeyRef{},
-									},
-									OAUth: &KafkaSASLOAuthBearer{
-										DeprecatedToken: &SecretKeyRef{},
-									},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							SchemaRegistry: &SchemaRegistrySpec{
-								SASL: &SchemaRegistrySASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-						},
-					},
+					ClusterSource: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
 				},
 			},
 			wantWarnings: []string{
@@ -223,52 +234,52 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			name: "Schema",
 			obj: &Schema{
 				Spec: SchemaSpec{
-					ClusterSource: &ClusterSource{
-						StaticConfiguration: &StaticConfigurationSource{
-							Admin: &AdminAPISpec{
-								SASL: &AdminSASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							Kafka: &KafkaAPISpec{
-								SASL: &KafkaSASL{
-									AWSMskIam: &KafkaSASLAWSMskIam{
-										DeprecatedSecretKey:    &SecretKeyRef{},
-										DeprecatedSessionToken: &SecretKeyRef{},
-									},
-									DeprecatedPassword: &SecretKeyRef{},
-									GSSAPIConfig: &KafkaSASLGSSAPI{
-										DeprecatedPassword: &SecretKeyRef{},
-									},
-									OAUth: &KafkaSASLOAuthBearer{
-										DeprecatedToken: &SecretKeyRef{},
-									},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							SchemaRegistry: &SchemaRegistrySpec{
-								SASL: &SchemaRegistrySASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-						},
-					},
+					ClusterSource: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
 				},
 			},
 			wantWarnings: []string{
@@ -296,98 +307,98 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			name: "ShadowLink",
 			obj: &ShadowLink{
 				Spec: ShadowLinkSpec{
-					ShadowCluster: &ClusterSource{
-						StaticConfiguration: &StaticConfigurationSource{
-							Admin: &AdminAPISpec{
-								SASL: &AdminSASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							Kafka: &KafkaAPISpec{
-								SASL: &KafkaSASL{
-									AWSMskIam: &KafkaSASLAWSMskIam{
-										DeprecatedSecretKey:    &SecretKeyRef{},
-										DeprecatedSessionToken: &SecretKeyRef{},
-									},
-									DeprecatedPassword: &SecretKeyRef{},
-									GSSAPIConfig: &KafkaSASLGSSAPI{
-										DeprecatedPassword: &SecretKeyRef{},
-									},
-									OAUth: &KafkaSASLOAuthBearer{
-										DeprecatedToken: &SecretKeyRef{},
-									},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							SchemaRegistry: &SchemaRegistrySpec{
-								SASL: &SchemaRegistrySASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-						},
-					},
-					SourceCluster: &ClusterSource{
-						StaticConfiguration: &StaticConfigurationSource{
-							Admin: &AdminAPISpec{
-								SASL: &AdminSASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							Kafka: &KafkaAPISpec{
-								SASL: &KafkaSASL{
-									AWSMskIam: &KafkaSASLAWSMskIam{
-										DeprecatedSecretKey:    &SecretKeyRef{},
-										DeprecatedSessionToken: &SecretKeyRef{},
-									},
-									DeprecatedPassword: &SecretKeyRef{},
-									GSSAPIConfig: &KafkaSASLGSSAPI{
-										DeprecatedPassword: &SecretKeyRef{},
-									},
-									OAUth: &KafkaSASLOAuthBearer{
-										DeprecatedToken: &SecretKeyRef{},
-									},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							SchemaRegistry: &SchemaRegistrySpec{
-								SASL: &SchemaRegistrySASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-						},
-					},
+					ShadowCluster: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
+					SourceCluster: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
 				},
 			},
 			wantWarnings: []string{
@@ -433,72 +444,72 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			name: "Topic",
 			obj: &Topic{
 				Spec: TopicSpec{
-					ClusterSource: &ClusterSource{
-						StaticConfiguration: &StaticConfigurationSource{
-							Admin: &AdminAPISpec{
-								SASL: &AdminSASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							Kafka: &KafkaAPISpec{
-								SASL: &KafkaSASL{
-									AWSMskIam: &KafkaSASLAWSMskIam{
-										DeprecatedSecretKey:    &SecretKeyRef{},
-										DeprecatedSessionToken: &SecretKeyRef{},
-									},
-									DeprecatedPassword: &SecretKeyRef{},
-									GSSAPIConfig: &KafkaSASLGSSAPI{
-										DeprecatedPassword: &SecretKeyRef{},
-									},
-									OAUth: &KafkaSASLOAuthBearer{
-										DeprecatedToken: &SecretKeyRef{},
-									},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							SchemaRegistry: &SchemaRegistrySpec{
-								SASL: &SchemaRegistrySASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-						},
-					},
-					KafkaAPISpec: &KafkaAPISpec{
-						SASL: &KafkaSASL{
-							AWSMskIam: &KafkaSASLAWSMskIam{
-								DeprecatedSecretKey:    &SecretKeyRef{},
-								DeprecatedSessionToken: &SecretKeyRef{},
-							},
-							DeprecatedPassword: &SecretKeyRef{},
-							GSSAPIConfig: &KafkaSASLGSSAPI{
-								DeprecatedPassword: &SecretKeyRef{},
-							},
-							OAUth: &KafkaSASLOAuthBearer{
-								DeprecatedToken: &SecretKeyRef{},
-							},
-						},
-						TLS: &CommonTLS{
-							DeprecatedCaCert: &SecretKeyRef{},
-							DeprecatedCert:   &SecretKeyRef{},
-							DeprecatedKey:    &SecretKeyRef{},
-						},
-					},
+					ClusterSource: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
+					KafkaAPISpec: ptr.To(KafkaAPISpec{
+						SASL: ptr.To(KafkaSASL{
+							AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+								DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+								DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+							}),
+							DeprecatedPassword: ptr.To(SecretKeyRef{}),
+							GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+								DeprecatedPassword: ptr.To(SecretKeyRef{}),
+							}),
+							OAUth: ptr.To(KafkaSASLOAuthBearer{
+								DeprecatedToken: ptr.To(SecretKeyRef{}),
+							}),
+						}),
+						TLS: ptr.To(CommonTLS{
+							DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+							DeprecatedCert:   ptr.To(SecretKeyRef{}),
+							DeprecatedKey:    ptr.To(SecretKeyRef{}),
+						}),
+					}),
 				},
 			},
 			wantWarnings: []string{
@@ -534,52 +545,52 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			name: "User",
 			obj: &User{
 				Spec: UserSpec{
-					ClusterSource: &ClusterSource{
-						StaticConfiguration: &StaticConfigurationSource{
-							Admin: &AdminAPISpec{
-								SASL: &AdminSASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							Kafka: &KafkaAPISpec{
-								SASL: &KafkaSASL{
-									AWSMskIam: &KafkaSASLAWSMskIam{
-										DeprecatedSecretKey:    &SecretKeyRef{},
-										DeprecatedSessionToken: &SecretKeyRef{},
-									},
-									DeprecatedPassword: &SecretKeyRef{},
-									GSSAPIConfig: &KafkaSASLGSSAPI{
-										DeprecatedPassword: &SecretKeyRef{},
-									},
-									OAUth: &KafkaSASLOAuthBearer{
-										DeprecatedToken: &SecretKeyRef{},
-									},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-							SchemaRegistry: &SchemaRegistrySpec{
-								SASL: &SchemaRegistrySASL{
-									DeprecatedAuthToken: &SecretKeyRef{},
-									DeprecatedPassword:  &SecretKeyRef{},
-								},
-								TLS: &CommonTLS{
-									DeprecatedCaCert: &SecretKeyRef{},
-									DeprecatedCert:   &SecretKeyRef{},
-									DeprecatedKey:    &SecretKeyRef{},
-								},
-							},
-						},
-					},
+					ClusterSource: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
 				},
 			},
 			wantWarnings: []string{

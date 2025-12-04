@@ -245,11 +245,24 @@ func extractPoorlyNamedDeprecatedFields(files []*ast.File, structs map[string]*a
 func literalForFieldType(fieldTypeName string, isPtr bool) string {
 	if fieldTypeName != "" {
 		if isPtr {
-			return fmt.Sprintf("&%s{}", fieldTypeName)
+			return fmt.Sprintf("ptr.To(%s)", literalForIdentity(fieldTypeName))
 		}
-		return fmt.Sprintf("%s{}", fieldTypeName)
+		return literalForIdentity(fieldTypeName)
 	}
 	return "struct{}{}"
+}
+
+func literalForIdentity(name string) string {
+	switch name {
+	case "string":
+		return "\"deprecated\""
+	case "bool":
+		return "true"
+	case "int", "int32", "int64":
+		return "1"
+	default:
+		return fmt.Sprintf("%s{}", name)
+	}
 }
 
 func literalForTypeExpr(e ast.Expr) string {
@@ -259,28 +272,19 @@ func literalForTypeExpr(e ast.Expr) string {
 		if id, ok := t.X.(*ast.Ident); ok {
 			name := id.Name
 			// default: non-nil pointer to empty struct
-			return fmt.Sprintf("&%s{}", name)
+			return fmt.Sprintf("ptr.To(%s)", literalForIdentity(name))
 		}
 		if sel, ok := t.X.(*ast.SelectorExpr); ok {
-			return fmt.Sprintf("&%s.%s{}", sel.X.(*ast.Ident).Name, sel.Sel.Name)
+			return fmt.Sprintf("ptr.To(%s)", literalForIdentity(sel.X.(*ast.Ident).Name+"."+sel.Sel.Name))
 		}
 	case *ast.Ident:
-		switch t.Name {
-		case "string":
-			return "\"deprecated\""
-		case "bool":
-			return "true"
-		case "int", "int32", "int64":
-			return "1"
-		default:
-			return fmt.Sprintf("%s{}", t.Name)
-		}
+		return literalForIdentity(t.Name)
 	case *ast.SelectorExpr:
 		// Qualified identifier like pkg.Type -> pkg.Type{}
 		if x, ok := t.X.(*ast.Ident); ok {
-			return fmt.Sprintf("%s.%s{}", x.Name, t.Sel.Name)
+			return literalForIdentity(x.Name + "." + t.Sel.Name)
 		}
-		return fmt.Sprintf("%s{}", t.Sel.Name)
+		return literalForIdentity(t.Sel.Name)
 	}
 	return "nil"
 }

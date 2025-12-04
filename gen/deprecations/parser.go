@@ -385,7 +385,7 @@ func (p *Parser) renderNestedField(fieldTypeName string, child *node, isPtr bool
 	}
 	nested := p.renderLiteral(fieldTypeName, child)
 	if isPtr && !strings.HasPrefix(nested, "&") {
-		nested = "&" + nested
+		nested = "ptr.To(" + nested + ")"
 	}
 	return nested
 }

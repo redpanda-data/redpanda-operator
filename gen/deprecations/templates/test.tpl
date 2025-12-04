@@ -16,6 +16,8 @@ import (
 
   "github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/deprecations"
 )

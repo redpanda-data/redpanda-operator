@@ -301,8 +301,8 @@ func ConvertConsoleSubchartToConsoleValues(src *RedpandaConsole) (*ConsoleValues
 	// Extract out .Console and .Config. .Console will be migrated and then
 	// merged into .Config as Config is meant to house V3 configurations.
 	var v2Config map[string]any
-	if src.Console != nil && len(src.Console.Raw) > 0 {
-		if err := json.Unmarshal(src.Console.Raw, &v2Config); err != nil {
+	if src.DeprecatedConsole != nil && len(src.DeprecatedConsole.Raw) > 0 {
+		if err := json.Unmarshal(src.DeprecatedConsole.Raw, &v2Config); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
