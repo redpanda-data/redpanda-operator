@@ -298,7 +298,12 @@ func (p *Parser) renderSpecLiteral(rootNode *node) string {
 }
 
 func (p *Parser) renderLiteral(typeName string, n *node) string {
-	p.config.Debugf("[render] typeName=%s, children=%d\n", typeName, len(n.children))
+	children := 0
+	if n != nil {
+		children = len(n.children)
+	}
+
+	p.config.Debugf("[render] typeName=%s, children=%d\n", typeName, children)
 	if n == nil {
 		return fmt.Sprintf("%s{}", typeName)
 	}

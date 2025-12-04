@@ -110,7 +110,7 @@ func Render(config DeprecationConfig) error {
 	}
 
 	outPath := filepath.Join(dir, config.OutputFile)
-	if err := os.WriteFile(outPath, contents, 0644); err != nil {
+	if err := os.WriteFile(outPath, contents, 0o644); err != nil {
 		return fmt.Errorf("failed to write output file: %w", err)
 	}
 
