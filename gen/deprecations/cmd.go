@@ -1,3 +1,12 @@
+// Copyright 2025 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
 package deprecations
 
 import (
@@ -8,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -21,7 +31,12 @@ var (
 )
 
 func init() {
-	testGenerator = template.Must(template.New("tests").Parse(testTemplate))
+	helpers := map[string]any{
+		"year": func() string {
+			return time.Now().Format("2006")
+		},
+	}
+	testGenerator = template.Must(template.New("tests").Funcs(helpers).Parse(testTemplate))
 }
 
 type DeprecationConfig struct {
