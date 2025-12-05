@@ -13,13 +13,11 @@ import (
 	"bufio"
 	"bytes"
 	_ "embed"
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/printer"
-	"go/scanner"
 	"go/token"
 	"io"
 	"os"
@@ -27,12 +25,13 @@ import (
 	"regexp"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/gen/internal"
 )
 
 var (
@@ -148,7 +147,7 @@ func renderAndWrite(directory, file string, info *templateInfo, renderFn func(in
 	}
 	formatted, err := format.Source(data)
 	if err != nil {
-		if contextualErrors := contextualizeFormatErrors(data, err); contextualErrors != "" {
+		if contextualErrors := internal.ContextualizeFormatErrors(data, err); contextualErrors != "" {
 			fmt.Println(contextualErrors)
 		}
 		return err
@@ -300,7 +299,7 @@ func replaceTombstones(r io.Reader, structs map[string]*status) ([]byte, error) 
 
 	data, err := format.Source(fileContents.Bytes())
 	if err != nil {
-		if contextualErrors := contextualizeFormatErrors(fileContents.Bytes(), err); contextualErrors != "" {
+		if contextualErrors := internal.ContextualizeFormatErrors(fileContents.Bytes(), err); contextualErrors != "" {
 			fmt.Println(contextualErrors)
 		}
 	}
@@ -367,29 +366,4 @@ func tombstoneComments(node ast.Node, structs map[string]*status) bool {
 	}
 
 	return false
-}
-
-func contextualizeFormatErrors(data []byte, err error) string {
-	var serr scanner.ErrorList
-	if errors.As(err, &serr) {
-		errContext := []string{}
-		lines := strings.Split(string(data), "\n")
-
-		for i, err := range serr {
-			line := err.Pos.Line
-
-			lineContext := []string{"[ERROR " + strconv.Itoa(i+1) + "]:\n"}
-			if line-2 >= 0 {
-				lineContext = append(lineContext, lines[line-2])
-			}
-			lineContext = append(lineContext, lines[line-1])
-			if line < len(lines) {
-				lineContext = append(lineContext, lines[line])
-			}
-			errContext = append(errContext, strings.Join(lineContext, "\n"))
-		}
-		return strings.Join(errContext, "\n\n")
-	}
-
-	return ""
 }

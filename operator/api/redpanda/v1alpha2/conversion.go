@@ -89,7 +89,7 @@ func convertConsoleLicenseSecretRef(src *RedpandaConsole) (*corev1.SecretKeySele
 	}
 
 	// Short circuit if Enterprise isn't specified.
-	if src.Enterprise == nil || len(src.Enterprise.Raw) != 0 {
+	if src.DeprecatedEnterprise == nil || len(src.DeprecatedEnterprise.Raw) != 0 {
 		return nil, nil
 	}
 
@@ -98,7 +98,7 @@ func convertConsoleLicenseSecretRef(src *RedpandaConsole) (*corev1.SecretKeySele
 		LicenseSecret *corev1.SecretKeySelector
 	}
 
-	enterprise, err := convertRuntimeRawExtension[ConsoleEnterprise](src.Enterprise)
+	enterprise, err := convertRuntimeRawExtension[ConsoleEnterprise](src.DeprecatedEnterprise)
 	if err != nil {
 		return nil, err
 	}

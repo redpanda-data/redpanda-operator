@@ -1776,7 +1776,7 @@ spec:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       tests:
-                        description: Controls the creation of helm tests for console.
+                        description: Deprecated
                         properties:
                           enabled:
                             type: boolean
@@ -1929,10 +1929,10 @@ spec:
                       x-kubernetes-map-type: atomic
                     type: array
                   license_key:
-                    description: 'Deprecated: Use `Enterprise` instead.'
+                    description: 'Deprecated: Use `enterprise.license` instead.'
                     type: string
                   license_secret_ref:
-                    description: 'Deprecated: Use `EnterpriseLicenseSecretRef` instead.'
+                    description: 'Deprecated: Use `enterprise.licenseSecretRef` instead.'
                     properties:
                       secret_key:
                         description: Specifies the key that is contains the Enterprise
@@ -20617,6 +20617,7 @@ spec:
                         type: object
                     type: object
                   tests:
+                    description: Deprecated
                     properties:
                       enabled:
                         type: boolean
@@ -20832,8 +20833,8 @@ spec:
                 properties:
                   clusterRef:
                     description: |-
-                      ClusterRef by default will not be able to reach different namespaces, but it can be
-                      overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+                      NamespaceNameRef contains namespace and name to inspect or modify the referred object
+                      REF https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference
                     properties:
                       name:
                         description: |-
@@ -20851,8 +20852,8 @@ spec:
                     type: object
                   consoleRef:
                     description: |-
-                      ConsoleRef by default will not be able to reach different namespaces, but it can be
-                      overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+                      NamespaceNameRef contains namespace and name to inspect or modify the referred object
+                      REF https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference
                     properties:
                       name:
                         description: |-
@@ -20979,10 +20980,7 @@ spec:
                   Redpanda used for restarting broker nodes as necessary.
                 type: string
               decommissioningNode:
-                description: |-
-                  ManagedDecommissioningNode indicates that a node is currently being
-                  decommissioned from the cluster and provides its ordinal number.
-                  deprecated
+                description: Deprecated
                 format: int32
                 type: integer
               failures:
@@ -20993,37 +20991,29 @@ spec:
                 format: int64
                 type: integer
               helmRelease:
-                description: deprecated
+                description: Deprecated
                 type: string
               helmReleaseReady:
-                description: deprecated
+                description: Deprecated
                 type: boolean
               helmRepository:
-                description: deprecated
+                description: Deprecated
                 type: string
               helmRepositoryReady:
-                description: deprecated
+                description: Deprecated
                 type: boolean
               installFailures:
-                description: deprecated
+                description: Deprecated
                 format: int64
                 type: integer
               lastAppliedRevision:
-                description: |-
-                  LastAppliedRevision is the revision of the last successfully applied source.
-                  deprecated
+                description: Deprecated
                 type: string
               lastAttemptedRevision:
-                description: |-
-                  LastAttemptedRevision is the revision of the last reconciliation attempt.
-                  deprecated
+                description: Deprecated
                 type: string
               lastHandledReconcileAt:
-                description: |-
-                  LastHandledReconcileAt holds the value of the most recent
-                  reconcile request value, so a change of the annotation value
-                  can be detected.
-                  deprecated
+                description: Deprecated
                 type: string
               license:
                 description: |-
@@ -21109,13 +21099,11 @@ spec:
                   type: object
                 type: array
               observedGeneration:
-                description: |-
-                  Specifies the last observed generation.
-                  deprecated
+                description: Deprecated
                 format: int64
                 type: integer
               upgradeFailures:
-                description: deprecated
+                description: Deprecated
                 format: int64
                 type: integer
             type: object
@@ -22887,7 +22875,7 @@ spec:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       tests:
-                        description: Controls the creation of helm tests for console.
+                        description: Deprecated
                         properties:
                           enabled:
                             type: boolean
@@ -23040,10 +23028,10 @@ spec:
                       x-kubernetes-map-type: atomic
                     type: array
                   license_key:
-                    description: 'Deprecated: Use `Enterprise` instead.'
+                    description: 'Deprecated: Use `enterprise.license` instead.'
                     type: string
                   license_secret_ref:
-                    description: 'Deprecated: Use `EnterpriseLicenseSecretRef` instead.'
+                    description: 'Deprecated: Use `enterprise.licenseSecretRef` instead.'
                     properties:
                       secret_key:
                         description: Specifies the key that is contains the Enterprise
@@ -41728,6 +41716,7 @@ spec:
                         type: object
                     type: object
                   tests:
+                    description: Deprecated
                     properties:
                       enabled:
                         type: boolean
@@ -41943,8 +41932,8 @@ spec:
                 properties:
                   clusterRef:
                     description: |-
-                      ClusterRef by default will not be able to reach different namespaces, but it can be
-                      overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+                      NamespaceNameRef contains namespace and name to inspect or modify the referred object
+                      REF https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference
                     properties:
                       name:
                         description: |-
@@ -41962,8 +41951,8 @@ spec:
                     type: object
                   consoleRef:
                     description: |-
-                      ConsoleRef by default will not be able to reach different namespaces, but it can be
-                      overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+                      NamespaceNameRef contains namespace and name to inspect or modify the referred object
+                      REF https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference
                     properties:
                       name:
                         description: |-
@@ -42090,10 +42079,7 @@ spec:
                   Redpanda used for restarting broker nodes as necessary.
                 type: string
               decommissioningNode:
-                description: |-
-                  ManagedDecommissioningNode indicates that a node is currently being
-                  decommissioned from the cluster and provides its ordinal number.
-                  deprecated
+                description: Deprecated
                 format: int32
                 type: integer
               failures:
@@ -42104,37 +42090,29 @@ spec:
                 format: int64
                 type: integer
               helmRelease:
-                description: deprecated
+                description: Deprecated
                 type: string
               helmReleaseReady:
-                description: deprecated
+                description: Deprecated
                 type: boolean
               helmRepository:
-                description: deprecated
+                description: Deprecated
                 type: string
               helmRepositoryReady:
-                description: deprecated
+                description: Deprecated
                 type: boolean
               installFailures:
-                description: deprecated
+                description: Deprecated
                 format: int64
                 type: integer
               lastAppliedRevision:
-                description: |-
-                  LastAppliedRevision is the revision of the last successfully applied source.
-                  deprecated
+                description: Deprecated
                 type: string
               lastAttemptedRevision:
-                description: |-
-                  LastAttemptedRevision is the revision of the last reconciliation attempt.
-                  deprecated
+                description: Deprecated
                 type: string
               lastHandledReconcileAt:
-                description: |-
-                  LastHandledReconcileAt holds the value of the most recent
-                  reconcile request value, so a change of the annotation value
-                  can be detected.
-                  deprecated
+                description: Deprecated
                 type: string
               license:
                 description: |-
@@ -42220,13 +42198,11 @@ spec:
                   type: object
                 type: array
               observedGeneration:
-                description: |-
-                  Specifies the last observed generation.
-                  deprecated
+                description: Deprecated
                 format: int64
                 type: integer
               upgradeFailures:
-                description: deprecated
+                description: Deprecated
                 format: int64
                 type: integer
             type: object
