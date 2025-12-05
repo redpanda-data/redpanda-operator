@@ -610,7 +610,7 @@ type ConfigurationProperties struct {
 	// aliases: [wasm_per_core_memory_reservation]
 	//
 	// +optional
-	DataTransformsPerCoreMemoryReservation *int64 `json:"dataTransformsPerCoreMemoryReservation,omitempty" property:"data_transforms_per_core_memory_reservation"`
+	DataTransformsPerCoreMemoryReservation *int64 `json:"dataTransformsPerCoreMemoryReservation,omitempty" property:"data_transforms_per_core_memory_reservation,aliases:data_transforms_per_core_memory_reservation;wasm_per_core_memory_reservation"`
 
 	// The amount of memory to give an instance of a data transform (Wasm) virtual
 	// machine. The maximum number of functions that can be deployed to a cluster is
@@ -622,7 +622,7 @@ type ConfigurationProperties struct {
 	// aliases: [wasm_per_function_memory_limit]
 	//
 	// +optional
-	DataTransformsPerFunctionMemoryLimit *int64 `json:"dataTransformsPerFunctionMemoryLimit,omitempty" property:"data_transforms_per_function_memory_limit"`
+	DataTransformsPerFunctionMemoryLimit *int64 `json:"dataTransformsPerFunctionMemoryLimit,omitempty" property:"data_transforms_per_function_memory_limit,aliases:data_transforms_per_function_memory_limit;wasm_per_function_memory_limit"`
 
 	// Option to explicitly disable enforcement of datalake disk space usage
 	//
@@ -1016,7 +1016,7 @@ type ConfigurationProperties struct {
 	// aliases: [iceberg_rest_catalog_aws_credentials_source]
 	//
 	// +optional
-	IcebergRestCatalogCredentialsSource *IcebergRestCatalogCredentialsSource `json:"icebergRestCatalogCredentialsSource,omitempty" property:"iceberg_rest_catalog_credentials_source"`
+	IcebergRestCatalogCredentialsSource *IcebergRestCatalogCredentialsSource `json:"icebergRestCatalogCredentialsSource,omitempty" property:"iceberg_rest_catalog_credentials_source,aliases:iceberg_rest_catalog_credentials_source;iceberg_rest_catalog_aws_credentials_source"`
 
 	// The contents of a certificate revocation list for
 	// `iceberg_rest_catalog_trust`. Takes precedence over
@@ -1100,7 +1100,7 @@ type ConfigurationProperties struct {
 	// aliases: [iceberg_rest_catalog_prefix]
 	//
 	// +optional
-	IcebergRestCatalogWarehouse *string `json:"icebergRestCatalogWarehouse,omitempty" property:"iceberg_rest_catalog_warehouse"`
+	IcebergRestCatalogWarehouse *string `json:"icebergRestCatalogWarehouse,omitempty" property:"iceberg_rest_catalog_warehouse,aliases:iceberg_rest_catalog_warehouse;iceberg_rest_catalog_prefix"`
 
 	// Default value for the redpanda.iceberg.target.lag.ms topic property, which
 	// controls how often data in an Iceberg table is refreshed with new data from
@@ -1449,7 +1449,7 @@ type ConfigurationProperties struct {
 	// aliases: [delete_retention_ms]
 	//
 	// +optional
-	LogRetentionMs *int64 `json:"logRetentionMs,omitempty" property:"log_retention_ms"`
+	LogRetentionMs *int64 `json:"logRetentionMs,omitempty" property:"log_retention_ms,aliases:log_retention_ms;delete_retention_ms"`
 
 	// Default lifetime of log segments. If `null`, the property is disabled, and no
 	// default lifetime is set. Any value under 60 seconds (60000 ms) is rejected.
@@ -1785,7 +1785,7 @@ type ConfigurationProperties struct {
 	// aliases: [schema_registry_normalize_on_startup]
 	//
 	// +optional
-	SchemaRegistryAlwaysNormalize *bool `json:"schemaRegistryAlwaysNormalize,omitempty" property:"schema_registry_always_normalize"`
+	SchemaRegistryAlwaysNormalize *bool `json:"schemaRegistryAlwaysNormalize,omitempty" property:"schema_registry_always_normalize,aliases:schema_registry_always_normalize;schema_registry_normalize_on_startup"`
 
 	// Enable ACL-based authorization for Schema Registry requests. When true, uses
 	// ACL-based authorization instead of the default public/user/superuser
@@ -1968,22 +1968,22 @@ type ConfigurationProperties struct {
 
 	// Deprecated: `wasmPerCoreMemoryReservation` has been deprecated, use `dataTransformsPerCoreMemoryReservation` instead
 	// +optional
-	DeprecatedWasmPerCoreMemoryReservation *int64 `json:"wasmPerCoreMemoryReservation,omitempty" property:"data_transforms_per_core_memory_reservation,alias:0"`
+	DeprecatedWasmPerCoreMemoryReservation *int64 `json:"wasmPerCoreMemoryReservation,omitempty" property:"wasm_per_core_memory_reservation,alias:0,aliases:data_transforms_per_core_memory_reservation;wasm_per_core_memory_reservation"`
 	// Deprecated: `wasmPerFunctionMemoryLimit` has been deprecated, use `dataTransformsPerFunctionMemoryLimit` instead
 	// +optional
-	DeprecatedWasmPerFunctionMemoryLimit *int64 `json:"wasmPerFunctionMemoryLimit,omitempty" property:"data_transforms_per_function_memory_limit,alias:0"`
+	DeprecatedWasmPerFunctionMemoryLimit *int64 `json:"wasmPerFunctionMemoryLimit,omitempty" property:"wasm_per_function_memory_limit,alias:0,aliases:data_transforms_per_function_memory_limit;wasm_per_function_memory_limit"`
 	// Deprecated: `icebergRestCatalogAwsCredentialsSource` has been deprecated, use `icebergRestCatalogCredentialsSource` instead
 	// +optional
-	DeprecatedIcebergRestCatalogAwsCredentialsSource *IcebergRestCatalogCredentialsSource `json:"icebergRestCatalogAwsCredentialsSource,omitempty" property:"iceberg_rest_catalog_credentials_source,alias:0"`
+	DeprecatedIcebergRestCatalogAwsCredentialsSource *IcebergRestCatalogCredentialsSource `json:"icebergRestCatalogAwsCredentialsSource,omitempty" property:"iceberg_rest_catalog_aws_credentials_source,alias:0,aliases:iceberg_rest_catalog_credentials_source;iceberg_rest_catalog_aws_credentials_source"`
 	// Deprecated: `icebergRestCatalogPrefix` has been deprecated, use `icebergRestCatalogWarehouse` instead
 	// +optional
-	DeprecatedIcebergRestCatalogPrefix *string `json:"icebergRestCatalogPrefix,omitempty" property:"iceberg_rest_catalog_warehouse,alias:0"`
+	DeprecatedIcebergRestCatalogPrefix *string `json:"icebergRestCatalogPrefix,omitempty" property:"iceberg_rest_catalog_prefix,alias:0,aliases:iceberg_rest_catalog_warehouse;iceberg_rest_catalog_prefix"`
 	// Deprecated: `deleteRetentionMs` has been deprecated, use `logRetentionMs` instead
 	// +optional
-	DeprecatedDeleteRetentionMs *int64 `json:"deleteRetentionMs,omitempty" property:"log_retention_ms,alias:0"`
+	DeprecatedDeleteRetentionMs *int64 `json:"deleteRetentionMs,omitempty" property:"delete_retention_ms,alias:0,aliases:log_retention_ms;delete_retention_ms"`
 	// Deprecated: `schemaRegistryNormalizeOnStartup` has been deprecated, use `schemaRegistryAlwaysNormalize` instead
 	// +optional
-	DeprecatedSchemaRegistryNormalizeOnStartup *bool `json:"schemaRegistryNormalizeOnStartup,omitempty" property:"schema_registry_always_normalize,alias:0"`
+	DeprecatedSchemaRegistryNormalizeOnStartup *bool `json:"schemaRegistryNormalizeOnStartup,omitempty" property:"schema_registry_normalize_on_startup,alias:0,aliases:schema_registry_always_normalize;schema_registry_normalize_on_startup"`
 }
 
 func (c *ConfigurationProperties) Equals(other *ConfigurationProperties) bool {

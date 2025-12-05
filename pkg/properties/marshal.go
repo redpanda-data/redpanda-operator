@@ -31,7 +31,7 @@ func MarshalProperties(v any) map[string]any {
 
 	for key, aliasValues := range aliases {
 		if _, ok := result[key]; ok {
-			// we only merge in aliases when their values haven'T
+			// we only merge in aliases when their values haven't
 			// already been set
 			continue
 		}
@@ -57,6 +57,7 @@ func unmarshalPropertyValues(v reflect.Value, data map[string]any) error {
 
 	t := v.Type()
 
+FIELD:
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldType := t.Field(i)
@@ -66,9 +67,20 @@ func unmarshalPropertyValues(v reflect.Value, data map[string]any) error {
 			continue
 		}
 
-		if len(strings.Split(tag, ",")) > 1 {
-			// this is an alias, skip it
-			continue
+		tokens := strings.Split(tag, ",")
+		tag = tokens[0]
+		if len(tokens) > 1 {
+			for _, tag := range tokens[1:] {
+				tokens := strings.Split(tag, ":")
+				if len(tokens) == 1 {
+					// invalid alias or aliases token, something is wrong with the generator
+					continue FIELD
+				}
+				if tokens[0] == "alias" {
+					// this is an alias, skip it
+					continue FIELD
+				}
+			}
 		}
 
 		raw, ok := data[tag]
@@ -179,9 +191,13 @@ func marshalPropertyValue(v reflect.Value, out map[string]any, aliases map[strin
 
 	t := v.Type()
 
-	processField := func(tag string, value any, isAlias bool, aliasOrder int) {
+	processField := func(tag string, value any, isAlias bool, aliasOrder int, fieldAliases ...string) {
 		if !isAlias {
 			out[tag] = value
+			// we output on all aliases for backwards compatability
+			for _, alias := range fieldAliases {
+				out[alias] = value
+			}
 			return
 		}
 
@@ -191,6 +207,15 @@ func marshalPropertyValue(v reflect.Value, out map[string]any, aliases map[strin
 		}
 		existing[aliasOrder] = value
 		aliases[tag] = existing
+
+		for _, alias := range fieldAliases {
+			existing, ok := aliases[alias]
+			if !ok {
+				existing = make(map[int]any)
+			}
+			existing[aliasOrder] = value
+			aliases[alias] = existing
+		}
 	}
 
 	for i := 0; i < v.NumField(); i++ {
@@ -207,23 +232,34 @@ func marshalPropertyValue(v reflect.Value, out map[string]any, aliases map[strin
 			continue
 		}
 
+		var fieldAliases []string
+
 		tokens := strings.Split(tag, ",")
 		tag = tokens[0]
 		isAlias := false
 		aliasOrder := 0
 		if len(tokens) > 1 {
-			isAlias = true
-			tokens := strings.Split(tokens[1], ":")
-			if len(tokens) == 1 {
-				// invalid alias token, something is wrong with the generator
-				continue
+			for _, tag := range tokens[1:] {
+				tokens := strings.Split(tag, ":")
+
+				if len(tokens) == 1 {
+					// invalid alias or aliases token, something is wrong with the generator
+					continue
+				}
+				if tokens[0] == "alias" {
+					isAlias = true
+					order, err := strconv.Atoi(tokens[1])
+					if err != nil {
+						// invalid alias token, something is wrong with the generator
+						continue
+					}
+					aliasOrder = order
+				}
+
+				if tokens[0] == "aliases" {
+					fieldAliases = strings.Split(tokens[1], ";")
+				}
 			}
-			order, err := strconv.Atoi(tokens[1])
-			if err != nil {
-				// invalid alias token, something is wrong with the generator
-				continue
-			}
-			aliasOrder = order
 		}
 
 		// Handle nested structs
@@ -233,7 +269,7 @@ func marshalPropertyValue(v reflect.Value, out map[string]any, aliases map[strin
 			nested := make(map[string]any)
 			marshalPropertyValue(field, nested, aliases)
 			if len(nested) > 0 {
-				processField(tag, nested, isAlias, aliasOrder)
+				processField(tag, nested, isAlias, aliasOrder, fieldAliases...)
 			}
 
 		case reflect.Pointer:
@@ -247,7 +283,7 @@ func marshalPropertyValue(v reflect.Value, out map[string]any, aliases map[strin
 				nested := make(map[string]any)
 				marshalPropertyValue(field.Elem(), nested, aliases)
 				if len(nested) > 0 {
-					processField(tag, nested, isAlias, aliasOrder)
+					processField(tag, nested, isAlias, aliasOrder, fieldAliases...)
 				}
 			case reflect.Slice, reflect.Array:
 				var sliceOut []any
@@ -270,14 +306,14 @@ func marshalPropertyValue(v reflect.Value, out map[string]any, aliases map[strin
 					}
 				}
 				if len(sliceOut) > 0 {
-					processField(tag, sliceOut, isAlias, aliasOrder)
+					processField(tag, sliceOut, isAlias, aliasOrder, fieldAliases...)
 				}
 			default:
-				processField(tag, field.Elem().Interface(), isAlias, aliasOrder)
+				processField(tag, field.Elem().Interface(), isAlias, aliasOrder, fieldAliases...)
 			}
 
 		default:
-			processField(tag, field.Interface(), isAlias, aliasOrder)
+			processField(tag, field.Interface(), isAlias, aliasOrder, fieldAliases...)
 		}
 	}
 }

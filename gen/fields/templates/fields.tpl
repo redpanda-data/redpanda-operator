@@ -61,7 +61,7 @@ type ConfigurationProperties struct {
   {{- range $i, $alias := $property.Aliases }}
   // Deprecated: `{{ jsonAlias $alias }}` has been deprecated, use `{{ jsonAlias $property.Name }}` instead
   // +optional
-  Deprecated{{ goName $alias }} {{ $property.GoType true }} `json:"{{ jsonAlias $alias }},omitempty" property:"{{ $property.OriginalName }},alias:{{ $i }}"`
+  Deprecated{{ goName $alias }} {{ $property.GoType true }} `json:"{{ jsonAlias $alias }},omitempty" property:"{{ $alias }},alias:{{ $i }},aliases:{{ $property.AliasString }}"`
   {{- end }}
   {{- end }}
 }

@@ -76,6 +76,10 @@ func (p property) GoType(ptr bool) (v string) {
 	}
 }
 
+func (p property) AliasString() string {
+	return p.OriginalName + ";" + strings.Join(p.Aliases, ";")
+}
+
 func (p property) EqualityCheck() string {
 	if p.Name == "KafkaThroughputControl" || p.Name == "SaslMechanismsOverrides" {
 		return "complexArrayEquals(c." + p.Name + ", other." + p.Name + ")"
@@ -120,7 +124,11 @@ func (p property) EnumValueDefinitions() string {
 }
 
 func (p property) JSONTag() string {
-	return "`json:\"" + strings.ToLower(string(p.Name[0])) + p.Name[1:] + ",omitempty\" property:\"" + p.OriginalName + "\"`"
+	propertyTag := p.OriginalName
+	if len(p.Aliases) != 0 {
+		propertyTag += ",aliases:" + p.AliasString()
+	}
+	return "`json:\"" + strings.ToLower(string(p.Name[0])) + p.Name[1:] + ",omitempty\" property:\"" + propertyTag + "\"`"
 }
 
 func (p property) Comment() string {
