@@ -12,6 +12,7 @@ package deprecations
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,7 +47,11 @@ func FindDeprecatedFieldWarnings(obj client.Object) []string {
 		return nil
 	}
 
-	return deprecatedFields(v.FieldByName("Spec"), spec.Type, "spec", make(map[uintptr]struct{}))
+	deprecations := deprecatedFields(v.FieldByName("Spec"), spec.Type, "spec", make(map[uintptr]struct{}))
+
+	slices.Sort(deprecations)
+
+	return deprecations
 }
 
 func deprecatedFields(value reflect.Value, reflectType reflect.Type, path string, visited map[uintptr]struct{}) []string {
