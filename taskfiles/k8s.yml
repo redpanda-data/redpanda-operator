@@ -147,6 +147,14 @@ tasks:
     deps:
     - task: :build:gen
 
+  generate:fields:
+    label: "generate:fields"
+    desc: "Generate the fields structure for Redpanda configuration."
+    cmds:
+    - gen fields --version 25.3.1 --output ./operator/api/redpanda/v1alpha2/zz_generated.fields.go
+    deps:
+    - task: :build:gen
+
   generate:statuses:
     run: when_changed
     internal: true
