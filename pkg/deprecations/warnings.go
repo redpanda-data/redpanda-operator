@@ -23,20 +23,30 @@ const DeprecatedPrefix = "Deprecated"
 // deprecation warning messages for any deeply nested struct fields that have a field
 // prefixed with "Deprecated" and whose value is not the zero value. The name shown in the
 // warning is taken from the field's full json path from the root of the CRD.
-func FindDeprecatedFieldWarnings(obj client.Object) ([]string, error) {
+func FindDeprecatedFieldWarnings(obj client.Object) []string {
 	v := reflect.ValueOf(obj)
 	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
-			return nil, fmt.Errorf("object is a nil pointer")
+			// nothing to do
+			return nil
 		}
 		v = v.Elem()
 	}
 
 	if v.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("object must be a struct or pointer to struct")
+		// if we don't have a struct, then it can't have fields
+		return nil
 	}
 
-	return deprecatedFields(v, v.Type(), "", make(map[uintptr]struct{})), nil
+	// Only inspect the Spec field and its children
+	spec, ok := v.Type().FieldByName("Spec")
+	if !ok {
+		// we only warn on user-supplied input, which comes from
+		// Spec
+		return nil
+	}
+
+	return deprecatedFields(v.FieldByName("Spec"), spec.Type, "spec", make(map[uintptr]struct{}))
 }
 
 func deprecatedFields(value reflect.Value, reflectType reflect.Type, path string, visited map[uintptr]struct{}) []string {

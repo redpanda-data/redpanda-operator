@@ -45,9 +45,7 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			warnings, err := deprecations.FindDeprecatedFieldWarnings(tc.obj)
-			require.NoError(t, err)
-			require.ElementsMatch(t, tc.wantWarnings, warnings)
+			require.ElementsMatch(t, tc.wantWarnings, deprecations.FindDeprecatedFieldWarnings(tc.obj))
 		})
 	}
 }
