@@ -353,7 +353,11 @@ func Run(
 	opts.managerOptions.Scheme = controller.UnifiedScheme
 
 	if opts.managerOptions.LeaderElectionNamespace == "" {
-		opts.managerOptions.LeaderElectionNamespace = opts.namespace
+		if opts.namespace == "" {
+			opts.managerOptions.LeaderElectionNamespace = "kube-system"
+		} else {
+			opts.managerOptions.LeaderElectionNamespace = opts.namespace
+		}
 	}
 
 	if opts.namespace != "" {
