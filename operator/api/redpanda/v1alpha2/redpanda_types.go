@@ -79,20 +79,17 @@ type RedpandaSpec struct {
 	ChartRef ChartRef `json:"chartRef,omitempty"`
 	// Defines the Helm values to use to deploy the cluster.
 	ClusterSpec *RedpandaClusterSpec `json:"clusterSpec,omitempty"`
+
+	// Deprecated fields
+
 	// Deprecated and Removed in v2.2.3-24.2.X. Downgrade to v2.2.2-24.2.4 perform the migration
-	Migration *Migration `json:"migration,omitempty"`
+	DeprecatedMigration *DeprecatedMigration `json:"migration,omitempty"`
 }
 
-// Migration can configure old Cluster and Console custom resource that will be disabled.
-// With Migration the ChartRef and ClusterSpec still need to be correctly configured.
-type Migration struct {
-	Enabled bool `json:"enabled"`
-	// ClusterRef by default will not be able to reach different namespaces, but it can be
-	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
+// This struct is set to be removed and not in use, so it is no longer documented
+type DeprecatedMigration struct {
+	Enabled    bool                                `json:"enabled"`
 	ClusterRef vectorizedv1alpha1.NamespaceNameRef `json:"clusterRef"`
-
-	// ConsoleRef by default will not be able to reach different namespaces, but it can be
-	// overwritten by adding ClusterRole and ClusterRoleBinding to operator ServiceAccount.
 	ConsoleRef vectorizedv1alpha1.NamespaceNameRef `json:"consoleRef"`
 }
 
@@ -119,63 +116,44 @@ type RedpandaStatus struct {
 
 	// everything below here is deprecated and should be removed
 
-	// Specifies the last observed generation.
-	// deprecated
+	// Deprecated
 	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
-	// LastHandledReconcileAt holds the value of the most recent
-	// reconcile request value, so a change of the annotation value
-	// can be detected.
-	// deprecated
+	DeprecatedObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Deprecated
 	// +optional
-	LastHandledReconcileAt string `json:"lastHandledReconcileAt,omitempty"`
-
-	// LastAppliedRevision is the revision of the last successfully applied source.
-	// deprecated
+	DeprecatedLastHandledReconcileAt string `json:"lastHandledReconcileAt,omitempty"`
+	// Deprecated
 	// +optional
-	LastAppliedRevision string `json:"lastAppliedRevision,omitempty"`
-
-	// LastAttemptedRevision is the revision of the last reconciliation attempt.
-	// deprecated
+	DeprecatedLastAppliedRevision string `json:"lastAppliedRevision,omitempty"`
+	// Deprecated
 	// +optional
-	LastAttemptedRevision string `json:"lastAttemptedRevision,omitempty"`
-
-	// deprecated
+	DeprecatedLastAttemptedRevision string `json:"lastAttemptedRevision,omitempty"`
+	// Deprecated
 	// +optional
-	HelmRelease string `json:"helmRelease,omitempty"`
-
-	// deprecated
+	DeprecatedHelmRelease string `json:"helmRelease,omitempty"`
+	// Deprecated
 	// +optional
-	HelmReleaseReady *bool `json:"helmReleaseReady,omitempty"`
-
-	// deprecated
+	DeprecatedHelmReleaseReady *bool `json:"helmReleaseReady,omitempty"`
+	// Deprecated
 	// +optional
-	HelmRepository string `json:"helmRepository,omitempty"`
-
-	// deprecated
+	DeprecatedHelmRepository string `json:"helmRepository,omitempty"`
+	// Deprecated
 	// +optional
-	HelmRepositoryReady *bool `json:"helmRepositoryReady,omitempty"`
-
-	// deprecated
+	DeprecatedHelmRepositoryReady *bool `json:"helmRepositoryReady,omitempty"`
+	// Deprecated
 	// +optional
-	UpgradeFailures int64 `json:"upgradeFailures,omitempty"`
-
+	DeprecatedUpgradeFailures int64 `json:"upgradeFailures,omitempty"`
 	// Failures is the reconciliation failure count against the latest desired
 	// state. It is reset after a successful reconciliation.
 	// deprecated
 	// +optional
-	Failures int64 `json:"failures,omitempty"`
-
-	// deprecated
+	DeprecatedFailures int64 `json:"failures,omitempty"`
+	// Deprecated
 	// +optional
-	InstallFailures int64 `json:"installFailures,omitempty"`
-
-	// ManagedDecommissioningNode indicates that a node is currently being
-	// decommissioned from the cluster and provides its ordinal number.
-	// deprecated
+	DeprecatedInstallFailures int64 `json:"installFailures,omitempty"`
+	// Deprecated
 	// +optional
-	ManagedDecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
+	DeprecatedManagedDecommissioningNode *int32 `json:"decommissioningNode,omitempty"`
 }
 
 type RedpandaLicenseStatus struct {
@@ -248,7 +226,7 @@ func (in *Redpanda) ValuesJSON() (*apiextensionsv1.JSON, error) {
 }
 
 func (in *Redpanda) GenerationObserved() bool {
-	return in.Generation != 0 && in.Generation == in.Status.ObservedGeneration
+	return in.Generation != 0 && in.Generation == in.Status.DeprecatedObservedGeneration
 }
 
 // GetConditions returns the status conditions of the object.

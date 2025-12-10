@@ -61,10 +61,6 @@ type RedpandaClusterSpec struct {
 	// Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
-	// Deprecated: Use `Enterprise` instead.
-	LicenseKey *string `json:"license_key,omitempty"`
-	// Deprecated: Use `EnterpriseLicenseSecretRef` instead.
-	LicenseSecretRef *LicenseSecretRef `json:"license_secret_ref,omitempty"`
 	// Defines an Enterprise license.
 	Enterprise *Enterprise `json:"enterprise,omitempty"`
 
@@ -140,10 +136,18 @@ type RedpandaClusterSpec struct {
 	// documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 
-	Tests *Enablable `json:"tests,omitempty"`
+	// Deprecated fields below
+
+	// Deprecated: Use `enterprise.license` instead.
+	DeprecatedLicenseKey *string `json:"license_key,omitempty"`
+	// Deprecated: Use `enterprise.licenseSecretRef` instead.
+	DeprecatedLicenseSecretRef *LicenseSecretRef `json:"license_secret_ref,omitempty"`
+	// Deprecated
+	DeprecatedTests *DeprecatedEnablable `json:"tests,omitempty"`
 }
 
-type Enablable struct {
+// This structure is deprecated and should be removed
+type DeprecatedEnablable struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
@@ -282,10 +286,6 @@ type RedpandaConsole struct {
 	// Specifies whether a Deployment should be created for Redpanda Console.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Deployment *runtime.RawExtension `json:"deployment,omitempty"`
-	// Deprecated: Use `config` instead
-	// `console` is available in Console chart version earlier or equal to v0.7.31
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Console *runtime.RawExtension `json:"console,omitempty"`
 	// Configures custom settings for Redpanda Console.
 	// `config` is available in Console chart version after v0.7.31 semver
 	// +kubebuilder:pruning:PreserveUnknownFields
@@ -293,10 +293,6 @@ type RedpandaConsole struct {
 	// Configures console's Deployment's update strategy.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Strategy *runtime.RawExtension `json:"strategy,omitempty"`
-	// Deprecated: Use `licenseSecretRef` instead.
-	// `enterprise` is available in Console chart version earlier or equal to v0.7.31
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Enterprise *runtime.RawExtension `json:"enterprise,omitempty"`
 	// Defines a reference to Kubernetes Secret that points to a Redpanda Enterprise license.
 	// Please consider use Enterprise in RedpandaClusterSpec type.
 	// `licenseSecretRef` is available in Console chart version after v0.7.31 semver
@@ -307,8 +303,19 @@ type RedpandaConsole struct {
 	ReadinessProbe *ReadinessProbe `json:"readinessProbe,omitempty"`
 	// Settings for console's Deployment's liveness probe.
 	LivenessProbe *LivenessProbe `json:"livenessProbe,omitempty"`
-	// Controls the creation of helm tests for console.
-	Tests *Enablable `json:"tests,omitempty"`
+
+	// Deprecated fields below
+
+	// Deprecated: Use `config` instead
+	// `console` is available in Console chart version earlier or equal to v0.7.31
+	// +kubebuilder:pruning:PreserveUnknownFields
+	DeprecatedConsole *runtime.RawExtension `json:"console,omitempty"`
+	// Deprecated: Use `licenseSecretRef` instead.
+	// `enterprise` is available in Console chart version earlier or equal to v0.7.31
+	// +kubebuilder:pruning:PreserveUnknownFields
+	DeprecatedEnterprise *runtime.RawExtension `json:"enterprise,omitempty"`
+	// Deprecated
+	DeprecatedTests *DeprecatedEnablable `json:"tests,omitempty"`
 }
 
 // ConsoleCreateObj represents configuration options for creating Kubernetes objects such as ConfigMaps, Secrets, and Deployments.

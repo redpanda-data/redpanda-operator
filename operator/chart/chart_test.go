@@ -199,7 +199,7 @@ func TestIntegrationChart(t *testing.T) {
 				}
 
 				// We define "not reconciled" as not having an ObservedGeneration set for at least 5 seconds.
-				return time.Since(rp.CreationTimestamp.Time) >= 5*time.Second && rp.Generation != 0 && rp.Status.ObservedGeneration == 0, nil
+				return time.Since(rp.CreationTimestamp.Time) >= 5*time.Second && rp.Generation != 0 && rp.Status.DeprecatedObservedGeneration == 0, nil
 			},
 			testRP("rp-2", "rp-2"),
 			testRP("rp-3", "rp-3")))
