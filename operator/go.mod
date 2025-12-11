@@ -28,7 +28,7 @@ require (
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250718150737-e01f8476d560
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0
-	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.2.1
+	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.3.1
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6

@@ -52,6 +52,6 @@ annotations:
       url: https://helm.sh/docs/intro/install/
   artifacthub.io/images: |
     - name: redpanda
-      image: docker.redpanda.com/redpandadata/redpanda:v25.2.1
+      image: docker.redpanda.com/redpandadata/redpanda:v25.3.1
     - name: busybox
       image: busybox:latest
