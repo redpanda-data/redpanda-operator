@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: ShadowLink CRD for controlling 25.3 shadow link settings. See documentation for details.
+time: 2025-12-10T12:19:13.689549-05:00

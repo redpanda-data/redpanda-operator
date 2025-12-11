@@ -35,6 +35,7 @@ var (
 		crds.Redpanda(),
 		crds.Role(),
 		crds.Schema(),
+		crds.ShadowLink(),
 		crds.Topic(),
 		crds.User(),
 	}
@@ -44,7 +45,6 @@ var (
 	}
 	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.NodePool(),
-		crds.ShadowLink(),
 	}
 	schemes = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
