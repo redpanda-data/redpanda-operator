@@ -56,7 +56,7 @@ type Controller string
 
 const (
 	defaultConfiguratorContainerImage = "docker.redpanda.com/redpandadata/redpanda-operator"
-	DefaultRedpandaImageTag           = "v25.2.1"
+	DefaultRedpandaImageTag           = "v25.3.1"
 	DefaultRedpandaRepository         = "docker.redpanda.com/redpandadata/redpanda"
 
 	AllNonVectorizedControllers = Controller("all")

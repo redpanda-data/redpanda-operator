@@ -232,9 +232,7 @@ func TestChartYaml(t *testing.T) {
 
 	assert.Equal(t, operatorImages[1].Image, redpandaImage, "artifacthub.io/images should be in sync with the default declared in run.go")
 	assert.Equal(t, fmt.Sprintf("%s:%s", operatorRepo, expectedVersion), operatorImages[0].Image, "artifacthub.io/images should be in sync with appVersion")
-	// TODO(chrisseto): Enable this once the release is cut.
-	// NB: AppVersion is used here because it includes a leading v.
-	// assert.Truef(t, strings.HasPrefix(Chart.Metadata().AppVersion, run.DefaultRedpandaImageTag[:5]), "Chart.yaml's appVersion should have the same major and minor version as the default redpanda tag")
+	assert.Truef(t, strings.HasPrefix(Chart.Metadata().AppVersion, run.DefaultRedpandaImageTag[:5]), "Chart.yaml's appVersion should have the same major and minor version as the default redpanda tag")
 }
 
 func TestRBACBindings(t *testing.T) {
