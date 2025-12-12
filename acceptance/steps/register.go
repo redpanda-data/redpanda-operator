@@ -109,6 +109,7 @@ func init() {
 	framework.RegisterStep(`^I prune any kubernetes node that is now in a NotReady status$`, deleteNotReadyKubernetesNodes)
 	framework.RegisterStep(`I stop the Node running Pod "([^"]+)"`, shutdownNodeOfPod)
 	framework.RegisterStep(`^cluster "([^"]*)" has only (\d+) remaining nodes$`, checkClusterNodeCount)
+	framework.RegisterStep(`^I prune kubernetes node that was removed in previous step$`, deleteKubernetesNodesFromContext)
 
 	// Operator upgrade scenario steps
 	framework.RegisterStep(`^I install local CRDs from "([^"]*)"`, iInstallLocalCRDs)
