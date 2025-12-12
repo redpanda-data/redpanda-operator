@@ -4,6 +4,7 @@ processor:
   - 'Migration$'
   - 'NodePool.*$'
   - 'EmbeddedNodePoolSpec$'
+  - 'Deprecated.*$'
   ignoreFields:
   - 'migration$'
   customMarkers:
