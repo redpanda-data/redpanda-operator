@@ -3,8 +3,6 @@ processor:
   - 'List$' # Don't include List types, end users likely don't care about these.
   - 'Migration$'
   - 'NodePool.*$'
-  - 'ShadowLink.*$' 
-  - 'Shadow.*'
   - 'EmbeddedNodePoolSpec$'
   ignoreFields:
   - 'migration$'
