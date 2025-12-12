@@ -8,6 +8,6 @@ Feature: Decommissioning brokers
     When I physically shutdown a kubernetes node for cluster "decommissioning"
     And cluster "decommissioning" is unhealthy
     And cluster "decommissioning" has only 2 remaining nodes
-    And I prune any kubernetes node that is now in a NotReady status
+    And I prune kubernetes node that was removed in previous step
     Then cluster "decommissioning" should recover
     And cluster "decommissioning" should be stable with 3 nodes
