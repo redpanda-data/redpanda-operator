@@ -4,7 +4,7 @@
   "commitConflicts": true,
   "repoOwner": "redpanda-data",
   "repoName": "redpanda-operator",
-  "targetBranchChoices": ["release/v25.1.x", "release/v2.4.x", "release/v2.3.x"],
+  "targetBranchChoices": ["release/v25.3.x", "release/v25.2.x", "release/v25.1.x"],
   "targetPRLabels": ["backport"],
   "branchLabelMapping": {
     "^v(\\d+).(\\d+).x$": "release/v$1.$2.x"
