@@ -37,7 +37,6 @@ run `task generate:third-party-licenses-list`
 | github.com/Masterminds/semver/v3 | [MIT](https://github.com/Masterminds/semver/blob/v3.3.1/LICENSE.txt) |
 | github.com/Masterminds/sprig/v3 | [MIT](https://github.com/Masterminds/sprig/blob/v3.3.0/LICENSE.txt) |
 | github.com/Masterminds/squirrel | [MIT](https://github.com/Masterminds/squirrel/blob/v1.5.4/LICENSE) |
-| github.com/andrewstucki/locking | [MIT](https://github.com/andrewstucki/locking/blob/29866e56c597/LICENSE) |
 | github.com/antlr4-go/antlr/v4 | [BSD-3-Clause](https://github.com/antlr4-go/antlr/blob/v4.13.1/LICENSE) |
 | github.com/asaskevich/govalidator | [MIT](https://github.com/asaskevich/govalidator/blob/a9d515a09cc2/LICENSE) |
 | github.com/aws/aws-sdk-go-v2 | [Apache-2.0](https://github.com/aws/aws-sdk-go-v2/blob/v1.40.0/LICENSE.txt) |

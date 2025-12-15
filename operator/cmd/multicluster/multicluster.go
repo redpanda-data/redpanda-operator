@@ -17,7 +17,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/andrewstucki/locking/multicluster"
 	"github.com/go-logr/zerologr"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 )
 
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;create;update;patch

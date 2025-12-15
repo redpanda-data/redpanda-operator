@@ -27,6 +27,7 @@ require (
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
 	github.com/twmb/franz-go/pkg/sr v1.5.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
+	go.etcd.io/raft/v3 v3.6.0
 	go.opentelemetry.io/collector/pdata v1.32.0
 	go.opentelemetry.io/contrib/bridges/prometheus v0.61.0
 	go.opentelemetry.io/otel v1.38.0
@@ -46,6 +47,7 @@ require (
 	golang.org/x/mod v0.30.0
 	golang.org/x/time v0.13.0
 	golang.org/x/tools v0.39.0
+	google.golang.org/grpc v1.75.1
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.5
@@ -57,6 +59,7 @@ require (
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	pgregory.net/rapid v1.1.0
 	sigs.k8s.io/controller-runtime v0.22.4
+	sigs.k8s.io/multicluster-runtime v0.22.0-beta.0
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -154,6 +157,7 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gonvenience/bunt v1.3.5 // indirect
 	github.com/gonvenience/neat v1.3.13 // indirect
 	github.com/gonvenience/term v1.0.2 // indirect
@@ -289,7 +293,6 @@ require (
 	google.golang.org/genproto v0.0.0-20251111163417-95abcf5c77ba // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251111163417-95abcf5c77ba // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba // indirect
-	google.golang.org/grpc v1.75.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
