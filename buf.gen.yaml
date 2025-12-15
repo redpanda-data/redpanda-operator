@@ -1,0 +1,19 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/redpanda-data/redpanda-operator/pkg/locking/raft/proto/gen
+inputs:
+  - directory: pkg/locking/raft/proto
+    paths:
+      - pkg/locking/raft/proto/transport
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: pkg/locking/raft/proto/gen
+    opt:
+      - paths=source_relative
+  - remote: buf.build/grpc/go
+    out: pkg/locking/raft/proto/gen
+    opt:
+      - paths=source_relative

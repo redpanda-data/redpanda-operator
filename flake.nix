@@ -70,6 +70,7 @@
               pkgs.backport
               pkgs.bk
               pkgs.buildkite-agent
+              pkgs.buf
               pkgs.changie # Changelog manager
               pkgs.code-generator
               pkgs.controller-gen
@@ -88,6 +89,7 @@
               pkgs.golangci-lint
               pkgs.gotestsum
               stablePkgs.goverter
+              pkgs.grpc-tools
               pkgs.helm-3-10-3
               pkgs.helm-docs
               pkgs.jq
@@ -99,6 +101,7 @@
               pkgs.kuttl
               pkgs.openssl
               pkgs.otel-desktop-viewer
+              pkgs.protoc-gen-go
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.vcluster
               pkgs.yq-go
