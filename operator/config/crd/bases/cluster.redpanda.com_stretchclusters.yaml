@@ -17,8 +17,14 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[?(@.type=="Synced")].status
-      name: Synced
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].message
+      name: Status
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="LicenseValid")].message
+      name: License
       type: string
     name: v1alpha2
     schema:
@@ -49,9 +55,39 @@ spec:
               conditions:
               - lastTransitionTime: "1970-01-01T00:00:00Z"
                 message: Waiting for controller
-                reason: Pending
+                reason: NotReconciled
                 status: Unknown
-                type: Synced
+                type: Ready
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Healthy
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: LicenseValid
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: ResourcesSynced
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: ConfigurationApplied
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Quiesced
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: Stable
             properties:
               conditions:
                 description: Conditions holds the conditions for the StretchCluster.
@@ -108,6 +144,94 @@ spec:
                   - reason
                   - status
                   - type
+                  type: object
+                type: array
+              configVersion:
+                description: |-
+                  ConfigVersion contains the configuration version written in
+                  Redpanda used for restarting broker nodes as necessary.
+                type: string
+              license:
+                description: |-
+                  LicenseStatus contains information about the current state of any
+                  installed license in the Redpanda cluster.
+                properties:
+                  expiration:
+                    format: date-time
+                    type: string
+                  expired:
+                    type: boolean
+                  inUseFeatures:
+                    items:
+                      type: string
+                    type: array
+                  organization:
+                    type: string
+                  type:
+                    type: string
+                  violation:
+                    type: boolean
+                required:
+                - inUseFeatures
+                - violation
+                type: object
+              nodePools:
+                description: |-
+                  NodePools contains information about the node pools associated
+                  with this stretch cluster.
+                items:
+                  description: EmbeddedNodePoolStatus defines the observed state of
+                    any node pools tied to this cluster
+                  properties:
+                    condemnedReplicas:
+                      description: |-
+                        CondemnedReplicas is the number of replicas that will be decommissioned
+                        as part of a scaling down operation.
+                      format: int32
+                      type: integer
+                    desiredReplicas:
+                      description: |-
+                        DesiredReplicas is the number of replicas that ought to be
+                        run for the cluster. It combines the desired replicas across
+                        all node pools.
+                      format: int32
+                      type: integer
+                    name:
+                      description: Name is the name of the pool
+                      type: string
+                    outOfDateReplicas:
+                      description: |-
+                        OutOfDateReplicas is the number of replicas that don't currently
+                        match their node pool definitions. If OutOfDateReplicas is not 0
+                        it should mean that the operator will soon roll this many pods.
+                      format: int32
+                      type: integer
+                    readyReplicas:
+                      description: |-
+                        ReadyReplicas is the number of replicas whose readiness probes are
+                        currently passing.
+                      format: int32
+                      type: integer
+                    replicas:
+                      description: |-
+                        Replicas is the number of actual replicas currently across
+                        the node pool. This differs from DesiredReplicas during
+                        a scaling operation, but should be the same once the cluster
+                        has quiesced.
+                      format: int32
+                      type: integer
+                    runningReplicas:
+                      description: |-
+                        RunningReplicas is the number of replicas that are actively in a running
+                        state.
+                      format: int32
+                      type: integer
+                    upToDateReplicas:
+                      description: |-
+                        UpToDateReplicas is the number of replicas that currently match
+                        their node pool definitions.
+                      format: int32
+                      type: integer
                   type: object
                 type: array
             type: object

@@ -14,8 +14,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -34,7 +34,7 @@ type V2NodePoolRenderer struct {
 var _ NodePoolRenderer[ClusterWithPools, *ClusterWithPools] = (*V2NodePoolRenderer)(nil)
 
 // NewV2NodePoolRenderer returns a V2NodePoolRenderer.
-func NewV2NodePoolRenderer(mgr ctrl.Manager, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *V2NodePoolRenderer {
+func NewV2NodePoolRenderer(mgr cluster.Cluster, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *V2NodePoolRenderer {
 	return &V2NodePoolRenderer{
 		kubeConfig:    mgr.GetConfig(),
 		sideCarImage:  sideCarImage,

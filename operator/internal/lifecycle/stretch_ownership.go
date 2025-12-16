@@ -14,18 +14,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// V2OwnershipResolver represents an ownership resolver for v2 clusters.
-type V2OwnershipResolver struct {
+// StretchOwnershipResolver represents an ownership resolver for stretch clusters.
+type StretchOwnershipResolver struct {
 	operatorLabel  string
 	ownerLabel     string
 	namespaceLabel string
 }
 
-var _ OwnershipResolver[ClusterWithPools, *ClusterWithPools] = (*V2OwnershipResolver)(nil)
+var _ OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchOwnershipResolver)(nil)
 
 // NewV2OwnershipResolver returns a V2OwnershipResolver.
-func NewV2OwnershipResolver() *V2OwnershipResolver {
-	return &V2OwnershipResolver{
+func NewStretchOwnershipResolver() *StretchOwnershipResolver {
+	return &StretchOwnershipResolver{
 		operatorLabel:  defaultOperatorLabel,
 		ownerLabel:     defaultOwnerLabel,
 		namespaceLabel: DefaultNamespaceLabel,
@@ -34,7 +34,7 @@ func NewV2OwnershipResolver() *V2OwnershipResolver {
 
 // AddLabels returns the labels to add to all resources associated with a
 // v2 cluster.
-func (m *V2OwnershipResolver) AddLabels(cluster *ClusterWithPools) map[string]string {
+func (m *StretchOwnershipResolver) AddLabels(cluster *StretchClusterWithPools) map[string]string {
 	return map[string]string{
 		m.namespaceLabel: cluster.GetNamespace(),
 		m.ownerLabel:     cluster.GetName(),
@@ -47,7 +47,7 @@ func (m *V2OwnershipResolver) AddLabels(cluster *ClusterWithPools) map[string]st
 
 // GetOwnerLabels returns the labels that can identify a resource belonging
 // to a given cluster.
-func (m *V2OwnershipResolver) GetOwnerLabels(cluster *ClusterWithPools) map[string]string {
+func (m *StretchOwnershipResolver) GetOwnerLabels(cluster *StretchClusterWithPools) map[string]string {
 	return map[string]string{
 		fluxNameLabel:      cluster.GetName(),
 		fluxNamespaceLabel: cluster.GetNamespace(),
@@ -55,7 +55,7 @@ func (m *V2OwnershipResolver) GetOwnerLabels(cluster *ClusterWithPools) map[stri
 }
 
 // ownerFromLabels returns the v2 cluster based on a resource's labels.
-func (m *V2OwnershipResolver) ownerFromLabels(labels map[string]string) types.NamespacedName {
+func (m *StretchOwnershipResolver) ownerFromLabels(labels map[string]string) types.NamespacedName {
 	owner := labels[m.ownerLabel]
 	if owner == "" {
 		// fallback to flux labels
@@ -75,7 +75,7 @@ func (m *V2OwnershipResolver) ownerFromLabels(labels map[string]string) types.Na
 }
 
 // OwnerForObject maps an object to the v2 cluster that owns it.
-func (m *V2OwnershipResolver) OwnerForObject(object client.Object) *types.NamespacedName {
+func (m *StretchOwnershipResolver) OwnerForObject(object client.Object) *types.NamespacedName {
 	if labels := object.GetLabels(); labels != nil {
 		nn := m.ownerFromLabels(labels)
 		if nn.Namespace != "" && nn.Name != "" {

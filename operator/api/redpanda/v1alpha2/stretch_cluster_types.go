@@ -17,22 +17,40 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=stretchclusters
 // +kubebuilder:resource:shortName=sc
-// +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=`.status.conditions[?(@.type=="Synced")].status`
+// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].message",description=""
+// +kubebuilder:printcolumn:name="License",type="string",JSONPath=".status.conditions[?(@.type==\"LicenseValid\")].message",description=""
 type StretchCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec StretchClusterSpec `json:"spec,omitempty"`
-	// +kubebuilder:default={conditions: {{type: "Synced", status: "Unknown", reason:"Pending", message:"Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
+	// +kubebuilder:default={conditions: {{type: "Ready", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Healthy", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "LicenseValid", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "ResourcesSynced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "ConfigurationApplied", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Quiesced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Stable", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
 	Status StretchClusterStatus `json:"status,omitempty"`
 }
 
-type StretchClusterSpec struct{}
+type StretchClusterSpec struct {
+}
 
 type StretchClusterStatus struct {
 	// Conditions holds the conditions for the StretchCluster.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// LicenseStatus contains information about the current state of any
+	// installed license in the Redpanda cluster.
+	// +optional
+	LicenseStatus *RedpandaLicenseStatus `json:"license,omitempty"`
+
+	// NodePools contains information about the node pools associated
+	// with this stretch cluster.
+	// +optional
+	NodePools []EmbeddedNodePoolStatus `json:"nodePools,omitempty"`
+
+	// ConfigVersion contains the configuration version written in
+	// Redpanda used for restarting broker nodes as necessary.
+	// +optional
+	ConfigVersion string `json:"configVersion,omitempty"`
 }
 
 // +kubebuilder:object:root=true

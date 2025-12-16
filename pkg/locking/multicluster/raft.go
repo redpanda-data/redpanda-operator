@@ -190,7 +190,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err := clusterProvider.Add(context.Background(), peer.Name, c, nil); err != nil {
+			if err := clusterProvider.Add(context.Background(), peer.Name, c); err != nil {
 				return nil, err
 			}
 		}

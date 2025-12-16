@@ -14,8 +14,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -31,7 +31,7 @@ type V2SimpleResourceRenderer struct {
 var _ SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools] = (*V2SimpleResourceRenderer)(nil)
 
 // NewV2SimpleResourceRenderer returns a V2SimpleResourceRenderer.
-func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
+func NewV2SimpleResourceRenderer(mgr cluster.Cluster) *V2SimpleResourceRenderer {
 	return &V2SimpleResourceRenderer{
 		kubeConfig: mgr.GetConfig(),
 	}
