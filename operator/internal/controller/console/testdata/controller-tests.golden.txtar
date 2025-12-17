@@ -30,7 +30,6 @@
         - https://test-redpanda-2.test-redpanda.test-ns.svc.cluster.local.:8081
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
@@ -40,7 +39,6 @@
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
@@ -64,7 +62,6 @@
       metadata:
         annotations:
           checksum/config: 78ea4be66cc35f74b22029b54133e3b8fe014982670188a71a4e8581e621daac
-        creationTimestamp: null
         labels:
           app.kubernetes.io/instance: console-cluster-ref
           app.kubernetes.io/name: console
@@ -171,7 +168,6 @@
     serde-protobuf-git-basicauth-password: ""
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
@@ -185,7 +181,6 @@
   immutable: true
   kind: Secret
   metadata:
-    creationTimestamp: null
     name: console-cluster-ref-jwt-secret
     namespace: test-ns
   type: Opaque
@@ -193,7 +188,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
@@ -203,7 +197,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-cluster-ref
       app.kubernetes.io/managed-by: redpanda-operator
@@ -235,7 +228,6 @@
       {}
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
@@ -245,7 +237,6 @@
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
@@ -269,7 +260,6 @@
       metadata:
         annotations:
           checksum/config: 28d978af90a43439edaee767a120fd85a15f923d1977979170de19b9e74c5895
-        creationTimestamp: null
         labels:
           app.kubernetes.io/instance: console-jwt-set
           app.kubernetes.io/name: console
@@ -365,7 +355,6 @@
     serde-protobuf-git-basicauth-password: ""
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
@@ -377,7 +366,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
@@ -387,7 +375,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-jwt-set
       app.kubernetes.io/managed-by: redpanda-operator
@@ -419,7 +406,6 @@
       {}
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
@@ -429,7 +415,6 @@
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
@@ -453,7 +438,6 @@
       metadata:
         annotations:
           checksum/config: 28d978af90a43439edaee767a120fd85a15f923d1977979170de19b9e74c5895
-        creationTimestamp: null
         labels:
           app.kubernetes.io/instance: console-no-cluster
           app.kubernetes.io/name: console
@@ -549,7 +533,6 @@
     serde-protobuf-git-basicauth-password: ""
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
@@ -563,7 +546,6 @@
   immutable: true
   kind: Secret
   metadata:
-    creationTimestamp: null
     name: console-no-cluster-jwt-secret
     namespace: test-ns
   type: Opaque
@@ -571,7 +553,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
@@ -581,7 +562,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-no-cluster
       app.kubernetes.io/managed-by: redpanda-operator
@@ -624,7 +604,6 @@
           - http://admin-api:9644
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
@@ -634,7 +613,6 @@
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
@@ -658,7 +636,6 @@
       metadata:
         annotations:
           checksum/config: d69ddbd3eb4553d96e3639308acc20a197c960b9580f562a5491bd9d7a5a2f78
-        creationTimestamp: null
         labels:
           app.kubernetes.io/instance: console-static
           app.kubernetes.io/name: console
@@ -759,7 +736,6 @@
     serde-protobuf-git-basicauth-password: ""
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
@@ -773,7 +749,6 @@
   immutable: true
   kind: Secret
   metadata:
-    creationTimestamp: null
     name: console-static-jwt-secret
     namespace: test-ns
   type: Opaque
@@ -781,7 +756,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
@@ -791,7 +765,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: console-static
       app.kubernetes.io/managed-by: redpanda-operator
