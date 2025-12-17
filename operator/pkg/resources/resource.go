@@ -138,7 +138,7 @@ func Update(
 	opts := []patch.CalculateOption{
 		patch.IgnoreStatusFields(),
 		patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus(),
-		patch.IgnorePDBSelector(),
+		utils.IgnorePDBSelector(), // we leverage the pdb selector for non-PDB resources, so we had to fork the one in "patch"
 		utils.IgnoreAnnotation(redpandaAnnotatorKey),
 	}
 	annotator := patch.NewAnnotator(redpandaAnnotatorKey)
