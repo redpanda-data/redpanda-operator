@@ -40,7 +40,7 @@ func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 // Render returns a list of simple resources for the given Redpanda v2 cluster. It does this by
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // should be considered a node pool.
-func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterWithPools) ([]client.Object, error) {
+func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterWithPools, _ string) ([]client.Object, error) {
 	spec := cluster.Spec.ClusterSpec.DeepCopy()
 
 	if spec != nil {

@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 )
 
 func objectNames[T client.Object](list []T) []string {
@@ -29,10 +30,10 @@ func objectNames[T client.Object](list []T) []string {
 	return ids
 }
 
-func objectNamespaceNames[T client.Object](list []T) []string {
+func clusterObjectNamespaceNames[T clusterObject](list []T) []string {
 	ids := []string{}
 	for _, o := range list {
-		ids = append(ids, client.ObjectKeyFromObject(o).String())
+		ids = append(ids, objectKeyFromObject(o).String())
 	}
 	return ids
 }
@@ -52,10 +53,13 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{Name: "pod-1"},
 					},
 				}},
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
-					Status:     appsv1.StatefulSetStatus{Replicas: 2},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
+						Status:     appsv1.StatefulSetStatus{Replicas: 2},
+					},
 				},
 			}},
 			canScale: false,
@@ -67,10 +71,13 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{Name: "pod-1"},
 					},
 				}},
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(0))},
-					Status:     appsv1.StatefulSetStatus{Replicas: 1},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(0))},
+						Status:     appsv1.StatefulSetStatus{Replicas: 1},
+					},
 				},
 			}},
 			canScale: false,
@@ -82,10 +89,13 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{Name: "pod-1"},
 					},
 				}},
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
-					Status:     appsv1.StatefulSetStatus{Replicas: 2},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+						Status:     appsv1.StatefulSetStatus{Replicas: 2},
+					},
 				},
 			}},
 			canScale: false,
@@ -101,10 +111,13 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{Name: "pod-2"},
 					},
 				}},
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
-					Status:     appsv1.StatefulSetStatus{Replicas: 2},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
+						Status:     appsv1.StatefulSetStatus{Replicas: 2},
+					},
 				},
 			}},
 			canScale: true,
@@ -122,77 +135,116 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 
 func TestPoolTrackerToCreate(t *testing.T) {
 	for name, tt := range map[string]struct {
-		existingPools        []*appsv1.StatefulSet
-		desiredPools         []*appsv1.StatefulSet
+		existingPools        []*MulticlusterStatefulSet
+		desiredPools         []*MulticlusterStatefulSet
 		expectedSetsToCreate []string
 	}{
 		"no-op": {},
 		"no-creations": {
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}},
 		},
 		"excess-existing": {
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-3",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-3",
+					},
 				},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}},
 		},
 		"no-existing": {
 			expectedSetsToCreate: []string{"pool-1", "pool-2"},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}},
 		},
 		"some-existing": {
 			expectedSetsToCreate: []string{"pool-2"},
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}},
 		},
@@ -205,7 +257,10 @@ func TestPoolTrackerToCreate(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: set.DeepCopy(),
+					set: &MulticlusterStatefulSet{
+						StatefulSet: set.DeepCopy(),
+						clusterName: set.clusterName,
+					},
 				})
 			}
 
@@ -220,87 +275,123 @@ func TestPoolTrackerToCreate(t *testing.T) {
 
 func TestPoolTrackerToScaleUp(t *testing.T) {
 	for name, tt := range map[string]struct {
-		existingPools         []*appsv1.StatefulSet
-		desiredPools          []*appsv1.StatefulSet
+		existingPools         []*MulticlusterStatefulSet
+		desiredPools          []*MulticlusterStatefulSet
 		expectedSetsToScaleUp []string
 	}{
 		"no-op": {},
 		"no-scale-ups": {
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
 		},
 		"all-scale-ups": {
 			expectedSetsToScaleUp: []string{"pool-1"},
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
 		},
 		"some-scale-ups": {
 			expectedSetsToScaleUp: []string{"pool-1"},
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}},
 		},
 		"scale-down": {
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}},
 		},
 	} {
@@ -312,7 +403,10 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: set.DeepCopy(),
+					set: &MulticlusterStatefulSet{
+						clusterName: mcmanager.LocalCluster,
+						StatefulSet: set.DeepCopy(),
+					},
 				})
 			}
 
@@ -328,85 +422,115 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 func TestPoolTrackerRequiresUpdate(t *testing.T) {
 	for name, tt := range map[string]struct {
 		generation           int64
-		existingPools        []*appsv1.StatefulSet
-		desiredPools         []*appsv1.StatefulSet
+		existingPools        []*MulticlusterStatefulSet
+		desiredPools         []*MulticlusterStatefulSet
 		expectedSetsToUpdate []string
 	}{
 		"no-op": {},
 		"no-updates": {
 			generation: 1,
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "pool-1",
-					Labels: map[string]string{generationLabel: "1"},
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "pool-1",
+						Labels: map[string]string{generationLabel: "1"},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "pool-2",
-					Labels: map[string]string{generationLabel: "1"},
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "pool-2",
+						Labels: map[string]string{generationLabel: "1"},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
 		},
 		"scaling-up": {
 			generation: 1,
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "pool-1",
-					Labels: map[string]string{generationLabel: "0"},
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "pool-1",
+						Labels: map[string]string{generationLabel: "0"},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
 		},
 		"scaling-down": {
 			generation: 1,
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "pool-1",
-					Labels: map[string]string{generationLabel: "0"},
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "pool-1",
+						Labels: map[string]string{generationLabel: "0"},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 			}},
 		},
 		"updates": {
 			generation:           1,
 			expectedSetsToUpdate: []string{"pool-1"},
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "pool-1",
-					Labels: map[string]string{generationLabel: "0"},
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   "pool-1",
+						Labels: map[string]string{generationLabel: "0"},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
-				Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 			}},
 		},
 	} {
@@ -418,7 +542,7 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: set.DeepCopy(),
+					set: &MulticlusterStatefulSet{StatefulSet: set.DeepCopy(), clusterName: set.clusterName},
 				})
 			}
 
@@ -434,16 +558,19 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 func TestPoolTrackerToScaleDown(t *testing.T) {
 	for name, tt := range map[string]struct {
 		existingPools           []*poolWithOrdinals
-		desiredPools            []*appsv1.StatefulSet
+		desiredPools            []*MulticlusterStatefulSet
 		expectedSetsToScaleDown []string
 	}{
 		"no-op": {},
 		"deleted-set": {
 			expectedSetsToScaleDown: []string{"pool-1(2): pod-3"},
 			existingPools: []*poolWithOrdinals{{
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
+					},
 				},
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -462,9 +589,12 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 		},
 		"scaling-up-set": {
 			existingPools: []*poolWithOrdinals{{
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
+					},
 				},
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -480,17 +610,23 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 					},
 				}},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-				Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(4))},
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(4))},
+				},
 			}},
 		},
 		"scaling-down-set": {
 			expectedSetsToScaleDown: []string{"pool-1(2): pod-3", "pool-3(0): pod-1"},
 			existingPools: []*poolWithOrdinals{{
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
+					},
 				},
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -506,9 +642,12 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 					},
 				}},
 			}, {
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-2"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-2"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+					},
 				},
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -516,9 +655,12 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 					},
 				}},
 			}, {
-				set: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "pool-3"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				set: &MulticlusterStatefulSet{
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{Name: "pool-3"},
+						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+					},
 				},
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -526,12 +668,18 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 					},
 				}},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
-				Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{Name: "pool-2"},
-				Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "pool-2"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
 			}},
 		},
 	} {
@@ -558,78 +706,114 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 
 func TestPoolTrackerToDelete(t *testing.T) {
 	for name, tt := range map[string]struct {
-		existingPools        []*appsv1.StatefulSet
-		desiredPools         []*appsv1.StatefulSet
+		existingPools        []*MulticlusterStatefulSet
+		desiredPools         []*MulticlusterStatefulSet
 		expectedSetsToDelete []string
 	}{
 		"no-op": {},
 		"no-deletions": {
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}},
 		},
 		"scaling-down": {
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
-				},
-				Spec: appsv1.StatefulSetSpec{
-					Replicas: ptr.To(int32(3)),
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To(int32(3)),
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-3",
-				},
-				Spec: appsv1.StatefulSetSpec{
-					Replicas: ptr.To(int32(0)),
-				},
-				Status: appsv1.StatefulSetStatus{
-					Replicas: 1,
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-3",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To(int32(0)),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas: 1,
+					},
 				},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}},
 		},
 		"can-delete": {
 			expectedSetsToDelete: []string{"pool-2", "pool-3"},
-			existingPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-2",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+					},
 				},
 			}, {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-3",
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-3",
+					},
 				},
 			}},
-			desiredPools: []*appsv1.StatefulSet{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "pool-1",
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+					},
 				},
 			}},
 		},
@@ -642,7 +826,7 @@ func TestPoolTrackerToDelete(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: set.DeepCopy(),
+					set: &MulticlusterStatefulSet{StatefulSet: set.DeepCopy(), clusterName: set.clusterName},
 				})
 			}
 
@@ -656,9 +840,12 @@ func TestPoolTrackerToDelete(t *testing.T) {
 }
 
 func TestPoolTrackerPodsToRoll(t *testing.T) {
-	pool1 := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "pool-1",
+	pool1 := &MulticlusterStatefulSet{
+		clusterName: mcmanager.LocalCluster,
+		StatefulSet: &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pool-1",
+			},
 		},
 	}
 	pool1Revisions := []*appsv1.ControllerRevision{{
@@ -670,9 +857,12 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 			Name: "b",
 		},
 	}}
-	pool2 := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "pool-2",
+	pool2 := &MulticlusterStatefulSet{
+		clusterName: mcmanager.LocalCluster,
+		StatefulSet: &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pool-2",
+			},
 		},
 	}
 	pool2Revisions := []*appsv1.ControllerRevision{{

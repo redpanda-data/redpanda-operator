@@ -135,59 +135,117 @@ func TestSortCreation(t *testing.T) {
 
 func TestSortByName(t *testing.T) {
 	for name, tt := range map[string]struct {
-		items    []*corev1.Pod
+		items    []*MulticlusterPod
 		expected []string
 	}{
 		"no-op": {
 			expected: []string{},
 		},
 		"ordered": {
-			expected: []string{"namespace-1/pod-1", "namespace-1/pod-2", "namespace-2/pod-1", "namespace-2/pod-2"},
-			items: []*corev1.Pod{
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-1",
-					Namespace: "namespace-1",
-				}},
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-2",
-					Namespace: "namespace-1",
-				}},
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-1",
-					Namespace: "namespace-2",
-				}},
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-2",
-					Namespace: "namespace-2",
-				}},
+			expected: []string{"cluster-a/namespace-1/pod-1", "cluster-a/namespace-1/pod-2", "cluster-a/namespace-2/pod-1", "cluster-a/namespace-2/pod-2", "cluster-b/namespace-1/pod-1"},
+			items: []*MulticlusterPod{
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-1",
+							Namespace: "namespace-1",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-2",
+							Namespace: "namespace-1",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-1",
+							Namespace: "namespace-2",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-2",
+							Namespace: "namespace-2",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-b",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-1",
+							Namespace: "namespace-1",
+						},
+					},
+				},
 			},
 		},
 		"unordered": {
-			expected: []string{"namespace-1/pod-1", "namespace-1/pod-2", "namespace-2/pod-1", "namespace-2/pod-2"},
-			items: []*corev1.Pod{
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-2",
-					Namespace: "namespace-2",
-				}},
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-2",
-					Namespace: "namespace-1",
-				}},
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-1",
-					Namespace: "namespace-1",
-				}},
-				{ObjectMeta: metav1.ObjectMeta{
-					Name:      "pod-1",
-					Namespace: "namespace-2",
-				}},
+			expected: []string{"cluster-a/namespace-1/pod-1", "cluster-a/namespace-1/pod-2", "cluster-a/namespace-2/pod-1", "cluster-a/namespace-2/pod-2", "cluster-b/namespace-1/pod-1"},
+			items: []*MulticlusterPod{
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-2",
+							Namespace: "namespace-2",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-1",
+							Namespace: "namespace-1",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-b",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-1",
+							Namespace: "namespace-1",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-2",
+							Namespace: "namespace-1",
+						},
+					},
+				},
+				{
+					clusterName: "cluster-a",
+					Pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pod-1",
+							Namespace: "namespace-2",
+						},
+					},
+				},
 			},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := objectNamespaceNames(sortByName(tt.items))
+			actual := clusterObjectNamespaceNames(sortByNameAndCluster(tt.items))
 			require.EqualValues(t, tt.expected, actual)
 		})
 	}

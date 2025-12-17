@@ -488,7 +488,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
 		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-		if err := r.Client.Delete(ctx, set); err != nil {
+		if err := r.Client.Delete(ctx, set.StatefulSet); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
 	}
@@ -519,7 +519,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			rolled = true
 			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
-			if err := r.Client.Delete(ctx, pod); err != nil {
+			if err := r.Client.Delete(ctx, pod.Pod); err != nil {
 				return ctrl.Result{}, errors.Wrap(err, "deleting pod")
 			}
 		}

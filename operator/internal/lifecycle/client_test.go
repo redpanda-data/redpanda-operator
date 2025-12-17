@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 )
 
 var parentCtx = context.Background()
@@ -107,7 +108,7 @@ type clientTest struct {
 	watchedResources     []client.Object
 	resources            []client.Object
 	resourcesRenderError error
-	nodePools            []*appsv1.StatefulSet
+	nodePools            []*MulticlusterStatefulSet
 	nodePoolsRenderError error
 	additionalObjects    []client.Object
 }
@@ -164,6 +165,7 @@ func (tt *clientTest) AdditionalResources() []client.Object {
 	return tt.additionalObjects
 }
 
+// TODO: this is currently not fully multicluster aware
 func (tt *clientTest) InitialResources() []client.Object {
 	initialResources := []client.Object{}
 
@@ -173,7 +175,7 @@ func (tt *clientTest) InitialResources() []client.Object {
 
 	if tt.nodePoolsRenderError == nil {
 		for _, pool := range tt.nodePools {
-			initialResources = append(initialResources, pool)
+			initialResources = append(initialResources, pool.StatefulSet)
 		}
 	}
 
@@ -294,19 +296,22 @@ func TestClientDeleteAll(t *testing.T) {
 					},
 				},
 			},
-			nodePools: []*appsv1.StatefulSet{
+			nodePools: []*MulticlusterStatefulSet{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "resources-and-pools-pool",
-						Namespace: metav1.NamespaceDefault,
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{"label": "label"},
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "resources-and-pools-pool",
+							Namespace: metav1.NamespaceDefault,
 						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{"label": "label"},
+						Spec: appsv1.StatefulSetSpec{
+							Selector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"label": "label"},
+							},
+							Template: corev1.PodTemplateSpec{
+								ObjectMeta: metav1.ObjectMeta{
+									Labels: map[string]string{"label": "label"},
+								},
 							},
 						},
 					},
@@ -333,7 +338,7 @@ func TestClientDeleteAll(t *testing.T) {
 			require.False(t, deleted, "found stray resource")
 
 			for _, pool := range tt.nodePools {
-				if err := instances.k8sClient.Get(ctx, client.ObjectKeyFromObject(pool), pool); err != nil {
+				if err := instances.k8sClient.Get(ctx, client.ObjectKeyFromObject(pool), pool.StatefulSet); err != nil {
 					require.True(t, k8sapierrors.IsNotFound(err))
 				} else {
 					require.NotNil(t, pool.GetDeletionTimestamp())
@@ -401,19 +406,22 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 			nodePoolsRenderError: errors.New("render"),
 		},
 		"single-pool": {
-			nodePools: []*appsv1.StatefulSet{
+			nodePools: []*MulticlusterStatefulSet{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pool-1",
-						Namespace: metav1.NamespaceDefault,
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{"label": "label"},
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "pool-1",
+							Namespace: metav1.NamespaceDefault,
 						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{"label": "label"},
+						Spec: appsv1.StatefulSetSpec{
+							Selector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"label": "label"},
+							},
+							Template: corev1.PodTemplateSpec{
+								ObjectMeta: metav1.ObjectMeta{
+									Labels: map[string]string{"label": "label"},
+								},
 							},
 						},
 					},
@@ -421,35 +429,41 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 			},
 		},
 		"multiple-pools": {
-			nodePools: []*appsv1.StatefulSet{
+			nodePools: []*MulticlusterStatefulSet{
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "multi-pool-1",
-						Namespace: metav1.NamespaceDefault,
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{"label": "label"},
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "multi-pool-1",
+							Namespace: metav1.NamespaceDefault,
 						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{"label": "label"},
+						Spec: appsv1.StatefulSetSpec{
+							Selector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"label": "label"},
+							},
+							Template: corev1.PodTemplateSpec{
+								ObjectMeta: metav1.ObjectMeta{
+									Labels: map[string]string{"label": "label"},
+								},
 							},
 						},
 					},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "multi-pool-2",
-						Namespace: metav1.NamespaceDefault,
-					},
-					Spec: appsv1.StatefulSetSpec{
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{"label": "label"},
+					clusterName: mcmanager.LocalCluster,
+					StatefulSet: &appsv1.StatefulSet{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "multi-pool-2",
+							Namespace: metav1.NamespaceDefault,
 						},
-						Template: corev1.PodTemplateSpec{
-							ObjectMeta: metav1.ObjectMeta{
-								Labels: map[string]string{"label": "label"},
+						Spec: appsv1.StatefulSetSpec{
+							Selector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"label": "label"},
+							},
+							Template: corev1.PodTemplateSpec{
+								ObjectMeta: metav1.ObjectMeta{
+									Labels: map[string]string{"label": "label"},
+								},
 							},
 						},
 					},
@@ -470,7 +484,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 
 			pools := []string{}
 			for _, pool := range tt.nodePools {
-				pools = append(pools, client.ObjectKeyFromObject(pool).String())
+				pools = append(pools, objectKeyFromObject(pool).String())
 			}
 
 			require.NoError(t, err)
@@ -479,7 +493,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 
 			for _, pool := range tt.nodePools {
 				require.NoError(t, instances.resourceClient.PatchNodePoolSet(ctx, cluster, pool))
-				require.NoError(t, instances.checkObject(ctx, t, pool))
+				require.NoError(t, instances.checkObject(ctx, t, pool.StatefulSet))
 			}
 
 			tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version")

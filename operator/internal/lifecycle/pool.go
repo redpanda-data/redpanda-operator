@@ -10,15 +10,31 @@
 package lifecycle
 
 import (
-	"sort"
+	"fmt"
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type MulticlusterStatefulSet struct {
+	*appsv1.StatefulSet
+	clusterName string
+}
+
+func (s *MulticlusterStatefulSet) GetCluster() string {
+	return s.clusterName
+}
+
+type MulticlusterPod struct {
+	*corev1.Pod
+	clusterName string
+}
+
+func (p *MulticlusterPod) GetCluster() string {
+	return p.clusterName
+}
 
 // podWithOrdinals is a container for sorting pods
 // by their ordinals
@@ -31,7 +47,7 @@ type podsWithOrdinals struct {
 // we need to figure out how to manipulate a given node pool
 type poolWithOrdinals struct {
 	pods      []*podsWithOrdinals
-	set       *appsv1.StatefulSet
+	set       *MulticlusterStatefulSet
 	revisions []*appsv1.ControllerRevision
 }
 
@@ -40,7 +56,37 @@ type poolWithOrdinals struct {
 // it is associated with.
 type ScaleDownSet struct {
 	LastPod     *corev1.Pod
-	StatefulSet *appsv1.StatefulSet
+	StatefulSet *MulticlusterStatefulSet
+}
+
+func (s *ScaleDownSet) GetCluster() string {
+	return s.StatefulSet.clusterName
+}
+
+func (s *ScaleDownSet) GetNamespace() string {
+	return s.LastPod.Namespace
+}
+
+func (s *ScaleDownSet) GetName() string {
+	return s.LastPod.Name
+}
+
+type ClusterNamespacedName struct {
+	Cluster   string
+	Namespace string
+	Name      string
+}
+
+func (c ClusterNamespacedName) String() string {
+	return fmt.Sprintf("%s/%s/%s", c.Cluster, c.Namespace, c.Name)
+}
+
+func objectKeyFromObject(o clusterObject) ClusterNamespacedName {
+	return ClusterNamespacedName{
+		Cluster:   o.GetCluster(),
+		Namespace: o.GetNamespace(),
+		Name:      o.GetName(),
+	}
 }
 
 // PoolTracker tracks the existing and desired node pool state
@@ -50,16 +96,16 @@ type PoolTracker struct {
 	// to determine whether or not a StatefulSet's definition is
 	// out-of-date
 	latestGeneration int64
-	existingPools    map[types.NamespacedName]*poolWithOrdinals
-	desiredPools     map[types.NamespacedName]*poolWithOrdinals
+	existingPools    map[ClusterNamespacedName]*poolWithOrdinals
+	desiredPools     map[ClusterNamespacedName]*poolWithOrdinals
 }
 
 // NewPoolTracker creates a new PoolTracker with the given cluster generation.
 func NewPoolTracker(generation int64) *PoolTracker {
 	return &PoolTracker{
 		latestGeneration: generation,
-		existingPools:    make(map[types.NamespacedName]*poolWithOrdinals),
-		desiredPools:     make(map[types.NamespacedName]*poolWithOrdinals),
+		existingPools:    make(map[ClusterNamespacedName]*poolWithOrdinals),
+		desiredPools:     make(map[ClusterNamespacedName]*poolWithOrdinals),
 	}
 }
 
@@ -143,29 +189,30 @@ func (p *PoolTracker) CheckScale() bool {
 }
 
 // ToCreate returns a list of StatefulSets that need to be created.
-func (p *PoolTracker) ToCreate() []*appsv1.StatefulSet {
-	sets := []*appsv1.StatefulSet{}
+func (p *PoolTracker) ToCreate() []*MulticlusterStatefulSet {
+	sets := []*MulticlusterStatefulSet{}
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn := range p.desiredPools {
 		if _, ok := p.existingPools[nn]; !ok {
-			set := p.desiredPools[nn].set.DeepCopy()
+			mcset := p.desiredPools[nn].set
+			set := mcset.DeepCopy()
 			if set.Labels == nil {
 				set.Labels = map[string]string{}
 			}
 			set.Labels[generationLabel] = generation
-			sets = append(sets, set)
+			sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName})
 		}
 	}
 
-	return sortByName(sets)
+	return sortByNameAndCluster(sets)
 }
 
 // ToScaleUp returns a list of StatefulSets that need to be scaled up
 // (i.e. existing replicas are less than desired replicas).
-func (p *PoolTracker) ToScaleUp() []*appsv1.StatefulSet {
-	sets := []*appsv1.StatefulSet{}
+func (p *PoolTracker) ToScaleUp() []*MulticlusterStatefulSet {
+	sets := []*MulticlusterStatefulSet{}
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
@@ -175,24 +222,25 @@ func (p *PoolTracker) ToScaleUp() []*appsv1.StatefulSet {
 			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
 
 			if existingReplicas < desiredReplicas {
-				set := desired.set.DeepCopy()
+				mcset := desired.set
+				set := mcset.DeepCopy()
 				if set.Labels == nil {
 					set.Labels = map[string]string{}
 				}
 				set.Labels[generationLabel] = generation
-				sets = append(sets, set)
+				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName})
 			}
 		}
 	}
 
-	return sortByName(sets)
+	return sortByNameAndCluster(sets)
 }
 
 // RequiresUpdate returns a list of StatefulSets that require an update
 // because they have not yet been updated since the last time the owning cluster
 // was updated.
-func (p *PoolTracker) RequiresUpdate() []*appsv1.StatefulSet {
-	sets := []*appsv1.StatefulSet{}
+func (p *PoolTracker) RequiresUpdate() []*MulticlusterStatefulSet {
+	sets := []*MulticlusterStatefulSet{}
 
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
@@ -216,17 +264,18 @@ func (p *PoolTracker) RequiresUpdate() []*appsv1.StatefulSet {
 			// we only return sets in which we already have matched replicas
 			// since the scale operations handle patching the other statefulsets
 			if existingReplicas == desiredReplicas {
-				set := desired.set.DeepCopy()
+				mcset := desired.set
+				set := mcset.DeepCopy()
 				if set.Labels == nil {
 					set.Labels = map[string]string{}
 				}
 				set.Labels[generationLabel] = generation
-				sets = append(sets, set)
+				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName})
 			}
 		}
 	}
 
-	return sortByName(sets)
+	return sortByNameAndCluster(sets)
 }
 
 // ToScaleDown returns a list of ScaleDownSets for StatefulSets
@@ -243,7 +292,8 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 
 			if existingReplicas != 0 && len(existing.pods) != 0 {
-				set := existing.set.DeepCopy()
+				mcset := existing.set
+				set := mcset.DeepCopy()
 				if set.Labels == nil {
 					set.Labels = map[string]string{}
 				}
@@ -252,7 +302,7 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, &ScaleDownSet{
-					StatefulSet: set,
+					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName},
 					LastPod:     lastPod.pod.DeepCopy(),
 				})
 			}
@@ -262,7 +312,8 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 
 			if existingReplicas > desiredReplicas {
 				// we use the desired set spec here
-				set := desired.set.DeepCopy()
+				mcset := existing.set
+				set := mcset.DeepCopy()
 				if set.Labels == nil {
 					set.Labels = map[string]string{}
 				}
@@ -271,23 +322,18 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, &ScaleDownSet{
-					StatefulSet: set,
+					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName},
 					LastPod:     lastPod.pod.DeepCopy(),
 				})
 			}
 		}
 	}
-
-	sort.SliceStable(sets, func(i, j int) bool {
-		return client.ObjectKeyFromObject(sets[i].StatefulSet).String() < client.ObjectKeyFromObject(sets[j].StatefulSet).String()
-	})
-
-	return sets
+	return sortByNameAndCluster(sets)
 }
 
 // ToDelete returns a list of StatefulSets that need to be deleted.
-func (p *PoolTracker) ToDelete() []*appsv1.StatefulSet {
-	sets := []*appsv1.StatefulSet{}
+func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
+	sets := []*MulticlusterStatefulSet{}
 
 	for nn, existing := range p.existingPools {
 		if _, ok := p.desiredPools[nn]; !ok {
@@ -295,30 +341,35 @@ func (p *PoolTracker) ToDelete() []*appsv1.StatefulSet {
 			// extra guard to make sure we don't accidentally delete a
 			// statefulset whose pods still need to be decommissioned
 			if existingReplicas == 0 && existing.set.Status.Replicas == 0 {
-				sets = append(sets, p.existingPools[nn].set.DeepCopy())
+				// 				sort.SliceStable(sets, func(i, j int) bool {
+				// 	return client.ObjectKeyFromObject(sets[i].StatefulSet).String() < client.ObjectKeyFromObject(sets[j].StatefulSet).String()
+				// })
+
+				mcset := p.existingPools[nn].set
+				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: mcset.DeepCopy(), clusterName: mcset.clusterName})
 			}
 		}
 	}
 
-	return sortByName(sets)
+	return sortByNameAndCluster(sets)
 }
 
 // PodsToRoll returns a list of pods that need to be rolled
 // because their association ControllerRevision does not match
 // the latest applied to the StatefulSet.
-func (p *PoolTracker) PodsToRoll() []*corev1.Pod {
-	pods := []*corev1.Pod{}
+func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
+	pods := []*MulticlusterPod{}
 
 	for _, existing := range p.existingPools {
 		for _, withOrdinals := range existing.pods {
 			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete
 			if len(existing.revisions) == 0 {
 				// we have no revisions, just assume this needs to be rolled
-				pods = append(pods, withOrdinals.pod.DeepCopy())
+				pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
 			} else {
 				lastRevision := existing.revisions[len(existing.revisions)-1]
 				if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] != lastRevision.Name {
-					pods = append(pods, withOrdinals.pod.DeepCopy())
+					pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
 				}
 			}
 		}
@@ -330,13 +381,13 @@ func (p *PoolTracker) PodsToRoll() []*corev1.Pod {
 // addExisting poolWithOrdinals to the tracker
 func (p *PoolTracker) addExisting(pools ...*poolWithOrdinals) {
 	for i := range pools {
-		p.existingPools[client.ObjectKeyFromObject(pools[i].set)] = pools[i]
+		p.existingPools[objectKeyFromObject(pools[i].set)] = pools[i]
 	}
 }
 
 // addDesired statefulsets to the tracker
-func (p *PoolTracker) addDesired(sets ...*appsv1.StatefulSet) {
+func (p *PoolTracker) addDesired(sets ...*MulticlusterStatefulSet) {
 	for _, set := range sets {
-		p.desiredPools[client.ObjectKeyFromObject(set)] = &poolWithOrdinals{set: set.DeepCopy()}
+		p.desiredPools[objectKeyFromObject(set)] = &poolWithOrdinals{set: &MulticlusterStatefulSet{StatefulSet: set.DeepCopy(), clusterName: set.clusterName}}
 	}
 }
