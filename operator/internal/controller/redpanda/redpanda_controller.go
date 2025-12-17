@@ -496,6 +496,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		if requeue {
 			result.RequeueAfter = requeueTimeout
 		}
+		//nolint:staticcheck // SA4004 this is intentionally early terminated
 		return result, err
 	}
 
