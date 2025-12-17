@@ -153,7 +153,7 @@ func (r *ClusterReconciler) Reconcile(
 			return
 		}
 
-		if result.Requeue || result.RequeueAfter > 0 {
+		if result.RequeueAfter > 0 {
 			// We're already set up to enqueue this resource again
 			return
 		}

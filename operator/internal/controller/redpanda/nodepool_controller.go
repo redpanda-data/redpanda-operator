@@ -129,7 +129,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 			logger.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
 		}
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
 	}
 
 	var status statuses.NodePoolStatus

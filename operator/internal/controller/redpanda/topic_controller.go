@@ -95,7 +95,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if updateStatusErr := r.patchTopicStatus(ctx, topic, l); updateStatusErr != nil {
 		l.Error(updateStatusErr, "unable to update topic status after reconciliation")
 		err = errors.Join(err, updateStatusErr)
-		result.Requeue = true
+		result.RequeueAfter = requeueTimeout
 	}
 
 	// Log reconciliation duration
