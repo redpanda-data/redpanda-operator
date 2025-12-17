@@ -1967,6 +1967,10 @@ func (f *structField) IncludeInZero() bool {
 	if f.Tag.OmitEmpty && omitemptyRespected(f.Field.Type()) {
 		return false
 	}
+	// special-case for modern versions where this isn't included by default
+	if f.Field.Type().String() == "k8s.io/apimachinery/pkg/apis/meta/v1.Time" {
+		return false
+	}
 	return true
 }
 
