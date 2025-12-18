@@ -63,7 +63,7 @@ func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr mcmanager.Manag
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
 	return &ResourceClient[T, U]{
 		manager:                mgr,
-		logger:                 mgr.GetLogger().WithName("ResourceClient"),
+		logger:                 mgr.GetLogger().WithName("MulticlusterResourceClient"),
 		ownershipResolver:      ownershipResolver,
 		statusUpdater:          statusUpdater,
 		nodePoolRenderer:       nodePoolRenderer,
@@ -168,8 +168,8 @@ func (r *renderer[T, U]) Types() []kube.Object {
 	})
 }
 
-func (r *ResourceClient[T, U]) syncer(owner U, clusterName string) (*kube.Syncer, error) {
-	ctl, err := r.ctl(context.Background(), clusterName)
+func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName string) (*kube.Syncer, error) {
+	ctl, err := r.ctl(ctx, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (r *ResourceClient[T, U]) syncer(owner U, clusterName string) (*kube.Syncer
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	var syncErr error
 	for _, clusterName := range r.clusterList(owner) {
-		syncer, err := r.syncer(owner, clusterName)
+		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			return err
 		}
@@ -387,7 +387,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 	var deleteErr error
 	for _, clusterName := range r.clusterList(owner) {
 		var clusterResourcesDeleted bool
-		syncer, err := r.syncer(owner, clusterName)
+		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			deleteErr = errors.Join(deleteErr, err)
 		} else {
