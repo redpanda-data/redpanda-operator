@@ -12,8 +12,10 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/cisco-open/k8s-objectmatcher/patch"
+	"github.com/cockroachdb/errors"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -71,4 +73,60 @@ func removeElement(m map[string]interface{}, path ...string) bool {
 	_, exists := cur[lastKey]
 	delete(cur, lastKey)
 	return exists
+}
+
+// taken from github.com/cisco-open/k8s-objectmatcher/patch but with some modifications to work
+// with newer typed PDBs
+func IgnorePDBSelector() patch.CalculateOption {
+	return func(current, modified []byte) ([]byte, []byte, error) {
+		currentResource := map[string]any{}
+		if err := jsoniter.Unmarshal(current, &currentResource); err != nil {
+			return []byte{}, []byte{}, errors.Wrap(err, "could not unmarshal byte sequence for current")
+		}
+
+		modifiedResource := map[string]any{}
+		if err := jsoniter.Unmarshal(modified, &modifiedResource); err != nil {
+			return []byte{}, []byte{}, errors.Wrap(err, "could not unmarshal byte sequence for modified")
+		}
+
+		if reflect.DeepEqual(getPDBSelector(currentResource), getPDBSelector(modifiedResource)) {
+			var err error
+			current, err = deletePDBSelector(currentResource)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "delete pdb selector from current")
+			}
+			modified, err = deletePDBSelector(modifiedResource)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "delete pdb selector from modified")
+			}
+		}
+
+		return current, modified, nil
+	}
+}
+
+func getPDBSelector(resource map[string]interface{}) interface{} {
+	if spec, ok := resource["spec"]; ok {
+		if spec, ok := spec.(map[string]any); ok {
+			if selector, ok := spec["selector"]; ok {
+				return selector
+			}
+		}
+	}
+	return nil
+}
+
+func deletePDBSelector(resource map[string]interface{}) ([]byte, error) {
+	if spec, ok := resource["spec"]; ok {
+		if spec, ok := spec.(map[string]any); ok {
+			delete(spec, "selector")
+		}
+	}
+
+	obj, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(resource)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "could not marshal byte sequence")
+	}
+
+	return obj, nil
 }

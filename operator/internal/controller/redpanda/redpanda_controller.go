@@ -60,6 +60,11 @@ const (
 	// due to an in-progress operation
 	requeueTimeout = 10 * time.Second
 
+	// finalizerRequeueTimeout is the time that the reconciler
+	// will wait before requeueing a reconciliation after
+	// patching a finalizer
+	finalizerRequeueTimeout = 1 * time.Second
+
 	// periodicRequeue is the maximal period between re-examining
 	// a cluster; this is used to ensure that we regularly reassert
 	// cluster configuration (which may depend on external secrets,
@@ -166,7 +171,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 			return
 		}
 
-		if result.Requeue || result.RequeueAfter > 0 {
+		if result.RequeueAfter > 0 {
 			// We're already set up to enqueue this resource again
 			return
 		}
@@ -225,7 +230,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 			logger.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
 		}
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
 	}
 
 	reconcilers := []clusterReconciliationFn{
@@ -251,8 +256,8 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 		result, err := reconciler(ctx, state)
 		// if we have an error or an explicit requeue from one of our
 		// sub reconcilers, then just early return
-		if err != nil || result.Requeue || result.RequeueAfter > 0 {
-			log.FromContext(ctx).V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeue", result.Requeue, "requeueAfter", result.RequeueAfter)
+		if err != nil || result.RequeueAfter > 0 {
+			log.FromContext(ctx).V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
 			return r.syncStatus(ctx, state, result, err)
 		}
 	}
@@ -372,7 +377,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 	if !state.pools.CheckScale() {
 		logger.V(log.TraceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 
 	logger.V(log.TraceLevel).Info("ready to scale and apply node pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
@@ -404,7 +409,13 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 		}
 	}
 
-	return ctrl.Result{Requeue: !(state.pools.AnyReady() || state.pools.AllZero())}, nil
+	result := ctrl.Result{}
+	requeue := !(state.pools.AnyReady() || state.pools.AllZero())
+
+	if requeue {
+		result.RequeueAfter = requeueTimeout
+	}
+	return result, nil
 }
 
 func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *clusterReconciliationState) (ctrl.Result, error) {
@@ -481,14 +492,19 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	// and decommissioning any nodes as needed
 	for _, set := range state.pools.ToScaleDown() {
 		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap)
-		return ctrl.Result{Requeue: requeue}, err
+		result := ctrl.Result{}
+		if requeue {
+			result.RequeueAfter = requeueTimeout
+		}
+		//nolint:staticcheck // SA4004 this is intentionally early terminated
+		return result, err
 	}
 
 	// at this point any set that needs to be deleted should have 0 replicas
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
 		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-		if err := r.Client.Delete(ctx, set); err != nil {
+		if err := r.Client.Delete(ctx, set.StatefulSet); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
 	}
@@ -519,7 +535,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			rolled = true
 			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
-			if err := r.Client.Delete(ctx, pod); err != nil {
+			if err := r.Client.Delete(ctx, pod.Pod); err != nil {
 				return ctrl.Result{}, errors.Wrap(err, "deleting pod")
 			}
 		}
@@ -527,7 +543,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		if !continueExecution {
 			// requeue since we just rolled a pod
 			// and we want for the system to stabilize
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 		}
 	}
 
@@ -535,7 +551,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		// here we're in a state where we can't currently roll any
 		// pods but we need to, therefore we just reschedule rather
 		// than marking the cluster as quiesced.
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -737,9 +753,14 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 	didConfigChange := state.cluster.Redpanda.Status.ConfigVersion != version
 	state.status.ConfigVersion = ptr.To(version)
 
+	result := ctrl.Result{}
 	shouldRequeue := didConfigChange && state.restartOnConfigChange
 
-	return ctrl.Result{Requeue: shouldRequeue}, nil
+	if shouldRequeue {
+		result.RequeueAfter = requeueTimeout
+	}
+
+	return result, nil
 }
 
 func (r *RedpandaReconciler) superusersFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]string, error) {
@@ -831,9 +852,8 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, state *clusterRecon
 	}
 
 	syncResult, syncErr := ignoreConflict(err)
-	if syncErr == nil && (result.Requeue || result.RequeueAfter > 0) {
-		syncResult.Requeue = true
-		syncResult.RequeueAfter = requeueTimeout
+	if syncErr == nil && (result.RequeueAfter > 0) {
+		syncResult.RequeueAfter = result.RequeueAfter
 	}
 	return syncResult, syncErr
 }
@@ -924,7 +944,7 @@ func (r *RedpandaReconciler) decommissionBroker(ctx context.Context, admin *rpad
 // also explicitly trigger a requeue.
 func ignoreConflict(err error) (ctrl.Result, error) {
 	if apierrors.IsConflict(err) {
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 	return ctrl.Result{}, err
 }

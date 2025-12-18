@@ -597,6 +597,21 @@ func pV1ConfigMapKeySelectorToPV1ConfigMapKeySelector(source *v1.ConfigMapKeySel
 	}
 	return pV1ConfigMapKeySelector
 }
+func pV1ContainerRestartRuleOnExitCodesToPV1ContainerRestartRuleOnExitCodes(source *v1.ContainerRestartRuleOnExitCodes) *v1.ContainerRestartRuleOnExitCodes {
+	var pV1ContainerRestartRuleOnExitCodes *v1.ContainerRestartRuleOnExitCodes
+	if source != nil {
+		var v1ContainerRestartRuleOnExitCodes v1.ContainerRestartRuleOnExitCodes
+		v1ContainerRestartRuleOnExitCodes.Operator = v1.ContainerRestartRuleOnExitCodesOperator((*source).Operator)
+		if (*source).Values != nil {
+			v1ContainerRestartRuleOnExitCodes.Values = make([]int32, len((*source).Values))
+			for i := 0; i < len((*source).Values); i++ {
+				v1ContainerRestartRuleOnExitCodes.Values[i] = (*source).Values[i]
+			}
+		}
+		pV1ContainerRestartRuleOnExitCodes = &v1ContainerRestartRuleOnExitCodes
+	}
+	return pV1ContainerRestartRuleOnExitCodes
+}
 func pV1DeploymentStrategyToPV1DeploymentStrategy(source *v12.DeploymentStrategy) *v12.DeploymentStrategy {
 	var pV1DeploymentStrategy *v12.DeploymentStrategy
 	if source != nil {
@@ -1362,6 +1377,12 @@ func v1ContainerResizePolicyToV1ContainerResizePolicy(source v1.ContainerResizeP
 	v1ContainerResizePolicy.RestartPolicy = v1.ResourceResizeRestartPolicy(source.RestartPolicy)
 	return v1ContainerResizePolicy
 }
+func v1ContainerRestartRuleToV1ContainerRestartRule(source v1.ContainerRestartRule) v1.ContainerRestartRule {
+	var v1ContainerRestartRule v1.ContainerRestartRule
+	v1ContainerRestartRule.Action = v1.ContainerRestartRuleAction(source.Action)
+	v1ContainerRestartRule.ExitCodes = pV1ContainerRestartRuleOnExitCodesToPV1ContainerRestartRuleOnExitCodes(source.ExitCodes)
+	return v1ContainerRestartRule
+}
 func v1ContainerToV1Container(source v1.Container) v1.Container {
 	var v1Container v1.Container
 	v1Container.Name = source.Name
@@ -1408,16 +1429,22 @@ func v1ContainerToV1Container(source v1.Container) v1.Container {
 		v1ContainerRestartPolicy := v1.ContainerRestartPolicy(*source.RestartPolicy)
 		v1Container.RestartPolicy = &v1ContainerRestartPolicy
 	}
+	if source.RestartPolicyRules != nil {
+		v1Container.RestartPolicyRules = make([]v1.ContainerRestartRule, len(source.RestartPolicyRules))
+		for o := 0; o < len(source.RestartPolicyRules); o++ {
+			v1Container.RestartPolicyRules[o] = v1ContainerRestartRuleToV1ContainerRestartRule(source.RestartPolicyRules[o])
+		}
+	}
 	if source.VolumeMounts != nil {
 		v1Container.VolumeMounts = make([]v1.VolumeMount, len(source.VolumeMounts))
-		for o := 0; o < len(source.VolumeMounts); o++ {
-			v1Container.VolumeMounts[o] = v1VolumeMountToV1VolumeMount(source.VolumeMounts[o])
+		for p := 0; p < len(source.VolumeMounts); p++ {
+			v1Container.VolumeMounts[p] = v1VolumeMountToV1VolumeMount(source.VolumeMounts[p])
 		}
 	}
 	if source.VolumeDevices != nil {
 		v1Container.VolumeDevices = make([]v1.VolumeDevice, len(source.VolumeDevices))
-		for p := 0; p < len(source.VolumeDevices); p++ {
-			v1Container.VolumeDevices[p] = v1VolumeDeviceToV1VolumeDevice(source.VolumeDevices[p])
+		for q := 0; q < len(source.VolumeDevices); q++ {
+			v1Container.VolumeDevices[q] = v1VolumeDeviceToV1VolumeDevice(source.VolumeDevices[q])
 		}
 	}
 	v1Container.LivenessProbe = pV1ProbeToPV1Probe(source.LivenessProbe)

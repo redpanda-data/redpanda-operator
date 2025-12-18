@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 )
@@ -98,7 +99,7 @@ type OwnershipResolver[T any, U Cluster[T]] interface {
 type SimpleResourceRenderer[T any, U Cluster[T]] interface {
 	// Render returns the list of all simple resources to create
 	// for a given cluster.
-	Render(ctx context.Context, cluster U) ([]client.Object, error)
+	Render(ctx context.Context, cluster U, kubernetesClusterName string) ([]client.Object, error)
 	// WatchedResourceTypes returns a list of all resources that
 	// our controller should watch for changes to trigger reconciliation.
 	WatchedResourceTypes() []client.Object
@@ -116,7 +117,7 @@ type MigratingRenderer interface {
 // clusters up and down as necessary.
 type NodePoolRenderer[T any, U Cluster[T]] interface {
 	// Render returns the list of node pools to create for a given cluster.
-	Render(ctx context.Context, cluster U) ([]*appsv1.StatefulSet, error)
+	Render(ctx context.Context, cluster U, kubernetesClusterName string) ([]*appsv1.StatefulSet, error)
 	// IsNodePool allows us to distinguish owned resources that are StatefulSets
 	// but not node pools from resources that are. This is important if we
 	// create StatefulSets that we don't need to consider part of a cluster's
@@ -146,3 +147,8 @@ type Image struct {
 // ClusterStatusUpdater, NodePoolRenderer, and SimpleResourceRenderer for our various
 // cluster versions.
 type ResourceManagerFactory[T any, U Cluster[T]] func(mgr ctrl.Manager) (OwnershipResolver[T, U], ClusterStatusUpdater[T, U], NodePoolRenderer[T, U], SimpleResourceRenderer[T, U])
+
+// MulticlusterResourceManagerFactory bundles together concrete implementations of OwnershipResolver
+// ClusterStatusUpdater, NodePoolRenderer, and SimpleResourceRenderer for our various
+// cluster versions.
+type MulticlusterResourceManagerFactory[T any, U Cluster[T]] func(mgr mcmanager.Manager) (OwnershipResolver[T, U], ClusterStatusUpdater[T, U], NodePoolRenderer[T, U], SimpleResourceRenderer[T, U])

@@ -21,7 +21,7 @@
 {{- $vol = (concat (default (list) $vol) (list $values.extraVolumes)) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict "containers" (coalesce nil)) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Pod")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "namespace" "spacename" "name" "eman")) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "volumes" $vol))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil)) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Pod")) (dict "metadata" (mustMergeOverwrite (dict) (dict "namespace" "spacename" "name" "eman")) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "volumes" $vol))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -31,7 +31,7 @@
 {{- $_is_returning := false -}}
 {{- $minAvail := (3 | int) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "disruptionsAllowed" 0 "currentHealthy" 0 "desiredHealthy" 0 "expectedPods" 0)) (mustMergeOverwrite (dict) (dict "apiVersion" "policyv1" "kind" "PodDisruptionBudget")) (dict "spec" (mustMergeOverwrite (dict) (dict "minAvailable" $minAvail))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "disruptionsAllowed" 0 "currentHealthy" 0 "desiredHealthy" 0 "expectedPods" 0)) (mustMergeOverwrite (dict) (dict "apiVersion" "policyv1" "kind" "PodDisruptionBudget")) (dict "spec" (mustMergeOverwrite (dict) (dict "minAvailable" $minAvail))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -40,7 +40,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "spec" (mustMergeOverwrite (dict) (dict "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict)))))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "spec" (mustMergeOverwrite (dict) (dict "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict)))))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -53,7 +53,7 @@
 {{- $svc := (index $_130_svc_ok1 0) -}}
 {{- $ok1 := (index $_130_svc_ok1 1) -}}
 {{- if (not $ok1) -}}
-{{- $_ := (fail (printf "%T %q not found. Test setup should have created it?" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) "name")) -}}
+{{- $_ := (fail (printf "%T %q not found. Test setup should have created it?" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) "name")) -}}
 {{- end -}}
 {{- $_135_sts_ok2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" "spacename" "eman")))) "r") -}}
 {{- $sts := (index $_135_sts_ok2 0) -}}

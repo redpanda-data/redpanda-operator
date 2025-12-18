@@ -111,11 +111,21 @@ func sortPodsByOrdinal(pods ...*corev1.Pod) ([]*podsWithOrdinals, error) {
 	return withOrdinals, nil
 }
 
-// sortByName sorts a generic list of client.Objects by the combination
+type clusterObject interface {
+	GetNamespace() string
+	GetName() string
+	GetCluster() string
+}
+
+func clusterObjectKey(o clusterObject) string {
+	return fmt.Sprintf("%s/%s/%s", o.GetCluster(), o.GetNamespace(), o.GetName())
+}
+
+// sortByNameAndCluster sorts a generic list of client.Objects by the combination
 // of their namespace/name.
-func sortByName[T client.Object](objs []T) []T {
+func sortByNameAndCluster[T clusterObject](objs []T) []T {
 	slices.SortStableFunc(objs, func(a, b T) int {
-		return strings.Compare(client.ObjectKeyFromObject(a).String(), client.ObjectKeyFromObject(b).String())
+		return strings.Compare(clusterObjectKey(a), clusterObjectKey(b))
 	})
 
 	return objs

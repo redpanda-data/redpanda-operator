@@ -6,7 +6,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict)) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" $name))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict)) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $name))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

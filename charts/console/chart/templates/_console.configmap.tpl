@@ -12,7 +12,7 @@
 {{- end -}}
 {{- $data := (dict "config.yaml" (printf "# from .Values.config\n%s\n" (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list (toYaml $state.Values.config)))))) "r"))) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "ConfigMap")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "labels" (get (fromJson (include "console.RenderState.Labels" (dict "a" (list $state (coalesce nil))))) "r") "name" (get (fromJson (include "console.RenderState.FullName" (dict "a" (list $state)))) "r") "namespace" $state.Namespace)) "data" $data))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "ConfigMap")) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" (get (fromJson (include "console.RenderState.Labels" (dict "a" (list $state (coalesce nil))))) "r") "name" (get (fromJson (include "console.RenderState.FullName" (dict "a" (list $state)))) "r") "namespace" $state.Namespace)) "data" $data))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

@@ -46,7 +46,7 @@ func NewV2NodePoolRenderer(mgr ctrl.Manager, redpandaImage, sideCarImage Image, 
 // Render returns a list of StatefulSets for the given Redpanda v2 cluster. It does this by
 // delegating to our particular resource rendering pipeline and filtering out anything that
 // isn't a node pool.
-func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPools) ([]*appsv1.StatefulSet, error) {
+func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPools, _ string) ([]*appsv1.StatefulSet, error) {
 	state, err := m.convertToRender(cluster)
 	if err != nil {
 		return nil, err

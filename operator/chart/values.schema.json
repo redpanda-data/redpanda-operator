@@ -1552,6 +1552,24 @@
                                   },
                                   "type": "object"
                                 },
+                                "fileKeyRef": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "key": {
+                                      "type": "string"
+                                    },
+                                    "optional": {
+                                      "type": "boolean"
+                                    },
+                                    "path": {
+                                      "type": "string"
+                                    },
+                                    "volumeName": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
                                 "resourceFieldRef": {
                                   "additionalProperties": false,
                                   "properties": {
@@ -2128,6 +2146,33 @@
                       },
                       "restartPolicy": {
                         "type": "string"
+                      },
+                      "restartPolicyRules": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "action": {
+                              "type": "string"
+                            },
+                            "exitCodes": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "operator": {
+                                  "type": "string"
+                                },
+                                "values": {
+                                  "items": {
+                                    "type": "integer"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
                       },
                       "securityContext": {
                         "additionalProperties": false,
@@ -2532,6 +2577,24 @@
                                   },
                                   "type": "object"
                                 },
+                                "fileKeyRef": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "key": {
+                                      "type": "string"
+                                    },
+                                    "optional": {
+                                      "type": "boolean"
+                                    },
+                                    "path": {
+                                      "type": "string"
+                                    },
+                                    "volumeName": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
                                 "resourceFieldRef": {
                                   "additionalProperties": false,
                                   "properties": {
@@ -3108,6 +3171,33 @@
                       },
                       "restartPolicy": {
                         "type": "string"
+                      },
+                      "restartPolicyRules": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "action": {
+                              "type": "string"
+                            },
+                            "exitCodes": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "operator": {
+                                  "type": "string"
+                                },
+                                "values": {
+                                  "items": {
+                                    "type": "integer"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
                       },
                       "securityContext": {
                         "additionalProperties": false,
@@ -3437,6 +3527,9 @@
             "hostname": {
               "type": "string"
             },
+            "hostnameOverride": {
+              "type": "string"
+            },
             "imagePullSecrets": {
               "oneOf": [
                 {
@@ -3509,6 +3602,24 @@
                                       "type": "string"
                                     },
                                     "fieldPath": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "fileKeyRef": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "key": {
+                                      "type": "string"
+                                    },
+                                    "optional": {
+                                      "type": "boolean"
+                                    },
+                                    "path": {
+                                      "type": "string"
+                                    },
+                                    "volumeName": {
                                       "type": "string"
                                     }
                                   },
@@ -4090,6 +4201,33 @@
                       },
                       "restartPolicy": {
                         "type": "string"
+                      },
+                      "restartPolicyRules": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "action": {
+                              "type": "string"
+                            },
+                            "exitCodes": {
+                              "additionalProperties": false,
+                              "properties": {
+                                "operator": {
+                                  "type": "string"
+                                },
+                                "values": {
+                                  "items": {
+                                    "type": "integer"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            }
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
                       },
                       "securityContext": {
                         "additionalProperties": false,
@@ -5699,6 +5837,30 @@
                                         "type": "object"
                                       },
                                       "type": "array"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
+                                "podCertificate": {
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "certificateChainPath": {
+                                      "type": "string"
+                                    },
+                                    "credentialBundlePath": {
+                                      "type": "string"
+                                    },
+                                    "keyPath": {
+                                      "type": "string"
+                                    },
+                                    "keyType": {
+                                      "type": "string"
+                                    },
+                                    "maxExpirationSeconds": {
+                                      "type": "integer"
+                                    },
+                                    "signerName": {
+                                      "type": "string"
                                     }
                                   },
                                   "type": "object"

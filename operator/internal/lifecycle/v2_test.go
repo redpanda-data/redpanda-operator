@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
@@ -164,7 +165,7 @@ func TestV2ResourceClient(t *testing.T) {
 			require.NoError(t, err)
 			goldenValues.AssertGolden(t, testutil.YAML, file.Name, yamlBytes)
 
-			sets, err := resourceClient.nodePoolRenderer.Render(ctx, cluster)
+			sets, err := resourceClient.nodePoolRenderer.Render(ctx, cluster, mcmanager.LocalCluster)
 			require.NoError(t, err)
 
 			assertOwnership := func(object client.Object) {
@@ -200,7 +201,7 @@ func TestV2ResourceClient(t *testing.T) {
 			require.NoError(t, err)
 			goldenPools.AssertGolden(t, testutil.YAML, file.Name, poolBytes)
 
-			resources, err := resourceClient.simpleResourceRenderer.Render(ctx, cluster)
+			resources, err := resourceClient.simpleResourceRenderer.Render(ctx, cluster, mcmanager.LocalCluster)
 			require.NoError(t, err)
 
 			for _, resource := range resources {

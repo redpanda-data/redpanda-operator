@@ -307,7 +307,7 @@ func (r *MockSimpleResourceRenderer) SetWatchedResources(resources []client.Obje
 	r.watchedResources = resources
 }
 
-func (r *MockSimpleResourceRenderer) Render(ctx context.Context, cluster *MockCluster) ([]client.Object, error) {
+func (r *MockSimpleResourceRenderer) Render(ctx context.Context, cluster *MockCluster, _ string) ([]client.Object, error) {
 	nn := client.ObjectKeyFromObject(cluster)
 
 	if err, ok := r.errorMappings[nn]; ok {
@@ -326,7 +326,7 @@ func (r *MockSimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 }
 
 type MockNodePoolRenderer struct {
-	poolMappings  map[types.NamespacedName][]*appsv1.StatefulSet
+	poolMappings  map[types.NamespacedName][]*MulticlusterStatefulSet
 	errorMappings map[types.NamespacedName]error
 }
 
@@ -334,12 +334,12 @@ var _ NodePoolRenderer[MockCluster, *MockCluster] = (*MockNodePoolRenderer)(nil)
 
 func NewMockNodePoolRenderer() *MockNodePoolRenderer {
 	return &MockNodePoolRenderer{
-		poolMappings:  make(map[types.NamespacedName][]*appsv1.StatefulSet),
+		poolMappings:  make(map[types.NamespacedName][]*MulticlusterStatefulSet),
 		errorMappings: make(map[types.NamespacedName]error),
 	}
 }
 
-func (r *MockNodePoolRenderer) SetPools(cluster *MockCluster, pools []*appsv1.StatefulSet) {
+func (r *MockNodePoolRenderer) SetPools(cluster *MockCluster, pools []*MulticlusterStatefulSet) {
 	nn := client.ObjectKeyFromObject(cluster)
 	r.poolMappings[nn] = pools
 }
@@ -349,15 +349,21 @@ func (r *MockNodePoolRenderer) SetError(cluster *MockCluster, err error) {
 	r.errorMappings[nn] = err
 }
 
-func (r *MockNodePoolRenderer) Render(ctx context.Context, cluster *MockCluster) ([]*appsv1.StatefulSet, error) {
+func (r *MockNodePoolRenderer) Render(ctx context.Context, cluster *MockCluster, clusterName string) ([]*appsv1.StatefulSet, error) {
 	nn := client.ObjectKeyFromObject(cluster)
 
 	if err, ok := r.errorMappings[nn]; ok {
 		return nil, err
 	}
 
+	filtered := []*appsv1.StatefulSet{}
 	if pools, ok := r.poolMappings[nn]; ok {
-		return pools, nil
+		for _, pool := range pools {
+			if pool.clusterName == clusterName {
+				filtered = append(filtered, pool.StatefulSet.DeepCopy())
+			}
+		}
+		return filtered, nil
 	}
 
 	return nil, nil

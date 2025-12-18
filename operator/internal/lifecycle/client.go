@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
@@ -41,31 +42,50 @@ type Cluster[T any] interface {
 	*T
 }
 
+type MultiCluster[T any] interface {
+	Cluster[T]
+	GetClusters() []string
+}
+
+type multicluster interface {
+	GetClusters() []string
+}
+
 // NewClusterObject creates a new instance of a typed cluster object.
 func NewClusterObject[T any, U Cluster[T]]() U {
 	var t T
 	return U(&t)
 }
 
+// NewMulticlusterResourceClient
+// mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr mcmanager.Manager, resourcesFn MulticlusterResourceManagerFactory[T, U]) *ResourceClient[T, U] {
+	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
+	return &ResourceClient[T, U]{
+		manager:                mgr,
+		logger:                 mgr.GetLogger().WithName("MulticlusterResourceClient"),
+		ownershipResolver:      ownershipResolver,
+		statusUpdater:          statusUpdater,
+		nodePoolRenderer:       nodePoolRenderer,
+		simpleResourceRenderer: simpleResourceRenderer,
+		traceLogging:           true,
+	}
+}
+
 // NewResourceClient creates a new instance of a ResourceClient for managing resources.
 func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
-	ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
-		Options: client.Options{
-			Scheme: mgr.GetScheme(),
-			Mapper: mgr.GetRESTMapper(),
-		},
-		FieldManager: string(DefaultFieldOwner),
-	})
+
+	multiclusterMgr, err := mcmanager.WithMultiCluster(mgr, nil)
 	if err != nil {
 		// NB: This is less than ideal but it's exceptionally unlikely that
-		// FromRESTConfig actually returns an error and this method is only
+		// this actually returns an error and this method is only
 		// ever called at initializtion time, not runtime.
 		panic(err)
 	}
 
 	return &ResourceClient[T, U]{
-		ctl:                    ctl,
+		manager:                multiclusterMgr,
 		logger:                 mgr.GetLogger().WithName("ResourceClient"),
 		ownershipResolver:      ownershipResolver,
 		statusUpdater:          statusUpdater,
@@ -78,7 +98,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 // ResourceClient is a client used to manage dependent resources,
 // both simple and node pools, for a given cluster type.
 type ResourceClient[T any, U Cluster[T]] struct {
-	ctl                    *kube.Ctl
+	manager                mcmanager.Manager
 	logger                 logr.Logger
 	traceLogging           bool
 	ownershipResolver      OwnershipResolver[T, U]
@@ -87,14 +107,42 @@ type ResourceClient[T any, U Cluster[T]] struct {
 	simpleResourceRenderer SimpleResourceRenderer[T, U]
 }
 
-// PatchNodePoolSet updates a StatefulSet for a specific node pool.
-func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *appsv1.StatefulSet) error {
+func (r *ResourceClient[T, U]) ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
+	cluster, err := r.manager.GetCluster(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	return kube.FromRESTConfig(cluster.GetConfig(), kube.Options{
+		Options: client.Options{
+			Scheme: cluster.GetScheme(),
+			Mapper: cluster.GetRESTMapper(),
+		},
+		FieldManager: string(DefaultFieldOwner),
+	})
+}
+
+func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
+	if mc, ok := cluster.(multicluster); ok {
+		return mc.GetClusters()
+	}
+	return []string{mcmanager.LocalCluster}
+}
+
+// PatchlNodePoolSet updates a StatefulSet for a specific node pool.
+func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *MulticlusterStatefulSet) error {
+	ctl, err := r.ctl(ctx, set.clusterName)
+	if err != nil {
+		return err
+	}
+
 	if set.GetLabels() == nil {
 		set.SetLabels(map[string]string{})
 	}
 	maps.Copy(set.GetLabels(), r.ownershipResolver.AddLabels(owner))
 	set.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
-	return r.ctl.Apply(ctx, set, client.ForceOwnership)
+
+	return ctl.Apply(ctx, set.StatefulSet, client.ForceOwnership)
 }
 
 // SetClusterStatus sets the status of the given cluster.
@@ -104,11 +152,12 @@ func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus
 
 type renderer[T any, U Cluster[T]] struct {
 	SimpleResourceRenderer[T, U]
-	Cluster U
+	Cluster     U
+	ClusterName string
 }
 
 func (r *renderer[T, U]) Render(ctx context.Context) ([]kube.Object, error) {
-	return r.SimpleResourceRenderer.Render(ctx, r.Cluster)
+	return r.SimpleResourceRenderer.Render(ctx, r.Cluster, r.ClusterName)
 }
 
 func (r *renderer[T, U]) Types() []kube.Object {
@@ -119,7 +168,12 @@ func (r *renderer[T, U]) Types() []kube.Object {
 	})
 }
 
-func (r *ResourceClient[T, U]) syncer(owner U) *kube.Syncer {
+func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName string) (*kube.Syncer, error) {
+	ctl, err := r.ctl(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
 	migratingResources := map[string]struct{}{}
 	if mr, ok := r.simpleResourceRenderer.(MigratingRenderer); ok {
 		for _, resource := range mr.MigratingResources() {
@@ -129,7 +183,7 @@ func (r *ResourceClient[T, U]) syncer(owner U) *kube.Syncer {
 	}
 
 	return &kube.Syncer{
-		Ctl:       r.ctl,
+		Ctl:       ctl,
 		Namespace: owner.GetNamespace(),
 		Renderer: &renderer[T, U]{
 			Cluster:                owner,
@@ -149,14 +203,22 @@ func (r *ResourceClient[T, U]) syncer(owner U) *kube.Syncer {
 			maps.Copy(o.GetLabels(), r.ownershipResolver.AddLabels(owner))
 		},
 		Owner: *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind()),
-	}
+	}, nil
 }
 
 // SyncAll synchronizes the simple resources associated with the given cluster,
 // cleaning up any resources that should no longer exist.
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
-	_, err := r.syncer(owner).Sync(ctx)
-	return err
+	var syncErr error
+	for _, clusterName := range r.clusterList(owner) {
+		syncer, err := r.syncer(ctx, owner, clusterName)
+		if err != nil {
+			return err
+		}
+		_, err = syncer.Sync(ctx)
+		syncErr = errors.Join(syncErr, err)
+	}
+	return syncErr
 }
 
 // FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
@@ -164,31 +226,38 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
 
-	existingPools, err := r.fetchExistingPools(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("fetching existing pools: %w", err)
-	}
-
-	desired, err := r.nodePoolRenderer.Render(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("constructing desired pools: %w", err)
-	}
-
-	// ensure we have and OnDelete type for our statefulset
-	for _, set := range desired {
-		set.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
-	}
-
-	// normalize the config version label
-	if configVersion != "" {
-		for _, set := range desired {
-			set.Labels = setConfigVersionLabels(set.Labels, configVersion)
-			set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
+	for _, clusterName := range r.clusterList(cluster) {
+		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
+		if err != nil {
+			return nil, fmt.Errorf("fetching existing pools: %w", err)
 		}
-	}
 
-	pools.addExisting(existingPools...)
-	pools.addDesired(desired...)
+		desired, err := r.nodePoolRenderer.Render(ctx, cluster, clusterName)
+		if err != nil {
+			return nil, fmt.Errorf("constructing desired pools: %w", err)
+		}
+
+		wrapped := []*MulticlusterStatefulSet{}
+		for _, set := range desired {
+			wrapped = append(wrapped, &MulticlusterStatefulSet{StatefulSet: set, clusterName: clusterName})
+		}
+
+		// ensure we have and OnDelete type for our statefulset
+		for _, set := range desired {
+			set.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+		}
+
+		// normalize the config version label
+		if configVersion != "" {
+			for _, set := range desired {
+				set.Labels = setConfigVersionLabels(set.Labels, configVersion)
+				set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
+			}
+		}
+
+		pools.addExisting(existingPools...)
+		pools.addDesired(wrapped...)
+	}
 
 	return pools, nil
 }
@@ -245,12 +314,18 @@ func wrapLoggingHandler[T client.Object](_ T, handler handler.TypedEventHandler[
 
 // WatchResources configures resource watching for the given cluster, including StatefulSets and other resources.
 func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object) error {
+	// NB: we use localcluster here because the RESTMapper and scheme should be identical across all clusters
+	ctl, err := r.ctl(context.Background(), mcmanager.LocalCluster)
+	if err != nil {
+		return err
+	}
+
 	// set that this is for the cluster
 	builder.For(cluster)
 
 	owns := func(obj client.Object) {
 		if r.traceLogging {
-			loggingHandler := wrapLoggingHandler(obj, handler.EnqueueRequestForOwner(r.ctl.Scheme(), r.ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()))
+			loggingHandler := wrapLoggingHandler(obj, handler.EnqueueRequestForOwner(ctl.Scheme(), ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()))
 			builder.Watches(obj, loggingHandler)
 		} else {
 			builder.Owns(obj)
@@ -261,12 +336,12 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 	owns(&appsv1.StatefulSet{})
 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
-		gvk, err := kube.GVKFor(r.ctl.Scheme(), resourceType)
+		gvk, err := kube.GVKFor(ctl.Scheme(), resourceType)
 		if err != nil {
 			return err
 		}
 
-		mapping, err := r.ctl.ScopeOf(gvk)
+		mapping, err := ctl.ScopeOf(gvk)
 		if err != nil {
 			if !apimeta.IsNoMatchError(err) {
 				return err
@@ -307,33 +382,57 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 
 // DeleteAll deletes all resources owned by the given cluster, including node pools.
 func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, error) {
-	errs := []error{}
-	allDeleted, err := r.syncer(owner).DeleteAll(ctx)
-	if err != nil {
-		errs = append(errs, err)
-	}
+	allDeleted := true
 
-	pools, err := r.fetchExistingPools(ctx, owner)
-	if err != nil {
-		return false, err
-	}
+	var deleteErr error
+	for _, clusterName := range r.clusterList(owner) {
+		var clusterResourcesDeleted bool
+		syncer, err := r.syncer(ctx, owner, clusterName)
+		if err != nil {
+			deleteErr = errors.Join(deleteErr, err)
+		} else {
+			clusterResourcesDeleted, err = syncer.DeleteAll(ctx)
+			if err != nil {
+				deleteErr = errors.Join(deleteErr, err)
+			}
+		}
 
-	for _, pool := range pools {
-		if pool.set.DeletionTimestamp != nil {
+		ctl, err := r.ctl(ctx, clusterName)
+		if err != nil {
+			return false, err
+		}
+
+		pools, err := r.fetchExistingPools(ctx, owner, clusterName)
+		if err != nil {
+			return false, err
+		}
+
+		for _, pool := range pools {
+			if pool.set.DeletionTimestamp != nil {
+				clusterResourcesDeleted = false
+			}
+
+			if err := ctl.Delete(ctx, pool.set.StatefulSet); err != nil {
+				deleteErr = errors.Join(deleteErr, err)
+			}
+		}
+
+		if !clusterResourcesDeleted {
 			allDeleted = false
 		}
-
-		if err := r.ctl.Delete(ctx, pool.set); err != nil {
-			errs = append(errs, err)
-		}
 	}
 
-	return allDeleted, errors.Join(errs...)
+	return allDeleted, deleteErr
 }
 
 // fetchExistingPools fetches the existing pools (StatefulSets) for a given cluster.
-func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U) ([]*poolWithOrdinals, error) {
-	sets, err := kube.List[appsv1.StatefulSetList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
+func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string) ([]*poolWithOrdinals, error) {
+	ctl, err := r.ctl(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	sets, err := kube.List[appsv1.StatefulSetList](ctx, ctl, cluster.GetNamespace(), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing StatefulSets")
 	}
@@ -362,7 +461,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 
 		// based on https://github.com/kubernetes/kubernetes/blob/c90a4b16b6aa849ed362ee40997327db09e3a62d/pkg/controller/history/controller_history.go#L222
-		revisions, err := kube.List[appsv1.ControllerRevisionList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
+		revisions, err := kube.List[appsv1.ControllerRevisionList](ctx, ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {
@@ -377,7 +476,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			}
 		}
 
-		pods, err := kube.List[corev1.PodList](ctx, r.ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
+		pods, err := kube.List[corev1.PodList](ctx, ctl, cluster.GetNamespace(), client.MatchingLabelsSelector{
 			Selector: selector,
 		})
 		if err != nil {
@@ -395,7 +494,10 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 
 		existing = append(existing, &poolWithOrdinals{
-			set:       &statefulSet,
+			set: &MulticlusterStatefulSet{
+				StatefulSet: &statefulSet,
+				clusterName: clusterName,
+			},
 			revisions: sortRevisions(ownedRevisions),
 			pods:      withOrdinals,
 		})
