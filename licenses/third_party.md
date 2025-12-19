@@ -98,6 +98,7 @@ run `task generate:third-party-licenses-list`
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
 | github.com/gogo/protobuf | [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE) |
 | github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.3.0/LICENSE) |
+| github.com/golang/protobuf/proto | [BSD-3-Clause](https://github.com/golang/protobuf/blob/v1.5.4/LICENSE) |
 | github.com/gonvenience/bunt | [MIT](https://github.com/gonvenience/bunt/blob/v1.3.5/LICENSE) |
 | github.com/gonvenience/neat | [MIT](https://github.com/gonvenience/neat/blob/v1.3.13/LICENSE) |
 | github.com/gonvenience/term | [MIT](https://github.com/gonvenience/term/blob/v1.0.2/LICENSE) |
@@ -230,6 +231,7 @@ run `task generate:third-party-licenses-list`
 | github.com/wk8/go-ordered-map/v2 | [Apache-2.0](https://github.com/wk8/go-ordered-map/blob/v2.1.8/LICENSE) |
 | github.com/x448/float16 | [MIT](https://github.com/x448/float16/blob/v0.8.4/LICENSE) |
 | github.com/xlab/treeprint | [MIT](https://github.com/xlab/treeprint/blob/v1.2.0/LICENSE) |
+| go.etcd.io/raft/v3 | [Apache-2.0](https://github.com/etcd-io/raft/blob/v3.6.0/LICENSE) |
 | go.opentelemetry.io/auto/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/sdk/v1.2.1/sdk/LICENSE) |
 | go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/google.golang.org/grpc/otelgrpc/v0.61.0/instrumentation/google.golang.org/grpc/otelgrpc/LICENSE) |
 | go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.63.0/instrumentation/net/http/otelhttp/LICENSE) |
@@ -307,7 +309,7 @@ run `task generate:third-party-licenses-list`
 | sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/cfa47c3a1cc8/LICENSE) |
 | sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.19.0/api/LICENSE) |
 | sigs.k8s.io/kustomize/kyaml | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.19.0/kyaml/LICENSE) |
-| sigs.k8s.io/multicluster-runtime/pkg | [Apache-2.0](https://github.com/kubernetes-sigs/multicluster-runtime/blob/v0.22.4-beta.1/LICENSE) |
+| sigs.k8s.io/multicluster-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/multicluster-runtime/blob/v0.22.4-beta.1/LICENSE) |
 | sigs.k8s.io/randfill | [Apache-2.0](https://github.com/kubernetes-sigs/randfill/blob/v1.0.0/LICENSE) |
 | sigs.k8s.io/structured-merge-diff/v6 | [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/v6.3.0/LICENSE) |
 | sigs.k8s.io/yaml | [MIT](https://github.com/kubernetes-sigs/yaml/blob/v1.6.0/LICENSE) |

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package transport.v1;
+
+message CheckRequest {
+  bool fromLeader = 1;
+}
+message CheckResponse {
+  bool hasLeader = 1;
+  repeated uint64 unhealthy_nodes = 2;
+  bytes meta = 3;
+}
+
+message SendRequest {
+  bytes payload = 1;
+}
+
+message SendResponse {
+  bool applied = 1;
+}
+
+message KubeconfigRequest {}
+
+message KubeconfigResponse {
+  bytes payload = 1;
+}
+
+service TransportService {
+  rpc Check(CheckRequest) returns (CheckResponse);
+  rpc Send(SendRequest) returns (SendResponse);
+  rpc Kubeconfig(KubeconfigRequest) returns (KubeconfigResponse);
+}
