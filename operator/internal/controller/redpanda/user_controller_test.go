@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -140,14 +141,17 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 				tt.mutate(user)
 			}
 
+			k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+			require.NoError(t, err)
+
 			key := client.ObjectKeyFromObject(user)
 			req := ctrl.Request{NamespacedName: key}
 
-			require.NoError(t, environment.Factory.Create(ctx, user))
-			_, err := environment.Reconciler.Reconcile(ctx, req)
+			require.NoError(t, k8sClient.Create(ctx, user))
+			_, err = environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
 
-			require.NoError(t, environment.Factory.Get(ctx, key, user))
+			require.NoError(t, k8sClient.Get(ctx, key, user))
 			require.Equal(t, []string{FinalizerKey}, user.Finalizers)
 			require.Len(t, user.Status.Conditions, 1)
 			require.Equal(t, tt.expectedCondition.Type, user.Status.Conditions[0].Type)
@@ -211,10 +215,10 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 					if user.ShouldManageUser() {
 						// now clear out any managed User and re-check
 						user.Spec.Authentication = nil
-						require.NoError(t, environment.Factory.Update(ctx, user))
+						require.NoError(t, k8sClient.Update(ctx, user))
 						_, err = environment.Reconciler.Reconcile(ctx, req)
 						require.NoError(t, err)
-						require.NoError(t, environment.Factory.Get(ctx, key, user))
+						require.NoError(t, k8sClient.Get(ctx, key, user))
 						require.False(t, user.Status.ManagedUser)
 					}
 
@@ -226,10 +230,10 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 					if user.ShouldManageACLs() {
 						// now clear out any managed ACLs and re-check
 						user.Spec.Authorization = nil
-						require.NoError(t, environment.Factory.Update(ctx, user))
+						require.NoError(t, k8sClient.Update(ctx, user))
 						_, err = environment.Reconciler.Reconcile(ctx, req)
 						require.NoError(t, err)
-						require.NoError(t, environment.Factory.Get(ctx, key, user))
+						require.NoError(t, k8sClient.Get(ctx, key, user))
 						require.False(t, user.Status.ManagedACLs)
 					}
 
@@ -240,10 +244,10 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 				}
 
 				// clean up and make sure we properly delete everything
-				require.NoError(t, environment.Factory.Delete(ctx, user))
+				require.NoError(t, k8sClient.Delete(ctx, user))
 				_, err = environment.Reconciler.Reconcile(ctx, req)
 				require.NoError(t, err)
-				require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, user)))
+				require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, user)))
 
 				// make sure we no longer have a user
 				hasUser, err := userClient.Has(ctx, user)
@@ -259,11 +263,11 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			}
 
 			// clean up and make sure we properly delete everything
-			require.NoError(t, environment.Factory.Delete(ctx, user))
+			require.NoError(t, k8sClient.Delete(ctx, user))
 			_, err = environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
 
-			require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, user)))
+			require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, user)))
 		})
 	}
 }

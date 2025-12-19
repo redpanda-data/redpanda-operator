@@ -30,8 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -44,10 +44,27 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 var chartVersion = ""
+
+func setupTestManager(t *testing.T, ctx context.Context, cfg *rest.Config, c client.Client) multicluster.Manager {
+	t.Helper()
+
+	mgr, err := multicluster.NewSingleClusterManager(cfg, manager.Options{
+		LeaderElection: false,
+		NewClient: func(_ *rest.Config, _ client.Options) (client.Client, error) {
+			return c, nil
+		},
+	})
+	require.NoError(t, err)
+	go mgr.Start(ctx)
+	<-mgr.Elected()
+
+	return mgr
+}
 
 func ensureMapAndSetValue(values map[string]any, key string, entries ...any) {
 	if len(entries) == 1 {
@@ -128,12 +145,12 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	env.SetupManager("test", func(mgr ctrl.Manager) error {
-		dialer := kube.NewPodDialer(mgr.GetConfig())
-		clientFactory = NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+	env.SetupManager("test", func(mgr multicluster.Manager) error {
+		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
+		clientFactory = NewFactory(mgr, nil).WithDialer(dialer.DialContext)
 
 		r = &vectorized.ClusterReconciler{
-			Client:                mgr.GetClient(),
+			Client:                mgr.GetLocalManager().GetClient(),
 			Log:                   testr.New(t),
 			AdminAPIClientFactory: admin.NewNodePoolInternalAdminAPI,
 			Dialer:                dialer.DialContext,
@@ -149,7 +166,7 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 		})
 		r.WithClusterDomain("cluster.local")
 
-		return r.SetupWithManager(mgr)
+		return r.SetupWithManager(mgr.GetLocalManager())
 	})
 
 	cr := vectorizedv1alpha1.Cluster{
@@ -245,13 +262,15 @@ func TestIntegrationClientFactory(t *testing.T) {
 	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 
+	mgr := setupTestManager(t, ctx, restcfg, kubeClient)
+
 	helmClient, err := helm.New(helm.Options{
 		KubeConfig: restcfg,
 	})
 	require.NoError(t, err)
 	require.NoError(t, helmClient.RepoAdd(ctx, "redpandadata", "https://charts.redpanda.com"))
 
-	factory := NewFactory(restcfg, kubeClient, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
+	factory := NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
 	type credentials struct {
 		Name      string
@@ -441,7 +460,9 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	factory := NewFactory(restcfg, kubeClient, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
+	mgr := setupTestManager(t, ctx, restcfg, kubeClient)
+
+	factory := NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
 	values := map[string]any{}
 	ensureMapAndSetValue(values, "tls", map[string]any{

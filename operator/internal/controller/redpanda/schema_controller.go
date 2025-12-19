@@ -25,6 +25,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
@@ -84,16 +85,14 @@ func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceR
 	return nil
 }
 
-func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
-	c := mgr.GetClient()
-	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c, expander)
+func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+	factory := internalclient.NewFactory(mgr, expander)
 
-	builder := ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr.GetLocalManager()).
 		For(&redpandav1alpha2.Schema{})
 
 	if includeV1 {
-		enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "schema_v1", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
+		enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr.GetLocalManager(), "schema_v1", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
 		if err != nil {
 			return err
 		}
@@ -101,14 +100,14 @@ func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secr
 	}
 
 	if includeV2 {
-		enqueueV2Schema, err := controller.RegisterClusterSourceIndex(ctx, mgr, "schema", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
+		enqueueV2Schema, err := controller.RegisterClusterSourceIndex(ctx, mgr.GetLocalManager(), "schema", &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
 		if err != nil {
 			return err
 		}
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema)
 	}
 
-	controller := NewResourceController(c, factory, &SchemaReconciler{}, "SchemaReconciler")
+	controller := NewResourceController(mgr.GetLocalManager().GetClient(), factory, &SchemaReconciler{}, "SchemaReconciler")
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct

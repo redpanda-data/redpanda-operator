@@ -35,6 +35,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
@@ -119,21 +120,19 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return result, err
 }
 
-func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
-	c := mgr.GetClient()
-	config := mgr.GetConfig()
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	r := &TopicReconciler{
-		Client:        c,
-		Factory:       internalclient.NewFactory(config, c, expander),
-		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
+		Client:        mgr.GetLocalManager().GetClient(),
+		Factory:       internalclient.NewFactory(mgr, expander),
+		Scheme:        mgr.GetLocalManager().GetScheme(),
+		EventRecorder: mgr.GetLocalManager().GetEventRecorderFor("TopicReconciler"),
 	}
 
-	builder := ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr.GetLocalManager()).
 		For(&redpandav1alpha2.Topic{})
 
 	if includeV1 {
-		enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "topic_v1", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+		enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr.GetLocalManager(), "topic_v1", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
 		if err != nil {
 			return err
 		}
@@ -141,7 +140,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 	}
 
 	if includeV2 {
-		enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr, "topic", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+		enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr.GetLocalManager(), "topic", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
 		if err != nil {
 			return err
 		}

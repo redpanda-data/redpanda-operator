@@ -41,6 +41,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -162,7 +163,8 @@ func (s *ProberSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
+	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
+		mgr := mcmgr.GetLocalManager()
 		helmClient, err := helm.New(helm.Options{
 			KubeConfig: mgr.GetConfig(),
 		})
@@ -176,7 +178,7 @@ func (s *ProberSuite) SetupSuite() {
 		s.manager = mgr
 		s.helm = helmClient
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mcmgr, nil).WithDialer(dialer.DialContext)
 
 		return nil
 	})

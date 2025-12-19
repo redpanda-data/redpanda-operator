@@ -29,7 +29,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -39,6 +38,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -189,7 +189,8 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
+	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
+		mgr := mcmgr.GetLocalManager()
 		helmClient, err := helm.New(helm.Options{
 			KubeConfig: mgr.GetConfig(),
 		})
@@ -199,7 +200,7 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 
 		s.helm = helmClient
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mcmgr, nil).WithDialer(dialer.DialContext)
 
 		decommissioner := decommissioning.NewStatefulSetDecommissioner(
 			mgr,

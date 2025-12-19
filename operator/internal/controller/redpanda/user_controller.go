@@ -29,6 +29,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
@@ -162,17 +163,15 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
-func SetupUserController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
-	c := mgr.GetClient()
-	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c, expander)
+func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+	factory := internalclient.NewFactory(mgr, expander)
 
-	builder := ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr.GetLocalManager()).
 		For(&redpandav1alpha2.User{}).
 		Owns(&corev1.Secret{})
 
 	if includeV1 {
-		enqueueV1User, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "user_v1", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+		enqueueV1User, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr.GetLocalManager(), "user_v1", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
 		if err != nil {
 			return err
 		}
@@ -180,14 +179,14 @@ func SetupUserController(ctx context.Context, mgr ctrl.Manager, expander *secret
 	}
 
 	if includeV2 {
-		enqueueV2User, err := controller.RegisterClusterSourceIndex(ctx, mgr, "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+		enqueueV2User, err := controller.RegisterClusterSourceIndex(ctx, mgr.GetLocalManager(), "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
 		if err != nil {
 			return err
 		}
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User)
 	}
 
-	controller := NewResourceController(c, factory, &UserReconciler{}, "UserReconciler")
+	controller := NewResourceController(mgr.GetLocalManager().GetClient(), factory, &UserReconciler{}, "UserReconciler")
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct

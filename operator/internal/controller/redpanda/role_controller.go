@@ -29,6 +29,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
@@ -183,17 +184,15 @@ func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request Resource
 	return rolesClient, syncer, hasRole, nil
 }
 
-func SetupRoleController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
-	c := mgr.GetClient()
-	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c, expander)
+func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+	factory := internalclient.NewFactory(mgr, expander)
 
-	builder := ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr.GetLocalManager()).
 		For(&redpandav1alpha2.RedpandaRole{}).
 		Owns(&corev1.Secret{})
 
 	if includeV1 {
-		enqueueV1Role, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "role_v1", &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})
+		enqueueV1Role, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr.GetLocalManager(), "role_v1", &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})
 		if err != nil {
 			return err
 		}
@@ -201,14 +200,14 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, expander *secret
 	}
 
 	if includeV2 {
-		enqueueV2Role, err := controller.RegisterClusterSourceIndex(ctx, mgr, "role", &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})
+		enqueueV2Role, err := controller.RegisterClusterSourceIndex(ctx, mgr.GetLocalManager(), "role", &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})
 		if err != nil {
 			return err
 		}
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Role)
 	}
 
-	controller := NewResourceController(c, factory, &RoleReconciler{}, "RoleReconciler")
+	controller := NewResourceController(mgr.GetLocalManager().GetClient(), factory, &RoleReconciler{}, "RoleReconciler")
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct

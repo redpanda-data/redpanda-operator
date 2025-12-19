@@ -34,6 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
 )
 
@@ -204,7 +205,7 @@ func Run(
 		utilruntime.Must(fn(scheme))
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := multicluster.NewSingleClusterManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Metrics:                 metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress:  probeAddr,
 		PprofBindAddress:        pprofAddr,
@@ -237,7 +238,7 @@ func Run(
 		}
 
 		if err := decommissioning.NewStatefulSetDecommissioner(
-			mgr,
+			mgr.GetLocalManager(),
 			func(ctx context.Context, _ *appsv1.StatefulSet) (*rpadmin.AdminAPI, error) {
 				// Always use the config that's loaded from redpanda.yaml, in
 				// sidecar mode no other STS's should be watched.
@@ -247,7 +248,7 @@ func Run(
 			decommissioning.WithRequeueTimeout(decommissionRequeueTimeout),
 			decommissioning.WithDelayedCacheInterval(decommissionVoteInterval),
 			decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
-		).SetupWithManager(mgr); err != nil {
+		).SetupWithManager(mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
 		}
@@ -257,10 +258,10 @@ func Run(
 		setupLog.Info("PVC unbinder enabled", "namespace", clusterNamespace, "selector", selector)
 
 		if err := (&pvcunbinder.Controller{
-			Client:   mgr.GetClient(),
+			Client:   mgr.GetLocalManager().GetClient(),
 			Timeout:  unbinderTimeout,
 			Selector: selector,
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
 		}
@@ -277,7 +278,7 @@ func Run(
 			Prober: probes.NewProber(
 				// NB: no need for cloud expansion here due to the fact that the sidecar probes are
 				// meant to function via resolving connection params from the rpk file on disk.
-				internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil),
+				internalclient.NewFactory(mgr, nil),
 				redpandaYAMLPath,
 				probes.WithLogger(mgr.GetLogger().WithName("Prober")),
 			),
@@ -290,7 +291,7 @@ func Run(
 			setupLog.Error(err, "unable to create health probe server")
 			return err
 		}
-		if err := mgr.Add(server); err != nil {
+		if err := mgr.GetLocalManager().Add(server); err != nil {
 			setupLog.Error(err, "unable to run health probe server")
 			return err
 		}
@@ -302,7 +303,7 @@ func Run(
 			configwatcher.WithUsersDirectory(usersDirectoryPath),
 			configwatcher.WithSkipClusterConfigurationSync(noSetSuperusers),
 		)
-		if err := mgr.Add(watcher); err != nil {
+		if err := mgr.GetLocalManager().Add(watcher); err != nil {
 			setupLog.Error(err, "unable to run config watcher")
 			return err
 		}
