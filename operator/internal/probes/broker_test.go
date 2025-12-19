@@ -32,7 +32,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -41,6 +40,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -53,7 +53,7 @@ func TestIntegrationProber(t *testing.T) {
 type ProberSuite struct {
 	suite.Suite
 
-	manager       ctrl.Manager
+	manager       multicluster.Manager
 	ctx           context.Context
 	env           *testenv.Env
 	client        client.Client
@@ -162,9 +162,9 @@ func (s *ProberSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
+	s.env.SetupManager(s.setupRBAC(), func(mgr multicluster.Manager) error {
 		helmClient, err := helm.New(helm.Options{
-			KubeConfig: mgr.GetConfig(),
+			KubeConfig: mgr.GetLocalManager().GetConfig(),
 		})
 		if err != nil {
 			return err
@@ -175,8 +175,8 @@ func (s *ProberSuite) SetupSuite() {
 
 		s.manager = mgr
 		s.helm = helmClient
-		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
+		s.clientFactory = internalclient.NewFactory(mgr.GetLocalManager().GetConfig(), mgr.GetLocalManager().GetClient(), nil).WithDialer(dialer.DialContext)
 
 		return nil
 	})

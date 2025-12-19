@@ -25,13 +25,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	goclientscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
@@ -169,7 +168,7 @@ func (e *Env) Namespace() string {
 	return e.namespace.Name
 }
 
-func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
+func (e *Env) SetupManager(serviceAccount string, fn func(multicluster.Manager) error) {
 	// Bind the managers base config to a ServiceAccount via the "Impersonate"
 	// feature. This ensures that any permissions/RBAC issues get caught by
 	// theses tests as e.config has Admin permissions.
@@ -183,7 +182,11 @@ func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
 	// local machine which could prove to be difficult across all docker/docker
 	// in docker environments.
 	// See also https://k3d.io/v5.4.6/faq/faq/?h=host#how-to-access-services-like-a-database-running-on-my-docker-host-machine
-	manager, err := ctrl.NewManager(config, ctrl.Options{
+	manager, err := multicluster.NewKubernetesRuntimeManager(multicluster.KubernetesConfiguration{
+		RestConfig: config,
+		ID:         "controller-test",
+		Name:       "controller-test",
+		Namespace:  e.Namespace(),
 		Cache: cache.Options{
 			// Limit this manager to only interacting with objects within our
 			// namespace.
@@ -191,7 +194,7 @@ func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
 				e.namespace.Name: {},
 			},
 		},
-		Metrics: server.Options{BindAddress: "0"}, // Disable metrics server to avoid port conflicts.
+		Metrics: false, // Disable metrics server to avoid port conflicts.
 		Scheme:  e.scheme,
 		Logger:  e.logger,
 		BaseContext: func() context.Context {

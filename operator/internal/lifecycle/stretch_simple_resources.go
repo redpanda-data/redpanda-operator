@@ -13,23 +13,22 @@ import (
 	"context"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // V2SimpleResourceRenderer represents an simple resource renderer for v2 clusters.
 type StretchSimpleResourceRenderer struct {
-	kubeConfig *kube.RESTConfig
+	manager mcmanager.Manager
 }
 
 var _ SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchSimpleResourceRenderer)(nil)
 
 // NewStretchSimpleResourceRenderer returns a StretchSimpleResourceRenderer.
-func NewStretchSimpleResourceRenderer(mgr cluster.Cluster) *StretchSimpleResourceRenderer {
+func NewStretchSimpleResourceRenderer(mgr mcmanager.Manager) *StretchSimpleResourceRenderer {
 	return &StretchSimpleResourceRenderer{
-		kubeConfig: mgr.GetConfig(),
+		manager: mgr,
 	}
 }
 

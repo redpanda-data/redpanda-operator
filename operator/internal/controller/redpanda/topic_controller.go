@@ -30,11 +30,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
@@ -52,7 +56,7 @@ var (
 
 // TopicReconciler reconciles a Topic object
 type TopicReconciler struct {
-	client.Client
+	manager multicluster.Manager
 	Factory internalclient.ClientFactory
 	Scheme  *runtime.Scheme
 	kuberecorder.EventRecorder
@@ -67,32 +71,42 @@ type TopicReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *TopicReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
 	start := time.Now()
 	l := log.FromContext(ctx).WithName("TopicReconciler.Reconcile")
 
 	l.Info("Starting reconcile loop")
 
+	k8sCluster, err := r.manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		l.Error(err, "unable to fetch cluster")
+
+		// we can't get the cluster, just ignore the reconciliation request
+		return ctrl.Result{}, nil
+	}
+
+	k8sClient := k8sCluster.GetClient()
+
 	topic := &redpandav1alpha2.Topic{}
-	if err := r.Client.Get(ctx, req.NamespacedName, topic); err != nil {
+	if err := k8sClient.Get(ctx, req.NamespacedName, topic); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	if !controllerutil.ContainsFinalizer(topic, FinalizerKey) {
 		patch := client.MergeFrom(topic.DeepCopy())
 		controllerutil.AddFinalizer(topic, FinalizerKey)
-		if err := r.Patch(ctx, topic, patch); err != nil {
+		if err := k8sClient.Patch(ctx, topic, patch); err != nil {
 			l.Error(err, "unable to register finalizer")
 			return ctrl.Result{}, err
 		}
 	}
 
 	l.Info("reconciling topic")
-	topic, result, err := r.reconcile(ctx, topic, l)
+	topic, result, err := r.reconcile(ctx, req.ClusterName, topic, l)
 
 	l.Info("updating topic status")
 	// Update status after reconciliation.
-	if updateStatusErr := r.patchTopicStatus(ctx, topic, l); updateStatusErr != nil {
+	if updateStatusErr := r.patchTopicStatus(ctx, k8sClient, topic, l); updateStatusErr != nil {
 		l.Error(updateStatusErr, "unable to update topic status after reconciliation")
 		err = errors.Join(err, updateStatusErr)
 		result.RequeueAfter = requeueTimeout
@@ -111,7 +125,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		patch := client.MergeFrom(topic.DeepCopy())
 		controllerutil.RemoveFinalizer(topic, FinalizerKey)
 		topic = redpandav1alpha2.TopicReady(topic)
-		if err = r.Patch(ctx, topic, patch); err != nil {
+		if err = k8sClient.Patch(ctx, topic, patch); err != nil {
 			l.Error(err, "unable to remove finalizer")
 			return ctrl.Result{}, err
 		}
@@ -119,39 +133,41 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return result, err
 }
 
-func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
-	c := mgr.GetClient()
-	config := mgr.GetConfig()
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+	localCluster, err := mgr.GetCluster(ctx, mcmanager.LocalCluster)
+	if err != nil {
+		return err
+	}
 	r := &TopicReconciler{
-		Client:        c,
-		Factory:       internalclient.NewFactory(config, c, expander),
-		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
+		manager:       mgr,
+		Factory:       internalclient.NewMuliticlusterFactory(mgr, expander),
+		Scheme:        localCluster.GetScheme(),
+		EventRecorder: localCluster.GetEventRecorderFor("TopicReconciler"),
 	}
 
-	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Topic{})
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		For(&redpandav1alpha2.Topic{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false))
 
 	if includeV1 {
-		enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "topic_v1", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+		enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "topic_v1", mcmanager.LocalCluster, &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false))
 	}
 
 	if includeV2 {
-		enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr, "topic", &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+		enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr, "topic", mcmanager.LocalCluster, &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false))
 	}
 
 	return builder.Complete(r)
 }
 
-func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
+func (r *TopicReconciler) reconcile(ctx context.Context, clusterName string, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
 	l = l.WithName("reconcile")
 
 	interval := metav1.Duration{Duration: time.Second * 3}
@@ -165,7 +181,7 @@ func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2
 		l.V(log.TraceLevel).Info("bump observed generation", "observed generation", topic.Generation)
 	}
 
-	kafkaClient, err := r.createKafkaClient(ctx, topic, l)
+	kafkaClient, err := r.createKafkaClient(ctx, clusterName, topic, l)
 	if err != nil {
 		return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, err
 	}
@@ -497,10 +513,10 @@ func (r *TopicReconciler) deleteTopic(ctx context.Context, topic *redpandav1alph
 	return nil
 }
 
-func (r *TopicReconciler) patchTopicStatus(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) error {
+func (r *TopicReconciler) patchTopicStatus(ctx context.Context, k8sClient client.Client, topic *redpandav1alpha2.Topic, l logr.Logger) error {
 	key := client.ObjectKeyFromObject(topic)
 	latest := &redpandav1alpha2.Topic{}
-	err := r.Client.Get(ctx, key, latest)
+	err := k8sClient.Get(ctx, key, latest)
 	if client.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("retrieve current topic resource for update statue: %w", err)
 	}
@@ -514,7 +530,7 @@ func (r *TopicReconciler) patchTopicStatus(ctx context.Context, topic *redpandav
 		l.V(log.TraceLevel).Info("patch topic status", "patch-type", patch.Type(), "patch-body", string(b))
 	}
 
-	return r.Client.Status().Patch(ctx, topic, patch)
+	return k8sClient.Status().Patch(ctx, topic, patch)
 }
 
 func generateConf(
@@ -563,8 +579,8 @@ func generateConf(
 	return setConf, specialSetConf, deleteConf
 }
 
-func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*kgo.Client, error) {
-	kafkaClient, err := r.Factory.KafkaClient(log.IntoContext(ctx, l.WithName("kafkaClient")), topic)
+func (r *TopicReconciler) createKafkaClient(ctx context.Context, clusterName string, topic *redpandav1alpha2.Topic, l logr.Logger) (*kgo.Client, error) {
+	kafkaClient, err := r.Factory.KafkaClientForCluster(log.IntoContext(ctx, l.WithName("kafkaClient")), topic, clusterName)
 	if err != nil {
 		return nil, fmt.Errorf("creating franz-go kafka client: %w", err)
 	}

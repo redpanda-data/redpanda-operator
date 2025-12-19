@@ -10,15 +10,19 @@
 package lifecycle
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
-
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 )
 
 // StretchClusterWithPools serves as an intermediate structure to merge a Cluster with its NodePools in v2
 type StretchClusterWithPools struct {
 	*redpandav1alpha2.StretchCluster
 	NodePools []*redpandav1alpha2.NodePool
+	Clusters  []string
+}
+
+func (s *StretchClusterWithPools) GetClusters() []string {
+	return s.Clusters
 }
 
 func NewStrechClusterWithPools(stretchCluster *redpandav1alpha2.StretchCluster, pools ...*redpandav1alpha2.NodePool) *StretchClusterWithPools {
@@ -29,13 +33,13 @@ func NewStrechClusterWithPools(stretchCluster *redpandav1alpha2.StretchCluster, 
 }
 
 // StrechResourceManagers is a factory function for tying together all of our Stretch.
-func StrechResourceManagers(redpandaImage, sidecarImage Image, cloudSecrets CloudSecretsFlags) func(mgr cluster.Cluster) (
+func StrechResourceManagers(redpandaImage, sidecarImage Image, cloudSecrets CloudSecretsFlags) func(mgr mcmanager.Manager) (
 	OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools],
 	ClusterStatusUpdater[StretchClusterWithPools, *StretchClusterWithPools],
 	NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools],
 	SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools],
 ) {
-	return func(mgr cluster.Cluster) (
+	return func(mgr mcmanager.Manager) (
 		OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools],
 		ClusterStatusUpdater[StretchClusterWithPools, *StretchClusterWithPools],
 		NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools],

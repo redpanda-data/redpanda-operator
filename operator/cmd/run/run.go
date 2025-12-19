@@ -47,6 +47,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
@@ -363,7 +364,17 @@ func Run(
 		opts.managerOptions.Cache.DefaultNamespaces = map[string]cache.Config{opts.namespace: {}}
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts.managerOptions)
+	mgr, err := multicluster.NewKubernetesRuntimeManager(multicluster.KubernetesConfiguration{
+		ID:               opts.managerOptions.LeaderElectionID,
+		Name:             "leases",
+		Namespace:        opts.managerOptions.LeaderElectionNamespace,
+		Cache:            opts.managerOptions.Cache,
+		Scheme:           opts.managerOptions.Scheme,
+		Metrics:          true,
+		PprofBindAddress: opts.managerOptions.PprofBindAddress,
+		MetricsServer:    opts.managerOptions.Metrics,
+		WebhookServer:    opts.managerOptions.WebhookServer,
+	})
 	if err != nil {
 		setupLog.Error(err, "Unable to start manager")
 		return err
@@ -371,7 +382,7 @@ func Run(
 
 	// Configure controllers that are always enabled (Redpanda, Topic, User, Schema).
 
-	factory := internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout)
+	factory := internalclient.NewMuliticlusterFactory(mgr, cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout)
 
 	cloudSecrets := lifecycle.CloudSecretsFlags{
 		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
@@ -395,14 +406,14 @@ func Run(
 	if v2Controllers {
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:           mgr.GetConfig(),
-			Client:               mgr.GetClient(),
-			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
-			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+			KubeConfig:           mgr.GetLocalManager().GetConfig(),
+			Client:               mgr.GetLocalManager().GetClient(),
+			EventRecorder:        mgr.GetLocalManager().GetEventRecorderFor("RedpandaReconciler"),
+			LifecycleClient:      lifecycle.NewResourceClient(mgr.GetLocalManager(), lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
 			UseNodePools:         opts.enableV2NodepoolController,
-		}).SetupWithManager(ctx, mgr); err != nil {
+		}).SetupWithManager(ctx, mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
@@ -413,7 +424,7 @@ func Run(
 		// NodePool Reconciler
 		if opts.enableV2NodepoolController {
 			if err := (&redpandacontrollers.NodePoolReconciler{
-				Client: mgr.GetClient(),
+				Manager: mgr,
 			}).SetupWithManager(ctx, mgr); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 				return err
@@ -422,13 +433,13 @@ func Run(
 
 		// Console Reconciler.
 		if opts.enableConsoleController {
-			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+			ctl, err := kube.FromRESTConfig(mgr.GetLocalManager().GetConfig(), kube.Options{
 				Options: client.Options{
-					Scheme: mgr.GetScheme(),
+					Scheme: mgr.GetLocalManager().GetScheme(),
 					// mgr's GetClient sets the cache, to have a fully compatible ctl, we
 					// need to set the cache as well.
 					Cache: &client.CacheOptions{
-						Reader: mgr.GetCache(),
+						Reader: mgr.GetLocalManager().GetCache(),
 					},
 				},
 			})
@@ -472,16 +483,16 @@ func Run(
 
 	if v1Controllers {
 		setupLog.Info("setting up vectorized controllers")
-		if err := setupVectorizedControllers(ctx, mgr, factory, cloudExpander, opts); err != nil {
+		if err := setupVectorizedControllers(ctx, mgr.GetLocalManager(), factory, cloudExpander, opts); err != nil {
 			return err
 		}
 	}
 
 	if opts.ControllerEnabled(NodeWatcherController) {
 		if err = (&nodewatcher.RedpandaNodePVCReconciler{
-			Client:       mgr.GetClient(),
+			Client:       mgr.GetLocalManager().GetClient(),
 			OperatorMode: true,
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
 			return err
 		}
@@ -489,10 +500,10 @@ func Run(
 
 	if opts.ControllerEnabled(OldDecommissionController) {
 		if err = (&olddecommission.DecommissionReconciler{
-			Client:                   mgr.GetClient(),
+			Client:                   mgr.GetLocalManager().GetClient(),
 			OperatorMode:             true,
 			DecommissionWaitInterval: opts.decommissionWaitInterval,
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
 			return err
 		}
@@ -505,11 +516,11 @@ func Run(
 		setupLog.Info("starting PVCUnbinder controller", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding)
 
 		if err := (&pvcunbinder.Controller{
-			Client:         mgr.GetClient(),
+			Client:         mgr.GetLocalManager().GetClient(),
 			Timeout:        opts.unbindPVCsAfter,
 			Selector:       opts.unbinderSelector.Selector,
 			AllowRebinding: opts.allowPVRebinding,
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
 		}

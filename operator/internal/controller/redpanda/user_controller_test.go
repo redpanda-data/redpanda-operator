@@ -24,6 +24,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -141,7 +143,7 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			}
 
 			key := client.ObjectKeyFromObject(user)
-			req := ctrl.Request{NamespacedName: key}
+			req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 
 			require.NoError(t, environment.Factory.Create(ctx, user))
 			_, err := environment.Reconciler.Reconcile(ctx, req)

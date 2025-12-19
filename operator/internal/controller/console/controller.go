@@ -26,6 +26,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -33,6 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
@@ -58,35 +62,35 @@ type Controller struct {
 	rng *rand.Rand
 }
 
-func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Manager) error {
 	// If rng is not set for testing, create and seed a new one.
 	if c.rng == nil {
 		// TODO: Weak RNG is probably acceptable here but best to doublecheck
 		c.rng = rand.New(rand.NewSource(time.Now().UnixMicro())) //nolint:gosec
 	}
 
-	builder := ctrl.NewControllerManagedBy(mgr)
+	builder := mcbuilder.ControllerManagedBy(mgr)
 
 	// NB: As of writing, all console types are namespace scoped.
 	for _, t := range console.Types() {
-		builder = builder.Owns(t)
+		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false))
 	}
 
-	eventHandler, err := controller.RegisterClusterSourceIndex(ctx, mgr, "console", &redpandav1alpha2.Console{}, &redpandav1alpha2.ConsoleList{})
+	eventHandler, err := controller.RegisterClusterSourceIndex(ctx, mgr, "console", mcmanager.LocalCluster, &redpandav1alpha2.Console{}, &redpandav1alpha2.ConsoleList{})
 	if err != nil {
 		return err
 	}
 
 	return builder.
-		For(&redpandav1alpha2.Console{}).
+		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false)).
 		// Configure a watch on redpandas using controller-runtime's indexing.
 		// If a redpanda is updated, any console's referring to it will be
 		// re-reconciled.
-		Watches(&redpandav1alpha2.Redpanda{}, eventHandler).
+		Watches(&redpandav1alpha2.Redpanda{}, eventHandler, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false)).
 		Complete(c)
 }
 
-func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
 	cr, err := kube.Get[redpandav1alpha2.Console](ctx, c.Ctl, req.NamespacedName)
 	if err != nil {
 		if apierrors.IsNotFound(err) {

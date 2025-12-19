@@ -29,7 +29,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -39,6 +38,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -189,20 +189,20 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
+	s.env.SetupManager(s.setupRBAC(), func(mgr multicluster.Manager) error {
 		helmClient, err := helm.New(helm.Options{
-			KubeConfig: mgr.GetConfig(),
+			KubeConfig: mgr.GetLocalManager().GetConfig(),
 		})
 		if err != nil {
 			return err
 		}
 
 		s.helm = helmClient
-		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
+		s.clientFactory = internalclient.NewFactory(mgr.GetLocalManager().GetConfig(), mgr.GetLocalManager().GetClient(), nil).WithDialer(dialer.DialContext)
 
 		decommissioner := decommissioning.NewStatefulSetDecommissioner(
-			mgr,
+			mgr.GetLocalManager(),
 			func(ctx context.Context, sts *appsv1.StatefulSet) (*rpadmin.AdminAPI, error) {
 				// NB: We expect to see some errors here. The release isn't
 				// populated until after the chart installation finishes.
@@ -221,7 +221,7 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 			decommissioning.WithRequeueTimeout(2*time.Second),
 		)
 
-		if err := decommissioner.SetupWithManager(mgr); err != nil {
+		if err := decommissioner.SetupWithManager(mgr.GetLocalManager()); err != nil {
 			return err
 		}
 

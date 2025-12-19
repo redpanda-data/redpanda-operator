@@ -14,8 +14,9 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -24,6 +25,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
@@ -101,31 +103,29 @@ func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request Resou
 	return nil
 }
 
-func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
-	c := mgr.GetClient()
-	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c, expander)
+func SetupShadowLinkController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+	factory := internalclient.NewMuliticlusterFactory(mgr, expander)
 
-	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.ShadowLink{})
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		For(&redpandav1alpha2.ShadowLink{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false))
 
 	if includeV1 {
-		enqueueV1ShadowLink, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		enqueueV1ShadowLink, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "shadow_link_v1", mcmanager.LocalCluster, &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false))
 	}
 
 	if includeV2 {
-		enqueueV2ShadowLink, err := controller.RegisterClusterSourceIndex(ctx, mgr, "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		enqueueV2ShadowLink, err := controller.RegisterClusterSourceIndex(ctx, mgr, "shadow_link", mcmanager.LocalCluster, &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
 		if err != nil {
 			return err
 		}
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink)
 	}
 
-	controller := NewResourceController(c, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
+	controller := NewResourceController(mgr, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct

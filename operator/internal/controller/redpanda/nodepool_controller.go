@@ -13,6 +13,7 @@ import (
 	"context"
 	"reflect"
 	"strconv"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	appsv1 "k8s.io/api/apps/v1"
@@ -22,8 +23,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -31,6 +35,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
@@ -45,20 +50,20 @@ import (
 // NodePoolReconciler reconciles a NodePool object. This reconciler in particular should only update status
 // fields and finalizers on the NodePool objects, rendering of NodePools takes place within the RedpandaReconciler.
 type NodePoolReconciler struct {
-	Client client.Client
+	Manager mcmanager.Manager
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
+func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager) error {
+	enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", mcmanager.LocalCluster, &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
 	if err != nil {
 		return err
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.NodePool{}).
-		Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster).
-		Watches(&appsv1.StatefulSet{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+	return mcbuilder.ControllerManagedBy(mgr).
+		For(&redpandav1alpha2.NodePool{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false)).
+		Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false)).
+		Watches(&appsv1.StatefulSet{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 			labels := o.GetLabels()
 			if labels == nil {
 				return nil
@@ -77,14 +82,32 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 					Name:      name,
 				},
 			}}
-		})).
+		}), mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(false)).
 		Complete(r)
 }
 
 // Reconcile reconciles NodePool objects
-func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
+func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (result ctrl.Result, err error) {
+	l := log.FromContext(ctx).WithName("NodePoolReconciler.Reconcile")
+	l.V(1).Info("Starting reconcile loop")
+	start := time.Now()
+	defer func() {
+		l.V(1).Info("Finished reconciling", "elapsed", time.Since(start))
+	}()
+
 	pool := &redpandav1alpha2.NodePool{}
-	if err := r.Client.Get(ctx, req.NamespacedName, pool); err != nil {
+
+	k8sCluster, err := r.Manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		l.Error(err, "unable to fetch cluster")
+
+		// we can't get the cluster, just ignore the reconciliation request
+		return ctrl.Result{}, nil
+	}
+
+	k8sClient := k8sCluster.GetClient()
+
+	if err := k8sClient.Get(ctx, req.NamespacedName, pool); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -98,7 +121,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 
 	if !feature.V2Managed.Get(ctx, pool) {
 		if controllerutil.RemoveFinalizer(pool, FinalizerKey) {
-			if err := r.Client.Update(ctx, pool); err != nil {
+			if err := k8sClient.Update(ctx, pool); err != nil {
 				logger.Error(err, "updating cluster finalizer")
 				// no need to update the status at this point since the
 				// previous update failed
@@ -111,7 +134,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	// Examine if the object is under deletion
 	if !pool.ObjectMeta.DeletionTimestamp.IsZero() {
 		if controllerutil.RemoveFinalizer(pool, FinalizerKey) {
-			if err := r.Client.Update(ctx, pool); err != nil {
+			if err := k8sClient.Update(ctx, pool); err != nil {
 				logger.Error(err, "updating cluster finalizer")
 				// no need to update the status at this point since the
 				// previous update failed
@@ -125,7 +148,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	// If any changes are made, persist the changes and immediately requeue to
 	// prevent any cache / resource version synchronization issues.
 	if controllerutil.AddFinalizer(pool, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, pool) {
-		if err := r.Client.Update(ctx, pool); err != nil {
+		if err := k8sClient.Update(ctx, pool); err != nil {
 			logger.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
 		}
@@ -134,7 +157,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 
 	var status statuses.NodePoolStatus
 	var statefulSets appsv1.StatefulSetList
-	if err := r.Client.List(ctx, &statefulSets, client.MatchingLabels{
+	if err := k8sClient.List(ctx, &statefulSets, client.MatchingLabels{
 		lifecycle.DefaultNamespaceLabel: pool.Namespace,
 		redpanda.NodePoolLabelName:      pool.Name,
 	}); err != nil {
@@ -191,7 +214,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	}
 
 	cluster := &redpandav1alpha2.Redpanda{}
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, cluster); err != nil {
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			status.SetBound(statuses.NodePoolBoundReasonNotBound)
 		} else {
@@ -204,7 +227,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 	if status.UpdateConditions(pool) ||
 		!reflect.DeepEqual(originalPoolStatus, pool.Status.EmbeddedNodePoolStatus) ||
 		(pool.Status.DeployedGeneration != originalPoolGeneration) {
-		return ignoreConflict(r.Client.Status().Update(ctx, pool))
+		return ignoreConflict(k8sClient.Status().Update(ctx, pool))
 	}
 
 	return ctrl.Result{}, nil

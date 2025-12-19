@@ -26,6 +26,8 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3"
@@ -168,7 +170,8 @@ func TestController(t *testing.T) {
 
 			// Reconcile the console a few times to ensure determinism.
 			for range 3 {
-				_, err = consoleCtrl.Reconcile(t.Context(), ctrl.Request{NamespacedName: kube.AsKey(console)})
+				req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(console)}, ClusterName: mcmanager.LocalCluster}
+				_, err = consoleCtrl.Reconcile(t.Context(), req)
 				require.NoError(t, err)
 
 				// Get updated console status
@@ -203,7 +206,8 @@ func TestController(t *testing.T) {
 
 			// Reconcile the deletion a few times.
 			for range 3 {
-				_, err = consoleCtrl.Reconcile(t.Context(), ctrl.Request{NamespacedName: kube.AsKey(console)})
+				req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(console)}, ClusterName: mcmanager.LocalCluster}
+				_, err = consoleCtrl.Reconcile(t.Context(), req)
 				require.NoError(t, err)
 			}
 

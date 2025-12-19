@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -44,6 +43,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -128,12 +128,12 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	env.SetupManager("test", func(mgr ctrl.Manager) error {
-		dialer := kube.NewPodDialer(mgr.GetConfig())
-		clientFactory = NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+	env.SetupManager("test", func(mgr multicluster.Manager) error {
+		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
+		clientFactory = NewMuliticlusterFactory(mgr, nil).WithDialer(dialer.DialContext)
 
 		r = &vectorized.ClusterReconciler{
-			Client:                mgr.GetClient(),
+			Client:                mgr.GetLocalManager().GetClient(),
 			Log:                   testr.New(t),
 			AdminAPIClientFactory: admin.NewNodePoolInternalAdminAPI,
 			Dialer:                dialer.DialContext,
@@ -149,7 +149,7 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 		})
 		r.WithClusterDomain("cluster.local")
 
-		return r.SetupWithManager(mgr)
+		return r.SetupWithManager(mgr.GetLocalManager())
 	})
 
 	cr := vectorizedv1alpha1.Cluster{

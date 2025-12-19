@@ -21,6 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -125,7 +127,7 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			}
 
 			key := client.ObjectKeyFromObject(role)
-			req := ctrl.Request{NamespacedName: key}
+			req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 
 			require.NoError(t, environment.Factory.Create(ctx, role))
 			_, err := environment.Reconciler.Reconcile(ctx, req)
@@ -322,7 +324,7 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 			}
 
 			key := client.ObjectKeyFromObject(role)
-			req := ctrl.Request{NamespacedName: key}
+			req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 
 			// Create and reconcile
 			require.NoError(t, environment.Factory.Create(ctx, role))
@@ -395,7 +397,7 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 	}
 
 	key := client.ObjectKeyFromObject(role)
-	req := ctrl.Request{NamespacedName: key}
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 
 	// Phase 1: Create in principals-only mode
 	t.Run("create_principals_only", func(t *testing.T) {
@@ -574,7 +576,7 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 	}
 
 	key := client.ObjectKeyFromObject(role)
-	req := ctrl.Request{NamespacedName: key}
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 
 	// Initial creation
 	t.Run("initial_creation", func(t *testing.T) {

@@ -14,14 +14,12 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 )
 
 // StretchNodePoolRenderer represents a node pool renderer for stretch clusters.
 type StretchNodePoolRenderer struct {
-	kubeConfig    *kube.RESTConfig
+	manager       mcmanager.Manager
 	sideCarImage  Image
 	redpandaImage Image
 	cloudSecrets  CloudSecretsFlags
@@ -30,9 +28,9 @@ type StretchNodePoolRenderer struct {
 var _ NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchNodePoolRenderer)(nil)
 
 // NewStretchNodePoolRenderer returns a StretchNodePoolRenderer.
-func NewStretchNodePoolRenderer(mgr cluster.Cluster, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *StretchNodePoolRenderer {
+func NewStretchNodePoolRenderer(mgr mcmanager.Manager, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *StretchNodePoolRenderer {
 	return &StretchNodePoolRenderer{
-		kubeConfig:    mgr.GetConfig(),
+		manager:       mgr,
 		sideCarImage:  sideCarImage,
 		redpandaImage: redpandaImage,
 		cloudSecrets:  cloudSecrets,

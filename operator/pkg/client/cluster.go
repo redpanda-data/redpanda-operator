@@ -27,8 +27,13 @@ import (
 )
 
 // redpandaAdminForCluster returns a simple rpadmin.AdminAPI able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*rpadmin.AdminAPI, error) {
-	dot, err := cluster.GetDot(c.config)
+func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*rpadmin.AdminAPI, error) {
+	config, err := c.getConfig(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	dot, err := cluster.GetDot(config)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +57,11 @@ func (c *Factory) redpandaAdminForCluster(cluster *redpandav1alpha2.Redpanda) (*
 	return client, nil
 }
 
-func (c *Factory) redpandaAdminForV1Cluster(cluster *vectorizedv1alpha1.Cluster) (*rpadmin.AdminAPI, error) {
-	ctx := context.Background()
+func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (*rpadmin.AdminAPI, error) {
+	client, err := c.getClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
 
 	if cluster.AdminAPITLS() != nil {
 		return nil, fmt.Errorf("non-TLS admin API is not supported on V1 CRD")
@@ -61,7 +69,7 @@ func (c *Factory) redpandaAdminForV1Cluster(cluster *vectorizedv1alpha1.Cluster)
 	// Assume no TLS. Practically, we don't need to support it in Operator V1.
 	t := &certmanager.ClusterCertificates{}
 
-	a, err := admin.NewNodePoolInternalAdminAPI(ctx, c.Client, cluster, fmt.Sprintf("%s.%s.svc.cluster.local", cluster.Name, cluster.Namespace), t, c.dialer, c.adminClientTimeout)
+	a, err := admin.NewNodePoolInternalAdminAPI(ctx, client, cluster, fmt.Sprintf("%s.%s.svc.cluster.local", cluster.Name, cluster.Namespace), t, c.dialer, c.adminClientTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +80,13 @@ func (c *Factory) redpandaAdminForV1Cluster(cluster *vectorizedv1alpha1.Cluster)
 }
 
 // schemaRegistryForCluster returns a simple sr.Client able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *Factory) schemaRegistryForCluster(cluster *redpandav1alpha2.Redpanda) (*sr.Client, error) {
-	dot, err := cluster.GetDot(c.config)
+func (c *Factory) schemaRegistryForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*sr.Client, error) {
+	config, err := c.getConfig(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	dot, err := cluster.GetDot(config)
 	if err != nil {
 		return nil, err
 	}
@@ -97,32 +110,40 @@ func (c *Factory) schemaRegistryForCluster(cluster *redpandav1alpha2.Redpanda) (
 	return client, nil
 }
 
-func (c *Factory) schemaRegistryForV1Cluster(cluster *vectorizedv1alpha1.Cluster) (*sr.Client, error) {
-	ctx := context.Background()
-
-	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
+func (c *Factory) schemaRegistryForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (*sr.Client, error) {
+	client, err := c.getClient(ctx, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := newNodePoolInternalSchemaRegistryAPI(ctx, c.Client, cluster, fqdn, certs, c.dialer, nil)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	srClient, err := newNodePoolInternalSchemaRegistryAPI(ctx, client, cluster, fqdn, certs, c.dialer, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	if c.userAuth != nil {
-		client, err = sr.NewClient(append(client.Opts(), sr.BasicAuth(c.userAuth.Username, c.userAuth.Password))...)
+		srClient, err = sr.NewClient(append(srClient.Opts(), sr.BasicAuth(c.userAuth.Username, c.userAuth.Password))...)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return client, nil
+	return srClient, nil
 }
 
 // kafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kgo.Opt) (*kgo.Client, error) {
-	dot, err := cluster.GetDot(c.config)
+func (c *Factory) kafkaForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string, opts ...kgo.Opt) (*kgo.Client, error) {
+	config, err := c.getConfig(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	dot, err := cluster.GetDot(config)
 	if err != nil {
 		return nil, err
 	}
@@ -154,10 +175,20 @@ func (c *Factory) kafkaForCluster(cluster *redpandav1alpha2.Redpanda, opts ...kg
 	return client, nil
 }
 
-func (c *Factory) remoteClusterSettingsForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda) (shadow.RemoteClusterSettings, error) {
+func (c *Factory) remoteClusterSettingsForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
-	dot, err := cluster.GetDot(c.config)
+	config, err := c.getConfig(ctx, clusterName)
+	if err != nil {
+		return settings, err
+	}
+
+	client, err := c.getClient(ctx, clusterName)
+	if err != nil {
+		return settings, err
+	}
+
+	dot, err := cluster.GetDot(config)
 	if err != nil {
 		return settings, err
 	}
@@ -167,37 +198,42 @@ func (c *Factory) remoteClusterSettingsForCluster(ctx context.Context, cluster *
 		return settings, err
 	}
 
-	config, err := state.AsStaticConfigSource().Kafka.Load(ctx, c.Client, c.secretExpander)
+	clusterConfig, err := state.AsStaticConfigSource().Kafka.Load(ctx, client, c.secretExpander)
 	if err != nil {
 		return settings, err
 	}
-	settings.BootstrapServers = config.Brokers
-	if config.TLS != nil {
+	settings.BootstrapServers = clusterConfig.Brokers
+	if clusterConfig.TLS != nil {
 		settings.TLSSettings = &shadow.TLSSettings{
-			CA:   config.TLS.CA,
-			Cert: config.TLS.Cert,
-			Key:  config.TLS.Key,
+			CA:   clusterConfig.TLS.CA,
+			Cert: clusterConfig.TLS.Cert,
+			Key:  clusterConfig.TLS.Key,
 		}
 	}
 
-	if config.SASL != nil {
+	if clusterConfig.SASL != nil {
 		settings.Authentication = &shadow.AuthenticationSettings{
-			Username:  config.SASL.Username,
-			Password:  config.SASL.Password,
-			Mechanism: redpandav1alpha2.SASLMechanism(config.SASL.Mechanism),
+			Username:  clusterConfig.SASL.Username,
+			Password:  clusterConfig.SASL.Password,
+			Mechanism: redpandav1alpha2.SASLMechanism(clusterConfig.SASL.Mechanism),
 		}
 	}
 
 	return settings, nil
 }
 
-func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, opts ...kgo.Opt) (*kgo.Client, error) {
-	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
+func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string, opts ...kgo.Opt) (*kgo.Client, error) {
+	client, err := c.getClient(ctx, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := newNodePoolInternalKafkaAPI(ctx, c.Client, cluster, fqdn, certs, c.dialer, opts)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	kClient, err := newNodePoolInternalKafkaAPI(ctx, client, cluster, fqdn, certs, c.dialer, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -205,28 +241,33 @@ func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1al
 	authOpt, err := c.kafkaUserAuth()
 	if err != nil {
 		// close the client since it's no longer usable
-		client.Close()
+		kClient.Close()
 
 		return nil, err
 	}
 
 	if authOpt != nil {
 		// close this client since we're not going to use it anymore
-		client.Close()
+		kClient.Close()
 
-		return kgo.NewClient(append(client.Opts(), authOpt)...)
+		return kgo.NewClient(append(kClient.Opts(), authOpt)...)
 	}
 
-	return client, nil
+	return kClient, nil
 }
 
-func (c *Factory) remoteClusterSettingsForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster) (shadow.RemoteClusterSettings, error) {
+func (c *Factory) remoteClusterSettingsForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
-	fqdn, certs, err := v1ClusterCerts(ctx, c.Client, cluster)
+	client, err := c.getClient(ctx, clusterName)
 	if err != nil {
 		return settings, err
 	}
 
-	return remoteClusterSettingsFromV1(ctx, c.Client, cluster, fqdn, certs)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	if err != nil {
+		return settings, err
+	}
+
+	return remoteClusterSettingsFromV1(ctx, client, cluster, fqdn, certs)
 }

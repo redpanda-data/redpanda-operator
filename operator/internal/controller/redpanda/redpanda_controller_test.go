@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
@@ -53,6 +52,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -919,27 +919,29 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
-		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+	s.env.SetupManager(s.setupRBAC(), func(mgr multicluster.Manager) error {
+		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
+		s.clientFactory = internalclient.NewMuliticlusterFactory(mgr, nil).WithDialer(dialer.DialContext)
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
-			Client: mgr.GetClient(),
+			Manager: mgr,
 		}).SetupWithManager(s.ctx, mgr))
 
+		cluster := mgr.GetLocalManager().GetClient()
+		config := mgr.GetLocalManager().GetConfig()
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
-			Client:        mgr.GetClient(),
-			KubeConfig:    mgr.GetConfig(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			Client:        cluster,
+			KubeConfig:    config,
+			EventRecorder: mgr.GetLocalManager().GetEventRecorderFor("Redpanda"),
 			ClientFactory: s.clientFactory,
-			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(
+			LifecycleClient: lifecycle.NewResourceClient(mgr.GetLocalManager(), lifecycle.V2ResourceManagers(
 				lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
 				lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
 			UseNodePools: true,
-		}).SetupWithManager(s.ctx, mgr)
+		}).SetupWithManager(s.ctx, mgr.GetLocalManager())
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with

@@ -24,14 +24,17 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/locking/multicluster"
 )
 
 type ResourceReconcilerTestEnvironment[T any, U Resource[T]] struct {
@@ -107,6 +110,9 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 			"password": []byte("password"),
 		},
 	})
+	require.NoError(t, err)
+
+	manager, err := multicluster.NewMockManager(cfg, c)
 	require.NoError(t, err)
 
 	err = c.Create(ctx, &corev1.Secret{
@@ -251,7 +257,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	)
 
 	return &ResourceReconcilerTestEnvironment[T, U]{
-		Reconciler:                 NewResourceController(c, factory, reconciler, "Test"),
+		Reconciler:                 NewResourceController(manager, factory, reconciler, "Test"),
 		Factory:                    factory,
 		ClusterSourceValid:         validClusterSource,
 		ClusterSourceNoSASL:        invalidAuthClusterSourceNoSASL,
@@ -358,7 +364,7 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 		require.NoError(t, environment.Factory.Client.Create(ctx, obj))
 
 		key := client.ObjectKeyFromObject(obj)
-		req := ctrl.Request{NamespacedName: key}
+		req := mcreconcile.Request{Request: reconcile.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 
 		_, err := environment.Reconciler.Reconcile(ctx, req)
 		require.NoError(t, err)
