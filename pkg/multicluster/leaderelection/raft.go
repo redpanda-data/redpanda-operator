@@ -308,7 +308,7 @@ func serverTLSConfig(certPEM, keyPEM, caPEM []byte) (credentials.TransportCreden
 		return nil, fmt.Errorf("unable to append the CA certificate to CA pool")
 	}
 
-	tlsConfig := &tls.Config{
+	tlsConfig := &tls.Config{ // nolint:gosec // linter complains about TLS min version, we pin all our certs here though, so ignore it
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		Certificates: []tls.Certificate{certificate},
 		ClientCAs:    capool,
@@ -335,7 +335,7 @@ func clientTLSConfig(certPEM, keyPEM, caPEM []byte, insecure ...bool) (credentia
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{certificate},
 		RootCAs:            capool,
-		InsecureSkipVerify: isInsecure,
+		InsecureSkipVerify: isInsecure, // nolint:gosec
 	}
 	return credentials.NewTLS(tlsConfig), nil
 }

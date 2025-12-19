@@ -196,7 +196,9 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 			case <-time.After(10 * time.Millisecond):
 				node.Tick()
 				if compactions == 0 {
-					storage.Compact(node.Status().Applied)
+					if err := storage.Compact(node.Status().Applied); err != nil {
+						config.Logger.Errorf("error compacting storage: %v", err)
+					}
 					compactions = 1000
 				}
 				compactions--
@@ -262,7 +264,9 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 			_ = storage.Append(rd.Entries)
 			for _, msg := range rd.Messages {
 				if msg.To == config.ID {
-					node.Step(ctx, msg)
+					if err := node.Step(ctx, msg); err != nil {
+						config.Logger.Errorf("error stepping node: %v", err)
+					}
 					continue
 				}
 				for {
