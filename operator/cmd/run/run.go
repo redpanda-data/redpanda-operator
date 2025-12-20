@@ -47,6 +47,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
@@ -363,11 +364,12 @@ func Run(
 		opts.managerOptions.Cache.DefaultNamespaces = map[string]cache.Config{opts.namespace: {}}
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts.managerOptions)
+	mcmanager, err := multicluster.NewSingleClusterManager(ctrl.GetConfigOrDie(), opts.managerOptions)
 	if err != nil {
 		setupLog.Error(err, "Unable to start manager")
 		return err
 	}
+	mgr := mcmanager.GetLocalManager()
 
 	// Configure controllers that are always enabled (Redpanda, Topic, User, Schema).
 
