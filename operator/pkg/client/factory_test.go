@@ -42,7 +42,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -115,6 +114,17 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 		Scheme: scheme,
 		CRDs:   crds.All(),
 		Logger: testr.New(t),
+		ImportImages: []string{
+			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"registry.k8s.io/kube-controller-manager:v1.29.6",
+			"registry.k8s.io/kube-apiserver:v1.29.6",
+			"quay.io/jetstack/cert-manager-controller:v1.8.0",
+			"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
+			"quay.io/jetstack/cert-manager-webhook:v1.8.0",
+			"coredns/coredns:1.11.1",
+			"redpandadata/redpanda-unstable:v24.3.1-rc8",
+			"redpandadata/redpanda-unstable:v25.3.1-rc2",
+		},
 	})
 
 	var clientFactory *Factory
@@ -242,33 +252,35 @@ func TestIntegrationClientFactory(t *testing.T) {
 
 	var suffix atomic.Int32
 
-	ctx := context.Background()
-	cluster, err := k3d.NewCluster(t.Name(), k3d.WithAgents(1))
-	require.NoError(t, err)
-	t.Logf("created cluster %T %q", cluster, cluster.Name)
-
-	t.Cleanup(func() {
-		if testutil.Retain() {
-			t.Logf("retain flag is set; not deleting cluster %q", cluster.Name)
-			return
-		}
-		t.Logf("Deleting cluster %q", cluster.Name)
-		require.NoError(t, cluster.Cleanup())
+	env := testenv.New(t, testenv.Options{
+		Name:   t.Name(),
+		Agents: 1,
+		Scheme: controller.UnifiedScheme,
+		// Logger: log,
+		ImportImages: []string{
+			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"registry.k8s.io/kube-controller-manager:v1.29.6",
+			"registry.k8s.io/kube-apiserver:v1.29.6",
+			"quay.io/jetstack/cert-manager-controller:v1.8.0",
+			"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
+			"quay.io/jetstack/cert-manager-webhook:v1.8.0",
+			"coredns/coredns:1.11.1",
+			"redpandadata/redpanda-unstable:v24.3.1-rc8",
+			"redpandadata/redpanda-unstable:v25.3.1-rc2",
+		},
 	})
 
-	restcfg := cluster.RESTConfig()
+	restcfg := env.RESTConfig()
 
-	restcfg.WarningHandler = rest.NoWarnings{}
-	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme})
-	require.NoError(t, err)
+	kubeClient := env.Client()
 
-	mgr := setupTestManager(t, ctx, restcfg, kubeClient)
+	mgr := setupTestManager(t, t.Context(), restcfg, kubeClient)
 
 	helmClient, err := helm.New(helm.Options{
 		KubeConfig: restcfg,
 	})
 	require.NoError(t, err)
-	require.NoError(t, helmClient.RepoAdd(ctx, "redpandadata", "https://charts.redpanda.com"))
+	require.NoError(t, helmClient.RepoAdd(t.Context(), "redpandadata", "https://charts.redpanda.com"))
 
 	factory := NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
@@ -324,7 +336,7 @@ func TestIntegrationClientFactory(t *testing.T) {
 
 			name := fmt.Sprintf("k3s-%d-%d", time.Now().Unix(), suffix.Add(1))
 
-			_, err := helmClient.Install(ctx, "redpandadata/redpanda", helm.InstallOptions{
+			_, err := helmClient.Install(t.Context(), "redpandadata/redpanda", helm.InstallOptions{
 				Version:         chartVersion,
 				CreateNamespace: true,
 				Name:            name,
@@ -343,9 +355,9 @@ func TestIntegrationClientFactory(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, json.Unmarshal(data, cluster.Spec.ClusterSpec))
 
-				kafkaClient, err := factory.KafkaClient(ctx, &cluster)
+				kafkaClient, err := factory.KafkaClient(t.Context(), &cluster)
 				require.NoError(t, err)
-				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(ctx)
+				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
 				require.NoError(t, err)
 				require.Len(t, metadata.Brokers.NodeIDs(), 1)
 				kafkaClient.Close()
@@ -355,7 +367,7 @@ func TestIntegrationClientFactory(t *testing.T) {
 				var spec redpandav1alpha2.KafkaAPISpec
 				spec.Brokers = []string{fmt.Sprintf("%s-0.%s.%s.svc.cluster.local:9093", name, name, name)}
 				if tt.Auth != nil {
-					require.NoError(t, kubeClient.Create(ctx, &corev1.Secret{
+					require.NoError(t, kubeClient.Create(t.Context(), &corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "secret",
 							Namespace: name,
@@ -386,9 +398,9 @@ func TestIntegrationClientFactory(t *testing.T) {
 						},
 					}
 				}
-				kafkaClient, err := factory.KafkaClient(ctx, wrapSpec(name, &spec))
+				kafkaClient, err := factory.KafkaClient(t.Context(), wrapSpec(name, &spec))
 				require.NoError(t, err)
-				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(ctx)
+				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
 				require.NoError(t, err)
 				require.Len(t, metadata.Brokers.NodeIDs(), 1)
 				kafkaClient.Close()
@@ -401,42 +413,44 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	// Test of https://github.com/redpanda-data/helm-charts/blob/230a32adcee07184313f1c864bf9e3ab21a2e38e/charts/operator/files/three_node_redpanda.yaml
 	testutil.SkipIfNotIntegration(t)
 
-	ctx := context.Background()
-	cluster, err := k3d.NewCluster("client-tls-listeners", k3d.WithAgents(1))
-	require.NoError(t, err)
-	t.Logf("created cluster %T %q", cluster, cluster.Name)
-
-	t.Cleanup(func() {
-		if testutil.Retain() {
-			t.Logf("retain flag is set; not deleting cluster %q", cluster.Name)
-			return
-		}
-		t.Logf("Deleting cluster %q", cluster.Name)
-		require.NoError(t, cluster.Cleanup())
+	env := testenv.New(t, testenv.Options{
+		Name:   "client-tls-listeners",
+		Agents: 1,
+		Scheme: controller.UnifiedScheme,
+		// Logger: log,
+		ImportImages: []string{
+			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"registry.k8s.io/kube-controller-manager:v1.29.6",
+			"registry.k8s.io/kube-apiserver:v1.29.6",
+			"quay.io/jetstack/cert-manager-controller:v1.8.0",
+			"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
+			"quay.io/jetstack/cert-manager-webhook:v1.8.0",
+			"coredns/coredns:1.11.1",
+			"redpandadata/redpanda-unstable:v24.3.1-rc8",
+			"redpandadata/redpanda-unstable:v25.3.1-rc2",
+		},
 	})
 
-	restcfg := cluster.RESTConfig()
+	restcfg := env.RESTConfig()
 
-	restcfg.WarningHandler = rest.NoWarnings{}
-	kubeClient, err := client.New(restcfg, client.Options{Scheme: controller.UnifiedScheme})
-	require.NoError(t, err)
+	kubeClient := env.Client()
 
 	helmClient, err := helm.New(helm.Options{
 		KubeConfig: restcfg,
 	})
 	require.NoError(t, err)
-	require.NoError(t, helmClient.RepoAdd(ctx, "redpandadata", "https://charts.redpanda.com"))
+	require.NoError(t, helmClient.RepoAdd(t.Context(), "redpandadata", "https://charts.redpanda.com"))
 
 	name := fmt.Sprintf("tls-test-%d", time.Now().Unix())
 
-	err = kubeClient.Create(ctx, &corev1.Namespace{
+	err = kubeClient.Create(t.Context(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 	})
 	require.NoError(t, err)
 
-	err = kubeClient.Create(ctx, &certmanagerv1.Certificate{
+	err = kubeClient.Create(t.Context(), &certmanagerv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kafka-internal-0",
 			Namespace: name,
@@ -460,7 +474,7 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	mgr := setupTestManager(t, ctx, restcfg, kubeClient)
+	mgr := setupTestManager(t, t.Context(), restcfg, kubeClient)
 
 	factory := NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(restcfg).DialContext)
 
@@ -509,7 +523,7 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, json.Unmarshal(data, redpanda.Spec.ClusterSpec))
 
-	_, err = helmClient.Install(ctx, "redpandadata/redpanda", helm.InstallOptions{
+	_, err = helmClient.Install(t.Context(), "redpandadata/redpanda", helm.InstallOptions{
 		Version:         chartVersion,
 		CreateNamespace: true,
 		Name:            name,
@@ -519,19 +533,19 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	require.NoError(t, err)
 
 	// check kafka connection
-	kafkaClient, err := factory.KafkaClient(ctx, &redpanda)
+	kafkaClient, err := factory.KafkaClient(t.Context(), &redpanda)
 	require.NoError(t, err)
-	metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(ctx)
+	metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
 	require.NoError(t, err)
 	require.Len(t, metadata.Brokers.NodeIDs(), 1)
 	kafkaClient.Close()
 
 	// check admin connection
-	adminClient, err := factory.RedpandaAdminClient(ctx, &redpanda)
+	adminClient, err := factory.RedpandaAdminClient(t.Context(), &redpanda)
 	require.NoError(t, err)
 	defer adminClient.Close()
 
-	brokers, err := adminClient.Brokers(ctx)
+	brokers, err := adminClient.Brokers(t.Context())
 	require.NoError(t, err)
 	require.Len(t, brokers, 1)
 }

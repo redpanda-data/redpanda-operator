@@ -166,6 +166,10 @@ func (e *Env) Client() client.Client {
 	return e.client
 }
 
+func (e *Env) RESTConfig() *rest.Config {
+	return e.config
+}
+
 func (e *Env) Namespace() string {
 	return e.namespace.Name
 }
