@@ -47,6 +47,8 @@ func Setup(t *testing.T) *Env {
 	})
 	require.NoError(t, err)
 
+	require.NoError(t, cluster.ImportImage("localhost/redpanda-operator:dev"))
+
 	return &Env{ctl: ctl, helm: client}
 }
 
