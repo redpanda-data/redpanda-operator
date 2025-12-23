@@ -37,13 +37,20 @@ var (
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
 	}
+	multiclusterSchemeFns = []func(s *runtime.Scheme) error{
+		apiextensionsv1.AddToScheme,
+		clientgoscheme.AddToScheme,
+		redpandav1alpha2.Install,
+	}
 
-	V1Scheme      *runtime.Scheme
-	V2Scheme      *runtime.Scheme
-	UnifiedScheme *runtime.Scheme
+	MulticlusterScheme *runtime.Scheme
+	V1Scheme           *runtime.Scheme
+	V2Scheme           *runtime.Scheme
+	UnifiedScheme      *runtime.Scheme
 )
 
 func init() {
+	MulticlusterScheme = runtime.NewScheme()
 	V1Scheme = runtime.NewScheme()
 	V2Scheme = runtime.NewScheme()
 	UnifiedScheme = runtime.NewScheme()
@@ -56,5 +63,9 @@ func init() {
 	for _, fn := range v2SchemeFns {
 		utilruntime.Must(fn(V2Scheme))
 		utilruntime.Must(fn(UnifiedScheme))
+	}
+
+	for _, fn := range multiclusterSchemeFns {
+		utilruntime.Must(fn(MulticlusterScheme))
 	}
 }

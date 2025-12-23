@@ -47,6 +47,7 @@ type PartialValues struct {
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
+	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
 }
 
 type PartialImage struct {
@@ -93,6 +94,12 @@ type PartialVectorizedControllers struct {
 	Enabled *bool "json:\"enabled,omitempty\""
 }
 
+type PartialMulticluster struct {
+	Enabled                      *bool         "json:\"enabled,omitempty\""
+	KubernetesAPIExternalAddress *string       "json:\"apiServerExternalAddress,omitempty\""
+	Peers                        []PartialPeer "json:\"peers,omitempty\""
+}
+
 type PartialPodTemplateSpec struct {
 	Metadata *PartialMetadata "json:\"metadata,omitempty\""
 	Spec     *corev1.PodSpec  "json:\"spec,omitempty\" jsonschema:\"required\""
@@ -118,4 +125,9 @@ type PartialLeaderElectionConfig struct {
 type PartialMetadata struct {
 	Labels      map[string]string "json:\"labels,omitempty\""
 	Annotations map[string]string "json:\"annotations,omitempty\""
+}
+
+type PartialPeer struct {
+	Name    *string "json:\"name,omitempty\" jsonschema:\"required\""
+	Address *string "json:\"address,omitempty\" jsonschema:\"required\""
 }

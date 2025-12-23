@@ -25,7 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	"sigs.k8s.io/multicluster-runtime/pkg/multicluster"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -58,7 +60,8 @@ type RaftConfiguration struct {
 
 	Scheme     *runtime.Scheme
 	Logger     logr.Logger
-	Metrics    bool
+	Metrics    *metricsserver.Options
+	Webhooks   webhook.Server
 	RestConfig *rest.Config
 
 	// the are only used when the Insecure flag is set to false
@@ -201,11 +204,14 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		Scheme:         config.Scheme,
 		LeaderElection: false,
 		Logger:         config.Logger,
+		WebhookServer:  config.Webhooks,
 	}
-	if !config.Metrics {
+	if config.Metrics == nil {
 		opts.Metrics = server.Options{
 			BindAddress: "0",
 		}
+	} else {
+		opts.Metrics = *config.Metrics
 	}
 
 	var currentLeader atomic.Uint64

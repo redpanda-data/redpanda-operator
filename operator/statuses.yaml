@@ -20,6 +20,7 @@
   # appliesTo allows us to generate struct and field kubebuilder annotations to default our conditions in our API structs
   appliesTo:
     - redpanda/v1alpha2/Redpanda
+    - redpanda/v1alpha2/StretchCluster
   # description is the description to add for this struct as a doc comment
   description:
     Defines the observed status conditions of a cluster.

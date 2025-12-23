@@ -46,6 +46,9 @@ var (
 	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.NodePool(),
 	}
+	multiclusterCRDs = []*apiextensionsv1.CustomResourceDefinition{
+		crds.StretchCluster(),
+	}
 	schemes = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
 		apiextensionsv1.AddToScheme,
@@ -57,6 +60,7 @@ var (
 func Command() *cobra.Command {
 	var experimental bool
 	var vectorized bool
+	var multicluster bool
 	cmd := &cobra.Command{
 		Use:   "crd",
 		Short: "Install CRDs into the cluster",
@@ -67,12 +71,14 @@ func Command() *cobra.Command {
 				ctx,
 				experimental,
 				vectorized,
+				multicluster,
 			)
 		},
 	}
 
 	cmd.Flags().BoolVar(&experimental, "experimental", false, "Install experimental CRDs")
 	cmd.Flags().BoolVar(&vectorized, "vectorized", false, "Install vectorized group (Cluster, Console) AKA the V1 Operator CRDs")
+	cmd.Flags().BoolVar(&multicluster, "multicluster", false, "Install multicluster CRDs")
 
 	return cmd
 }
@@ -81,6 +87,7 @@ func run(
 	ctx context.Context,
 	experimental bool,
 	vectorized bool,
+	multicluster bool,
 ) {
 	crdType := "stable"
 	if experimental {
@@ -107,6 +114,10 @@ func run(
 
 	if vectorized {
 		toInstall = append(toInstall, vectorizedCRDs...)
+	}
+
+	if multicluster {
+		toInstall = append(toInstall, multiclusterCRDs...)
 	}
 
 	var errs []error
