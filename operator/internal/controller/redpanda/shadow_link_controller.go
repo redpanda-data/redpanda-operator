@@ -24,6 +24,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
@@ -101,16 +102,14 @@ func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request Resou
 	return nil
 }
 
-func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
-	c := mgr.GetClient()
-	config := mgr.GetConfig()
-	factory := internalclient.NewFactory(config, c, expander)
+func SetupShadowLinkController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+	factory := internalclient.NewFactory(mgr, expander)
 
-	builder := ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr.GetLocalManager()).
 		For(&redpandav1alpha2.ShadowLink{})
 
 	if includeV1 {
-		enqueueV1ShadowLink, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		enqueueV1ShadowLink, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr.GetLocalManager(), "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
 		if err != nil {
 			return err
 		}
@@ -118,14 +117,14 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *
 	}
 
 	if includeV2 {
-		enqueueV2ShadowLink, err := controller.RegisterClusterSourceIndex(ctx, mgr, "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		enqueueV2ShadowLink, err := controller.RegisterClusterSourceIndex(ctx, mgr.GetLocalManager(), "shadow_link", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
 		if err != nil {
 			return err
 		}
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink)
 	}
 
-	controller := NewResourceController(c, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
+	controller := NewResourceController(mgr.GetLocalManager().GetClient(), factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct

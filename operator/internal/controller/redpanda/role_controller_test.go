@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -124,14 +125,17 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 				tt.mutate(role)
 			}
 
+			k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+			require.NoError(t, err)
+
 			key := client.ObjectKeyFromObject(role)
 			req := ctrl.Request{NamespacedName: key}
 
-			require.NoError(t, environment.Factory.Create(ctx, role))
-			_, err := environment.Reconciler.Reconcile(ctx, req)
+			require.NoError(t, k8sClient.Create(ctx, role))
+			_, err = environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
 
-			require.NoError(t, environment.Factory.Get(ctx, key, role))
+			require.NoError(t, k8sClient.Get(ctx, key, role))
 			require.Equal(t, []string{FinalizerKey}, role.Finalizers)
 			require.Len(t, role.Status.Conditions, 1)
 			require.Equal(t, tt.expectedCondition.Type, role.Status.Conditions[0].Type)
@@ -171,10 +175,10 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 					if role.ShouldManageRole() {
 						// Test role updates by changing principals
 						role.Spec.Principals = []string{"User:newuser1", "User:newuser2"}
-						require.NoError(t, environment.Factory.Update(ctx, role))
+						require.NoError(t, k8sClient.Update(ctx, role))
 						_, err = environment.Reconciler.Reconcile(ctx, req)
 						require.NoError(t, err)
-						require.NoError(t, environment.Factory.Get(ctx, key, role))
+						require.NoError(t, k8sClient.Get(ctx, key, role))
 						require.True(t, role.Status.ManagedRole)
 
 					}
@@ -182,10 +186,10 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 					if role.ShouldManageACLs() {
 						// now clear out any managed ACLs and re-check
 						role.Spec.Authorization = nil
-						require.NoError(t, environment.Factory.Update(ctx, role))
+						require.NoError(t, k8sClient.Update(ctx, role))
 						_, err = environment.Reconciler.Reconcile(ctx, req)
 						require.NoError(t, err)
-						require.NoError(t, environment.Factory.Get(ctx, key, role))
+						require.NoError(t, k8sClient.Get(ctx, key, role))
 						require.False(t, role.Status.ManagedACLs)
 					}
 
@@ -196,10 +200,10 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 				}
 
 				// clean up and make sure we properly delete everything
-				require.NoError(t, environment.Factory.Delete(ctx, role))
+				require.NoError(t, k8sClient.Delete(ctx, role))
 				_, err = environment.Reconciler.Reconcile(ctx, req)
 				require.NoError(t, err)
-				require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, role)))
+				require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 
 				// make sure we no longer have a role
 				hasRole, err := rolesClient.Has(ctx, role)
@@ -215,11 +219,11 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			}
 
 			// clean up and make sure we properly delete everything
-			require.NoError(t, environment.Factory.Delete(ctx, role))
+			require.NoError(t, k8sClient.Delete(ctx, role))
 			_, err = environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
 
-			require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, role)))
+			require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 		})
 	}
 }
@@ -321,16 +325,19 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 				},
 			}
 
+			k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+			require.NoError(t, err)
+
 			key := client.ObjectKeyFromObject(role)
 			req := ctrl.Request{NamespacedName: key}
 
 			// Create and reconcile
-			require.NoError(t, environment.Factory.Create(ctx, role))
-			_, err := environment.Reconciler.Reconcile(ctx, req)
+			require.NoError(t, k8sClient.Create(ctx, role))
+			_, err = environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
 
 			// Verify status
-			require.NoError(t, environment.Factory.Get(ctx, key, role))
+			require.NoError(t, k8sClient.Get(ctx, key, role))
 			require.Equal(t, []string{FinalizerKey}, role.Finalizers)
 			require.Len(t, role.Status.Conditions, 1)
 			require.Equal(t, environment.SyncedCondition.Status, role.Status.Conditions[0].Status)
@@ -365,10 +372,10 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 			}
 
 			// Clean up
-			require.NoError(t, environment.Factory.Delete(ctx, role))
+			require.NoError(t, k8sClient.Delete(ctx, role))
 			_, err = environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
-			require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, role)))
+			require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 		})
 	}
 }
@@ -399,11 +406,14 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 
 	// Phase 1: Create in principals-only mode
 	t.Run("create_principals_only", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Create(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Create(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.ShouldManageRole())
 		require.False(t, role.ShouldManageACLs())
 		require.True(t, role.ShouldManagePrincipals())
@@ -431,7 +441,10 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 
 	// Phase 2: Transition to combined mode
 	t.Run("add_authorization", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		role.Spec.Authorization = &redpandav1alpha2.RoleAuthorizationSpec{
 			ACLs: []redpandav1alpha2.ACLRule{{
 				Type: redpandav1alpha2.ACLTypeAllow,
@@ -445,11 +458,11 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 			}},
 		}
 
-		require.NoError(t, environment.Factory.Update(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.ShouldManageRole())
 		require.True(t, role.ShouldManageACLs())
 		require.True(t, role.ShouldManagePrincipals())
@@ -477,14 +490,17 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 
 	// Phase 3: Update principals
 	t.Run("update_principals", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
-		role.Spec.Principals = []string{"User:lifecycle-user", "User:additional-user"}
-
-		require.NoError(t, environment.Factory.Update(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:lifecycle-user", "User:additional-user"}
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedACLs)
 		require.True(t, role.Status.ManagedPrincipals)
@@ -510,14 +526,17 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 
 	// Phase 4: Remove authorization (back to principals-only)
 	t.Run("remove_authorization", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
-		role.Spec.Authorization = nil
-
-		require.NoError(t, environment.Factory.Update(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Authorization = nil
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.ShouldManageRole())
 		require.False(t, role.ShouldManageACLs())
 		require.True(t, role.ShouldManagePrincipals())
@@ -545,10 +564,13 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 
 	// Phase 5: Clean up
 	t.Run("cleanup", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Delete(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
-		require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, role)))
+
+		require.NoError(t, k8sClient.Delete(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 	})
 }
 
@@ -578,11 +600,14 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 
 	// Initial creation
 	t.Run("initial_creation", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Create(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Create(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedPrincipals)
 		require.Equal(t, []string{"User:alice", "User:bob"}, role.Spec.Principals)
@@ -599,14 +624,17 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 
 	// Test 1: Add a new member
 	t.Run("add_member", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
-		role.Spec.Principals = []string{"User:alice", "User:bob", "User:charlie"}
-
-		require.NoError(t, environment.Factory.Update(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:alice", "User:bob", "User:charlie"}
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedPrincipals)
 		require.Equal(t, []string{"User:alice", "User:bob", "User:charlie"}, role.Spec.Principals)
@@ -623,14 +651,17 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 
 	// Test 2: Remove a member
 	t.Run("remove_member", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
-		role.Spec.Principals = []string{"User:alice", "User:charlie"}
-
-		require.NoError(t, environment.Factory.Update(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:alice", "User:charlie"}
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedPrincipals)
 		require.Equal(t, []string{"User:alice", "User:charlie"}, role.Spec.Principals)
@@ -647,14 +678,17 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 
 	// Test 3: Replace all members
 	t.Run("replace_all_members", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
-		role.Spec.Principals = []string{"User:dave", "User:eve"}
-
-		require.NoError(t, environment.Factory.Update(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:dave", "User:eve"}
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.True(t, role.Status.ManagedPrincipals)
 		require.Equal(t, []string{"User:dave", "User:eve"}, role.Spec.Principals)
@@ -671,14 +705,17 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 
 	// Test 4: Remove all members (empty principals list)
 	t.Run("remove_all_members", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
-		role.Spec.Principals = nil
-
-		require.NoError(t, environment.Factory.Update(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Get(ctx, key, role))
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Principals = nil
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
 		require.True(t, role.Status.ManagedRole)
 		require.False(t, role.Status.ManagedPrincipals) // No longer managing principals
 		require.Empty(t, role.Spec.Principals)
@@ -695,9 +732,12 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 
 	// Cleanup
 	t.Run("cleanup", func(t *testing.T) {
-		require.NoError(t, environment.Factory.Delete(ctx, role))
-		_, err := environment.Reconciler.Reconcile(ctx, req)
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
-		require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, role)))
+
+		require.NoError(t, k8sClient.Delete(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 	})
 }

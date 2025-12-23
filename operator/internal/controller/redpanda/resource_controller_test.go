@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -95,7 +96,8 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	factory := internalclient.NewFactory(cfg, c, nil)
+	mgr := SetupTestManager(t, ctx, cfg, c)
+	factory := internalclient.NewFactory(mgr, nil)
 
 	// ensure we have a secret which we can pull a password from
 	err = c.Create(ctx, &corev1.Secret{
@@ -337,12 +339,14 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 		},
 	}
 
-	err := environment.Factory.Client.Create(ctx, crd)
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+	err = k8sClient.Create(ctx, crd)
 	require.NoError(t, err)
 
 	require.Eventually(t, func() bool {
 		key := client.ObjectKeyFromObject(crd)
-		err = environment.Factory.Client.Get(ctx, key, crd)
+		err = k8sClient.Get(ctx, key, crd)
 		require.NoError(t, err)
 
 		for _, cond := range crd.Status.Conditions {
@@ -355,7 +359,7 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 	}, 60*time.Second, 1*time.Second)
 
 	doReconcileLifecycle := func(obj *testObject, delete bool) {
-		require.NoError(t, environment.Factory.Client.Create(ctx, obj))
+		require.NoError(t, k8sClient.Create(ctx, obj))
 
 		key := client.ObjectKeyFromObject(obj)
 		req := ctrl.Request{NamespacedName: key}
@@ -363,16 +367,16 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 		_, err := environment.Reconciler.Reconcile(ctx, req)
 		require.NoError(t, err)
 
-		require.NoError(t, environment.Factory.Client.Get(ctx, key, obj))
+		require.NoError(t, k8sClient.Get(ctx, key, obj))
 		require.Contains(t, obj.Finalizers, FinalizerKey)
 
 		if delete {
-			require.NoError(t, environment.Factory.Client.Delete(ctx, obj))
+			require.NoError(t, k8sClient.Delete(ctx, obj))
 
 			_, err := environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
 
-			require.Error(t, environment.Factory.Client.Get(ctx, key, obj))
+			require.Error(t, k8sClient.Get(ctx, key, obj))
 		}
 	}
 

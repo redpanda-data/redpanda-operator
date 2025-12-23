@@ -35,8 +35,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -46,6 +48,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 type delayedLog func() string
@@ -340,6 +343,24 @@ func versionedClientsForCluster(ctx context.Context, version, cluster string) *c
 	return clientsForCluster(ctx, cluster)
 }
 
+func setupTestManager(ctx context.Context, cfg *rest.Config, c runtimeclient.Client) multicluster.Manager {
+	t := framework.T(ctx)
+
+	mgr, err := multicluster.NewSingleClusterManager(cfg, manager.Options{
+		LeaderElection: false,
+		NewClient: func(_ *rest.Config, _ runtimeclient.Options) (runtimeclient.Client, error) {
+			return c, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("initializing manager: %v", err)
+	}
+	go mgr.Start(ctx)
+	<-mgr.Elected()
+
+	return mgr
+}
+
 func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t := framework.T(ctx)
 
@@ -371,7 +392,9 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
-	factory := client.NewFactory(t.RestConfig(), t, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	mgr := setupTestManager(ctx, t.RestConfig(), t)
+
+	factory := client.NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
 	clients := &clusterClients{
 		resourceTarget: referencer,
@@ -416,7 +439,9 @@ func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake v1 user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
-	factory := client.NewFactory(t.RestConfig(), t, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	mgr := setupTestManager(ctx, t.RestConfig(), t)
+
+	factory := client.NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
 
 	clients := &clusterClients{
 		resourceTarget: referencer,

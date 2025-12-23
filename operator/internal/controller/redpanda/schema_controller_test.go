@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -92,11 +93,14 @@ func TestSchemaReconcile(t *testing.T) { // nolint:funlen // These tests have cl
 			key := client.ObjectKeyFromObject(schema)
 			req := ctrl.Request{NamespacedName: key}
 
-			require.NoError(t, environment.Factory.Create(ctx, schema))
-			_, err := environment.Reconciler.Reconcile(ctx, req)
+			k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 			require.NoError(t, err)
 
-			require.NoError(t, environment.Factory.Get(ctx, key, schema))
+			require.NoError(t, k8sClient.Create(ctx, schema))
+			_, err = environment.Reconciler.Reconcile(ctx, req)
+			require.NoError(t, err)
+
+			require.NoError(t, k8sClient.Get(ctx, key, schema))
 			require.Equal(t, []string{FinalizerKey}, schema.Finalizers)
 			require.Len(t, schema.Status.Conditions, 1)
 			require.Equal(t, tt.expectedCondition.Type, schema.Status.Conditions[0].Type)
@@ -112,10 +116,10 @@ func TestSchemaReconcile(t *testing.T) { // nolint:funlen // These tests have cl
 				require.NoError(t, err)
 
 				// clean up and make sure we properly delete everything
-				require.NoError(t, environment.Factory.Delete(ctx, schema))
+				require.NoError(t, k8sClient.Delete(ctx, schema))
 				_, err = environment.Reconciler.Reconcile(ctx, req)
 				require.NoError(t, err)
-				require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, schema)))
+				require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, schema)))
 
 				// make sure we no longer have a schema
 				_, err = schemaClient.SchemaByVersion(ctx, schema.Name, -1)
@@ -125,10 +129,10 @@ func TestSchemaReconcile(t *testing.T) { // nolint:funlen // These tests have cl
 			}
 
 			// clean up and make sure we properly delete everything
-			require.NoError(t, environment.Factory.Delete(ctx, schema))
+			require.NoError(t, k8sClient.Delete(ctx, schema))
 			_, err = environment.Reconciler.Reconcile(ctx, req)
 			require.NoError(t, err)
-			require.True(t, apierrors.IsNotFound(environment.Factory.Get(ctx, key, schema)))
+			require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, schema)))
 		})
 	}
 }

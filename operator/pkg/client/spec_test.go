@@ -67,7 +67,9 @@ func TestShadowLinkClusterSettings_BootstrapRegression(t *testing.T) {
 	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 
-	factory := NewFactory(cfg, c, nil)
+	mgr := setupTestManager(t, ctx, cfg, c)
+
+	factory := NewFactory(mgr, nil)
 
 	settings, err := factory.RemoteClusterSettings(ctx, &redpandav1alpha2.ShadowLink{
 		Spec: redpandav1alpha2.ShadowLinkSpec{

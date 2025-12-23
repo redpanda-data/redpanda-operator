@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -37,6 +38,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
@@ -73,44 +75,61 @@ type ClientFactory interface {
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should always call Close on the returned *kgo.Client,
 	// or it will leak goroutines.
 	KafkaClient(ctx context.Context, object any, opts ...kgo.Opt) (*kgo.Client, error)
+	// KafkaClientForCluster is the same as KafkaClient but it takes a kubernetes cluster name.
+	KafkaClientForCluster(ctx context.Context, object any, clusterName string, opts ...kgo.Opt) (*kgo.Client, error)
 
 	// RedpandaAdminClient initializes a rpadmin.AdminAPI client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.AdminConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should call Close on the returned *rpadmin.AdminAPI
 	// to ensure any idle connections in the underlying transport are closed.
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
+	// RedpandaAdminClientForCluster is the same as RedpandaAdminClient but it takes a kubernetes cluster name.
+	RedpandaAdminClientForCluster(ctx context.Context, object any, clusterName string) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
 	SchemaRegistryClient(ctx context.Context, object any) (*sr.Client, error)
+	// SchemaRegistryClientForCluster is the same as SchemaRegistryClient but it takes a kubernetes cluster name.
+	SchemaRegistryClientForCluster(ctx context.Context, object any, clusterName string) (*sr.Client, error)
 
 	// ACLs returns a high-level client for synchronizing ACLs. Callers should always call Close on the returned *acls.Syncer, or it will leak
 	// goroutines.
 	ACLs(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error)
+	// ACLsForCluster is the same as ACLs but it takes a kubernetes cluster name
+	ACLsForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*acls.Syncer, error)
 
 	// Users returns a high-level client for managing users. Callers should always call Close on the returned *users.Client, or it will leak
 	// goroutines.
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
+	// UsersForCluster is the same as Users but it takes a kubernetes cluster name
+	UsersForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*users.Client, error)
 
 	// Roles returns a high-level client for managing roles. Callers should always call Close on the returned *roles.Client, or it will leak
 	// goroutines.
 	Roles(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error)
+	// RolesForCluster is the same as Roles but it takes a kubernetes cluster name
+	RolesForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string) (*roles.Client, error)
 
 	// Schemas returns a high-level client for synchronizing Schemas.
 	Schemas(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error)
+	// SchemasForCluster is the same as Schemas but it takes a kubernetes cluster name
+	SchemasForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string) (*schemas.Syncer, error)
 
-	// ShadowLinks returns a high-level client for synchronizing ShadowLinks.
+	// ShadowLinksForCluster returns a high-level client for synchronizing ShadowLinks.
 	ShadowLinks(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error)
+	// ShadowLinksForCluster is the same as ShadowLinks but it takes a kubernetes cluster name
+	ShadowLinksForCluster(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (*shadow.Syncer, error)
 
 	// RemoteClusterSettings returns the ShadowLink connection configuration for an object.
 	RemoteClusterSettings(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error)
+	// RemoteClusterSettingsForCluster is the same as RemoteClusterSettings but it takes a kubernetes cluster name
+	RemoteClusterSettingsForCluster(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (shadow.RemoteClusterSettings, error)
 }
 
 type Factory struct {
-	client.Client
-	config *rest.Config
-	fs     afero.Fs
+	mgr multicluster.Manager
+	fs  afero.Fs
 
 	adminClientTimeout time.Duration
 	dialer             redpanda.DialContextFunc
@@ -120,34 +139,48 @@ type Factory struct {
 
 var _ ClientFactory = (*Factory)(nil)
 
-func NewFactory(config *rest.Config, kubeclient client.Client, expander *pkgsecrets.CloudExpander) *Factory {
+func NewFactory(mgr multicluster.Manager, expander *pkgsecrets.CloudExpander) *Factory {
 	return &Factory{
-		config:             rest.CopyConfig(config),
+		mgr:                mgr,
 		fs:                 afero.NewOsFs(),
-		Client:             kubeclient,
 		secretExpander:     expander,
 		adminClientTimeout: 10 * time.Second,
 	}
 }
 
 func NewRPKOnlyFactory() *Factory {
-	return NewFactory(&rest.Config{}, nil, nil)
+	return NewFactory(nil, nil)
+}
+
+func (c *Factory) GetClient(ctx context.Context, clusterName string) (client.Client, error) {
+	cluster, err := c.mgr.GetCluster(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	return cluster.GetClient(), nil
+}
+
+func (c *Factory) GetConfig(ctx context.Context, clusterName string) (*rest.Config, error) {
+	cluster, err := c.mgr.GetCluster(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	return cluster.GetConfig(), nil
 }
 
 func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 	return &Factory{
-		Client:   c.Client,
-		config:   c.config,
-		userAuth: c.userAuth,
-		fs:       c.fs,
-		dialer:   dialer,
+		mgr:                c.mgr,
+		userAuth:           c.userAuth,
+		fs:                 c.fs,
+		dialer:             dialer,
+		adminClientTimeout: c.adminClientTimeout,
 	}
 }
 
 func (c *Factory) WithAdminClientTimeout(timeout time.Duration) *Factory {
 	return &Factory{
-		Client:             c.Client,
-		config:             c.config,
+		mgr:                c.mgr,
 		userAuth:           c.userAuth,
 		fs:                 c.fs,
 		dialer:             c.dialer,
@@ -157,32 +190,32 @@ func (c *Factory) WithAdminClientTimeout(timeout time.Duration) *Factory {
 
 func (c *Factory) WithFS(fs afero.Fs) *Factory {
 	return &Factory{
-		Client:   c.Client,
-		config:   c.config,
-		userAuth: c.userAuth,
-		dialer:   c.dialer,
-		fs:       fs,
+		mgr:                c.mgr,
+		userAuth:           c.userAuth,
+		dialer:             c.dialer,
+		fs:                 fs,
+		adminClientTimeout: c.adminClientTimeout,
 	}
 }
 
 func (c *Factory) WithUserAuth(userAuth *UserAuth) *Factory {
 	return &Factory{
-		Client:   c.Client,
-		config:   c.config,
-		dialer:   c.dialer,
-		fs:       c.fs,
-		userAuth: userAuth,
+		mgr:                c.mgr,
+		dialer:             c.dialer,
+		fs:                 c.fs,
+		userAuth:           userAuth,
+		adminClientTimeout: c.adminClientTimeout,
 	}
 }
 
-func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) KafkaClientForCluster(ctx context.Context, obj any, clusterName string, opts ...kgo.Opt) (*kgo.Client, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
-		return c.kafkaForCluster(cluster, opts...)
+		return c.kafkaForCluster(ctx, cluster, clusterName, opts...)
 	}
 
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
-		return c.kafkaForV1Cluster(ctx, cluster)
+		return c.kafkaForV1Cluster(ctx, cluster, clusterName)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
@@ -194,39 +227,43 @@ func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*k
 		return nil, ErrInvalidKafkaClientObject
 	}
 
-	cluster, err := c.getV2Cluster(ctx, o)
+	cluster, err := c.getV2Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	if cluster != nil {
-		return c.kafkaForCluster(cluster, opts...)
+		return c.kafkaForCluster(ctx, cluster, clusterName, opts...)
 	}
 
-	v1Cluster, err := c.getV1Cluster(ctx, o)
+	v1Cluster, err := c.getV1Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	if v1Cluster != nil {
-		return c.kafkaForV1Cluster(ctx, v1Cluster, opts...)
+		return c.kafkaForV1Cluster(ctx, v1Cluster, clusterName, opts...)
 	}
 
 	if spec := c.getKafkaSpec(o); spec != nil {
-		return c.kafkaForSpec(ctx, c.getKafkaMetricNamespace(o), spec, opts...)
+		return c.kafkaForSpec(ctx, c.getKafkaMetricNamespace(o), spec, clusterName, opts...)
 	}
 
 	return nil, ErrInvalidKafkaClientObject
 }
 
-func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.AdminAPI, error) {
+func (c *Factory) KafkaClient(ctx context.Context, obj any, opts ...kgo.Opt) (*kgo.Client, error) {
+	return c.KafkaClientForCluster(ctx, obj, mcmanager.LocalCluster, opts...)
+}
+
+func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, clusterName string) (*rpadmin.AdminAPI, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
-		return c.redpandaAdminForCluster(cluster)
+		return c.redpandaAdminForCluster(ctx, cluster, clusterName)
 	}
 
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
-		return c.redpandaAdminForV1Cluster(cluster)
+		return c.redpandaAdminForV1Cluster(ctx, cluster, clusterName)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
@@ -238,39 +275,43 @@ func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.Ad
 		return nil, ErrInvalidRedpandaClientObject
 	}
 
-	cluster, err := c.getV2Cluster(ctx, o)
+	cluster, err := c.getV2Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	if cluster != nil {
-		return c.redpandaAdminForCluster(cluster)
+		return c.redpandaAdminForCluster(ctx, cluster, clusterName)
 	}
 
-	v1Cluster, err := c.getV1Cluster(ctx, o)
+	v1Cluster, err := c.getV1Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	if v1Cluster != nil {
-		return c.redpandaAdminForV1Cluster(v1Cluster)
+		return c.redpandaAdminForV1Cluster(ctx, v1Cluster, clusterName)
 	}
 
 	if spec := c.getAdminSpec(o); spec != nil {
-		return c.redpandaAdminForSpec(ctx, spec)
+		return c.redpandaAdminForSpec(ctx, spec, clusterName)
 	}
 
 	return nil, ErrInvalidRedpandaClientObject
 }
 
-func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client, error) {
+func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.AdminAPI, error) {
+	return c.RedpandaAdminClientForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+func (c *Factory) SchemaRegistryClientForCluster(ctx context.Context, obj any, clusterName string) (*sr.Client, error) {
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
-		return c.schemaRegistryForCluster(cluster)
+		return c.schemaRegistryForCluster(ctx, cluster, clusterName)
 	}
 
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
-		return c.schemaRegistryForV1Cluster(cluster)
+		return c.schemaRegistryForV1Cluster(ctx, cluster, clusterName)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
@@ -282,32 +323,36 @@ func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client
 		return nil, ErrInvalidSchemaRegistryClientObject
 	}
 
-	cluster, err := c.getV2Cluster(ctx, o)
+	cluster, err := c.getV2Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	if cluster != nil {
-		return c.schemaRegistryForCluster(cluster)
+		return c.schemaRegistryForCluster(ctx, cluster, clusterName)
 	}
 
-	v1Cluster, err := c.getV1Cluster(ctx, o)
+	v1Cluster, err := c.getV1Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
 	if v1Cluster != nil {
-		return c.schemaRegistryForV1Cluster(v1Cluster)
+		return c.schemaRegistryForV1Cluster(ctx, v1Cluster, clusterName)
 	}
 
 	if spec := c.getSchemaRegistrySpec(o); spec != nil {
-		return c.schemaRegistryForSpec(ctx, spec)
+		return c.schemaRegistryForSpec(ctx, spec, clusterName)
 	}
 
 	return nil, ErrInvalidSchemaRegistryClientObject
 }
 
-func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error) {
+func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client, error) {
+	return c.SchemaRegistryClientForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+func (c *Factory) SchemasForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (*schemas.Syncer, error) {
 	schemaRegistryClient, err := c.SchemaRegistryClient(ctx, obj)
 	if err != nil {
 		return nil, err
@@ -316,7 +361,11 @@ func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterRefer
 	return schemas.NewSyncer(schemaRegistryClient), nil
 }
 
-func (c *Factory) ShadowLinks(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error) {
+func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error) {
+	return c.SchemasForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+func (c *Factory) ShadowLinksForCluster(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (*shadow.Syncer, error) {
 	adminClient, err := c.RedpandaAdminClient(ctx, obj)
 	if err != nil {
 		return nil, err
@@ -325,7 +374,11 @@ func (c *Factory) ShadowLinks(ctx context.Context, obj redpandav1alpha2.RemoteCl
 	return shadow.NewSyncer(adminClient), nil
 }
 
-func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
+func (c *Factory) ShadowLinks(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (*shadow.Syncer, error) {
+	return c.ShadowLinksForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+func (c *Factory) ACLsForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*acls.Syncer, error) {
 	kafkaClient, err := c.KafkaClient(ctx, obj, opts...)
 	if err != nil {
 		return nil, err
@@ -334,7 +387,16 @@ func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferenc
 	return acls.NewSyncer(kafkaClient), nil
 }
 
-func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error) {
+func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
+	return c.ACLsForCluster(ctx, obj, mcmanager.LocalCluster, opts...)
+}
+
+func (c *Factory) UsersForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*users.Client, error) {
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
 	kafkaClient, err := c.KafkaClient(ctx, obj, opts...)
 	if err != nil {
 		return nil, err
@@ -345,10 +407,14 @@ func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 		return nil, err
 	}
 
-	return users.NewClient(ctx, c.Client, kadm.NewClient(kafkaClient), adminClient)
+	return users.NewClient(ctx, client, kadm.NewClient(kafkaClient), adminClient)
 }
 
-func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error) {
+func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error) {
+	return c.UsersForCluster(ctx, obj, mcmanager.LocalCluster, opts...)
+}
+
+func (c *Factory) RolesForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (*roles.Client, error) {
 	adminClient, err := c.RedpandaAdminClient(ctx, obj)
 	if err != nil {
 		return nil, err
@@ -357,7 +423,11 @@ func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 	return roles.NewClient(ctx, adminClient)
 }
 
-func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error) {
+func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error) {
+	return c.RolesForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+func (c *Factory) RemoteClusterSettingsForCluster(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
 	o, ok := obj.(client.Object)
@@ -365,42 +435,51 @@ func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha
 		return settings, ErrInvalidKafkaClientObject
 	}
 
-	cluster, err := c.getRemoteV2Cluster(ctx, o)
+	cluster, err := c.getRemoteV2Cluster(ctx, o, clusterName)
 	if err != nil {
 		return settings, err
 	}
 
 	if cluster != nil {
-		return c.remoteClusterSettingsForCluster(ctx, cluster)
+		return c.remoteClusterSettingsForCluster(ctx, cluster, clusterName)
 	}
 
-	v1Cluster, err := c.getRemoteV1Cluster(ctx, o)
+	v1Cluster, err := c.getRemoteV1Cluster(ctx, o, clusterName)
 	if err != nil {
 		return settings, err
 	}
 
 	if v1Cluster != nil {
-		return c.remoteClusterSettingsForV1Cluster(ctx, v1Cluster)
+		return c.remoteClusterSettingsForV1Cluster(ctx, v1Cluster, clusterName)
 	}
 
 	if spec := c.getRemoteKafkaSpec(o); spec != nil {
-		return c.remoteClusterSettingsForSpec(ctx, spec)
+		return c.remoteClusterSettingsForSpec(ctx, spec, clusterName)
 	}
 
 	return settings, ErrInvalidKafkaClientObject
 }
 
-func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object) (*vectorizedv1alpha1.Cluster, error) {
+func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error) {
+	return c.RemoteClusterSettingsForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object, clusterName string) (*vectorizedv1alpha1.Cluster, error) {
 	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
 	if !ok {
 		return nil, nil
+	}
+
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
 	}
 
 	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV1() {
 			var cluster vectorizedv1alpha1.Cluster
 
-			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -414,17 +493,21 @@ func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object) (*vectori
 	return nil, nil
 }
 
-func (c *Factory) getRemoteV1Cluster(ctx context.Context, obj client.Object) (*vectorizedv1alpha1.Cluster, error) {
+func (c *Factory) getRemoteV1Cluster(ctx context.Context, obj client.Object, clusterName string) (*vectorizedv1alpha1.Cluster, error) {
 	o, ok := obj.(redpandav1alpha2.RemoteClusterReferencingObject)
 	if !ok {
 		return nil, nil
 	}
-
 	if source := o.GetRemoteClusterSource(); source != nil { //nolint:nestif // ignore
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV1() {
 			var cluster vectorizedv1alpha1.Cluster
 
-			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			client, err := c.GetClient(ctx, clusterName)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -438,7 +521,7 @@ func (c *Factory) getRemoteV1Cluster(ctx context.Context, obj client.Object) (*v
 	return nil, nil
 }
 
-func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
+func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterName string) (*redpandav1alpha2.Redpanda, error) {
 	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
 	if !ok {
 		return nil, nil
@@ -448,7 +531,12 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object) (*redpand
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
 			var cluster redpandav1alpha2.Redpanda
 
-			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			client, err := c.GetClient(ctx, clusterName)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -462,7 +550,7 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object) (*redpand
 	return nil, nil
 }
 
-func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object) (*redpandav1alpha2.Redpanda, error) {
+func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object, clusterName string) (*redpandav1alpha2.Redpanda, error) {
 	o, ok := obj.(redpandav1alpha2.RemoteClusterReferencingObject)
 	if !ok {
 		return nil, nil
@@ -472,7 +560,12 @@ func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object) (*r
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
 			var cluster redpandav1alpha2.Redpanda
 
-			if err := c.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			client, err := c.GetClient(ctx, clusterName)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}

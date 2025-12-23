@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
@@ -53,6 +52,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -914,14 +914,24 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		SkipVCluster: true,
 		ImportImages: []string{
 			"localhost/redpanda-operator:dev",
+			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"registry.k8s.io/kube-controller-manager:v1.29.6",
+			"registry.k8s.io/kube-apiserver:v1.29.6",
+			"quay.io/jetstack/cert-manager-controller:v1.8.0",
+			"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
+			"quay.io/jetstack/cert-manager-webhook:v1.8.0",
+			"coredns/coredns:1.11.1",
+			"redpandadata/redpanda-unstable:v24.3.1-rc8",
+			"redpandadata/redpanda-unstable:v25.3.1-rc2",
 		},
 	})
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
+	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
+		mgr := mcmgr.GetLocalManager()
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mcmgr, nil).WithDialer(dialer.DialContext)
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
 			Client: mgr.GetClient(),

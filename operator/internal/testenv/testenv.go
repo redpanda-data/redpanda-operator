@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
@@ -51,13 +52,14 @@ type Env struct {
 }
 
 type Options struct {
-	Name         string
-	Agents       int
-	SkipVCluster bool
-	Scheme       *runtime.Scheme
-	CRDs         []*apiextensionsv1.CustomResourceDefinition
-	Logger       logr.Logger
-	ImportImages []string
+	Name                string
+	Agents              int
+	SkipVCluster        bool
+	SkipNamespaceClient bool
+	Scheme              *runtime.Scheme
+	CRDs                []*apiextensionsv1.CustomResourceDefinition
+	Logger              logr.Logger
+	ImportImages        []string
 }
 
 // New returns a configured [Env] that utilizes an [vcluster.Cluster] in a
@@ -120,7 +122,12 @@ func New(t *testing.T, options Options) *Env {
 
 	require.NoError(t, c.Create(ctx, ns))
 
-	otelClient := otelkube.NewClient(client.NewNamespacedClient(c, ns.Name))
+	var otelClient client.Client
+	if options.SkipNamespaceClient {
+		otelClient = otelkube.NewClient(c)
+	} else {
+		otelClient = otelkube.NewClient(client.NewNamespacedClient(c, ns.Name))
+	}
 
 	env := &Env{
 		t:         t,
@@ -165,11 +172,15 @@ func (e *Env) Client() client.Client {
 	return e.client
 }
 
+func (e *Env) RESTConfig() *rest.Config {
+	return e.config
+}
+
 func (e *Env) Namespace() string {
 	return e.namespace.Name
 }
 
-func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
+func (e *Env) SetupManager(serviceAccount string, fn func(multicluster.Manager) error) {
 	// Bind the managers base config to a ServiceAccount via the "Impersonate"
 	// feature. This ensures that any permissions/RBAC issues get caught by
 	// theses tests as e.config has Admin permissions.
@@ -183,7 +194,7 @@ func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
 	// local machine which could prove to be difficult across all docker/docker
 	// in docker environments.
 	// See also https://k3d.io/v5.4.6/faq/faq/?h=host#how-to-access-services-like-a-database-running-on-my-docker-host-machine
-	manager, err := ctrl.NewManager(config, ctrl.Options{
+	manager, err := multicluster.NewSingleClusterManager(config, ctrl.Options{
 		Cache: cache.Options{
 			// Limit this manager to only interacting with objects within our
 			// namespace.

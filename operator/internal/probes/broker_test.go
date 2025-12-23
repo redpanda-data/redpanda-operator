@@ -41,6 +41,7 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -158,11 +159,23 @@ func (s *ProberSuite) SetupSuite() {
 	s.env = testenv.New(t, testenv.Options{
 		Scheme: scheme,
 		Logger: log,
+		ImportImages: []string{
+			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"registry.k8s.io/kube-controller-manager:v1.29.6",
+			"registry.k8s.io/kube-apiserver:v1.29.6",
+			"quay.io/jetstack/cert-manager-controller:v1.8.0",
+			"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
+			"quay.io/jetstack/cert-manager-webhook:v1.8.0",
+			"coredns/coredns:1.11.1",
+			"redpandadata/redpanda-unstable:v24.3.1-rc8",
+			"redpandadata/redpanda-unstable:v25.3.1-rc2",
+		},
 	})
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
+	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
+		mgr := mcmgr.GetLocalManager()
 		helmClient, err := helm.New(helm.Options{
 			KubeConfig: mgr.GetConfig(),
 		})
@@ -176,7 +189,7 @@ func (s *ProberSuite) SetupSuite() {
 		s.manager = mgr
 		s.helm = helmClient
 		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
+		s.clientFactory = internalclient.NewFactory(mcmgr, nil).WithDialer(dialer.DialContext)
 
 		return nil
 	})

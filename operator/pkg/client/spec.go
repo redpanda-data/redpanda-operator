@@ -27,10 +27,15 @@ import (
 )
 
 // KafkaForSpec returns a simple kgo.Client able to communicate with the given cluster specified via KafkaAPISpec.
-func (c *Factory) kafkaForSpec(ctx context.Context, metricNamespace *string, spec *ir.KafkaAPISpec, opts ...kgo.Opt) (*kgo.Client, error) {
+func (c *Factory) kafkaForSpec(ctx context.Context, metricNamespace *string, spec *ir.KafkaAPISpec, clusterName string, opts ...kgo.Opt) (*kgo.Client, error) {
 	logger := log.FromContext(ctx)
 
-	configuration, err := spec.Load(ctx, c.Client, c.secretExpander)
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	configuration, err := spec.Load(ctx, client, c.secretExpander)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +58,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, metricNamespace *string, spe
 	kopts = append(kopts, kgo.WithLogger(wrapLogger(logger)), kgo.WithHooks(hooks))
 
 	if spec.SASL != nil {
-		saslOpt, err := spec.SASL.AsOption(ctx, c.Client, c.secretExpander)
+		saslOpt, err := spec.SASL.AsOption(ctx, client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +76,7 @@ func (c *Factory) kafkaForSpec(ctx context.Context, metricNamespace *string, spe
 	}
 
 	if spec.TLS != nil {
-		tlsConfig, err := spec.TLS.Config(ctx, c.Client, c.secretExpander)
+		tlsConfig, err := spec.TLS.Config(ctx, client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -92,15 +97,19 @@ func (c *Factory) kafkaForSpec(ctx context.Context, metricNamespace *string, spe
 	return kgo.NewClient(append(opts, kopts...)...)
 }
 
-func (c *Factory) redpandaAdminForSpec(ctx context.Context, spec *ir.AdminAPISpec) (*rpadmin.AdminAPI, error) {
+func (c *Factory) redpandaAdminForSpec(ctx context.Context, spec *ir.AdminAPISpec, clusterName string) (*rpadmin.AdminAPI, error) {
 	if len(spec.URLs) == 0 {
 		return nil, ErrEmptyURLList
 	}
 
-	var err error
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
 	var tlsConfig *tls.Config
 	if spec.TLS != nil {
-		tlsConfig, err = spec.TLS.Config(ctx, c.Client, c.secretExpander)
+		tlsConfig, err = spec.TLS.Config(ctx, client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +117,7 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, spec *ir.AdminAPISpe
 
 	var auth rpadmin.Auth
 	var username, password, token string
-	username, password, token, err = spec.Auth.AsCredentials(ctx, c.Client, c.secretExpander)
+	username, password, token, err = spec.Auth.AsCredentials(ctx, client, c.secretExpander)
 	if err != nil {
 		return nil, err
 	}
@@ -127,24 +136,29 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, spec *ir.AdminAPISpe
 		auth = &rpadmin.NopAuth{}
 	}
 
-	client, err := rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
+	rpclient, err := rpadmin.NewAdminAPIWithDialer(spec.URLs, auth, tlsConfig, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, err
 	}
 
 	if c.userAuth != nil {
-		client.SetAuth(&rpadmin.BasicAuth{
+		rpclient.SetAuth(&rpadmin.BasicAuth{
 			Username: c.userAuth.Username,
 			Password: c.userAuth.Password,
 		})
 	}
 
-	return client, nil
+	return rpclient, nil
 }
 
-func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegistrySpec) (*sr.Client, error) {
+func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegistrySpec, clusterName string) (*sr.Client, error) {
 	if len(spec.URLs) == 0 {
 		return nil, ErrEmptyURLList
+	}
+
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
 	}
 
 	// These transport values come from the TLS client options found here:
@@ -160,10 +174,9 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegi
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
-	var err error
 	var tlsConfig *tls.Config
 	if spec.TLS != nil {
-		tlsConfig, err = spec.TLS.Config(ctx, c.Client, c.secretExpander)
+		tlsConfig, err = spec.TLS.Config(ctx, client, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +190,7 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegi
 		}),
 	}
 
-	authOpt, err := spec.SASL.AsOption(ctx, c.Client, c.secretExpander)
+	authOpt, err := spec.SASL.AsOption(ctx, client, c.secretExpander)
 	if err != nil {
 		return nil, err
 	}
@@ -193,10 +206,15 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegi
 	return sr.NewClient(opts...)
 }
 
-func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, spec *ir.KafkaAPISpec) (shadow.RemoteClusterSettings, error) {
+func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, spec *ir.KafkaAPISpec, clusterName string) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
-	configuration, err := spec.Load(ctx, c.Client, c.secretExpander)
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return settings, err
+	}
+
+	configuration, err := spec.Load(ctx, client, c.secretExpander)
 	if err != nil {
 		return settings, err
 	}

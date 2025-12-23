@@ -186,6 +186,7 @@ tasks:
       vars:
         CLI_ARGS: '' # Don't forward CLI args to build:image
     - task: build:charts
+    - task: test:pull-images
     vars:
       RUN: '{{ default `"^TestIntegration"` .RUN }}'
     cmds:
@@ -219,25 +220,42 @@ tasks:
   test:pull-images:
     vars:
       DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
+      DEFAULT_SECOND_TEST_CERTMANAGER_VERSION: v1.8.0
       DEFAULT_TEST_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
       DEFAULT_TEST_REDPANDA_VERSION: v25.3.1
       DEFAULT_TEST_UPGRADE_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
       DEFAULT_TEST_UPGRADE_REDPANDA_VERSION: v24.3.11
       DEFAULT_TEST_UPGRADE_OPERATOR_VERSION: v2.3.9-24.3.11
+      DEFAULT_TEST_VCLUSTER_VERSION: 0.23.0
+      DEFAULT_TEST_KUBE_VERSION: v1.29.6
+      DEFAULT_TEST_COREDNS_VERSION: 1.11.1
       TEST_CERTMANAGER_VERSION: '{{ .TEST_CERTMANAGER_VERSION | default .DEFAULT_TEST_CERTMANAGER_VERSION }}'
+      SECOND_TEST_CERTMANAGER_VERSION: '{{ .SECOND_TEST_CERTMANAGER_VERSION | default .DEFAULT_SECOND_TEST_CERTMANAGER_VERSION }}'
       TEST_REDPANDA_REPO: '{{ .TEST_REDPANDA_REPO | default .DEFAULT_TEST_REDPANDA_REPO }}'
       TEST_REDPANDA_VERSION: '{{ .TEST_REDPANDA_VERSION | default .DEFAULT_TEST_REDPANDA_VERSION }}'
       TEST_UPGRADE_REDPANDA_REPO: '{{ .TEST_UPGRADE_REDPANDA_REPO | default .DEFAULT_TEST_UPGRADE_REDPANDA_REPO }}'
       TEST_UPGRADE_REDPANDA_VERSION: '{{ .TEST_UPGRADE_REDPANDA_VERSION | default .DEFAULT_TEST_UPGRADE_REDPANDA_VERSION }}'
       TEST_UPGRADE_OPERATOR_VERSION: '{{ .TEST_UPGRADE_OPERATOR_VERSION | default .DEFAULT_TEST_UPGRADE_OPERATOR_VERSION }}'
+      TEST_VCLUSTER_VERSION: '{{ .TEST_VCLUSTER_VERSION | default .DEFAULT_TEST_VCLUSTER_VERSION }}'
+      TEST_KUBE_VERSION: '{{ .TEST_KUBE_VERSION | default .DEFAULT_TEST_KUBE_VERSION }}'
+      TEST_COREDNS_VERSION: '{{ .TEST_COREDNS_VERSION | default .DEFAULT_TEST_COREDNS_VERSION }}'
       IMAGES:
       - quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-controller:{{.SECOND_TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-cainjector:{{.SECOND_TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-webhook:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
       - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
       - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
+      - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}
+      - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
+      - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
+      - coredns/coredns:{{.TEST_COREDNS_VERSION}}
+      - redpandadata/redpanda-unstable:v24.3.1-rc8
+      - redpandadata/redpanda-unstable:v25.3.1-rc2
 
     cmds:
       - for: {var: IMAGES}
