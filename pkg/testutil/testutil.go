@@ -39,6 +39,7 @@ const (
 	TestTypeUnit TestType = iota
 	TestTypeIntegration
 	TestTypeAcceptance
+	TestTypeMulticluster
 )
 
 // String returns the human readable name of the test type.
@@ -50,6 +51,8 @@ func (t TestType) String() string {
 		return "integration"
 	case TestTypeAcceptance:
 		return "acceptance"
+	case TestTypeMulticluster:
+		return "multicluster"
 	default:
 		return "unknown"
 	}
@@ -63,7 +66,15 @@ func Type() TestType {
 	if IsIntegration() {
 		return TestTypeIntegration
 	}
+	if IsMulticluster() {
+		return TestTypeMulticluster
+	}
 	return TestTypeUnit
+}
+
+// IsMulticluster returns true if this is a multicluster test
+func IsMulticluster() bool {
+	return skipMulticlusterTests == false
 }
 
 // IsAcceptance returns true if this is an acceptance test
@@ -155,6 +166,24 @@ func SkipIfNotIntegration(t *testing.T) {
 		t.Skipf("-short specified; skipping integration test")
 	} else {
 		RequireTimeout(t, 20*time.Minute)
+	}
+}
+
+func SkipIfNotMulticluster(t *testing.T) {
+	const prefix = "TestMulticluster"
+
+	// NB: This check is performed regardless of the build tags because we want
+	// to catch naming issues as soon as possible.
+	if !strings.HasPrefix(t.Name(), prefix) {
+		t.Fatalf("tests calling SkipIfNotMulticluster must be prefixed with %q; got: %s", prefix, t.Name())
+	}
+
+	if skipMulticlusterTests {
+		t.Skipf("multicluster build flag not set; skipping multicluster test")
+	} else if testing.Short() {
+		t.Skipf("-short specified; skipping multicluster test")
+	} else {
+		RequireTimeout(t, 60*time.Minute)
 	}
 }
 

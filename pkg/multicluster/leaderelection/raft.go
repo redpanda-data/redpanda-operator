@@ -151,6 +151,38 @@ func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, p
 	}, nil
 }
 
+func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
+	serverTLSConfig := &tls.Config{ClientAuth: tls.RequireAndVerifyClientCert}
+	for _, opt := range serverOptions {
+		opt(serverTLSConfig)
+	}
+	serverCredentials := credentials.NewTLS(serverTLSConfig)
+
+	clientTLSConfig := &tls.Config{}
+	for _, opt := range clientOptions {
+		opt(clientTLSConfig)
+	}
+	clientCredentials := credentials.NewTLS(clientTLSConfig)
+
+	initializedPeers := make(map[uint64]*peer, len(peers))
+	for id, peer := range peers {
+		initialized, err := newPeer(peer, clientCredentials)
+		if err != nil {
+			return nil, err
+		}
+		initializedPeers[id] = initialized
+	}
+
+	return &grpcTransport{
+		meta:              meta,
+		addr:              addr,
+		peers:             initializedPeers,
+		serverCredentials: serverCredentials,
+		clientCredentials: clientCredentials,
+		kubeconfigFetcher: fetcher,
+	}, nil
+}
+
 func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
 	initializedPeers := make(map[uint64]*peer, len(peers))
 	for id, peer := range peers {

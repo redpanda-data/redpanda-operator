@@ -11,6 +11,7 @@ package multicluster
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"hash/fnv"
 	"os"
@@ -21,8 +22,10 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -48,6 +51,7 @@ type RaftCluster struct {
 	Name           string
 	Address        string
 	KubeconfigFile string
+	Kubeconfig     *rest.Config
 }
 
 type RaftConfiguration struct {
@@ -58,23 +62,29 @@ type RaftConfiguration struct {
 	HeartbeatInterval time.Duration
 	Meta              []byte
 
-	Scheme     *runtime.Scheme
-	Logger     logr.Logger
-	Metrics    *metricsserver.Options
-	Webhooks   webhook.Server
-	RestConfig *rest.Config
+	Scheme      *runtime.Scheme
+	Logger      logr.Logger
+	Metrics     *metricsserver.Options
+	Webhooks    webhook.Server
+	RestConfig  *rest.Config
+	BaseContext func() context.Context
 
-	// the are only used when the Insecure flag is set to false
-	Insecure        bool
-	CAFile          string
-	PrivateKeyFile  string
-	CertificateFile string
+	Insecure bool
+	// these are only used when the Insecure flag is set to false
+	CAFile           string
+	PrivateKeyFile   string
+	CertificateFile  string
+	ClientTLSOptions []func(*tls.Config)
+	ServerTLSOptions []func(*tls.Config)
 
 	// these are used when bootstrapping mode is enabled
 	Bootstrap           bool
 	KubernetesAPIServer string
 	KubeconfigNamespace string
 	KubeconfigName      string
+
+	// For multicluster runtime to be able to run multiple controllers with the same name
+	SkipNameValidation bool
 }
 
 func (r RaftConfiguration) validate() error {
@@ -84,7 +94,7 @@ func (r RaftConfiguration) validate() error {
 	if r.Address == "" {
 		return errors.New("address must be specified")
 	}
-	if !r.Insecure {
+	if !r.Insecure && (len(r.ClientTLSOptions) == 0 || len(r.ServerTLSOptions) == 0) {
 		if len(r.CAFile) == 0 {
 			return errors.New("ca must be specified")
 		}
@@ -144,7 +154,22 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 			if err != nil {
 				return nil, err
 			}
-			c, err := cluster.New(kubeConfig)
+			c, err := cluster.New(kubeConfig, func(o *cluster.Options) {
+				o.Scheme = config.Scheme
+				o.Logger = config.Logger
+			})
+			if err != nil {
+				return nil, err
+			}
+			if err := clusterProvider.Add(context.Background(), peer.Name, c); err != nil {
+				return nil, err
+			}
+		}
+		if peer.Kubeconfig != nil {
+			c, err := cluster.New(peer.Kubeconfig, func(o *cluster.Options) {
+				o.Scheme = config.Scheme
+				o.Logger = config.Logger
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -205,6 +230,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		LeaderElection: false,
 		Logger:         config.Logger,
 		WebhookServer:  config.Webhooks,
+		BaseContext:    config.BaseContext,
 	}
 	if config.Metrics == nil {
 		opts.Metrics = server.Options{
@@ -212,6 +238,12 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		}
 	} else {
 		opts.Metrics = *config.Metrics
+	}
+
+	if config.SkipNameValidation {
+		opts.Controller = ctrlconfig.Controller{
+			SkipNameValidation: ptr.To(true),
+		}
 	}
 
 	var currentLeader atomic.Uint64
@@ -383,8 +415,12 @@ type leaderRunnable struct {
 func (l *leaderRunnable) Add(r mcmanager.Runnable) {
 	doEngage := func() {
 		for name, cluster := range l.getClusters() {
+			l.logger.Info("engaging cluster", "cluster", name)
+
 			// engage any static clusters
-			_ = r.Engage(context.Background(), name, cluster)
+			if err := r.Engage(context.Background(), name, cluster); err != nil {
+				l.logger.Error(err, "error engaging cluster", "cluster", name)
+			}
 		}
 	}
 

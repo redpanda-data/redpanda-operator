@@ -39,7 +39,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $vol := (list (get (fromJson (include "operator.serviceAccountTokenVolume" (dict "a" (list)))) "r")) -}}
+{{- $vol := (list (get (fromJson (include "operator.serviceAccountTokenVolume" (dict "a" (list)))) "r") (get (fromJson (include "operator.multiclusterTLSVolume" (dict "a" (list $dot)))) "r")) -}}
 {{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $vol) | toJson -}}
@@ -57,7 +57,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $volMount := (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r")) -}}
+{{- $volMount := (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r") (get (fromJson (include "operator.multiclusterTLSVolumeMount" (dict "a" (list $dot)))) "r")) -}}
 {{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volMount) | toJson -}}
@@ -75,12 +75,13 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--log-level" $values.logLevel "--base-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--base-image" $values.image.repository "--raft-address" "0.0.0.0:9443" "--ca-file" "/tls/ca.crt" "--certificate-file" "/tls/tls.crt" "--private-key-file" "/tls/tls.key" "--kubernetes-api-address" $values.multicluster.apiServerExternalAddress "--kubeconfig-namespace" $dot.Release.Namespace "--kubeconfig-name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r")) -}}
 {{- if $values.webhook.enabled -}}
-{{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
+{{- $_ := (set $defaults "--webhook-cert-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.crt")) -}}
+{{- $_ := (set $defaults "--webhook-key-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.key")) -}}
 {{- end -}}
 {{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
-{{- $flags := (coalesce nil) -}}
+{{- $flags := (list "multicluster") -}}
 {{- range $key, $value := (merge (dict) $defaults $userProvided) -}}
 {{- if (eq $value "") -}}
 {{- $flags = (concat (default (list) $flags) (list $key)) -}}
@@ -91,8 +92,34 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+{{- range $_, $peer := $values.multicluster.peers -}}
+{{- $flags = (concat (default (list) $flags) (list (printf "--peer=%s://%s:9443" $peer.name $peer.address))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $flags) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.multiclusterTLSVolume" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%s-multicluster-certificates" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r")) "items" (list (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "tls.crt" "path" "tls.crt")) (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "tls.key" "path" "tls.key")) (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "ca.crt" "path" "ca.crt"))))))) (dict "name" (printf "%s-multicluster-certificates" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r"))))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.multiclusterTLSVolumeMount" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" (printf "%s-multicluster-certificates" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r")) "readOnly" true "mountPath" "/tls"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

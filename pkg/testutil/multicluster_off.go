@@ -7,10 +7,8 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-//go:build integration || acceptance || multicluster
+//go:build !multicluster
 
-package k3d
+package testutil
 
-func init() {
-	usagePermitted = true
-}
+const skipMulticlusterTests = true

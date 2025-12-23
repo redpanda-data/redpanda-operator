@@ -16,7 +16,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=stretchclusters
-// +kubebuilder:resource:shortName=sc
+// +kubebuilder:resource:shortName=stretch
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].message",description=""
 // +kubebuilder:printcolumn:name="License",type="string",JSONPath=".status.conditions[?(@.type==\"LicenseValid\")].message",description=""

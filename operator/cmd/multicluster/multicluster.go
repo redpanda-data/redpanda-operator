@@ -12,6 +12,7 @@ package multicluster
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/url"
@@ -28,6 +29,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/watcher"
 )
 
 // NB: these annotations are necessary because we want the ability to manager service accounts
@@ -188,9 +190,6 @@ func Run(
 		RestConfig:          k8sConfig,
 		Meta:                []byte("node-name=" + opts.Name),
 		Scheme:              controller.MulticlusterScheme,
-		CAFile:              opts.CAFile,
-		CertificateFile:     opts.CertificateFile,
-		PrivateKeyFile:      opts.PrivateKeyFile,
 		Bootstrap:           true,
 		KubernetesAPIServer: opts.KubernetesAPIServer,
 		KubeconfigNamespace: opts.KubeconfigNamespace,
@@ -252,6 +251,70 @@ func Run(
 			TLSOpts: []func(*tls.Config){disableHTTP2, fetchCertificates},
 		})
 	}
+
+	// Set up all of the certificate watching code
+	raftCertWatcher, err := certwatcher.New(opts.CertificateFile, opts.PrivateKeyFile)
+	if err != nil {
+		setupLog.Error(err, "to initialize raft certificate watcher", "error", err)
+		return err
+	}
+	raftCAWatcher, err := watcher.New(opts.CAFile)
+	if err != nil {
+		setupLog.Error(err, "to initialize raft certificate watcher", "error", err)
+		return err
+	}
+	go func() {
+		setupLog.Error(raftCertWatcher.Start(ctx), "raft cert watcher exited")
+	}()
+	go func() {
+		setupLog.Error(raftCAWatcher.Start(ctx), "raft ca watcher exited")
+	}()
+
+	// NB: we dynamically swap out the cached CA read from disk based on
+	// the basic CA rotation code found here:
+	// https://github.com/golang/go/issues/64796#issuecomment-2897933746
+	config.ClientTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
+		c.GetCertificate = raftCertWatcher.GetCertificate
+		c.VerifyConnection = func(cs tls.ConnectionState) error {
+			roots, err := raftCAWatcher.GetCA()
+			if err != nil {
+				return err
+			}
+			opts := x509.VerifyOptions{
+				Roots:         roots,
+				Intermediates: x509.NewCertPool(),
+				KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			}
+			for _, cert := range cs.PeerCertificates[1:] {
+				opts.Intermediates.AddCert(cert)
+			}
+			_, err = cs.PeerCertificates[0].Verify(opts)
+			return err
+		}
+	}}
+	config.ServerTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
+		c.GetCertificate = raftCertWatcher.GetCertificate
+		c.VerifyConnection = func(cs tls.ConnectionState) error {
+			if cs.ServerName == "" {
+				return errors.New("no ServerName provided to verify certificate")
+			}
+			roots, err := raftCAWatcher.GetCA()
+			if err != nil {
+				return err
+			}
+			opts := x509.VerifyOptions{
+				Roots:         roots,
+				DNSName:       cs.ServerName,
+				Intermediates: x509.NewCertPool(),
+			}
+			for _, cert := range cs.PeerCertificates[1:] {
+				opts.Intermediates.AddCert(cert)
+			}
+			_, err = cs.PeerCertificates[0].Verify(opts)
+			return err
+		}
+	}}
+
 	for _, peer := range opts.Peers {
 		config.Peers = append(config.Peers, multicluster.RaftCluster{
 			Name:    peer.Name,
