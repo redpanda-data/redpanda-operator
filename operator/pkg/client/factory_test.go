@@ -111,9 +111,12 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 	scheme := controller.V1Scheme
 
 	env := testenv.New(t, testenv.Options{
-		Scheme: scheme,
-		CRDs:   crds.All(),
-		Logger: testr.New(t),
+		Scheme:              scheme,
+		CRDs:                crds.All(),
+		Logger:              testr.New(t),
+		SkipVCluster:        true,
+		SkipNamespaceClient: true,
+		Agents:              1,
 		ImportImages: []string{
 			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
 			"registry.k8s.io/kube-controller-manager:v1.29.6",
@@ -253,9 +256,11 @@ func TestIntegrationClientFactory(t *testing.T) {
 	var suffix atomic.Int32
 
 	env := testenv.New(t, testenv.Options{
-		Name:   t.Name(),
-		Agents: 1,
-		Scheme: controller.UnifiedScheme,
+		Name:                t.Name(),
+		Agents:              1,
+		Scheme:              controller.UnifiedScheme,
+		SkipVCluster:        true,
+		SkipNamespaceClient: true,
 		// Logger: log,
 		ImportImages: []string{
 			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
@@ -414,9 +419,11 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	testutil.SkipIfNotIntegration(t)
 
 	env := testenv.New(t, testenv.Options{
-		Name:   "client-tls-listeners",
-		Agents: 1,
-		Scheme: controller.UnifiedScheme,
+		Name:                "client-tls-listeners",
+		Agents:              1,
+		Scheme:              controller.UnifiedScheme,
+		SkipVCluster:        true,
+		SkipNamespaceClient: true,
 		// Logger: log,
 		ImportImages: []string{
 			"ghcr.io/loft-sh/vcluster-pro:0.23.0",

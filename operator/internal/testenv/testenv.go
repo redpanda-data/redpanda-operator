@@ -52,13 +52,14 @@ type Env struct {
 }
 
 type Options struct {
-	Name         string
-	Agents       int
-	SkipVCluster bool
-	Scheme       *runtime.Scheme
-	CRDs         []*apiextensionsv1.CustomResourceDefinition
-	Logger       logr.Logger
-	ImportImages []string
+	Name                string
+	Agents              int
+	SkipVCluster        bool
+	SkipNamespaceClient bool
+	Scheme              *runtime.Scheme
+	CRDs                []*apiextensionsv1.CustomResourceDefinition
+	Logger              logr.Logger
+	ImportImages        []string
 }
 
 // New returns a configured [Env] that utilizes an [vcluster.Cluster] in a
@@ -121,7 +122,12 @@ func New(t *testing.T, options Options) *Env {
 
 	require.NoError(t, c.Create(ctx, ns))
 
-	otelClient := otelkube.NewClient(client.NewNamespacedClient(c, ns.Name))
+	var otelClient client.Client
+	if options.SkipNamespaceClient {
+		otelClient = otelkube.NewClient(c)
+	} else {
+		otelClient = otelkube.NewClient(client.NewNamespacedClient(c, ns.Name))
+	}
 
 	env := &Env{
 		t:         t,
