@@ -96,3 +96,15 @@ additionalCmdFlags:
 - --configurator-base-image=my.repo.com/configurator
 - --configurator-tag=XYZ
 - --configurator-image-pull-policy=IfNotPresent
+
+-- multicluster --
+crds:
+  enabled: true
+multicluster:
+  enabled: true
+  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
+  peers:
+    - name: west
+      address: some.dns.label
+    - name: east
+      address: some.other.dns.label

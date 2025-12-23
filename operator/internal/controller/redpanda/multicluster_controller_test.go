@@ -17,17 +17,6 @@ import (
 	"testing"
 	"time"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -35,6 +24,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func TestMulticlusterController(t *testing.T) {
@@ -45,9 +45,8 @@ func TestMulticlusterController(t *testing.T) {
 type MulticlusterControllerSuite struct {
 	suite.Suite
 
-	ctx           context.Context
-	envs          []*testenv.Env
-	clientFactory internalclient.ClientFactory
+	ctx  context.Context
+	envs []*testenv.Env
 }
 
 var (

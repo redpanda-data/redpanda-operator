@@ -41,8 +41,7 @@ type CAWatcher struct {
 	interval        time.Duration
 	log             logr.Logger
 
-	caPath  string
-	keyPath string
+	caPath string
 
 	cachedCA []byte
 

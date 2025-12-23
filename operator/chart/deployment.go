@@ -50,10 +50,10 @@ func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 	if values.Multicluster.Enabled {
 		return MulticlusterDeployment(dot)
 	}
-	return SingleDeployment(dot)
+	return SingleClusterDeployment(dot)
 }
 
-func SingleDeployment(dot *helmette.Dot) *appsv1.Deployment {
+func SingleClusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	dep := &appsv1.Deployment{

@@ -62,7 +62,6 @@ type Cluster struct {
 	Name string
 
 	mu            sync.Mutex
-	ip            string
 	restConfig    *kube.RESTConfig
 	agentCounter  int32
 	skipManifests bool

@@ -152,13 +152,13 @@ func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, p
 }
 
 func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
-	serverTLSConfig := &tls.Config{ClientAuth: tls.RequireAndVerifyClientCert}
+	serverTLSConfig := &tls.Config{ClientAuth: tls.RequireAndVerifyClientCert} // nolint:gosec // the tls version is configurable by calling code
 	for _, opt := range serverOptions {
 		opt(serverTLSConfig)
 	}
 	serverCredentials := credentials.NewTLS(serverTLSConfig)
 
-	clientTLSConfig := &tls.Config{}
+	clientTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
 	for _, opt := range clientOptions {
 		opt(clientTLSConfig)
 	}

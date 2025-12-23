@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_deployment.go.tpl
+// +gotohelm:filename=_multicluster_deployment.go.tpl
 package operator
 
 import (

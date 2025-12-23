@@ -344,6 +344,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -356,6 +357,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -368,6 +370,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -1108,6 +1111,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -1120,6 +1124,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -1132,6 +1137,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -1899,6 +1905,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -1911,6 +1918,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -1923,6 +1931,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -2834,6 +2843,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -2846,6 +2856,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -2858,6 +2869,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -3754,6 +3766,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -3766,6 +3779,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -3778,6 +3792,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -4532,6 +4547,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -4544,6 +4560,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -4556,6 +4573,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -5439,6 +5457,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -5451,6 +5470,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -5463,6 +5483,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -6413,6 +6434,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -6425,6 +6447,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -6437,6 +6460,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -7202,6 +7226,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -7214,6 +7239,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -7226,6 +7252,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -7985,6 +8012,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -7997,6 +8025,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -8009,6 +8038,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -8807,6 +8837,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -8819,6 +8850,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -8831,6 +8863,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -9428,6 +9461,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -9440,6 +9474,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -9452,6 +9487,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -10386,6 +10422,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -10398,6 +10435,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -10410,6 +10448,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -11216,6 +11255,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -11228,6 +11268,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -11240,6 +11281,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -11872,6 +11914,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -11884,6 +11927,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -11896,6 +11940,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -12662,6 +12707,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -12674,6 +12720,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -12686,6 +12733,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -13709,6 +13757,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -13721,6 +13770,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -13733,6 +13783,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -14702,6 +14753,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -14714,6 +14766,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -14726,6 +14779,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -15684,6 +15738,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -15696,6 +15751,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -15708,6 +15764,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -16730,6 +16787,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -16742,6 +16800,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -16754,6 +16813,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -17799,6 +17859,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -17811,6 +17872,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -17823,6 +17885,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -18822,6 +18885,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -18834,6 +18898,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -18846,6 +18911,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -19779,6 +19845,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -19791,6 +19858,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -19803,6 +19871,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -20974,6 +21043,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -20986,6 +21056,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -20998,6 +21069,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -22268,6 +22340,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -22280,6 +22353,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -22292,6 +22366,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -23285,6 +23360,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -23297,6 +23373,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -23309,6 +23386,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -24436,6 +24514,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -24448,6 +24527,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -24460,6 +24540,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -25882,6 +25963,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -25894,6 +25976,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -25906,6 +25989,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -27172,6 +27256,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -27184,6 +27269,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -27196,6 +27282,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -28115,6 +28202,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -28127,6 +28215,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -28139,6 +28228,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -30846,6 +30936,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -30858,6 +30949,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -30870,6 +30962,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -32848,6 +32941,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -32860,6 +32954,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -32872,6 +32967,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -35408,6 +35504,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -35420,6 +35517,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -35432,6 +35530,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -36835,6 +36934,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -36847,6 +36947,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -36859,6 +36960,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -38855,6 +38957,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -38867,6 +38970,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -38879,6 +38983,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -40666,6 +40771,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -40678,6 +40784,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -40690,6 +40797,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -41947,6 +42055,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -41959,6 +42068,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -41971,6 +42081,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -43350,6 +43461,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -43362,6 +43474,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -43374,6 +43487,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -44664,6 +44778,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -44676,6 +44791,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -44688,6 +44804,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -46035,6 +46152,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -46047,6 +46165,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -46059,6 +46178,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -46933,6 +47053,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -46945,6 +47066,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -46957,6 +47079,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -47830,6 +47953,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -47842,6 +47966,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -47854,6 +47979,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -48593,6 +48719,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -48605,6 +48732,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -48617,6 +48745,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -49373,6 +49502,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -49385,6 +49515,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -49397,6 +49528,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -50136,6 +50268,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -50148,6 +50281,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -50160,6 +50294,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -50553,6 +50688,936 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
                 path: namespace
+-- testdata/multicluster.yaml.golden --
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+data:
+  controller_manager_config.yaml: |-
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    health:
+      healthProbeBindAddress: :8081
+    kind: ControllerManagerConfig
+    leaderElection:
+      leaderElect: true
+      resourceName: aa9fc693.vectorized.io
+    metrics:
+      bindAddress: 127.0.0.1:8080
+    webhook:
+      port: 9443
+kind: ConfigMap
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-config
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-default-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - controllerrevisions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  - issuers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools/finalizers
+  - redpandaroles/finalizers
+  - redpandas/finalizers
+  - schemas/finalizers
+  - shadowlinks/finalizers
+  - stretchclusters/finalizers
+  - topics/finalizers
+  - users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools/status
+  - redpandaroles/status
+  - redpandas/status
+  - schemas/status
+  - shadowlinks/status
+  - stretchclusters/status
+  - topics/status
+  - users/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandaroles
+  - schemas
+  - shadowlinks
+  - stretchclusters
+  - topics
+  - users
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-additional-controllers-default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - nodes
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-additional-controllers-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-additional-controllers-default
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-metrics-service
+  namespace: default
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/name: operator
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: operator
+      app.kubernetes.io/name: operator
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app.kubernetes.io/instance: operator
+        app.kubernetes.io/name: operator
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - multicluster
+        - --base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --base-tag=v25.3.1
+        - --ca-file=/tls/ca.crt
+        - --certificate-file=/tls/tls.crt
+        - --health-probe-bind-address=:8081
+        - --kubeconfig-name=operator
+        - --kubeconfig-namespace=default
+        - --kubernetes-api-address=https://dns.address.for.my.kubernetes.api.server:8080
+        - --log-level=info
+        - --metrics-bind-address=:8443
+        - --private-key-file=/tls/tls.key
+        - --raft-address=0.0.0.0:9443
+        - --peer=west://some.dns.label:9443
+        - --peer=east://some.other.dns.label:9443
+        command:
+        - /manager
+        env: []
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz/
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+        - mountPath: /tls
+          name: operator-multicluster-certificates
+          readOnly: true
+      ephemeralContainers: null
+      imagePullSecrets: []
+      initContainers: []
+      nodeSelector: {}
+      securityContext:
+        runAsUser: 65532
+      serviceAccountName: operator
+      terminationGracePeriodSeconds: 10
+      tolerations: []
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+      - name: operator-multicluster-certificates
+        secret:
+          items:
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          - key: ca.crt
+            path: ca.crt
+          secretName: operator-multicluster-certificates
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-crd-job
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-crd-job-default
+rules:
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+  - get
+  - patch
+  - update
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-crd-job-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-crd-job-default
+subjects:
+- kind: ServiceAccount
+  name: operator-crd-job
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-5"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v25.3.1
+    helm.sh/chart: operator-25.3.1
+  name: operator-crds
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app.kubernetes.io/instance: operator
+        app.kubernetes.io/name: operator
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - crd
+        - --multicluster
+        command:
+        - /redpanda-operator
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
+        imagePullPolicy: IfNotPresent
+        name: crd-installation
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      imagePullSecrets: []
+      nodeSelector: {}
+      restartPolicy: OnFailure
+      serviceAccountName: operator-crd-job
+      terminationGracePeriodSeconds: 10
+      tolerations: []
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
 -- testdata/operator-cluster-scoped.yaml.golden --
 ---
 # Source: operator/templates/entry-point.yaml
@@ -50899,6 +51964,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -50911,6 +51977,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -50923,6 +51990,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
@@ -51793,6 +52861,7 @@ rules:
   - redpandas/finalizers
   - schemas/finalizers
   - shadowlinks/finalizers
+  - stretchclusters/finalizers
   - topics/finalizers
   - users/finalizers
   verbs:
@@ -51805,6 +52874,7 @@ rules:
   - redpandas/status
   - schemas/status
   - shadowlinks/status
+  - stretchclusters/status
   - topics/status
   - users/status
   verbs:
@@ -51817,6 +52887,7 @@ rules:
   - redpandaroles
   - schemas
   - shadowlinks
+  - stretchclusters
   - topics
   - users
   verbs:
