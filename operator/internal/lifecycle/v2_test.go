@@ -33,6 +33,7 @@ import (
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -68,7 +69,7 @@ func TestV2ResourceClient(t *testing.T) {
 
 	logger := zap.New(opts...)
 
-	manager, err := ctrl.NewManager(config, ctrl.Options{
+	manager, err := multicluster.NewSingleClusterManager(config, ctrl.Options{
 		Scheme: controller.V2Scheme,
 		Logger: logger,
 		Metrics: metricsserver.Options{

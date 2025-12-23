@@ -23,10 +23,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 const (
@@ -45,15 +48,15 @@ func init() {
 }
 
 type MockBuilder struct {
-	*builder.Builder
+	*mcbuilder.Builder
 	base    string
 	watches []string
 	owns    []string
 }
 
-func NewMockBuilder(manager ctrl.Manager) *MockBuilder {
+func NewMockBuilder(manager multicluster.Manager) *MockBuilder {
 	return &MockBuilder{
-		Builder: ctrl.NewControllerManagedBy(manager),
+		Builder: mcbuilder.ControllerManagedBy(manager),
 	}
 }
 
@@ -69,17 +72,17 @@ func (b *MockBuilder) Watched() []string {
 	return b.watches
 }
 
-func (b *MockBuilder) For(object client.Object, opts ...builder.ForOption) *builder.Builder {
+func (b *MockBuilder) For(object client.Object, opts ...mcbuilder.ForOption) *mcbuilder.Builder {
 	b.base = fmt.Sprintf("%T", object)
 	return b.Builder.For(object, opts...)
 }
 
-func (b *MockBuilder) Owns(object client.Object, opts ...builder.OwnsOption) *builder.Builder {
+func (b *MockBuilder) Owns(object client.Object, opts ...mcbuilder.OwnsOption) *mcbuilder.Builder {
 	b.owns = append(b.owns, fmt.Sprintf("%T", object))
 	return b.Builder.Owns(object, opts...)
 }
 
-func (b *MockBuilder) Watches(object client.Object, eventHandler handler.EventHandler, opts ...builder.WatchesOption) *builder.Builder {
+func (b *MockBuilder) Watches(object client.Object, eventHandler mchandler.TypedEventHandlerFunc[client.Object, mcreconcile.Request], opts ...mcbuilder.WatchesOption) *mcbuilder.Builder {
 	b.watches = append(b.watches, fmt.Sprintf("%T", object))
 	return b.Builder.Watches(object, eventHandler, opts...)
 }

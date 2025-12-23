@@ -928,20 +928,17 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
-	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
-		mgr := mcmgr.GetLocalManager()
-		dialer := kube.NewPodDialer(mgr.GetConfig())
-		s.clientFactory = internalclient.NewFactory(mcmgr, nil).WithDialer(dialer.DialContext)
+	s.env.SetupManager(s.setupRBAC(), func(mgr multicluster.Manager) error {
+		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
+		s.clientFactory = internalclient.NewFactory(mgr, nil).WithDialer(dialer.DialContext)
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
-			Client: mgr.GetClient(),
+			Manager: mgr,
 		}).SetupWithManager(s.ctx, mgr))
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
-			Client:        mgr.GetClient(),
-			KubeConfig:    mgr.GetConfig(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			Manager:       mgr,
 			ClientFactory: s.clientFactory,
 			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(
 				lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},

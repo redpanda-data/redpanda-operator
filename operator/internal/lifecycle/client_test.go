@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,7 +41,7 @@ func setupContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(parentCtx, 1*time.Minute)
 }
 
-func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) ctrl.Manager {
+func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) multicluster.Manager {
 	t.Helper()
 
 	server := &envtest.APIServer{}
@@ -76,7 +77,7 @@ func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) ctrl.Manag
 
 	logger := zap.New(opts...)
 
-	manager, err := ctrl.NewManager(config, ctrl.Options{
+	manager, err := multicluster.NewSingleClusterManager(config, ctrl.Options{
 		Scheme: runtimeScheme,
 		Logger: logger,
 		Metrics: metricsserver.Options{
@@ -97,7 +98,7 @@ func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) ctrl.Manag
 		}
 	}()
 
-	client := manager.GetClient()
+	client := manager.GetLocalManager().GetClient()
 
 	require.NoError(t, InstallCRDs(ctx, client))
 
@@ -119,7 +120,7 @@ type clientTestInstances struct {
 	nodeRenderer     *MockNodePoolRenderer
 	resourceRenderer *MockSimpleResourceRenderer
 	resourceClient   *ResourceClient[MockCluster, *MockCluster]
-	manager          ctrl.Manager
+	manager          multicluster.Manager
 	k8sClient        client.Client
 }
 
@@ -150,7 +151,7 @@ func (tt *clientTest) setupClient(ctx context.Context, t *testing.T) (*clientTes
 		resourceRenderer: resourceRenderer,
 		resourceClient:   resourceClient,
 		manager:          manager,
-		k8sClient:        manager.GetClient(),
+		k8sClient:        manager.GetLocalManager().GetClient(),
 	}, cancel
 }
 
@@ -325,7 +326,7 @@ func TestClientDeleteAll(t *testing.T) {
 
 			for _, resource := range tt.InitialResources() {
 				// we need to set an owner ref since making sure those are present on namespace-scoped resources
-				require.NoError(t, controllerutil.SetOwnerReference(cluster, resource, instances.manager.GetScheme()))
+				require.NoError(t, controllerutil.SetOwnerReference(cluster, resource, instances.manager.GetLocalManager().GetScheme()))
 				require.NoError(t, instances.k8sClient.Create(ctx, resource))
 			}
 
@@ -390,7 +391,7 @@ func TestClientWatchResources(t *testing.T) {
 		tt.testParams.Run(parentCtx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
 			builder := NewMockBuilder(instances.manager)
 
-			require.NoError(t, instances.resourceClient.WatchResources(builder, &MockCluster{}))
+			require.NoError(t, instances.resourceClient.WatchResources(builder, &MockCluster{}, []string{mcmanager.LocalCluster}))
 			require.Equal(t, "*lifecycle.MockCluster", builder.Base())
 
 			require.ElementsMatch(t, tt.ownedResources, builder.Owned())

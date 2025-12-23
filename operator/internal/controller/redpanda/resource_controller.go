@@ -20,10 +20,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
@@ -45,18 +47,18 @@ type ResourceReconciler[T client.Object] interface {
 }
 
 type ResourceController[T any, U Resource[T]] struct {
-	client.Client
 	internalclient.ClientFactory
+	manager multicluster.Manager
 
 	reconciler      ResourceReconciler[U]
 	name            string
 	periodicTimeout time.Duration
 }
 
-func NewResourceController[T any, U Resource[T]](c client.Client, factory internalclient.ClientFactory, reconciler ResourceReconciler[U], name string) *ResourceController[T, U] {
+func NewResourceController[T any, U Resource[T]](manager multicluster.Manager, factory internalclient.ClientFactory, reconciler ResourceReconciler[U], name string) *ResourceController[T, U] {
 	return &ResourceController[T, U]{
-		Client:        c,
 		ClientFactory: factory,
+		manager:       manager,
 		reconciler:    reconciler,
 		name:          name,
 	}
@@ -67,7 +69,7 @@ func (r *ResourceController[T, U]) PeriodicallyReconcile(timeout time.Duration) 
 	return r
 }
 
-func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx).WithName(fmt.Sprintf("%s.Reconcile", r.name))
 	l.V(1).Info("Starting reconcile loop")
 	start := time.Now()
@@ -75,8 +77,16 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Reque
 		l.V(1).Info("Finished reconciling", "elapsed", time.Since(start))
 	}()
 
+	cluster, err := r.manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		l.Error(err, "unable to fetch cluster, skipping reconciliation")
+		return ctrl.Result{}, nil
+	}
+
+	k8sClient := cluster.GetClient()
+
 	object := U(new(T))
-	if err := r.Get(ctx, req.NamespacedName, object); err != nil {
+	if err := k8sClient.Get(ctx, req.NamespacedName, object); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -91,7 +101,7 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, err
 		}
 		if controllerutil.RemoveFinalizer(object, FinalizerKey) {
-			return ctrl.Result{}, r.Update(ctx, object)
+			return ctrl.Result{}, k8sClient.Update(ctx, object)
 		}
 		return ctrl.Result{}, nil
 	}
@@ -99,7 +109,7 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Reque
 	if !controllerutil.ContainsFinalizer(object, FinalizerKey) {
 		patch := r.reconciler.FinalizerPatch(request)
 		if patch != nil {
-			if err := r.Patch(ctx, object, patch, client.ForceOwnership, lifecycle.DefaultFieldOwner); err != nil {
+			if err := k8sClient.Patch(ctx, object, patch, client.ForceOwnership, lifecycle.DefaultFieldOwner); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -108,7 +118,7 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Reque
 	patch, err := r.reconciler.SyncResource(ctx, request)
 	var syncError error
 	if patch != nil {
-		syncError = r.Status().Patch(ctx, object, patch, client.ForceOwnership, lifecycle.DefaultFieldOwner)
+		syncError = k8sClient.Status().Patch(ctx, object, patch, client.ForceOwnership, lifecycle.DefaultFieldOwner)
 	}
 
 	result := ctrl.Result{}

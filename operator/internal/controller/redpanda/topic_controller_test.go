@@ -27,6 +27,8 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -87,9 +89,8 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	}
 
 	tr := TopicReconciler{
-		Client:  c,
+		Manager: mgr,
 		Factory: factory,
-		Scheme:  controller.UnifiedScheme,
 	}
 
 	t.Run("create_topic", func(t *testing.T) {
@@ -114,12 +115,8 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err := c.Create(ctx, &createTopic)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -178,12 +175,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err := c.Create(ctx, &createTopic)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -242,12 +236,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err = c.Create(ctx, &createTopic)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -306,12 +297,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		require.NoError(t, err)
 
 		// when topic custom resource reconciled
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		_, err = tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -377,12 +365,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		require.NoError(t, err)
 
 		// when topic custom resource reconciled
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		_, err = tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -435,12 +420,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		require.NoError(t, err)
 
 		// when topic custom resource reconciled
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		_, err = tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -499,12 +481,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		require.NoError(t, err)
 
 		// when topic custom resource reconciled
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      removeTopicPropertyName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: removeTopicPropertyName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		_, err = tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -588,12 +567,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err := c.Create(ctx, &tieredStorageConf)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      twoTieredStorageConfTopicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: twoTieredStorageConfTopicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		_, err = tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -679,12 +655,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err := c.Create(ctx, &topicStatus)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -731,12 +704,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err = c.Create(ctx, &updateTopic)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      updateTopicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: updateTopicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		_, err = tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -772,12 +742,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	t.Run("ignore_not_found", func(t *testing.T) {
 		topicName := "ignore-not-found"
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      topicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -807,12 +774,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err = c.Delete(ctx, &deleteTopic)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      deleteTopicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: deleteTopicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
@@ -851,12 +815,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err = c.Delete(ctx, &noneExistentTestTopic)
 		require.NoError(t, err)
 
-		req := ctrl.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      deleteNoneExistentTopicName,
-				Namespace: testNamespace,
-			},
-		}
+		key := types.NamespacedName{Name: deleteNoneExistentTopicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
