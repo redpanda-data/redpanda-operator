@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,6 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 var parentCtx = context.Background()

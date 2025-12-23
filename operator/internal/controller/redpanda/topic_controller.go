@@ -101,7 +101,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req mcreconcile.Request
 	}
 
 	l.Info("reconciling topic")
-	topic, result, err := r.reconcile(ctx, k8sClient, r.getRecorder(cluster), topic, l)
+	topic, result, err := r.reconcile(ctx, r.getRecorder(cluster), topic, l)
 
 	l.Info("updating topic status")
 	// Update status after reconciliation.
@@ -169,7 +169,7 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 	return builder.Complete(r)
 }
 
-func (r *TopicReconciler) reconcile(ctx context.Context, k8sClient client.Client, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
+func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
 	l = l.WithName("reconcile")
 
 	interval := metav1.Duration{Duration: time.Second * 3}
