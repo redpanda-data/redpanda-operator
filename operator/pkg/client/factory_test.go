@@ -184,7 +184,8 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 
 	cr := vectorizedv1alpha1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name:      "test",
+			Namespace: env.Namespace(),
 		},
 		Spec: vectorizedv1alpha1.ClusterSpec{
 			Image:    "docker.io/redpandadata/redpanda",
@@ -220,7 +221,8 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 	require.Eventuallyf(t, func() bool {
 		cluster := vectorizedv1alpha1.Cluster{}
 		if err := env.Client().Get(testutil.Context(t), types.NamespacedName{
-			Name: "test",
+			Name:      "test",
+			Namespace: env.Namespace(),
 		}, &cluster); err != nil {
 			return false
 		}
