@@ -22,6 +22,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -194,6 +195,7 @@ func Run(
 		KubernetesAPIServer: opts.KubernetesAPIServer,
 		KubeconfigNamespace: opts.KubeconfigNamespace,
 		KubeconfigName:      opts.KubeconfigName,
+		HealthProbeAddress:  opts.HealthProbeBindAddress,
 	}
 
 	// Disabling http/2 is to
@@ -274,7 +276,9 @@ func Run(
 	// the basic CA rotation code found here:
 	// https://github.com/golang/go/issues/64796#issuecomment-2897933746
 	config.ClientTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
-		c.GetCertificate = raftCertWatcher.GetCertificate
+		c.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			return raftCertWatcher.GetCertificate(nil)
+		}
 		c.InsecureSkipVerify = true // nolint:gosec // verification below
 		c.VerifyConnection = func(cs tls.ConnectionState) error {
 			roots, err := raftCAWatcher.GetCA()
@@ -284,7 +288,7 @@ func Run(
 			opts := x509.VerifyOptions{
 				Roots:         roots,
 				Intermediates: x509.NewCertPool(),
-				KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+				KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 			}
 			for _, cert := range cs.PeerCertificates[1:] {
 				opts.Intermediates.AddCert(cert)
@@ -294,26 +298,23 @@ func Run(
 		}
 	}}
 	config.ServerTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
-		c.GetCertificate = raftCertWatcher.GetCertificate
-		c.InsecureSkipVerify = true // nolint:gosec // verification below
-		c.VerifyConnection = func(cs tls.ConnectionState) error {
-			if cs.ServerName == "" {
-				return errors.New("no ServerName provided to verify certificate")
-			}
+		c.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
 			roots, err := raftCAWatcher.GetCA()
 			if err != nil {
-				return err
+				return nil, err
 			}
-			opts := x509.VerifyOptions{
-				Roots:         roots,
-				DNSName:       cs.ServerName,
-				Intermediates: x509.NewCertPool(),
+			cert, err := raftCertWatcher.GetCertificate(hello)
+			if err != nil {
+				return nil, err
 			}
-			for _, cert := range cs.PeerCertificates[1:] {
-				opts.Intermediates.AddCert(cert)
+			if cert == nil {
+				return nil, errors.New("certificate not loaded")
 			}
-			_, err = cs.PeerCertificates[0].Verify(opts)
-			return err
+			return &tls.Config{
+				Certificates: []tls.Certificate{*cert},
+				RootCAs:      roots,
+				ClientAuth:   tls.RequireAndVerifyClientCert,
+			}, nil
 		}
 	}}
 
@@ -332,6 +333,16 @@ func Run(
 	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
+	}
+
+	if config.HealthProbeAddress != "" {
+		if err := manager.GetLocalManager().AddHealthzCheck("health", healthz.Ping); err != nil {
+			return err
+		}
+
+		if err := manager.GetLocalManager().AddReadyzCheck("check", healthz.Ping); err != nil {
+			return err
+		}
 	}
 
 	return manager.Start(ctrl.SetupSignalHandler())

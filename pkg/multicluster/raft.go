@@ -62,12 +62,13 @@ type RaftConfiguration struct {
 	HeartbeatInterval time.Duration
 	Meta              []byte
 
-	Scheme      *runtime.Scheme
-	Logger      logr.Logger
-	Metrics     *metricsserver.Options
-	Webhooks    webhook.Server
-	RestConfig  *rest.Config
-	BaseContext func() context.Context
+	Scheme             *runtime.Scheme
+	Logger             logr.Logger
+	Metrics            *metricsserver.Options
+	HealthProbeAddress string
+	Webhooks           webhook.Server
+	RestConfig         *rest.Config
+	BaseContext        func() context.Context
 
 	Insecure bool
 	// these are only used when the Insecure flag is set to false
@@ -241,6 +242,10 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		}
 	} else {
 		opts.Metrics = *config.Metrics
+	}
+
+	if config.HealthProbeAddress != "" {
+		opts.HealthProbeBindAddress = config.HealthProbeAddress
 	}
 
 	if config.SkipNameValidation {
