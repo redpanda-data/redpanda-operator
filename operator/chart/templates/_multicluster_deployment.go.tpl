@@ -6,6 +6,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
+{{- if (eq $values.multicluster.name "") -}}
+{{- $_ := (fail "name must be specified in multicluster mode") -}}
+{{- end -}}
 {{- if (eq $values.multicluster.apiServerExternalAddress "") -}}
 {{- $_ := (fail "apiServerExternalAddress must be specified in multicluster mode") -}}
 {{- end -}}
@@ -29,7 +32,7 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "manager" "image" (get (fromJson (include "operator.containerImage" (dict "a" (list $dot)))) "r") "imagePullPolicy" $values.image.pullPolicy "command" (list "/manager") "args" (get (fromJson (include "operator.multiclusterOperatorArguments" (dict "a" (list $dot)))) "r") "securityContext" (mustMergeOverwrite (dict) (dict "allowPrivilegeEscalation" false)) "ports" (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "webhook-server" "containerPort" (9443 | int) "protocol" "TCP")) (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "https" "containerPort" (8443 | int) "protocol" "TCP"))) "volumeMounts" (get (fromJson (include "operator.multiclusterOperatorPodVolumesMounts" (dict "a" (list $dot)))) "r") "livenessProbe" (get (fromJson (include "operator.livenessProbe" (dict "a" (list $dot $podTerminationGracePeriodSeconds)))) "r") "readinessProbe" (get (fromJson (include "operator.readinessProbe" (dict "a" (list $dot $podTerminationGracePeriodSeconds)))) "r") "resources" $values.resources)))) | toJson -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "manager" "image" (get (fromJson (include "operator.containerImage" (dict "a" (list $dot)))) "r") "imagePullPolicy" $values.image.pullPolicy "command" (list "/redpanda-operator") "args" (get (fromJson (include "operator.multiclusterOperatorArguments" (dict "a" (list $dot)))) "r") "securityContext" (mustMergeOverwrite (dict) (dict "allowPrivilegeEscalation" false)) "ports" (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "webhook-server" "containerPort" (9443 | int) "protocol" "TCP")) (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "https" "containerPort" (8443 | int) "protocol" "TCP"))) "volumeMounts" (get (fromJson (include "operator.multiclusterOperatorPodVolumesMounts" (dict "a" (list $dot)))) "r") "livenessProbe" (get (fromJson (include "operator.livenessProbe" (dict "a" (list $dot $podTerminationGracePeriodSeconds)))) "r") "readinessProbe" (get (fromJson (include "operator.readinessProbe" (dict "a" (list $dot $podTerminationGracePeriodSeconds)))) "r") "resources" $values.resources)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -75,7 +78,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--log-level" $values.logLevel "--base-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--base-image" $values.image.repository "--raft-address" "0.0.0.0:9443" "--ca-file" "/tls/ca.crt" "--certificate-file" "/tls/tls.crt" "--private-key-file" "/tls/tls.key" "--kubernetes-api-address" $values.multicluster.apiServerExternalAddress "--kubeconfig-namespace" $dot.Release.Namespace "--kubeconfig-name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r")) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--log-level" $values.logLevel "--name" $values.multicluster.name "--base-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--base-image" $values.image.repository "--raft-address" "0.0.0.0:9443" "--ca-file" "/tls/ca.crt" "--certificate-file" "/tls/tls.crt" "--private-key-file" "/tls/tls.key" "--kubernetes-api-address" $values.multicluster.apiServerExternalAddress "--kubeconfig-namespace" $dot.Release.Namespace "--kubeconfig-name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r")) -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.crt")) -}}
 {{- $_ := (set $defaults "--webhook-key-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.key")) -}}

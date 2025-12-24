@@ -102,6 +102,7 @@ crds:
   enabled: true
 multicluster:
   enabled: true
+  name: blue
   apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
   peers:
     - name: west

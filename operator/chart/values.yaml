@@ -187,6 +187,7 @@ podTemplate:
 # Multicluster settings
 multicluster:
   enabled: false
+  name: ""
   apiServerExternalAddress: ""
   # peers follows the form:
   #  - name: peer-1

@@ -32,6 +32,7 @@ type Peer struct {
 
 type Multicluster struct {
 	Enabled                      bool   `json:"enabled"`
+	Name                         string `json:"name"`
 	KubernetesAPIExternalAddress string `json:"apiServerExternalAddress"`
 	Peers                        []Peer `json:"peers"`
 }

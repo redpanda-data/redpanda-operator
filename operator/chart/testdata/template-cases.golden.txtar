@@ -51406,12 +51406,13 @@ spec:
         - --kubernetes-api-address=https://dns.address.for.my.kubernetes.api.server:8080
         - --log-level=info
         - --metrics-bind-address=:8443
+        - --name=blue
         - --private-key-file=/tls/tls.key
         - --raft-address=0.0.0.0:9443
         - --peer=west://some.dns.label:9443
         - --peer=east://some.other.dns.label:9443
         command:
-        - /manager
+        - /redpanda-operator
         env: []
         image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
         imagePullPolicy: IfNotPresent

@@ -275,6 +275,7 @@ func Run(
 	// https://github.com/golang/go/issues/64796#issuecomment-2897933746
 	config.ClientTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
 		c.GetCertificate = raftCertWatcher.GetCertificate
+		c.InsecureSkipVerify = true // nolint:gosec // verification below
 		c.VerifyConnection = func(cs tls.ConnectionState) error {
 			roots, err := raftCAWatcher.GetCA()
 			if err != nil {
@@ -294,6 +295,7 @@ func Run(
 	}}
 	config.ServerTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
 		c.GetCertificate = raftCertWatcher.GetCertificate
+		c.InsecureSkipVerify = true // nolint:gosec // verification below
 		c.VerifyConnection = func(cs tls.ConnectionState) error {
 			if cs.ServerName == "" {
 				return errors.New("no ServerName provided to verify certificate")

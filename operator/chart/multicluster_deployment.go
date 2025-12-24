@@ -25,6 +25,10 @@ import (
 func MulticlusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 	values := helmette.Unwrap[Values](dot.Values)
 
+	if values.Multicluster.Name == "" {
+		panic("name must be specified in multicluster mode")
+	}
+
 	if values.Multicluster.KubernetesAPIExternalAddress == "" {
 		panic("apiServerExternalAddress must be specified in multicluster mode")
 	}
@@ -92,7 +96,7 @@ func multiclusterOperatorContainers(dot *helmette.Dot, podTerminationGracePeriod
 			Name:            "manager",
 			Image:           containerImage(dot),
 			ImagePullPolicy: values.Image.PullPolicy,
-			Command:         []string{"/manager"},
+			Command:         []string{"/redpanda-operator"},
 			Args:            multiclusterOperatorArguments(dot),
 			SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To(false)},
 			Ports: []corev1.ContainerPort{
@@ -168,6 +172,7 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 		"--health-probe-bind-address": ":8081",
 		"--metrics-bind-address":      ":8443",
 		"--log-level":                 values.LogLevel,
+		"--name":                      values.Multicluster.Name,
 		"--base-tag":                  containerTag(dot),
 		"--base-image":                values.Image.Repository,
 		"--raft-address":              "0.0.0.0:9443",

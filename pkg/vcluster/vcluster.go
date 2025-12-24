@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,7 +37,7 @@ const (
 	// vClusterChartVersion is the pinned version of the vCluster helm chart. It's
 	// pinned to avoid sudden failures if there are backwards incompatible changes
 	// added.
-	vClusterChartVersion    = "v0.23.0"
+	vClusterChartVersion    = "v0.28.0"
 	certManagerChartversion = "v1.8.0"
 )
 
@@ -46,6 +47,10 @@ type Cluster struct {
 	helm       *helm.Client
 	release    helm.Release
 	namespace  *corev1.Namespace
+}
+
+func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {
+	return &vclusterRESTClientGetter{cluster: c}
 }
 
 func ForTestInShared(t *testing.T) *Cluster {

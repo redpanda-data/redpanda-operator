@@ -206,7 +206,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		})
 	}
 
-	if !config.Insecure {
+	if !config.Insecure && (len(config.ClientTLSOptions) == 0 || len(config.ServerTLSOptions) == 0) {
 		var err error
 
 		raftConfig.CA, err = os.ReadFile(config.CAFile)
@@ -223,6 +223,9 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else if len(config.ClientTLSOptions) != 0 && len(config.ServerTLSOptions) != 0 {
+		raftConfig.ClientTLSOptions = config.ClientTLSOptions
+		raftConfig.ServerTLSOptions = config.ServerTLSOptions
 	}
 
 	opts := manager.Options{

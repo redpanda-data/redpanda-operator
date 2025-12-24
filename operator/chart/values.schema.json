@@ -867,6 +867,9 @@
         "enabled": {
           "type": "boolean"
         },
+        "name": {
+          "type": "string"
+        },
         "peers": {
           "oneOf": [
             {

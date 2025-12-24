@@ -96,6 +96,7 @@ type PartialVectorizedControllers struct {
 
 type PartialMulticluster struct {
 	Enabled                      *bool         "json:\"enabled,omitempty\""
+	Name                         *string       "json:\"name,omitempty\""
 	KubernetesAPIExternalAddress *string       "json:\"apiServerExternalAddress,omitempty\""
 	Peers                        []PartialPeer "json:\"peers,omitempty\""
 }
