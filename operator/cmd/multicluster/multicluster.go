@@ -12,7 +12,6 @@ package multicluster
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/url"
@@ -254,69 +253,20 @@ func Run(
 		})
 	}
 
-	// Set up all of the certificate watching code
-	raftCertWatcher, err := certwatcher.New(opts.CertificateFile, opts.PrivateKeyFile)
+	// Set up the certificate watcher
+	certWatcher, err := watcher.New(opts.CAFile, opts.CertificateFile, opts.PrivateKeyFile)
 	if err != nil {
 		setupLog.Error(err, "to initialize raft certificate watcher", "error", err)
 		return err
 	}
-	raftCAWatcher, err := watcher.New(opts.CAFile)
-	if err != nil {
-		setupLog.Error(err, "to initialize raft certificate watcher", "error", err)
-		return err
-	}
-	go func() {
-		setupLog.Error(raftCertWatcher.Start(ctx), "raft cert watcher exited")
-	}()
-	go func() {
-		setupLog.Error(raftCAWatcher.Start(ctx), "raft ca watcher exited")
-	}()
+	certWatcher.SetLogger(setupLog)
+	certWatcher.Start(ctx)
 
 	// NB: we dynamically swap out the cached CA read from disk based on
 	// the basic CA rotation code found here:
 	// https://github.com/golang/go/issues/64796#issuecomment-2897933746
-	config.ClientTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
-		c.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
-			return raftCertWatcher.GetCertificate(nil)
-		}
-		c.InsecureSkipVerify = true // nolint:gosec // verification below
-		c.VerifyConnection = func(cs tls.ConnectionState) error {
-			roots, err := raftCAWatcher.GetCA()
-			if err != nil {
-				return err
-			}
-			opts := x509.VerifyOptions{
-				Roots:         roots,
-				Intermediates: x509.NewCertPool(),
-				KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-			}
-			for _, cert := range cs.PeerCertificates[1:] {
-				opts.Intermediates.AddCert(cert)
-			}
-			_, err = cs.PeerCertificates[0].Verify(opts)
-			return err
-		}
-	}}
-	config.ServerTLSOptions = []func(c *tls.Config){func(c *tls.Config) {
-		c.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
-			roots, err := raftCAWatcher.GetCA()
-			if err != nil {
-				return nil, err
-			}
-			cert, err := raftCertWatcher.GetCertificate(hello)
-			if err != nil {
-				return nil, err
-			}
-			if cert == nil {
-				return nil, errors.New("certificate not loaded")
-			}
-			return &tls.Config{
-				Certificates: []tls.Certificate{*cert},
-				RootCAs:      roots,
-				ClientAuth:   tls.RequireAndVerifyClientCert,
-			}, nil
-		}
-	}}
+	config.ClientTLSOptions = []func(c *tls.Config){certWatcher.ClientTLSOptions}
+	config.ServerTLSOptions = []func(c *tls.Config){certWatcher.ServerTLSOptions}
 
 	for _, peer := range opts.Peers {
 		config.Peers = append(config.Peers, multicluster.RaftCluster{

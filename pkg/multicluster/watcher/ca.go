@@ -49,8 +49,8 @@ type CAWatcher struct {
 	callback func(*x509.CertPool)
 }
 
-// New returns a new CertWatcher watching the given certificate and key.
-func New(caPath string) (*CAWatcher, error) {
+// NewCAWatcher returns a new CAWatcher watching the given certificate and key.
+func NewCAWatcher(caPath string) (*CAWatcher, error) {
 	var err error
 
 	cw := &CAWatcher{
