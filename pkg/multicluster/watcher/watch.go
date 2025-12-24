@@ -47,10 +47,14 @@ func (w *Watcher) SetLogger(logger logr.Logger) {
 
 func (w *Watcher) Start(ctx context.Context) {
 	go func() {
-		w.logger.Error(w.certWatcher.Start(ctx), "cert watcher exited")
+		if err := w.certWatcher.Start(ctx); err != nil {
+			w.logger.Error(err, "cert watcher exited with an error")
+		}
 	}()
 	go func() {
-		w.logger.Error(w.caWatcher.Start(ctx), "ca watcher exited")
+		if err := w.caWatcher.Start(ctx); err != nil {
+			w.logger.Error(err, "ca watcher exited with error")
+		}
 	}()
 }
 
@@ -60,6 +64,7 @@ func (w *Watcher) ClientTLSOptions(c *tls.Config) {
 	}
 	c.InsecureSkipVerify = true // nolint:gosec // verification below
 	c.VerifyConnection = func(cs tls.ConnectionState) error {
+		w.logger.V(7).Info("verifying server config")
 		roots, err := w.caWatcher.GetCA()
 		if err != nil {
 			return err
@@ -73,6 +78,11 @@ func (w *Watcher) ClientTLSOptions(c *tls.Config) {
 			opts.Intermediates.AddCert(cert)
 		}
 		_, err = cs.PeerCertificates[0].Verify(opts)
+		if err != nil {
+			w.logger.V(7).Info("verifying server config failed", "error", err)
+		} else {
+			w.logger.V(7).Info("verifying server config succeeded")
+		}
 		return err
 	}
 }
@@ -80,6 +90,7 @@ func (w *Watcher) ClientTLSOptions(c *tls.Config) {
 func (w *Watcher) ServerTLSOptions(c *tls.Config) {
 	c.GetCertificate = w.certWatcher.GetCertificate
 	c.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+		w.logger.V(7).Info("fetching client config")
 		roots, err := w.caWatcher.GetCA()
 		if err != nil {
 			return nil, err

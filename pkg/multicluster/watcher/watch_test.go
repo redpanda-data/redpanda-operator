@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/stretchr/testify/require"
 )
@@ -35,6 +36,7 @@ func TestWatcher(t *testing.T) {
 
 	watcher, err := New(path.Join(directory, "ca.crt"), path.Join(directory, "tls.crt"), path.Join(directory, "tls.key"))
 	require.NoError(t, err)
+	watcher.SetLogger(testr.NewWithOptions(t, testr.Options{Verbosity: 7}))
 	watcher.Start(t.Context())
 
 	serverCert := &tls.Config{
