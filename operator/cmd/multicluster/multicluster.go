@@ -260,7 +260,6 @@ func Run(
 		return err
 	}
 	certWatcher.SetLogger(setupLog)
-	certWatcher.Start(ctx)
 
 	// NB: we dynamically swap out the cached CA read from disk based on
 	// the basic CA rotation code found here:
@@ -285,6 +284,9 @@ func Run(
 		return err
 	}
 
+	if err := manager.GetLocalManager().Add(certWatcher); err != nil {
+		return err
+	}
 	if config.HealthProbeAddress != "" {
 		if err := manager.GetLocalManager().AddHealthzCheck("health", healthz.Ping); err != nil {
 			return err

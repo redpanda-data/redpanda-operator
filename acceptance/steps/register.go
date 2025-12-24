@@ -92,6 +92,8 @@ func init() {
 
 	// Multicluster scenario steps
 	framework.RegisterStep(`^I create a multicluster operator with (\d+) nodes$`, createNetworkedVClusterOperators)
+	framework.RegisterStep(`^I apply the multicluster Kubernetes manifest:$`, iApplyKuberneteMulticlusterManifest)
+	framework.RegisterStep(`^the Kubernetes object "([^"]*)" in namespace "([^"]*)" of type "([^"]*)" should have finalizer "([^"]*)"$`, checkMulticlusterFinalizers)
 
 	// Scaling scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)

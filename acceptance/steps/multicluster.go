@@ -12,15 +12,13 @@ package steps
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,9 +29,39 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
+type vclusterNodes []*vclusterNode
+
+func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
+	t := framework.T(ctx)
+	for _, node := range v {
+		require.NoError(t, node.KubectlApply(ctx, manifest))
+	}
+}
+
+func (v vclusterNodes) DeleteAll(ctx context.Context, manifest []byte) {
+	t := framework.T(ctx)
+	for _, node := range v {
+		require.NoError(t, node.KubectlDelete(ctx, manifest))
+	}
+}
+
+func (v vclusterNodes) CheckAll(ctx context.Context, namespacedName types.NamespacedName, groupVersionKind string, fn func(o client.Object)) {
+	t := framework.T(ctx)
+
+	gvk, _ := schema.ParseKindArg(groupVersionKind)
+	for _, node := range v {
+		obj, err := t.Scheme().New(*gvk)
+		require.NoError(t, err)
+
+		o := obj.(client.Object)
+		require.NoError(t, node.Get(ctx, namespacedName, o))
+		fn(o)
+	}
+}
+
 type vclusterNode struct {
 	client.Client
-	cluster    *vcluster.Cluster
+	*vcluster.Cluster
 	apiServer  string
 	externalIP string
 }
@@ -46,7 +74,33 @@ func (n *vclusterNode) ExternalIP() string {
 	return n.externalIP
 }
 
-func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusters int32) {
+func stashNodes(ctx context.Context, name string, nodes vclusterNodes) context.Context {
+	return context.WithValue(ctx, name, nodes)
+}
+
+func getNodes(ctx context.Context, name string) vclusterNodes {
+	t := framework.T(ctx)
+
+	nodes := ctx.Value(name)
+	require.NotNil(t, nodes)
+	return nodes.(vclusterNodes)
+}
+
+func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.TestingT, manifest *godog.DocString) {
+	nodes := getNodes(ctx, "multicluster")
+	nodes.ApplyAll(ctx, []byte(manifest.Content))
+	t.Cleanup(func(ctx context.Context) {
+		nodes.DeleteAll(ctx, []byte(manifest.Content))
+	})
+}
+
+func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, name, namespace, groupVersionKind, finalizer string) {
+	getNodes(ctx, "multicluster").CheckAll(ctx, types.NamespacedName{Namespace: namespace, Name: name}, groupVersionKind, func(o client.Object) {
+		require.Contains(t, o.GetFinalizers(), finalizer)
+	})
+}
+
+func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusters int32) context.Context {
 	namespace := metav1.NamespaceDefault
 
 	vclusters := []*vclusterNode{}
@@ -68,7 +122,7 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 
 		vclusters = append(vclusters, &vclusterNode{
 			Client:    c,
-			cluster:   cluster,
+			Cluster:   cluster,
 			apiServer: fmt.Sprintf("https://%s", apiServer.Spec.ClusterIPs[0]),
 		})
 	}
@@ -109,7 +163,7 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 			}
 			cluster.externalIP = operatorService.Spec.ClusterIPs[0]
 			return true
-		}, 1*time.Minute, 1*time.Second, fmt.Sprintf("cluster %s never got operator cluster ip", cluster.cluster.Name))
+		}, 1*time.Minute, 1*time.Second, fmt.Sprintf("cluster %s never got operator cluster ip", cluster.Name()))
 	}
 
 	// next we bootstrap TLS for Raft in the cluster
@@ -122,12 +176,12 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	peers := []any{}
 	for _, cluster := range vclusters {
 		bootstrapConfig.RemoteClusters = append(bootstrapConfig.RemoteClusters, bootstrap.RemoteConfiguration{
-			KubeConfig:     cluster.cluster.RESTConfig(),
+			KubeConfig:     cluster.RESTConfig(),
 			APIServer:      cluster.APIServer(),
 			ServiceAddress: cluster.ExternalIP(),
 		})
 		peers = append(peers, map[string]any{
-			"name":    cluster.cluster.Name(),
+			"name":    cluster.Name(),
 			"address": cluster.ExternalIP(),
 		})
 	}
@@ -136,8 +190,8 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 
 	// and finally we do the operator installation in each cluster
 	for _, cluster := range vclusters {
-		t.Logf("deploying operator in %q", cluster.cluster.Name())
-		rel := cluster.helmInstall(ctx, "../operator/chart", helm.InstallOptions{
+		t.Logf("deploying operator in %q", cluster.Name())
+		rel, err := cluster.HelmInstall(ctx, "../operator/chart", helm.InstallOptions{
 			Name: "redpanda",
 			Values: map[string]any{
 				"crds": map[string]any{
@@ -145,7 +199,7 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 				},
 				"multicluster": map[string]any{
 					"enabled":                  true,
-					"name":                     cluster.cluster.Name(),
+					"name":                     cluster.Name(),
 					"apiServerExternalAddress": cluster.APIServer(),
 					"peers":                    peers,
 				},
@@ -156,43 +210,11 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 			},
 			Namespace: namespace,
 		})
+		require.NoError(t, err)
 		t.Cleanup(func(ctx context.Context) {
-			cluster.helmUninstall(ctx, rel)
+			require.NoError(t, cluster.HelmUninstall(ctx, rel))
 		})
 	}
-}
 
-// the functions below differ from our other helm mechanisms since they leverage helm as
-// a library rather than using the CLI, this is necessary for VCluster since we
-// do a bunch of hole punching and proxying that can't be persisted to disk.
-
-func (c *vclusterNode) helmInstall(ctx context.Context, chartName string, options helm.InstallOptions) *release.Release {
-	t := framework.T(ctx)
-
-	actionConfig := new(action.Configuration)
-	require.NoError(t, actionConfig.Init(c.cluster.AsRESTClientGetter(), options.Namespace, "secret", t.Logf))
-
-	install := action.NewInstall(actionConfig)
-	install.ReleaseName = options.Name
-	install.Namespace = options.Namespace
-
-	chart, err := loader.Load(chartName)
-	require.NoError(t, err)
-
-	rel, err := install.Run(chart, options.Values.(map[string]any))
-	require.NoError(t, err)
-
-	return rel
-}
-
-func (c *vclusterNode) helmUninstall(ctx context.Context, rel *release.Release) {
-	t := framework.T(ctx)
-
-	actionConfig := new(action.Configuration)
-	require.NoError(t, actionConfig.Init(c.cluster.AsRESTClientGetter(), rel.Namespace, "secret", t.Logf))
-	uninstall := action.NewUninstall(actionConfig)
-	_, err := uninstall.Run(rel.Name)
-	if err != nil && !strings.Contains(err.Error(), "release: not found") {
-		require.NoError(t, err)
-	}
+	return stashNodes(ctx, "multicluster", vclusters)
 }

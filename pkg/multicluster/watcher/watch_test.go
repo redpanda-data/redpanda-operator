@@ -37,7 +37,7 @@ func TestWatcher(t *testing.T) {
 	watcher, err := New(path.Join(directory, "ca.crt"), path.Join(directory, "tls.crt"), path.Join(directory, "tls.key"))
 	require.NoError(t, err)
 	watcher.SetLogger(testr.NewWithOptions(t, testr.Options{Verbosity: 7}))
-	watcher.Start(t.Context())
+	go watcher.Start(t.Context())
 
 	serverCert := &tls.Config{
 		ClientAuth: tls.RequireAndVerifyClientCert,

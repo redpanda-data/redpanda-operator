@@ -7,7 +7,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// package watcher is a port of certwatcher code from controller-runtime, but just with CA files
 package watcher
 
 import (
@@ -29,11 +28,7 @@ import (
 
 const defaultWatchInterval = 10 * time.Second
 
-// CAWatcher watches ca files for changes.
-// It always returns the cached version,
-// but periodically reads and parses the watched file for changes
-// and calls an optional callback with the new file.
-type CAWatcher struct {
+type caWatcher struct {
 	sync.RWMutex
 
 	currentCertPool *x509.CertPool
@@ -49,17 +44,16 @@ type CAWatcher struct {
 	callback func(*x509.CertPool)
 }
 
-// NewCAWatcher returns a new CAWatcher watching the given certificate and key.
-func NewCAWatcher(caPath string) (*CAWatcher, error) {
+func newCAWatcher(caPath string) (*caWatcher, error) {
 	var err error
 
-	cw := &CAWatcher{
+	cw := &caWatcher{
 		caPath:   caPath,
 		interval: defaultWatchInterval,
 	}
 
 	// Initial read of certificate and key.
-	if err := cw.ReadCertificate(); err != nil {
+	if err := cw.readCertificate(); err != nil {
 		return nil, err
 	}
 
@@ -71,14 +65,12 @@ func NewCAWatcher(caPath string) (*CAWatcher, error) {
 	return cw, nil
 }
 
-// WithWatchInterval sets the watch interval and returns the CAWatcher pointer
-func (cw *CAWatcher) WithWatchInterval(interval time.Duration) *CAWatcher {
+func (cw *caWatcher) withWatchInterval(interval time.Duration) *caWatcher {
 	cw.interval = interval
 	return cw
 }
 
-// RegisterCallback registers a callback to be invoked when the certificate changes.
-func (cw *CAWatcher) RegisterCallback(callback func(*x509.CertPool)) {
+func (cw *caWatcher) registerCallback(callback func(*x509.CertPool)) {
 	cw.Lock()
 	defer cw.Unlock()
 	// If the current pool is not nil, invoke the callback immediately.
@@ -88,15 +80,13 @@ func (cw *CAWatcher) RegisterCallback(callback func(*x509.CertPool)) {
 	cw.callback = callback
 }
 
-// GetCA fetches the current ca, which may be nil.
-func (cw *CAWatcher) GetCA() (*x509.CertPool, error) {
+func (cw *caWatcher) getCA() (*x509.CertPool, error) {
 	cw.RLock()
 	defer cw.RUnlock()
 	return cw.currentCertPool, nil
 }
 
-// Start starts the watch on the certificate and key files.
-func (cw *CAWatcher) Start(ctx context.Context) error {
+func (cw *caWatcher) start(ctx context.Context) error {
 	cw.log = ctrl.LoggerFrom(ctx).WithName("CAWatcher")
 
 	files := sets.New(cw.caPath)
@@ -118,7 +108,7 @@ func (cw *CAWatcher) Start(ctx context.Context) error {
 		}
 	}
 
-	go cw.Watch()
+	go cw.watch()
 
 	ticker := time.NewTicker(cw.interval)
 	defer ticker.Stop()
@@ -129,15 +119,14 @@ func (cw *CAWatcher) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return cw.watcher.Close()
 		case <-ticker.C:
-			if err := cw.ReadCertificate(); err != nil {
+			if err := cw.readCertificate(); err != nil {
 				cw.log.Error(err, "failed read certificate")
 			}
 		}
 	}
 }
 
-// Watch reads events from the watcher's channel and reacts to changes.
-func (cw *CAWatcher) Watch() {
+func (cw *caWatcher) watch() {
 	for {
 		select {
 		case event, ok := <-cw.watcher.Events:
@@ -158,9 +147,7 @@ func (cw *CAWatcher) Watch() {
 	}
 }
 
-// updateCachedCertificate checks if the new certificate differs from the cache,
-// updates it and returns the result if it was updated or not
-func (cw *CAWatcher) updateCachedCertPool(pool *x509.CertPool, caPEMBlock []byte) bool {
+func (cw *caWatcher) updateCachedCertPool(pool *x509.CertPool, caPEMBlock []byte) bool {
 	cw.Lock()
 	defer cw.Unlock()
 
@@ -174,10 +161,7 @@ func (cw *CAWatcher) updateCachedCertPool(pool *x509.CertPool, caPEMBlock []byte
 	return true
 }
 
-// ReadCertificate reads the certificate and key files from disk, parses them,
-// and updates the current certificate on the watcher if updated. If a callback is set, it
-// is invoked with the new certificate.
-func (cw *CAWatcher) ReadCertificate() error {
+func (cw *caWatcher) readCertificate() error {
 	caPEMBlock, err := os.ReadFile(cw.caPath)
 	if err != nil {
 		return err
@@ -204,7 +188,7 @@ func (cw *CAWatcher) ReadCertificate() error {
 	return nil
 }
 
-func (cw *CAWatcher) handleEvent(event fsnotify.Event) {
+func (cw *caWatcher) handleEvent(event fsnotify.Event) {
 	// Only care about events which may modify the contents of the file.
 	switch {
 	case event.Op.Has(fsnotify.Write):
@@ -219,13 +203,7 @@ func (cw *CAWatcher) handleEvent(event fsnotify.Event) {
 	}
 
 	cw.log.V(1).Info("certificate event", "event", event)
-	if err := cw.ReadCertificate(); err != nil {
+	if err := cw.readCertificate(); err != nil {
 		cw.log.Error(err, "error re-reading certificate")
 	}
-}
-
-// NeedLeaderElection indicates that the cert-manager
-// does not need leader election.
-func (cw *CAWatcher) NeedLeaderElection() bool {
-	return false
 }

@@ -10,6 +10,7 @@
 package vcluster
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -20,8 +21,13 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -30,6 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -255,6 +262,93 @@ func (c *Cluster) Delete() error {
 	}
 
 	return client.Delete(context.Background(), c.namespace)
+}
+
+// the functions below differ from our other helm and kubectl mechanisms since they leverage helm as
+// a library rather than using the CLI, this is necessary for VCluster since we
+// do a bunch of hole punching and proxying that can't be persisted to disk.
+
+func (c *Cluster) KubectlApply(ctx context.Context, manifest []byte) error {
+	k8sClient, err := c.Client(client.Options{})
+	if err != nil {
+		return err
+	}
+	for {
+		reader := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 1024)
+		var decoded unstructured.Unstructured
+		if err := reader.Decode(&decoded); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		if decoded.GroupVersionKind().Empty() {
+			// ignore if no GVKs are set
+			continue
+		}
+
+		if err := k8sClient.Patch(ctx, &decoded, client.Apply, client.ForceOwnership, client.FieldOwner("tests")); err != nil {
+			return err
+		}
+	}
+}
+
+func (c *Cluster) KubectlDelete(ctx context.Context, manifest []byte) error {
+	k8sClient, err := c.Client(client.Options{})
+	if err != nil {
+		return err
+	}
+	for {
+		reader := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 1024)
+		var decoded unstructured.Unstructured
+		if err := reader.Decode(&decoded); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		if decoded.GroupVersionKind().Empty() {
+			// ignore if no GVKs are set
+			continue
+		}
+
+		if err := k8sClient.Delete(ctx, &decoded); err != nil {
+			return err
+		}
+	}
+}
+
+func (c *Cluster) HelmInstall(ctx context.Context, chartName string, options helm.InstallOptions) (*release.Release, error) {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(c.AsRESTClientGetter(), options.Namespace, "secret", log.FromContext(ctx).Info); err != nil {
+		return nil, err
+	}
+
+	install := action.NewInstall(actionConfig)
+	install.ReleaseName = options.Name
+	install.Namespace = options.Namespace
+
+	chart, err := loader.Load(chartName)
+	if err != nil {
+		return nil, err
+	}
+
+	return install.Run(chart, options.Values.(map[string]any))
+}
+
+func (c *Cluster) HelmUninstall(ctx context.Context, rel *release.Release) error {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(c.AsRESTClientGetter(), rel.Namespace, "secret", log.FromContext(ctx).Info); err != nil {
+		return err
+	}
+	uninstall := action.NewUninstall(actionConfig)
+	_, err := uninstall.Run(rel.Name)
+	if err != nil && !strings.Contains(err.Error(), "release: not found") {
+		return err
+	}
+	return nil
 }
 
 // proxy is a bad reverse TCP proxy to a single backend.
