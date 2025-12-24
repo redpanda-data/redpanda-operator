@@ -16,12 +16,12 @@ import (
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 type clientList[T client.Object] interface {
@@ -33,24 +33,32 @@ func clusterReferenceIndexName(name string) string {
 	return fmt.Sprintf("__%s_referencing_cluster", name)
 }
 
-func RegisterClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
+func RegisterClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr multicluster.Manager, name, clusterName string, o T, l U) (mchandler.EventHandlerFunc, error) {
 	indexName := clusterReferenceIndexName(name)
-	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
+	cluster, err := mgr.GetCluster(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	if err := cluster.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
 		return cr.IsV2()
 	})); err != nil {
 		return nil, err
 	}
-	return enqueueFromSourceCluster(mgr, name, l), nil
+	return enqueueFromSourceCluster(mgr, name, clusterName, l), nil
 }
 
-func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
+func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr multicluster.Manager, name, clusterName string, o T, l U) (mchandler.EventHandlerFunc, error) {
 	indexName := clusterReferenceIndexName(name)
-	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
+	cluster, err := mgr.GetCluster(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	if err := cluster.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
 		return cr.IsV1()
 	})); err != nil {
 		return nil, err
 	}
-	return enqueueFromSourceCluster(mgr, name, l), nil
+	return enqueueFromSourceCluster(mgr, name, clusterName, l), nil
 }
 
 func indexByClusterSource(checkRef func(*redpandav1alpha2.ClusterRef) bool) func(o client.Object) []string {
@@ -97,10 +105,15 @@ func sourceClusters[T client.Object, U clientList[T]](ctx context.Context, c cli
 	return requests, nil
 }
 
-func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr multicluster.Manager, name string, clusterName string, l U) mchandler.EventHandlerFunc {
+	return mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		cluster, err := mgr.GetCluster(ctx, clusterName)
+		if err != nil {
+			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
+			return nil
+		}
 		list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
-		requests, err := sourceClusters(ctx, mgr.GetClient(), list, name, client.ObjectKeyFromObject(o))
+		requests, err := sourceClusters(ctx, cluster.GetClient(), list, name, client.ObjectKeyFromObject(o))
 		if err != nil {
 			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
 			return nil

@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -253,7 +254,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	)
 
 	return &ResourceReconcilerTestEnvironment[T, U]{
-		Reconciler:                 NewResourceController(c, factory, reconciler, "Test"),
+		Reconciler:                 NewResourceController(mgr, factory, reconciler, "Test"),
 		Factory:                    factory,
 		ClusterSourceValid:         validClusterSource,
 		ClusterSourceNoSASL:        invalidAuthClusterSourceNoSASL,
@@ -362,7 +363,7 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 		require.NoError(t, k8sClient.Create(ctx, obj))
 
 		key := client.ObjectKeyFromObject(obj)
-		req := ctrl.Request{NamespacedName: key}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
 
 		_, err := environment.Reconciler.Reconcile(ctx, req)
 		require.NoError(t, err)

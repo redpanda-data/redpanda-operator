@@ -17,8 +17,8 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -166,27 +166,29 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
-	builder := ctrl.NewControllerManagedBy(mgr.GetLocalManager()).
-		For(&redpandav1alpha2.User{}).
-		Owns(&corev1.Secret{})
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		For(&redpandav1alpha2.User{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
+		Owns(&corev1.Secret{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 
-	if includeV1 {
-		enqueueV1User, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr.GetLocalManager(), "user_v1", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
-		if err != nil {
-			return err
+	for _, clusterName := range mgr.GetClusterNames() {
+		if includeV1 {
+			enqueueV1User, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "user_v1", clusterName, &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+			if err != nil {
+				return err
+			}
+			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User, controller.WatchOptions(clusterName)...)
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User)
+
+		if includeV2 {
+			enqueueV2User, err := controller.RegisterClusterSourceIndex(ctx, mgr, "user", clusterName, &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+			if err != nil {
+				return err
+			}
+			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User, controller.WatchOptions(clusterName)...)
+		}
 	}
 
-	if includeV2 {
-		enqueueV2User, err := controller.RegisterClusterSourceIndex(ctx, mgr.GetLocalManager(), "user", &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
-		if err != nil {
-			return err
-		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User)
-	}
-
-	controller := NewResourceController(mgr.GetLocalManager().GetClient(), factory, &UserReconciler{}, "UserReconciler")
+	controller := NewResourceController(mgr, factory, &UserReconciler{}, "UserReconciler")
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct

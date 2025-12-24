@@ -23,15 +23,19 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
@@ -47,7 +51,7 @@ type MultiCluster[T any] interface {
 	GetClusters() []string
 }
 
-type multicluster interface {
+type multi interface {
 	GetClusters() []string
 }
 
@@ -59,7 +63,7 @@ func NewClusterObject[T any, U Cluster[T]]() U {
 
 // NewMulticlusterResourceClient
 // mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
-func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr mcmanager.Manager, resourcesFn MulticlusterResourceManagerFactory[T, U]) *ResourceClient[T, U] {
+func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr multicluster.Manager, resourcesFn MulticlusterResourceManagerFactory[T, U]) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
 	return &ResourceClient[T, U]{
 		manager:                mgr,
@@ -73,19 +77,11 @@ func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr mcmanager.Manag
 }
 
 // NewResourceClient creates a new instance of a ResourceClient for managing resources.
-func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
-	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
-
-	multiclusterMgr, err := mcmanager.WithMultiCluster(mgr, nil)
-	if err != nil {
-		// NB: This is less than ideal but it's exceptionally unlikely that
-		// this actually returns an error and this method is only
-		// ever called at initializtion time, not runtime.
-		panic(err)
-	}
+func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
+	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr.GetLocalManager())
 
 	return &ResourceClient[T, U]{
-		manager:                multiclusterMgr,
+		manager:                mgr,
 		logger:                 mgr.GetLogger().WithName("ResourceClient"),
 		ownershipResolver:      ownershipResolver,
 		statusUpdater:          statusUpdater,
@@ -98,7 +94,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr ctrl.Manager, resourcesFn Resour
 // ResourceClient is a client used to manage dependent resources,
 // both simple and node pools, for a given cluster type.
 type ResourceClient[T any, U Cluster[T]] struct {
-	manager                mcmanager.Manager
+	manager                multicluster.Manager
 	logger                 logr.Logger
 	traceLogging           bool
 	ownershipResolver      OwnershipResolver[T, U]
@@ -123,7 +119,7 @@ func (r *ResourceClient[T, U]) ctl(ctx context.Context, clusterName string) (*ku
 }
 
 func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
-	if mc, ok := cluster.(multicluster); ok {
+	if mc, ok := cluster.(multi); ok {
 		return mc.GetClusters()
 	}
 	return []string{mcmanager.LocalCluster}
@@ -264,38 +260,38 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 
 // Builder is an interface for our used methods of *sigs.k8s.io/controller-runtime/pkg/builder.Builder
 type Builder interface {
-	For(object client.Object, opts ...builder.ForOption) *builder.Builder
-	Owns(object client.Object, opts ...builder.OwnsOption) *builder.Builder
-	Watches(object client.Object, eventHandler handler.EventHandler, opts ...builder.WatchesOption) *builder.Builder
+	For(object client.Object, opts ...mcbuilder.ForOption) *mcbuilder.Builder
+	Owns(object client.Object, opts ...mcbuilder.OwnsOption) *mcbuilder.Builder
+	Watches(object client.Object, eventHandler mchandler.TypedEventHandlerFunc[client.Object, mcreconcile.Request], opts ...mcbuilder.WatchesOption) *mcbuilder.Builder
 }
 
 type loggingHandler[T client.Object] struct {
-	handler.TypedEventHandler[T, reconcile.Request]
+	handler.TypedEventHandler[T, mcreconcile.Request]
 }
 
-func (h *loggingHandler[T]) Create(ctx context.Context, evt event.TypedCreateEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+func (h *loggingHandler[T]) Create(ctx context.Context, evt event.TypedCreateEvent[T], wq workqueue.TypedRateLimitingInterface[mcreconcile.Request]) {
 	h.TypedEventHandler.Create(ctx, evt, wrapQueue(ctx, evt.Object, wq))
 }
 
-func (h *loggingHandler[T]) Update(ctx context.Context, evt event.TypedUpdateEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+func (h *loggingHandler[T]) Update(ctx context.Context, evt event.TypedUpdateEvent[T], wq workqueue.TypedRateLimitingInterface[mcreconcile.Request]) {
 	h.TypedEventHandler.Update(ctx, evt, wrapQueue(ctx, evt.ObjectNew, wq))
 }
 
-func (h *loggingHandler[T]) Delete(ctx context.Context, evt event.TypedDeleteEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+func (h *loggingHandler[T]) Delete(ctx context.Context, evt event.TypedDeleteEvent[T], wq workqueue.TypedRateLimitingInterface[mcreconcile.Request]) {
 	h.TypedEventHandler.Delete(ctx, evt, wrapQueue(ctx, evt.Object, wq))
 }
 
-func (h *loggingHandler[T]) Generic(ctx context.Context, evt event.TypedGenericEvent[T], wq workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+func (h *loggingHandler[T]) Generic(ctx context.Context, evt event.TypedGenericEvent[T], wq workqueue.TypedRateLimitingInterface[mcreconcile.Request]) {
 	h.TypedEventHandler.Generic(ctx, evt, wrapQueue(ctx, evt.Object, wq))
 }
 
 type wrappedAdder struct {
 	obj client.Object
 	ctx context.Context
-	workqueue.TypedRateLimitingInterface[reconcile.Request]
+	workqueue.TypedRateLimitingInterface[mcreconcile.Request]
 }
 
-func wrapQueue(ctx context.Context, obj client.Object, wq workqueue.TypedRateLimitingInterface[reconcile.Request]) workqueue.TypedRateLimitingInterface[reconcile.Request] {
+func wrapQueue(ctx context.Context, obj client.Object, wq workqueue.TypedRateLimitingInterface[mcreconcile.Request]) workqueue.TypedRateLimitingInterface[mcreconcile.Request] {
 	return &wrappedAdder{
 		obj:                        obj,
 		ctx:                        ctx,
@@ -303,17 +299,19 @@ func wrapQueue(ctx context.Context, obj client.Object, wq workqueue.TypedRateLim
 	}
 }
 
-func (w *wrappedAdder) Add(item reconcile.Request) {
+func (w *wrappedAdder) Add(item mcreconcile.Request) {
 	log.FromContext(w.ctx).V(log.TraceLevel).Info("[enqueue] adding reconciliation request", "request", item, "due-to", reflect.TypeOf(w.obj).String(), "name", client.ObjectKeyFromObject(w.obj))
 	w.TypedRateLimitingInterface.Add(item)
 }
 
-func wrapLoggingHandler[T client.Object](_ T, handler handler.TypedEventHandler[T, reconcile.Request]) handler.TypedEventHandler[T, reconcile.Request] {
-	return &loggingHandler[T]{TypedEventHandler: handler}
+func wrapLoggingHandler[T client.Object](_ T, h handler.TypedEventHandler[T, mcreconcile.Request]) mchandler.TypedEventHandlerFunc[T, mcreconcile.Request] {
+	return func(string, cluster.Cluster) handler.TypedEventHandler[T, mcreconcile.Request] {
+		return &loggingHandler[T]{TypedEventHandler: h}
+	}
 }
 
 // WatchResources configures resource watching for the given cluster, including StatefulSets and other resources.
-func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object) error {
+func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object, clusterNames []string) error {
 	// NB: we use localcluster here because the RESTMapper and scheme should be identical across all clusters
 	ctl, err := r.ctl(context.Background(), mcmanager.LocalCluster)
 	if err != nil {
@@ -325,8 +323,10 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 
 	owns := func(obj client.Object) {
 		if r.traceLogging {
-			loggingHandler := wrapLoggingHandler(obj, handler.EnqueueRequestForOwner(ctl.Scheme(), ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()))
-			builder.Watches(obj, loggingHandler)
+			for _, clusterName := range clusterNames {
+				loggingHandler := wrapLoggingHandler(obj, mchandler.ForCluster(handler.EnqueueRequestForOwner(ctl.Scheme(), ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()), clusterName))
+				builder.Watches(obj, loggingHandler, controller.WatchOptions(clusterName)...)
+			}
 		} else {
 			builder.Owns(obj)
 		}
@@ -361,20 +361,29 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 			continue
 		}
 
-		// since resources are cluster-scoped we need to call a Watch on them with some
-		// custom mappings
-		watchHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
-				return []reconcile.Request{{
-					NamespacedName: *owner,
-				}}
+		for _, clusterName := range clusterNames {
+			// since resources are cluster-scoped we need to call a Watch on them with some
+			// custom mappings
+			if r.traceLogging {
+				builder.Watches(resourceType, wrapLoggingHandler(resourceType, mchandler.ForCluster(handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+					if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
+						return []reconcile.Request{{
+							NamespacedName: *owner,
+						}}
+					}
+					return nil
+				}), clusterName)), controller.WatchOptions(clusterName)...)
+			} else {
+				builder.Watches(resourceType, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+					if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
+						return []reconcile.Request{{
+							NamespacedName: *owner,
+						}}
+					}
+					return nil
+				}), controller.WatchOptions(clusterName)...)
 			}
-			return nil
-		})
-		if r.traceLogging {
-			watchHandler = wrapLoggingHandler(resourceType, watchHandler)
 		}
-		builder.Watches(resourceType, watchHandler)
 	}
 
 	return nil

@@ -397,14 +397,12 @@ func Run(
 	if v2Controllers {
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
-			KubeConfig:           mgr.GetConfig(),
-			Client:               mgr.GetClient(),
-			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
-			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+			Manager:              mcmanager,
+			LifecycleClient:      lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
 			UseNodePools:         opts.enableV2NodepoolController,
-		}).SetupWithManager(ctx, mgr); err != nil {
+		}).SetupWithManager(ctx, mcmanager); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
@@ -415,8 +413,8 @@ func Run(
 		// NodePool Reconciler
 		if opts.enableV2NodepoolController {
 			if err := (&redpandacontrollers.NodePoolReconciler{
-				Client: mgr.GetClient(),
-			}).SetupWithManager(ctx, mgr); err != nil {
+				Manager: mcmanager,
+			}).SetupWithManager(ctx, mcmanager); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 				return err
 			}
@@ -438,7 +436,7 @@ func Run(
 				return err
 			}
 
-			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr); err != nil {
+			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mcmanager); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}
