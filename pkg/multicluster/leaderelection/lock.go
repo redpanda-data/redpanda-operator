@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"go.etcd.io/raft/v3"
+
+	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
 
 const (
@@ -107,6 +109,10 @@ func asPeers(nodes []LockerNode) []raft.Peer {
 }
 
 func Run(ctx context.Context, config LockConfiguration, callbacks *LeaderCallbacks) error {
+	return run(ctx, config, nil, callbacks)
+}
+
+func run(ctx context.Context, config LockConfiguration, transportCallback func(transportv1.TransportServiceClient), callbacks *LeaderCallbacks) error {
 	if err := config.validate(); err != nil {
 		return err
 	}
@@ -123,6 +129,14 @@ func Run(ctx context.Context, config LockConfiguration, callbacks *LeaderCallbac
 	}
 	if err != nil {
 		return err
+	}
+
+	if transportCallback != nil {
+		cl, err := transport.client()
+		if err != nil {
+			return err
+		}
+		transportCallback(cl)
 	}
 	transport.logger = config.Logger
 

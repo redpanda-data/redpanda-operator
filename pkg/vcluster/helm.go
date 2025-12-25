@@ -42,6 +42,7 @@ func getDefaultCacheDir() string {
 
 	return filepath.Join(homedir.HomeDir(), ".kube", "cache")
 }
+
 func computeDiscoverCacheDir(parentDir, host string) string {
 	// strip the optional scheme from host if its there:
 	schemelessHost := strings.Replace(strings.Replace(host, "https://", "", 1), "http://", "", 1)
@@ -53,6 +54,7 @@ func computeDiscoverCacheDir(parentDir, host string) string {
 func (c *vclusterRESTClientGetter) ToRESTConfig() (*rest.Config, error) {
 	return c.cluster.config, nil
 }
+
 func (c *vclusterRESTClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
 	cacheDir := getDefaultCacheDir()
 	httpCacheDir := filepath.Join(cacheDir, "http")
@@ -60,6 +62,7 @@ func (c *vclusterRESTClientGetter) ToDiscoveryClient() (discovery.CachedDiscover
 
 	return diskcached.NewCachedDiscoveryClientForConfig(c.cluster.config, discoveryCacheDir, httpCacheDir, time.Duration(6*time.Hour))
 }
+
 func (c *vclusterRESTClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	discoveryClient, err := c.ToDiscoveryClient()
 	if err != nil {
@@ -81,9 +84,11 @@ func (c *vclusterRESTClientGetter) Namespace() (string, bool, error) {
 func (c *vclusterRESTClientGetter) ClientConfig() (*rest.Config, error) {
 	return c.cluster.config, nil
 }
+
 func (c *vclusterRESTClientGetter) RawConfig() (clientcmdapi.Config, error) {
 	return clientcmdapi.Config{}, nil
 }
+
 func (c *vclusterRESTClientGetter) ConfigAccess() clientcmd.ConfigAccess {
 	return nil
 }

@@ -65,21 +65,6 @@ func newCAWatcher(caPath string) (*caWatcher, error) {
 	return cw, nil
 }
 
-func (cw *caWatcher) withWatchInterval(interval time.Duration) *caWatcher {
-	cw.interval = interval
-	return cw
-}
-
-func (cw *caWatcher) registerCallback(callback func(*x509.CertPool)) {
-	cw.Lock()
-	defer cw.Unlock()
-	// If the current pool is not nil, invoke the callback immediately.
-	if cw.currentCertPool != nil {
-		callback(cw.currentCertPool)
-	}
-	cw.callback = callback
-}
-
 func (cw *caWatcher) getCA() (*x509.CertPool, error) {
 	cw.RLock()
 	defer cw.RUnlock()

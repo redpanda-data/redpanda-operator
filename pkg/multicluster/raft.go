@@ -14,6 +14,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"hash/fnv"
+	"net/http"
 	"os"
 	"sort"
 	"sync/atomic"
@@ -342,6 +343,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 type raftManager struct {
 	mcmanager.Manager
 	runnable            *leaderRunnable
+	manager             *leaderelection.LeaderManager
 	logger              logr.Logger
 	getLeader           func() string
 	getClusters         func() map[string]cluster.Cluster
@@ -372,6 +374,10 @@ func (m *raftManager) GetLeader() string {
 	return m.getLeader()
 }
 
+func (m *raftManager) Health(req *http.Request) error {
+	return m.manager.Health(req)
+}
+
 func newManager(logger logr.Logger, config *rest.Config, provider multicluster.Provider, restart chan struct{}, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
 	mgr, err := mcmanager.New(config, provider, opts)
 	if err != nil {
@@ -389,7 +395,7 @@ func newManager(logger logr.Logger, config *rest.Config, provider multicluster.P
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
-	return &raftManager{Manager: mgr, runnable: runnable, logger: logger, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
+	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
 }
 
 func (m *raftManager) Add(r mcmanager.Runnable) error {

@@ -72,19 +72,25 @@ func InsecureClientFor(config LockConfiguration, node LockerNode) (transportv1.T
 
 func ClientFor(config LockConfiguration, node LockerNode) (transportv1.TransportServiceClient, error) {
 	var err error
-	var credentials credentials.TransportCredentials
+	var creds credentials.TransportCredentials
 
 	if config.Insecure {
-		credentials = insecure.NewCredentials()
+		creds = insecure.NewCredentials()
+	} else if len(config.ServerTLSOptions) == 0 || len(config.ClientTLSOptions) == 0 {
+		creds, err = clientTLSConfig(config.Certificate, config.PrivateKey, config.CA)
 	} else {
-		credentials, err = clientTLSConfig(config.Certificate, config.PrivateKey, config.CA)
+		clientTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
+		for _, opt := range config.ClientTLSOptions {
+			opt(clientTLSConfig)
+		}
+		creds = credentials.NewTLS(clientTLSConfig)
 	}
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize client credentials: %w", err)
 	}
 
-	conn, err := grpc.NewClient(node.Address, grpc.WithTransportCredentials(credentials))
+	conn, err := grpc.NewClient(node.Address, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +158,7 @@ func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, p
 }
 
 func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
-	serverTLSConfig := &tls.Config{ClientAuth: tls.RequireAndVerifyClientCert} // nolint:gosec // the tls version is configurable by calling code
+	serverTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
 	for _, opt := range serverOptions {
 		opt(serverTLSConfig)
 	}
@@ -211,6 +217,15 @@ func (t *grpcTransport) getNode() raft.Node {
 	t.nodeLock.RLock()
 	defer t.nodeLock.RUnlock()
 	return t.node
+}
+
+func (t *grpcTransport) client() (transportv1.TransportServiceClient, error) {
+	peer, err := newPeer(t.addr, t.clientCredentials)
+	if err != nil {
+		return nil, err
+	}
+
+	return peer.client, nil
 }
 
 func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, error) {

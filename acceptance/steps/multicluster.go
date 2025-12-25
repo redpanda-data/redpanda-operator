@@ -12,6 +12,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -34,6 +35,7 @@ type vclusterNodes []*vclusterNode
 func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	t := framework.T(ctx)
 	for _, node := range v {
+		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlApply(ctx, manifest))
 	}
 }
@@ -45,17 +47,23 @@ func (v vclusterNodes) DeleteAll(ctx context.Context, manifest []byte) {
 	}
 }
 
-func (v vclusterNodes) CheckAll(ctx context.Context, namespacedName types.NamespacedName, groupVersionKind string, fn func(o client.Object)) {
+func (v vclusterNodes) CheckAll(ctx context.Context, namespacedName types.NamespacedName, groupVersionKind string, fn func(o client.Object) bool) {
 	t := framework.T(ctx)
 
 	gvk, _ := schema.ParseKindArg(groupVersionKind)
 	for _, node := range v {
-		obj, err := t.Scheme().New(*gvk)
-		require.NoError(t, err)
+		require.Eventually(t, func() bool {
+			obj, err := t.Scheme().New(*gvk)
+			require.NoError(t, err)
 
-		o := obj.(client.Object)
-		require.NoError(t, node.Get(ctx, namespacedName, o))
-		fn(o)
+			o := obj.(client.Object)
+			t.Logf("fetching (%T) object: %q", o, namespacedName.String())
+			if err := node.Get(ctx, namespacedName, o); err != nil {
+				t.Logf("error fetching %q: %v", namespacedName.String(), err)
+				return false
+			}
+			return fn(o)
+		}, 1*time.Minute, 1*time.Second, "condition not met")
 	}
 }
 
@@ -74,33 +82,35 @@ func (n *vclusterNode) ExternalIP() string {
 	return n.externalIP
 }
 
+type multiclusterKey string
+
 func stashNodes(ctx context.Context, name string, nodes vclusterNodes) context.Context {
-	return context.WithValue(ctx, name, nodes)
+	return context.WithValue(ctx, multiclusterKey(name), nodes)
 }
 
 func getNodes(ctx context.Context, name string) vclusterNodes {
 	t := framework.T(ctx)
 
-	nodes := ctx.Value(name)
+	nodes := ctx.Value(multiclusterKey(name))
 	require.NotNil(t, nodes)
 	return nodes.(vclusterNodes)
 }
 
-func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.TestingT, manifest *godog.DocString) {
-	nodes := getNodes(ctx, "multicluster")
+func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
+	nodes := getNodes(ctx, clusterName)
 	nodes.ApplyAll(ctx, []byte(manifest.Content))
 	t.Cleanup(func(ctx context.Context) {
 		nodes.DeleteAll(ctx, []byte(manifest.Content))
 	})
 }
 
-func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, name, namespace, groupVersionKind, finalizer string) {
-	getNodes(ctx, "multicluster").CheckAll(ctx, types.NamespacedName{Namespace: namespace, Name: name}, groupVersionKind, func(o client.Object) {
-		require.Contains(t, o.GetFinalizers(), finalizer)
+func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clusterName, name, namespace, groupVersionKind, finalizer string) {
+	getNodes(ctx, clusterName).CheckAll(ctx, types.NamespacedName{Namespace: namespace, Name: name}, groupVersionKind, func(o client.Object) bool {
+		return slices.Contains(o.GetFinalizers(), finalizer)
 	})
 }
 
-func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusters int32) context.Context {
+func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {
 	namespace := metav1.NamespaceDefault
 
 	vclusters := []*vclusterNode{}
@@ -109,13 +119,15 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 		t.Logf("creating vcluster %d", i+1)
 		cluster, err := vcluster.New(ctx, t.RestConfig())
 		require.NoError(t, err)
+		cluster.SetScheme(t.Scheme())
 
 		t.Logf("finished creating vcluster %d (name: %q)", i+1, cluster.Name())
 
 		t.Cleanup(func(ctx context.Context) {
 			require.NoError(t, cluster.Delete())
 		})
-		c, err := cluster.Client(client.Options{})
+		c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
+		require.NoError(t, err)
 
 		var apiServer corev1.Service
 		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: metav1.NamespaceDefault}, &apiServer))
@@ -149,8 +161,9 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 					"app.kubernetes.io/instance": "redpanda",
 					"app.kubernetes.io/name":     "operator",
 				},
-				// this is necessary since we can't see readiness
-				// until the quorum forms
+				// this is necessary since we don't mark the operators as
+				// ready until the quorum forms, but in order to do so
+				// they need to resolve the IP published here.
 				PublishNotReadyAddresses: true,
 			},
 		}))
@@ -216,5 +229,5 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 		})
 	}
 
-	return stashNodes(ctx, "multicluster", vclusters)
+	return stashNodes(ctx, clusterName, vclusters)
 }

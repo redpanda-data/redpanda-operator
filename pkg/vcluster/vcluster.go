@@ -25,8 +25,10 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
@@ -54,6 +56,7 @@ type Cluster struct {
 	helm       *helm.Client
 	release    helm.Release
 	namespace  *corev1.Namespace
+	scheme     *runtime.Scheme
 }
 
 func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {
@@ -268,39 +271,49 @@ func (c *Cluster) Delete() error {
 // a library rather than using the CLI, this is necessary for VCluster since we
 // do a bunch of hole punching and proxying that can't be persisted to disk.
 
+func (c *Cluster) SetScheme(scheme *runtime.Scheme) {
+	c.scheme = scheme
+}
+
 func (c *Cluster) KubectlApply(ctx context.Context, manifest []byte) error {
-	k8sClient, err := c.Client(client.Options{})
-	if err != nil {
-		return err
-	}
-	for {
-		reader := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 1024)
-		var decoded unstructured.Unstructured
-		if err := reader.Decode(&decoded); err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-
-		if decoded.GroupVersionKind().Empty() {
-			// ignore if no GVKs are set
-			continue
-		}
-
-		if err := k8sClient.Patch(ctx, &decoded, client.Apply, client.ForceOwnership, client.FieldOwner("tests")); err != nil {
-			return err
-		}
-	}
+	logger := log.FromContext(ctx)
+	return c.doKubectl(ctx, manifest, func(k8sclient client.Client, decoded *unstructured.Unstructured) error {
+		logger.Info("patching object", "name", decoded.GetName(), "namespace", decoded.GetNamespace(), "gvk", decoded.GroupVersionKind().String())
+		return k8sclient.Patch(ctx, decoded, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))
+	})
 }
 
 func (c *Cluster) KubectlDelete(ctx context.Context, manifest []byte) error {
-	k8sClient, err := c.Client(client.Options{})
+	logger := log.FromContext(ctx)
+	return c.doKubectl(ctx, manifest, func(k8sclient client.Client, decoded *unstructured.Unstructured) error {
+		logger.Info("deleting object", "name", decoded.GetName(), "namespace", decoded.GetNamespace(), "gvk", decoded.GroupVersionKind().String())
+		return k8sclient.Delete(ctx, decoded)
+	})
+}
+
+func (c *Cluster) doKubectl(ctx context.Context, manifest []byte, fn func(k8sclient client.Client, decoded *unstructured.Unstructured) error) error {
+	logger := log.FromContext(ctx)
+
+	logger.Info("initializing client")
+	k8sClient, err := c.Client(client.Options{Scheme: c.scheme})
 	if err != nil {
 		return err
 	}
+	return DecodeManifest(manifest, func(decoded *unstructured.Unstructured) error {
+		if err := fn(k8sClient, decoded); err != nil {
+			if !k8sapierrors.IsNotFound(err) {
+				logger.Error(err, "error doing operation")
+				return err
+			}
+			return nil
+		}
+		return nil
+	})
+}
+
+func DecodeManifest(manifest []byte, fn func(decoded *unstructured.Unstructured) error) error {
+	reader := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 1024)
 	for {
-		reader := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 1024)
 		var decoded unstructured.Unstructured
 		if err := reader.Decode(&decoded); err != nil {
 			if err == io.EOF {
@@ -314,7 +327,7 @@ func (c *Cluster) KubectlDelete(ctx context.Context, manifest []byte) error {
 			continue
 		}
 
-		if err := k8sClient.Delete(ctx, &decoded); err != nil {
+		if err := fn(&decoded); err != nil {
 			return err
 		}
 	}

@@ -295,6 +295,10 @@ func Run(
 		if err := manager.GetLocalManager().AddReadyzCheck("check", healthz.Ping); err != nil {
 			return err
 		}
+
+		if err := manager.GetLocalManager().AddReadyzCheck("raft", manager.Health); err != nil {
+			return err
+		}
 	}
 
 	return manager.Start(ctrl.SetupSignalHandler())

@@ -90,7 +90,7 @@ func (w *Watcher) ClientTLSOptions(c *tls.Config) {
 		}
 		_, err = cs.PeerCertificates[0].Verify(opts)
 		if err != nil {
-			w.logger.V(7).Info("verifying server config failed", "error", err)
+			w.logger.Error(err, "verifying server config failed")
 		} else {
 			w.logger.V(7).Info("verifying server config succeeded")
 		}
@@ -115,7 +115,7 @@ func (w *Watcher) ServerTLSOptions(c *tls.Config) {
 		return &tls.Config{
 			MinVersion:   tls.VersionTLS13,
 			Certificates: []tls.Certificate{*cert},
-			RootCAs:      roots,
+			ClientCAs:    roots,
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 		}, nil
 	}

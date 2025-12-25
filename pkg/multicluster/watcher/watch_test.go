@@ -6,6 +6,7 @@
 // As of the Change Date specified in that file, in accordance with
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
+
 package watcher
 
 import (
@@ -18,8 +19,9 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr/testr"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/stretchr/testify/require"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 )
 
 func TestWatcher(t *testing.T) {
