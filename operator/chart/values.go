@@ -25,6 +25,18 @@ var (
 	ValuesSchemaJSON []byte
 )
 
+type Peer struct {
+	Name    string `json:"name,omitempty" jsonschema:"required"`
+	Address string `json:"address,omitempty" jsonschema:"required"`
+}
+
+type Multicluster struct {
+	Enabled                      bool   `json:"enabled"`
+	Name                         string `json:"name"`
+	KubernetesAPIExternalAddress string `json:"apiServerExternalAddress"`
+	Peers                        []Peer `json:"peers"`
+}
+
 type Values struct {
 	NameOverride          string                        `json:"nameOverride"`
 	FullnameOverride      string                        `json:"fullnameOverride"`
@@ -54,6 +66,7 @@ type Values struct {
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
+	Multicluster          Multicluster                  `json:"multicluster"`
 }
 
 type VectorizedControllers struct {

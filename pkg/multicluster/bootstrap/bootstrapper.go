@@ -18,6 +18,7 @@ import (
 )
 
 type RemoteConfiguration struct {
+	KubeConfig     *rest.Config
 	ContextName    string
 	APIServer      string
 	ServiceAddress string
@@ -85,6 +86,7 @@ func BootstrapKubernetesClusters(ctx context.Context, organization string, confi
 				Namespace:       configuration.OperatorNamespace,
 				Name:            configuration.ServiceName,
 				APIServer:       address,
+				RESTConfig:      cluster.KubeConfig,
 			})
 			if err != nil {
 				return err
@@ -114,6 +116,7 @@ func BootstrapKubernetesClusters(ctx context.Context, organization string, confi
 					Namespace:       configuration.OperatorNamespace,
 					Name:            configuration.ServiceName + "-" + configuration.RemoteClusters[i].ContextName,
 					EnsureNamespace: configuration.EnsureNamespace,
+					RESTConfig:      cluster.KubeConfig,
 				}); err != nil {
 					return err
 				}
@@ -126,6 +129,7 @@ func BootstrapKubernetesClusters(ctx context.Context, organization string, confi
 				Namespace:       configuration.OperatorNamespace,
 				Name:            configuration.ServiceName,
 				EnsureNamespace: configuration.EnsureNamespace,
+				RESTConfig:      cluster.KubeConfig,
 			}); err != nil {
 				return err
 			}

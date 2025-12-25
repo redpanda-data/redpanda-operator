@@ -23,6 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
@@ -126,4 +128,42 @@ func TestIntegrationVCluster(t *testing.T) {
 		_, err = kubectl("get", "nodes")
 		require.Error(t, err)
 	})
+}
+
+func TestDecodeManifest(t *testing.T) {
+	manifest := `---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster
+  namespace: default`
+
+	type gvkNamed struct {
+		gvk            string
+		namespacedName string
+	}
+
+	expected := []gvkNamed{{
+		gvk:            "cluster.redpanda.com/v1alpha2, Kind=StretchCluster",
+		namespacedName: "default/cluster",
+	}, {
+		gvk:            "/v1, Kind=ConfigMap",
+		namespacedName: "default/cluster",
+	}}
+	actual := []gvkNamed{}
+	require.NoError(t, vcluster.DecodeManifest([]byte(manifest), func(decoded *unstructured.Unstructured) error {
+		actual = append(actual, gvkNamed{
+			gvk:            decoded.GroupVersionKind().String(),
+			namespacedName: types.NamespacedName{Namespace: decoded.GetNamespace(), Name: decoded.GetName()}.String(),
+		})
+		return nil
+	}))
+
+	require.ElementsMatch(t, expected, actual)
 }

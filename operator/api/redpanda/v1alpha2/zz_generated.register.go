@@ -66,6 +66,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&SchemaList{},
 		&ShadowLink{},
 		&ShadowLinkList{},
+		&StretchCluster{},
+		&StretchClusterList{},
 		&Topic{},
 		&TopicList{},
 		&User{},

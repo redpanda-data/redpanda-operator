@@ -10,6 +10,7 @@
 package vcluster
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -20,8 +21,16 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +38,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -36,7 +46,7 @@ const (
 	// vClusterChartVersion is the pinned version of the vCluster helm chart. It's
 	// pinned to avoid sudden failures if there are backwards incompatible changes
 	// added.
-	vClusterChartVersion    = "v0.23.0"
+	vClusterChartVersion    = "v0.28.0"
 	certManagerChartversion = "v1.8.0"
 )
 
@@ -46,6 +56,11 @@ type Cluster struct {
 	helm       *helm.Client
 	release    helm.Release
 	namespace  *corev1.Namespace
+	scheme     *runtime.Scheme
+}
+
+func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {
+	return &vclusterRESTClientGetter{cluster: c}
 }
 
 func ForTestInShared(t *testing.T) *Cluster {
@@ -250,6 +265,103 @@ func (c *Cluster) Delete() error {
 	}
 
 	return client.Delete(context.Background(), c.namespace)
+}
+
+// the functions below differ from our other helm and kubectl mechanisms since they leverage helm as
+// a library rather than using the CLI, this is necessary for VCluster since we
+// do a bunch of hole punching and proxying that can't be persisted to disk.
+
+func (c *Cluster) SetScheme(scheme *runtime.Scheme) {
+	c.scheme = scheme
+}
+
+func (c *Cluster) KubectlApply(ctx context.Context, manifest []byte) error {
+	logger := log.FromContext(ctx)
+	return c.doKubectl(ctx, manifest, func(k8sclient client.Client, decoded *unstructured.Unstructured) error {
+		logger.Info("patching object", "name", decoded.GetName(), "namespace", decoded.GetNamespace(), "gvk", decoded.GroupVersionKind().String())
+		return k8sclient.Patch(ctx, decoded, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))
+	})
+}
+
+func (c *Cluster) KubectlDelete(ctx context.Context, manifest []byte) error {
+	logger := log.FromContext(ctx)
+	return c.doKubectl(ctx, manifest, func(k8sclient client.Client, decoded *unstructured.Unstructured) error {
+		logger.Info("deleting object", "name", decoded.GetName(), "namespace", decoded.GetNamespace(), "gvk", decoded.GroupVersionKind().String())
+		return k8sclient.Delete(ctx, decoded)
+	})
+}
+
+func (c *Cluster) doKubectl(ctx context.Context, manifest []byte, fn func(k8sclient client.Client, decoded *unstructured.Unstructured) error) error {
+	logger := log.FromContext(ctx)
+
+	logger.Info("initializing client")
+	k8sClient, err := c.Client(client.Options{Scheme: c.scheme})
+	if err != nil {
+		return err
+	}
+	return DecodeManifest(manifest, func(decoded *unstructured.Unstructured) error {
+		if err := fn(k8sClient, decoded); err != nil {
+			if !k8sapierrors.IsNotFound(err) {
+				logger.Error(err, "error doing operation")
+				return err
+			}
+			return nil
+		}
+		return nil
+	})
+}
+
+func DecodeManifest(manifest []byte, fn func(decoded *unstructured.Unstructured) error) error {
+	reader := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 1024)
+	for {
+		var decoded unstructured.Unstructured
+		if err := reader.Decode(&decoded); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		if decoded.GroupVersionKind().Empty() {
+			// ignore if no GVKs are set
+			continue
+		}
+
+		if err := fn(&decoded); err != nil {
+			return err
+		}
+	}
+}
+
+func (c *Cluster) HelmInstall(ctx context.Context, chartName string, options helm.InstallOptions) (*release.Release, error) {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(c.AsRESTClientGetter(), options.Namespace, "secret", log.FromContext(ctx).Info); err != nil {
+		return nil, err
+	}
+
+	install := action.NewInstall(actionConfig)
+	install.ReleaseName = options.Name
+	install.Namespace = options.Namespace
+
+	chart, err := loader.Load(chartName)
+	if err != nil {
+		return nil, err
+	}
+
+	return install.Run(chart, options.Values.(map[string]any))
+}
+
+func (c *Cluster) HelmUninstall(ctx context.Context, rel *release.Release) error {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(c.AsRESTClientGetter(), rel.Namespace, "secret", log.FromContext(ctx).Info); err != nil {
+		return err
+	}
+	uninstall := action.NewUninstall(actionConfig)
+	_, err := uninstall.Run(rel.Name)
+	if err != nil && !strings.Contains(err.Error(), "release: not found") {
+		return err
+	}
+	return nil
 }
 
 // proxy is a bad reverse TCP proxy to a single backend.

@@ -11,6 +11,7 @@ package leaderelection
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
 	"log"
@@ -18,6 +19,8 @@ import (
 	"time"
 
 	"go.etcd.io/raft/v3"
+
+	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
 
 const (
@@ -39,15 +42,18 @@ type LockerNode struct {
 }
 
 type LockConfiguration struct {
-	ID          uint64
-	Address     string
-	CA          []byte
-	PrivateKey  []byte
-	Certificate []byte
-	Meta        []byte
-	Peers       []LockerNode
-	Insecure    bool
-	Fetcher     KubeconfigFetcher
+	ID      uint64
+	Address string
+	Meta    []byte
+	Peers   []LockerNode
+	Fetcher KubeconfigFetcher
+
+	Insecure         bool
+	ServerTLSOptions []func(*tls.Config)
+	ClientTLSOptions []func(*tls.Config)
+	CA               []byte
+	PrivateKey       []byte
+	Certificate      []byte
 
 	ElectionTimeout   time.Duration
 	HeartbeatInterval time.Duration
@@ -61,7 +67,7 @@ func (c *LockConfiguration) validate() error {
 	if c.Address == "" {
 		return errors.New("address must be specified")
 	}
-	if !c.Insecure {
+	if !c.Insecure && (len(c.ServerTLSOptions) == 0 || len(c.ClientTLSOptions) == 0) {
 		if len(c.CA) == 0 {
 			return errors.New("ca must be specified")
 		}
@@ -103,6 +109,10 @@ func asPeers(nodes []LockerNode) []raft.Peer {
 }
 
 func Run(ctx context.Context, config LockConfiguration, callbacks *LeaderCallbacks) error {
+	return run(ctx, config, nil, callbacks)
+}
+
+func run(ctx context.Context, config LockConfiguration, transportCallback func(transportv1.TransportServiceClient), callbacks *LeaderCallbacks) error {
 	if err := config.validate(); err != nil {
 		return err
 	}
@@ -112,11 +122,21 @@ func Run(ctx context.Context, config LockConfiguration, callbacks *LeaderCallbac
 	var err error
 	if config.Insecure {
 		transport, err = newInsecureGRPCTransport(config.Meta, config.Address, nodes, config.Fetcher)
-	} else {
+	} else if len(config.ServerTLSOptions) == 0 || len(config.ClientTLSOptions) == 0 {
 		transport, err = newGRPCTransport(config.Meta, config.Certificate, config.PrivateKey, config.CA, config.Address, nodes, config.Fetcher)
+	} else {
+		transport, err = newGRPCTransportWithOptions(config.Meta, config.ServerTLSOptions, config.ClientTLSOptions, config.Address, nodes, config.Fetcher)
 	}
 	if err != nil {
 		return err
+	}
+
+	if transportCallback != nil {
+		cl, err := transport.client()
+		if err != nil {
+			return err
+		}
+		transportCallback(cl)
 	}
 	transport.logger = config.Logger
 
@@ -196,9 +216,7 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 			case <-time.After(10 * time.Millisecond):
 				node.Tick()
 				if compactions == 0 {
-					if err := storage.Compact(node.Status().Applied); err != nil {
-						config.Logger.Errorf("error compacting storage: %v", err)
-					}
+					_ = storage.Compact(node.Status().Applied)
 					compactions = 1000
 				}
 				compactions--

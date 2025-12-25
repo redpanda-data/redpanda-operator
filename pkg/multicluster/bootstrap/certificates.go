@@ -354,7 +354,7 @@ func CreateTLSSecret(ctx context.Context, ca *CACertificate, certificate *Certif
 	}
 	if configuration.RESTConfig == nil {
 		if configuration.ContextName == "" {
-			return errors.New("either the name of a kubernetes context of a rest Config must be specified")
+			return errors.New("either the name of a kubernetes context or a rest config must be specified")
 		}
 		config, err := configFromContext(configuration.ContextName)
 		if err != nil {

@@ -6,6 +6,22 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
+{{- if $values.multicluster.enabled -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "operator.MulticlusterDeployment" (dict "a" (list $dot)))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "operator.SingleClusterDeployment" (dict "a" (list $dot)))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.SingleClusterDeployment" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
 {{- $dep := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "strategy" (dict)) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "apps/v1" "kind" "Deployment")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "namespace" $dot.Release.Namespace "annotations" $values.annotations)) "spec" (mustMergeOverwrite (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "strategy" (dict)) (dict "replicas" ($values.replicaCount | int) "selector" (mustMergeOverwrite (dict) (dict "matchLabels" (get (fromJson (include "operator.SelectorLabels" (dict "a" (list $dot)))) "r"))) "strategy" $values.strategy "template" (get (fromJson (include "operator.StrategicMergePatch" (dict "a" (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" $values.podTemplate.metadata.labels "annotations" $values.podTemplate.metadata.annotations)) "spec" $values.podTemplate.spec)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) (dict "metadata" (mustMergeOverwrite (dict) (dict "annotations" $values.podAnnotations "labels" (merge (dict) (get (fromJson (include "operator.SelectorLabels" (dict "a" (list $dot)))) "r") $values.podLabels))) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "automountServiceAccountToken" false "terminationGracePeriodSeconds" ((10 | int64) | int64) "imagePullSecrets" $values.imagePullSecrets "serviceAccountName" (get (fromJson (include "operator.ServiceAccountName" (dict "a" (list $dot)))) "r") "nodeSelector" $values.nodeSelector "tolerations" $values.tolerations "volumes" (get (fromJson (include "operator.operatorPodVolumes" (dict "a" (list $dot)))) "r") "containers" (get (fromJson (include "operator.operatorContainers" (dict "a" (list $dot (coalesce nil))))) "r"))))))))) "r"))))) -}}
 {{- if (not (empty $values.affinity)) -}}
 {{- $_ := (set $dep.spec.template.spec "affinity" $values.affinity) -}}

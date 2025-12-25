@@ -11,8 +11,10 @@ package multicluster
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"hash/fnv"
+	"net/http"
 	"os"
 	"sort"
 	"sync/atomic"
@@ -21,11 +23,15 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	"sigs.k8s.io/multicluster-runtime/pkg/multicluster"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -46,6 +52,7 @@ type RaftCluster struct {
 	Name           string
 	Address        string
 	KubeconfigFile string
+	Kubeconfig     *rest.Config
 }
 
 type RaftConfiguration struct {
@@ -56,22 +63,30 @@ type RaftConfiguration struct {
 	HeartbeatInterval time.Duration
 	Meta              []byte
 
-	Scheme     *runtime.Scheme
-	Logger     logr.Logger
-	Metrics    bool
-	RestConfig *rest.Config
+	Scheme             *runtime.Scheme
+	Logger             logr.Logger
+	Metrics            *metricsserver.Options
+	HealthProbeAddress string
+	Webhooks           webhook.Server
+	RestConfig         *rest.Config
+	BaseContext        func() context.Context
 
-	// the are only used when the Insecure flag is set to false
-	Insecure        bool
-	CAFile          string
-	PrivateKeyFile  string
-	CertificateFile string
+	Insecure bool
+	// these are only used when the Insecure flag is set to false
+	CAFile           string
+	PrivateKeyFile   string
+	CertificateFile  string
+	ClientTLSOptions []func(*tls.Config)
+	ServerTLSOptions []func(*tls.Config)
 
 	// these are used when bootstrapping mode is enabled
 	Bootstrap           bool
 	KubernetesAPIServer string
 	KubeconfigNamespace string
 	KubeconfigName      string
+
+	// For multicluster runtime to be able to run multiple controllers with the same name
+	SkipNameValidation bool
 }
 
 func (r RaftConfiguration) validate() error {
@@ -81,7 +96,7 @@ func (r RaftConfiguration) validate() error {
 	if r.Address == "" {
 		return errors.New("address must be specified")
 	}
-	if !r.Insecure {
+	if !r.Insecure && (len(r.ClientTLSOptions) == 0 || len(r.ServerTLSOptions) == 0) {
 		if len(r.CAFile) == 0 {
 			return errors.New("ca must be specified")
 		}
@@ -141,7 +156,22 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 			if err != nil {
 				return nil, err
 			}
-			c, err := cluster.New(kubeConfig)
+			c, err := cluster.New(kubeConfig, func(o *cluster.Options) {
+				o.Scheme = config.Scheme
+				o.Logger = config.Logger
+			})
+			if err != nil {
+				return nil, err
+			}
+			if err := clusterProvider.Add(context.Background(), peer.Name, c); err != nil {
+				return nil, err
+			}
+		}
+		if peer.Kubeconfig != nil {
+			c, err := cluster.New(peer.Kubeconfig, func(o *cluster.Options) {
+				o.Scheme = config.Scheme
+				o.Logger = config.Logger
+			})
 			if err != nil {
 				return nil, err
 			}
@@ -178,7 +208,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		})
 	}
 
-	if !config.Insecure {
+	if !config.Insecure && (len(config.ClientTLSOptions) == 0 || len(config.ServerTLSOptions) == 0) {
 		var err error
 
 		raftConfig.CA, err = os.ReadFile(config.CAFile)
@@ -195,16 +225,33 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else if len(config.ClientTLSOptions) != 0 && len(config.ServerTLSOptions) != 0 {
+		raftConfig.ClientTLSOptions = config.ClientTLSOptions
+		raftConfig.ServerTLSOptions = config.ServerTLSOptions
 	}
 
 	opts := manager.Options{
 		Scheme:         config.Scheme,
 		LeaderElection: false,
 		Logger:         config.Logger,
+		WebhookServer:  config.Webhooks,
+		BaseContext:    config.BaseContext,
 	}
-	if !config.Metrics {
+	if config.Metrics == nil {
 		opts.Metrics = server.Options{
 			BindAddress: "0",
+		}
+	} else {
+		opts.Metrics = *config.Metrics
+	}
+
+	if config.HealthProbeAddress != "" {
+		opts.HealthProbeBindAddress = config.HealthProbeAddress
+	}
+
+	if config.SkipNameValidation {
+		opts.Controller = ctrlconfig.Controller{
+			SkipNameValidation: ptr.To(true),
 		}
 	}
 
@@ -296,6 +343,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 type raftManager struct {
 	mcmanager.Manager
 	runnable            *leaderRunnable
+	manager             *leaderelection.LeaderManager
 	logger              logr.Logger
 	getLeader           func() string
 	getClusters         func() map[string]cluster.Cluster
@@ -326,6 +374,10 @@ func (m *raftManager) GetLeader() string {
 	return m.getLeader()
 }
 
+func (m *raftManager) Health(req *http.Request) error {
+	return m.manager.Health(req)
+}
+
 func newManager(logger logr.Logger, config *rest.Config, provider multicluster.Provider, restart chan struct{}, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
 	mgr, err := mcmanager.New(config, provider, opts)
 	if err != nil {
@@ -343,7 +395,7 @@ func newManager(logger logr.Logger, config *rest.Config, provider multicluster.P
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
-	return &raftManager{Manager: mgr, runnable: runnable, logger: logger, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
+	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
 }
 
 func (m *raftManager) Add(r mcmanager.Runnable) error {
@@ -377,8 +429,12 @@ type leaderRunnable struct {
 func (l *leaderRunnable) Add(r mcmanager.Runnable) {
 	doEngage := func() {
 		for name, cluster := range l.getClusters() {
+			l.logger.Info("engaging cluster", "cluster", name)
+
 			// engage any static clusters
-			_ = r.Engage(context.Background(), name, cluster)
+			if err := r.Engage(context.Background(), name, cluster); err != nil {
+				l.logger.Error(err, "error engaging cluster", "cluster", name)
+			}
 		}
 	}
 

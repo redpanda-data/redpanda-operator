@@ -81,6 +81,10 @@ func crdJobContainers(dot *helmette.Dot) []corev1.Container {
 		args = append(args, "--vectorized")
 	}
 
+	if values.Multicluster.Enabled {
+		args = append(args, "--multicluster")
+	}
+
 	return []corev1.Container{
 		{
 			Name:            "crd-installation",

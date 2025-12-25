@@ -387,6 +387,8 @@ func (s *ClusterStatus) UpdateConditions(o client.Object) bool {
 	switch kind := o.(type) {
 	case *redpandav1alpha2.Redpanda:
 		conditions = &kind.Status.Conditions
+	case *redpandav1alpha2.StretchCluster:
+		conditions = &kind.Status.Conditions
 	default:
 		panic("unsupported kind")
 	}
@@ -406,6 +408,8 @@ func (s *ClusterStatus) StatusConditionConfigs(o client.Object) []*applymetav1.C
 	var conditions []metav1.Condition
 	switch kind := o.(type) {
 	case *redpandav1alpha2.Redpanda:
+		conditions = kind.Status.Conditions
+	case *redpandav1alpha2.StretchCluster:
 		conditions = kind.Status.Conditions
 	default:
 		panic("unsupported kind")
@@ -1040,6 +1044,8 @@ func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav
 func GetConditions(o client.Object) []metav1.Condition {
 	switch kind := o.(type) {
 	case *redpandav1alpha2.Redpanda:
+		return kind.Status.Conditions
+	case *redpandav1alpha2.StretchCluster:
 		return kind.Status.Conditions
 	case *redpandav1alpha2.NodePool:
 		return kind.Status.Conditions

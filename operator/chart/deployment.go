@@ -47,6 +47,15 @@ const (
 func Deployment(dot *helmette.Dot) *appsv1.Deployment {
 	values := helmette.Unwrap[Values](dot.Values)
 
+	if values.Multicluster.Enabled {
+		return MulticlusterDeployment(dot)
+	}
+	return SingleClusterDeployment(dot)
+}
+
+func SingleClusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
+	values := helmette.Unwrap[Values](dot.Values)
+
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",

@@ -12,6 +12,7 @@ package multicluster
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,6 +35,10 @@ func (s *singleClusterManager) GetClusterNames() []string {
 
 func (s *singleClusterManager) AddOrReplaceCluster(_ context.Context, _ string, _ cluster.Cluster) error {
 	return errors.New("adding a cluster not supported in single cluster mode")
+}
+
+func (s *singleClusterManager) Health(req *http.Request) error {
+	return nil
 }
 
 func NewSingleClusterManager(config *rest.Config, opts manager.Options) (Manager, error) {

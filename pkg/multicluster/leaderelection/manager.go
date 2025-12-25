@@ -11,11 +11,15 @@ package leaderelection
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/go-logr/logr"
+
+	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
 
 type runFactory func(ctx context.Context) error
@@ -25,16 +29,35 @@ type LeaderManager struct {
 
 	logger logr.Logger
 
+	localClient transportv1.TransportServiceClient
+
 	mutex sync.RWMutex
 
 	isLeader atomic.Bool
 	runner   runFactory
 }
 
+func (lm *LeaderManager) Health(req *http.Request) error {
+	if lm.localClient == nil {
+		return errors.New("raft not started")
+	}
+	response, err := lm.localClient.Check(req.Context(), &transportv1.CheckRequest{})
+	if err != nil {
+		lm.logger.Error(err, "checking local client health")
+		return err
+	}
+	if !response.HasLeader {
+		return errors.New("cluster has no leader")
+	}
+	return nil
+}
+
 func NewRaftLockManager(configuration LockConfiguration, setLeader func(uint64)) *LeaderManager {
 	manager := &LeaderManager{}
 	manager.runner = func(ctx context.Context) error {
-		return Run(ctx, configuration, &LeaderCallbacks{
+		return run(ctx, configuration, func(cl transportv1.TransportServiceClient) {
+			manager.localClient = cl
+		}, &LeaderCallbacks{
 			OnStartedLeading: manager.runLeaderRoutines,
 			OnStoppedLeading: func() {
 				manager.isLeader.Store(false)

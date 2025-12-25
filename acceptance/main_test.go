@@ -40,9 +40,9 @@ var (
 )
 
 func getSuite(t *testing.T) *framework.Suite {
-	suit, err := setupSuite()
+	suite, err := setupSuite()
 	require.NoError(t, err)
-	return suit
+	return suite
 }
 
 var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {

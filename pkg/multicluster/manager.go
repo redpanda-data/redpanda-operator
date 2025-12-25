@@ -11,6 +11,7 @@ package multicluster
 
 import (
 	"context"
+	"net/http"
 
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
@@ -22,4 +23,5 @@ type Manager interface {
 	GetClusterNames() []string
 	// the context passed here, when canceled will stop the cluster
 	AddOrReplaceCluster(ctx context.Context, clusterName string, cl cluster.Cluster) error
+	Health(req *http.Request) error
 }

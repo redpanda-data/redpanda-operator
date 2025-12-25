@@ -182,3 +182,14 @@ podTemplate:
 # For details,
 # see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#Probe).
 # readinessProbe:
+
+# @ignored
+# Multicluster settings
+multicluster:
+  enabled: false
+  name: ""
+  apiServerExternalAddress: ""
+  # peers follows the form:
+  #  - name: peer-1
+  #    address: ip/dns of operator host
+  peers: []

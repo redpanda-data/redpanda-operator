@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -21,6 +22,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	goclientscheme "k8s.io/client-go/kubernetes/scheme"
@@ -49,6 +51,7 @@ type Env struct {
 	host      *k3d.Cluster
 	config    *rest.Config
 	client    client.Client
+	Name      string
 }
 
 type Options struct {
@@ -59,7 +62,12 @@ type Options struct {
 	Scheme              *runtime.Scheme
 	CRDs                []*apiextensionsv1.CustomResourceDefinition
 	Logger              logr.Logger
+	Network             string
+	Namespace           string
 	ImportImages        []string
+	Domain              string
+	Port                int
+	PortMappings        []k3d.PortMapping
 }
 
 // New returns a configured [Env] that utilizes an [vcluster.Cluster] in a
@@ -68,6 +76,8 @@ type Options struct {
 // Due to the shared nature, the k3d cluster will NOT be shutdown at the end of
 // tests. The vCluster will be deleted unless -retain is specified.
 func New(t *testing.T, options Options) *Env {
+	t.Helper()
+
 	if options.Agents == 0 {
 		options.Agents = 3
 	}
@@ -84,7 +94,20 @@ func New(t *testing.T, options Options) *Env {
 		options.Logger = logr.Discard()
 	}
 
-	host, err := k3d.GetOrCreate(options.Name, k3d.WithAgents(options.Agents))
+	opts := []k3d.ClusterOpt{k3d.WithAgents(options.Agents)}
+
+	if options.Network != "" {
+		opts = append(opts, k3d.WithNetwork(options.Network))
+	}
+	if options.Domain != "" {
+		opts = append(opts, k3d.WithDomain(options.Domain))
+	}
+	if options.Port != 0 {
+		opts = append(opts, k3d.WithPort(options.Port))
+	}
+	opts = append(opts, k3d.WithMappedPorts(options.PortMappings...))
+
+	host, err := k3d.GetOrCreate(options.Name, opts...)
 	require.NoError(t, err)
 
 	for _, image := range options.ImportImages {
@@ -120,7 +143,15 @@ func New(t *testing.T, options Options) *Env {
 		GenerateName: "testenv-",
 	}}
 
-	require.NoError(t, c.Create(ctx, ns))
+	if options.Namespace != "" {
+		ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+			Name: options.Namespace,
+		}}
+	}
+	createErr := c.Create(ctx, ns)
+	if !k8sapierrors.IsAlreadyExists(createErr) {
+		require.NoError(t, createErr)
+	}
 
 	var otelClient client.Client
 	if options.SkipNamespaceClient {
@@ -140,6 +171,7 @@ func New(t *testing.T, options Options) *Env {
 		host:      host,
 		config:    config,
 		client:    otelClient,
+		Name:      options.Name,
 	}
 
 	if !options.SkipVCluster {
@@ -178,6 +210,41 @@ func (e *Env) RESTConfig() *rest.Config {
 
 func (e *Env) Namespace() string {
 	return e.namespace.Name
+}
+
+func (e *Env) SetupMulticlusterManager(serviceAccount string, address string, peers []multicluster.RaftCluster, fn func(multicluster.Manager) error) {
+	// Bind the managers base config to a ServiceAccount via the "Impersonate"
+	// feature. This ensures that any permissions/RBAC issues get caught by
+	// theses tests as e.config has Admin permissions.
+	config := rest.CopyConfig(e.config)
+	if serviceAccount != "" {
+		config.Impersonate.UserName = fmt.Sprintf("system:serviceaccount:%s:%s", e.Namespace(), serviceAccount)
+	}
+
+	manager, err := multicluster.NewRaftRuntimeManager(multicluster.RaftConfiguration{
+		Name:               e.Name,
+		Address:            address,
+		Peers:              peers,
+		RestConfig:         config,
+		Scheme:             e.scheme,
+		Logger:             e.logger,
+		Insecure:           true,
+		SkipNameValidation: true,
+		ElectionTimeout:    1 * time.Second,
+		HeartbeatInterval:  100 * time.Millisecond,
+		BaseContext: func() context.Context {
+			return e.ctx
+		},
+	})
+	require.NoError(e.t, err)
+	require.NoError(e.t, fn(manager))
+
+	e.group.Go(func() error {
+		if err := manager.Start(e.ctx); err != nil && e.ctx.Err() != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (e *Env) SetupManager(serviceAccount string, fn func(multicluster.Manager) error) {
