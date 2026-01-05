@@ -118,7 +118,7 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 		SkipNamespaceClient: true,
 		Agents:              1,
 		ImportImages: []string{
-			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
 			"registry.k8s.io/kube-controller-manager:v1.29.6",
 			"registry.k8s.io/kube-apiserver:v1.29.6",
 			"quay.io/jetstack/cert-manager-controller:v1.8.0",
@@ -265,7 +265,7 @@ func TestIntegrationClientFactory(t *testing.T) {
 		SkipNamespaceClient: true,
 		// Logger: log,
 		ImportImages: []string{
-			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
 			"registry.k8s.io/kube-controller-manager:v1.29.6",
 			"registry.k8s.io/kube-apiserver:v1.29.6",
 			"quay.io/jetstack/cert-manager-controller:v1.8.0",
@@ -428,7 +428,7 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 		SkipNamespaceClient: true,
 		// Logger: log,
 		ImportImages: []string{
-			"ghcr.io/loft-sh/vcluster-pro:0.23.0",
+			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
 			"registry.k8s.io/kube-controller-manager:v1.29.6",
 			"registry.k8s.io/kube-apiserver:v1.29.6",
 			"quay.io/jetstack/cert-manager-controller:v1.8.0",

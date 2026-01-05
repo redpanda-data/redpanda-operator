@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -82,6 +83,10 @@ type clusterConfig struct {
 	image            string
 	skipManifests    bool
 	serverNoSchedule bool
+	network          string
+	domain           string
+	port             int
+	portMappings     []PortMapping
 }
 
 func defaultClusterConfig() *clusterConfig {
@@ -127,6 +132,35 @@ func WithTimeout(timeout time.Duration) clusterOpt {
 	}
 }
 
+func WithNetwork(network string) clusterOpt {
+	return func(config *clusterConfig) {
+		config.network = network
+	}
+}
+
+func WithDomain(domain string) clusterOpt {
+	return func(config *clusterConfig) {
+		config.domain = domain
+	}
+}
+
+func WithPort(port int) clusterOpt {
+	return func(config *clusterConfig) {
+		config.port = port
+	}
+}
+
+type PortMapping struct {
+	Host   int
+	Target int
+}
+
+func WithMappedPorts(mappings ...PortMapping) clusterOpt {
+	return func(config *clusterConfig) {
+		config.portMappings = mappings
+	}
+}
+
 // GetShared gets or creates the shared "testenv" k3d cluster. Most tests
 // should use this method in combination with [vcluster.New].
 //
@@ -137,6 +171,7 @@ func GetShared() (*Cluster, error) {
 
 func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 	config := defaultClusterConfig()
+	config.network = fmt.Sprintf("k3d-%s", name)
 	for _, opt := range opts {
 		opt.apply(config)
 	}
@@ -165,6 +200,7 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 	name = strings.ToLower(name)
 
 	config := defaultClusterConfig()
+	config.network = fmt.Sprintf("k3d-%s", name)
 	for _, opt := range opts {
 		opt.apply(config)
 	}
@@ -189,7 +225,20 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		// Disable the traefik Ingress controller. We don't use Ingress for
 		// anything and will install a standalone version if one is required.
 		`--k3s-arg`, `--disable=traefik@server:*`,
+		`--network`, config.network,
 		`--verbose`,
+	}
+
+	for _, mapping := range config.portMappings {
+		args = append(args, `--port`, fmt.Sprintf("%d:%d@loadbalancer", mapping.Host, mapping.Target))
+	}
+
+	if config.domain != "" {
+		args = append(args, `--k3s-arg`, `--cluster-domain=`+config.domain+"@server:*")
+	}
+
+	if config.port != 0 {
+		args = append(args, `--api-port`, strconv.Itoa(config.port))
 	}
 
 	if config.serverNoSchedule {
@@ -214,7 +263,7 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		}
 		containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-server-0", name)).CombinedOutput()
 		fmt.Printf("server-0 logs:\n%s\n", string(containerLogs))
-		containerLogs, _ = exec.Command("docker", "network", "inspect", fmt.Sprintf("k3d-%s", name)).CombinedOutput()
+		containerLogs, _ = exec.Command("docker", "network", "inspect", config.network).CombinedOutput()
 		fmt.Printf("docker network inspect:\n%s\n", string(containerLogs))
 
 		return nil, errors.Wrapf(err, "%s", out)

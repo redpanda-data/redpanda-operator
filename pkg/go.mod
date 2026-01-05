@@ -7,6 +7,7 @@ replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-c
 require (
 	github.com/cert-manager/cert-manager v1.14.5
 	github.com/cockroachdb/errors v1.11.3
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-logr/logr v1.4.3
 	github.com/gonvenience/ytbx v1.4.4
 	github.com/google/cel-go v0.26.1
@@ -45,6 +46,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.38.0
 	go.opentelemetry.io/proto/otlp v1.7.1
 	golang.org/x/mod v0.30.0
+	golang.org/x/sync v0.18.0
 	golang.org/x/time v0.13.0
 	golang.org/x/tools v0.39.0
 	google.golang.org/grpc v1.75.1
@@ -54,6 +56,7 @@ require (
 	k8s.io/api v0.34.1
 	k8s.io/apiextensions-apiserver v0.34.1
 	k8s.io/apimachinery v0.34.1
+	k8s.io/cli-runtime v0.33.3
 	k8s.io/client-go v0.34.1
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
@@ -139,7 +142,6 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.3 // indirect
@@ -285,7 +287,6 @@ require (
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.31.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
@@ -298,7 +299,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apiserver v0.34.1 // indirect
-	k8s.io/cli-runtime v0.33.3 // indirect
 	k8s.io/component-base v0.34.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	k8s.io/kubectl v0.33.3 // indirect

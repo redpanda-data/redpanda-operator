@@ -34,17 +34,18 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 			Enabled: true,
 			Subject: ServiceAccountName(dot),
 			RuleFiles: map[string]bool{
-				"files/rbac/console.ClusterRole.yaml":         true,
-				"files/rbac/leader-election.ClusterRole.yaml": true,
-				"files/rbac/leader-election.Role.yaml":        true,
-				"files/rbac/pvcunbinder.ClusterRole.yaml":     true,
-				"files/rbac/pvcunbinder.Role.yaml":            true,
-				"files/rbac/rack-awareness.ClusterRole.yaml":  true, // Rack awareness is a toggle on the CR, so we always need RBAC for it.
-				"files/rbac/rpk-debug-bundle.Role.yaml":       true, // debug bundle permissions is a toggle on the CR, so we always need RBAC for it.
-				"files/rbac/sidecar.Role.yaml":                true, // Sidecar is a toggle on the CR, so we always need RBAC for it.
-				"files/rbac/v1-manager.ClusterRole.yaml":      values.VectorizedControllers.Enabled,
-				"files/rbac/v1-manager.Role.yaml":             values.VectorizedControllers.Enabled,
-				"files/rbac/v2-manager.ClusterRole.yaml":      true,
+				"files/rbac/console.ClusterRole.yaml":              true,
+				"files/rbac/leader-election.ClusterRole.yaml":      true,
+				"files/rbac/leader-election.Role.yaml":             true,
+				"files/rbac/pvcunbinder.ClusterRole.yaml":          true,
+				"files/rbac/pvcunbinder.Role.yaml":                 true,
+				"files/rbac/rack-awareness.ClusterRole.yaml":       true, // Rack awareness is a toggle on the CR, so we always need RBAC for it.
+				"files/rbac/rpk-debug-bundle.Role.yaml":            true, // debug bundle permissions is a toggle on the CR, so we always need RBAC for it.
+				"files/rbac/sidecar.Role.yaml":                     true, // Sidecar is a toggle on the CR, so we always need RBAC for it.
+				"files/rbac/v1-manager.ClusterRole.yaml":           values.VectorizedControllers.Enabled,
+				"files/rbac/v1-manager.Role.yaml":                  values.VectorizedControllers.Enabled,
+				"files/rbac/v2-manager.ClusterRole.yaml":           true,
+				"files/rbac/multicluster-manager.ClusterRole.yaml": values.Multicluster.Enabled,
 			},
 		},
 		{

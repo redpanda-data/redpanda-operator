@@ -56,6 +56,8 @@ tasks:
           PATH: ./cmd/run
         - NAME: crd-installation
           PATH: ./cmd/crd
+        - NAME: multicluster-manager
+          PATH: ./cmd/multicluster
         cmd: |
           controller-gen \
             paths={{ .ITEM.PATH }} \
@@ -90,6 +92,7 @@ tasks:
           ./config/rbac/itemized/rpk-debug-bundle.yaml \
           ./config/rbac/itemized/sidecar.yaml \
           ./config/rbac/itemized/crd-installation.yaml \
+          ./config/rbac/itemized/multicluster-manager.yaml \
           ./config/rbac/itemized/v1-manager.yaml \
           ./config/rbac/itemized/v2-manager.yaml \
           ./config/rbac/itemized/console.yaml
@@ -107,6 +110,7 @@ tasks:
       - |
         controller-gen \
           paths=./cmd/run \
+          paths=./cmd/multicluster \
           paths=./internal/controller/redpanda \
           paths=./internal/controller/rackawareness \
           paths=./internal/controller/rpkdebugbundle \

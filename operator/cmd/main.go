@@ -19,6 +19,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/crd"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
@@ -47,6 +48,7 @@ func init() {
 		bootstrap.Command(),
 		configurator.Command(),
 		crd.Command(),
+		multicluster.Command(),
 		ready.Command(),
 		run.Command(),
 		sidecar.Command(),

@@ -90,6 +90,11 @@ func init() {
 	framework.RegisterStep(`^the helm release for "([^"]*)" can be deleted by removing its stored secret$`, iDeleteHelmReleaseSecret)
 	framework.RegisterStep(`^the cluster "([^"]*)" is healthy$`, redpandaClusterIsHealthy)
 
+	// Multicluster scenario steps
+	framework.RegisterStep(`^I create a multicluster operator named "([^"]*)" with (\d+) nodes$`, createNetworkedVClusterOperators)
+	framework.RegisterStep(`^I apply a multicluster Kubernetes manifest to "([^"]*)":$`, iApplyKuberneteMulticlusterManifest)
+	framework.RegisterStep(`^in "([^"]*)" the Kubernetes object "([^"]*)" in namespace "([^"]*)" of type "([^"]*)" should have finalizer "([^"]*)"$`, checkMulticlusterFinalizers)
+
 	// Scaling scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)
 	framework.RegisterStep(`^cluster "([^"]*)" is stable with (\d+) nodes$`, checkClusterStableWithCount)

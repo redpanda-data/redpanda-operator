@@ -124,6 +124,11 @@ func ShadowLink() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("shadowlinks.cluster.redpanda.com"))
 }
 
+// StretchCluster returns the StretchCluster CustomResourceDefinition.
+func StretchCluster() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("stretchclusters.cluster.redpanda.com"))
+}
+
 // VectorizedCluster returns the Cluster CustomResourceDefinition.
 func VectorizedCluster() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("clusters.redpanda.vectorized.io"))

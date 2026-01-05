@@ -72,19 +72,25 @@ func InsecureClientFor(config LockConfiguration, node LockerNode) (transportv1.T
 
 func ClientFor(config LockConfiguration, node LockerNode) (transportv1.TransportServiceClient, error) {
 	var err error
-	var credentials credentials.TransportCredentials
+	var creds credentials.TransportCredentials
 
 	if config.Insecure {
-		credentials = insecure.NewCredentials()
+		creds = insecure.NewCredentials()
+	} else if len(config.ServerTLSOptions) == 0 || len(config.ClientTLSOptions) == 0 {
+		creds, err = clientTLSConfig(config.Certificate, config.PrivateKey, config.CA)
 	} else {
-		credentials, err = clientTLSConfig(config.Certificate, config.PrivateKey, config.CA)
+		clientTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
+		for _, opt := range config.ClientTLSOptions {
+			opt(clientTLSConfig)
+		}
+		creds = credentials.NewTLS(clientTLSConfig)
 	}
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize client credentials: %w", err)
 	}
 
-	conn, err := grpc.NewClient(node.Address, grpc.WithTransportCredentials(credentials))
+	conn, err := grpc.NewClient(node.Address, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +157,38 @@ func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, p
 	}, nil
 }
 
+func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
+	serverTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
+	for _, opt := range serverOptions {
+		opt(serverTLSConfig)
+	}
+	serverCredentials := credentials.NewTLS(serverTLSConfig)
+
+	clientTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
+	for _, opt := range clientOptions {
+		opt(clientTLSConfig)
+	}
+	clientCredentials := credentials.NewTLS(clientTLSConfig)
+
+	initializedPeers := make(map[uint64]*peer, len(peers))
+	for id, peer := range peers {
+		initialized, err := newPeer(peer, clientCredentials)
+		if err != nil {
+			return nil, err
+		}
+		initializedPeers[id] = initialized
+	}
+
+	return &grpcTransport{
+		meta:              meta,
+		addr:              addr,
+		peers:             initializedPeers,
+		serverCredentials: serverCredentials,
+		clientCredentials: clientCredentials,
+		kubeconfigFetcher: fetcher,
+	}, nil
+}
+
 func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
 	initializedPeers := make(map[uint64]*peer, len(peers))
 	for id, peer := range peers {
@@ -179,6 +217,15 @@ func (t *grpcTransport) getNode() raft.Node {
 	t.nodeLock.RLock()
 	defer t.nodeLock.RUnlock()
 	return t.node
+}
+
+func (t *grpcTransport) client() (transportv1.TransportServiceClient, error) {
+	peer, err := newPeer(t.addr, t.clientCredentials)
+	if err != nil {
+		return nil, err
+	}
+
+	return peer.client, nil
 }
 
 func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, error) {

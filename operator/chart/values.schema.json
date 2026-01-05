@@ -858,6 +858,47 @@
       },
       "type": "object"
     },
+    "multicluster": {
+      "additionalProperties": false,
+      "properties": {
+        "apiServerExternalAddress": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "peers": {
+          "oneOf": [
+            {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "address"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
     "nameOverride": {
       "type": "string"
     },
