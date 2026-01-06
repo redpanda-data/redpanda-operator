@@ -1,4 +1,4 @@
-// Copyright 2025 Redpanda Data, Inc.
+// Copyright 2026 Redpanda Data, Inc.
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.md
@@ -38,7 +38,7 @@ func TestLoadPackages(t *testing.T) {
 
 				// Inject a built tag into the golden files so they don't get picked up
 				// by LoadPackages.
-				buf.WriteString("//go:build rewrites\n")
+				buf.WriteString("//go:build rewrites\n\n")
 
 				require.NoError(t, format.Node(&buf, pkg.Fset, f))
 
