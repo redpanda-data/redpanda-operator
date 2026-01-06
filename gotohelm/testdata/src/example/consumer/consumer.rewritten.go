@@ -1,4 +1,5 @@
 //go:build rewrites
+
 package consumer
 
 import (

@@ -38,7 +38,7 @@ func TestLoadPackages(t *testing.T) {
 
 				// Inject a built tag into the golden files so they don't get picked up
 				// by LoadPackages.
-				buf.WriteString("//go:build rewrites\n")
+				buf.WriteString("//go:build rewrites\n\n")
 
 				require.NoError(t, format.Node(&buf, pkg.Fset, f))
 
