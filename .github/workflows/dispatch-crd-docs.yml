@@ -9,6 +9,8 @@ on:
     types: [published]
 jobs:
   dispatch:
+    # Skip draft releases and prereleases
+    if: ${{ !github.event.release.draft && !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -29,3 +31,4 @@ jobs:
           token: ${{ env.ACTIONS_BOT_TOKEN }}
           repository: redpanda-data/docs
           event-type: generate-crd-docs
+          client-payload: '{"tag": "${{ github.event.release.tag_name }}"}'
