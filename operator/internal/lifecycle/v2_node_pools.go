@@ -12,6 +12,7 @@ package lifecycle
 import (
 	"context"
 
+	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -20,7 +21,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // V2NodePoolRenderer represents a node pool renderer for v2 clusters.

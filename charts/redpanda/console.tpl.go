@@ -11,12 +11,12 @@
 package redpanda
 
 import (
+	"github.com/redpanda-data/common-go/kube"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // consoleChartIntegration plumbs redpanda connection information into the console subchart.

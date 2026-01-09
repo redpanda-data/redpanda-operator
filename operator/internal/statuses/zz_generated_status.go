@@ -1,12 +1,3 @@
-// Copyright 2026 Redpanda Data, Inc.
-//
-// Use of this software is governed by the Business Source License
-// included in the file licenses/BSL.md
-//
-// As of the Change Date specified in that file, in accordance with
-// the Business Source License, use of this software will be governed
-// by the Apache License, Version 2.0
-
 package statuses
 
 // GENERATED from ./statuses.yaml, DO NOT EDIT DIRECTLY
@@ -15,13 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redpanda-data/common-go/rp-controller-utils/status"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 // ratelimitedCondition is a condition wrapped in some rate limiting configuration for doing
@@ -415,7 +406,7 @@ func (s *ClusterStatus) StatusConditionConfigs(o client.Object) []*applymetav1.C
 		panic("unsupported kind")
 	}
 
-	return utils.StatusConditionConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+	return status.ConditionApplyConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
 }
 
 // getRateLimit returns the rate limiting configuration for a given condition
@@ -820,7 +811,7 @@ func (s *NodePoolStatus) StatusConditionConfigs(o client.Object) []*applymetav1.
 		panic("unsupported kind")
 	}
 
-	return utils.StatusConditionConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+	return status.ConditionApplyConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
 }
 
 // getRateLimit returns the rate limiting configuration for a given condition
@@ -1057,7 +1048,7 @@ func GetConditions(o client.Object) []metav1.Condition {
 // setStatusCondition is a copy of the apimeta.SetStatusCondition with one primary change. Rather
 // than only change the .LastTransitionTime if the .Status field of the condition changes, it
 // sets it if .Status, .Reason, .Message, or .ObservedGeneration changes, which works nicely with our recent check leveraged
-// for rate limiting above. It also normalizes this to be the same as what utils.StatusConditionConfigs does
+// for rate limiting above. It also normalizes this to be the same as what status.ConditionApplyConfigs does
 func setStatusCondition(conditions *[]metav1.Condition, newCondition ratelimitedCondition) (changed bool) {
 	if conditions == nil {
 		return false

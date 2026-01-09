@@ -111,6 +111,7 @@ tasks:
       - task: generate:changelog
       - task: generate:buildkite-pipelines
       - buf generate
+      - task: lint-fix
       - nix fmt . # Ensure flake.nix has been formatted.
 
   generate:buildkite-pipelines:

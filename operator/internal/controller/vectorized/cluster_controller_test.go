@@ -19,6 +19,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr/testr"
+	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/kube/kubetest"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -44,9 +47,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )

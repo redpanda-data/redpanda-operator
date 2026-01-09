@@ -147,9 +147,7 @@ tasks:
     label: "generate:deprecations"
     desc: "Generate the deprecation tests for our deprecation warnings."
     cmds:
-    - gen deprecations --directory ./operator/api/redpanda/v1alpha2
-    deps:
-    - task: :build:gen
+    - rp-controller-gen deprecations --directory ./operator/api/redpanda/v1alpha2
 
   generate:statuses:
     run: when_changed
@@ -162,9 +160,7 @@ tasks:
     generates:
     - ./internal/statuses/*.go
     cmds:
-    - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --rewrite-comments
-    deps:
-    - task: :build:gen
+    - rp-controller-gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --base-package github.com/redpanda-data/redpanda-operator/operator --rewrite-comments
 
   fetch-latest-redpanda:
     desc: fetch the latest redpanda release and tag it localhost/redpanda:dev

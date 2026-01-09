@@ -1,12 +1,3 @@
-// Copyright 2026 Redpanda Data, Inc.
-//
-// Use of this software is governed by the Business Source License
-// included in the file licenses/BSL.md
-//
-// As of the Change Date specified in that file, in accordance with
-// the Business Source License, use of this software will be governed
-// by the Apache License, Version 2.0
-
 package v1alpha2
 
 // TODO: The following fields are documented as deprecated in the API comments
@@ -39,12 +30,11 @@ package v1alpha2
 import (
 	"testing"
 
+	"github.com/redpanda-data/common-go/rp-controller-utils/deprecations"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/deprecations"
 )
 
 func TestDeprecatedFieldWarnings(t *testing.T) {

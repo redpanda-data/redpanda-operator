@@ -34,8 +34,8 @@ import (
 	"example.com/example/syntax"
 	"example.com/example/typing"
 
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func main() {

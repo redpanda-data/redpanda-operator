@@ -5,6 +5,7 @@ go 1.25.1
 require (
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.66.1
+	github.com/redpanda-data/common-go/kube v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/rpadmin v0.2.0
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
@@ -203,7 +204,9 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
+	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
+	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0 // indirect
@@ -304,6 +307,7 @@ require (
 replace (
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../charts/console
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
+	github.com/redpanda-data/redpanda-operator/gotohelm => ../gotohelm
 	github.com/redpanda-data/redpanda-operator/harpoon => ../harpoon
 	github.com/redpanda-data/redpanda-operator/operator => ../operator
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg

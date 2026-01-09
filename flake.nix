@@ -88,9 +88,11 @@
               pkgs.kubernetes-helm
               pkgs.kustomize
               pkgs.kuttl
+              pkgs.licenseupdater
               pkgs.openssl
               pkgs.otel-desktop-viewer
               pkgs.protoc-gen-go
+              pkgs.rp-controller-gen
               pkgs.setup-envtest # Kubernetes provided test utilities
               pkgs.vcluster
               pkgs.yq-go

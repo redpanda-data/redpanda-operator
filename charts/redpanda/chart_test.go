@@ -30,6 +30,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/imdario/mergo"
+	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -52,8 +54,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm/helmtest"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/tlsgeneration"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
