@@ -13,9 +13,8 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/twmb/franz-go/pkg/kgo"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 var errKgo = errors.New("kgo client error")

@@ -22,6 +22,9 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/otelutil/log"
+	"github.com/redpanda-data/common-go/otelutil/trace"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,10 +54,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 

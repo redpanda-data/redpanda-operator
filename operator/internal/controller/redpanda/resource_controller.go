@@ -16,6 +16,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +27,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 type Resource[T any] interface {

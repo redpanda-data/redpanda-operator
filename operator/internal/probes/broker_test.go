@@ -19,6 +19,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr/testr"
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/suite"
@@ -40,7 +41,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )

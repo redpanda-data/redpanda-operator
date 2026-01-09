@@ -19,10 +19,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr/testr"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 // script is a bash script that logs our received signals and exits upon

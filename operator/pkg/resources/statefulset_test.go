@@ -20,6 +20,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -42,7 +43,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 const (

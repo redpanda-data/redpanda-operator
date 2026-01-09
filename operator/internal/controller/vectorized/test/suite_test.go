@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/client-go/rest"
@@ -40,7 +41,6 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to

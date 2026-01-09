@@ -15,13 +15,13 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // V2Defaults contains the default values for the v2 CRD conversion.

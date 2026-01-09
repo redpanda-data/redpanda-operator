@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/sr"
@@ -33,7 +34,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 type Client struct {

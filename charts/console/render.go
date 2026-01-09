@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -26,7 +27,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 //go:embed chart/values.yaml

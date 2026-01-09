@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/fluxcd/pkg/runtime/logger"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
@@ -26,7 +27,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/supervisor"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 var (

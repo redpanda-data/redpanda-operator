@@ -23,10 +23,12 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.66.1
+	github.com/redpanda-data/common-go/kube v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7
+	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1
+	github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/rpadmin v0.2.0
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186
-	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250718150737-e01f8476d560
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.3.1
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
@@ -259,6 +261,7 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
+	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
@@ -344,6 +347,7 @@ require (
 replace (
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../charts/console
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
+	github.com/redpanda-data/redpanda-operator/gotohelm => ../gotohelm
 	// we want to leverage the latest pkg -- all of this should go away when we
 	// reintroduce go.work
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg

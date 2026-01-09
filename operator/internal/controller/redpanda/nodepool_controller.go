@@ -15,6 +15,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/redpanda-data/common-go/otelutil/log"
+	"github.com/redpanda-data/common-go/otelutil/otelkube"
+	"github.com/redpanda-data/common-go/otelutil/trace"
 	"go.opentelemetry.io/otel/attribute"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,9 +38,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 )
 
 // nodepool resources

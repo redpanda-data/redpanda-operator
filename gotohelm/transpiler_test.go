@@ -25,6 +25,8 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/packages"
 	corev1 "k8s.io/api/core/v1"
@@ -36,8 +38,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )

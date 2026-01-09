@@ -17,7 +17,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
+	"github.com/redpanda-data/common-go/otelutil/log"
 )
 
 // NormalizeSuperusers de-duplicates and sorts the superusers

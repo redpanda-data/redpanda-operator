@@ -19,10 +19,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/time/rate"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 func Command() *cobra.Command {

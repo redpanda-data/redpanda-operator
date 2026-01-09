@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -34,8 +36,6 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 

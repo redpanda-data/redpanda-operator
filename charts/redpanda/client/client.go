@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
@@ -27,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // permitOutOfClusterDNS controls whether or not this package will use the

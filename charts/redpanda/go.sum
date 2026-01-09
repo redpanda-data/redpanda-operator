@@ -495,6 +495,10 @@ github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 h1:EfpWLLCyXw8PSM2/XNJLjI3Pb
 github.com/redis/go-redis/extra/redisotel/v9 v9.0.5/go.mod h1:WZjPDy7VNzn77AAfnAfVjZNvfJTYfPetfZk5yoSTLaQ=
 github.com/redis/go-redis/v9 v9.7.3 h1:YpPyAayJV+XErNsatSElgRZZVCwXX9QzkKYNvO7x0wM=
 github.com/redis/go-redis/v9 v9.7.3/go.mod h1:bGUrSggJ9X9GUmZpZNEOQKaANxSGgOEBRltRTZHSvrA=
+github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 h1:wWHiS4LNYzl5HkUPG6dpGPPvFW3ze7ZnraYvyqZ/+8s=
+github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:V3OBV2kcF/BDDytUZuKvIygbaXoGPT5VO3KmMAz+mBM=
+github.com/redpanda-data/common-go/kube v0.0.0-20260109170727-1dd9f5d22ee1 h1:5QnuFhDX0+mXuyVVCgo7/6OIZP7YPxm+MST3FRwgyhk=
+github.com/redpanda-data/common-go/kube v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:4v6g3AnjS1VXhDvHIOMZ/hU+5Wc+KceRU2VzVQoSi/A=
 github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 h1:MXLdjFdFjOtyuUR4TdVVsqFP8xnru2YDwzH9bJTUr1M=
 github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7/go.mod h1:UJIi/yUxGOBYXUrfUsOkxfYxcb/ll7mZrwae/i+U2kc=
 github.com/redpanda-data/common-go/rpadmin v0.2.0 h1:s2MyyY+yq7B17mLjjW17RO81wFlzo856K9IuBpsmvv0=
@@ -503,8 +507,6 @@ github.com/redpanda-data/common-go/secrets v0.1.4 h1:CGp3KolGnjcJvIafTwf7Hlj5ztL
 github.com/redpanda-data/common-go/secrets v0.1.4/go.mod h1:WjUU/5saSXwItZx6veFOGbQZUgPQz4MQ65z22y0Ky84=
 github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186 h1:kfhe8NbuBsXmBF68CnDaA0dDTWICNxwrC3rsO0h3WIg=
 github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186/go.mod h1:a73cXlHClCE0iUOjSOKdaGAPcnwYDv+2WaT9NeLZvKc=
-github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a h1:cBI+h6YFt1y45nvGQ4oFOEhPcQa/ih3DiNFJpFm5XVE=
-github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a/go.mod h1:yGPEeD4Xznu327upp2jctQuOjJWCuq73e8uEFzFMGsc=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6 h1:SbcvWTYFEbH5+NQOl1To5jppEa8RCK1HAkRNfhdUGLg=
 github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6/go.mod h1:/8XZuwUVFOGUkn31kglW28Xie5TrM7COtzRMA3GixaA=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=

@@ -17,9 +17,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/twmb/franz-go/pkg/kgo"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 var ( // interface checks to ensure we implement the hooks properly

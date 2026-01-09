@@ -18,6 +18,9 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/otelutil/log"
+	"github.com/redpanda-data/common-go/otelutil/otelkube"
+	"github.com/redpanda-data/common-go/otelutil/trace"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.opentelemetry.io/otel/attribute"
 	corev1 "k8s.io/api/core/v1"
@@ -44,9 +47,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/otelkube"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/trace"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
