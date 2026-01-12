@@ -22,6 +22,7 @@ import (
 
 var (
 	retain = flag.Bool("retain", false, "if true, no clean up will be performed.")
+	// note that for golden files the -update flag is now -update-golden due to externalizing the library
 	update = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
 )
 
@@ -94,7 +95,7 @@ func Retain() bool {
 // Update returns value of the -update CLI flag. A value of true indicates that
 // computed files should be updated instead of asserted against.
 func Update() bool {
-	return *update
+	return *update || goldenfile.Update()
 }
 
 // TempDir is wrapper around [testing.T.TempDir] that respects [Retain].

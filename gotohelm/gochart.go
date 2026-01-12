@@ -30,6 +30,7 @@ import (
 type RenderFunc func(*helmette.Dot) []kube.Object
 
 type GoChart struct {
+	kubeversion   *helmette.KubeVersion
 	metadata      chart.Metadata
 	defaultValues []byte
 	renderFunc    RenderFunc
@@ -213,6 +214,19 @@ func (c *GoChart) LoadValues(values any) (helmette.Values, error) {
 	return merged, nil
 }
 
+// WithSyntheticKubeVersion allows a caller to override the KubeVersion passed
+// off to the underlying go-rendered chart.
+func (c *GoChart) WithSyntheticKubeVersion(version *helmette.KubeVersion) *GoChart {
+	return &GoChart{
+		kubeversion:   version,
+		metadata:      c.metadata,
+		defaultValues: c.defaultValues,
+		renderFunc:    c.renderFunc,
+		dependencies:  c.dependencies,
+		fs:            c.fs,
+	}
+}
+
 // Dot constructs a [helmette.Dot] for this chart and any dependencies it has,
 // taking into consideration the dependencies' condition.
 func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any) (*helmette.Dot, error) {
@@ -282,6 +296,10 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 	capabilities, err := helmette.NewCapabilities(cfg)
 	if err != nil {
 		return nil, errors.WithStack(err)
+	}
+
+	if c.kubeversion != nil {
+		capabilities.KubeVersion = *c.kubeversion
 	}
 
 	return &helmette.Dot{
