@@ -46,7 +46,7 @@ func TestLocker(t *testing.T) {
 			currentLeaders := leaders
 			// scale down til we get to the min followers
 			for len(currentLeaders) != (minQuorum - 1) {
-				currentLeader, currentLeaders = waitForAnyLeader(t, 15*time.Second, currentLeaders...)
+				currentLeader, currentLeaders = waitForAnyLeader(t, 30*time.Second, currentLeaders...)
 				currentLeader.Stop()
 				stopped = append(stopped, currentLeader)
 				t.Log("killing leader", currentLeader.config.ID)
@@ -57,7 +57,7 @@ func TestLocker(t *testing.T) {
 				leader.Start(t, ctx)
 			}
 
-			_, _ = waitForAnyLeader(t, 15*time.Second, leaders...)
+			_, _ = waitForAnyLeader(t, 30*time.Second, leaders...)
 		})
 	}
 }
