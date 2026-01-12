@@ -92,6 +92,9 @@ func pod(dot *helmette.Dot) *corev1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "spacename",
 			Name:      "eman",
+			Labels: map[string]string{
+				"kubernetes-version": dot.Capabilities.KubeVersion.Version,
+			},
 		},
 		Spec: corev1.PodSpec{
 			Volumes: vol,

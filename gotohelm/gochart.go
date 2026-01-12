@@ -279,13 +279,19 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		return nil, errors.WithStack(err)
 	}
 
+	capabilities, err := helmette.NewCapabilities(cfg)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return &helmette.Dot{
-		KubeConfig: cfg,
-		Release:    release,
-		Subcharts:  subcharts,
-		Values:     parentValues,
-		Templates:  templates,
-		Files:      helmette.NewFiles(c.fs),
+		KubeConfig:   cfg,
+		Release:      release,
+		Subcharts:    subcharts,
+		Values:       parentValues,
+		Templates:    templates,
+		Files:        helmette.NewFiles(c.fs),
+		Capabilities: capabilities,
 		Chart: helmette.Chart{
 			Name:       c.metadata.Name,
 			Version:    c.metadata.Version,

@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 // - https://github.com/redpanda-data/helm-charts/issues/1454
 // - https://redpandadata.slack.com/archives/C01H6JRQX1S/p1728322201042639 (Kinda)
 func TestTemplateHelm310(t *testing.T) {
-	cmd := exec.Command("helm-3.10.3", "template", "./chart", "--generate-name")
+	cmd := exec.Command("helm-3.10.3", "--kube-version", "v1.99.0-eks", "template", "./chart", "--generate-name")
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "helm-3.10.3 template failed:\n%s", out)
 }
@@ -127,6 +127,7 @@ func TestTemplate(t *testing.T) {
 					// the bootstrap user password has the same issues as jwtSecret
 					"auth.sasl.bootstrapUser.password=changeme",
 				},
+				KubeVersion: "v1.99.0-gke",
 			})
 
 			objs, decodeErr := kube.DecodeYAML(out, redpanda.Scheme)

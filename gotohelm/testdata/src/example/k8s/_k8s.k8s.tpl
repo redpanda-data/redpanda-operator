@@ -21,7 +21,7 @@
 {{- $vol = (concat (default (list) $vol) (list $values.extraVolumes)) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil)) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Pod")) (dict "metadata" (mustMergeOverwrite (dict) (dict "namespace" "spacename" "name" "eman")) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "volumes" $vol))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil)) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Pod")) (dict "metadata" (mustMergeOverwrite (dict) (dict "namespace" "spacename" "name" "eman" "labels" (dict "kubernetes-version" $dot.Capabilities.KubeVersion.Version))) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "volumes" $vol))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -49,15 +49,15 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_130_svc_ok1 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Service" "namespace" "name")))) "r") -}}
-{{- $svc := (index $_130_svc_ok1 0) -}}
-{{- $ok1 := (index $_130_svc_ok1 1) -}}
+{{- $_133_svc_ok1 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Service" "namespace" "name")))) "r") -}}
+{{- $svc := (index $_133_svc_ok1 0) -}}
+{{- $ok1 := (index $_133_svc_ok1 1) -}}
 {{- if (not $ok1) -}}
 {{- $_ := (fail (printf "%T %q not found. Test setup should have created it?" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) "name")) -}}
 {{- end -}}
-{{- $_135_sts_ok2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" "spacename" "eman")))) "r") -}}
-{{- $sts := (index $_135_sts_ok2 0) -}}
-{{- $ok2 := (index $_135_sts_ok2 1) -}}
+{{- $_138_sts_ok2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" "spacename" "eman")))) "r") -}}
+{{- $sts := (index $_138_sts_ok2 0) -}}
+{{- $ok2 := (index $_138_sts_ok2 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list $svc $ok1 $sts $ok2)) | toJson -}}
 {{- break -}}

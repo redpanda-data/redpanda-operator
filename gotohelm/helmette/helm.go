@@ -13,6 +13,7 @@ import (
 	"context"
 	"io/fs"
 	"maps"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -21,18 +22,21 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	"helm.sh/helm/v3/pkg/chartutil"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sversion "k8s.io/apimachinery/pkg/util/version"
+	"k8s.io/client-go/discovery"
 )
 
 // Dot is a representation of the "global" context or `.` in the execution
 // of a helm template.
 // See also: https://github.com/helm/helm/blob/3764b483b385a12e7d3765bff38eced840362049/pkg/chartutil/values.go#L137-L166
 type Dot struct {
-	Values    Values
-	Release   Release
-	Chart     Chart
-	Subcharts map[string]*Dot
-	Files     Files
-	Template  Template
+	Values       Values
+	Release      Release
+	Chart        Chart
+	Subcharts    map[string]*Dot
+	Files        Files
+	Capabilities Capabilities
+	Template     Template
 	// Capabilities
 
 	// KubeConfig is a hacked in value to allow `Lookup` to not rely on global
@@ -245,4 +249,77 @@ func SafeLookup[T any, PT kube.AddrOfObject[T]](dot *Dot, namespace, name string
 	}
 
 	return obj, true, nil
+}
+
+// Capabilities is a partial re-implementation of Helm's Capabilities object
+// but that only exposes Kubernetes version information.
+type Capabilities struct {
+	// KubeVersion is the Kubernetes version.
+	KubeVersion KubeVersion
+}
+
+func NewCapabilities(cfg *kube.RESTConfig) (Capabilities, error) {
+	if cfg == nil {
+		// we're likely coming from a test, just return a stub version
+		return Capabilities{}, nil
+	}
+
+	client, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return Capabilities{}, errors.WithStack(err)
+	}
+	version, err := client.ServerVersion()
+	if err != nil {
+		return Capabilities{}, errors.WithStack(err)
+	}
+	parsed, err := ParseKubeVersion(version.GitVersion)
+	if err != nil {
+		return Capabilities{}, errors.WithStack(err)
+	}
+	return Capabilities{
+		KubeVersion: *parsed,
+	}, nil
+}
+
+// KubeVersion is the Kubernetes version.
+type KubeVersion struct {
+	Version           string // Full version (e.g., v1.33.4-gke.1245000)
+	normalizedVersion string // Normalized for constraint checking (e.g., v1.33.4)
+	Major             string // Kubernetes major version
+	Minor             string // Kubernetes minor version
+}
+
+// String implements fmt.Stringer.
+// Returns the normalized version used for constraint checking.
+func (kv *KubeVersion) String() string {
+	if kv.normalizedVersion != "" {
+		return kv.normalizedVersion
+	}
+	return kv.Version
+}
+
+// ParseKubeVersion parses kubernetes version from string
+func ParseKubeVersion(version string) (*KubeVersion, error) {
+	// Based on the original k8s version parser.
+	// https://github.com/kubernetes/kubernetes/blob/b266ac2c3e42c2c4843f81e20213d2b2f43e450a/staging/src/k8s.io/apimachinery/pkg/util/version/version.go#L137
+	sv, err := k8sversion.ParseGeneric(version)
+	if err != nil {
+		return nil, err
+	}
+
+	// Preserve original input (e.g., v1.33.4-gke.1245000)
+	gitVersion := version
+	if !strings.HasPrefix(version, "v") {
+		gitVersion = "v" + version
+	}
+
+	// Normalize for constraint checking (strips all suffixes)
+	normalizedVer := "v" + sv.String()
+
+	return &KubeVersion{
+		Version:           gitVersion,
+		normalizedVersion: normalizedVer,
+		Major:             strconv.FormatUint(uint64(sv.Major()), 10),
+		Minor:             strconv.FormatUint(uint64(sv.Minor()), 10),
+	}, nil
 }

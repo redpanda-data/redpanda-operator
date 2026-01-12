@@ -632,7 +632,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 	container := corev1.Container{
 		Name:  RedpandaContainerName,
 		Image: fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
-		Env:   bootstrapEnvVars(state, statefulSetRedpandaEnv()),
+		Env:   append(bootstrapEnvVars(state, statefulSetRedpandaEnv()), MetricsEnvironmentVariables(state, pool)...),
 		Lifecycle: &corev1.Lifecycle{
 			// finish the lifecycle scripts with "true" to prevent them from terminating the pod prematurely
 			PostStart: &corev1.LifecycleHandler{

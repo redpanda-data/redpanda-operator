@@ -259,6 +259,13 @@ func TestTranspile(t *testing.T) {
 							Namespace: "release-namespace",
 						},
 						Files: helmette.NewFiles(os.DirFS(filepath.Join(td, "src", "example", pkg.Name))),
+						Capabilities: helmette.Capabilities{
+							KubeVersion: helmette.KubeVersion{
+								Version: "v1.33.4",
+								Major:   "1",
+								Minor:   "33",
+							},
+						},
 					}
 
 					// Kinda cheating here, goRunner is used first as it's

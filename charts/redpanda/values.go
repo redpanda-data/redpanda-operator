@@ -267,8 +267,8 @@ type Enableable struct {
 }
 
 type Logging struct {
-	LogLevel    string `json:"logLevel" jsonschema:"required,pattern=^(error|warn|info|debug|trace)$"`
-	UseageStats struct {
+	LogLevel   string `json:"logLevel" jsonschema:"required,pattern=^(error|warn|info|debug|trace)$"`
+	UsageStats struct {
 		Enabled   bool    `json:"enabled" jsonschema:"required"`
 		ClusterID *string `json:"clusterId"`
 	} `json:"usageStats" jsonschema:"required"`
@@ -277,7 +277,7 @@ type Logging struct {
 func (l *Logging) Translate() map[string]any {
 	result := map[string]any{}
 
-	if clusterID := ptr.Deref(l.UseageStats.ClusterID, ""); clusterID != "" {
+	if clusterID := ptr.Deref(l.UsageStats.ClusterID, ""); clusterID != "" {
 		result["cluster_id"] = clusterID
 	}
 
