@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
@@ -37,7 +38,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 var (

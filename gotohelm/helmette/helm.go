@@ -18,10 +18,9 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	"helm.sh/helm/v3/pkg/chartutil"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // Dot is a representation of the "global" context or `.` in the execution

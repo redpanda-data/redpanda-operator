@@ -13,8 +13,7 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
+	"github.com/redpanda-data/common-go/otelutil/log"
 )
 
 type FlagBundle int

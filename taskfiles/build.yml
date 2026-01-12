@@ -82,11 +82,6 @@ tasks:
       - task: go:build
         vars: { DIR: gotohelm, PACKAGE: ./cmd/gotohelm }
 
-  licenseupdater:
-    cmds:
-      - task: go:build
-        vars: { DIR: licenseupdater }
-
   go:build:
     internal: true
     run: when_changed

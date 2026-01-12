@@ -14,8 +14,9 @@ import (
 	"errors"
 	"os"
 
+	"github.com/redpanda-data/common-go/kube"
+
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 func NewK3D(nodes int) *K3DProvider {

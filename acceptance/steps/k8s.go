@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +29,6 @@ import (
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 // this is a nasty hack due to the fact that we can't disable the linter for typecheck
