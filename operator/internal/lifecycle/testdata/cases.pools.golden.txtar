@@ -66,6 +66,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: helm
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: c6a8818d-9443-4a2a-ab21-f088538f330a
           image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
@@ -426,6 +436,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: helm
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: c6a8818d-9443-4a2a-ab21-f088538f330a
           image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
@@ -790,6 +810,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: helm
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: c6a8818d-9443-4a2a-ab21-f088538f330a
           image: foo:bar
           lifecycle:
             postStart:
@@ -1209,6 +1239,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: helm
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: c6a8818d-9443-4a2a-ab21-f088538f330a
           image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
@@ -1569,6 +1609,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: helm
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: c6a8818d-9443-4a2a-ab21-f088538f330a
           image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
@@ -1930,6 +1980,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: helm
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: c6a8818d-9443-4a2a-ab21-f088538f330a
           image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
@@ -2289,6 +2349,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: helm
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/test:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: c6a8818d-9443-4a2a-ab21-f088538f330a
           image: redpandadata/redpanda-unstable:v25.3.1-rc2
           lifecycle:
             postStart:
