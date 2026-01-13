@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -128,7 +127,7 @@ func TestFullNameOverride(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedJSON, b)
 
-			dot, err := tc.rp.GetDot(&rest.Config{})
+			dot, err := tc.rp.GetDot(nil)
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedFullname, dot.Values["fullnameOverride"].(string))
 		})

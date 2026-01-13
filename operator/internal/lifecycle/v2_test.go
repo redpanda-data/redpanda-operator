@@ -196,6 +196,18 @@ func TestV2ResourceClient(t *testing.T) {
 			for _, pool := range sets {
 				assertOwnership(pool)
 				require.True(t, resourceClient.nodePoolRenderer.IsNodePool(pool))
+				for _, container := range pool.Spec.Template.Spec.Containers {
+					// make these deterministic for the test
+					for i, env := range container.Env {
+						if env.Name == "REDPANDA_METRICS_K8S_CLUSTER_ID" {
+							env.Value = "00000000-0000-0000-0000-000000000000"
+						}
+						if env.Name == "REDPANDA_METRICS_K8S_VERSION" {
+							env.Value = "v1.32.0"
+						}
+						container.Env[i] = env
+					}
+				}
 			}
 
 			poolBytes, err := yaml.Marshal(sets)

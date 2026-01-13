@@ -299,6 +299,7 @@ type TemplateOptions struct {
 	ValuesFile   string   `flag:"values"`
 	Set          []string `flag:"set"`
 	SkipTests    bool     `flag:"skip-tests"`
+	KubeVersion  string   `flag:"kube-version"`
 }
 
 func (c *Client) Template(ctx context.Context, chart string, opts TemplateOptions) ([]byte, error) {
@@ -334,6 +335,13 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 	// deal with this.
 	// Running helm install in our integration tests will catch any real issues.
 	client.KubeVersion = &chartutil.KubeVersion{Version: "v1.99.0", Minor: "99", Major: "1"}
+	if opts.KubeVersion != "" {
+		kubeVersion, err := chartutil.ParseKubeVersion(opts.KubeVersion)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		client.KubeVersion = kubeVersion
+	}
 
 	releaseName, chart, err := client.NameAndChart([]string{opts.Name, chart})
 	if err != nil {
