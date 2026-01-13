@@ -23,6 +23,8 @@ buf.build/gen/go/redpandadata/common/connectrpc/go v1.16.2-20240508150812-e0d0fb
 buf.build/gen/go/redpandadata/common/connectrpc/go v1.18.1-20240917150400-3f349e63f44a.1 h1:EPRfGAJDTnM3J3MPGMPEs+HBezpiE/8lTWB3kdlQTGI=
 buf.build/gen/go/redpandadata/common/connectrpc/go v1.18.1-20240917150400-3f349e63f44a.1/go.mod h1:ZNgPT3k1W0p+EkMibCzOqoHOhNDi1ym6RH7/kGEHeKE=
 buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240715174743-9c0afe867874.2/go.mod h1:wThyg02xJx4K/DA5fg0QlKts8XVPyTT86JC8hPfEzno=
+buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1 h1:Hpbojb8tNZa89EzngrN24YIC1cAqV6cmHfRlbvOoOGo=
+buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1/go.mod h1:5sjUVquVwNxt3Q/EhE/UW0BBJ5sgPiaVTw8//wxRULI=
 buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240620104934-3415ce922cfb.1/go.mod h1:R0DNyd3sxZqaTQrcjSgGaJqHndFCf3kKHBbXgKYzKDY=
 buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240620104934-3415ce922cfb.2/go.mod h1:AcLjVYZHtwlZvBrjuqyjtZtHv9BbDaHD6C92lO/gJFI=
 buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.36.2-20250404200318-65f29ddd7b29.1/go.mod h1:zTNjffbkXs9K5/sbSlagide7l0hSTs+Oa1j39yENO8M=
@@ -3371,6 +3373,8 @@ google.golang.org/protobuf v1.36.6/go.mod h1:jduwjTPXsFjZGTmRluh+L6NjiWu7pchiJ2/
 google.golang.org/protobuf v1.36.7/go.mod h1:jduwjTPXsFjZGTmRluh+L6NjiWu7pchiJ2/5YcXBHnY=
 google.golang.org/protobuf v1.36.8/go.mod h1:fuxRtAxBytpl4zzqUh6/eyUujkJdNiuEkXntxiD/uRU=
 google.golang.org/protobuf v1.36.9/go.mod h1:fuxRtAxBytpl4zzqUh6/eyUujkJdNiuEkXntxiD/uRU=
+google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=
+google.golang.org/protobuf v1.36.11/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/airbrake/gobrake.v2 v2.0.9/go.mod h1:/h5ZAUhDkGaJfjzjKLSjv6zCL6O0LLBxU4K+aSYdM/U=
 gopkg.in/alecthomas/kingpin.v1 v1.3.7/go.mod h1:vs0oy7ub8knYaut5kITUTmx/WeE4xRuEeOR34yEAWEA=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6 h1:jMFz6MfLP0/4fUyZle81rXUoxOBFi19VUFKVDOQfozc=

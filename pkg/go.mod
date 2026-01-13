@@ -44,9 +44,15 @@ require (
 	go.opentelemetry.io/otel/trace v1.38.0
 	go.opentelemetry.io/proto/otlp v1.7.1
 	golang.org/x/mod v0.30.0
+<<<<<<< HEAD
 	golang.org/x/time v0.13.0
 	golang.org/x/tools v0.39.0
 	google.golang.org/protobuf v1.36.10
+=======
+	golang.org/x/sync v0.18.0
+	google.golang.org/grpc v1.75.1
+	google.golang.org/protobuf v1.36.11
+>>>>>>> 9fc5e9b7 (Fix PLAIN auth support for shadow links (#1226))
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.5
 	k8s.io/api v0.33.3
@@ -66,7 +72,7 @@ require (
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.10-20251106193941-bb850a944663.1 // indirect
 	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20251111205446-9c61b5cb371f.2 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.10-20251111205446-9c61b5cb371f.1 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1 // indirect
 	cel.dev/expr v0.24.0 // indirect
 	cloud.google.com/go/auth v0.16.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
