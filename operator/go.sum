@@ -573,8 +573,8 @@ github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 h1:lZUw3E0/J3roVtGQ+SCrUrg3ON6Ng
 github.com/santhosh-tekuri/jsonschema/v5 v5.3.1/go.mod h1:uToXkOrWAZ6/Oc07xWQrPOhJotwFIyu2bBVN41fcDUY=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 h1:KRzFb2m7YtdldCEkzs6KqmJw4nqEVZGK7IN2kJkjTuQ=
 github.com/santhosh-tekuri/jsonschema/v6 v6.0.2/go.mod h1:JXeL+ps8p7/KNMjDQk3TCwPpBy0wYklyWTfbkIzdIFU=
-github.com/scalalang2/golang-fifo v1.0.2 h1:sfOJBB86iXuqB5WoLtVI7+wxn8UOEOr9SnJaTakinBA=
-github.com/scalalang2/golang-fifo v1.0.2/go.mod h1:TsyVkLbka5m8tmfqsWBXwJ7Om1jV/uuOuvoPulZbMmA=
+github.com/scalalang2/golang-fifo v1.2.0 h1:B75sFuYrTetzKs/hFzWu897XEqV71z1TGug125LVMoU=
+github.com/scalalang2/golang-fifo v1.2.0/go.mod h1:FxELKz5TUmoNSPufbs2r5ZGdZ+GGGeIG8ehiFamENN8=
 github.com/segmentio/asm v1.2.0 h1:9BQrFxC+YOHJlTlHGkTrFWf59nbL3XnCoFLTwDCI7ys=
 github.com/segmentio/asm v1.2.0/go.mod h1:BqMnlJP91P8d+4ibuonYZw9mfnzI9HfxselHZr5aAcs=
 github.com/sergi/go-diff v1.4.0 h1:n/SP9D5ad1fORl+llWyN+D6qoUETXNZARKjyY2/KVCw=

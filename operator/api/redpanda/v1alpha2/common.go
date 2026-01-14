@@ -326,10 +326,11 @@ type ClusterRef struct {
 }
 
 const (
-	v1ClusterRefGroup = "redpanda.vectorized.io"
-	v1ClusterRefKind  = "Cluster"
-	v2ClusterRefGroup = "cluster.redpanda.com"
-	v2ClusterRefKind  = "Redpanda"
+	v1ClusterRefGroup     = "redpanda.vectorized.io"
+	v1ClusterRefKind      = "Cluster"
+	v2ClusterRefGroup     = "cluster.redpanda.com"
+	v2ClusterRefKind      = "Redpanda"
+	StretchClusterRefKind = "StretchCluster"
 )
 
 func (c *ClusterRef) GetGroup() string {
@@ -346,6 +347,10 @@ func (c *ClusterRef) IsV1() bool {
 
 func (c *ClusterRef) IsV2() bool {
 	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == v2ClusterRefKind
+}
+
+func (c *ClusterRef) IsStretchCluster() bool {
+	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == StretchClusterRefKind
 }
 
 // ResourceTemplate specifies additional configuration for a resource.
