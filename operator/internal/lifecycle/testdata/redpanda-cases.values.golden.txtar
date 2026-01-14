@@ -430,6 +430,7 @@ values:
 pools:
 - Generation: "0"
   Name: pool
+  ServiceAnnotations: null
   Statefulset:
     additionalRedpandaCmdFlags: []
     additionalSelectorLabels: {}
@@ -1388,6 +1389,7 @@ values:
 pools:
 - Generation: "0"
   Name: basic-a
+  ServiceAnnotations: null
   Statefulset:
     additionalRedpandaCmdFlags: []
     additionalSelectorLabels: {}
@@ -1467,6 +1469,7 @@ pools:
       type: RollingUpdate
 - Generation: "0"
   Name: basic-b
+  ServiceAnnotations: null
   Statefulset:
     additionalRedpandaCmdFlags: []
     additionalSelectorLabels: {}

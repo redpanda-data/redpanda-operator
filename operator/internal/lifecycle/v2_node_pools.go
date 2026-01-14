@@ -12,6 +12,7 @@ package lifecycle
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/utils/ptr"
@@ -49,7 +50,7 @@ func NewV2NodePoolRenderer(mgr ctrl.Manager, redpandaImage, sideCarImage Image, 
 func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPools, _ string) ([]*appsv1.StatefulSet, error) {
 	state, err := m.convertToRender(cluster)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return redpanda.RenderNodePools(state)

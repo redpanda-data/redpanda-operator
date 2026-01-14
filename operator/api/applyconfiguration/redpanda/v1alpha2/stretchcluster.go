@@ -12,7 +12,6 @@
 package v1alpha2
 
 import (
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
@@ -23,7 +22,7 @@ import (
 type StretchClusterApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *redpandav1alpha2.StretchClusterSpec    `json:"spec,omitempty"`
+	Spec                             *StretchClusterSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                           *StretchClusterStatusApplyConfiguration `json:"status,omitempty"`
 }
 
@@ -199,8 +198,8 @@ func (b *StretchClusterApplyConfiguration) ensureObjectMetaApplyConfigurationExi
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *StretchClusterApplyConfiguration) WithSpec(value redpandav1alpha2.StretchClusterSpec) *StretchClusterApplyConfiguration {
-	b.Spec = &value
+func (b *StretchClusterApplyConfiguration) WithSpec(value *StretchClusterSpecApplyConfiguration) *StretchClusterApplyConfiguration {
+	b.Spec = value
 	return b
 }
 

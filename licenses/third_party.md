@@ -206,7 +206,7 @@ run `task generate:third-party-licenses-list`
 | github.com/russross/blackfriday/v2 | [BSD-2-Clause](https://github.com/russross/blackfriday/blob/v2.1.0/LICENSE.txt) |
 | github.com/santhosh-tekuri/jsonschema/v5 | [Apache-2.0](https://github.com/santhosh-tekuri/jsonschema/blob/v5.3.1/LICENSE) |
 | github.com/santhosh-tekuri/jsonschema/v6 | [Apache-2.0](https://github.com/santhosh-tekuri/jsonschema/blob/v6.0.2/LICENSE) |
-| github.com/scalalang2/golang-fifo | [MIT](https://github.com/scalalang2/golang-fifo/blob/v1.0.2/LICENSE) |
+| github.com/scalalang2/golang-fifo | [MIT](https://github.com/scalalang2/golang-fifo/blob/v1.2.0/LICENSE) |
 | github.com/sergi/go-diff/diffmatchpatch | [MIT](https://github.com/sergi/go-diff/blob/v1.4.0/LICENSE) |
 | github.com/sethgrid/pester | [MIT](https://github.com/sethgrid/pester/blob/v1.2.0/LICENSE.md) |
 | github.com/shopspring/decimal | [MIT](https://github.com/shopspring/decimal/blob/v1.4.0/LICENSE) |
