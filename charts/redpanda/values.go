@@ -755,9 +755,10 @@ type PodTemplate struct {
 }
 
 type Pool struct {
-	Name        string
-	Generation  string
-	Statefulset Statefulset
+	Name               string
+	Generation         string
+	Statefulset        Statefulset
+	ServiceAnnotations map[string]string
 }
 
 func (n Pool) Suffix() string {

@@ -39,6 +39,7 @@ var (
 	}
 	multiclusterSchemeFns = []func(s *runtime.Scheme) error{
 		apiextensionsv1.AddToScheme,
+		certmanagerv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		redpandav1alpha2.Install,
 	}

@@ -24,6 +24,14 @@ package v1alpha2
 //   - ClusterSpec.Listeners.HTTP.KafkaEndpoint
 //   - ClusterSpec.Listeners.RPC.TLS.SecretRef
 //   - ClusterSpec.Listeners.SchemaRegistry.KafkaEndpoint
+// - StretchCluster:
+//   - Logging.UsageStats.Organization
+//   - Storage.Tiered.Config.CloudStorageReconciliationIntervalMs
+//   - PostInstallJob.SecurityContext
+//   - PostUpgradeJob.SecurityContext
+//   - Listeners.HTTP.KafkaEndpoint
+//   - Listeners.RPC.TLS.SecretRef
+//   - Listeners.SchemaRegistry.KafkaEndpoint
 // - Topic:
 //   - KafkaAPISpec
 
@@ -428,6 +436,17 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 				"field 'spec.sourceCluster.staticConfiguration.schemaRegistry.tls.keySecretRef' is deprecated and set",
 				"field 'spec.sourceCluster.staticConfiguration.schemaRegistry.sasl.passwordSecretRef' is deprecated and set",
 				"field 'spec.sourceCluster.staticConfiguration.schemaRegistry.sasl.token' is deprecated and set",
+			},
+		},
+		{
+			name: "StretchCluster",
+			obj: &StretchCluster{
+				Spec: StretchClusterSpec{
+					DeprecatedFullNameOverride: "deprecated",
+				},
+			},
+			wantWarnings: []string{
+				"field 'spec.fullNameOverride' is deprecated and set",
 			},
 		},
 		{

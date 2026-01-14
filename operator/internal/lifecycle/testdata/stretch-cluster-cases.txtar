@@ -1,0 +1,57 @@
+-- basic-test --
+-- nodepool-basic-test --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: basic-b
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  sidecarImage:
+    tag: dev
+    repository: localhost/test
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: basic-a
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+-- compat-test --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: basic-b
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  sidecarImage:
+    tag: dev
+    repository: localhost/test
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: basic-a
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default

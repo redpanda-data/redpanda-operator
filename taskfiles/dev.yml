@@ -50,6 +50,20 @@ tasks:
       - docker buildx create --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=-1 --platform linux/amd64,linux/arm64 --name v-builder --use
       - '{{if eq ARCH "amd64"}} docker run --rm --privileged linuxkit/binfmt:v0.8 {{else}} echo "" {{end}}'
 
-  update-licenses:
+  install:license-updater:
     cmds:
-      - licenseupdater ./... -config .licenseupdater.yaml
+      - GOBIN={{.PWD}}/.build go install github.com/redpanda-data/common-go/licenseupdater@0862a76e8f5ec7c9ed22ff22706408ff350610ac
+    status:
+      - test -f .build/licenseupdater
+
+  install:rp-controller-gen:
+    cmds:
+      - GOBIN={{.PWD}}/.build go install github.com/redpanda-data/common-go/rp-controller-gen@0862a76e8f5ec7c9ed22ff22706408ff350610ac
+    status:
+      - test -f .build/rp-controller-gen
+
+  update-licenses:
+    deps:
+      - task: install:license-updater
+    cmds:
+      - .build/licenseupdater -config .licenseupdater.yaml
