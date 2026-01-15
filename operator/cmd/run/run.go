@@ -234,15 +234,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 		}
 	}
 
-	// Deprecated flags.
-	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
-	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
-	cmd.Flags().Bool("enable-helm-controllers", false, "A deprecated and unused flag")
-	cmd.Flags().String("helm-repository-url", "https://charts.redpanda.com/", "A deprecated and unused flag")
-	cmd.Flags().Bool("force-defluxed-mode", false, "A deprecated and unused flag")
-	cmd.Flags().Bool("allow-pvc-deletion", false, "Deprecated: Ignored if specified")
-	cmd.Flags().Bool("operator-mode", true, "A deprecated and unused flag")
-	cmd.Flags().Bool("enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
+	addDeprecatedFlags(cmd)
 }
 
 func (o *RunOptions) ControllerEnabled(controller Controller) bool {
@@ -273,6 +265,8 @@ func Command() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
+			deprecatedFlagsUsed := checkDeprecatedFlags(cmd)
+
 			var cloudExpander *pkgsecrets.CloudExpander
 			if options.cloudSecrets.enabled {
 				var err error
@@ -282,7 +276,7 @@ func Command() *cobra.Command {
 				}
 			}
 
-			return Run(ctx, cloudExpander, &options)
+			return Run(ctx, cloudExpander, &options, deprecatedFlagsUsed)
 		},
 	}
 
@@ -296,6 +290,7 @@ func Run(
 	ctx context.Context,
 	cloudExpander *pkgsecrets.CloudExpander,
 	opts *RunOptions,
+	deprecatedFlagsUsed []string,
 ) error {
 	v1Controllers := opts.v1Flags.enabled
 	v2Controllers := opts.v2Flags.enabled
@@ -305,6 +300,10 @@ func Run(
 	}
 
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
+
+	if len(deprecatedFlagsUsed) != 0 {
+		setupLog.Info("WARNING - detected deprecated flags currently in-use: [%s]", strings.Join(deprecatedFlagsUsed, ", "))
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
