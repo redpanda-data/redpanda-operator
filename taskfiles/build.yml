@@ -70,7 +70,13 @@ tasks:
         -C ./alias
         -o ../.build/alias-{{.ITEM.GOOS}}-{{.ITEM.GOARCH}}
         -ldflags='-X "main.AliasTo=/redpanda-operator run"'
-        .
+      # once cross-compilation using go install is allowed, then move to this 
+      # cmd: >-
+      #   CGO_ENABLED=0
+      #   GOOS={{.ITEM.GOOS}}
+      #   GOARCH={{.ITEM.GOARCH}}
+      #   GOBIN={{.BUILD_ROOT}}
+      #   go install -ldflags='-X "main.AliasTo=/redpanda-operator run"' github.com/redpanda-data/common-go/alias@latest && mv {{.BUILD_ROOT}}/alias {{.BUILD_ROOT}}/alias-{{.ITEM.GOOS}}-{{.ITEM.GOARCH}}
 
   gen:
     cmds:

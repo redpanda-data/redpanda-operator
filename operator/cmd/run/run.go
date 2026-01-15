@@ -71,124 +71,174 @@ var availableControllers = []string{
 }
 
 type RunOptions struct {
-	namespace             string
-	additionalControllers []string
+	managerOptions  ctrl.Options
+	rpClientTimeout time.Duration
 
-	// enableVectorizedControllers controls whether or not controllers for
-	// resources in the vectorized group (Cluster, Console) AKA the V1 Operator
-	// will be enabled or not.
-	enableVectorizedControllers bool
+	images struct {
+		configurator struct {
+			image string
+			tag   string
+		}
+		redpanda struct {
+			image string
+			tag   string
+		}
+	}
 
-	// enableRedpandaControllers controls whether or not to enable the Redpanda
-	// controller - this should really only be used in cloud where we leverage
-	// a different set of cluster CRDs.
-	enableRedpandaControllers bool
+	v1Flags struct {
+		enabled                     bool
+		ghostbuster                 bool
+		clusterDomain               string
+		decommissionWaitInterval    time.Duration
+		metricsTimeout              time.Duration
+		autoDeletePVCs              bool
+		restrictToRedpandaVersion   string
+		configuratorImagePullPolicy string
+	}
 
-	enableV2NodepoolController          bool
-	enableConsoleController             bool
-	managerOptions                      ctrl.Options
-	clusterDomain                       string
-	secureMetrics                       bool
-	enableHTTP2                         bool
-	webhookEnabled                      bool
-	configuratorBaseImage               string
-	configuratorTag                     string
-	configuratorImagePullPolicy         string
-	redpandaDefaultTag                  string
-	redpandaDefaultRepository           string
-	decommissionWaitInterval            time.Duration
-	metricsTimeout                      time.Duration
-	rpClientTimeout                     time.Duration
-	restrictToRedpandaVersion           string
-	ghostbuster                         bool
-	unbindPVCsAfter                     time.Duration
-	unbinderSelector                    pflagutil.LabelSelectorValue
-	allowPVRebinding                    bool
-	autoDeletePVCs                      bool
-	webhookCertPath                     string
-	webhookCertName                     string
-	webhookCertKey                      string
-	metricsCertPath                     string
-	metricsCertName                     string
-	metricsCertKey                      string
-	enableGhostBrokerDecommissioner     bool
-	ghostBrokerDecommissionerSyncPeriod time.Duration
-	cloudSecretsEnabled                 bool
-	cloudSecretsPrefix                  string
-	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
+	v2Flags struct {
+		enabled          bool
+		nodepoolsEnabled bool
+		consoleEnabled   bool
+	}
+
+	unbinder struct {
+		selector       pflagutil.LabelSelectorValue
+		unbindAfter    time.Duration
+		allowRebinding bool
+	}
+
+	webhooks struct {
+		enabled  bool
+		certPath string
+		certName string
+		certKey  string
+	}
+
+	metrics struct {
+		secure   bool
+		certPath string
+		certName string
+		certKey  string
+	}
+
+	cloudSecrets struct {
+		enabled bool
+		prefix  string
+		config  pkgsecrets.ExpanderCloudConfiguration
+	}
+
+	maybeDeprecate struct {
+		// all of our docs basically say 1 operator per cluster
+		// we should deprecate this mode of running
+		namespace             string
+		additionalControllers []string
+		enableHTTP2           bool
+		decommissionerFlags   struct {
+			enabled    bool
+			syncPeriod time.Duration
+		}
+	}
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
-	// Manager flags.
-	cmd.Flags().StringVar(&o.managerOptions.Metrics.BindAddress, "metrics-bind-address", "0", "The address the metrics endpoint binds to. Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
-	cmd.Flags().BoolVar(&o.managerOptions.LeaderElection, "leader-elect", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
-	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionID, "leader-election-id", "aa9fc693.vectorized.io", "Sets the ID used for the leader election process.")
-	// NB: The default behavior here is in the controller-runtime, pretty deep. It reads the namespace file that's created when mounting a service account token.
-	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionNamespace, "leader-election-namespace", "", "Sets the namespace that leader election resources will be created within. If not specified, defaults the value of --namespace or the namespace this Pod is running in.")
-	cmd.Flags().StringVar(&o.managerOptions.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	cmd.Flags().StringVar(&o.managerOptions.PprofBindAddress, "pprof-bind-address", ":8082", "The address the metric endpoint binds to. Set to '' or 0 to disable")
-	cmd.Flags().StringVar(&o.namespace, "namespace", "", "If namespace is set to not empty value, it changes scope of Redpanda operator to work in single namespace")
-	cmd.Flags().BoolVar(&o.secureMetrics, "metrics-secure", true, "If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
-	cmd.Flags().BoolVar(&o.enableHTTP2, "enable-http2", false, "If set, HTTP/2 will be enabled for the metrics and webhook servers")
-	cmd.Flags().StringVar(&o.webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
-	cmd.Flags().StringVar(&o.webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
-	cmd.Flags().StringVar(&o.webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
-	cmd.Flags().StringVar(&o.metricsCertPath, "metrics-cert-path", "", "The directory that contains the metrics server certificate.")
-	cmd.Flags().StringVar(&o.metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
-	cmd.Flags().StringVar(&o.metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
-	cmd.Flags().BoolVar(&o.webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
+	{
+		// Manager flags.
+		cmd.Flags().StringVar(&o.managerOptions.Metrics.BindAddress, "metrics-bind-address", "0", "The address the metrics endpoint binds to. Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
+		cmd.Flags().BoolVar(&o.managerOptions.LeaderElection, "leader-elect", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+		cmd.Flags().StringVar(&o.managerOptions.LeaderElectionID, "leader-election-id", "aa9fc693.vectorized.io", "Sets the ID used for the leader election process.")
+		// NB: The default behavior here is in the controller-runtime, pretty deep. It reads the namespace file that's created when mounting a service account token.
+		cmd.Flags().StringVar(&o.managerOptions.LeaderElectionNamespace, "leader-election-namespace", "", "Sets the namespace that leader election resources will be created within. If not specified, defaults the value of --namespace or the namespace this Pod is running in.")
+		cmd.Flags().StringVar(&o.managerOptions.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+		cmd.Flags().StringVar(&o.managerOptions.PprofBindAddress, "pprof-bind-address", ":8082", "The address the metric endpoint binds to. Set to '' or 0 to disable")
+	}
 
-	// Controller flags.
-	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
-	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
-	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
-	cmd.Flags().BoolVar(&o.enableRedpandaControllers, "enable-redpanda-controllers", true, "Specifies whether or not to enabled the Redpanda cluster controllers")
-	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
-	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
-	cmd.Flags().StringVar(&o.configuratorTag, "configurator-tag", version.Version, "The tag of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
-	cmd.Flags().StringVar(&o.redpandaDefaultTag, "redpanda-tag", DefaultRedpandaImageTag, "The default docker image tag for redpanda containers")
-	cmd.Flags().StringVar(&o.redpandaDefaultRepository, "redpanda-repository", DefaultRedpandaRepository, "The default docker repository to pull redpanda images from")
-	cmd.Flags().StringVar(&o.configuratorImagePullPolicy, "configurator-image-pull-policy", "Always", "Set the configurator image pull policy")
-	cmd.Flags().DurationVar(&o.decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
-	cmd.Flags().DurationVar(&o.metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
 	cmd.Flags().DurationVar(&o.rpClientTimeout, "cluster-connection-timeout", 10*time.Second, "Set the timeout for internal clients used to connect to Redpanda clusters")
-	cmd.Flags().StringVar(&o.restrictToRedpandaVersion, "restrict-redpanda-version", "", "Restrict management of clusters to those with this version")
-	cmd.Flags().BoolVar(&o.ghostbuster, "unsafe-decommission-failed-brokers", false, "Set to enable decommissioning a failed broker that is configured but does not exist in the StatefulSet (ghost broker). This may result in invalidating valid data")
-	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
-	cmd.Flags().StringSliceVar(&o.additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
-	cmd.Flags().DurationVar(&o.unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
-	cmd.Flags().BoolVar(&o.allowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
-	cmd.Flags().Var(&o.unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
-	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
-	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
-	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 
-	// Secret store related flags.
-	cmd.Flags().BoolVar(&o.cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
-	cmd.Flags().StringVar(&o.cloudSecretsPrefix, "cloud-secrets-prefix", "", "Prefix for all names of cloud secrets")
-	cmd.Flags().StringVar(&o.cloudSecretsConfig.AWSRegion, "cloud-secrets-aws-region", "", "AWS Region in which the secrets are stored")
-	cmd.Flags().StringVar(&o.cloudSecretsConfig.AWSRoleARN, "cloud-secrets-aws-role-arn", "", "AWS role ARN to assume when fetching secrets")
-	cmd.Flags().StringVar(&o.cloudSecretsConfig.GCPProjectID, "cloud-secrets-gcp-project-id", "", "GCP project ID in which the secrets are stored")
-	cmd.Flags().StringVar(&o.cloudSecretsConfig.AzureKeyVaultURI, "cloud-secrets-azure-key-vault-uri", "", "Azure Key Vault URI in which the secrets are stored")
+	{
+		// image flags
+		cmd.Flags().StringVar(&o.images.configurator.image, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
+		cmd.Flags().StringVar(&o.images.configurator.tag, "configurator-tag", version.Version, "The tag of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
+		cmd.Flags().StringVar(&o.images.redpanda.image, "redpanda-tag", DefaultRedpandaImageTag, "The default docker image tag for redpanda containers")
+		cmd.Flags().StringVar(&o.images.redpanda.tag, "redpanda-repository", DefaultRedpandaRepository, "The default docker repository to pull redpanda images from")
+	}
 
-	// Legacy Global flags.
-	cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowDownscalingInWebhook, "allow-downscaling", true, "Allow to reduce the number of replicas in existing clusters")
-	cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowConsoleAnyNamespace, "allow-console-any-ns", false, "Allow to create Console in any namespace. Allowing this copies Redpanda SchemaRegistry TLS Secret to namespace (alpha feature)")
-	cmd.Flags().StringVar(&vectorizedv1alpha1.SuperUsersPrefix, "superusers-prefix", "", "Prefix to add in username of superusers managed by operator. This will only affect new clusters, enabling this will not add prefix to existing clusters (alpha feature)")
+	{
+		// unbinder flags
+		cmd.Flags().DurationVar(&o.unbinder.unbindAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
+		cmd.Flags().BoolVar(&o.unbinder.allowRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
+		cmd.Flags().Var(&o.unbinder.selector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
+	}
 
-	// Deprecated flags.
-	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
-	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
-	cmd.Flags().Bool("enable-helm-controllers", false, "A deprecated and unused flag")
-	cmd.Flags().String("helm-repository-url", "https://charts.redpanda.com/", "A deprecated and unused flag")
-	cmd.Flags().Bool("force-defluxed-mode", false, "A deprecated and unused flag")
-	cmd.Flags().Bool("allow-pvc-deletion", false, "Deprecated: Ignored if specified")
-	cmd.Flags().Bool("operator-mode", true, "A deprecated and unused flag")
-	cmd.Flags().Bool("enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
+	{
+		// webhooks flags
+		cmd.Flags().BoolVar(&o.webhooks.enabled, "webhook-enabled", false, "Enable webhook Manager")
+		cmd.Flags().StringVar(&o.webhooks.certPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
+		cmd.Flags().StringVar(&o.webhooks.certName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
+		cmd.Flags().StringVar(&o.webhooks.certKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
+	}
+
+	{
+		// metrics flags
+		cmd.Flags().BoolVar(&o.metrics.secure, "metrics-secure", true, "If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
+		cmd.Flags().StringVar(&o.metrics.certPath, "metrics-cert-path", "", "The directory that contains the metrics server certificate.")
+		cmd.Flags().StringVar(&o.metrics.certName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
+		cmd.Flags().StringVar(&o.metrics.certKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
+	}
+
+	{
+		// cloud secrets flags
+		cmd.Flags().BoolVar(&o.cloudSecrets.enabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
+		cmd.Flags().StringVar(&o.cloudSecrets.prefix, "cloud-secrets-prefix", "", "Prefix for all names of cloud secrets")
+		cmd.Flags().StringVar(&o.cloudSecrets.config.AWSRegion, "cloud-secrets-aws-region", "", "AWS Region in which the secrets are stored")
+		cmd.Flags().StringVar(&o.cloudSecrets.config.AWSRoleARN, "cloud-secrets-aws-role-arn", "", "AWS role ARN to assume when fetching secrets")
+		cmd.Flags().StringVar(&o.cloudSecrets.config.GCPProjectID, "cloud-secrets-gcp-project-id", "", "GCP project ID in which the secrets are stored")
+		cmd.Flags().StringVar(&o.cloudSecrets.config.AzureKeyVaultURI, "cloud-secrets-azure-key-vault-uri", "", "Azure Key Vault URI in which the secrets are stored")
+	}
+
+	{
+		// v2-only flags
+		cmd.Flags().BoolVar(&o.v2Flags.enabled, "enable-redpanda-controllers", true, "Specifies whether or not to enabled the Redpanda cluster controllers")
+		cmd.Flags().BoolVar(&o.v2Flags.consoleEnabled, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
+		cmd.Flags().BoolVar(&o.v2Flags.nodepoolsEnabled, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
+	}
+
+	{
+		// v1-only flags
+		cmd.Flags().BoolVar(&o.v1Flags.enabled, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
+		cmd.Flags().DurationVar(&o.v1Flags.decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
+		cmd.Flags().DurationVar(&o.v1Flags.metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
+		cmd.Flags().BoolVar(&o.v1Flags.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
+		cmd.Flags().StringVar(&o.v1Flags.restrictToRedpandaVersion, "restrict-redpanda-version", "", "Restrict management of clusters to those with this version")
+		cmd.Flags().StringVar(&o.v1Flags.configuratorImagePullPolicy, "configurator-image-pull-policy", "Always", "Set the configurator image pull policy")
+		cmd.Flags().StringVar(&o.v1Flags.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
+
+		cmd.Flags().BoolVar(&o.v1Flags.ghostbuster, "unsafe-decommission-failed-brokers", false, "Set to enable decommissioning a failed broker that is configured but does not exist in the StatefulSet (ghost broker). This may result in invalidating valid data")
+		_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
+
+		// Legacy Global flags.
+		cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowDownscalingInWebhook, "allow-downscaling", true, "Allow to reduce the number of replicas in existing clusters")
+		cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowConsoleAnyNamespace, "allow-console-any-ns", false, "Allow to create Console in any namespace. Allowing this copies Redpanda SchemaRegistry TLS Secret to namespace (alpha feature)")
+		cmd.Flags().StringVar(&vectorizedv1alpha1.SuperUsersPrefix, "superusers-prefix", "", "Prefix to add in username of superusers managed by operator. This will only affect new clusters, enabling this will not add prefix to existing clusters (alpha feature)")
+	}
+
+	{
+		// to deprecate
+		cmd.Flags().StringVar(&o.maybeDeprecate.namespace, "namespace", "", "If namespace is set to not empty value, it changes scope of Redpanda operator to work in single namespace")
+		cmd.Flags().BoolVar(&o.maybeDeprecate.enableHTTP2, "enable-http2", false, "If set, HTTP/2 will be enabled for the metrics and webhook servers")
+		cmd.Flags().StringSliceVar(&o.maybeDeprecate.additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
+		{
+			// decommissioner flags
+			cmd.Flags().BoolVar(&o.maybeDeprecate.decommissionerFlags.enabled, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
+			cmd.Flags().DurationVar(&o.maybeDeprecate.decommissionerFlags.syncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
+		}
+	}
+
+	addDeprecatedFlags(cmd)
 }
 
 func (o *RunOptions) ControllerEnabled(controller Controller) bool {
-	for _, c := range o.additionalControllers {
+	for _, c := range o.maybeDeprecate.additionalControllers {
 		if Controller(c) == AllNonVectorizedControllers || Controller(c) == controller {
 			return true
 		}
@@ -215,16 +265,18 @@ func Command() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
+			deprecatedFlagsUsed := checkDeprecatedFlags(cmd)
+
 			var cloudExpander *pkgsecrets.CloudExpander
-			if options.cloudSecretsEnabled {
+			if options.cloudSecrets.enabled {
 				var err error
-				cloudExpander, err = pkgsecrets.NewCloudExpander(ctx, options.cloudSecretsPrefix, options.cloudSecretsConfig)
+				cloudExpander, err = pkgsecrets.NewCloudExpander(ctx, options.cloudSecrets.prefix, options.cloudSecrets.config)
 				if err != nil {
 					return err
 				}
 			}
 
-			return Run(ctx, cloudExpander, &options)
+			return Run(ctx, cloudExpander, &options, deprecatedFlagsUsed)
 		},
 	}
 
@@ -238,15 +290,20 @@ func Run(
 	ctx context.Context,
 	cloudExpander *pkgsecrets.CloudExpander,
 	opts *RunOptions,
+	deprecatedFlagsUsed []string,
 ) error {
-	v1Controllers := opts.enableVectorizedControllers
-	v2Controllers := opts.enableRedpandaControllers
+	v1Controllers := opts.v1Flags.enabled
+	v2Controllers := opts.v2Flags.enabled
 
-	if (opts.enableV2NodepoolController || opts.enableConsoleController) && !v2Controllers {
+	if (opts.v2Flags.nodepoolsEnabled || opts.v2Flags.consoleEnabled) && !v2Controllers {
 		return errors.New("running NodePool or Console controllers requires running the Redpanda controller")
 	}
 
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
+
+	if len(deprecatedFlagsUsed) != 0 {
+		setupLog.Info("WARNING - detected deprecated flags currently in-use: [%s]", strings.Join(deprecatedFlagsUsed, ", "))
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -260,7 +317,7 @@ func Run(
 	}
 
 	var tlsOpts []func(*tls.Config)
-	if !opts.enableHTTP2 {
+	if !opts.maybeDeprecate.enableHTTP2 {
 		tlsOpts = append(tlsOpts, disableHTTP2)
 	}
 
@@ -268,18 +325,18 @@ func Run(
 	var metricsCertWatcher, webhookCertWatcher *certwatcher.CertWatcher
 
 	var webhookServer webhook.Server
-	if opts.webhookEnabled {
+	if opts.webhooks.enabled {
 		// Initial webhook TLS options
 		webhookTLSOpts := tlsOpts
 
-		if len(opts.webhookCertPath) > 0 {
+		if len(opts.webhooks.certPath) > 0 {
 			setupLog.Info("Initializing webhook certificate watcher using provided certificates",
-				"webhook-cert-path", opts.webhookCertPath, "webhook-cert-name", opts.webhookCertName, "webhook-cert-key", opts.webhookCertKey)
+				"webhook-cert-path", opts.webhooks.certPath, "webhook-cert-name", opts.webhooks.certName, "webhook-cert-key", opts.webhooks.certKey)
 
 			var err error
 			webhookCertWatcher, err = certwatcher.New(
-				filepath.Join(opts.webhookCertPath, opts.webhookCertName),
-				filepath.Join(opts.webhookCertPath, opts.webhookCertKey),
+				filepath.Join(opts.webhooks.certPath, opts.webhooks.certName),
+				filepath.Join(opts.webhooks.certPath, opts.webhooks.certKey),
 			)
 			if err != nil {
 				setupLog.Error(err, "Failed to initialize webhook certificate watcher")
@@ -305,11 +362,11 @@ func Run(
 	// - https://book.kubebuilder.io/reference/metrics.html
 	metricsServerOptions := metricsserver.Options{
 		BindAddress:   opts.managerOptions.Metrics.BindAddress,
-		SecureServing: opts.secureMetrics,
+		SecureServing: opts.metrics.secure,
 		TLSOpts:       tlsOpts,
 	}
 
-	if opts.secureMetrics {
+	if opts.metrics.secure {
 		// FilterProvider is used to protect the metrics endpoint with authn/authz.
 		// These configurations ensure that only authorized users and service accounts
 		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
@@ -325,14 +382,14 @@ func Run(
 	// - [METRICS-WITH-CERTS] at config/default/kustomization.yaml to generate and use certificates
 	// managed by cert-manager for the metrics server.
 	// - [PROMETHEUS-WITH-CERTS] at config/prometheus/kustomization.yaml for TLS certification.
-	if len(opts.metricsCertPath) > 0 {
+	if len(opts.metrics.certPath) > 0 {
 		setupLog.Info("Initializing metrics certificate watcher using provided certificates",
-			"metrics-cert-path", opts.metricsCertPath, "metrics-cert-name", opts.metricsCertName, "metrics-cert-key", opts.metricsCertKey)
+			"metrics-cert-path", opts.metrics.certPath, "metrics-cert-name", opts.metrics.certName, "metrics-cert-key", opts.metrics.certKey)
 
 		var err error
 		metricsCertWatcher, err = certwatcher.New(
-			filepath.Join(opts.metricsCertPath, opts.metricsCertName),
-			filepath.Join(opts.metricsCertPath, opts.metricsCertKey),
+			filepath.Join(opts.metrics.certPath, opts.metrics.certName),
+			filepath.Join(opts.metrics.certPath, opts.metrics.certKey),
 		)
 		if err != nil {
 			setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
@@ -353,15 +410,15 @@ func Run(
 	opts.managerOptions.Scheme = controller.UnifiedScheme
 
 	if opts.managerOptions.LeaderElectionNamespace == "" {
-		if opts.namespace == "" {
+		if opts.maybeDeprecate.namespace == "" {
 			opts.managerOptions.LeaderElectionNamespace = "kube-system"
 		} else {
-			opts.managerOptions.LeaderElectionNamespace = opts.namespace
+			opts.managerOptions.LeaderElectionNamespace = opts.maybeDeprecate.namespace
 		}
 	}
 
-	if opts.namespace != "" {
-		opts.managerOptions.Cache.DefaultNamespaces = map[string]cache.Config{opts.namespace: {}}
+	if opts.maybeDeprecate.namespace != "" {
+		opts.managerOptions.Cache.DefaultNamespaces = map[string]cache.Config{opts.maybeDeprecate.namespace: {}}
 	}
 
 	mcmanager, err := multicluster.NewSingleClusterManager(ctrl.GetConfigOrDie(), opts.managerOptions)
@@ -376,22 +433,22 @@ func Run(
 	factory := internalclient.NewFactory(mcmanager, cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout)
 
 	cloudSecrets := lifecycle.CloudSecretsFlags{
-		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
-		CloudSecretsPrefix:           opts.cloudSecretsPrefix,
-		CloudSecretsAWSRegion:        opts.cloudSecretsConfig.AWSRegion,
-		CloudSecretsAWSRoleARN:       opts.cloudSecretsConfig.AWSRoleARN,
-		CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
-		CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
+		CloudSecretsEnabled:          opts.cloudSecrets.enabled,
+		CloudSecretsPrefix:           opts.cloudSecrets.prefix,
+		CloudSecretsAWSRegion:        opts.cloudSecrets.config.AWSRegion,
+		CloudSecretsAWSRoleARN:       opts.cloudSecrets.config.AWSRoleARN,
+		CloudSecretsGCPProjectID:     opts.cloudSecrets.config.GCPProjectID,
+		CloudSecretsAzureKeyVaultURI: opts.cloudSecrets.config.AzureKeyVaultURI,
 	}
 
 	sidecarImage := lifecycle.Image{
-		Repository: opts.configuratorBaseImage,
-		Tag:        opts.configuratorTag,
+		Repository: opts.images.configurator.image,
+		Tag:        opts.images.configurator.tag,
 	}
 
 	redpandaImage := lifecycle.Image{
-		Repository: opts.redpandaDefaultRepository,
-		Tag:        opts.redpandaDefaultTag,
+		Repository: opts.images.redpanda.image,
+		Tag:        opts.images.redpanda.tag,
 	}
 
 	if v2Controllers {
@@ -401,7 +458,7 @@ func Run(
 			LifecycleClient:      lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
-			UseNodePools:         opts.enableV2NodepoolController,
+			UseNodePools:         opts.v2Flags.consoleEnabled,
 		}).SetupWithManager(ctx, mcmanager); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
@@ -411,7 +468,7 @@ func Run(
 		// only run them if we run the Redpanda controller
 
 		// NodePool Reconciler
-		if opts.enableV2NodepoolController {
+		if opts.v2Flags.nodepoolsEnabled {
 			if err := (&redpandacontrollers.NodePoolReconciler{
 				Manager: mcmanager,
 			}).SetupWithManager(ctx, mcmanager); err != nil {
@@ -421,7 +478,7 @@ func Run(
 		}
 
 		// Console Reconciler.
-		if opts.enableConsoleController {
+		if opts.v2Flags.consoleEnabled {
 			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
 				Options: client.Options{
 					Scheme: mgr.GetScheme(),
@@ -491,7 +548,7 @@ func Run(
 		if err = (&olddecommission.DecommissionReconciler{
 			Client:                   mgr.GetClient(),
 			OperatorMode:             true,
-			DecommissionWaitInterval: opts.decommissionWaitInterval,
+			DecommissionWaitInterval: opts.v1Flags.decommissionWaitInterval,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
 			return err
@@ -499,16 +556,16 @@ func Run(
 	}
 
 	// The unbinder gets to run in any mode, if it's enabled.
-	if opts.unbindPVCsAfter <= 0 {
-		setupLog.Info("PVCUnbinder controller not active", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding)
+	if opts.unbinder.unbindAfter <= 0 {
+		setupLog.Info("PVCUnbinder controller not active", "unbind-after", opts.unbinder.unbindAfter, "selector", opts.unbinder.selector, "allow-pv-rebinding", opts.unbinder.allowRebinding)
 	} else {
-		setupLog.Info("starting PVCUnbinder controller", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding)
+		setupLog.Info("starting PVCUnbinder controller", "unbind-after", opts.unbinder.unbindAfter, "selector", opts.unbinder.selector, "allow-pv-rebinding", opts.unbinder.allowRebinding)
 
 		if err := (&pvcunbinder.Controller{
 			Client:         mgr.GetClient(),
-			Timeout:        opts.unbindPVCsAfter,
-			Selector:       opts.unbinderSelector.Selector,
-			AllowRebinding: opts.allowPVRebinding,
+			Timeout:        opts.unbinder.unbindAfter,
+			Selector:       opts.unbinder.selector.Selector,
+			AllowRebinding: opts.unbinder.allowRebinding,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
@@ -527,7 +584,7 @@ func Run(
 		return err
 	}
 
-	if opts.webhookEnabled {
+	if opts.webhooks.enabled {
 		hookServer := mgr.GetWebhookServer()
 		if err := mgr.AddReadyzCheck("webhook", hookServer.StartedChecker()); err != nil {
 			setupLog.Error(err, "unable to create ready check")
@@ -557,15 +614,15 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 	log.Info(ctx, "Starting Vectorized (V1) Controllers")
 
 	configurator := resources.ConfiguratorSettings{
-		ConfiguratorBaseImage:        opts.configuratorBaseImage,
-		ConfiguratorTag:              opts.configuratorTag,
-		ImagePullPolicy:              corev1.PullPolicy(opts.configuratorImagePullPolicy),
-		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
-		CloudSecretsPrefix:           opts.cloudSecretsPrefix,
-		CloudSecretsAWSRegion:        opts.cloudSecretsConfig.AWSRegion,
-		CloudSecretsAWSRoleARN:       opts.cloudSecretsConfig.AWSRoleARN,
-		CloudSecretsGCPProjectID:     opts.cloudSecretsConfig.GCPProjectID,
-		CloudSecretsAzureKeyVaultURI: opts.cloudSecretsConfig.AzureKeyVaultURI,
+		ConfiguratorBaseImage:        opts.images.configurator.image,
+		ConfiguratorTag:              opts.images.configurator.tag,
+		ImagePullPolicy:              corev1.PullPolicy(opts.v1Flags.configuratorImagePullPolicy),
+		CloudSecretsEnabled:          opts.cloudSecrets.enabled,
+		CloudSecretsPrefix:           opts.cloudSecrets.prefix,
+		CloudSecretsAWSRegion:        opts.cloudSecrets.config.AWSRegion,
+		CloudSecretsAWSRoleARN:       opts.cloudSecrets.config.AWSRoleARN,
+		CloudSecretsGCPProjectID:     opts.cloudSecrets.config.GCPProjectID,
+		CloudSecretsAzureKeyVaultURI: opts.cloudSecrets.config.AzureKeyVaultURI,
 	}
 
 	adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
@@ -575,14 +632,14 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 		Scheme:                    mgr.GetScheme(),
 		AdminAPIClientFactory:     adminAPIClientFactory,
-		DecommissionWaitInterval:  opts.decommissionWaitInterval,
-		MetricsTimeout:            opts.metricsTimeout,
-		RestrictToRedpandaVersion: opts.restrictToRedpandaVersion,
-		GhostDecommissioning:      opts.ghostbuster,
-		AutoDeletePVCs:            opts.autoDeletePVCs,
+		DecommissionWaitInterval:  opts.v1Flags.decommissionWaitInterval,
+		MetricsTimeout:            opts.v1Flags.metricsTimeout,
+		RestrictToRedpandaVersion: opts.v1Flags.restrictToRedpandaVersion,
+		GhostDecommissioning:      opts.v1Flags.ghostbuster,
+		AutoDeletePVCs:            opts.v1Flags.autoDeletePVCs,
 		CloudSecretsExpander:      cloudExpander,
 		Timeout:                   opts.rpClientTimeout,
-	}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
+	}).WithClusterDomain(opts.v1Flags.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 		log.Error(ctx, err, "Unable to create controller", "controller", "Cluster")
 		return err
 	}
@@ -593,7 +650,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 	}
 
 	// Setup webhooks
-	if opts.webhookEnabled {
+	if opts.webhooks.enabled {
 		log.Info(ctx, "Setup webhook")
 		if err := (&vectorizedv1alpha1.Cluster{}).SetupWebhookWithManager(mgr); err != nil {
 			log.Error(ctx, err, "Unable to create webhook", "webhook", "RedpandaCluster")
@@ -601,7 +658,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		}
 	}
 
-	if opts.enableGhostBrokerDecommissioner && opts.enableVectorizedControllers {
+	if opts.maybeDeprecate.decommissionerFlags.enabled && opts.v1Flags.enabled {
 		adapter := vectorizedDecommissionerAdapter{factory: factory, client: mgr.GetClient()}
 		d := decommissioning.NewStatefulSetDecommissioner(
 			mgr,
@@ -610,7 +667,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 			// Operator v1 supports multiple NodePools, and therefore multiple STS.
 			// This function provides a custom replica count: the desired replicas of all STS, instead of a single STS.
 			decommissioning.WithDesiredReplicasFetcher(adapter.desiredReplicas),
-			decommissioning.WithSyncPeriod(opts.ghostBrokerDecommissionerSyncPeriod),
+			decommissioning.WithSyncPeriod(opts.maybeDeprecate.decommissionerFlags.syncPeriod),
 			decommissioning.WithCleanupPVCs(false),
 			// In Operator v1, decommissioning based on pod ordinal is not correct because
 			// it has controller code that manages decommissioning. If something else decommissions the node, it can not deal with this under all circumstances because of various reasons, eg. bercause of a protection against stale status reads of status.currentReplicas
