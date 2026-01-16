@@ -11,6 +11,7 @@
   helm-3-10-3 = pkgs.callPackage ./helm.nix { };
   kuttl = pkgs.callPackage ./kuttl.nix { };
   licenseupdater = pkgs.callPackage ./licenseupdater.nix { };
+  openapi-gen = pkgs.callPackage ./openapi-gen.nix { };
   rp-controller-gen = pkgs.callPackage ./rp-controller-gen.nix { };
   setup-envtest = pkgs.callPackage ./setup-envtest.nix { };
   vcluster = pkgs.callPackage ./vcluster.nix { };

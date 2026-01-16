@@ -89,6 +89,7 @@
               pkgs.kustomize
               pkgs.kuttl
               pkgs.licenseupdater
+              pkgs.openapi-gen
               pkgs.openssl
               pkgs.otel-desktop-viewer
               pkgs.protoc-gen-go
