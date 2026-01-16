@@ -68,6 +68,11 @@ func init() {
 	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have no members in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveNoMembersInCluster)
 	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have status field "([^"]*)" set to "([^"]*)"$`, redpandaRoleShouldHaveStatusFieldSetTo)
 
+	// Direct testing with effective role names (using the role name as it appears in Redpanda)
+	framework.RegisterStep(`^role "([^"]*)" should exist in( vectorized)? cluster "([^"]*)" with effective name "([^"]*)"$`, roleShouldExistInClusterWithEffectiveName)
+	framework.RegisterStep(`^there should be no role "([^"]*)" in( vectorized)? cluster "([^"]*)" with effective name "([^"]*)"$`, thereShouldBeNoRoleInClusterWithEffectiveName)
+	framework.RegisterStep(`^role "([^"]*)" should have members "([^"]*)" in( vectorized)? cluster "([^"]*)" with effective name "([^"]*)"$`, roleShouldHaveMembersWithEffectiveName)
+
 	// Metrics scenario steps
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)
 	framework.RegisterStep(`^its metrics endpoint should reject http request with status code "([^"]*)"$`, requestMetricsEndpointPlainHTTP)
