@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Support for InternalRoleName field in RedpandaRole to enable cloud-managed roles with internal naming conventions (prefixed with "__") while maintaining user-friendly Kubernetes resource names.
+time: 2026-01-16T14:10:12.353945182+00:00

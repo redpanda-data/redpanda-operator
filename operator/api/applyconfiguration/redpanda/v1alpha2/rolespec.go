@@ -14,9 +14,10 @@ package v1alpha2
 // RoleSpecApplyConfiguration represents a declarative configuration of the RoleSpec type for use
 // with apply.
 type RoleSpecApplyConfiguration struct {
-	ClusterSource *ClusterSourceApplyConfiguration         `json:"cluster,omitempty"`
-	Principals    []string                                 `json:"principals,omitempty"`
-	Authorization *RoleAuthorizationSpecApplyConfiguration `json:"authorization,omitempty"`
+	ClusterSource    *ClusterSourceApplyConfiguration         `json:"cluster,omitempty"`
+	Principals       []string                                 `json:"principals,omitempty"`
+	Authorization    *RoleAuthorizationSpecApplyConfiguration `json:"authorization,omitempty"`
+	InternalRoleName *string                                  `json:"internalRoleName,omitempty"`
 }
 
 // RoleSpecApplyConfiguration constructs a declarative configuration of the RoleSpec type for use with
@@ -48,5 +49,13 @@ func (b *RoleSpecApplyConfiguration) WithPrincipals(values ...string) *RoleSpecA
 // If called multiple times, the Authorization field is set to the value of the last call.
 func (b *RoleSpecApplyConfiguration) WithAuthorization(value *RoleAuthorizationSpecApplyConfiguration) *RoleSpecApplyConfiguration {
 	b.Authorization = value
+	return b
+}
+
+// WithInternalRoleName sets the InternalRoleName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the InternalRoleName field is set to the value of the last call.
+func (b *RoleSpecApplyConfiguration) WithInternalRoleName(value string) *RoleSpecApplyConfiguration {
+	b.InternalRoleName = &value
 	return b
 }

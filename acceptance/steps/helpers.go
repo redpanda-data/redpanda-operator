@@ -159,20 +159,20 @@ func (c *clusterClients) ExpectNoUser(ctx context.Context, user string) {
 	t.Logf("Found no user %q in cluster %q", user, c.cluster)
 }
 
-func (c *clusterClients) ExpectRole(ctx context.Context, role string) {
+func (c *clusterClients) ExpectRole(ctx context.Context, effectiveRoleName string) {
 	t := framework.T(ctx)
 
-	t.Logf("Checking for role %q in cluster %q", role, c.cluster)
-	c.checkRole(ctx, role, true, fmt.Sprintf("Role %q does not exist in cluster %q", role, c.cluster))
-	t.Logf("Found role %q in cluster %q", role, c.cluster)
+	t.Logf("Checking for role %q in cluster %q", effectiveRoleName, c.cluster)
+	c.checkRole(ctx, effectiveRoleName, true, fmt.Sprintf("Role %q does not exist in cluster %q", effectiveRoleName, c.cluster))
+	t.Logf("Found role %q in cluster %q", effectiveRoleName, c.cluster)
 }
 
-func (c *clusterClients) ExpectNoRole(ctx context.Context, role string) {
+func (c *clusterClients) ExpectNoRole(ctx context.Context, effectiveRoleName string) {
 	t := framework.T(ctx)
 
-	t.Logf("Checking that role %q does not exist in cluster %q", role, c.cluster)
-	c.checkRole(ctx, role, false, fmt.Sprintf("Role %q still exists in cluster %q", role, c.cluster))
-	t.Logf("Found no role %q in cluster %q", role, c.cluster)
+	t.Logf("Checking that role %q does not exist in cluster %q", effectiveRoleName, c.cluster)
+	c.checkRole(ctx, effectiveRoleName, false, fmt.Sprintf("Role %q still exists in cluster %q", effectiveRoleName, c.cluster))
+	t.Logf("Found no role %q in cluster %q", effectiveRoleName, c.cluster)
 }
 
 func (c *clusterClients) ExpectSchema(ctx context.Context, schema string) {
@@ -313,21 +313,21 @@ func (c *clusterClients) checkUser(ctx context.Context, user string, exists bool
 	}
 }
 
-func (c *clusterClients) checkRole(ctx context.Context, role string, exists bool, message string) {
+func (c *clusterClients) checkRole(ctx context.Context, effectiveRoleName string, exists bool, message string) {
 	t := framework.T(ctx)
 
 	if !assert.Eventually(t, func() bool {
-		t.Logf("Checking if role %q exists in cluster", role)
+		t.Logf("Checking if role %q exists in cluster", effectiveRoleName)
 		adminClient := c.RedpandaAdmin(ctx)
 
 		// Try to get role members - if it succeeds, role exists
-		_, err := adminClient.RoleMembers(ctx, role)
+		_, err := adminClient.RoleMembers(ctx, effectiveRoleName)
 		roleExists := err == nil
 
 		adminClient.Close()
 		return exists == roleExists
 	}, 30*time.Second, 2*time.Second, message) {
-		t.Errorf("Role %q existence check failed", role)
+		t.Errorf("Role %q existence check failed", effectiveRoleName)
 	}
 }
 

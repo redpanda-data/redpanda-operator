@@ -19,19 +19,118 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 func TestRole_GetPrincipal(t *testing.T) {
-	role := &RedpandaRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-role",
+	tests := []struct {
+		name     string
+		role     *RedpandaRole
+		expected string
+	}{
+		{
+			name: "role with no internal role name",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+			},
+			expected: "RedpandaRole:test-role",
+		},
+		{
+			name: "role with internal role name",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+				Spec: RoleSpec{
+					InternalRoleName: ptr.To("internal-name"),
+				},
+			},
+			expected: "RedpandaRole:__internal-name",
+		},
+		{
+			name: "role with empty internal role name",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+				Spec: RoleSpec{
+					InternalRoleName: ptr.To(""),
+				},
+			},
+			expected: "RedpandaRole:test-role",
 		},
 	}
 
-	assert.Equal(t, "RedpandaRole:test-role", role.GetPrincipal())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.role.GetPrincipal())
+		})
+	}
+}
+
+func TestRole_GetEffectiveRoleName(t *testing.T) {
+	tests := []struct {
+		name     string
+		role     *RedpandaRole
+		expected string
+	}{
+		{
+			name: "role with no internal role name",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+			},
+			expected: "test-role",
+		},
+		{
+			name: "role with internal role name",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+				Spec: RoleSpec{
+					InternalRoleName: ptr.To("internal-name"),
+				},
+			},
+			expected: "__internal-name",
+		},
+		{
+			name: "role with empty internal role name",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+				Spec: RoleSpec{
+					InternalRoleName: ptr.To(""),
+				},
+			},
+			expected: "test-role",
+		},
+		{
+			name: "role with nil internal role name",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+				Spec: RoleSpec{
+					InternalRoleName: nil,
+				},
+			},
+			expected: "test-role",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.role.GetEffectiveRoleName())
+		})
+	}
 }
 
 func TestRole_GetACLs(t *testing.T) {
@@ -302,6 +401,40 @@ func TestRoleValidation(t *testing.T) {
 					}},
 				}
 			},
+		},
+		// internal role name validation
+		"internal role name - valid": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.InternalRoleName = ptr.To("valid-role-name")
+			},
+		},
+		"internal role name - valid with numbers": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.InternalRoleName = ptr.To("role123")
+			},
+		},
+		"internal role name - valid with underscores": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.InternalRoleName = ptr.To("role_name")
+			},
+		},
+		"internal role name - invalid starts with hyphen": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.InternalRoleName = ptr.To("-invalid")
+			},
+			errors: []string{`spec.internalRoleName: Invalid value`},
+		},
+		"internal role name - invalid ends with hyphen": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.InternalRoleName = ptr.To("invalid-")
+			},
+			errors: []string{`spec.internalRoleName: Invalid value`},
+		},
+		"internal role name - invalid special characters": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.InternalRoleName = ptr.To("invalid@name")
+			},
+			errors: []string{`spec.internalRoleName: Invalid value`},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

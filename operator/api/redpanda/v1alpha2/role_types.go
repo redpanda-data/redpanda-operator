@@ -16,6 +16,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
+const (
+	// InternalRolePrefix is the prefix used for internal role names in Redpanda
+	InternalRolePrefix = "__"
+)
+
 // RedpandaRole defines the CRD for a Redpanda role.
 // +genclient
 // +kubebuilder:object:root=true
@@ -40,9 +45,19 @@ var (
 	_ AuthorizedObject         = (*RedpandaRole)(nil)
 )
 
+// GetEffectiveRoleName returns the role name to be used in Redpanda.
+// If InternalRoleName is specified, it returns the internal name prefixed with the InternalRolePrefix.
+// Otherwise, it returns the Kubernetes resource name.
+func (r *RedpandaRole) GetEffectiveRoleName() string {
+	if r.Spec.InternalRoleName != nil && *r.Spec.InternalRoleName != "" {
+		return InternalRolePrefix + *r.Spec.InternalRoleName
+	}
+	return r.Name
+}
+
 // GetPrincipal constructs the principal of a Role for defining ACLs.
 func (r *RedpandaRole) GetPrincipal() string {
-	return "RedpandaRole:" + r.Name
+	return "RedpandaRole:" + r.GetEffectiveRoleName()
 }
 
 func (r *RedpandaRole) GetACLs() []ACLRule {
@@ -97,6 +112,14 @@ type RoleSpec struct {
 	// Authorization rules defined for this role. If specified, the operator will manage ACLs for this role.
 	// If omitted, ACLs should be managed separately using Redpanda's ACL management.
 	Authorization *RoleAuthorizationSpec `json:"authorization,omitempty"`
+	// InternalRoleName specifies the internal role name to be used in Redpanda, prefixed with "__".
+	// If specified, this name (with the "__" prefix) will be used as the actual role name in Redpanda
+	// instead of the Kubernetes resource name. This allows for internal role management while
+	// maintaining a user-friendly external name.
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][a-zA-Z0-9\-_]*[a-zA-Z0-9]$`
+	// +kubebuilder:validation:MaxLength=253
+	// +optional
+	InternalRoleName *string `json:"internalRoleName,omitempty"`
 }
 
 // RoleAuthorizationSpec defines authorization rules for this role.
@@ -121,6 +144,10 @@ type RoleStatus struct {
 	// ManagedPrincipals returns whether the role has managed principals (membership)
 	// that are being reconciled by the operator.
 	ManagedPrincipals bool `json:"managedPrincipals,omitempty"`
+	// EffectiveRoleName stores the last known effective role name that was successfully
+	// reconciled. This is used to detect role renames and clean up the old role.
+	// +optional
+	EffectiveRoleName string `json:"effectiveRoleName,omitempty"`
 }
 
 // RedpandaRoleList contains a list of Redpanda role objects.
