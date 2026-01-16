@@ -52,3 +52,24 @@ webhooks:
     resources:
     - clusters
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-redpandarole
+  failurePolicy: Fail
+  name: vredpandarole.kb.io
+  rules:
+  - apiGroups:
+    - cluster.redpanda.com
+    apiVersions:
+    - v1alpha2
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redpandaroles
+  sideEffects: None
