@@ -49,6 +49,7 @@
               { name = "TEST_REDPANDA_REPO"; eval = "redpandadata/redpanda-unstable"; }
               { name = "TEST_REDPANDA_VERSION"; eval = "v25.3.1-rc2"; }
               { name = "CGO_ENABLED"; eval = "0"; }
+              { name = "GOLANG_PROTOBUF_REGISTRATION_CONFLICT"; eval = "ignore"; }
             ];
 
             # If the version of the installed binary is important make sure to

@@ -8,10 +8,10 @@ buildGoModule rec {
     owner = "kubernetes";
     repo = "kube-openapi";
     rev = "${version}";
-    sha256 = "sha256-gB6jchb2V5HIo48M0wRpEmynoJN23S3OL8YCfkkxyF8=";
+    sha256 = "sha256-AlDMB7rdqG/EvRuyQ8K0MELn16tyo2HNcPR4tR1XPK8=";
   };
 
-  vendorHash = "sha256-ntKV2GMMt4R46opWP3rdB+Cnu/y6sRTYZR6uDSTbWLc=";
+  vendorHash = "sha256-VEymgJ6U9QrKcFm5G6uvB3qVHbuze8GrJ+zCaifWeVk=";
 
   ldflags = [
     "-s"
