@@ -22,6 +22,7 @@ import (
 	apivirtual "github.com/redpanda-data/redpanda-operator/operator/api/virtual"
 	virtualv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/virtual/v1alpha1"
 	virtual "github.com/redpanda-data/redpanda-operator/operator/internal/virtual"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/virtual/backends"
 )
 
 type APIServerConfig struct {
@@ -60,7 +61,7 @@ func SetupAPIServer(config APIServerConfig) error {
 	builder := kube.NewAPIServerManagedBy(config.Manager).WithRotator(rotator).WithBind(net.ParseIP("0.0.0.0"), 9050)
 	builder.WithStorage("shadowlinks", virtual.NewVirtualStorage[apivirtual.ShadowLink, apivirtual.ShadowLinkList](
 		// "virtual" shadowlinks
-		[]string{"vsl"}, apivirtual.GroupVersion.WithResource("shadowlinks").GroupResource(), ctl,
+		[]string{"vsl"}, apivirtual.GroupVersion.WithResource("shadowlinks").GroupResource(), backends.NewEmptyBackend[*apivirtual.ShadowLink](), ctl,
 	))
 	return builder.Complete(virtualv1alpha1.GroupVersion, virtualv1alpha1.GetOpenAPIDefinitions, "Virtual", "1.0")
 }

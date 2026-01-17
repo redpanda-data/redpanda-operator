@@ -26,6 +26,11 @@ type ShadowLink struct {
 	Status ShadowLinkStatus `json:"status,omitempty"`
 }
 
+// GetCluster returns the name of the undelrying cluster.
+func (s *ShadowLink) GetCluster() string {
+	return s.Spec.ClusterRef.Name
+}
+
 // ShadowLinkSpec defines the desired state of a shadow link.
 //
 // +k8s:openapi-gen=true
@@ -59,4 +64,9 @@ type ShadowLinkList struct {
 // GetItems returns the underlying ShadowLink items.
 func (s *ShadowLinkList) GetItems() []ShadowLink {
 	return s.Items
+}
+
+// SetItems sets the underlying ShadowLink items.
+func (s *ShadowLinkList) SetItems(items []ShadowLink) {
+	s.Items = items
 }
