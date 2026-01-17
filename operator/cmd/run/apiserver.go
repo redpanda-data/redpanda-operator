@@ -53,7 +53,7 @@ func SetupAPIServer(config APIServerConfig) error {
 		return err
 	}
 
-	builder := kube.NewAPIServerManagedBy(config.Manager).WithRotator(rotator).WithBind(net.IP("0.0.0.0"), 9050)
+	builder := kube.NewAPIServerManagedBy(config.Manager).WithRotator(rotator).WithBind(net.ParseIP("0.0.0.0"), 9050)
 	builder.WithStorage("shadowlinks", virtual.NewVirtualStorage[apivirtual.ShadowLink, apivirtual.ShadowLinkList](apivirtual.GroupVersion.WithResource("shadowlinks").GroupResource(), ctl))
 	return builder.Complete(virtualv1alpha1.GroupVersion, virtualv1alpha1.GetOpenAPIDefinitions, "Virtual", "1.0")
 }

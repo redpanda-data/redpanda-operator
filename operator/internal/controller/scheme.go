@@ -20,6 +20,8 @@ import (
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	apivirtual "github.com/redpanda-data/redpanda-operator/operator/api/virtual"
+	virtualv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/virtual/v1alpha1"
 )
 
 var (
@@ -36,6 +38,8 @@ var (
 		monitoringv1.AddToScheme,
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
+		virtualv1alpha1.AddToScheme,
+		apivirtual.AddToScheme,
 	}
 	multiclusterSchemeFns = []func(s *runtime.Scheme) error{
 		apiextensionsv1.AddToScheme,

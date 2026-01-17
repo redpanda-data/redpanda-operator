@@ -133,16 +133,16 @@ func (o *RunOptions) validateAPIServer() error {
 	}
 
 	var err error
-	if o.apiServer.serviceName != "" {
+	if o.apiServer.serviceName == "" {
 		err = errors.Join(err, errors.New("--experimental-api-server-service-name is required when --experimental-api-server-enabled is specified"))
 	}
-	if o.apiServer.serviceNamespace != "" {
+	if o.apiServer.serviceNamespace == "" {
 		err = errors.Join(err, errors.New("--experimental-api-server-service-namespace is required when --experimental-api-server-enabled is specified"))
 	}
-	if o.apiServer.secretKeyName != "" {
+	if o.apiServer.secretKeyName == "" {
 		err = errors.Join(err, errors.New("--experimental-api-server-secret-key-name is required when --experimental-api-server-enabled is specified"))
 	}
-	if o.apiServer.secretKeyNamespace != "" {
+	if o.apiServer.secretKeyNamespace == "" {
 		err = errors.Join(err, errors.New("--experimental-api-server-secret-key-namespace is required when --experimental-api-server-enabled is specified"))
 	}
 	return err
