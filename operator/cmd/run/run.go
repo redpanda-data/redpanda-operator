@@ -24,6 +24,7 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -116,6 +117,35 @@ type RunOptions struct {
 	cloudSecretsEnabled                 bool
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
+
+	apiServer struct {
+		enabled            bool
+		serviceName        string
+		serviceNamespace   string
+		secretKeyName      string
+		secretKeyNamespace string
+	}
+}
+
+func (o *RunOptions) validateAPIServer() error {
+	if !o.apiServer.enabled {
+		return nil
+	}
+
+	var err error
+	if o.apiServer.serviceName != "" {
+		err = errors.Join(err, errors.New("--experimental-api-server-service-name is required when --experimental-api-server-enabled is specified"))
+	}
+	if o.apiServer.serviceNamespace != "" {
+		err = errors.Join(err, errors.New("--experimental-api-server-service-namespace is required when --experimental-api-server-enabled is specified"))
+	}
+	if o.apiServer.secretKeyName != "" {
+		err = errors.Join(err, errors.New("--experimental-api-server-secret-key-name is required when --experimental-api-server-enabled is specified"))
+	}
+	if o.apiServer.secretKeyNamespace != "" {
+		err = errors.Join(err, errors.New("--experimental-api-server-secret-key-namespace is required when --experimental-api-server-enabled is specified"))
+	}
+	return err
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
@@ -176,6 +206,15 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&vectorizedv1alpha1.AllowConsoleAnyNamespace, "allow-console-any-ns", false, "Allow to create Console in any namespace. Allowing this copies Redpanda SchemaRegistry TLS Secret to namespace (alpha feature)")
 	cmd.Flags().StringVar(&vectorizedv1alpha1.SuperUsersPrefix, "superusers-prefix", "", "Prefix to add in username of superusers managed by operator. This will only affect new clusters, enabling this will not add prefix to existing clusters (alpha feature)")
 
+	{
+		// api server flags
+		cmd.Flags().BoolVar(&o.apiServer.enabled, "experimental-api-server-enabled", false, "")
+		cmd.Flags().StringVar(&o.apiServer.serviceName, "experimental-api-server-service-name", "", "")
+		cmd.Flags().StringVar(&o.apiServer.serviceNamespace, "experimental-api-server-service-namespace", "", "")
+		cmd.Flags().StringVar(&o.apiServer.secretKeyName, "experimental-api-server-secret-key-name", "", "")
+		cmd.Flags().StringVar(&o.apiServer.secretKeyNamespace, "experimental-api-server-secret-key-namespace", "", "")
+	}
+
 	// Deprecated flags.
 	cmd.Flags().Bool("debug", false, "A deprecated and unused flag")
 	cmd.Flags().String("events-addr", "", "A deprecated and unused flag")
@@ -195,6 +234,9 @@ func (o *RunOptions) ControllerEnabled(controller Controller) bool {
 	}
 	return false
 }
+
+// APIServices RBAC permissions
+// +kubebuilder:rbac:groups=apiregistration.k8s.io,resources=apiservices,verbs=get;list;watch;create;update;patch
 
 // Metrics RBAC permissions
 // +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create;
@@ -239,6 +281,10 @@ func Run(
 	cloudExpander *pkgsecrets.CloudExpander,
 	opts *RunOptions,
 ) error {
+	if err := opts.validateAPIServer(); err != nil {
+		return err
+	}
+
 	v1Controllers := opts.enableVectorizedControllers
 	v2Controllers := opts.enableRedpandaControllers
 
@@ -536,6 +582,23 @@ func Run(
 
 		if err := mgr.AddHealthzCheck("webhook", hookServer.StartedChecker()); err != nil {
 			setupLog.Error(err, "unable to create health check")
+			return err
+		}
+	}
+
+	if opts.apiServer.enabled {
+		if err := SetupAPIServer(APIServerConfig{
+			Manager: mgr,
+			ServiceKey: types.NamespacedName{
+				Namespace: opts.apiServer.serviceNamespace,
+				Name:      opts.apiServer.serviceName,
+			},
+			SecretKey: types.NamespacedName{
+				Namespace: opts.apiServer.secretKeyNamespace,
+				Name:      opts.apiServer.secretKeyName,
+			},
+		}); err != nil {
+			setupLog.Error(err, "setting up api server")
 			return err
 		}
 	}

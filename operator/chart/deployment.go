@@ -341,6 +341,14 @@ func operatorArguments(dot *helmette.Dot) []string {
 		defaults["--webhook-cert-path"] = webhookCertificatePath
 	}
 
+	if values.Experimental.APIServer.Enabled {
+		defaults["--experimental-api-server-enabled"] = ""
+		defaults["--experimental-api-server-service-name"] = fmt.Sprintf("%s-virtual-server", Name(dot))
+		defaults["--experimental-api-server-service-namespace"] = dot.Release.Namespace
+		defaults["--experimental-api-server-secret-key-name"] = fmt.Sprintf("%s-virtual-server-certificate", Name(dot))
+		defaults["--experimental-api-server-secret-key-namespace"] = dot.Release.Namespace
+	}
+
 	userProvided := chartutil.ParseFlags(values.AdditionalCmdFlags)
 
 	var flags []string

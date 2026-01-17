@@ -52,6 +52,8 @@ func render(dot *helmette.Dot) []kube.Object {
 		Issuer(dot),
 		Certificate(dot),
 		ConfigMap(dot),
+		APIService(dot),
+		APIServiceCertificate(dot),
 		MetricsService(dot),
 		WebhookService(dot),
 		MutatingWebhookConfiguration(dot),
@@ -69,6 +71,10 @@ func render(dot *helmette.Dot) []kube.Object {
 
 	for _, crb := range ClusterRoleBindings(dot) {
 		manifests = append(manifests, &crb)
+	}
+
+	for _, service := range APIServices(dot) {
+		manifests = append(manifests, service)
 	}
 
 	// NB: This slice may contain nil interfaces!

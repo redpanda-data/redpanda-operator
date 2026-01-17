@@ -680,6 +680,21 @@
       },
       "type": "object"
     },
+    "experimental": {
+      "additionalProperties": false,
+      "properties": {
+        "apiServer": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "fullnameOverride": {
       "type": "string"
     },

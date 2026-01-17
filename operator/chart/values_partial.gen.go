@@ -48,6 +48,7 @@ type PartialValues struct {
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
+	Experimental          *PartialExperimental          "json:\"experimental,omitempty\""
 }
 
 type PartialImage struct {
@@ -99,6 +100,12 @@ type PartialMulticluster struct {
 	Name                         *string       "json:\"name,omitempty\""
 	KubernetesAPIExternalAddress *string       "json:\"apiServerExternalAddress,omitempty\""
 	Peers                        []PartialPeer "json:\"peers,omitempty\""
+}
+
+type PartialExperimental struct {
+	APIServer *struct {
+		Enabled *bool "json:\"enabled,omitempty\""
+	} "json:\"apiServer,omitempty\""
 }
 
 type PartialPodTemplateSpec struct {

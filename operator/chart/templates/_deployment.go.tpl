@@ -169,6 +169,13 @@
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
 {{- end -}}
+{{- if $values.experimental.apiServer.enabled -}}
+{{- $_ := (set $defaults "--experimental-api-server-enabled" "") -}}
+{{- $_ := (set $defaults "--experimental-api-server-service-name" (printf "%s-virtual-server" (get (fromJson (include "operator.Name" (dict "a" (list $dot)))) "r"))) -}}
+{{- $_ := (set $defaults "--experimental-api-server-service-namespace" $dot.Release.Namespace) -}}
+{{- $_ := (set $defaults "--experimental-api-server-secret-key-name" (printf "%s-virtual-server-certificate" (get (fromJson (include "operator.Name" (dict "a" (list $dot)))) "r"))) -}}
+{{- $_ := (set $defaults "--experimental-api-server-secret-key-namespace" $dot.Release.Namespace) -}}
+{{- end -}}
 {{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
 {{- $flags := (coalesce nil) -}}
 {{- range $key, $value := (merge (dict) $defaults $userProvided) -}}

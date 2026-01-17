@@ -37,6 +37,12 @@ type Multicluster struct {
 	Peers                        []Peer `json:"peers"`
 }
 
+type Experimental struct {
+	APIServer struct {
+		Enabled bool `json:"enabled"`
+	} `json:"apiServer"`
+}
+
 type Values struct {
 	NameOverride          string                        `json:"nameOverride"`
 	FullnameOverride      string                        `json:"fullnameOverride"`
@@ -67,6 +73,7 @@ type Values struct {
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
 	Multicluster          Multicluster                  `json:"multicluster"`
+	Experimental          Experimental                  `json:"experimental"`
 }
 
 type VectorizedControllers struct {

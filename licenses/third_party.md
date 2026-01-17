@@ -283,11 +283,11 @@ run `task generate:third-party-licenses-list`
 | google.golang.org/genproto/googleapis/rpc | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/95abcf5c77ba/googleapis/rpc/LICENSE) |
 | google.golang.org/grpc | [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.75.1/LICENSE) |
 | google.golang.org/protobuf | [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.11/LICENSE) |
-| gopkg.in/evanphx/json-patch.v4 | [BSD-3-Clause](Unknown) |
-| gopkg.in/inf.v0 | [BSD-3-Clause](Unknown) |
-| gopkg.in/natefinch/lumberjack.v2 | [MIT](Unknown) |
-| gopkg.in/yaml.v2 | [Apache-2.0](Unknown) |
-| gopkg.in/yaml.v3 | [MIT](Unknown) |
+| gopkg.in/evanphx/json-patch.v4 | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v4.12.0/LICENSE) |
+| gopkg.in/inf.v0 | [BSD-3-Clause](https://github.com/go-inf/inf/blob/v0.9.1/LICENSE) |
+| gopkg.in/natefinch/lumberjack.v2 | [MIT](https://github.com/natefinch/lumberjack/blob/v2.2.1/LICENSE) |
+| gopkg.in/yaml.v2 | [Apache-2.0](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE) |
+| gopkg.in/yaml.v3 | [MIT](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE) |
 | helm.sh/helm/v3 | [Apache-2.0](https://github.com/helm/helm/blob/v3.18.5/LICENSE) |
 | k8s.io/api | [Apache-2.0](https://github.com/kubernetes/api/blob/v0.34.1/LICENSE) |
 | k8s.io/apiextensions-apiserver/pkg | [Apache-2.0](https://github.com/kubernetes/apiextensions-apiserver/blob/v0.34.1/LICENSE) |
@@ -301,6 +301,7 @@ run `task generate:third-party-licenses-list`
 | k8s.io/component-helpers | [Apache-2.0](https://github.com/kubernetes/component-helpers/blob/v0.33.3/LICENSE) |
 | k8s.io/klog/v2 | [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.130.1/LICENSE) |
 | k8s.io/kms | [Apache-2.0](https://github.com/kubernetes/kms/blob/v0.34.1/LICENSE) |
+| k8s.io/kube-aggregator/pkg/apis/apiregistration | [Apache-2.0](https://github.com/kubernetes/kube-aggregator/blob/v0.29.0/LICENSE) |
 | k8s.io/kube-openapi/pkg | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json | [BSD-3-Clause](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/internal/third_party/go-json-experiment/json/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/govalidator | [MIT](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/internal/third_party/govalidator/LICENSE) |

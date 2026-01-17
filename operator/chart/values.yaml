@@ -193,3 +193,9 @@ multicluster:
   #  - name: peer-1
   #    address: ip/dns of operator host
   peers: []
+
+# @ignored
+# Experimental settings
+experimental:
+  apiServer:
+    enabled: false

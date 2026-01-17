@@ -22,6 +22,10 @@ tasks:
           rbac:roleName=manager-role \
           output:crd:artifacts:config=config/crd/bases \
           output:rbac:artifacts:config=config/rbac/bases/operator
+      # generated for the api server
+      - openapi-gen --output-dir api/virtual/v1alpha1 --output-file zz_generated.openapi.go --output-pkg v1alpha1 ./api/virtual/v1alpha1 k8s.io/apimachinery/pkg/apis/meta/v1 k8s.io/apimachinery/pkg/runtime k8s.io/apimachinery/pkg/version
+      - conversion-gen ./api/virtual/v1alpha1 --output-file zz_generated.conversion.go
+      - rm -f ./config/crd/bases/_.yaml ./config/crd/bases/virtual.cluster.redpanda.com*
 
       - task: generate:statuses
       - task: generate:deprecations
