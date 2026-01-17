@@ -34,6 +34,7 @@ tasks:
   operator:
     vars:
       LD_FLAGS: >-
+        -X "google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.buildDate={{.TIMESTAMP}}"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.commit={{.COMMIT}}"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.OPERATOR_VERSION}}"

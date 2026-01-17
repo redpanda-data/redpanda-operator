@@ -76,7 +76,7 @@ var (
 	_ rest.Getter               = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.Lister               = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.Scoper               = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
-	_ rest.Creature             = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
+	_ rest.Creater              = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.Updater              = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.GracefulDeleter      = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.SingularNameProvider = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
