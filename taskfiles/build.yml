@@ -86,13 +86,18 @@ tasks:
     internal: true
     run: when_changed
     label: "go:build:{{ .DIR }}"
+    vars:
+      # this is a workaround for rpk packages using buf-built grpc-gateway protobuf options, whereas the kubernetes ecosystem
+      # uses the google provided libraries, which conflict due to them being the same library.
+      LD_FLAGS: >-
+        -X "google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore"
     var:
       DIR: ""
       PACKAGE: '{{default .TARGET "."}}'
     requires:
       vars: [DIR]
     cmds:
-    - go build -C {{ .DIR }} -o ../.build/{{ .DIR }} {{ .PACKAGE }}
+    - go build -C {{ .DIR }} -ldflags='{{ .LD_FLAGS }}' -o ../.build/{{ .DIR }} {{ .PACKAGE }}
     status:
     # NB: Task's globbing is finicky and tracking all possible go files is
     # prone to error. Instead, rely on go build's caching. Cache status must be
@@ -103,4 +108,4 @@ tasks:
     # Negating the output of grep effectively indicates if go thinks a rebuild
     # is required. Command must be encased in "s as the negation operator (!)
     # is otherwise consumed during YAML parsing.
-    - "! go build -C {{ .DIR }} -n -o ../.build/{{ .DIR }} {{ .PACKAGE }} 2>&1 | grep 'mv $WORK'"
+    - "! go build -C {{ .DIR }} -n -ldflags='{{ .LD_FLAGS }}' -o ../.build/{{ .DIR }} {{ .PACKAGE }} 2>&1 | grep 'mv $WORK'"

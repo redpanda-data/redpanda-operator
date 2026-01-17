@@ -49,6 +49,8 @@
               { name = "TEST_REDPANDA_REPO"; eval = "redpandadata/redpanda-unstable"; }
               { name = "TEST_REDPANDA_VERSION"; eval = "v25.3.1-rc2"; }
               { name = "CGO_ENABLED"; eval = "0"; }
+              # this is a workaround for rpk packages using buf-built grpc-gateway protobuf options, whereas the kubernetes ecosystem
+              # uses the google provided libraries, which conflict due to them being the same library.
               { name = "GOLANG_PROTOBUF_REGISTRATION_CONFLICT"; eval = "ignore"; }
             ];
 
