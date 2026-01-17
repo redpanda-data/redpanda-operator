@@ -60,14 +60,16 @@ func castObjectListPointer[Obj, List any, PList ObjectList[Obj, List]](l List) P
 }
 
 type VirtualStorage[Obj, List any, PObj Object[Obj], PList ObjectList[Obj, List]] struct {
-	resource schema.GroupResource
-	ctl      *kube.Ctl
+	shortNames []string
+	resource   schema.GroupResource
+	ctl        *kube.Ctl
 }
 
-func NewVirtualStorage[Obj, List any, PObj Object[Obj], PList ObjectList[Obj, List]](resource schema.GroupResource, ctl *kube.Ctl) *VirtualStorage[Obj, List, PObj, PList] {
+func NewVirtualStorage[Obj, List any, PObj Object[Obj], PList ObjectList[Obj, List]](shortNames []string, resource schema.GroupResource, ctl *kube.Ctl) *VirtualStorage[Obj, List, PObj, PList] {
 	return &VirtualStorage[Obj, List, PObj, PList]{
-		resource: resource,
-		ctl:      ctl,
+		shortNames: shortNames,
+		resource:   resource,
+		ctl:        ctl,
 	}
 }
 
@@ -80,6 +82,7 @@ var (
 	_ rest.Updater              = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.GracefulDeleter      = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.SingularNameProvider = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
+	_ rest.ShortNamesProvider   = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 )
 
 func (s *VirtualStorage[Obj, List, PObj, PList]) Destroy() {}
@@ -89,6 +92,10 @@ func (s *VirtualStorage[Obj, List, PObj, PList]) NamespaceScoped() bool {
 
 func (s *VirtualStorage[Obj, List, PObj, PList]) GetSingularName() string {
 	return s.resource.Resource
+}
+
+func (s *VirtualStorage[Obj, List, PObj, PList]) ShortNames() []string {
+	return s.shortNames
 }
 
 func (s *VirtualStorage[Obj, List, PObj, PList]) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
