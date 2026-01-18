@@ -25,6 +25,10 @@ kind: NodePool
 metadata:
   name: basic-a
 spec:
+  clusterRef:
+    group: a
+    kind: b
+    name: xyz
   replicas: 1
 -- compat-test --
 apiVersion: cluster.redpanda.com/v1alpha2

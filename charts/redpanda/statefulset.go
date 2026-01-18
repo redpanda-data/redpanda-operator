@@ -910,8 +910,7 @@ func bootstrapEnvVars(state *RenderState, envVars []corev1.EnvVar) []corev1.EnvV
 }
 
 func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
-	// default statefulset
-	sets := []*appsv1.StatefulSet{StatefulSet(state, Pool{Statefulset: state.Values.Statefulset})}
+	sets := []*appsv1.StatefulSet{}
 	for _, set := range state.Pools {
 		sets = append(sets, StatefulSet(state, set))
 	}

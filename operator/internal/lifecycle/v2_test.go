@@ -90,12 +90,12 @@ func TestV2ResourceClient(t *testing.T) {
 		}
 	}()
 
-	casesArchive, err := txtar.ParseFile("testdata/cases.txtar")
+	casesArchive, err := txtar.ParseFile("testdata/redpanda-cases.txtar")
 	require.NoError(t, err)
 
-	goldenPools := testutil.NewTxTar(t, "testdata/cases.pools.golden.txtar")
-	goldenResources := testutil.NewTxTar(t, "testdata/cases.resources.golden.txtar")
-	goldenValues := testutil.NewTxTar(t, "testdata/cases.values.golden.txtar")
+	goldenPools := testutil.NewTxTar(t, "testdata/redpanda-cases.pools.golden.txtar")
+	goldenResources := testutil.NewTxTar(t, "testdata/redpanda-cases.resources.golden.txtar")
+	goldenValues := testutil.NewTxTar(t, "testdata/redpanda-cases.values.golden.txtar")
 
 	cloudSecrets := CloudSecretsFlags{
 		CloudSecretsEnabled: false,
