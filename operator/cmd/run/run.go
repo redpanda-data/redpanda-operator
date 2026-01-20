@@ -597,6 +597,7 @@ func Run(
 				Namespace: opts.apiServer.secretKeyNamespace,
 				Name:      opts.apiServer.secretKeyName,
 			},
+			Factory: factory,
 		}); err != nil {
 			setupLog.Error(err, "setting up api server")
 			return err

@@ -21,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/utils/ptr"
@@ -83,10 +84,6 @@ func ensureOneClusterPerNamespace(clusters []redpandav1alpha2.Redpanda) (*redpan
 	return activeCluster, nil
 }
 
-func toClient(o runtime.Object) client.Object {
-	return o.(client.Object)
-}
-
 type Object[Obj any] interface {
 	client.Object
 	GetCluster() string
@@ -107,10 +104,6 @@ type ObjectList[Obj, List any] interface {
 	GetItems() []Obj
 	SetItems([]Obj)
 	*List
-}
-
-func derefNonNilObjectListPointer[Obj, List any, PList ObjectList[Obj, List]](l PList) List {
-	return *l
 }
 
 func castObjectListPointer[Obj, List any, PList ObjectList[Obj, List]](l List) PList {
@@ -139,7 +132,7 @@ var (
 	_ rest.Getter               = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.Lister               = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.Scoper               = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
-	_ rest.Creater              = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
+	_ rest.Creater              = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil) //nolint:misspell // this is the interface name
 	_ rest.Updater              = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.GracefulDeleter      = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
 	_ rest.SingularNameProvider = (*VirtualStorage[virtualv1alpha1.ShadowLink, virtualv1alpha1.ShadowLinkList, *virtualv1alpha1.ShadowLink, *virtualv1alpha1.ShadowLinkList])(nil)
@@ -208,6 +201,10 @@ func (s *VirtualStorage[Obj, List, PObj, PList]) Get(ctx context.Context, name s
 		return nil, err
 	}
 
+	if cluster == nil {
+		return nil, apierrors.NewNotFound(s.resource, namespaceFromContext(ctx)+"/"+name)
+	}
+
 	found, err := s.backend.Read(ctx, cluster, name)
 	if err != nil {
 		return nil, handleBackendError(err)
@@ -225,6 +222,14 @@ func (s *VirtualStorage[Obj, List, PObj, PList]) Create(ctx context.Context, run
 	cluster, err := s.getActiveCluster(ctx, object.GetNamespace())
 	if err != nil {
 		return nil, err
+	}
+
+	if cluster == nil {
+		return nil, apierrors.NewInvalid(object.GetObjectKind().GroupVersionKind().GroupKind(), client.ObjectKeyFromObject(object).String(), field.ErrorList{{
+			Type:   field.ErrorTypeNotFound,
+			Field:  "cluster",
+			Detail: "no active cluster in namespace found",
+		}})
 	}
 
 	found, err := s.backend.Read(ctx, cluster, object.GetName())
@@ -250,6 +255,10 @@ func (s *VirtualStorage[Obj, List, PObj, PList]) Delete(ctx context.Context, nam
 		return nil, false, err
 	}
 
+	if cluster == nil {
+		return nil, false, apierrors.NewNotFound(s.resource, namespaceFromContext(ctx)+"/"+name)
+	}
+
 	found, err := s.backend.Read(ctx, cluster, name)
 	if err != nil {
 		return nil, false, handleBackendError(err)
@@ -271,6 +280,10 @@ func (s *VirtualStorage[Obj, List, PObj, PList]) Update(ctx context.Context, nam
 	cluster, err := s.getActiveCluster(ctx, namespace)
 	if err != nil {
 		return nil, false, err
+	}
+
+	if cluster == nil {
+		return nil, false, apierrors.NewNotFound(s.resource, namespaceFromContext(ctx)+"/"+name)
 	}
 
 	found, err := s.backend.Read(ctx, cluster, name)
