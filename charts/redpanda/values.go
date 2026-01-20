@@ -1969,7 +1969,7 @@ func (TieredStorageConfig) JSONSchema() *jsonschema.Schema {
 		// `config.node`.
 		CloudStorageCacheDirectory              string            `json:"cloud_storage_cache_directory" jsonschema:"deprecated"`
 		CloudStorageCacheSize                   *ResourceQuantity `json:"cloud_storage_cache_size"`
-		CloudStorageCredentialsSource           string            `json:"cloud_storage_credentials_source" jsonschema:"pattern=^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$"`
+		CloudStorageCredentialsSource           string            `json:"cloud_storage_credentials_source" jsonschema:"pattern=^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata|azure_aks_oidc_federation)$"`
 		CloudStorageDisableTLS                  bool              `json:"cloud_storage_disable_tls"`
 		CloudStorageEnableRemoteRead            bool              `json:"cloud_storage_enable_remote_read"`
 		CloudStorageEnableRemoteWrite           bool              `json:"cloud_storage_enable_remote_write"`
