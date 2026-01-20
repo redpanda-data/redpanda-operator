@@ -19,6 +19,7 @@ import (
 )
 
 type PartialValues struct {
+	Enterprise            *PartialEnterprise            "json:\"enterprise,omitempty\""
 	NameOverride          *string                       "json:\"nameOverride,omitempty\""
 	FullnameOverride      *string                       "json:\"fullnameOverride,omitempty\""
 	ReplicaCount          *int32                        "json:\"replicaCount,omitempty\""
@@ -99,6 +100,10 @@ type PartialMulticluster struct {
 	Name                         *string       "json:\"name,omitempty\""
 	KubernetesAPIExternalAddress *string       "json:\"apiServerExternalAddress,omitempty\""
 	Peers                        []PartialPeer "json:\"peers,omitempty\""
+}
+
+type PartialEnterprise struct {
+	LicenseSecretRef *corev1.SecretKeySelector "json:\"licenseSecretRef,omitempty\""
 }
 
 type PartialPodTemplateSpec struct {

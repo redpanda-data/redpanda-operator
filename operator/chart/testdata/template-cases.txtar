@@ -109,3 +109,14 @@ multicluster:
       address: some.dns.label
     - name: east
       address: some.other.dns.label
+
+-- license --
+enterprise:
+  licenseSecretRef:
+    name: my-secret
+
+-- license-with-key --
+enterprise:
+  licenseSecretRef:
+    name: my-secret
+    key: my-redpanda-license

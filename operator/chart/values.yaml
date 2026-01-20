@@ -1,6 +1,15 @@
 # Default values for the Redpanda Operator Helm chart.
 # Declare variables to be passed into your templates.
 
+# -- Enterprise (optional)
+# For details,
+# see the [License documentation](https://docs.redpanda.com/docs/get-started/licenses/?platform=kubernetes#redpanda-enterprise-edition).
+enterprise:
+  # -- Secret name and key where the license key is stored.
+  licenseSecretRef:
+    # name: my-secret
+    key: ""
+
 # -- Overrides the `redpanda-operator.name` template.
 nameOverride: ""
 

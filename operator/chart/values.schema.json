@@ -680,6 +680,27 @@
       },
       "type": "object"
     },
+    "enterprise": {
+      "additionalProperties": false,
+      "properties": {
+        "licenseSecretRef": {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "optional": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "fullnameOverride": {
       "type": "string"
     },
