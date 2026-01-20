@@ -21801,7 +21801,7 @@
                   ]
                 },
                 "cloud_storage_credentials_source": {
-                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$",
+                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata|azure_aks_oidc_federation)$",
                   "type": "string"
                 },
                 "cloud_storage_disable_tls": {
@@ -22002,7 +22002,7 @@
               ]
             },
             "cloud_storage_credentials_source": {
-              "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$",
+              "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata|azure_aks_oidc_federation)$",
               "type": "string"
             },
             "cloud_storage_disable_tls": {
