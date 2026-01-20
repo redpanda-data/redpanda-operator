@@ -24,6 +24,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.66.1
 	github.com/redpanda-data/common-go/kube v0.0.0-20260109170727-1dd9f5d22ee1
+	github.com/redpanda-data/common-go/license v0.0.0-20260120073450-935d3dd3d6c1
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1
