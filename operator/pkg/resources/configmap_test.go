@@ -518,6 +518,51 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 	}
 }
 
+func TestConfigmap_InternalClientsUseLocalhost(t *testing.T) {
+	panda := pandaCluster().DeepCopy()
+	panda.Spec.Configuration.SchemaRegistry = &vectorizedv1alpha1.SchemaRegistryAPI{
+		Port: 8081,
+	}
+	panda.Spec.Configuration.PandaproxyAPI = []vectorizedv1alpha1.PandaproxyAPI{
+		{Port: 8082},
+	}
+	panda.Spec.AdditionalConfiguration = map[string]string{
+		"pandaproxy_client.use_localhost":      "true",
+		"schema_registry_client.use_localhost": "true",
+	}
+
+	c := fake.NewClientBuilder().Build()
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "archival",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"archival": []byte("XXX"),
+		},
+	}
+	require.NoError(t, c.Create(t.Context(), &secret))
+
+	cfg, err := resources.CreateConfiguration(
+		t.Context(), c, nil, panda,
+		"cluster.default.svc.cluster.local",
+		types.NamespacedName{Namespace: "namespace", Name: "pandaproxy"},
+		types.NamespacedName{Namespace: "namespace", Name: "schemaregistry"},
+		types.NamespacedName{Namespace: "namespace", Name: "rpk"},
+		TestBrokerTLSConfigProvider{},
+	)
+	require.NoError(t, err)
+
+	redpandaYaml, err := cfg.ReifyNodeConfiguration(t.Context())
+	require.NoError(t, err)
+
+	// Should use localhost when override is set
+	require.Equal(t, []config.SocketAddress{{Address: "localhost", Port: 123}},
+		redpandaYaml.PandaproxyClient.Brokers)
+	require.Equal(t, []config.SocketAddress{{Address: "localhost", Port: 123}},
+		redpandaYaml.SchemaRegistryClient.Brokers)
+}
+
 func TestConfigmap_BrokerTLSClients(t *testing.T) {
 	panda := pandaCluster().DeepCopy()
 	panda.Spec.Configuration.KafkaAPI[0].TLS = vectorizedv1alpha1.KafkaAPITLS{
