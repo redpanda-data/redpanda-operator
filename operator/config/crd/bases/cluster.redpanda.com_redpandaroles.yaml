@@ -2468,6 +2468,12 @@ spec:
                   rule: self == oldSelf
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
+              internal:
+                description: |-
+                  Internal marks this role as an internal Redpanda role with "__" prefix.
+                  When true, the effective role name becomes "__<kubernetes-name>".
+                  When false (default), the effective role name is the Kubernetes resource name.
+                type: boolean
               principals:
                 description: |-
                   Principals defines the list of users assigned to this role.
@@ -2546,6 +2552,11 @@ spec:
                   - type
                   type: object
                 type: array
+              effectiveRoleName:
+                description: |-
+                  EffectiveRoleName stores the last known effective role name that was successfully
+                  reconciled. This is used to detect role renames and clean up the old role.
+                type: string
               managedAcls:
                 description: |-
                   ManagedACLs returns whether the role has managed ACLs that need

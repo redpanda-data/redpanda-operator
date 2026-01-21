@@ -2982,6 +2982,9 @@ Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to 
 
 | *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]__ | Authorization rules defined for this role. If specified, the operator will manage ACLs for this role. +
 If omitted, ACLs should be managed separately using Redpanda's ACL management. + |  | 
+| *`internal`* __boolean__ | Internal marks this role as an internal Redpanda role with "__" prefix. +
+When true, the effective role name becomes "__<kubernetes-name>". +
+When false (default), the effective role name is the Kubernetes resource name. + |  | 
 |===
 
 
@@ -3010,6 +3013,8 @@ to be cleaned up. + |  |
 to be cleaned up. + |  | 
 | *`managedPrincipals`* __boolean__ | ManagedPrincipals returns whether the role has managed principals (membership) +
 that are being reconciled by the operator. + |  | 
+| *`effectiveRoleName`* __string__ | EffectiveRoleName stores the last known effective role name that was successfully +
+reconciled. This is used to detect role renames and clean up the old role. + |  | 
 |===
 
 
