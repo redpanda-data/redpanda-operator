@@ -284,3 +284,134 @@ Feature: Role CRDs
     And role "swap-role" should not have member "olduser1" in cluster "sasl"
     And role "swap-role" should not have member "olduser2" in cluster "sasl"
     And RedpandaRole "swap-role" should have status field "managedPrincipals" set to "true"
+
+  @skip:gke @skip:aks @skip:eks
+  Scenario: Manage roles with internal flag
+    Given there is no role "__admin-role-k8s" in cluster "sasl"
+    And there are the following pre-existing users in cluster "sasl"
+      | name    | password | mechanism     |
+      | alice   | password | SCRAM-SHA-256 |
+      | bob     | password | SCRAM-SHA-256 |
+    When I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: admin-role-k8s
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      internal: true
+      principals:
+        - User:alice
+        - User:bob
+    """
+    And role "admin-role-k8s" is successfully synced
+    Then role "__admin-role-k8s" should exist in cluster "sasl" with effective name "__admin-role-k8s"
+    And role "__admin-role-k8s" should have members "alice and bob" in cluster "sasl" with effective name "__admin-role-k8s"
+    And there should be no role "admin-role-k8s" in cluster "sasl" with effective name "admin-role-k8s"
+
+  @skip:gke @skip:aks @skip:eks
+  Scenario: Manage internal roles with authorization
+    Given there is no role "__reader-role-k8s" in cluster "sasl"
+    And there are the following pre-existing users in cluster "sasl"
+      | name    | password | mechanism     |
+      | charlie | password | SCRAM-SHA-256 |
+    When I create topic "internal-test" in cluster "sasl"
+    And I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: reader-role-k8s
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      internal: true
+      principals:
+        - User:charlie
+      authorization:
+        acls:
+          - type: allow
+            resource:
+              type: topic
+              name: internal-
+              patternType: prefixed
+            operations: [Read, Describe]
+    """
+    And role "reader-role-k8s" is successfully synced
+    Then role "__reader-role-k8s" should exist in cluster "sasl" with effective name "__reader-role-k8s"
+    And role "__reader-role-k8s" should have members "charlie" in cluster "sasl" with effective name "__reader-role-k8s"
+    And there should be no role "reader-role-k8s" in cluster "sasl" with effective name "reader-role-k8s"
+    And role "reader-role-k8s" should have ACLs for topic pattern "internal-" in cluster "sasl"
+    And "charlie" should be able to read from topic "internal-test" in cluster "sasl"
+
+  @skip:gke @skip:aks @skip:eks
+  Scenario: Toggle internal flag to rename role with ACLs
+    Given there is no role "rename-test" in cluster "sasl"
+    And there is no role "__rename-test" in cluster "sasl"
+    And there are the following pre-existing users in cluster "sasl"
+      | name    | password | mechanism     |
+      | renameuser | password | SCRAM-SHA-256 |
+    When I create topic "rename-test-topic-before" in cluster "sasl"
+    And I create topic "rename-test-topic-after" in cluster "sasl"
+    And I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: rename-test
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      principals:
+        - User:renameuser
+      authorization:
+        acls:
+          - type: allow
+            resource:
+              type: topic
+              name: rename-test-
+              patternType: prefixed
+            operations: [Read, Describe]
+    """
+    And role "rename-test" is successfully synced
+    Then role "rename-test" should exist in cluster "sasl" with effective name "rename-test"
+    And role "rename-test" should have members "renameuser" in cluster "sasl" with effective name "rename-test"
+    And role "rename-test" should have ACLs for topic pattern "rename-test-" in cluster "sasl"
+    And "renameuser" should be able to read from topic "rename-test-topic-before" in cluster "sasl"
+    And RedpandaRole "rename-test" should have status field "effectiveRoleName" set to "rename-test"
+    When I apply Kubernetes manifest:
+    """
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: rename-test
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      internal: true
+      principals:
+        - User:renameuser
+      authorization:
+        acls:
+          - type: allow
+            resource:
+              type: topic
+              name: rename-test-
+              patternType: prefixed
+            operations: [Read, Describe]
+    """
+    And role "rename-test" is successfully synced
+    Then role "__rename-test" should exist in cluster "sasl" with effective name "__rename-test"
+    And role "__rename-test" should have members "renameuser" in cluster "sasl" with effective name "__rename-test"
+    And there should be no role "rename-test" in cluster "sasl" with effective name "rename-test"
+    And role "rename-test" should have ACLs for topic pattern "rename-test-" in cluster "sasl"
+    And "renameuser" should be able to read from topic "rename-test-topic-after" in cluster "sasl"
+    And RedpandaRole "rename-test" should have status field "effectiveRoleName" set to "__rename-test"
+
+
