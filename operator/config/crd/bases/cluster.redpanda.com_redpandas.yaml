@@ -3998,8 +3998,8 @@ spec:
                             type: object
                           spec:
                             description: |-
-                              PodSpecApplyConfiguration is a wrapper around
-                              [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+                              PodSpecApplyConfiguration represents a declarative configuration of the PodSpec type for use
+                              with apply.
                             properties:
                               activeDeadlineSeconds:
                                 format: int64
@@ -9669,8 +9669,8 @@ spec:
                             type: object
                           spec:
                             description: |-
-                              PodSpecApplyConfiguration is a wrapper around
-                              [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+                              PodSpecApplyConfiguration represents a declarative configuration of the PodSpec type for use
+                              with apply.
                             properties:
                               activeDeadlineSeconds:
                                 format: int64
@@ -15192,8 +15192,8 @@ spec:
                             type: object
                           spec:
                             description: |-
-                              PodSpecApplyConfiguration is a wrapper around
-                              [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+                              PodSpecApplyConfiguration represents a declarative configuration of the PodSpec type for use
+                              with apply.
                             properties:
                               activeDeadlineSeconds:
                                 format: int64
@@ -25586,8 +25586,8 @@ spec:
                             type: object
                           spec:
                             description: |-
-                              PodSpecApplyConfiguration is a wrapper around
-                              [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+                              PodSpecApplyConfiguration represents a declarative configuration of the PodSpec type for use
+                              with apply.
                             properties:
                               activeDeadlineSeconds:
                                 format: int64
@@ -31257,8 +31257,8 @@ spec:
                             type: object
                           spec:
                             description: |-
-                              PodSpecApplyConfiguration is a wrapper around
-                              [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+                              PodSpecApplyConfiguration represents a declarative configuration of the PodSpec type for use
+                              with apply.
                             properties:
                               activeDeadlineSeconds:
                                 format: int64
@@ -36780,8 +36780,8 @@ spec:
                             type: object
                           spec:
                             description: |-
-                              PodSpecApplyConfiguration is a wrapper around
-                              [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
+                              PodSpecApplyConfiguration represents a declarative configuration of the PodSpec type for use
+                              with apply.
                             properties:
                               activeDeadlineSeconds:
                                 format: int64

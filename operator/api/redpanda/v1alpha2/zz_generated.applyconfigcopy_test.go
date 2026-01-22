@@ -1,0 +1,43 @@
+// Copyright 2026 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package v1alpha2
+
+import (
+	"encoding/json"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	"pgregory.net/rapid"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/rapidutil"
+)
+
+func TestDeepCopyPodSpecApplyConfiguration(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		original := rapid.MakeCustom[applycorev1.PodSpecApplyConfiguration](rapidutil.KubernetesTypes).Draw(t, "original")
+
+		// Marshal the original
+		originalBytes, err := json.Marshal(original)
+		require.NoError(t, err)
+
+		// Deep copy
+		copy := DeepCopyPodSpecApplyConfiguration(&original)
+		require.NotNil(t, copy)
+
+		// Marshal the copy
+		copyBytes, err := json.Marshal(copy)
+		require.NoError(t, err)
+
+		// Compare JSON
+		assert.JSONEq(t, string(originalBytes), string(copyBytes), "DeepCopyPodSpecApplyConfiguration did not copy all fields correctly")
+	})
+}

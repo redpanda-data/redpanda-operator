@@ -11,6 +11,7 @@ package v1alpha2
 
 import (
 	"encoding/json"
+	"maps"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -798,32 +799,26 @@ type Statefulset struct {
 
 // PodTemplate will pass label and annotation to Statefulset Pod template.
 type PodTemplate struct {
-	Labels      map[string]string          `json:"labels,omitempty"`
-	Annotations map[string]string          `json:"annotations,omitempty"`
-	Spec        *PodSpecApplyConfiguration `json:"spec,omitempty"`
+	Labels      map[string]string                      `json:"labels,omitempty"`
+	Annotations map[string]string                      `json:"annotations,omitempty"`
+	Spec        *applycorev1.PodSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
-// PodSpecApplyConfiguration is a wrapper around
-// [applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
-type PodSpecApplyConfiguration struct {
-	*applycorev1.PodSpecApplyConfiguration `json:",inline"`
-}
-
-func (ac *PodSpecApplyConfiguration) DeepCopy() *PodSpecApplyConfiguration {
-	// For some inexplicable reason, apply configs don't have deepcopy
-	// generated for them.
-	//
-	// DeepCopyInto can be generated with just DeepCopy implemented. Sadly, the
-	// easiest way to implement DeepCopy is to run this type through JSON. It's
-	// highly unlikely that we'll hit a panic but it is possible to do so with
-	// invalid values for resource.Quantity and the like.
-	out := new(PodSpecApplyConfiguration)
-	data, err := json.Marshal(ac)
-	if err != nil {
-		panic(err)
+func (in *PodTemplate) DeepCopy() *PodTemplate {
+	if in == nil {
+		return nil
 	}
-	if err := json.Unmarshal(data, out); err != nil {
-		panic(err)
+	out := new(PodTemplate)
+	if in.Labels != nil {
+		out.Labels = make(map[string]string, len(in.Labels))
+		maps.Copy(out.Labels, in.Labels)
+	}
+	if in.Annotations != nil {
+		out.Annotations = make(map[string]string, len(in.Annotations))
+		maps.Copy(out.Annotations, in.Annotations)
+	}
+	if in.Spec != nil {
+		out.Spec = DeepCopyPodSpecApplyConfiguration(in.Spec)
 	}
 	return out
 }
