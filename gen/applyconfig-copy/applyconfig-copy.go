@@ -556,7 +556,7 @@ func (g *Generator) generateDeepCopy() (string, error) {
 			}
 		}
 	}
-	// Use deepCopyFuncTemplateText for the struct DeepCopy function
+
 	var buf strings.Builder
 	if err := deepCopyTemplate.Execute(&buf, deepCopyTemplateData{
 		StructName:    g.structName,
@@ -571,71 +571,8 @@ func (g *Generator) generateDeepCopy() (string, error) {
 func (g *Generator) generateCopy(buf *strings.Builder, inPath, outPath, knownPkg string, expr ast.Expr, skipInitial bool) error {
 	switch t := expr.(type) {
 	case *ast.Ident:
-		packagePath := g.inputPackagePath
-		if knownPkg != "" {
-			packagePath = g.imports[knownPkg]
-		}
-		if st, ok := g.structTypes[structIdentifier{packagePath: packagePath, structName: t.Name}]; ok {
-			var fieldCopies strings.Builder
-			for _, field := range st.structType.Fields.List {
-				if field.Names == nil {
-					typeName := ""
-					switch t := field.Type.(type) {
-					case *ast.Ident:
-						typeName = t.Name
-					case *ast.SelectorExpr:
-						typeName = t.Sel.Name
-					case *ast.StarExpr:
-						switch xt := t.X.(type) {
-						case *ast.Ident:
-							typeName = xt.Name
-						case *ast.SelectorExpr:
-							typeName = xt.Sel.Name
-						}
-					}
-					if typeName != "" {
-						subIn := fmt.Sprintf("(%s).%s", inPath, typeName)
-						subOut := fmt.Sprintf("(%s).%s", outPath, typeName)
-						fieldCopies.WriteString("\n")
-						if err := g.generateCopy(&fieldCopies, subIn, subOut, knownPkg, field.Type, false); err != nil {
-							return err
-						}
-					}
-					continue
-				}
-				for _, name := range field.Names {
-					subIn := fmt.Sprintf("(%s).%s", inPath, name.Name)
-					subOut := fmt.Sprintf("(%s).%s", outPath, name.Name)
-					fieldCopies.WriteString("\n")
-					if err := g.generateCopy(&fieldCopies, subIn, subOut, knownPkg, field.Type, false); err != nil {
-						return err
-					}
-				}
-			}
-			if !skipInitial {
-				if err := structTemplate.Execute(buf, copyTemplateData{
-					OutPath:       outPath,
-					PackagePrefix: g.packagePrefix,
-					TypeString:    t.Name,
-				}); err != nil {
-					return err
-				}
-			}
-			buf.WriteString(fieldCopies.String())
-		} else {
-			name := t.Name
-			if knownPkg != "" {
-				name = knownPkg
-			}
-			if path, ok := g.imports[name]; ok && path != "" {
-				g.usedImports[name] = path
-			}
-			if err := basicTemplate.Execute(buf, copyTemplateData{
-				OutPath: outPath,
-				InPath:  inPath,
-			}); err != nil {
-				return err
-			}
+		if err := g.handleIdentCopy(buf, t, inPath, outPath, knownPkg, skipInitial); err != nil {
+			return err
 		}
 	case *ast.SelectorExpr:
 		if err := g.handleSelectorExprCopy(buf, t, inPath, outPath, knownPkg, skipInitial); err != nil {
@@ -663,6 +600,64 @@ func (g *Generator) generateCopy(buf *strings.Builder, inPath, outPath, knownPkg
 	return nil
 }
 
+func (g *Generator) handleIdentCopy(buf *strings.Builder, t *ast.Ident, inPath, outPath, knownPkg string, skipInitial bool) error {
+	packagePath := g.inputPackagePath
+	if knownPkg != "" {
+		packagePath = g.imports[knownPkg]
+	}
+
+	if st, ok := g.structTypes[structIdentifier{packagePath: packagePath, structName: t.Name}]; ok {
+		var fieldCopies strings.Builder
+		for _, field := range st.structType.Fields.List {
+			if field.Names == nil {
+				if fieldName := getEmbeddedFieldName(field); fieldName != "" {
+					if err := g.handleFieldCopy(&fieldCopies, field, fieldName, inPath, outPath, knownPkg, false); err != nil {
+						return err
+					}
+				}
+				continue
+			}
+			for _, name := range field.Names {
+				if err := g.handleFieldCopy(&fieldCopies, field, name.Name, inPath, outPath, knownPkg, false); err != nil {
+					return err
+				}
+			}
+		}
+		if !skipInitial {
+			if err := structTemplate.Execute(buf, copyTemplateData{
+				OutPath:       outPath,
+				PackagePrefix: g.packagePrefix,
+				TypeString:    t.Name,
+			}); err != nil {
+				return err
+			}
+		}
+		_, err := buf.WriteString(fieldCopies.String())
+		return err
+	}
+
+	name := t.Name
+	if knownPkg != "" {
+		name = knownPkg
+	}
+	if path, ok := g.imports[name]; ok && path != "" {
+		g.usedImports[name] = path
+	}
+	return basicTemplate.Execute(buf, copyTemplateData{
+		OutPath: outPath,
+		InPath:  inPath,
+	})
+}
+
+func (g *Generator) handleFieldCopy(buf *strings.Builder, t *ast.Field, fieldName, inPath, outPath, knownPkg string, skipInitial bool) error {
+	subIn := fmt.Sprintf("(%s).%s", inPath, fieldName)
+	subOut := fmt.Sprintf("(%s).%s", outPath, fieldName)
+	if _, err := buf.WriteString("\n"); err != nil {
+		return err
+	}
+	return g.generateCopy(buf, subIn, subOut, knownPkg, t.Type, false)
+}
+
 func (g *Generator) handleSelectorExprCopy(buf *strings.Builder, t *ast.SelectorExpr, inPath, outPath, knownPkg string, skipInitial bool) error {
 	if !skipInitial {
 		if err := selectorTemplate.Execute(buf, copyTemplateData{
@@ -681,7 +676,9 @@ func (g *Generator) handleArrayCopy(buf *strings.Builder, t *ast.ArrayType, inPa
 	var elemCopy string
 	if g.isStructType(t.Elt, knownPkg) {
 		var copyElements strings.Builder
-		copyElements.WriteString(fmt.Sprintf("in, out := &%s[i], &%s[i]\n", inPath, outPath))
+		if _, err := copyElements.WriteString(fmt.Sprintf("in, out := &%s[i], &%s[i]\n", inPath, outPath)); err != nil {
+			return err
+		}
 		if err := g.generateCopy(&copyElements, "in", "out", knownPkg, t.Elt, true); err != nil {
 			return err
 		}
@@ -702,7 +699,9 @@ func (g *Generator) handleMapCopy(buf *strings.Builder, t *ast.MapType, inPath, 
 	isStruct := g.isStructType(t.Value, knownPkg)
 	if isStruct {
 		var copyElements strings.Builder
-		copyElements.WriteString(fmt.Sprintf("in, out := &v, &%s[k]\n", outPath))
+		if _, err := copyElements.WriteString(fmt.Sprintf("in, out := &v, &%s[k]\n", outPath)); err != nil {
+			return err
+		}
 		if err := g.generateCopy(&copyElements, "in", "out", knownPkg, t.Value, true); err != nil {
 			return err
 		}
@@ -820,6 +819,23 @@ func (g *Generator) typeString(expr ast.Expr, prefix string) string {
 	default:
 		panic("unhandled type")
 	}
+}
+
+func getEmbeddedFieldName(field *ast.Field) string {
+	switch t := field.Type.(type) {
+	case *ast.Ident:
+		return t.Name
+	case *ast.SelectorExpr:
+		return t.Sel.Name
+	case *ast.StarExpr:
+		switch xt := t.X.(type) {
+		case *ast.Ident:
+			return xt.Name
+		case *ast.SelectorExpr:
+			return xt.Sel.Name
+		}
+	}
+	return ""
 }
 
 func normalizeAlias(packageName, structName string) string {
