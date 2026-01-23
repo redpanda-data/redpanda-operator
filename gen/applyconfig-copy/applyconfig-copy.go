@@ -11,6 +11,7 @@
 package applyconfigcopy
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -22,6 +23,10 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
 )
+
+var loadConfig = &packages.Config{
+	Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax | packages.NeedTypes,
+}
 
 type fileImport struct {
 	Alias string
@@ -213,56 +218,12 @@ func run(args []string, outFlag, outPackage, headerFlag, structFlag, testFlag st
 		os.Exit(1)
 	}
 
-	pkgPath := args[0]
-
-	// Load the package
-	cfg := &packages.Config{
-		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax | packages.NeedTypes,
-	}
-	pkgs, err := packages.Load(cfg, pkgPath)
+	parser, err := Parse(args[0], outPackage, structFlag)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading package: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error parsing package: %v\n", err)
 		os.Exit(1)
 	}
 
-	if len(pkgs) != 1 {
-		fmt.Fprintf(os.Stderr, "Expected exactly one package, found %d\n", len(pkgs))
-		os.Exit(1)
-	}
-
-	pkg := pkgs[0]
-	if len(pkg.Errors) > 0 {
-		for _, err := range pkg.Errors {
-			fmt.Fprintf(os.Stderr, "Package error: %v\n", err)
-		}
-		os.Exit(1)
-	}
-
-	inputPkgPath := pkg.PkgPath
-
-	structTypes, imports, err := collectStructTypesAndImports(pkgPath, make(map[string]struct{}))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error collecting struct types and imports: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Check if the specified struct exists
-	if _, ok := structTypes[structFlag]; !ok {
-		fmt.Fprintf(os.Stderr, "Struct %s not found in package %s\n", structFlag, pkgPath)
-		os.Exit(1)
-	}
-	parts := strings.Split(pkg.PkgPath, "/")
-	inputPackage := strings.Join(parts[len(parts)-2:], "") + "ac"
-
-	parser := &Parser{
-		inputPackage:     inputPackage,
-		inputPackagePath: pkg.PkgPath,
-		packageName:      outPackage,
-		structName:       structFlag,
-		structType:       structTypes[structFlag],
-		imports:          imports,
-		structTypes:      structTypes,
-	}
 	generator := parser.Generator()
 	code, err := generator.Generate()
 	if err != nil {
@@ -272,26 +233,12 @@ func run(args []string, outFlag, outPackage, headerFlag, structFlag, testFlag st
 
 	// Generate test if requested
 	if testFlag != "" {
-		var buf strings.Builder
-		err := testTemplate.Execute(&buf, testTemplateData{
-			Package:    outPackage,
-			Import:     fileImport{Alias: inputPackage, Path: inputPkgPath},
-			StructName: structFlag,
-		})
+		testCode, err := generator.GenerateTest()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error templating test file: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error generating DeepCopy test code: %v\n", err)
 			os.Exit(1)
 		}
 
-		// Format the code
-		src := buf.String()
-		formatted, err := format.Source([]byte(src))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error formatting test file: %v\n", err)
-			os.Exit(1)
-		}
-
-		testCode := string(formatted)
 		if headerFlag != "" {
 			header, err := os.ReadFile(headerFlag)
 			if err != nil {
@@ -459,19 +406,61 @@ type Parser struct {
 	inputPackagePath string
 	packageName      string
 	structName       string
-	structType       *ast.StructType
 	imports          map[string]string
 	structTypes      map[string]*ast.StructType
 }
 
+func Parse(inputPackagePath, packageName, structName string) (*Parser, error) {
+	pkgs, err := packages.Load(loadConfig, inputPackagePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pkgs) != 1 {
+		return nil, fmt.Errorf("expected exactly one package, found %d", len(pkgs))
+	}
+
+	pkg := pkgs[0]
+	if len(pkg.Errors) > 0 {
+		var err error
+		for _, pkgErr := range pkg.Errors {
+			err = errors.Join(err, pkgErr)
+		}
+		return nil, err
+	}
+
+	parts := strings.Split(pkg.PkgPath, "/")
+	inputPackage := strings.Join(parts[len(parts)-2:], "") + "ac"
+
+	structTypes, imports, err := collectStructTypesAndImports(pkg.PkgPath, make(map[string]struct{}))
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := structTypes[structName]; !ok {
+		return nil, fmt.Errorf("Struct %s not found in package %s\n", structName, pkg.PkgPath)
+	}
+
+	return &Parser{
+		inputPackage:     inputPackage,
+		inputPackagePath: inputPackagePath,
+		packageName:      packageName,
+		structName:       structName,
+		imports:          imports,
+		structTypes:      structTypes,
+	}, nil
+}
+
 func (p *Parser) Generator() *Generator {
 	return &Generator{
-		packagePrefix: p.inputPackage + ".",
-		packageName:   p.packageName,
-		structName:    p.structName,
-		imports:       p.imports,
-		structType:    p.structType,
-		structTypes:   p.structTypes,
+		packagePrefix:    p.inputPackage + ".",
+		packageName:      p.packageName,
+		structName:       p.structName,
+		inputPackage:     p.inputPackage,
+		inputPackagePath: p.inputPackagePath,
+		imports:          p.imports,
+		structType:       p.structTypes[p.structName],
+		structTypes:      p.structTypes,
 		usedImports: map[string]string{
 			p.inputPackage: p.inputPackagePath,
 		},
@@ -479,13 +468,34 @@ func (p *Parser) Generator() *Generator {
 }
 
 type Generator struct {
-	packagePrefix string
-	packageName   string
-	structName    string
-	structType    *ast.StructType
-	imports       map[string]string
-	structTypes   map[string]*ast.StructType
-	usedImports   map[string]string
+	packagePrefix    string
+	packageName      string
+	inputPackage     string
+	inputPackagePath string
+	structName       string
+	structType       *ast.StructType
+	imports          map[string]string
+	structTypes      map[string]*ast.StructType
+	usedImports      map[string]string
+}
+
+func (g *Generator) GenerateTest() (string, error) {
+	var buf strings.Builder
+	if err := testTemplate.Execute(&buf, testTemplateData{
+		Package:    g.packageName,
+		Import:     fileImport{Alias: g.inputPackage, Path: g.inputPackagePath},
+		StructName: g.structName,
+	}); err != nil {
+		return "", err
+	}
+
+	src := buf.String()
+	formatted, err := format.Source([]byte(src))
+	if err != nil {
+		return "", err
+	}
+
+	return string(formatted), nil
 }
 
 func (g *Generator) Generate() (string, error) {
