@@ -958,6 +958,10 @@ config:
 
   # Reference schema registry client https://docs.redpanda.com/current/reference/node-configuration-sample/
   schema_registry_client: {}
+    #  # Override to use localhost instead of headless service FQDN.
+    #  # Useful when DNS issues occur. Default: false (uses headless service)
+    # use_localhost: false
+    #
     #  # Number of times to retry a request to a broker
     #  # Default: 5
     # retries: 5
@@ -1000,6 +1004,10 @@ config:
 
   # Reference panda proxy client https://docs.redpanda.com/current/reference/node-configuration-sample/
   pandaproxy_client: {}
+    #  # Override to use localhost instead of headless service FQDN.
+    #  # Useful when DNS issues occur. Default: false (uses headless service)
+    # use_localhost: false
+    #
     #  # Number of times to retry a request to a broker
     #  # Default: 5
     # retries: 5
