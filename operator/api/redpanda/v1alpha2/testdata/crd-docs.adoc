@@ -2115,23 +2115,6 @@ PodAntiAffinity configures Pod anti-affinity rules to prevent Pods from being sc
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podspecapplyconfiguration"]
-==== PodSpecApplyConfiguration
-
-
-
-PodSpecApplyConfiguration is a wrapper around
-[applycorev1.PodSpecApplyConfiguration] that adds support for DeepCopying.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]
-****
-
-
-
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate"]
 ==== PodTemplate
 
@@ -2153,7 +2136,7 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 | Field | Description | Default | Validation
 | *`labels`* __object (keys:string, values:string)__ |  |  | 
 | *`annotations`* __object (keys:string, values:string)__ |  |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podspecapplyconfiguration[$$PodSpecApplyConfiguration$$]__ |  |  | 
+| *`spec`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-podspecapplyconfiguration[$$PodSpecApplyConfiguration$$]__ |  |  | 
 |===
 
 
