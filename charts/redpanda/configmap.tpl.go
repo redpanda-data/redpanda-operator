@@ -147,10 +147,10 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool P
 
 	if includeNonHashableItems {
 		redpandaYaml["rpk"] = rpkNodeConfig(state, pool)
-		redpandaYaml["pandaproxy_client"] = kafkaClient(state)
-		redpandaYaml["schema_registry_client"] = kafkaClient(state)
+		redpandaYaml["pandaproxy_client"] = kafkaClient(state, "pandaproxy")
+		redpandaYaml["schema_registry_client"] = kafkaClient(state, "schema_registry")
 		if RedpandaAtLeast_23_3_0(state) && state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
-			redpandaYaml["audit_log_client"] = kafkaClient(state)
+			redpandaYaml["audit_log_client"] = kafkaClient(state, "audit_log")
 		}
 	}
 
@@ -489,13 +489,34 @@ func rpkSchemaRegistryClientTLSConfiguration(state *RenderState) map[string]any 
 // kafkaClient returns the configuration for internal components of redpanda to
 // connect to its own Kafka API. This is distinct from RPK's configuration for
 // Kafka API interactions.
-func kafkaClient(state *RenderState) map[string]any {
+func kafkaClient(state *RenderState, clientType string) map[string]any {
 	brokerList := []map[string]any{}
-	for _, broker := range BrokerList(state, -1) {
+
+	useLocalhostKey := fmt.Sprintf("%s_client.use_localhost", clientType)
+	useLocalhost := false
+
+	val, ok := state.Values.Config.Node[useLocalhostKey]
+	if ok {
+		if helmette.KindIs("bool", val) {
+			useLocalhost = val == true
+		} else if helmette.KindIs("string", val) {
+			strVal := val.(string)
+			useLocalhost = strVal == "true" || strVal == "True" || strVal == "TRUE" || strVal == "1"
+		}
+	}
+
+	if useLocalhost {
 		brokerList = append(brokerList, map[string]any{
-			"address": broker,
+			"address": "localhost",
 			"port":    state.Values.Listeners.Kafka.Port,
 		})
+	} else {
+		for _, broker := range BrokerList(state, -1) {
+			brokerList = append(brokerList, map[string]any{
+				"address": broker,
+				"port":    state.Values.Listeners.Kafka.Port,
+			})
+		}
 	}
 
 	kafkaTLS := state.Values.Listeners.Kafka.TLS
