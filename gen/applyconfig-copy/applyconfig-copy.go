@@ -277,66 +277,101 @@ func run(args []string, outFlag, outPackage, headerFlag, structFlag, testFlag st
 	}
 }
 
-func collectStructTypesAndImports(basePackage string, seen map[string]struct{}) (map[string]*ast.StructType, map[string]string, error) {
+type Parser struct {
+	inputPackage     string
+	inputPackagePath string
+	packageName      string
+	structName       string
+	structType       *ast.StructType
+	processed        map[string]struct{}
+	imports          map[string]string
+	structTypes      map[structIdentifier]packageStruct
+}
+
+func Parse(inputPackagePath, packageName, structName string) (*Parser, error) {
+	pkgs, err := packages.Load(loadConfig, inputPackagePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pkgs) != 1 {
+		return nil, fmt.Errorf("expected exactly one package, found %d", len(pkgs))
+	}
+
+	pkg := pkgs[0]
+	if len(pkg.Errors) > 0 {
+		var err error
+		for _, pkgErr := range pkg.Errors {
+			err = errors.Join(err, pkgErr)
+		}
+		return nil, err
+	}
+
+	parts := strings.Split(pkg.PkgPath, "/")
+	inputPackage := strings.Join(parts[len(parts)-2:], "") + "ac"
+
+	p := &Parser{
+		inputPackage:     inputPackage,
+		inputPackagePath: inputPackagePath,
+		packageName:      packageName,
+		structName:       structName,
+		processed:        make(map[string]struct{}),
+		imports:          make(map[string]string),
+		structTypes:      make(map[structIdentifier]packageStruct),
+	}
+
+	if err := p.collect(pkg.PkgPath); err != nil {
+		return nil, err
+	}
+
+	structType, ok := p.structTypes[structIdentifier{packagePath: pkg.PkgPath, structName: structName}]
+	if !ok {
+		return nil, fmt.Errorf("Struct %s not found in package %s\n", structName, pkg.PkgPath)
+	}
+	p.structType = structType.structType
+
+	return p, nil
+}
+
+func (p *Parser) collect(basePackage string) error {
 	pkgs, err := packages.Load(&packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedSyntax | packages.NeedTypes,
 	}, basePackage)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
 
-	imports := make(map[string]string)
-	structTypes := make(map[string]*ast.StructType)
 	for _, pkg := range pkgs {
-		if _, ok := seen[pkg.PkgPath]; ok {
+		if _, ok := p.processed[pkg.PkgPath]; ok {
 			continue
 		}
-		pkgStructs := collectStructTypesForPackage(pkg, seen)
-		for name, st := range pkgStructs {
-			if _, exists := structTypes[name]; exists {
-				return nil, nil, fmt.Errorf("struct type conflict: %s defined in multiple packages", name)
-			}
-			structTypes[name] = st
-		}
-		pkgImports, err := collectImportsForPackage(pkg, seen)
-		if err != nil {
-			return nil, nil, err
-		}
-		for alias, path := range pkgImports {
-			if existingPath, exists := imports[alias]; exists && existingPath != path {
-				return nil, nil, fmt.Errorf("import alias conflict: %s maps to both %s and %s", alias, existingPath, path)
-			}
-			imports[alias] = path
-		}
 
-		seen[pkg.PkgPath] = struct{}{}
+		if err := p.collectStructTypes(pkg); err != nil {
+			return err
+		}
+		if err := p.collectImports(pkg); err != nil {
+			return err
+		}
+		p.processed[pkg.PkgPath] = struct{}{}
 	}
 
-	for _, importName := range imports {
-		importStructTypes, importImports, err := collectStructTypesAndImports(importName, seen)
-		if err != nil {
-			return nil, nil, err
+	for _, importName := range p.imports {
+		if _, ok := p.processed[importName]; ok {
+			continue
 		}
-		for name, st := range importStructTypes {
-			structTypes[name] = st
-		}
-		for impAlias, impPath := range importImports {
-			if existingPath, exists := imports[impAlias]; exists && existingPath != impPath {
-				return nil, nil, fmt.Errorf("import alias conflict: %s maps to both %s and %s", impAlias, existingPath, impPath)
-			}
-			imports[impAlias] = impPath
+		if err := p.collect(importName); err != nil {
+			return err
 		}
 	}
 
-	return structTypes, imports, nil
+	return nil
 }
 
-func collectImportsForPackage(pkg *packages.Package, seen map[string]struct{}) (map[string]string, error) {
-	if _, ok := seen[pkg.PkgPath]; ok {
-		return nil, nil
+func (p *Parser) collectImports(pkg *packages.Package) error {
+	if _, ok := p.processed[pkg.PkgPath]; ok {
+		return nil
 	}
 
-	imports := make(map[string]string) // alias -> path
 	for _, file := range pkg.Syntax {
 		for _, imp := range file.Imports {
 			importPath := strings.Trim(imp.Path.Value, "\"")
@@ -365,90 +400,60 @@ func collectImportsForPackage(pkg *packages.Package, seen map[string]struct{}) (
 				}
 			}
 			i := 2
-			for existingPath, exists := imports[alias]; exists && existingPath != importPath; i++ {
+			for existingPath, exists := p.imports[alias]; exists && existingPath != importPath; i++ {
 				parts := strings.Split(importPath, "/")
 				if len(parts) < i {
-					return nil, fmt.Errorf("import alias conflict: %s maps to both %s and %s", alias, existingPath, importPath)
+					return fmt.Errorf("import alias conflict: %s maps to both %s and %s", alias, existingPath, importPath)
 				}
 				alias = parts[len(parts)-i] + alias
-				existingPath, exists = imports[alias]
+				existingPath, exists = p.imports[alias]
 			}
-			imports[alias] = importPath
-			imports[importPath] = alias
+			p.imports[alias] = importPath
+			p.imports[importPath] = alias
 		}
 	}
 
-	return imports, nil
+	return nil
 }
 
-func collectStructTypesForPackage(pkg *packages.Package, seen map[string]struct{}) map[string]*ast.StructType {
-	if _, ok := seen[pkg.PkgPath]; ok {
+type structIdentifier struct {
+	packagePath string
+	structName  string
+}
+
+type packageStruct struct {
+	packagePath string
+	structType  *ast.StructType
+}
+
+func (p *Parser) collectStructTypes(pkg *packages.Package) error {
+	if _, ok := p.processed[pkg.PkgPath]; ok {
 		return nil
 	}
 
-	structTypes := make(map[string]*ast.StructType)
-
+	var err error
 	for _, file := range pkg.Syntax {
 		ast.Inspect(file, func(n ast.Node) bool {
 			if ts, ok := n.(*ast.TypeSpec); ok {
 				if st, ok := ts.Type.(*ast.StructType); ok {
-					structTypes[ts.Name.Name] = st
+					name := ts.Name.Name
+					if old, exists := p.structTypes[structIdentifier{packagePath: pkg.PkgPath, structName: name}]; exists {
+						err = fmt.Errorf("struct type conflict: %s defined in multiple packages: %q and %q", name, old.packagePath, pkg.PkgPath)
+						return false
+					}
+					p.structTypes[structIdentifier{packagePath: pkg.PkgPath, structName: name}] = packageStruct{
+						packagePath: pkg.PkgPath,
+						structType:  st,
+					}
 				}
 			}
 			return true
 		})
-	}
-	return structTypes
-}
-
-type Parser struct {
-	inputPackage     string
-	inputPackagePath string
-	packageName      string
-	structName       string
-	imports          map[string]string
-	structTypes      map[string]*ast.StructType
-}
-
-func Parse(inputPackagePath, packageName, structName string) (*Parser, error) {
-	pkgs, err := packages.Load(loadConfig, inputPackagePath)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(pkgs) != 1 {
-		return nil, fmt.Errorf("expected exactly one package, found %d", len(pkgs))
-	}
-
-	pkg := pkgs[0]
-	if len(pkg.Errors) > 0 {
-		var err error
-		for _, pkgErr := range pkg.Errors {
-			err = errors.Join(err, pkgErr)
+		if err != nil {
+			return err
 		}
-		return nil, err
 	}
-
-	parts := strings.Split(pkg.PkgPath, "/")
-	inputPackage := strings.Join(parts[len(parts)-2:], "") + "ac"
-
-	structTypes, imports, err := collectStructTypesAndImports(pkg.PkgPath, make(map[string]struct{}))
-	if err != nil {
-		return nil, err
-	}
-
-	if _, ok := structTypes[structName]; !ok {
-		return nil, fmt.Errorf("Struct %s not found in package %s\n", structName, pkg.PkgPath)
-	}
-
-	return &Parser{
-		inputPackage:     inputPackage,
-		inputPackagePath: inputPackagePath,
-		packageName:      packageName,
-		structName:       structName,
-		imports:          imports,
-		structTypes:      structTypes,
-	}, nil
+	return nil
 }
 
 func (p *Parser) Generator() *Generator {
@@ -459,7 +464,7 @@ func (p *Parser) Generator() *Generator {
 		inputPackage:     p.inputPackage,
 		inputPackagePath: p.inputPackagePath,
 		imports:          p.imports,
-		structType:       p.structTypes[p.structName],
+		structType:       p.structType,
 		structTypes:      p.structTypes,
 		usedImports: map[string]string{
 			p.inputPackage: p.inputPackagePath,
@@ -475,7 +480,7 @@ type Generator struct {
 	structName       string
 	structType       *ast.StructType
 	imports          map[string]string
-	structTypes      map[string]*ast.StructType
+	structTypes      map[structIdentifier]packageStruct
 	usedImports      map[string]string
 }
 
@@ -566,9 +571,13 @@ func (g *Generator) generateDeepCopy() (string, error) {
 func (g *Generator) generateCopy(buf *strings.Builder, inPath, outPath, knownPkg string, expr ast.Expr, skipInitial bool) error {
 	switch t := expr.(type) {
 	case *ast.Ident:
-		if st, ok := g.structTypes[t.Name]; ok {
+		packagePath := g.inputPackagePath
+		if knownPkg != "" {
+			packagePath = g.imports[knownPkg]
+		}
+		if st, ok := g.structTypes[structIdentifier{packagePath: packagePath, structName: t.Name}]; ok {
 			var fieldCopies strings.Builder
-			for _, field := range st.Fields.List {
+			for _, field := range st.structType.Fields.List {
 				if field.Names == nil {
 					typeName := ""
 					switch t := field.Type.(type) {
@@ -629,91 +638,24 @@ func (g *Generator) generateCopy(buf *strings.Builder, inPath, outPath, knownPkg
 			}
 		}
 	case *ast.SelectorExpr:
-		if !skipInitial {
-			if err := selectorTemplate.Execute(buf, copyTemplateData{
-				OutPath:      outPath,
-				Alias:        knownPkg,
-				SelectorName: t.Sel.Name,
-			}); err != nil {
-				return err
-			}
-		}
-		if err := g.generateCopy(buf, inPath, outPath, knownPkg, t.X, false); err != nil {
+		if err := g.handleSelectorExprCopy(buf, t, inPath, outPath, knownPkg, skipInitial); err != nil {
 			return err
 		}
 	case *ast.ArrayType:
-		var elemCopy string
-		if g.isStructType(t.Elt) {
-			var subBuf strings.Builder
-			subBuf.WriteString(fmt.Sprintf("in, out := &%s[i], &%s[i]\n", inPath, outPath))
-			if err := g.generateCopy(&subBuf, "in", "out", knownPkg, t.Elt, true); err != nil {
-				return err
-			}
-			elemCopy = subBuf.String()
-		}
-		if err := arrayTemplate.Execute(buf, copyTemplateData{
-			InPath:     inPath,
-			OutPath:    outPath,
-			TypeString: g.typeString(t, g.packagePrefix),
-			IsStruct:   g.isStructType(t.Elt),
-			ElemCopy:   elemCopy,
-		}); err != nil {
+		if err := g.handleArrayCopy(buf, t, inPath, outPath, knownPkg); err != nil {
 			return err
 		}
 	case *ast.MapType:
-		var elemCopy string
-		if g.isStructType(t.Value) {
-			var subBuf strings.Builder
-			subBuf.WriteString(fmt.Sprintf("in, out := &v, &%s[k]\n", outPath))
-			if err := g.generateCopy(&subBuf, "in", "out", knownPkg, t.Value, true); err != nil {
-				return err
-			}
-			elemCopy = subBuf.String()
-		}
-		if err := mapTemplate.Execute(buf, copyTemplateData{
-			InPath: inPath, OutPath: outPath,
-			TypeString: g.typeString(t, g.packagePrefix),
-			IsStruct:   g.isStructType(t.Value),
-			ElemCopy:   elemCopy,
-		}); err != nil {
+		if err := g.handleMapCopy(buf, t, inPath, outPath, knownPkg); err != nil {
 			return err
 		}
 	case *ast.StarExpr:
-		var elemCopy string
-		prefix := g.packagePrefix
-		knownPkg := ""
-		typeString := g.typeString(t.X, "")
-		if strings.Contains(typeString, ".") {
-			prefix = ""
-			parts := strings.Split(typeString, ".")
-			knownPkg = parts[0]
-		}
-
-		if g.isStructType(t.X) {
-			var subBuf strings.Builder
-			if err := g.generateCopy(&subBuf, fmt.Sprintf("*%s", inPath), fmt.Sprintf("*%s", outPath), knownPkg, t.X, true); err != nil {
-				return err
-			}
-			elemCopy = subBuf.String()
-		}
-
-		isStruct := g.isStructType(t.X)
-		if err := starTemplate.Execute(buf, copyTemplateData{
-			InPath:        inPath,
-			OutPath:       outPath,
-			TypeString:    typeString,
-			PackagePrefix: prefix,
-			IsStruct:      isStruct,
-			ElemCopy:      elemCopy,
-		}); err != nil {
+		if err := g.handleStarExprCopy(buf, t, inPath, outPath); err != nil {
 			return err
 		}
 	default:
 		if !skipInitial {
-			if err := defaultTemplate.Execute(buf, copyTemplateData{
-				OutPath: outPath,
-				InPath:  inPath,
-			}); err != nil {
+			if err := g.handleDefaultCopy(buf, inPath, outPath); err != nil {
 				return err
 			}
 		}
@@ -721,18 +663,118 @@ func (g *Generator) generateCopy(buf *strings.Builder, inPath, outPath, knownPkg
 	return nil
 }
 
-func (g *Generator) isStructType(expr ast.Expr) bool {
+func (g *Generator) handleSelectorExprCopy(buf *strings.Builder, t *ast.SelectorExpr, inPath, outPath, knownPkg string, skipInitial bool) error {
+	if !skipInitial {
+		if err := selectorTemplate.Execute(buf, copyTemplateData{
+			OutPath:      outPath,
+			Alias:        knownPkg,
+			SelectorName: t.Sel.Name,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return g.generateCopy(buf, inPath, outPath, knownPkg, t.X, false)
+}
+
+func (g *Generator) handleArrayCopy(buf *strings.Builder, t *ast.ArrayType, inPath, outPath, knownPkg string) error {
+	var elemCopy string
+	if g.isStructType(t.Elt, knownPkg) {
+		var copyElements strings.Builder
+		copyElements.WriteString(fmt.Sprintf("in, out := &%s[i], &%s[i]\n", inPath, outPath))
+		if err := g.generateCopy(&copyElements, "in", "out", knownPkg, t.Elt, true); err != nil {
+			return err
+		}
+		elemCopy = copyElements.String()
+	}
+
+	return arrayTemplate.Execute(buf, copyTemplateData{
+		InPath:     inPath,
+		OutPath:    outPath,
+		TypeString: g.typeString(t, g.packagePrefix),
+		IsStruct:   g.isStructType(t.Elt, knownPkg),
+		ElemCopy:   elemCopy,
+	})
+}
+
+func (g *Generator) handleMapCopy(buf *strings.Builder, t *ast.MapType, inPath, outPath, knownPkg string) error {
+	var elemCopy string
+	isStruct := g.isStructType(t.Value, knownPkg)
+	if isStruct {
+		var copyElements strings.Builder
+		copyElements.WriteString(fmt.Sprintf("in, out := &v, &%s[k]\n", outPath))
+		if err := g.generateCopy(&copyElements, "in", "out", knownPkg, t.Value, true); err != nil {
+			return err
+		}
+		elemCopy = copyElements.String()
+	}
+
+	return mapTemplate.Execute(buf, copyTemplateData{
+		InPath: inPath, OutPath: outPath,
+		TypeString: g.typeString(t, g.packagePrefix),
+		IsStruct:   isStruct,
+		ElemCopy:   elemCopy,
+	})
+}
+
+func (g *Generator) handleStarExprCopy(buf *strings.Builder, t *ast.StarExpr, inPath, outPath string) error {
+	prefix := g.packagePrefix
+	knownPkg := ""
+	typeString := g.typeString(t.X, "")
+	if strings.Contains(typeString, ".") {
+		prefix = ""
+		parts := strings.Split(typeString, ".")
+		knownPkg = parts[0]
+	}
+
+	var elemCopy string
+	isStruct := g.isStructType(t.X, knownPkg)
+	if isStruct {
+		var copyElements strings.Builder
+		if err := g.generateCopy(&copyElements, fmt.Sprintf("*%s", inPath), fmt.Sprintf("*%s", outPath), knownPkg, t.X, true); err != nil {
+			return err
+		}
+		elemCopy = copyElements.String()
+	}
+
+	return starTemplate.Execute(buf, copyTemplateData{
+		InPath:        inPath,
+		OutPath:       outPath,
+		TypeString:    typeString,
+		PackagePrefix: prefix,
+		IsStruct:      isStruct,
+		ElemCopy:      elemCopy,
+	})
+}
+
+func (g *Generator) handleDefaultCopy(buf *strings.Builder, inPath, outPath string) error {
+	return defaultTemplate.Execute(buf, copyTemplateData{
+		OutPath: outPath,
+		InPath:  inPath,
+	})
+}
+
+func (g *Generator) isStructType(expr ast.Expr, knownPackage string) bool {
 	switch t := expr.(type) {
 	case *ast.Ident:
-		_, ok := g.structTypes[t.Name]
+		packagePath := g.inputPackagePath
+		if knownPackage != "" {
+			packagePath = g.imports[knownPackage]
+		}
+		_, ok := g.structTypes[structIdentifier{packagePath: packagePath, structName: t.Name}]
 		return ok
 	case *ast.StarExpr:
-		return g.isStructType(t.X)
+		knownPkg := ""
+		typeString := g.typeString(t.X, "")
+		if strings.Contains(typeString, ".") {
+			parts := strings.Split(typeString, ".")
+			knownPkg = parts[0]
+		}
+		return g.isStructType(t.X, knownPkg)
 	case *ast.SelectorExpr:
 		// Try to resolve qualified name for imported struct
 		if ident, ok := t.X.(*ast.Ident); ok {
-			qualified := ident.Name + "." + t.Sel.Name
-			_, ok := g.structTypes[qualified]
+			_, ok := g.structTypes[structIdentifier{packagePath: g.imports[ident.Name], structName: t.Sel.Name}]
 			return ok || strings.HasSuffix(t.Sel.Name, "ApplyConfiguration")
 		}
 		return false
@@ -763,10 +805,7 @@ func (g *Generator) typeString(expr ast.Expr, prefix string) string {
 	case *ast.SelectorExpr:
 		alias := ""
 		if ident, ok := t.X.(*ast.Ident); ok {
-			name := ident.Name
-			if strings.Contains(t.Sel.Name, "ApplyConfiguration") {
-				name = name + "ac"
-			}
+			name := normalizeAlias(ident.Name, t.Sel.Name)
 			if path, ok := g.imports[name]; ok && path != "" {
 				g.usedImports[name] = path
 				alias = name
@@ -781,4 +820,11 @@ func (g *Generator) typeString(expr ast.Expr, prefix string) string {
 	default:
 		panic("unhandled type")
 	}
+}
+
+func normalizeAlias(packageName, structName string) string {
+	if strings.Contains(structName, "ApplyConfiguration") {
+		return packageName + "ac"
+	}
+	return packageName
 }
