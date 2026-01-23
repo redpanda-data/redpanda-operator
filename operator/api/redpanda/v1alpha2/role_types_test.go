@@ -25,13 +25,75 @@ import (
 )
 
 func TestRole_GetPrincipal(t *testing.T) {
-	role := &RedpandaRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-role",
+	tests := []struct {
+		name     string
+		role     *RedpandaRole
+		expected string
+	}{
+		{
+			name: "role with internal false",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+			},
+			expected: "RedpandaRole:test-role",
+		},
+		{
+			name: "role with internal true",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+				Spec: RoleSpec{
+					Internal: true,
+				},
+			},
+			expected: "RedpandaRole:__test-role",
 		},
 	}
 
-	assert.Equal(t, "RedpandaRole:test-role", role.GetPrincipal())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.role.GetPrincipal())
+		})
+	}
+}
+
+func TestRole_GetEffectiveRoleName(t *testing.T) {
+	tests := []struct {
+		name     string
+		role     *RedpandaRole
+		expected string
+	}{
+		{
+			name: "role with internal false",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+			},
+			expected: "test-role",
+		},
+		{
+			name: "role with internal true",
+			role: &RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-role",
+				},
+				Spec: RoleSpec{
+					Internal: true,
+				},
+			},
+			expected: "__test-role",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.role.GetEffectiveRoleName())
+		})
+	}
 }
 
 func TestRole_GetACLs(t *testing.T) {

@@ -742,3 +742,155 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 	})
 }
+
+func TestRoleRename(t *testing.T) {
+	// Tests role rename happy path: K8s name → internal name → different internal name
+	// Verifies old roles are deleted and new roles created without orphaning.
+	//
+	// Unhappy path scenarios (documented for future implementation with mocks):
+	//
+	// Scenario 1: New role creation fails
+	//   - Rename detected, hasRole=false
+	//   - Create() returns error
+	//   - createPatch returns error
+	//   - Status NOT updated (keeps previousEffectiveName)
+	//   - Next reconciliation retries from beginning
+	//
+	// Scenario 2: Old role deletion fails
+	//   - Rename detected, hasRole=false
+	//   - Create() succeeds, new role exists
+	//   - DeleteByName() returns error
+	//   - createPatch returns error
+	//   - Status NOT updated (keeps previousEffectiveName)
+	//   - Next reconciliation: hasRole=true (skip create), retry delete
+	//
+	// Scenario 3: Retry after deletion failure
+	//   - Rename still detected (status has old name)
+	//   - hasRole=true (new role exists from previous attempt)
+	//   - Logs "New role already exists, skipping creation"
+	//   - DeleteByName() succeeds this time
+	//   - createPatch(nil) updates status to currentEffectiveName
+	//   - Rename complete, no orphaned roles
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	// Create role with initial name (no internal name)
+	role := &redpandav1alpha2.RedpandaRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceDefault,
+			Name:      "updateable-role",
+		},
+		Spec: redpandav1alpha2.RoleSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Principals:    []string{"User:user1", "User:user2"},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(role)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	// Phase 1: Create role without internal name
+	t.Run("create_role_without_internal_name", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Create(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.Equal(t, "updateable-role", role.Status.EffectiveRoleName, "Status should track effective name")
+
+		// Verify role exists in cluster with K8s name
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should exist with name 'updateable-role'")
+	})
+
+	// Phase 2: Rename by setting internal flag
+	t.Run("rename_via_internal_flag", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Internal = true
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.Equal(t, "__updateable-role", role.Status.EffectiveRoleName, "Status should update to new effective name")
+
+		// Verify new role exists
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasNewRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasNewRole, "New role '__updateable-role' should exist")
+
+		// Verify old role is deleted
+		oldRole := role.DeepCopy()
+		oldRole.Spec.Internal = false // This makes GetEffectiveRoleName return "updateable-role"
+		hasOldRole, err := rolesClient.Has(ctx, oldRole)
+		require.NoError(t, err)
+		require.False(t, hasOldRole, "Old role 'updateable-role' should be deleted")
+	})
+
+	// Phase 3: Toggle internal flag back to verify multiple renames work
+	t.Run("toggle_internal_back", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Internal = false
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.Equal(t, "updateable-role", role.Status.EffectiveRoleName, "Status should update back to K8s name")
+
+		// Verify role with K8s name exists
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role 'updateable-role' should exist")
+
+		// Check previous internal name is gone
+		previousRole := role.DeepCopy()
+		previousRole.Spec.Internal = true
+		hasPreviousRole, err := rolesClient.Has(ctx, previousRole)
+		require.NoError(t, err)
+		require.False(t, hasPreviousRole, "Previous role '__updateable-role' should be deleted")
+	})
+
+	// Cleanup
+	t.Run("cleanup", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Delete(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
+	})
+}
