@@ -252,17 +252,30 @@ func run(args []string, outFlag, outPackage, headerFlag, structFlag, testFlag st
 		os.Exit(1)
 	}
 	parts := strings.Split(pkg.PkgPath, "/")
-	pkgName := strings.Join(parts[len(parts)-2:], "") + "ac"
+	inputPackage := strings.Join(parts[len(parts)-2:], "") + "ac"
 
-	// Generate DeepCopy code for all structs
-	code := generateDeepCopyAll(pkgName, outPackage, structFlag, structTypes[structFlag], structTypes, imports, inputPkgPath)
+	parser := &Parser{
+		inputPackage:     inputPackage,
+		inputPackagePath: pkg.PkgPath,
+		packageName:      outPackage,
+		structName:       structFlag,
+		structType:       structTypes[structFlag],
+		imports:          imports,
+		structTypes:      structTypes,
+	}
+	generator := parser.Generator()
+	code, err := generator.Generate()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating DeepCopy code: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Generate test if requested
 	if testFlag != "" {
 		var buf strings.Builder
 		err := testTemplate.Execute(&buf, testTemplateData{
 			Package:    outPackage,
-			Import:     fileImport{Alias: pkgName, Path: inputPkgPath},
+			Import:     fileImport{Alias: inputPackage, Path: inputPkgPath},
 			StructName: structFlag,
 		})
 		if err != nil {
@@ -441,50 +454,71 @@ func collectStructTypesForPackage(pkg *packages.Package, seen map[string]struct{
 	return structTypes
 }
 
-func generateDeepCopyAll(pkgName, outPkg, name string, structType *ast.StructType, structTypes map[string]*ast.StructType, imports map[string]string, inputPkgPath string) string {
-	if outPkg == "" {
-		outPkg = pkgName
+type Parser struct {
+	inputPackage     string
+	inputPackagePath string
+	packageName      string
+	structName       string
+	structType       *ast.StructType
+	imports          map[string]string
+	structTypes      map[string]*ast.StructType
+}
+
+func (p *Parser) Generator() *Generator {
+	return &Generator{
+		packagePrefix: p.inputPackage + ".",
+		packageName:   p.packageName,
+		structName:    p.structName,
+		imports:       p.imports,
+		structType:    p.structType,
+		structTypes:   p.structTypes,
+		usedImports: map[string]string{
+			p.inputPackage: p.inputPackagePath,
+		},
 	}
+}
 
-	usedImports := make(map[string]string)
+type Generator struct {
+	packagePrefix string
+	packageName   string
+	structName    string
+	structType    *ast.StructType
+	imports       map[string]string
+	structTypes   map[string]*ast.StructType
+	usedImports   map[string]string
+}
 
-	pkgPrefix := ""
-	if outPkg != pkgName {
-		pkgPrefix = pkgName + "."
-		usedImports[pkgName] = inputPkgPath
+func (g *Generator) Generate() (string, error) {
+	deepCopyCode, err := g.generateDeepCopy()
+	if err != nil {
+		return "", err
 	}
-
-	// Generate DeepCopy code and collect imports as we go
-	deepCopyCode := generateDeepCopyForStructWithImports(name, structType, structTypes, pkgPrefix, usedImports, imports)
 
 	importsList := []fileImport{}
-	for alias, path := range usedImports {
+	for alias, path := range g.usedImports {
 		importsList = append(importsList, fileImport{Alias: alias, Path: path})
 	}
 
 	var buf strings.Builder
-	err := fileTemplate.Execute(&buf, fileTemplateData{
-		Package:      outPkg,
+	if err := fileTemplate.Execute(&buf, fileTemplateData{
+		Package:      g.packageName,
 		Imports:      importsList,
 		DeepCopyCode: deepCopyCode,
-	})
-	if err != nil {
-		return "// template error: " + err.Error()
+	}); err != nil {
+		return "", err
 	}
 
-	// Format the code
 	src := buf.String()
 	formatted, err := format.Source([]byte(src))
 	if err != nil {
-		return src // return unformatted if error
+		return "", err
 	}
-	return string(formatted)
+	return string(formatted), nil
 }
 
-// generateDeepCopyForStructWithImports is like generateDeepCopyForStruct but also collects imports as it generates code
-func generateDeepCopyForStructWithImports(structName string, structType *ast.StructType, structTypes map[string]*ast.StructType, pkgPrefix string, usedImports map[string]string, imports map[string]string) string {
+func (g *Generator) generateDeepCopy() (string, error) {
 	var fieldCopies strings.Builder
-	for _, field := range structType.Fields.List {
+	for _, field := range g.structType.Fields.List {
 		if field.Names == nil {
 			typeName := ""
 			switch t := field.Type.(type) {
@@ -494,30 +528,35 @@ func generateDeepCopyForStructWithImports(structName string, structType *ast.Str
 				typeName = t.Sel.Name
 			}
 			if typeName != "" {
-				generateCopyWithImports(&fieldCopies, fmt.Sprintf("in.%s", typeName), fmt.Sprintf("out.%s", typeName), "", field.Type, structTypes, pkgPrefix, usedImports, imports, false)
+				if err := g.generateCopy(&fieldCopies, fmt.Sprintf("in.%s", typeName), fmt.Sprintf("out.%s", typeName), "", field.Type, false); err != nil {
+					return "", err
+				}
 			}
 			continue
 		}
 		for _, name := range field.Names {
 			fieldName := name.Name
-			generateCopyWithImports(&fieldCopies, fmt.Sprintf("in.%s", fieldName), fmt.Sprintf("out.%s", fieldName), "", field.Type, structTypes, pkgPrefix, usedImports, imports, false)
+			if err := g.generateCopy(&fieldCopies, fmt.Sprintf("in.%s", fieldName), fmt.Sprintf("out.%s", fieldName), "", field.Type, false); err != nil {
+				return "", err
+			}
 		}
 	}
 	// Use deepCopyFuncTemplateText for the struct DeepCopy function
 	var buf strings.Builder
-	deepCopyTemplate.Execute(&buf, deepCopyTemplateData{
-		StructName:    structName,
-		PackagePrefix: pkgPrefix,
+	if err := deepCopyTemplate.Execute(&buf, deepCopyTemplateData{
+		StructName:    g.structName,
+		PackagePrefix: g.packagePrefix,
 		FieldCopies:   fieldCopies.String(),
-	})
-	return buf.String()
+	}); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
-// generateCopyWithImports is like generateCopy but also collects imports as it generates code
-func generateCopyWithImports(buf *strings.Builder, inPath, outPath, knownPkg string, expr ast.Expr, structTypes map[string]*ast.StructType, pkgPrefix string, usedImports map[string]string, imports map[string]string, skipInitial bool) {
+func (g *Generator) generateCopy(buf *strings.Builder, inPath, outPath, knownPkg string, expr ast.Expr, skipInitial bool) error {
 	switch t := expr.(type) {
 	case *ast.Ident:
-		if st, ok := structTypes[t.Name]; ok {
+		if st, ok := g.structTypes[t.Name]; ok {
 			var fieldCopies strings.Builder
 			for _, field := range st.Fields.List {
 				if field.Names == nil {
@@ -539,7 +578,9 @@ func generateCopyWithImports(buf *strings.Builder, inPath, outPath, knownPkg str
 						subIn := fmt.Sprintf("(%s).%s", inPath, typeName)
 						subOut := fmt.Sprintf("(%s).%s", outPath, typeName)
 						fieldCopies.WriteString("\n")
-						generateCopyWithImports(&fieldCopies, subIn, subOut, knownPkg, field.Type, structTypes, pkgPrefix, usedImports, imports, false)
+						if err := g.generateCopy(&fieldCopies, subIn, subOut, knownPkg, field.Type, false); err != nil {
+							return err
+						}
 					}
 					continue
 				}
@@ -547,15 +588,19 @@ func generateCopyWithImports(buf *strings.Builder, inPath, outPath, knownPkg str
 					subIn := fmt.Sprintf("(%s).%s", inPath, name.Name)
 					subOut := fmt.Sprintf("(%s).%s", outPath, name.Name)
 					fieldCopies.WriteString("\n")
-					generateCopyWithImports(&fieldCopies, subIn, subOut, knownPkg, field.Type, structTypes, pkgPrefix, usedImports, imports, false)
+					if err := g.generateCopy(&fieldCopies, subIn, subOut, knownPkg, field.Type, false); err != nil {
+						return err
+					}
 				}
 			}
 			if !skipInitial {
-				structTemplate.Execute(buf, copyTemplateData{
+				if err := structTemplate.Execute(buf, copyTemplateData{
 					OutPath:       outPath,
-					PackagePrefix: pkgPrefix,
+					PackagePrefix: g.packagePrefix,
 					TypeString:    t.Name,
-				})
+				}); err != nil {
+					return err
+				}
 			}
 			buf.WriteString(fieldCopies.String())
 		} else {
@@ -563,101 +608,121 @@ func generateCopyWithImports(buf *strings.Builder, inPath, outPath, knownPkg str
 			if knownPkg != "" {
 				name = knownPkg
 			}
-			if path, ok := imports[name]; ok && path != "" {
-				usedImports[name] = path
+			if path, ok := g.imports[name]; ok && path != "" {
+				g.usedImports[name] = path
 			}
-			basicTemplate.Execute(buf, copyTemplateData{
+			if err := basicTemplate.Execute(buf, copyTemplateData{
 				OutPath: outPath,
 				InPath:  inPath,
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	case *ast.SelectorExpr:
 		if !skipInitial {
-			selectorTemplate.Execute(buf, copyTemplateData{
+			if err := selectorTemplate.Execute(buf, copyTemplateData{
 				OutPath:      outPath,
 				Alias:        knownPkg,
 				SelectorName: t.Sel.Name,
-			})
+			}); err != nil {
+				return err
+			}
 		}
-		generateCopyWithImports(buf, inPath, outPath, knownPkg, t.X, structTypes, pkgPrefix, usedImports, imports, false)
+		if err := g.generateCopy(buf, inPath, outPath, knownPkg, t.X, false); err != nil {
+			return err
+		}
 	case *ast.ArrayType:
 		var elemCopy string
-		if isStructType(t.Elt, structTypes) {
+		if g.isStructType(t.Elt) {
 			var subBuf strings.Builder
 			subBuf.WriteString(fmt.Sprintf("in, out := &%s[i], &%s[i]\n", inPath, outPath))
-			generateCopyWithImports(&subBuf, "in", "out", knownPkg, t.Elt, structTypes, pkgPrefix, usedImports, imports, true)
+			if err := g.generateCopy(&subBuf, "in", "out", knownPkg, t.Elt, true); err != nil {
+				return err
+			}
 			elemCopy = subBuf.String()
 		}
-		arrayTemplate.Execute(buf, copyTemplateData{
+		if err := arrayTemplate.Execute(buf, copyTemplateData{
 			InPath:     inPath,
 			OutPath:    outPath,
-			TypeString: typeString(t, pkgPrefix, usedImports, imports),
-			IsStruct:   isStructType(t.Elt, structTypes),
+			TypeString: g.typeString(t, g.packagePrefix),
+			IsStruct:   g.isStructType(t.Elt),
 			ElemCopy:   elemCopy,
-		})
+		}); err != nil {
+			return err
+		}
 	case *ast.MapType:
 		var elemCopy string
-		if isStructType(t.Value, structTypes) {
+		if g.isStructType(t.Value) {
 			var subBuf strings.Builder
 			subBuf.WriteString(fmt.Sprintf("in, out := &v, &%s[k]\n", outPath))
-			generateCopyWithImports(&subBuf, "in", "out", knownPkg, t.Value, structTypes, pkgPrefix, usedImports, imports, true)
+			if err := g.generateCopy(&subBuf, "in", "out", knownPkg, t.Value, true); err != nil {
+				return err
+			}
 			elemCopy = subBuf.String()
 		}
-		mapTemplate.Execute(buf, copyTemplateData{
+		if err := mapTemplate.Execute(buf, copyTemplateData{
 			InPath: inPath, OutPath: outPath,
-			TypeString: typeString(t, pkgPrefix, usedImports, imports),
-			IsStruct:   isStructType(t.Value, structTypes),
+			TypeString: g.typeString(t, g.packagePrefix),
+			IsStruct:   g.isStructType(t.Value),
 			ElemCopy:   elemCopy,
-		})
+		}); err != nil {
+			return err
+		}
 	case *ast.StarExpr:
 		var elemCopy string
-		prefix := pkgPrefix
+		prefix := g.packagePrefix
 		knownPkg := ""
-		typeString := typeString(t.X, "", usedImports, imports)
+		typeString := g.typeString(t.X, "")
 		if strings.Contains(typeString, ".") {
 			prefix = ""
 			parts := strings.Split(typeString, ".")
 			knownPkg = parts[0]
 		}
 
-		if isStructType(t.X, structTypes) {
+		if g.isStructType(t.X) {
 			var subBuf strings.Builder
-			generateCopyWithImports(&subBuf, fmt.Sprintf("*%s", inPath), fmt.Sprintf("*%s", outPath), knownPkg, t.X, structTypes, pkgPrefix, usedImports, imports, true)
+			if err := g.generateCopy(&subBuf, fmt.Sprintf("*%s", inPath), fmt.Sprintf("*%s", outPath), knownPkg, t.X, true); err != nil {
+				return err
+			}
 			elemCopy = subBuf.String()
 		}
 
-		isStruct := isStructType(t.X, structTypes)
-
-		starTemplate.Execute(buf, copyTemplateData{
+		isStruct := g.isStructType(t.X)
+		if err := starTemplate.Execute(buf, copyTemplateData{
 			InPath:        inPath,
 			OutPath:       outPath,
 			TypeString:    typeString,
 			PackagePrefix: prefix,
 			IsStruct:      isStruct,
 			ElemCopy:      elemCopy,
-		})
+		}); err != nil {
+			return err
+		}
 	default:
 		if !skipInitial {
-			defaultTemplate.Execute(buf, copyTemplateData{
+			if err := defaultTemplate.Execute(buf, copyTemplateData{
 				OutPath: outPath,
 				InPath:  inPath,
-			})
+			}); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
-func isStructType(expr ast.Expr, structTypes map[string]*ast.StructType) bool {
+func (g *Generator) isStructType(expr ast.Expr) bool {
 	switch t := expr.(type) {
 	case *ast.Ident:
-		_, ok := structTypes[t.Name]
+		_, ok := g.structTypes[t.Name]
 		return ok
 	case *ast.StarExpr:
-		return isStructType(t.X, structTypes)
+		return g.isStructType(t.X)
 	case *ast.SelectorExpr:
 		// Try to resolve qualified name for imported struct
 		if ident, ok := t.X.(*ast.Ident); ok {
 			qualified := ident.Name + "." + t.Sel.Name
-			_, ok := structTypes[qualified]
+			_, ok := g.structTypes[qualified]
 			return ok || strings.HasSuffix(t.Sel.Name, "ApplyConfiguration")
 		}
 		return false
@@ -666,7 +731,7 @@ func isStructType(expr ast.Expr, structTypes map[string]*ast.StructType) bool {
 	}
 }
 
-func typeString(expr ast.Expr, pkgPrefix string, usedImports map[string]string, imports map[string]string) string {
+func (g *Generator) typeString(expr ast.Expr, prefix string) string {
 	switch t := expr.(type) {
 	case *ast.Ident:
 		switch t.Name {
@@ -677,14 +742,14 @@ func typeString(expr ast.Expr, pkgPrefix string, usedImports map[string]string, 
 			"byte", "rune":
 			return t.Name
 		default:
-			return pkgPrefix + t.Name
+			return prefix + t.Name
 		}
 	case *ast.ArrayType:
-		return "[]" + typeString(t.Elt, pkgPrefix, usedImports, imports)
+		return "[]" + g.typeString(t.Elt, prefix)
 	case *ast.MapType:
-		return "map[" + typeString(t.Key, pkgPrefix, usedImports, imports) + "]" + typeString(t.Value, pkgPrefix, usedImports, imports)
+		return "map[" + g.typeString(t.Key, prefix) + "]" + g.typeString(t.Value, prefix)
 	case *ast.StarExpr:
-		return "*" + typeString(t.X, pkgPrefix, usedImports, imports)
+		return "*" + g.typeString(t.X, prefix)
 	case *ast.SelectorExpr:
 		alias := ""
 		if ident, ok := t.X.(*ast.Ident); ok {
@@ -692,8 +757,8 @@ func typeString(expr ast.Expr, pkgPrefix string, usedImports map[string]string, 
 			if strings.Contains(t.Sel.Name, "ApplyConfiguration") {
 				name = name + "ac"
 			}
-			if path, ok := imports[name]; ok && path != "" {
-				usedImports[name] = path
+			if path, ok := g.imports[name]; ok && path != "" {
+				g.usedImports[name] = path
 				alias = name
 			} else {
 				alias = name
@@ -702,7 +767,7 @@ func typeString(expr ast.Expr, pkgPrefix string, usedImports map[string]string, 
 		if alias != "" {
 			return alias + "." + t.Sel.Name
 		}
-		return pkgPrefix + t.Sel.Name
+		return prefix + t.Sel.Name
 	default:
 		panic("unhandled type")
 	}
