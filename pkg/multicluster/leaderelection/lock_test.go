@@ -36,9 +36,17 @@ func TestLocker(t *testing.T) {
 			minQuorum := (tt.nodes + 1) / 2
 
 			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
-			defer cancel()
-
 			leaders := setupLockTest(t, ctx, tt.nodes)
+
+			defer func() {
+				// ensure all leaders are stopped before the test ends so we don't
+				// accidentally use the test logger after the test has finished
+				// and panic
+				cancel()
+				for _, leader := range leaders {
+					leader.WaitForStopped(t, 10*time.Second)
+				}
+			}()
 
 			stopped := []*testLeader{}
 
