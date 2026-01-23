@@ -212,7 +212,6 @@ func (p *Parser) collectImports(pkg *packages.Package) error {
 	}
 
 	for _, file := range pkg.Syntax {
-
 		for _, imp := range file.Imports {
 			importPath := strings.Trim(imp.Path.Value, "\"")
 
@@ -429,14 +428,14 @@ func (g *Generator) handleIdentCopy(buf *strings.Builder, t *ast.Ident, inPath, 
 		for _, field := range st.structType.Fields.List {
 			if field.Names == nil {
 				if fieldName := getEmbeddedFieldName(field); fieldName != "" {
-					if err := g.handleFieldCopy(&fieldCopies, field, fieldName, inPath, outPath, knownPkg, false); err != nil {
+					if err := g.handleFieldCopy(&fieldCopies, field, fieldName, inPath, outPath, knownPkg); err != nil {
 						return err
 					}
 				}
 				continue
 			}
 			for _, name := range field.Names {
-				if err := g.handleFieldCopy(&fieldCopies, field, name.Name, inPath, outPath, knownPkg, false); err != nil {
+				if err := g.handleFieldCopy(&fieldCopies, field, name.Name, inPath, outPath, knownPkg); err != nil {
 					return err
 				}
 			}
@@ -467,7 +466,7 @@ func (g *Generator) handleIdentCopy(buf *strings.Builder, t *ast.Ident, inPath, 
 	})
 }
 
-func (g *Generator) handleFieldCopy(buf *strings.Builder, t *ast.Field, fieldName, inPath, outPath, knownPkg string, skipInitial bool) error {
+func (g *Generator) handleFieldCopy(buf *strings.Builder, t *ast.Field, fieldName, inPath, outPath, knownPkg string) error {
 	subIn := fmt.Sprintf("(%s).%s", inPath, fieldName)
 	subOut := fmt.Sprintf("(%s).%s", outPath, fieldName)
 	if _, err := buf.WriteString("\n"); err != nil {
