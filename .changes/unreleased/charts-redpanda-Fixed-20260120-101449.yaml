@@ -1,6 +1,0 @@
-project: charts/redpanda
-kind: Fixed
-body: |-
-    In the 24.1.1 version Redpanda introduces new value `cloud_storage_credentials_source` for `cloud_storage_azure_managed_identity_id`
-    property. Redpanda helm chart schema validation rejected new value. Schema is extended to include new value.
-time: 2026-01-20T10:14:49.185925+01:00
