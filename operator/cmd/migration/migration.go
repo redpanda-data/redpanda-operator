@@ -20,7 +20,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
 
 func Command() *cobra.Command {
@@ -45,12 +47,23 @@ func run(
 	log.Printf("Running migrations for Redpanda Operator")
 
 	scheme := controller.UnifiedScheme
-	k8sClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
+	config := ctrl.GetConfigOrDie()
+	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
 	if err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to run migrations: %w", err))
 	}
 
-	if err := migrateFieldManagers(ctx, k8sClient); err != nil {
+	ctl, err := kube.FromRESTConfig(config, kube.Options{
+		Options: client.Options{
+			Scheme: scheme,
+		},
+		FieldManager: string(lifecycle.DefaultFieldOwner),
+	})
+	if err != nil {
+		log.Fatalf("%s", fmt.Errorf("unable to create kube ctl: %w", err))
+	}
+
+	if err := migrateFieldManagers(ctx, ctl, k8sClient); err != nil {
 		log.Fatalf("%s", fmt.Errorf("unable to update field managers: %w", err))
 	}
 }

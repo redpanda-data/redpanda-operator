@@ -31,7 +31,7 @@ var undesiredFieldManagers = []string{
 }
 
 // this is a potentially heavy operation
-func migrateFieldManagers(ctx context.Context, k8sClient client.Client) error {
+func migrateFieldManagers(ctx context.Context, ctl *kube.Ctl, k8sClient client.Client) error {
 	var redpandas redpandav1alpha2.RedpandaList
 	if err := k8sClient.List(ctx, &redpandas); err != nil {
 		return err
@@ -47,7 +47,7 @@ func migrateFieldManagers(ctx context.Context, k8sClient client.Client) error {
 	ownershipResolver := lifecycle.NewV2OwnershipResolver()
 
 	for _, rp := range redpandas.Items {
-		if err := maybeUpdate(ctx, undesiredFieldManagers, k8sClient, &rp); err != nil {
+		if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, &rp); err != nil {
 			return err
 		}
 
@@ -61,7 +61,7 @@ func migrateFieldManagers(ctx context.Context, k8sClient client.Client) error {
 				return err
 			}
 			for _, resource := range resources {
-				if err := maybeUpdate(ctx, undesiredFieldManagers, k8sClient, resource); err != nil {
+				if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, resource); err != nil {
 					return err
 				}
 			}
@@ -69,7 +69,7 @@ func migrateFieldManagers(ctx context.Context, k8sClient client.Client) error {
 	}
 
 	for _, console := range consoles.Items {
-		if err := maybeUpdate(ctx, undesiredFieldManagers, k8sClient, &console); err != nil {
+		if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, &console); err != nil {
 			return err
 		}
 
@@ -81,7 +81,7 @@ func migrateFieldManagers(ctx context.Context, k8sClient client.Client) error {
 				return err
 			}
 			for _, resource := range resources {
-				if err := maybeUpdate(ctx, undesiredFieldManagers, k8sClient, resource); err != nil {
+				if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, resource); err != nil {
 					return err
 				}
 			}
@@ -100,13 +100,13 @@ func consoleOwnershipLabels(console *redpandav1alpha2.Console) map[string]string
 	}
 }
 
-func maybeUpdate(ctx context.Context, undersiredManagers []string, k8sClient client.Client, obj client.Object) error {
+func maybeUpdate(ctx context.Context, undersiredManagers []string, ctl *kube.Ctl, k8sClient client.Client, obj client.Object) error {
 	if !removeFieldManagers(undersiredManagers, obj) {
 		return nil
 	}
 
 	managers := obj.GetManagedFields()
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
 			if apierrors.IsNotFound(err) {
 				// resource was deleted, just skip
@@ -116,7 +116,13 @@ func maybeUpdate(ctx context.Context, undersiredManagers []string, k8sClient cli
 		}
 		obj.SetManagedFields(managers)
 		return k8sClient.Update(ctx, obj)
-	})
+	}); err != nil {
+		return err
+	}
+
+	// now we do a fetch + server-side apply to make sure that our field manager owns any
+	// fields that it should in-case anything was orphaned by the removal above
+	return ctl.Apply(ctx, obj, client.ForceOwnership)
 }
 
 func removeFieldManagers(undersiredManagers []string, obj client.Object) bool {
