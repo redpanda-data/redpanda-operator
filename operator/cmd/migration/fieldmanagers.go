@@ -105,7 +105,8 @@ func maybeUpdate(ctx context.Context, undesiredManagers []string, ctl *kube.Ctl,
 		return nil
 	}
 
-	managers := obj.GetManagedFields()
+	// deep-copy as paranoia for potential overwrite during retry loop
+	managers := obj.DeepCopyObject().(client.Object).GetManagedFields()
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
 			if apierrors.IsNotFound(err) {
