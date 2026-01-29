@@ -16,11 +16,11 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )

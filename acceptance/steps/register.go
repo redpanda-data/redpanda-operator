@@ -128,6 +128,11 @@ func init() {
 	framework.RegisterStep(`^Console "([^"]+)" will be healthy`, consoleIsHealthy)
 	framework.RegisterStep(`^the migrated console cluster "([^"]+)" should have (\d+) warning(s)?$`, consoleHasWarnings)
 
+	// Regression steps
+	framework.RegisterStep(`^service "([^"]*)" should have field managers:$`, checkResourceFieldManagers)
+	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
+	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
+
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 }
