@@ -54,7 +54,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
-		RegisterProvider("k3d", providers.NewK3D(1).RetainCluster()).
+		RegisterProvider("k3d", providers.NewK3D(5).RetainCluster()).
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
 			imageRepo + ":" + imageTag,
