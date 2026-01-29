@@ -53,6 +53,7 @@ func render(dot *helmette.Dot) []kube.Object {
 		Certificate(dot),
 		ConfigMap(dot),
 		MetricsService(dot),
+		StretchClusterService(dot),
 		WebhookService(dot),
 		MutatingWebhookConfiguration(dot),
 		ValidatingWebhookConfiguration(dot),

@@ -1,6 +1,22 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/service.go" */ -}}
 
+{{- define "operator.StretchClusterService" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- if (not $values.multicluster.enabled) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (coalesce nil)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "raft-service")))) "r") "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" $values.annotations)) "spec" (mustMergeOverwrite (dict) (dict "selector" (get (fromJson (include "operator.SelectorLabels" (dict "a" (list $dot)))) "r") "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "port" ((9443 | int) | int) "targetPort" (9443 | int)))) "publishNotReadyAddresses" true))))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "operator.WebhookService" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}

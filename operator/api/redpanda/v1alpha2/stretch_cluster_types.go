@@ -86,6 +86,11 @@ type StretchClusterStatus struct {
 	// Redpanda used for restarting broker nodes as necessary.
 	// +optional
 	ConfigVersion string `json:"configVersion,omitempty"`
+
+	// LicenseStatus contains information about the current state of any
+	// installed license in the Redpanda cluster.
+	// +optional
+	LicenseStatus *RedpandaLicenseStatus `json:"license,omitempty"`
 }
 
 // +kubebuilder:object:root=true
