@@ -77,6 +77,10 @@ func render(dot *helmette.Dot) []kube.Object {
 		manifests = append(manifests, &crb)
 	}
 
+	for _, svc := range StretchClusterService(dot) {
+		manifests = append(manifests, &svc)
+	}
+
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you
 	// can avoid it.

@@ -112,7 +112,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (printf "%s-multicluster-certificates" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r")) "items" (list (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "tls.crt" "path" "tls.crt")) (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "tls.key" "path" "tls.key")) (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "ca.crt" "path" "ca.crt"))))))) (dict "name" (printf "%s-multicluster-certificates" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r"))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "secretName" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "multicluster-certificates")))) "r") "items" (list (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "tls.crt" "path" "tls.crt")) (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "tls.key" "path" "tls.key")) (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "ca.crt" "path" "ca.crt"))))))) (dict "name" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "multicluster-certificates")))) "r")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
