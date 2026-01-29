@@ -177,6 +177,14 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 			migratingResources[gvk.String()] = struct{}{}
 		}
 	}
+	//logger := log.FromContext(ctx).WithName("debug-ownership")
+	owner, err = r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
+	if err != nil {
+		return nil, fmt.Errorf("cannot resolve owner reference: %w", err)
+	}
+
+	//msg := fmt.Sprintf("syncer called, clusterName=%q, owner.Name=%q owner.UID=%q owner.GroupVersionKind=%q", clusterName, owner.GetName(), owner.GetUID(), owner.GetObjectKind().GroupVersionKind().String())
+	//logger.V(log.InfoLevel).Info(msg)
 
 	return &kube.Syncer{
 		Ctl:       ctl,
@@ -221,7 +229,6 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 // a tracker that can be used for determining necessary operations on the pools.
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
-
 	for _, clusterName := range r.clusterList(cluster) {
 		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
 		if err != nil {
