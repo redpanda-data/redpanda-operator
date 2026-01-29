@@ -5,7 +5,7 @@ go 1.25.1
 require (
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.66.1
-	github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e
+	github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d
 	github.com/redpanda-data/common-go/rpadmin v0.2.0
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000

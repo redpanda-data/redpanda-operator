@@ -5,7 +5,7 @@ go 1.25.1
 require (
 	github.com/google/gofuzz v1.2.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
-	github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e
+	github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-20250327164623-c3883a149a17
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	github.com/stretchr/testify v1.11.1

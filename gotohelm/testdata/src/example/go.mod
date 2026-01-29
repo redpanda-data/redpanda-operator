@@ -3,7 +3,7 @@ module example.com/example
 go 1.25.1
 
 require (
-	github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e
+	github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-00010101000000-000000000000
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
 	k8s.io/api v0.34.1

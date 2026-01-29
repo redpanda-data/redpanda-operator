@@ -10,7 +10,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22
-	github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e
+	github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d
 	github.com/redpanda-data/common-go/rpadmin v0.2.0
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a

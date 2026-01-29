@@ -371,8 +371,8 @@ github.com/redis/go-redis/extra/redisotel/v9 v9.0.5 h1:EfpWLLCyXw8PSM2/XNJLjI3Pb
 github.com/redis/go-redis/extra/redisotel/v9 v9.0.5/go.mod h1:WZjPDy7VNzn77AAfnAfVjZNvfJTYfPetfZk5yoSTLaQ=
 github.com/redis/go-redis/v9 v9.7.3 h1:YpPyAayJV+XErNsatSElgRZZVCwXX9QzkKYNvO7x0wM=
 github.com/redis/go-redis/v9 v9.7.3/go.mod h1:bGUrSggJ9X9GUmZpZNEOQKaANxSGgOEBRltRTZHSvrA=
-github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e h1:vO519K3Y5Xm4p7SzTD9NJNjuZuY5Q2m1EZiGyVM5g8E=
-github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e/go.mod h1:Ye/yB6LyJWUe0FkA6HCUOEflk4N+a4ycrw0J0Mrt0Es=
+github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d h1:axtGEKnUlTkgyyasuCfiyTJyKsm5ibTaqCmHI8UXHX4=
+github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d/go.mod h1:Ye/yB6LyJWUe0FkA6HCUOEflk4N+a4ycrw0J0Mrt0Es=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50 h1:rmgno9TNZCX2c81zJGrv2CZjiPURWevNeQ7Lo8fVszk=
 github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50/go.mod h1:b/GBKIBr3nLE+LAtb8P4b2KrOwL3SGXAF4l65UcF71c=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=

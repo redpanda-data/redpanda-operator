@@ -390,8 +390,8 @@ github.com/redis/go-redis/v9 v9.7.3 h1:YpPyAayJV+XErNsatSElgRZZVCwXX9QzkKYNvO7x0
 github.com/redis/go-redis/v9 v9.7.3/go.mod h1:bGUrSggJ9X9GUmZpZNEOQKaANxSGgOEBRltRTZHSvrA=
 github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 h1:wWHiS4LNYzl5HkUPG6dpGPPvFW3ze7ZnraYvyqZ/+8s=
 github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:V3OBV2kcF/BDDytUZuKvIygbaXoGPT5VO3KmMAz+mBM=
-github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e h1:vO519K3Y5Xm4p7SzTD9NJNjuZuY5Q2m1EZiGyVM5g8E=
-github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e/go.mod h1:Ye/yB6LyJWUe0FkA6HCUOEflk4N+a4ycrw0J0Mrt0Es=
+github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d h1:axtGEKnUlTkgyyasuCfiyTJyKsm5ibTaqCmHI8UXHX4=
+github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d/go.mod h1:Ye/yB6LyJWUe0FkA6HCUOEflk4N+a4ycrw0J0Mrt0Es=
 github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1 h1:fLBU7IJZq8PR88AkEdI5G+yyBsftionGapvAOMPW9hg=
 github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:LzztzYWpD+e+A6hV6+eQhYY60zHQR7ePxhLgyMmRn/Q=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=

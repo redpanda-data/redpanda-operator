@@ -13,7 +13,7 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1
-	github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e
+	github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/rpadmin v0.2.0
 	github.com/redpanda-data/common-go/secrets v0.1.4

@@ -7,7 +7,7 @@ require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/google/gofuzz v1.2.0
 	github.com/itchyny/gojq v0.12.17
-	github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e
+	github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
