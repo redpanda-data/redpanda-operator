@@ -21,7 +21,7 @@ run `task generate:third-party-licenses-list`
 | cloud.google.com/go/iam | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/iam/v1.5.3/iam/LICENSE) |
 | cloud.google.com/go/secretmanager | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/secretmanager/v1.16.0/secretmanager/LICENSE) |
 | connectrpc.com/connect | [Apache-2.0](https://github.com/connectrpc/connect-go/blob/v1.19.1/LICENSE) |
-| dario.cat/mergo | [BSD-3-Clause](Unknown) |
+| dario.cat/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v1.0.2/LICENSE) |
 | emperror.dev/errors | [MIT](https://github.com/emperror/errors/blob/v0.8.1/LICENSE) |
 | github.com/AlecAivazis/survey/v2 | [MIT](https://github.com/AlecAivazis/survey/blob/v2.3.7/LICENSE) |
 | github.com/AlecAivazis/survey/v2/terminal | [MIT](https://github.com/AlecAivazis/survey/blob/v2.3.7/terminal/LICENSE.txt) |
