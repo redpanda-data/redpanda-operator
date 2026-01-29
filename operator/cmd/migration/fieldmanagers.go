@@ -100,8 +100,8 @@ func consoleOwnershipLabels(console *redpandav1alpha2.Console) map[string]string
 	}
 }
 
-func maybeUpdate(ctx context.Context, undersiredManagers []string, ctl *kube.Ctl, k8sClient client.Client, obj client.Object) error {
-	if !removeFieldManagers(undersiredManagers, obj) {
+func maybeUpdate(ctx context.Context, undesiredManagers []string, ctl *kube.Ctl, k8sClient client.Client, obj client.Object) error {
+	if !removeFieldManagers(undesiredManagers, obj) {
 		return nil
 	}
 
@@ -125,12 +125,12 @@ func maybeUpdate(ctx context.Context, undersiredManagers []string, ctl *kube.Ctl
 	return ctl.Apply(ctx, obj, client.ForceOwnership)
 }
 
-func removeFieldManagers(undersiredManagers []string, obj client.Object) bool {
+func removeFieldManagers(undesiredManagers []string, obj client.Object) bool {
 	managers := obj.GetManagedFields()
 	updated := []metav1.ManagedFieldsEntry{}
 	changed := false
 	for _, manager := range managers {
-		if slices.Contains(undersiredManagers, manager.Manager) {
+		if slices.Contains(undesiredManagers, manager.Manager) {
 			changed = true
 			continue
 		}
