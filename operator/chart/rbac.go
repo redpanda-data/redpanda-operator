@@ -28,7 +28,7 @@ type RBACBundle struct {
 func rbacBundles(dot *helmette.Dot) []RBACBundle {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	return []RBACBundle{
+	bundles := []RBACBundle{
 		{
 			Name:    Fullname(dot),
 			Enabled: true,
@@ -78,6 +78,21 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 			},
 		},
 	}
+
+	// the migration job needs the same general RBAC policy as the operator itself
+	bundles = append(bundles, RBACBundle{
+		Name:    MigrationJobServiceAccountName(dot),
+		Enabled: true,
+		Subject: MigrationJobServiceAccountName(dot),
+		Annotations: map[string]string{
+			"helm.sh/hook":               "post-upgrade",
+			"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
+			"helm.sh/hook-weight":        "-10",
+		},
+		RuleFiles: bundles[0].RuleFiles,
+	})
+
+	return bundles
 }
 
 func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {

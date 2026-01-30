@@ -37,6 +37,7 @@ run `task generate:third-party-licenses-list`
 | github.com/Masterminds/semver/v3 | [MIT](https://github.com/Masterminds/semver/blob/v3.3.1/LICENSE.txt) |
 | github.com/Masterminds/sprig/v3 | [MIT](https://github.com/Masterminds/sprig/blob/v3.3.0/LICENSE.txt) |
 | github.com/Masterminds/squirrel | [MIT](https://github.com/Masterminds/squirrel/blob/v1.5.4/LICENSE) |
+| github.com/NYTimes/gziphandler | [Apache-2.0](https://github.com/NYTimes/gziphandler/blob/v1.1.1/LICENSE) |
 | github.com/antlr4-go/antlr/v4 | [BSD-3-Clause](https://github.com/antlr4-go/antlr/blob/v4.13.1/LICENSE) |
 | github.com/asaskevich/govalidator | [MIT](https://github.com/asaskevich/govalidator/blob/a9d515a09cc2/LICENSE) |
 | github.com/aws/aws-sdk-go-v2 | [Apache-2.0](https://github.com/aws/aws-sdk-go-v2/blob/v1.40.0/LICENSE.txt) |
@@ -72,6 +73,8 @@ run `task generate:third-party-licenses-list`
 | github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v1.0.0/LICENSE) |
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
+| github.com/coreos/go-semver/semver | [Apache-2.0](https://github.com/coreos/go-semver/blob/v0.3.1/LICENSE) |
+| github.com/coreos/go-systemd/v22 | [Apache-2.0](https://github.com/coreos/go-systemd/blob/v22.5.0/LICENSE) |
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.4.1/LICENSE) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
 | github.com/emicklei/go-restful/v3 | [MIT](https://github.com/emicklei/go-restful/blob/v3.12.2/LICENSE) |
@@ -119,6 +122,7 @@ run `task generate:third-party-licenses-list`
 | github.com/gosuri/uitable | [MIT](https://github.com/gosuri/uitable/blob/v0.0.4/LICENSE) |
 | github.com/gosuri/uitable/util/wordwrap | [MIT](https://github.com/gosuri/uitable/blob/v0.0.4/util/wordwrap/LICENSE.md) |
 | github.com/gregjones/httpcache | [MIT](https://github.com/gregjones/httpcache/blob/901d90724c79/LICENSE.txt) |
+| github.com/grpc-ecosystem/go-grpc-prometheus | [Apache-2.0](https://github.com/grpc-ecosystem/go-grpc-prometheus/blob/v1.2.0/LICENSE) |
 | github.com/grpc-ecosystem/grpc-gateway/v2 | [BSD-3-Clause](https://github.com/grpc-ecosystem/grpc-gateway/blob/v2.27.3/LICENSE) |
 | github.com/hashicorp/errwrap | [MPL-2.0](https://github.com/hashicorp/errwrap/blob/v1.1.0/LICENSE) |
 | github.com/hashicorp/go-multierror | [MPL-2.0](https://github.com/hashicorp/go-multierror/blob/v1.1.1/LICENSE) |
@@ -231,6 +235,9 @@ run `task generate:third-party-licenses-list`
 | github.com/wk8/go-ordered-map/v2 | [Apache-2.0](https://github.com/wk8/go-ordered-map/blob/v2.1.8/LICENSE) |
 | github.com/x448/float16 | [MIT](https://github.com/x448/float16/blob/v0.8.4/LICENSE) |
 | github.com/xlab/treeprint | [MIT](https://github.com/xlab/treeprint/blob/v1.2.0/LICENSE) |
+| go.etcd.io/etcd/api/v3 | [Apache-2.0](https://github.com/etcd-io/etcd/blob/api/v3.6.4/api/LICENSE) |
+| go.etcd.io/etcd/client/pkg/v3 | [Apache-2.0](https://github.com/etcd-io/etcd/blob/client/pkg/v3.6.4/client/pkg/LICENSE) |
+| go.etcd.io/etcd/client/v3 | [Apache-2.0](https://github.com/etcd-io/etcd/blob/client/v3.6.4/client/v3/LICENSE) |
 | go.etcd.io/raft/v3 | [Apache-2.0](https://github.com/etcd-io/raft/blob/v3.6.0/LICENSE) |
 | go.opentelemetry.io/auto/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/sdk/v1.2.1/sdk/LICENSE) |
 | go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/google.golang.org/grpc/otelgrpc/v0.61.0/instrumentation/google.golang.org/grpc/otelgrpc/LICENSE) |
@@ -278,6 +285,7 @@ run `task generate:third-party-licenses-list`
 | google.golang.org/protobuf | [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.11/LICENSE) |
 | gopkg.in/evanphx/json-patch.v4 | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v4.12.0/LICENSE) |
 | gopkg.in/inf.v0 | [BSD-3-Clause](https://github.com/go-inf/inf/blob/v0.9.1/LICENSE) |
+| gopkg.in/natefinch/lumberjack.v2 | [MIT](https://github.com/natefinch/lumberjack/blob/v2.2.1/LICENSE) |
 | gopkg.in/yaml.v2 | [Apache-2.0](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE) |
 | gopkg.in/yaml.v3 | [MIT](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE) |
 | helm.sh/helm/v3 | [Apache-2.0](https://github.com/helm/helm/blob/v3.18.5/LICENSE) |
@@ -292,6 +300,7 @@ run `task generate:third-party-licenses-list`
 | k8s.io/component-base | [Apache-2.0](https://github.com/kubernetes/component-base/blob/v0.34.1/LICENSE) |
 | k8s.io/component-helpers | [Apache-2.0](https://github.com/kubernetes/component-helpers/blob/v0.33.3/LICENSE) |
 | k8s.io/klog/v2 | [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.130.1/LICENSE) |
+| k8s.io/kms | [Apache-2.0](https://github.com/kubernetes/kms/blob/v0.34.1/LICENSE) |
 | k8s.io/kube-openapi/pkg | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json | [BSD-3-Clause](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/internal/third_party/go-json-experiment/json/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/govalidator | [MIT](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/internal/third_party/govalidator/LICENSE) |
