@@ -28,6 +28,10 @@ func CRDJobServiceAccountName(dot *helmette.Dot) string {
 	return ServiceAccountName(dot) + "-crd-job"
 }
 
+func MigrationJobServiceAccountName(dot *helmette.Dot) string {
+	return ServiceAccountName(dot) + "-migration-job"
+}
+
 func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -75,6 +79,36 @@ func CRDJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 				),
 				map[string]string{
 					"helm.sh/hook":               "pre-install,pre-upgrade",
+					"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
+					"helm.sh/hook-weight":        "-10",
+				},
+			),
+		},
+		AutomountServiceAccountToken: ptr.To(false),
+	}
+}
+
+// MigrationJobServiceAccount returns a ServiceAccount that's used by
+// [PostUpgradeMigrationJob]. Helm will delete it after the job succeeds.
+func MigrationJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	return &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceAccount",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      MigrationJobServiceAccountName(dot),
+			Labels:    Labels(dot),
+			Namespace: dot.Release.Namespace,
+			Annotations: helmette.Merge(
+				helmette.Default(
+					map[string]string{},
+					values.ServiceAccount.Annotations,
+				),
+				map[string]string{
+					"helm.sh/hook":               "post-upgrade",
 					"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 					"helm.sh/hook-weight":        "-10",
 				},

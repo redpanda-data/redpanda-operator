@@ -37,7 +37,12 @@ run `task generate:third-party-licenses-list`
 | github.com/Masterminds/semver/v3 | [MIT](https://github.com/Masterminds/semver/blob/v3.3.1/LICENSE.txt) |
 | github.com/Masterminds/sprig/v3 | [MIT](https://github.com/Masterminds/sprig/blob/v3.3.0/LICENSE.txt) |
 | github.com/Masterminds/squirrel | [MIT](https://github.com/Masterminds/squirrel/blob/v1.5.4/LICENSE) |
+<<<<<<< HEAD
 | github.com/antlr4-go/antlr/v4 | [BSD-3-Clause](https://github.com/antlr4-go/antlr/blob/v4.13.0/LICENSE) |
+=======
+| github.com/NYTimes/gziphandler | [Apache-2.0](https://github.com/NYTimes/gziphandler/blob/v1.1.1/LICENSE) |
+| github.com/antlr4-go/antlr/v4 | [BSD-3-Clause](https://github.com/antlr4-go/antlr/blob/v4.13.1/LICENSE) |
+>>>>>>> f1112cbe (Add migration job to handle mismatched field managers (#1249))
 | github.com/asaskevich/govalidator | [MIT](https://github.com/asaskevich/govalidator/blob/a9d515a09cc2/LICENSE) |
 | github.com/aws/aws-sdk-go-v2 | [Apache-2.0](https://github.com/aws/aws-sdk-go-v2/blob/v1.32.3/LICENSE.txt) |
 | github.com/aws/aws-sdk-go-v2/config | [Apache-2.0](https://github.com/aws/aws-sdk-go-v2/blob/config/v1.28.1/config/LICENSE.txt) |
@@ -72,6 +77,8 @@ run `task generate:third-party-licenses-list`
 | github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v1.0.0/LICENSE) |
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
+| github.com/coreos/go-semver/semver | [Apache-2.0](https://github.com/coreos/go-semver/blob/v0.3.1/LICENSE) |
+| github.com/coreos/go-systemd/v22 | [Apache-2.0](https://github.com/coreos/go-systemd/blob/v22.5.0/LICENSE) |
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.4.1/LICENSE) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
 | github.com/distribution/reference | [Apache-2.0](https://github.com/distribution/reference/blob/v0.6.0/LICENSE) |
@@ -118,7 +125,12 @@ run `task generate:third-party-licenses-list`
 | github.com/gosuri/uitable | [MIT](https://github.com/gosuri/uitable/blob/v0.0.4/LICENSE) |
 | github.com/gosuri/uitable/util/wordwrap | [MIT](https://github.com/gosuri/uitable/blob/v0.0.4/util/wordwrap/LICENSE.md) |
 | github.com/gregjones/httpcache | [MIT](https://github.com/gregjones/httpcache/blob/901d90724c79/LICENSE.txt) |
+<<<<<<< HEAD
 | github.com/grpc-ecosystem/grpc-gateway/v2 | [BSD-3-Clause](https://github.com/grpc-ecosystem/grpc-gateway/blob/v2.26.3/LICENSE) |
+=======
+| github.com/grpc-ecosystem/go-grpc-prometheus | [Apache-2.0](https://github.com/grpc-ecosystem/go-grpc-prometheus/blob/v1.2.0/LICENSE) |
+| github.com/grpc-ecosystem/grpc-gateway/v2 | [BSD-3-Clause](https://github.com/grpc-ecosystem/grpc-gateway/blob/v2.27.3/LICENSE) |
+>>>>>>> f1112cbe (Add migration job to handle mismatched field managers (#1249))
 | github.com/hashicorp/errwrap | [MPL-2.0](https://github.com/hashicorp/errwrap/blob/v1.1.0/LICENSE) |
 | github.com/hashicorp/go-multierror | [MPL-2.0](https://github.com/hashicorp/go-multierror/blob/v1.1.1/LICENSE) |
 | github.com/hashicorp/go-uuid | [MPL-2.0](https://github.com/hashicorp/go-uuid/blob/v1.0.3/LICENSE) |
@@ -224,6 +236,7 @@ run `task generate:third-party-licenses-list`
 | github.com/wk8/go-ordered-map/v2 | [Apache-2.0](https://github.com/wk8/go-ordered-map/blob/v2.1.8/LICENSE) |
 | github.com/x448/float16 | [MIT](https://github.com/x448/float16/blob/v0.8.4/LICENSE) |
 | github.com/xlab/treeprint | [MIT](https://github.com/xlab/treeprint/blob/v1.2.0/LICENSE) |
+<<<<<<< HEAD
 | go.opentelemetry.io/auto/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/sdk/v1.1.0/sdk/LICENSE) |
 | go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/google.golang.org/grpc/otelgrpc/v0.59.0/instrumentation/google.golang.org/grpc/otelgrpc/LICENSE) |
 | go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.59.0/instrumentation/net/http/otelhttp/LICENSE) |
@@ -236,6 +249,33 @@ run `task generate:third-party-licenses-list`
 | go.opentelemetry.io/otel/sdk/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.11.0/sdk/log/LICENSE) |
 | go.opentelemetry.io/otel/trace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.36.0/trace/LICENSE) |
 | go.opentelemetry.io/proto/otlp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-proto-go/blob/otlp/v1.6.0/otlp/LICENSE) |
+=======
+| go.etcd.io/etcd/api/v3 | [Apache-2.0](https://github.com/etcd-io/etcd/blob/api/v3.6.4/api/LICENSE) |
+| go.etcd.io/etcd/client/pkg/v3 | [Apache-2.0](https://github.com/etcd-io/etcd/blob/client/pkg/v3.6.4/client/pkg/LICENSE) |
+| go.etcd.io/etcd/client/v3 | [Apache-2.0](https://github.com/etcd-io/etcd/blob/client/v3.6.4/client/v3/LICENSE) |
+| go.etcd.io/raft/v3 | [Apache-2.0](https://github.com/etcd-io/raft/blob/v3.6.0/LICENSE) |
+| go.opentelemetry.io/auto/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/sdk/v1.2.1/sdk/LICENSE) |
+| go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/google.golang.org/grpc/otelgrpc/v0.61.0/instrumentation/google.golang.org/grpc/otelgrpc/LICENSE) |
+| go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.63.0/instrumentation/net/http/otelhttp/LICENSE) |
+| go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.63.0/instrumentation/net/http/otelhttp/LICENSE) |
+| go.opentelemetry.io/otel | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/v1.38.0/LICENSE) |
+| go.opentelemetry.io/otel | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/v1.38.0/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.38.0/exporters/otlp/otlptrace/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.38.0/exporters/otlp/otlptrace/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.38.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.38.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
+| go.opentelemetry.io/otel/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.14.0/log/LICENSE) |
+| go.opentelemetry.io/otel/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.14.0/log/LICENSE) |
+| go.opentelemetry.io/otel/metric | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.38.0/metric/LICENSE) |
+| go.opentelemetry.io/otel/metric | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.38.0/metric/LICENSE) |
+| go.opentelemetry.io/otel/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.38.0/sdk/LICENSE) |
+| go.opentelemetry.io/otel/sdk | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.38.0/sdk/LICENSE) |
+| go.opentelemetry.io/otel/sdk/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.14.0/sdk/log/LICENSE) |
+| go.opentelemetry.io/otel/sdk/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.14.0/sdk/log/LICENSE) |
+| go.opentelemetry.io/otel/trace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.38.0/trace/LICENSE) |
+| go.opentelemetry.io/otel/trace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.38.0/trace/LICENSE) |
+| go.opentelemetry.io/proto/otlp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-proto-go/blob/otlp/v1.7.1/otlp/LICENSE) |
+>>>>>>> f1112cbe (Add migration job to handle mismatched field managers (#1249))
 | go.uber.org/multierr | [MIT](https://github.com/uber-go/multierr/blob/v1.11.0/LICENSE.txt) |
 | go.uber.org/zap | [MIT](https://github.com/uber-go/zap/blob/v1.27.0/LICENSE) |
 | go.yaml.in/yaml/v2 | [Apache-2.0](https://github.com/yaml/go-yaml/blob/v2.4.2/LICENSE) |
@@ -261,6 +301,7 @@ run `task generate:third-party-licenses-list`
 | google.golang.org/protobuf | [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.6/LICENSE) |
 | gopkg.in/evanphx/json-patch.v4 | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v4.12.0/LICENSE) |
 | gopkg.in/inf.v0 | [BSD-3-Clause](https://github.com/go-inf/inf/blob/v0.9.1/LICENSE) |
+| gopkg.in/natefinch/lumberjack.v2 | [MIT](https://github.com/natefinch/lumberjack/blob/v2.2.1/LICENSE) |
 | gopkg.in/yaml.v2 | [Apache-2.0](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE) |
 | gopkg.in/yaml.v3 | [MIT](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE) |
 | helm.sh/helm/v3 | [Apache-2.0](https://github.com/helm/helm/blob/v3.18.5/LICENSE) |
@@ -275,12 +316,22 @@ run `task generate:third-party-licenses-list`
 | k8s.io/component-base | [Apache-2.0](https://github.com/kubernetes/component-base/blob/v0.33.3/LICENSE) |
 | k8s.io/component-helpers | [Apache-2.0](https://github.com/kubernetes/component-helpers/blob/v0.33.3/LICENSE) |
 | k8s.io/klog/v2 | [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.130.1/LICENSE) |
+<<<<<<< HEAD
 | k8s.io/kube-openapi/pkg | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json | [BSD-3-Clause](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/pkg/internal/third_party/go-json-experiment/json/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/govalidator | [MIT](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/pkg/internal/third_party/govalidator/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/errors | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/pkg/validation/errors/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/spec | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/pkg/validation/spec/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/strfmt | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/pkg/validation/strfmt/LICENSE) |
+=======
+| k8s.io/kms | [Apache-2.0](https://github.com/kubernetes/kms/blob/v0.34.1/LICENSE) |
+| k8s.io/kube-openapi/pkg | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/LICENSE) |
+| k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json | [BSD-3-Clause](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/internal/third_party/go-json-experiment/json/LICENSE) |
+| k8s.io/kube-openapi/pkg/internal/third_party/govalidator | [MIT](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/internal/third_party/govalidator/LICENSE) |
+| k8s.io/kube-openapi/pkg/validation/errors | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/validation/errors/LICENSE) |
+| k8s.io/kube-openapi/pkg/validation/spec | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/validation/spec/LICENSE) |
+| k8s.io/kube-openapi/pkg/validation/strfmt | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/f3f2b991d03b/pkg/validation/strfmt/LICENSE) |
+>>>>>>> f1112cbe (Add migration job to handle mismatched field managers (#1249))
 | k8s.io/kubectl/pkg | [Apache-2.0](https://github.com/kubernetes/kubectl/blob/v0.33.3/LICENSE) |
 | k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/0f33e8f1c979/LICENSE) |
 | k8s.io/utils/internal/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/0f33e8f1c979/internal/third_party/forked/golang/LICENSE) |

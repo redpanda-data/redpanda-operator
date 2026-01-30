@@ -19,6 +19,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/crd"
+<<<<<<< HEAD
+=======
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/migration"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/multicluster"
+>>>>>>> f1112cbe (Add migration job to handle mismatched field managers (#1249))
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/sidecar"
@@ -53,6 +58,7 @@ func init() {
 		supervisor.Command(),
 		syncclusterconfig.Command(),
 		version.Command(),
+		migration.Command(),
 	)
 
 	logOptions.BindFlags(rootCmd.PersistentFlags())

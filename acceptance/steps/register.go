@@ -92,8 +92,25 @@ func init() {
 	framework.RegisterStep(`I stop the Node running Pod "([^"]+)"`, shutdownNodeOfPod)
 	framework.RegisterStep(`^cluster "([^"]*)" has only (\d+) remaining nodes$`, checkClusterNodeCount)
 
+<<<<<<< HEAD
 	// User CRDs with Redpanda 25.2 scenario steps
 	framework.RegisterStep(`^I create a sasl cluster named "([^"]*)"$`, iCreateSASLCluster)
 	framework.RegisterStep(`^I upgrade to "([^"]*)" cluster to 25.2.1$`, iUpgradeCluster)
 	framework.RegisterStep(`^I should be able to modify CRD-based users for cluster "([^"]*)":$`, iUpdateCRDbasedUsers)
+=======
+	// Operator upgrade scenario steps
+	framework.RegisterStep(`^I install local CRDs from "([^"]*)"`, iInstallLocalCRDs)
+
+	// Console scenario steps
+	framework.RegisterStep(`^Console "([^"]+)" will be healthy`, consoleIsHealthy)
+	framework.RegisterStep(`^the migrated console cluster "([^"]+)" should have (\d+) warning(s)?$`, consoleHasWarnings)
+
+	// Regression steps
+	framework.RegisterStep(`^service "([^"]*)" should have field managers:$`, checkResourceFieldManagers)
+	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
+	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
+
+	// Debug steps
+	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
+>>>>>>> f1112cbe (Add migration job to handle mismatched field managers (#1249))
 }

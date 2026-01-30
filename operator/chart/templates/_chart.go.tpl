@@ -4,6 +4,7 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+<<<<<<< HEAD
 {{- $manifests := (list (get (fromJson (include "operator.Issuer" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.Certificate" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ConfigMap" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.MetricsService" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.WebhookService" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.MutatingWebhookConfiguration" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ValidatingWebhookConfiguration" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ServiceAccount" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ServiceMonitor" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.Deployment" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.PreInstallCRDJob" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.CRDJobServiceAccount" (dict "a" (list $dot)))) "r")) -}}
 {{- range $_, $role := (get (fromJson (include "operator.Roles" (dict "a" (list $dot)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $role)) -}}
@@ -11,6 +12,9 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+=======
+{{- $manifests := (list (get (fromJson (include "operator.Issuer" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.Certificate" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ConfigMap" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.MetricsService" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.WebhookService" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.MutatingWebhookConfiguration" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ValidatingWebhookConfiguration" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ServiceAccount" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.ServiceMonitor" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.Deployment" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.PreInstallCRDJob" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.CRDJobServiceAccount" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.PostUpgradeMigrationJob" (dict "a" (list $dot)))) "r") (get (fromJson (include "operator.MigrationJobServiceAccount" (dict "a" (list $dot)))) "r")) -}}
+>>>>>>> f1112cbe (Add migration job to handle mismatched field managers (#1249))
 {{- range $_, $cr := (get (fromJson (include "operator.ClusterRoles" (dict "a" (list $dot)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $cr)) -}}
 {{- end -}}
