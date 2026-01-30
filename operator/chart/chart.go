@@ -61,6 +61,8 @@ func render(dot *helmette.Dot) []kube.Object {
 		Deployment(dot),
 		PreInstallCRDJob(dot),
 		CRDJobServiceAccount(dot),
+		PostUpgradeMigrationJob(dot),
+		MigrationJobServiceAccount(dot),
 	}
 
 	for _, cr := range ClusterRoles(dot) {

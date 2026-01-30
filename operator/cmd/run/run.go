@@ -428,6 +428,7 @@ func Run(
 						Reader: mgr.GetCache(),
 					},
 				},
+				FieldManager: string(lifecycle.DefaultFieldOwner),
 			})
 			if err != nil {
 				return err

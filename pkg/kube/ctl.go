@@ -80,6 +80,10 @@ func (o Options) ApplyToOptions(opts *Options) {
 	if o.HTTPClient != nil {
 		opts.HTTPClient = o.HTTPClient
 	}
+
+	if o.FieldManager != "" {
+		opts.FieldManager = o.FieldManager
+	}
 }
 
 // FromEnv returns a [Ctl] for the default context in $KUBECONFIG.
