@@ -12,10 +12,12 @@ package redpanda
 import (
 	"context"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -126,7 +128,9 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 	// able to clean ourselves up anyway.
 	if internalclient.IsTerminalClientError(err) ||
 		internalclient.IsConfigurationError(err) ||
-		internalclient.IsInvalidClusterError(err) {
+		internalclient.IsInvalidClusterError(err) ||
+		isNotFoundInChain(err) ||
+		isNetworkDialError(err) {
 		// We use Info rather than Error here because we don't want
 		// to ignore the verbosity settings. This is really only for
 		// debugging purposes.
@@ -134,6 +138,25 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 		return nil
 	}
 	return err
+}
+
+// isNotFoundInChain walks the error chain to check if a K8s "not found" error
+// is wrapped anywhere. This handles missing secrets/configmaps.
+func isNotFoundInChain(err error) bool {
+	for err != nil {
+		if apierrors.IsNotFound(err) {
+			return true
+		}
+		err = errors.Unwrap(err)
+	}
+	return false
+}
+
+// isNetworkDialError checks if the error chain contains a network dial error.
+// This handles cases where the broker is unreachable (connection refused, timeout, etc).
+func isNetworkDialError(err error) bool {
+	var netErr *net.OpError
+	return errors.As(err, &netErr)
 }
 
 func handleResourceSyncErrors(err error) (metav1.Condition, error) {
