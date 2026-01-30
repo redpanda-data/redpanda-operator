@@ -185,6 +185,12 @@ func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRe
 
 	kafkaClient, err := r.createKafkaClient(ctx, topic, l)
 	if err != nil {
+		// If topic is being deleted, allow finalizer removal when we can't
+		// establish a connection. This prevents namespaces from getting stuck
+		// in Terminating state when secrets are deleted before the Topic.
+		if !topic.ObjectMeta.DeletionTimestamp.IsZero() && ignoreAllConnectionErrors(l, err) == nil {
+			return redpandav1alpha2.TopicReady(topic), ctrl.Result{}, nil
+		}
 		return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, err
 	}
 	defer kafkaClient.Close()
@@ -203,6 +209,12 @@ func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRe
 		l.V(log.DebugLevel).Info("delete topic", "topic-name", topic.GetTopicName())
 		err = r.deleteTopic(ctx, recorder, topic, kafkaClient)
 		if err != nil {
+			// Allow finalizer removal if we can't connect to the broker.
+			// This prevents topics from getting stuck in Terminating state
+			// when the broker is unreachable.
+			if ignoreAllConnectionErrors(l, err) == nil {
+				return redpandav1alpha2.TopicReady(topic), ctrl.Result{}, nil
+			}
 			return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, fmt.Errorf("unable to delete topic: %w", err)
 		}
 		return redpandav1alpha2.TopicReady(topic), ctrl.Result{}, nil

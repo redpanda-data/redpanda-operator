@@ -12,11 +12,13 @@ package redpanda
 import (
 	"context"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,6 +29,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 type Resource[T any] interface {
@@ -136,7 +139,9 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 	// able to clean ourselves up anyway.
 	if internalclient.IsTerminalClientError(err) ||
 		internalclient.IsConfigurationError(err) ||
-		internalclient.IsInvalidClusterError(err) {
+		internalclient.IsInvalidClusterError(err) ||
+		isNotFoundInChain(err) ||
+		isNetworkDialError(err) {
 		// We use Info rather than Error here because we don't want
 		// to ignore the verbosity settings. This is really only for
 		// debugging purposes.
@@ -144,6 +149,26 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 		return nil
 	}
 	return err
+}
+
+// isNotFoundInChain walks the error chain to check if a "not found" error
+// is wrapped anywhere. This handles both K8s NotFound (missing secrets/configmaps)
+// and cloud secret not found errors.
+func isNotFoundInChain(err error) bool {
+	for err != nil {
+		if apierrors.IsNotFound(err) || errors.Is(err, secrets.ErrSecretNotFound) {
+			return true
+		}
+		err = errors.Unwrap(err)
+	}
+	return false
+}
+
+// isNetworkDialError checks if the error chain contains a network dial error.
+// This handles cases where the broker is unreachable (connection refused, timeout, etc).
+func isNetworkDialError(err error) bool {
+	var netErr *net.OpError
+	return errors.As(err, &netErr)
 }
 
 func handleResourceSyncErrors(err error) (metav1.Condition, error) {
