@@ -9,7 +9,7 @@ tasks:
     - generate-manifests
     cmds:
       # Generates SchemaBuilders and automatically registers CRs with it.
-      - register-gen --go-header-file "../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ./api/redpanda/... ./api/vectorized/...
+      - register-gen --go-header-file "../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ../api/redpanda/... ../api/vectorized/...
 
       # Generate the full RBAC bundle for kustomize and the operator chart, CRD
       # manifests, and deep copy methods.
@@ -122,15 +122,15 @@ tasks:
       - |
         applyconfiguration-gen \
         --go-header-file "../licenses/boilerplate.go.txt" \
-        --output-dir "api/applyconfiguration" \
-        --output-pkg "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration" \
-        ./api/redpanda/v1alpha2
-      - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
-      - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
+        --output-dir "../api/applyconfiguration" \
+        --output-pkg "github.com/redpanda-data/redpanda-operator/api/applyconfiguration" \
+        ../api/redpanda/v1alpha2
+      - find ../api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
+      - rm -rf ../api/applyconfiguration/utils.go ../api/applyconfiguration/internal
 
       # Generate rote conversion functions.
       # Must run after deepcopy is generated.
-      - goverter gen ./api/redpanda/v1alpha2/
+      - goverter gen ./internal/conversion/v1alpha2/
 
   generate:crd-docs:
     desc: Generates an example ascii doc from our crd-ref-docs configuration.
@@ -139,15 +139,15 @@ tasks:
     - |
       crd-ref-docs \
       --config crd-ref-docs-config.yaml \
-      --source-path ./api/redpanda/v1alpha2/ \
-      --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc \
+      --source-path ../api/redpanda/v1alpha2/ \
+      --output-path ../api/redpanda/v1alpha2/testdata/crd-docs.adoc \
       --templates-dir=./crd-docs-templates/
 
   generate:deprecations:
     label: "generate:deprecations"
     desc: "Generate the deprecation tests for our deprecation warnings."
     cmds:
-    - rp-controller-gen deprecations --directory ./operator/api/redpanda/v1alpha2
+    - rp-controller-gen deprecations --directory ./api/redpanda/v1alpha2
 
   generate:statuses:
     run: when_changed

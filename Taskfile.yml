@@ -125,7 +125,7 @@ tasks:
     deps:
     - build:gen
     cmds:
-    - gen applyconfig-copy --header "licenses/boilerplate.go.txt" --package "v1alpha2" --out "./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy.go"  --test "./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy_test.go" --struct "PodSpecApplyConfiguration" k8s.io/client-go/applyconfigurations/core/v1
+    - gen applyconfig-copy --header "licenses/boilerplate.go.txt" --package "v1alpha2" --out "./api/redpanda/v1alpha2/zz_generated.applyconfigcopy.go"  --test "./api/redpanda/v1alpha2/zz_generated.applyconfigcopy_test.go" --struct "PodSpecApplyConfiguration" k8s.io/client-go/applyconfigurations/core/v1
 
   generate:third-party-licenses-list:
     dir: operator
