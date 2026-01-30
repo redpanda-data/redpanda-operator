@@ -21,6 +21,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// ErrSecretNotFound is returned when a cloud secret cannot be found.
+var ErrSecretNotFound = errors.New("cloud secret not found")
+
 type CloudExpander struct {
 	client secrets.SecretAPI
 	logger *slog.Logger
@@ -97,7 +100,7 @@ func NewCloudExpanderFromAPI(api secrets.SecretAPI) *CloudExpander {
 func (t *CloudExpander) Expand(ctx context.Context, name string) (string, error) {
 	value, found := t.client.GetSecretValue(ctx, name)
 	if !found {
-		return "", errors.Newf("secret %s not found", name)
+		return "", errors.Wrapf(ErrSecretNotFound, "secret %s", name)
 	}
 	return value, nil
 }
