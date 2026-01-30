@@ -866,4 +866,91 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 
 		assert.Equal(t, time.Duration(0), result.RequeueAfter)
 	})
+	t.Run("delete_topic_with_missing_credentials_succeeds", func(t *testing.T) {
+		// Deletion should succeed when credentials Secret is missing.
+		// This prevents namespaces from getting stuck in Terminating state
+		// when secrets are deleted before topics.
+		topicName := "delete-topic-missing-secret"
+
+		topic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       topicName,
+				Namespace:  testNamespace,
+				Finalizers: []string{FinalizerKey},
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(1),
+				ReplicationFactor: ptr.To(1),
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+					SASL: &redpandav1alpha2.KafkaSASL{
+						Username: "testuser",
+						Password: redpandav1alpha2.SecretKeyRef{
+							Name: "non-existent-secret",
+							Key:  "password",
+						},
+						Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &topic)
+		require.NoError(t, err)
+
+		err = c.Delete(ctx, &topic)
+		require.NoError(t, err)
+
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := ctrl.Request{NamespacedName: key}
+
+		// Reconcile should succeed (ignoring the not-found error during deletion)
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err, "reconciler should not error when secret is missing during deletion")
+		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+
+		// Topic should be deleted (finalizer removed)
+		err = c.Get(ctx, key, &topic)
+		assert.True(t, apierrors.IsNotFound(err), "topic should be deleted after finalizer removal")
+	})
+	t.Run("delete_topic_with_unreachable_broker_succeeds", func(t *testing.T) {
+		// Deletion should succeed when broker is unreachable (connection refused).
+		// This prevents topics from getting stuck in Terminating state when the
+		// Kafka cluster is gone or unreachable.
+		topicName := "delete-topic-unreachable-broker"
+
+		topic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       topicName,
+				Namespace:  testNamespace,
+				Finalizers: []string{FinalizerKey},
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(1),
+				ReplicationFactor: ptr.To(1),
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					// Use a localhost address that will definitely fail to connect
+					Brokers: []string{"localhost:19092"},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &topic)
+		require.NoError(t, err)
+
+		err = c.Delete(ctx, &topic)
+		require.NoError(t, err)
+
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := ctrl.Request{NamespacedName: key}
+
+		// Reconcile should succeed (ignoring the dial error during deletion)
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err, "reconciler should not error when broker is unreachable during deletion")
+		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+
+		// Topic should be deleted (finalizer removed)
+		err = c.Get(ctx, key, &topic)
+		assert.True(t, apierrors.IsNotFound(err), "topic should be deleted after finalizer removal")
+	})
 }
