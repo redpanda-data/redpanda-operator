@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Allow Topic finalizer removal when broker is unreachable or credentials are missing during deletion, preventing stuck namespaces.
+time: 2026-01-22T10:00:00.000000+01:00

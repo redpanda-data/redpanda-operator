@@ -12,12 +12,14 @@ package redpanda
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	corev1 "k8s.io/api/core/v1"
@@ -393,4 +395,70 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 
 	require.Equal(t, int32(size/2), reconciler.deletes.Load())
 	require.Equal(t, int32(size), reconciler.syncs.Load())
+}
+
+func TestIsNetworkDialError(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "plain error",
+			err:      errors.New("some error"),
+			expected: false,
+		},
+		{
+			name:     "net.OpError directly",
+			err:      &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("connection refused")},
+			expected: true,
+		},
+		{
+			name: "net.OpError wrapped once (franz-go style)",
+			err: fmt.Errorf("unable to dial: %w",
+				&net.OpError{Op: "dial", Net: "tcp", Err: errors.New("connection refused")}),
+			expected: true,
+		},
+		{
+			name: "net.OpError wrapped twice (recordErrorEvent + franz-go)",
+			err: fmt.Errorf("deleting topic (test) library error: %w",
+				fmt.Errorf("unable to dial: %w",
+					&net.OpError{Op: "dial", Net: "tcp", Err: errors.New("connection refused")})),
+			expected: true,
+		},
+		{
+			name: "realistic connection refused error",
+			err: fmt.Errorf("deleting topic (test-topic) library error: %w",
+				fmt.Errorf("unable to dial: %w",
+					&net.OpError{
+						Op:   "dial",
+						Net:  "tcp",
+						Addr: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9092},
+						Err:  &net.OpError{Op: "connect", Err: errors.New("connection refused")},
+					})),
+			expected: true,
+		},
+		{
+			name: "DNS resolution error",
+			err: fmt.Errorf("unable to dial: %w",
+				&net.OpError{
+					Op:  "dial",
+					Net: "tcp",
+					Err: &net.DNSError{Err: "no such host", Name: "nonexistent.local"},
+				}),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isNetworkDialError(tt.err)
+			assert.Equal(t, tt.expected, result, "error: %v", tt.err)
+		})
+	}
 }
