@@ -27,6 +27,7 @@ import (
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
@@ -48,6 +49,8 @@ var (
 		"SCRAM-SHA-256", "SCRAM-SHA-512",
 	}
 )
+
+const DefaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
 
 // FetchSASLUsers attempts to locate an existing SASL users secret in the cluster.
 // If found, it is used to populate the first user in the secret for use.
@@ -253,7 +256,9 @@ func certificatesFor(state *RenderState, name string) (certSecret, certKey, clie
 
 // KubeCTL constructs a kube.Ctl from the RenderState's kubeconfig.
 func (r *RenderState) KubeCTL() (*kube.Ctl, error) {
-	return kube.FromRESTConfig(r.Dot.KubeConfig)
+	return kube.FromRESTConfig(r.Dot.KubeConfig, kube.Options{
+		FieldManager: string(DefaultFieldOwner),
+	})
 }
 
 // RenderNodePools can be used to render node pools programmatically from Go.
