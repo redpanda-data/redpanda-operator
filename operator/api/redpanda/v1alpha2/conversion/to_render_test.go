@@ -43,6 +43,9 @@ func TestConvertV2Fields(t *testing.T) {
 		values := redpanda.Values{}
 		clusterSpec := &redpandav1alpha2.RedpandaClusterSpec{
 			Affinity: &corev1.Affinity{},
+			Statefulset: &redpandav1alpha2.Statefulset{
+				PodAffinity: &corev1.PodAffinity{},
+			},
 		}
 		marshaled, err := json.Marshal(partialValues)
 		require.NoError(t, err)
