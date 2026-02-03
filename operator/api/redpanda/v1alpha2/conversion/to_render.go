@@ -126,6 +126,9 @@ func convertV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec 
 	if spec.NodeSelector != nil {
 		values.PodTemplate.Spec.NodeSelector = spec.NodeSelector
 	}
+	if values.PodTemplate.Spec.Affinity == nil {
+		values.PodTemplate.Spec.Affinity = &applycorev1.AffinityApplyConfiguration{}
+	}
 	if err := convertJSONNotNil(spec.Affinity, values.PodTemplate.Spec.Affinity); err != nil {
 		return err
 	}
