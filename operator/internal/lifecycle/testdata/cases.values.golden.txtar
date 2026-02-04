@@ -250,6 +250,7 @@ values:
   nameOverride: ""
   podTemplate:
     spec:
+      affinity: {}
       securityContext:
         fsGroup: 101
         fsGroupChangePolicy: OnRootMismatch
@@ -840,6 +841,7 @@ values:
   nameOverride: ""
   podTemplate:
     spec:
+      affinity: {}
       securityContext:
         fsGroup: 101
         fsGroupChangePolicy: OnRootMismatch
@@ -1208,6 +1210,7 @@ values:
   nameOverride: ""
   podTemplate:
     spec:
+      affinity: {}
       securityContext:
         fsGroup: 101
         fsGroupChangePolicy: OnRootMismatch
@@ -1794,6 +1797,7 @@ values:
   nameOverride: ""
   podTemplate:
     spec:
+      affinity: {}
       securityContext:
         fsGroup: 101
         fsGroupChangePolicy: OnRootMismatch
