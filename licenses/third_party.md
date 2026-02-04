@@ -300,6 +300,7 @@ run `task generate:third-party-licenses-list`
 | k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/0f33e8f1c979/LICENSE) |
 | k8s.io/utils/internal/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/0f33e8f1c979/internal/third_party/forked/golang/LICENSE) |
 | oras.land/oras-go/v2 | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v2.6.0/LICENSE) |
+| pgregory.net/rapid | [MPL-2.0](https://github.com/chrisseto/rapid/blob/cdeef406c65c/LICENSE) |
 | sigs.k8s.io/apiserver-network-proxy/konnectivity-client | [Apache-2.0](https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/konnectivity-client/v0.31.2/konnectivity-client/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.20.4/LICENSE) |
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.1.0/LICENSE) |
