@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fixed an issue where specifying pod affinity on a Redpanda cluster's `spec.clusterSpec.affinity` field resulted in rendering issues for the underlying StatefulSet.
+time: 2026-02-03T14:19:06.024407-05:00
