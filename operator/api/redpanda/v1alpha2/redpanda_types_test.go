@@ -145,8 +145,9 @@ func TestRedpanda_ValuesJSON(t *testing.T) {
 // cluster spec is byte of byte compatible with the values that the helm chart
 // accepts.
 func TestHelmValuesCompat(t *testing.T) {
+	cfg := fuzzing.ClusterSpecConfig()
 	t.Run("clusterSpec", rapid.MakeCheck(func(t *rapid.T) {
-		AssertJSONCompat[redpanda.PartialValues, redpandav1alpha2.RedpandaClusterSpec](t, fuzzing.ClusterSpecConfig(), func(from *redpanda.PartialValues) {
+		AssertJSONCompat[redpanda.PartialValues, redpandav1alpha2.RedpandaClusterSpec](t, cfg, func(from *redpanda.PartialValues) {
 			if from.Storage != nil && from.Storage.Tiered != nil && from.Storage.Tiered.PersistentVolume != nil {
 				// Incorrect type (should be a *resource.Quantity) on an anonymous struct in Partial Values.
 				from.Storage.Tiered.PersistentVolume.Size = nil
