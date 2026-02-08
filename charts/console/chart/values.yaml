@@ -107,6 +107,24 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+# -- Gateway API HTTPRoute configuration (alternative to ingress)
+# For details, see https://gateway-api.sigs.k8s.io/
+httproute:
+  # -- Enable HTTPRoute resource for Redpanda Console
+  enabled: false
+  # -- Additional HTTPRoute labels
+  labels: {}
+  # -- Additional HTTPRoute annotations
+  annotations: {}
+  # -- Gateway API parentRefs for the HTTPRoute. Must reference an existing Gateway.
+  parentRefs: []
+  #  - name: example-gateway
+  #    namespace: example-gateway-namespace
+  #    sectionName: https
+  # -- List of hostnames for the HTTPRoute
+  hostnames: []
+  #  - console.example.com
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little

@@ -24,6 +24,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -45,6 +46,7 @@ const (
 // +gotohelm:ignore=true
 func init() {
 	must(scheme.AddToScheme(Scheme))
+	must(gatewayv1.Install(Scheme))
 }
 
 // +gotohelm:ignore=true
@@ -165,6 +167,7 @@ func Render(state *RenderState) []kube.Object {
 		ConfigMap(state),
 		Service(state),
 		Ingress(state),
+		HTTPRoute(state),
 		Deployment(state),
 		HorizontalPodAutoscaler(state),
 	}
@@ -182,6 +185,7 @@ func Types() []kube.Object {
 		&corev1.ConfigMap{},
 		&corev1.Service{},
 		&networkingv1.Ingress{},
+		&gatewayv1.HTTPRoute{},
 		&appsv1.Deployment{},
 		&autoscalingv2.HorizontalPodAutoscaler{},
 	}

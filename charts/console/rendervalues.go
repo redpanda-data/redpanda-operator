@@ -32,6 +32,7 @@ type RenderValues struct {
 	SecurityContext              corev1.SecurityContext            `json:"securityContext" partial:"builtin"`
 	Service                      ServiceConfig                     `json:"service"`
 	Ingress                      IngressConfig                     `json:"ingress"`
+	HTTPRoute                    HTTPRouteConfig                   `json:"httproute"`
 	Resources                    corev1.ResourceRequirements       `json:"resources"`
 	Autoscaling                  AutoScaling                       `json:"autoscaling"`
 	NodeSelector                 map[string]string                 `json:"nodeSelector"`
@@ -186,4 +187,19 @@ type Image struct {
 	Repository string            `json:"repository"`
 	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 	Tag        string            `json:"tag"`
+}
+
+// HTTPRouteConfig configures Gateway API HTTPRoute as an alternative to Ingress
+type HTTPRouteConfig struct {
+	Enabled     bool                 `json:"enabled"`
+	Labels      map[string]string    `json:"labels"`
+	Annotations map[string]string    `json:"annotations"`
+	ParentRefs  []HTTPRouteParentRef `json:"parentRefs"`
+	Hostnames   []string             `json:"hostnames"`
+}
+
+type HTTPRouteParentRef struct {
+	Name        string  `json:"name"`
+	Namespace   *string `json:"namespace,omitempty"`
+	SectionName *string `json:"sectionName,omitempty"`
 }
