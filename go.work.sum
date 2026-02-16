@@ -2340,7 +2340,6 @@ github.com/redpanda-data/common-go/api v0.0.0-20250701102610-07660e078862 h1:eTX
 github.com/redpanda-data/common-go/api v0.0.0-20250701102610-07660e078862/go.mod h1:klAmWfc8Q3hEZk8geFTMu6f2sk3VUKRS7cv/LvB05ig=
 github.com/redpanda-data/common-go/api v0.0.0-20251118002524-720a3c2f5569 h1:BEoWWptXOLTozgptV9jUd2CJDFy9+R0dmdGv9Gr32dw=
 github.com/redpanda-data/common-go/api v0.0.0-20251118002524-720a3c2f5569/go.mod h1:klAmWfc8Q3hEZk8geFTMu6f2sk3VUKRS7cv/LvB05ig=
-github.com/redpanda-data/common-go/kube v0.0.0-20260129210004-d6a0f302216d/go.mod h1:Ye/yB6LyJWUe0FkA6HCUOEflk4N+a4ycrw0J0Mrt0Es=
 github.com/redpanda-data/common-go/proto v0.0.0-20250422172326-6a3bcb14b829 h1:fx1Z+t/fa0vd7kAblgCrdYRW3QHc3svYiVnO1DadS94=
 github.com/redpanda-data/common-go/proto v0.0.0-20250422172326-6a3bcb14b829/go.mod h1:6WXvgZCZIkbQCNsvU5zTx/+ub5eXTuCcl90i5xkhMw0=
 github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
@@ -3152,6 +3151,7 @@ golang.org/x/sys v0.32.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
 golang.org/x/sys v0.33.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
 golang.org/x/sys v0.34.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
 golang.org/x/sys v0.35.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
+golang.org/x/sys v0.40.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
 golang.org/x/telemetry v0.0.0-20240521205824-bda55230c457 h1:zf5N6UOrA487eEFacMePxjXAJctxKmyjKUsjA11Uzuk=
 golang.org/x/telemetry v0.0.0-20240521205824-bda55230c457/go.mod h1:pRgIJT+bRLFKnoM1ldnzKoxTIn14Yxz928LQRYYgIN0=
 golang.org/x/telemetry v0.0.0-20250710130107-8d8967aff50b/go.mod h1:4ZwOYna0/zsOKwuR5X/m0QFOJpSZvAxFfkQT+Erd9D4=
