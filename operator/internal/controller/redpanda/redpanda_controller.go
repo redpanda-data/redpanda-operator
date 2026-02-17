@@ -118,7 +118,7 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager) error {
+func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
 	builder := mcbuilder.ControllerManagedBy(mgr)
 
 	if err := r.LifecycleClient.WatchResources(builder, &redpandav1alpha2.Redpanda{}, mgr.GetClusterNames()); err != nil {
@@ -140,7 +140,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		}
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 type clusterReconciliationState struct {

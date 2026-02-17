@@ -163,7 +163,7 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
-func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -193,5 +193,5 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
-	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }

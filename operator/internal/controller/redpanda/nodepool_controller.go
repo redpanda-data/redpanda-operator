@@ -53,7 +53,7 @@ type NodePoolReconciler struct {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager) error {
+func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.NodePool{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		Watches(&appsv1.StatefulSet{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
@@ -86,7 +86,7 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster, controller.WatchOptions(clusterName)...)
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 // Reconcile reconciles NodePool objects

@@ -61,7 +61,7 @@ type Controller struct {
 	rng *rand.Rand
 }
 
-func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Manager) error {
+func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
 	// If rng is not set for testing, create and seed a new one.
 	if c.rng == nil {
 		// TODO: Weak RNG is probably acceptable here but best to doublecheck
@@ -88,7 +88,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 		builder.Watches(&redpandav1alpha2.Redpanda{}, eventHandler, controller.WatchOptions(clusterName)...)
 	}
 
-	return builder.Complete(c)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, c))
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
