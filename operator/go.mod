@@ -12,7 +12,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/fluxcd/pkg/runtime v0.43.3
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/google/cel-go v0.23.2
 	github.com/google/gofuzz v1.2.0
 	github.com/jcmturner/gokrb5/v8 v8.4.4
@@ -37,7 +37,7 @@ require (
 	github.com/scalalang2/golang-fifo v1.0.2
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.39.0
 	github.com/testcontainers/testcontainers-go/modules/redpanda v0.39.0
 	github.com/twmb/franz-go v1.19.4
@@ -45,7 +45,7 @@ require (
 	github.com/twmb/franz-go/pkg/kmsg v1.11.2
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
 	github.com/twmb/franz-go/pkg/sr v1.4.1-0.20250620172413-c17130ef7765
-	go.opentelemetry.io/otel v1.36.0
+	go.opentelemetry.io/otel v1.40.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.19.0
 	golang.org/x/time v0.11.0
@@ -251,7 +251,7 @@ require (
 	github.com/redpanda-data/redpanda-operator/charts/connectors v0.0.0-20250407180246-dc814fb6b3b8 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console v0.0.0-20250407180246-dc814fb6b3b8 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
@@ -276,7 +276,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/pdata v1.32.0 // indirect
 	go.opentelemetry.io/contrib/bridges/prometheus v0.61.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.59.0 // indirect
@@ -288,11 +288,11 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.35.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0 // indirect
 	go.opentelemetry.io/otel/log v0.11.0 // indirect
-	go.opentelemetry.io/otel/metric v1.36.0 // indirect
+	go.opentelemetry.io/otel/metric v1.40.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.36.0 // indirect
 	go.opentelemetry.io/otel/sdk/log v0.11.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.36.0 // indirect
-	go.opentelemetry.io/otel/trace v1.36.0 // indirect
+	go.opentelemetry.io/otel/trace v1.40.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect

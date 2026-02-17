@@ -7,7 +7,7 @@ replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-c
 require (
 	github.com/cert-manager/cert-manager v1.14.5
 	github.com/cockroachdb/errors v1.11.3
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/gonvenience/ytbx v1.4.4
 	github.com/homeport/dyff v1.7.1
 	github.com/invopop/jsonschema v0.12.0
@@ -15,12 +15,12 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/pflag v1.0.7
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go/modules/k3s v0.39.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.opentelemetry.io/collector/pdata v1.32.0
 	go.opentelemetry.io/contrib/bridges/prometheus v0.61.0
-	go.opentelemetry.io/otel v1.36.0
+	go.opentelemetry.io/otel v1.40.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.11.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.11.0
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.36.0
@@ -28,11 +28,11 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.opentelemetry.io/otel/log v0.11.0
-	go.opentelemetry.io/otel/metric v1.36.0
+	go.opentelemetry.io/otel/metric v1.40.0
 	go.opentelemetry.io/otel/sdk v1.36.0
 	go.opentelemetry.io/otel/sdk/log v0.11.0
 	go.opentelemetry.io/otel/sdk/metric v1.36.0
-	go.opentelemetry.io/otel/trace v1.36.0
+	go.opentelemetry.io/otel/trace v1.40.0
 	go.opentelemetry.io/proto/otlp v1.6.0
 	golang.org/x/mod v0.32.0
 	golang.org/x/tools v0.41.0
@@ -169,7 +169,7 @@ require (
 	github.com/prometheus/common v0.64.0 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
@@ -187,7 +187,7 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.35.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
