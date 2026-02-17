@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/licenseupdater
 
-go 1.24.3
+go 1.24.13
 
 require (
 	github.com/cockroachdb/errors v1.11.3
