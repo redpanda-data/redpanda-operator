@@ -3521,7 +3521,14 @@ spec:
     storage: false
     subresources:
       status: {}
-  - name: v1alpha2
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].message
+      name: Status
+      type: string
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         description: Topic defines the CRD for Topic resources. See https://docs.redpanda.com/current/manage/kubernetes/manage-topics/.
