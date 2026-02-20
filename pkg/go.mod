@@ -14,7 +14,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jcmturner/gokrb5/v8 v8.4.4
 	github.com/lucasjones/reggen v0.0.0-20200904144131-37ba4fa293bb
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.85.0
 	github.com/redpanda-data/common-go/rpadmin v0.2.0
 	github.com/redpanda-data/common-go/secrets v0.1.4
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186
@@ -54,9 +54,9 @@ require (
 	k8s.io/apimachinery v0.33.8
 	k8s.io/client-go v0.33.8
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	pgregory.net/rapid v1.1.0
-	sigs.k8s.io/controller-runtime v0.20.4
+	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/yaml v1.6.0
 )
 

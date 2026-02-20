@@ -15,7 +15,7 @@ require (
 	github.com/buildkite/go-pipeline v0.13.3
 	github.com/cockroachdb/errors v1.12.0
 	github.com/invopop/jsonschema v0.12.0
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.76.2
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.85.0
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.3.1
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-20250528175436-e8cca0053dc6
@@ -26,7 +26,7 @@ require (
 	golang.org/x/tools v0.41.0
 	k8s.io/api v0.33.8
 	k8s.io/apimachinery v0.33.8
-	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	mvdan.cc/gofumpt v0.7.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -270,7 +270,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/kubectl v0.33.3 // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
-	sigs.k8s.io/controller-runtime v0.20.4 // indirect
+	sigs.k8s.io/controller-runtime v0.21.0 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.19.0 // indirect

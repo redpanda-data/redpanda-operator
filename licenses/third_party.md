@@ -191,7 +191,7 @@ run `task generate:third-party-licenses-list`
 | github.com/pkg/browser | [BSD-2-Clause](https://github.com/pkg/browser/blob/5ac0b6a4141c/LICENSE) |
 | github.com/pkg/errors | [BSD-2-Clause](https://github.com/pkg/errors/blob/v0.9.1/LICENSE) |
 | github.com/pmezard/go-difflib/difflib | [BSD-3-Clause](https://github.com/pmezard/go-difflib/blob/5d4384ee4fb2/LICENSE) |
-| github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring | [Apache-2.0](https://github.com/prometheus-operator/prometheus-operator/blob/pkg/apis/monitoring/v0.76.2/pkg/apis/monitoring/LICENSE) |
+| github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring | [Apache-2.0](https://github.com/prometheus-operator/prometheus-operator/blob/pkg/apis/monitoring/v0.85.0/pkg/apis/monitoring/LICENSE) |
 | github.com/prometheus/client_golang/internal/github.com/golang/gddo/httputil | [BSD-3-Clause](https://github.com/prometheus/client_golang/blob/v1.23.2/internal/github.com/golang/gddo/LICENSE) |
 | github.com/prometheus/client_golang/prometheus | [Apache-2.0](https://github.com/prometheus/client_golang/blob/v1.23.2/LICENSE) |
 | github.com/prometheus/client_model/go | [Apache-2.0](https://github.com/prometheus/client_model/blob/v0.6.2/LICENSE) |
@@ -297,12 +297,12 @@ run `task generate:third-party-licenses-list`
 | k8s.io/kube-openapi/pkg/validation/spec | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/pkg/validation/spec/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/strfmt | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/c8a335a9a2ff/pkg/validation/strfmt/LICENSE) |
 | k8s.io/kubectl/pkg | [Apache-2.0](https://github.com/kubernetes/kubectl/blob/v0.33.3/LICENSE) |
-| k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/0f33e8f1c979/LICENSE) |
-| k8s.io/utils/internal/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/0f33e8f1c979/internal/third_party/forked/golang/LICENSE) |
+| k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/4c0f3b243397/LICENSE) |
+| k8s.io/utils/internal/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/4c0f3b243397/internal/third_party/forked/golang/LICENSE) |
 | oras.land/oras-go/v2 | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v2.6.0/LICENSE) |
 | pgregory.net/rapid | [MPL-2.0](https://github.com/chrisseto/rapid/blob/cdeef406c65c/LICENSE) |
 | sigs.k8s.io/apiserver-network-proxy/konnectivity-client | [Apache-2.0](https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/konnectivity-client/v0.31.2/konnectivity-client/LICENSE) |
-| sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.20.4/LICENSE) |
+| sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.21.0/LICENSE) |
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.1.0/LICENSE) |
 | sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
