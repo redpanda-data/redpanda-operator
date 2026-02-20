@@ -304,13 +304,13 @@ run `task generate:third-party-licenses-list`
 | sigs.k8s.io/apiserver-network-proxy/konnectivity-client | [Apache-2.0](https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/konnectivity-client/v0.31.2/konnectivity-client/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.20.4/LICENSE) |
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.1.0/LICENSE) |
-| sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/cfa47c3a1cc8/LICENSE) |
-| sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/cfa47c3a1cc8/LICENSE) |
+| sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
+| sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.19.0/api/LICENSE) |
 | sigs.k8s.io/kustomize/kyaml | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.19.0/kyaml/LICENSE) |
 | sigs.k8s.io/randfill | [Apache-2.0](https://github.com/kubernetes-sigs/randfill/blob/v1.0.0/LICENSE) |
 | sigs.k8s.io/structured-merge-diff/v4 | [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/v4.7.0/LICENSE) |
-| sigs.k8s.io/yaml | [MIT](https://github.com/kubernetes-sigs/yaml/blob/v1.5.0/LICENSE) |
-| sigs.k8s.io/yaml | [Apache-2.0](https://github.com/kubernetes-sigs/yaml/blob/v1.5.0/LICENSE) |
-| sigs.k8s.io/yaml | [BSD-3-Clause](https://github.com/kubernetes-sigs/yaml/blob/v1.5.0/LICENSE) |
+| sigs.k8s.io/yaml | [MIT](https://github.com/kubernetes-sigs/yaml/blob/v1.6.0/LICENSE) |
+| sigs.k8s.io/yaml | [Apache-2.0](https://github.com/kubernetes-sigs/yaml/blob/v1.6.0/LICENSE) |
+| sigs.k8s.io/yaml | [BSD-3-Clause](https://github.com/kubernetes-sigs/yaml/blob/v1.6.0/LICENSE) |
 
