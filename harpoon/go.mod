@@ -9,9 +9,9 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250123101329-b89e4b888a74
 	github.com/stretchr/testify v1.11.1
-	k8s.io/api v0.33.3
-	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.3
+	k8s.io/api v0.33.8
+	k8s.io/apimachinery v0.33.8
+	k8s.io/client-go v0.33.8
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 

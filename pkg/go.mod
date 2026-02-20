@@ -49,10 +49,10 @@ require (
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.5
-	k8s.io/api v0.33.3
+	k8s.io/api v0.33.8
 	k8s.io/apiextensions-apiserver v0.33.3
-	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.3
+	k8s.io/apimachinery v0.33.8
+	k8s.io/client-go v0.33.8
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 	pgregory.net/rapid v1.1.0

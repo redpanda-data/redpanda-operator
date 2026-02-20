@@ -23,9 +23,9 @@ require (
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
 	golang.org/x/mod v0.32.0
 	golang.org/x/tools v0.41.0
-	k8s.io/api v0.33.3
-	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.3
+	k8s.io/api v0.33.8
+	k8s.io/apimachinery v0.33.8
+	k8s.io/client-go v0.33.8
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 	pgregory.net/rapid v1.1.0
 	sigs.k8s.io/controller-runtime v0.20.4

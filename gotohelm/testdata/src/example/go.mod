@@ -6,8 +6,8 @@ require (
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
-	k8s.io/api v0.33.3
-	k8s.io/apimachinery v0.33.3
+	k8s.io/api v0.33.8
+	k8s.io/apimachinery v0.33.8
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 )
 
@@ -81,7 +81,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.18.5 // indirect
 	k8s.io/apiextensions-apiserver v0.33.3 // indirect
-	k8s.io/client-go v0.33.3 // indirect
+	k8s.io/client-go v0.33.8 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/controller-runtime v0.20.4 // indirect

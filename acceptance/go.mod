@@ -13,9 +13,9 @@ require (
 	github.com/twmb/franz-go v1.20.4
 	github.com/twmb/franz-go/pkg/kadm v1.17.1
 	github.com/twmb/franz-go/pkg/sr v1.5.0
-	k8s.io/api v0.33.3
-	k8s.io/apimachinery v0.33.3
-	k8s.io/client-go v0.33.3
+	k8s.io/api v0.33.8
+	k8s.io/apimachinery v0.33.8
+	k8s.io/client-go v0.33.8
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/yaml v1.5.0
