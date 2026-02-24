@@ -64,8 +64,14 @@ linters:
 
     gosec:
       excludes:
+      - G101 # False positives for secret references (e.g. Buildkite secret IDs, env var names).
       - G115 # integer overflows aren't super likely to be a problem for us and we're really just at the mercy of the APIs we use.
+      - G117 # Struct fields matching secret patterns (Password, AccessKey, etc.) are unavoidable in Kubernetes API types.
+      - G204 # Subprocess launched with variable is expected for kubectl/helm invocations.
       - G304 # Potential file inclusion via variable
+      - G703 # Path traversal via taint analysis flags legitimate temp file cleanup.
+      - G704 # SSRF via taint analysis flags legitimate HTTP API calls.
+      - G705 # XSS via taint analysis flags writes to non-HTTP buffers/stdout.
 
       config:
         G306: "0644" # Maximum allowed os.WriteFile Permissions

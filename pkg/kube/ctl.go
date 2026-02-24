@@ -206,7 +206,7 @@ func (c *Ctl) Apply(ctx context.Context, obj Object, opts ...client.PatchOption)
 	// Prepend field owner to allow caller's to override it.
 	opts = append([]client.PatchOption{c.fieldOwner}, opts...)
 
-	if err := c.client.Patch(ctx, obj, client.Apply, opts...); err != nil {
+	if err := c.client.Patch(ctx, obj, client.Apply, opts...); err != nil { //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 		return errors.WithStack(err)
 	}
 

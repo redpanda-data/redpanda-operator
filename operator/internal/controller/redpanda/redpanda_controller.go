@@ -832,7 +832,6 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, state *clusterRecon
 
 	syncResult, syncErr := ignoreConflict(err)
 	if syncErr == nil && (result.Requeue || result.RequeueAfter > 0) {
-		syncResult.Requeue = true
 		syncResult.RequeueAfter = requeueTimeout
 	}
 	return syncResult, syncErr

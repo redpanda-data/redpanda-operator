@@ -1,12 +1,12 @@
 module github.com/redpanda-data/redpanda-operator/licenseupdater
 
-go 1.24.13
+go 1.25.7
 
 require (
 	github.com/cockroachdb/errors v1.11.3
 	github.com/sergi/go-diff v1.4.0
 	golang.org/x/sync v0.18.0
-	sigs.k8s.io/yaml v1.5.0
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
