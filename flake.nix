@@ -42,6 +42,7 @@
 
           devshells.default = {
             env = [
+              { name = "CGO_ENABLED"; value = "0"; }
               { name = "GOROOT"; value = "${pkgs.go_1_25}/share/go"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }

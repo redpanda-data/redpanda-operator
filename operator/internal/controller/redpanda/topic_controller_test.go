@@ -595,7 +595,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
-		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+		assert.Equal(t, 3*time.Second, result.RequeueAfter)
 
 		rc, err := kafkaAdmCl.DescribeTopicConfigs(ctx, twoTieredStorageConfTopicName)
 		require.NoError(t, err)
@@ -628,7 +628,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		result, err = tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
-		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+		assert.Equal(t, 3*time.Second, result.RequeueAfter)
 
 		rc, err = kafkaAdmCl.DescribeTopicConfigs(ctx, twoTieredStorageConfTopicName)
 		require.NoError(t, err)
@@ -742,7 +742,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
-		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+		assert.Equal(t, 3*time.Second, result.RequeueAfter)
 
 		rc, err := kafkaAdmCl.DescribeTopicConfigs(ctx, updateTopicName)
 		require.NoError(t, err)
