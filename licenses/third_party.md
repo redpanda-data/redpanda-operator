@@ -110,7 +110,6 @@ run `task generate:third-party-licenses-list`
 | github.com/google/gnostic-models | [Apache-2.0](https://github.com/google/gnostic-models/blob/v0.7.0/LICENSE) |
 | github.com/google/go-cmp/cmp | [BSD-3-Clause](https://github.com/google/go-cmp/blob/v0.7.0/LICENSE) |
 | github.com/google/s2a-go | [Apache-2.0](https://github.com/google/s2a-go/blob/v0.1.9/LICENSE.md) |
-| github.com/google/shlex | [Apache-2.0](https://github.com/google/shlex/blob/e7afc7fbc510/COPYING) |
 | github.com/google/uuid | [BSD-3-Clause](https://github.com/google/uuid/blob/v1.6.0/LICENSE) |
 | github.com/googleapis/enterprise-certificate-proxy/client | [Apache-2.0](https://github.com/googleapis/enterprise-certificate-proxy/blob/v0.3.6/LICENSE) |
 | github.com/googleapis/gax-go/v2 | [BSD-3-Clause](https://github.com/googleapis/gax-go/blob/v2.14.1/v2/LICENSE) |
@@ -275,11 +274,11 @@ run `task generate:third-party-licenses-list`
 | k8s.io/apimachinery/pkg | [Apache-2.0](https://github.com/kubernetes/apimachinery/blob/v0.35.0/LICENSE) |
 | k8s.io/apimachinery/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/apimachinery/blob/v0.35.0/third_party/forked/golang/LICENSE) |
 | k8s.io/apiserver | [Apache-2.0](https://github.com/kubernetes/apiserver/blob/v0.35.0/LICENSE) |
-| k8s.io/cli-runtime/pkg | [Apache-2.0](https://github.com/kubernetes/cli-runtime/blob/v0.33.3/LICENSE) |
+| k8s.io/cli-runtime/pkg | [Apache-2.0](https://github.com/kubernetes/cli-runtime/blob/v0.35.0/LICENSE) |
 | k8s.io/client-go | [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.35.0/LICENSE) |
 | k8s.io/client-go/third_party/forked/golang/template | [BSD-3-Clause](https://github.com/kubernetes/client-go/blob/v0.35.0/third_party/forked/golang/LICENSE) |
 | k8s.io/component-base | [Apache-2.0](https://github.com/kubernetes/component-base/blob/v0.35.0/LICENSE) |
-| k8s.io/component-helpers | [Apache-2.0](https://github.com/kubernetes/component-helpers/blob/v0.33.3/LICENSE) |
+| k8s.io/component-helpers | [Apache-2.0](https://github.com/kubernetes/component-helpers/blob/v0.35.0/LICENSE) |
 | k8s.io/klog/v2 | [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.130.1/LICENSE) |
 | k8s.io/kube-openapi/pkg | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/589584f1c912/LICENSE) |
 | k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json | [BSD-3-Clause](https://github.com/kubernetes/kube-openapi/blob/589584f1c912/pkg/internal/third_party/go-json-experiment/json/LICENSE) |
@@ -287,7 +286,7 @@ run `task generate:third-party-licenses-list`
 | k8s.io/kube-openapi/pkg/validation/errors | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/589584f1c912/pkg/validation/errors/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/spec | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/589584f1c912/pkg/validation/spec/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/strfmt | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/589584f1c912/pkg/validation/strfmt/LICENSE) |
-| k8s.io/kubectl/pkg | [Apache-2.0](https://github.com/kubernetes/kubectl/blob/v0.33.3/LICENSE) |
+| k8s.io/kubectl/pkg | [Apache-2.0](https://github.com/kubernetes/kubectl/blob/v0.35.0/LICENSE) |
 | k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/bc988d571ff4/LICENSE) |
 | k8s.io/utils/internal/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/bc988d571ff4/internal/third_party/forked/golang/LICENSE) |
 | oras.land/oras-go/v2 | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v2.6.0/LICENSE) |
@@ -296,8 +295,8 @@ run `task generate:third-party-licenses-list`
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.1.0/LICENSE) |
 | sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
-| sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.19.0/api/LICENSE) |
-| sigs.k8s.io/kustomize/kyaml | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.19.0/kyaml/LICENSE) |
+| sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.20.1/api/LICENSE) |
+| sigs.k8s.io/kustomize/kyaml | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.20.1/kyaml/LICENSE) |
 | sigs.k8s.io/randfill | [Apache-2.0](https://github.com/kubernetes-sigs/randfill/blob/v1.0.0/LICENSE) |
 | sigs.k8s.io/structured-merge-diff/v6 | [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/d9cc6641c482/LICENSE) |
 | sigs.k8s.io/yaml | [MIT](https://github.com/kubernetes-sigs/yaml/blob/v1.6.0/LICENSE) |
