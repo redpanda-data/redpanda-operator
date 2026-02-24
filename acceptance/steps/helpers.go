@@ -474,3 +474,7 @@ func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName
 		}},
 	}
 }
+
+func iWaitNSeconds(_ context.Context, duration int) {
+	time.Sleep(time.Duration(duration) * time.Second)
+}

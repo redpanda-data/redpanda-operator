@@ -12,6 +12,7 @@ Feature: User CRDs
       | james |          | SCRAM-SHA-512 |      |
       | alice | qwerty   | SCRAM-SHA-512 |      |
     When I upgrade to "sasl" cluster to 25.2.1
+    And I sleep for 5 seconds
     Then cluster "sasl" should be stable with 1 nodes
     And "bob" should exist and be able to authenticate to the "sasl" cluster
     And "james" should exist and be able to authenticate to the "sasl" cluster
