@@ -491,7 +491,7 @@ func Run(
 			Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
 			AdminAPIClientFactory:   adminAPIClientFactory,
 			Store:                   consolepkg.NewStore(mgr.GetClient(), mgr.GetScheme()),
-			EventRecorder:           mgr.GetEventRecorderFor("Console"),
+			EventRecorder:           mgr.GetEventRecorderFor("Console"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 			KafkaAdminClientFactory: consolepkg.NewKafkaAdmin,
 		}).WithClusterDomain(clusterDomain).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Console")
@@ -502,7 +502,7 @@ func Run(
 			Client:        mgr.GetClient(),
 			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(rpClientTimeout),
 			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
+			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err
@@ -551,7 +551,7 @@ func Run(
 		if err = (&redpandacontrollers.RedpandaReconciler{
 			KubeConfig:           mgr.GetConfig(),
 			Client:               mgr.GetClient(),
-			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
+			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
@@ -564,7 +564,7 @@ func Run(
 			Client:        mgr.GetClient(),
 			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
-			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
+			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err

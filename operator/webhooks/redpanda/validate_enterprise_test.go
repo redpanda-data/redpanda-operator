@@ -122,7 +122,7 @@ func TestDoNotValidateWhenDeleted(t *testing.T) {
 		Log:                     ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Console"),
 		AdminAPIClientFactory:   testAdminAPIFactory,
 		Store:                   testStore,
-		EventRecorder:           mgr.GetEventRecorderFor("Console"),
+		EventRecorder:           mgr.GetEventRecorderFor("Console"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 		KafkaAdminClientFactory: testKafkaAdminFactory,
 	}).WithClusterDomain("").SetupWithManager(mgr)
 	require.NoError(t, err)

@@ -710,7 +710,6 @@ func (r *RedpandaReconciler) syncStatusAndRequeue(ctx context.Context, status *l
 	}
 
 	result, err := ignoreConflict(err)
-	result.Requeue = true
 	result.RequeueAfter = requeueTimeout
 
 	return result, err
