@@ -20,7 +20,6 @@ func (*Redpanda) Hub() {}
 
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func (in *Redpanda) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(in).
+	return ctrl.NewWebhookManagedBy(mgr, in).
 		Complete()
 }
