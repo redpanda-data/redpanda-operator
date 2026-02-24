@@ -96,4 +96,7 @@ func init() {
 	framework.RegisterStep(`^I create a sasl cluster named "([^"]*)"$`, iCreateSASLCluster)
 	framework.RegisterStep(`^I upgrade to "([^"]*)" cluster to 25.2.1$`, iUpgradeCluster)
 	framework.RegisterStep(`^I should be able to modify CRD-based users for cluster "([^"]*)":$`, iUpdateCRDbasedUsers)
+
+	// Utilities
+	framework.RegisterStep(`^I sleep for (\d+) seconds$`, iWaitNSeconds)
 }
