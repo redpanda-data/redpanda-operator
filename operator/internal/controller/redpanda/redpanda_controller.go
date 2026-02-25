@@ -53,8 +53,7 @@ import (
 const (
 	FinalizerKey = "operator.redpanda.com/finalizer"
 
-	revisionPath        = "/revision"
-	componentLabelValue = "redpanda-statefulset"
+	revisionPath = "/revision"
 
 	// reqeueueTimeout is the time that the reconciler will
 	// wait before requeueing a cluster to be reconciled when

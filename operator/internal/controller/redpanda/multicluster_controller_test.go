@@ -114,7 +114,7 @@ func (s *MulticlusterControllerSuite) ApplyAll(objs ...client.Object) {
 				obj.SetResourceVersion("")
 				obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-				s.Require().NoError(env.Client().Patch(s.ctx, obj.DeepCopyObject().(client.Object), client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+				s.Require().NoError(env.Client().Patch(s.ctx, obj.DeepCopyObject().(client.Object), client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Apply() with typed apply configurations
 			}
 		}
 		apply(objs...)
@@ -204,7 +204,7 @@ func (s *MulticlusterControllerSuite) setupMulticlusterRBAC(env *testenv.Env) st
 			obj.SetResourceVersion("")
 			obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-			s.Require().NoError(env.Client().Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+			s.Require().NoError(env.Client().Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Apply() with typed apply configurations
 		}
 	}
 

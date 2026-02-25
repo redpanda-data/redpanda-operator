@@ -493,7 +493,7 @@ func (g *Generator) handleArrayCopy(buf *strings.Builder, t *ast.ArrayType, inPa
 	var elemCopy string
 	if g.isStructType(t.Elt, knownPkg) {
 		var copyElements strings.Builder
-		if _, err := copyElements.WriteString(fmt.Sprintf("in, out := &%s[i], &%s[i]\n", inPath, outPath)); err != nil {
+		if _, err := fmt.Fprintf(&copyElements, "in, out := &%s[i], &%s[i]\n", inPath, outPath); err != nil {
 			return err
 		}
 		if err := g.generateCopy(&copyElements, "in", "out", knownPkg, t.Elt, true); err != nil {
@@ -516,7 +516,7 @@ func (g *Generator) handleMapCopy(buf *strings.Builder, t *ast.MapType, inPath, 
 	isStruct := g.isStructType(t.Value, knownPkg)
 	if isStruct {
 		var copyElements strings.Builder
-		if _, err := copyElements.WriteString(fmt.Sprintf("in, out := &v, &%s[k]\n", outPath)); err != nil {
+		if _, err := fmt.Fprintf(&copyElements, "in, out := &v, &%s[k]\n", outPath); err != nil {
 			return err
 		}
 		if err := g.generateCopy(&copyElements, "in", "out", knownPkg, t.Value, true); err != nil {

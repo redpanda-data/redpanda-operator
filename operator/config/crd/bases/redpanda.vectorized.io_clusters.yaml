@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.20.1
   name: clusters.redpanda.vectorized.io
 spec:
   group: redpanda.vectorized.io
@@ -414,16 +414,17 @@ spec:
                                 certificate.
                               properties:
                                 group:
-                                  description: Group of the resource being referred
-                                    to.
+                                  description: |-
+                                    Group of the issuer being referred to.
+                                    Defaults to 'cert-manager.io'.
                                   type: string
                                 kind:
-                                  description: Kind of the resource being referred
-                                    to.
+                                  description: |-
+                                    Kind of the issuer being referred to.
+                                    Defaults to 'Issuer'.
                                   type: string
                                 name:
-                                  description: Name of the resource being referred
-                                    to.
+                                  description: Name of the issuer being referred to.
                                   type: string
                               required:
                               - name
@@ -624,16 +625,17 @@ spec:
                                 certificate.
                               properties:
                                 group:
-                                  description: Group of the resource being referred
-                                    to.
+                                  description: |-
+                                    Group of the issuer being referred to.
+                                    Defaults to 'cert-manager.io'.
                                   type: string
                                 kind:
-                                  description: Kind of the resource being referred
-                                    to.
+                                  description: |-
+                                    Kind of the issuer being referred to.
+                                    Defaults to 'Issuer'.
                                   type: string
                                 name:
-                                  description: Name of the resource being referred
-                                    to.
+                                  description: Name of the issuer being referred to.
                                   type: string
                               required:
                               - name
@@ -842,16 +844,17 @@ spec:
                                 certificate.
                               properties:
                                 group:
-                                  description: Group of the resource being referred
-                                    to.
+                                  description: |-
+                                    Group of the issuer being referred to.
+                                    Defaults to 'cert-manager.io'.
                                   type: string
                                 kind:
-                                  description: Kind of the resource being referred
-                                    to.
+                                  description: |-
+                                    Kind of the issuer being referred to.
+                                    Defaults to 'Issuer'.
                                   type: string
                                 name:
-                                  description: Name of the resource being referred
-                                    to.
+                                  description: Name of the issuer being referred to.
                                   type: string
                               required:
                               - name
@@ -1058,14 +1061,17 @@ spec:
                               certificate.
                             properties:
                               group:
-                                description: Group of the resource being referred
-                                  to.
+                                description: |-
+                                  Group of the issuer being referred to.
+                                  Defaults to 'cert-manager.io'.
                                 type: string
                               kind:
-                                description: Kind of the resource being referred to.
+                                description: |-
+                                  Kind of the issuer being referred to.
+                                  Defaults to 'Issuer'.
                                 type: string
                               name:
-                                description: Name of the resource being referred to.
+                                description: Name of the issuer being referred to.
                                 type: string
                             required:
                             - name
@@ -1273,16 +1279,17 @@ spec:
                                 certificate.
                               properties:
                                 group:
-                                  description: Group of the resource being referred
-                                    to.
+                                  description: |-
+                                    Group of the issuer being referred to.
+                                    Defaults to 'cert-manager.io'.
                                   type: string
                                 kind:
-                                  description: Kind of the resource being referred
-                                    to.
+                                  description: |-
+                                    Kind of the issuer being referred to.
+                                    Defaults to 'Issuer'.
                                   type: string
                                 name:
-                                  description: Name of the resource being referred
-                                    to.
+                                  description: Name of the issuer being referred to.
                                   type: string
                               required:
                               - name
@@ -1571,9 +1578,10 @@ spec:
                           operator:
                             description: |-
                               Operator represents a key's relationship to the value.
-                              Valid operators are Exists and Equal. Defaults to Equal.
+                              Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                               Exists is equivalent to wildcard for value, so that a pod can
                               tolerate all taints of a particular category.
+                              Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                             type: string
                           tolerationSeconds:
                             description: |-
@@ -1878,9 +1886,10 @@ spec:
                     operator:
                       description: |-
                         Operator represents a key's relationship to the value.
-                        Valid operators are Exists and Equal. Defaults to Equal.
+                        Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                         Exists is equivalent to wildcard for value, so that a pod can
                         tolerate all taints of a particular category.
+                        Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                       type: string
                     tolerationSeconds:
                       description: |-

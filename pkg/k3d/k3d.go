@@ -402,7 +402,7 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		for _, obj := range startupManifests() {
 			// we deep copy so we don't modify the startup manifests when multiple k3d objects are created
 			cloned := obj.DeepCopyObject().(client.Object)
-			if err := cl.Patch(ctx, cloned, client.Apply, client.FieldOwner(fmt.Sprintf("k3d-setup-%s", c.Name)), client.ForceOwnership); err != nil {
+			if err := cl.Patch(ctx, cloned, client.Apply, client.FieldOwner(fmt.Sprintf("k3d-setup-%s", c.Name)), client.ForceOwnership); err != nil { //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 				return errors.WithStack(err)
 			}
 		}

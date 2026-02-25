@@ -285,11 +285,11 @@ func (l *Logging) Translate() map[string]any {
 }
 
 type Monitoring struct {
-	Enabled        bool                    `json:"enabled" jsonschema:"required"`
-	ScrapeInterval monitoringv1.Duration   `json:"scrapeInterval" jsonschema:"required"`
-	Labels         map[string]string       `json:"labels"`
-	TLSConfig      *monitoringv1.TLSConfig `json:"tlsConfig"`
-	EnableHTTP2    *bool                   `json:"enableHttp2"`
+	Enabled               bool                    `json:"enabled" jsonschema:"required"`
+	ScrapeInterval        monitoringv1.Duration   `json:"scrapeInterval" jsonschema:"required"`
+	Labels                map[string]string       `json:"labels"`
+	TLSConfig             *monitoringv1.TLSConfig `json:"tlsConfig"`
+	DeprecatedEnableHTTP2 *bool                   `json:"enableHttp2"`
 }
 
 // RedpandaResources encapsulates the calculation of the redpanda container's
