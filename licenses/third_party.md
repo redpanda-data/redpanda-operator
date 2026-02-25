@@ -231,11 +231,14 @@ run `task generate:third-party-licenses-list`
 | github.com/xlab/treeprint | [MIT](https://github.com/xlab/treeprint/blob/v1.2.0/LICENSE) |
 | go.opentelemetry.io/auto/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-instrumentation/blob/sdk/v1.2.1/sdk/LICENSE) |
 | go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/google.golang.org/grpc/otelgrpc/v0.61.0/instrumentation/google.golang.org/grpc/otelgrpc/LICENSE) |
-| go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.61.0/instrumentation/net/http/otelhttp/LICENSE) |
+| go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.63.0/instrumentation/net/http/otelhttp/LICENSE) |
+| go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.63.0/instrumentation/net/http/otelhttp/LICENSE) |
 | go.opentelemetry.io/otel | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/v1.40.0/LICENSE) |
 | go.opentelemetry.io/otel | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/v1.40.0/LICENSE) |
-| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.35.0/exporters/otlp/otlptrace/LICENSE) |
-| go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.35.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.38.0/exporters/otlp/otlptrace/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.38.0/exporters/otlp/otlptrace/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.38.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.38.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
 | go.opentelemetry.io/otel/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.16.0/log/LICENSE) |
 | go.opentelemetry.io/otel/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.16.0/log/LICENSE) |
 | go.opentelemetry.io/otel/metric | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.40.0/metric/LICENSE) |
@@ -246,7 +249,7 @@ run `task generate:third-party-licenses-list`
 | go.opentelemetry.io/otel/sdk/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.16.0/sdk/log/LICENSE) |
 | go.opentelemetry.io/otel/trace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.40.0/trace/LICENSE) |
 | go.opentelemetry.io/otel/trace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.40.0/trace/LICENSE) |
-| go.opentelemetry.io/proto/otlp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-proto-go/blob/otlp/v1.6.0/otlp/LICENSE) |
+| go.opentelemetry.io/proto/otlp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-proto-go/blob/otlp/v1.7.1/otlp/LICENSE) |
 | go.uber.org/multierr | [MIT](https://github.com/uber-go/multierr/blob/v1.11.0/LICENSE.txt) |
 | go.uber.org/zap | [MIT](https://github.com/uber-go/zap/blob/v1.27.1/LICENSE) |
 | go.yaml.in/yaml/v2 | [Apache-2.0](https://github.com/yaml/go-yaml/blob/v2.4.3/LICENSE) |
