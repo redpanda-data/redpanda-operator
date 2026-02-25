@@ -1,17 +1,17 @@
-{ buildGo124Module, lib, fetchFromGitHub }:
+{ buildGo125Module, lib, fetchFromGitHub }:
 
-buildGo124Module rec {
+buildGo125Module rec {
   pname = "controller-tools";
-  version = "0.16.3";
+  version = "0.20.1";
 
   src = fetchFromGitHub {
     owner = "kubernetes-sigs";
     repo = pname;
     rev = "v${version}";
-    sha256 = "sha256-Txvzp8OcRTDCAB8nFrqj93X+Kk/sNPSSLOI07J3DwcM=";
+    sha256 = "sha256-c1d7FlfGv7iGS+4GyhsO99OrCBIxO3M9r7jwYh7qs2o=";
   };
 
-  vendorHash = "sha256-nwzXlsSG7JF145bf/AJZB1GbGJRHJC7Q73Jty6mHc/w=";
+  vendorHash = "sha256-cFnUfcoLyFHg0JR6ix0AnpSHUGuNNVbKldKelvvMu/4=";
 
   ldflags = [
     "-s"

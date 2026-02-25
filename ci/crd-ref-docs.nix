@@ -1,11 +1,11 @@
-{ buildGo124Module
+{ buildGo125Module
 , fetchFromGitHub
 , lib
 }:
 
-buildGo124Module rec {
+buildGo125Module rec {
   pname = "crd-ref-docs";
-  version = "0.1.0";
+  version = "0.3.0";
 
   # Don't run tests.
   doCheck = false;
@@ -15,7 +15,7 @@ buildGo124Module rec {
     owner = "elastic";
     repo = pname;
     rev = "v${version}";
-    hash = "sha256-Vp4HrT6Fj+stj2xasyz7i+UuogsFHeHOT8Ro0HeoGpI=";
+    hash = "sha256-+kg9Ql6LrvQO9UJ0lBEXJpedMBpmasTwYgRg9pj8420=";
   };
 
   subPackages = [
@@ -23,7 +23,7 @@ buildGo124Module rec {
     "./config"
   ];
 
-  vendorHash = "sha256-kNynNSa7xi5BL2oWBq7A2SWtjm1E+CyJd5f0FXkHAII=";
+  vendorHash = "sha256-lV9kMqdB4hA9v/748fJH9TnE5angryLdguAEjuMhUjM=";
 
   meta = with lib; {
     description = "Generates Kubernetes CRD API reference documentation";

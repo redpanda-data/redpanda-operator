@@ -14,7 +14,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil)) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (get (fromJson (include "connectors.ServiceName" (dict "a" (list $dot)))) "r") "labels" (merge (dict) (get (fromJson (include "connectors.FullLabels" (dict "a" (list $dot)))) "r") $values.service.annotations))) "spec" (mustMergeOverwrite (dict) (dict "ipFamilies" (list "IPv4") "ipFamilyPolicy" "SingleStack" "ports" $ports "selector" (get (fromJson (include "connectors.PodLabels" (dict "a" (list $dot)))) "r") "sessionAffinity" "None" "type" "ClusterIP"))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "connectors.ServiceName" (dict "a" (list $dot)))) "r") "labels" (merge (dict) (get (fromJson (include "connectors.FullLabels" (dict "a" (list $dot)))) "r") $values.service.annotations))) "spec" (mustMergeOverwrite (dict) (dict "ipFamilies" (list "IPv4") "ipFamilyPolicy" "SingleStack" "ports" $ports "selector" (get (fromJson (include "connectors.PodLabels" (dict "a" (list $dot)))) "r") "sessionAffinity" "None" "type" "ClusterIP"))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
