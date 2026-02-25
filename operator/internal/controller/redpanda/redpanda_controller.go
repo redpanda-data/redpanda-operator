@@ -341,7 +341,7 @@ func (r *RedpandaReconciler) reconcileParameterValidation(ctx context.Context, s
 		state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
 
 		logger.Error(err, "validating cluster parameters")
-		cluster.GetEventRecorderFor("RedpandaReconciler").Eventf(state.cluster.Redpanda, "Warning", redpandav1alpha2.EventSeverityError, err.Error())
+		cluster.GetEventRecorderFor("RedpandaReconciler").Eventf(state.cluster.Redpanda, "Warning", redpandav1alpha2.EventSeverityError, err.Error()) //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
