@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/operator
 
-go 1.25.7
+go 1.26.0
 
 require (
 	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1

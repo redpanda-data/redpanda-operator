@@ -1,10 +1,10 @@
-{ buildGo125Module
+{ buildGo126Module
 , fetchFromGitHub
 }:
 let
   version = "2.0.1";
 in
-buildGo125Module {
+buildGo126Module {
   pname = "go-licenses";
   inherit version;
 

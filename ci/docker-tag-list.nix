@@ -1,9 +1,9 @@
-{ buildGo125Module
+{ buildGo126Module
 , fetchFromGitHub
 , lib
 }:
 
-buildGo125Module rec {
+buildGo126Module rec {
   pname = "docker-tag-list";
   version = "1.0.1";
 
