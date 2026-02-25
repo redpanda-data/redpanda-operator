@@ -188,21 +188,21 @@ func TestGoModLint(t *testing.T) {
 	// This could also be done with go work sync but go.work causes many other
 	// pains :(.
 	workspaceWideVersions := map[string]string{
-		"github.com/Masterminds/semver/v3": "v3.3.1",
+		"github.com/Masterminds/semver/v3": "v3.4.0",
 		"github.com/Masterminds/sprig/v3":  "v3.3.0",
 		"helm.sh/helm/v3":                  "v3.18.5",
-		"k8s.io/api":                       "v0.33.3",
-		"k8s.io/apiextensions-apiserver":   "v0.33.3",
-		"k8s.io/apimachinery":              "v0.33.3",
-		"k8s.io/apiserver":                 "v0.33.3",
-		"k8s.io/cli-runtime":               "v0.33.3",
-		"k8s.io/client-go":                 "v0.33.3",
-		"k8s.io/component-base":            "v0.33.3",
-		"k8s.io/component-helpers":         "v0.33.3",
-		"k8s.io/kubectl":                   "v0.33.3",
-		"k8s.io/utils":                     "v0.0.0-20250502105355-0f33e8f1c979",
-		"sigs.k8s.io/controller-runtime":   "v0.20.4",
-		"sigs.k8s.io/yaml":                 "v1.5.0",
+		"k8s.io/api":                       "v0.35.0",
+		"k8s.io/apiextensions-apiserver":   "v0.35.0",
+		"k8s.io/apimachinery":              "v0.35.0",
+		"k8s.io/apiserver":                 "v0.35.0",
+		"k8s.io/cli-runtime":               "v0.35.0",
+		"k8s.io/client-go":                 "v0.35.0",
+		"k8s.io/component-base":            "v0.35.0",
+		"k8s.io/component-helpers":         "v0.35.0",
+		"k8s.io/kubectl":                   "v0.35.0",
+		"k8s.io/utils":                     "v0.0.0-20251002143259-bc988d571ff4",
+		"sigs.k8s.io/controller-runtime":   "v0.23.1",
+		"sigs.k8s.io/yaml":                 "v1.6.0",
 	}
 
 	modPaths, err := filepath.Glob("../../*/go.mod")

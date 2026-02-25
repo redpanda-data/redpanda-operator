@@ -185,7 +185,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		Log:                     l.WithName("controllers").WithName("redpanda").WithName("Console"),
 		AdminAPIClientFactory:   testAdminAPIFactory,
 		Store:                   testStore,
-		EventRecorder:           k8sManager.GetEventRecorderFor("Console"),
+		EventRecorder:           k8sManager.GetEventRecorderFor("Console"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 		KafkaAdminClientFactory: testKafkaAdminFactory,
 	}).WithClusterDomain("cluster.local").SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
@@ -201,7 +201,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		}, lifecycle.CloudSecretsFlags{
 			CloudSecretsEnabled: false,
 		})),
-		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"),
+		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 	}).SetupWithManager(ctx, k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

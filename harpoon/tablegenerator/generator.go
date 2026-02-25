@@ -92,7 +92,7 @@ func generateTables(providers []string, headerDepth string, features []*supporte
 			scenarios = append(scenarios, row)
 		}
 
-		if _, err := buffer.WriteString(fmt.Sprintf("%s Feature: %s\n\n", headerDepth, feature.name)); err != nil {
+		if _, err := fmt.Fprintf(&buffer, "%s Feature: %s\n\n", headerDepth, feature.name); err != nil {
 			return "", err
 		}
 

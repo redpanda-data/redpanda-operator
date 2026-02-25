@@ -2,7 +2,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -51,7 +50,6 @@
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -82,7 +80,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -99,7 +96,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -311,7 +307,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -352,7 +347,6 @@
           ca_file: ca.crt
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -369,7 +363,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -389,7 +382,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -410,7 +402,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -430,7 +421,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -451,7 +441,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -481,7 +470,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -511,7 +499,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -552,7 +539,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -593,7 +579,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -628,7 +613,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -658,7 +642,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -683,7 +666,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -708,7 +690,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -804,7 +785,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -905,7 +885,6 @@
           - https://basic-test.basic-test.svc.cluster.local.:9644
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
@@ -922,7 +901,6 @@
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
@@ -946,9 +924,8 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 521217d2b7753580c8ef5da50a799bb4f1f123228eaa0b077105632a5685402c
+          checksum-redpanda-chart/config: 56fe1000ab8d544916e35480bb049d54024098d8efe58e21a9ebff52251a1ead
           checksum/config: e07159484f05956236f7ca9b493b61cf44715cbd5df7c0c0a0e5f9c5391bfa42
-        creationTimestamp: null
         labels:
           app.kubernetes.io/instance: basic-test
           app.kubernetes.io/name: console
@@ -1008,7 +985,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
@@ -1025,7 +1001,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/managed-by: Helm
@@ -1055,7 +1030,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1104,7 +1078,6 @@
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1135,7 +1108,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1152,7 +1124,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1364,7 +1335,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1405,7 +1375,6 @@
           ca_file: ca.crt
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1422,7 +1391,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1442,7 +1410,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1463,7 +1430,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1483,7 +1449,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1504,7 +1469,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1534,7 +1498,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1564,7 +1527,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1605,7 +1567,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1646,7 +1607,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1681,7 +1641,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1711,7 +1670,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1736,7 +1694,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1761,7 +1718,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1857,7 +1813,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: chown-datadir
@@ -1958,7 +1913,6 @@
           - https://chown-datadir.chown-datadir.svc.cluster.local.:9644
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: chown-datadir
       app.kubernetes.io/managed-by: Helm
@@ -1975,7 +1929,6 @@
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: chown-datadir
       app.kubernetes.io/managed-by: Helm
@@ -1999,9 +1952,8 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 6ebf49f3ef56e0306722fbdb2c2fcd455b17f1bf89ae6d85d0cedcaf64f89e6c
+          checksum-redpanda-chart/config: 9f508326a5a18d3e5114be863406ce98c300e6f1a538101870f965d641fa3276
           checksum/config: 4e5f7d808b9f6bf7323f22007d1a2a891597deec3eb09a83e674a1d48fd50d20
-        creationTimestamp: null
         labels:
           app.kubernetes.io/instance: chown-datadir
           app.kubernetes.io/name: console
@@ -2061,7 +2013,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: chown-datadir
       app.kubernetes.io/managed-by: Helm
@@ -2078,7 +2029,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: chown-datadir
       app.kubernetes.io/managed-by: Helm
@@ -2108,7 +2058,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2157,7 +2106,6 @@
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2188,7 +2136,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2205,7 +2152,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2417,7 +2363,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2458,7 +2403,6 @@
           ca_file: ca.crt
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2475,7 +2419,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2495,7 +2438,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2516,7 +2458,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2536,7 +2477,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2557,7 +2497,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2587,7 +2526,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2617,7 +2555,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2658,7 +2595,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2699,7 +2635,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2734,7 +2669,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2764,7 +2698,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2787,7 +2720,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2812,7 +2744,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2837,7 +2768,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2861,7 +2791,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -2957,7 +2886,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: rack-awareness
@@ -3064,7 +2992,6 @@
           - https://rack-awareness.rack-awareness.svc.cluster.local.:9644
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: Helm
@@ -3081,7 +3008,6 @@
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: Helm
@@ -3105,9 +3031,8 @@
     template:
       metadata:
         annotations:
-          checksum-redpanda-chart/config: 0d2fee8fc52d84f752cbe78a81c519531ed9227e33cd7ad8144f57250a121940
+          checksum-redpanda-chart/config: 82b6dd55b571312100021cb3afa36ee663479b94647988ab4e792d3a486e676a
           checksum/config: 64f3b5984ecaf99055c6b45a56baef56a9f7889a06431d63526f92f8ad0192bc
-        creationTimestamp: null
         labels:
           app.kubernetes.io/instance: rack-awareness
           app.kubernetes.io/name: console
@@ -3167,7 +3092,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: Helm
@@ -3184,7 +3108,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: Helm
