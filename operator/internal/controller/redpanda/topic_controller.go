@@ -95,7 +95,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if updateStatusErr := r.patchTopicStatus(ctx, topic, l); updateStatusErr != nil {
 		l.Error(updateStatusErr, "unable to update topic status after reconciliation")
 		err = errors.Join(err, updateStatusErr)
-		result.Requeue = true
+		result.RequeueAfter = time.Second
 	}
 
 	// Log reconciliation duration
@@ -126,7 +126,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 		Client:        c,
 		Factory:       internalclient.NewFactory(config, c, expander),
 		Scheme:        mgr.GetScheme(),
-		EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"),
+		EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 	}
 
 	builder := ctrl.NewControllerManagedBy(mgr).

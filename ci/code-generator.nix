@@ -1,8 +1,8 @@
-{ buildGoModule
+{ buildGo125Module
 , fetchFromGitHub
 }:
 
-buildGoModule rec {
+buildGo125Module rec {
   pname = "code-generator";
   version = "0.33.0";
 

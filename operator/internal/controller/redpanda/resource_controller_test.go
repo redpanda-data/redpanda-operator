@@ -291,7 +291,7 @@ func (r *testReconciler) FinalizerPatch(request ResourceRequest[*testObject]) cl
 		Kind:       "testObject",
 		APIVersion: redpandav1alpha2.GroupVersion.String(),
 	}
-	return client.Apply
+	return client.Apply //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 }
 
 func (r *testReconciler) SyncResource(ctx context.Context, request ResourceRequest[*testObject]) (client.Patch, error) {

@@ -394,7 +394,7 @@ func Run(
 		if err := (&redpandacontrollers.RedpandaReconciler{
 			KubeConfig:           mgr.GetConfig(),
 			Client:               mgr.GetClient(),
-			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"),
+			EventRecorder:        mgr.GetEventRecorderFor("RedpandaReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
