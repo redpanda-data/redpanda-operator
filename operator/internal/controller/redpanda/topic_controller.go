@@ -134,7 +134,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req mcreconcile.Request
 
 func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
 	if r.RecordEvents {
-		return c.GetEventRecorderFor("TopicReconciler")
+		return c.GetEventRecorderFor("TopicReconciler") //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
 	}
 	return nil
 }

@@ -5923,6 +5923,12 @@
                                     },
                                     "signerName": {
                                       "type": "string"
+                                    },
+                                    "userAnnotations": {
+                                      "additionalProperties": {
+                                        "type": "string"
+                                      },
+                                      "type": "object"
                                     }
                                   },
                                   "type": "object"
@@ -6172,6 +6178,21 @@
                   "type": "null"
                 }
               ]
+            },
+            "workloadRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "podGroup": {
+                  "type": "string"
+                },
+                "podGroupReplicaKey": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"

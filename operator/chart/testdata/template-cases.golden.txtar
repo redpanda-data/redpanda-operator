@@ -9083,7 +9083,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -32389,7 +32389,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -37873,7 +37873,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -43329,7 +43329,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -45218,7 +45218,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -47106,7 +47106,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -51408,7 +51408,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -54884,7 +54884,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -58098,7 +58098,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -60321,7 +60321,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -63691,7 +63691,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -65746,7 +65746,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}
@@ -67762,7 +67762,7 @@ spec:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     path: /metrics
     port: https
-    scheme: https
+    scheme: HTTPS
     tlsConfig:
       ca: {}
       cert: {}

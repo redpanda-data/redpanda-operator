@@ -13,7 +13,7 @@ let
       hash = "sha256-3NWvQramcxvZaewc3hMvYGhSOIIsnWD3mqU/WNA723c=";
     };
     x86_64-linux = fetchurl {
-      url = " https://github.com/loft-sh/vcluster/releases/download/v${version}/vcluster-linux-amd64";
+      url = "https://github.com/loft-sh/vcluster/releases/download/v${version}/vcluster-linux-amd64";
       hash = "sha256-4b/UKWj/1hef0A2tKlluiWVhi94FQL1qAmmTc5Q0DMc=";
     };
   }.${stdenv.system} or (throw "${pname}-${version}: ${stdenv.system} is unsupported.");
