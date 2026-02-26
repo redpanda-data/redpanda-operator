@@ -21,6 +21,7 @@ type StretchClusterStatusApplyConfiguration struct {
 	Conditions    []v1.ConditionApplyConfiguration           `json:"conditions,omitempty"`
 	NodePools     []EmbeddedNodePoolStatusApplyConfiguration `json:"nodePools,omitempty"`
 	ConfigVersion *string                                    `json:"configVersion,omitempty"`
+	LicenseStatus *RedpandaLicenseStatusApplyConfiguration   `json:"license,omitempty"`
 }
 
 // StretchClusterStatusApplyConfiguration constructs a declarative configuration of the StretchClusterStatus type for use with
@@ -60,5 +61,13 @@ func (b *StretchClusterStatusApplyConfiguration) WithNodePools(values ...*Embedd
 // If called multiple times, the ConfigVersion field is set to the value of the last call.
 func (b *StretchClusterStatusApplyConfiguration) WithConfigVersion(value string) *StretchClusterStatusApplyConfiguration {
 	b.ConfigVersion = &value
+	return b
+}
+
+// WithLicenseStatus sets the LicenseStatus field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the LicenseStatus field is set to the value of the last call.
+func (b *StretchClusterStatusApplyConfiguration) WithLicenseStatus(value *RedpandaLicenseStatusApplyConfiguration) *StretchClusterStatusApplyConfiguration {
+	b.LicenseStatus = value
 	return b
 }

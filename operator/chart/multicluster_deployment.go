@@ -209,10 +209,10 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 
 func multiclusterTLSVolume(dot *helmette.Dot) corev1.Volume {
 	return corev1.Volume{
-		Name: fmt.Sprintf("%s-multicluster-certificates", Fullname(dot)),
+		Name: cleanForK8sWithSuffix(Fullname(dot), "multicluster-certificates"),
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: fmt.Sprintf("%s-multicluster-certificates", Fullname(dot)),
+				SecretName: cleanForK8sWithSuffix(Fullname(dot), "multicluster-certificates"),
 				Items: []corev1.KeyToPath{{
 					Key:  "tls.crt",
 					Path: "tls.crt",

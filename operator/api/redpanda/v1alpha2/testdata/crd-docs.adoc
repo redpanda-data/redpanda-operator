@@ -2676,6 +2676,7 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterstatus[$$StretchClusterStatus$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -4185,6 +4186,8 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the StretchCluster. + |  | 
 | *`configVersion`* __string__ | ConfigVersion contains the configuration version written in +
 Redpanda used for restarting broker nodes as necessary. + |  | 
+| *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
+installed license in the Redpanda cluster. + |  | 
 |===
 
 
