@@ -2,7 +2,6 @@
 - apiVersion: apps/v1
   kind: StatefulSet
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -29,7 +28,6 @@
       metadata:
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: basic-test
@@ -345,7 +343,6 @@
       type: RollingUpdate
     volumeClaimTemplates:
     - metadata:
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: basic-test
@@ -365,7 +362,6 @@
 - apiVersion: apps/v1
   kind: StatefulSet
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -392,7 +388,6 @@
       metadata:
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: compat-test
@@ -689,7 +684,6 @@
       type: RollingUpdate
     volumeClaimTemplates:
     - metadata:
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: compat-test
@@ -708,7 +702,6 @@
 - apiVersion: apps/v1
   kind: StatefulSet
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda-pool
       app.kubernetes.io/instance: compat-test
@@ -737,7 +730,6 @@
       metadata:
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-pool-statefulset
           app.kubernetes.io/instance: compat-test
@@ -1134,7 +1126,6 @@
       type: RollingUpdate
     volumeClaimTemplates:
     - metadata:
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: compat-test
@@ -1154,7 +1145,6 @@
 - apiVersion: apps/v1
   kind: StatefulSet
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -1181,7 +1171,6 @@
       metadata:
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: console-disabled
@@ -1497,7 +1486,6 @@
       type: RollingUpdate
     volumeClaimTemplates:
     - metadata:
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: console-disabled
@@ -1517,7 +1505,6 @@
 - apiVersion: apps/v1
   kind: StatefulSet
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -1544,7 +1531,6 @@
       metadata:
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
@@ -1860,7 +1846,6 @@
       type: RollingUpdate
     volumeClaimTemplates:
     - metadata:
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: nodepool-basic-test
@@ -1879,7 +1864,6 @@
 - apiVersion: apps/v1
   kind: StatefulSet
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda-basic-a
       app.kubernetes.io/instance: nodepool-basic-test
@@ -1908,7 +1892,6 @@
       metadata:
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-basic-a-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
@@ -2222,7 +2205,6 @@
       type: RollingUpdate
     volumeClaimTemplates:
     - metadata:
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: nodepool-basic-test
@@ -2241,7 +2223,6 @@
 - apiVersion: apps/v1
   kind: StatefulSet
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda-basic-b
       app.kubernetes.io/instance: nodepool-basic-test
@@ -2270,7 +2251,6 @@
       metadata:
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda-basic-b-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
@@ -2584,7 +2564,6 @@
       type: RollingUpdate
     volumeClaimTemplates:
     - metadata:
-        creationTimestamp: null
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: nodepool-basic-test

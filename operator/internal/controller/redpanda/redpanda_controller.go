@@ -166,7 +166,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 			return
 		}
 
-		if result.Requeue || result.RequeueAfter > 0 {
+		if result.Requeue || result.RequeueAfter > 0 { //nolint:staticcheck // SA1019 result.Requeue is deprecated but still used in sub-reconcilers
 			// We're already set up to enqueue this resource again
 			return
 		}
@@ -251,8 +251,8 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (r
 		result, err := reconciler(ctx, state)
 		// if we have an error or an explicit requeue from one of our
 		// sub reconcilers, then just early return
-		if err != nil || result.Requeue || result.RequeueAfter > 0 {
-			log.FromContext(ctx).V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeue", result.Requeue, "requeueAfter", result.RequeueAfter)
+		if err != nil || result.Requeue || result.RequeueAfter > 0 { //nolint:staticcheck // SA1019 result.Requeue is deprecated but still used in sub-reconcilers
+			log.FromContext(ctx).V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeue", result.Requeue, "requeueAfter", result.RequeueAfter) //nolint:staticcheck // SA1019
 			return r.syncStatus(ctx, state, result, err)
 		}
 	}
@@ -831,8 +831,7 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, state *clusterRecon
 	}
 
 	syncResult, syncErr := ignoreConflict(err)
-	if syncErr == nil && (result.Requeue || result.RequeueAfter > 0) {
-		syncResult.Requeue = true
+	if syncErr == nil && (result.Requeue || result.RequeueAfter > 0) { //nolint:staticcheck // SA1019 result.Requeue is deprecated
 		syncResult.RequeueAfter = requeueTimeout
 	}
 	return syncResult, syncErr

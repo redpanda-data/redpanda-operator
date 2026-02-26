@@ -31,7 +31,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict "creationTimestamp" (coalesce nil))) (mustMergeOverwrite (dict) (dict "kind" "ServiceAccount" "apiVersion" "v1")) (dict "metadata" (mustMergeOverwrite (dict "creationTimestamp" (coalesce nil)) (dict "name" (get (fromJson (include "console.ServiceAccountName" (dict "a" (list $state)))) "r") "labels" (get (fromJson (include "console.RenderState.Labels" (dict "a" (list $state (coalesce nil))))) "r") "namespace" $state.Namespace "annotations" $state.Values.serviceAccount.annotations)) "automountServiceAccountToken" $state.Values.serviceAccount.automountServiceAccountToken))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "kind" "ServiceAccount" "apiVersion" "v1")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "console.ServiceAccountName" (dict "a" (list $state)))) "r") "labels" (get (fromJson (include "console.RenderState.Labels" (dict "a" (list $state (coalesce nil))))) "r") "namespace" $state.Namespace "annotations" $state.Values.serviceAccount.annotations)) "automountServiceAccountToken" $state.Values.serviceAccount.automountServiceAccountToken))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

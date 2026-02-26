@@ -1,9 +1,9 @@
-{ buildGoModule
+{ buildGo125Module
 , fetchFromGitHub
 , lib
 }:
 
-buildGoModule rec {
+buildGo125Module rec {
   pname = "setup-envtest";
   version = "0.20.4";
 

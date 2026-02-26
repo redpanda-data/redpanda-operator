@@ -931,7 +931,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		return (&redpanda.RedpandaReconciler{
 			Client:        mgr.GetClient(),
 			KubeConfig:    mgr.GetConfig(),
-			EventRecorder: mgr.GetEventRecorderFor("Redpanda"),
+			EventRecorder: mgr.GetEventRecorderFor("Redpanda"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 			ClientFactory: s.clientFactory,
 			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(
 				lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
@@ -1122,7 +1122,7 @@ func (s *RedpandaControllerSuite) apply(objs ...client.Object) {
 		obj.SetResourceVersion("")
 		obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 	}
 }
 
