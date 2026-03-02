@@ -145,6 +145,8 @@ console:
   deployment:
     create: false
   config: {}
+  monitoring:
+    enabled: false
 
 # -- Authentication settings.
 # For details,

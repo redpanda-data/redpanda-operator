@@ -995,6 +995,7 @@ migration of a Console V2 config to a Console V3 config. If warnings are +
 present, they will describe which fields from the original config have +
 been dropped and why. +
 Setting this field has no effect. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoringconfig[$$MonitoringConfig$$]__ |  |  | 
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ |  |  | 
 |===
 
@@ -1962,6 +1963,30 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoringconfig"]
+==== MonitoringConfig
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconsole[$$RedpandaConsole$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`scrapeInterval`* __string__ |  |  | 
+| *`labels`* __object (keys:string, values:string)__ |  |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter"]
 ==== NameFilter
 
@@ -2647,6 +2672,7 @@ Please consider use Enterprise in RedpandaClusterSpec type. +
 | *`automountServiceAccountToken`* __boolean__ | Automount API credentials for the Service Account into the pod. + |  | 
 | *`readinessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-readinessprobe[$$ReadinessProbe$$]__ | Settings for console's Deployment's readiness probe. + |  | 
 | *`livenessProbe`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-livenessprobe[$$LivenessProbe$$]__ | Settings for console's Deployment's liveness probe. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoringconfig[$$MonitoringConfig$$]__ |  |  | 
 | *`console`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Deprecated: Use `config` instead +
 `console` is available in Console chart version earlier or equal to v0.7.31 + |  | 
 | *`enterprise`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Deprecated: Use `licenseSecretRef` instead. +

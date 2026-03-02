@@ -92,6 +92,9 @@ values:
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
+    monitoring:
+      enabled: false
+      scrapeInterval: 1m
     nameOverride: ""
     podSecurityContext:
       fsGroup: 99
@@ -684,6 +687,9 @@ values:
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
+    monitoring:
+      enabled: false
+      scrapeInterval: 1m
     nameOverride: ""
     podSecurityContext:
       fsGroup: 99
@@ -1088,6 +1094,8 @@ values:
     deployment:
       create: false
     enabled: false
+    monitoring:
+      enabled: false
     secret:
       create: false
   enterprise:
@@ -1642,6 +1650,9 @@ values:
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
+    monitoring:
+      enabled: false
+      scrapeInterval: 1m
     nameOverride: ""
     podSecurityContext:
       fsGroup: 99

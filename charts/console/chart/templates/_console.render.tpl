@@ -80,7 +80,7 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $manifests := (list (get (fromJson (include "console.ServiceAccount" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Secret" (dict "a" (list $state)))) "r") (get (fromJson (include "console.ConfigMap" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Service" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Ingress" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Deployment" (dict "a" (list $state)))) "r") (get (fromJson (include "console.HorizontalPodAutoscaler" (dict "a" (list $state)))) "r")) -}}
+{{- $manifests := (list (get (fromJson (include "console.ServiceAccount" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Secret" (dict "a" (list $state)))) "r") (get (fromJson (include "console.ConfigMap" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Service" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Ingress" (dict "a" (list $state)))) "r") (get (fromJson (include "console.Deployment" (dict "a" (list $state)))) "r") (get (fromJson (include "console.HorizontalPodAutoscaler" (dict "a" (list $state)))) "r") (get (fromJson (include "console.ServiceMonitor" (dict "a" (list $state)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $manifests) | toJson -}}
 {{- break -}}
@@ -91,7 +91,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list (mustMergeOverwrite (dict "metadata" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "strategy" (dict)) "status" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "scaleTargetRef" (dict "kind" "" "name" "") "maxReplicas" 0) "status" (dict "desiredReplicas" 0 "currentMetrics" (coalesce nil))) (dict)))) | toJson -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "metadata" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "strategy" (dict)) "status" (dict)) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "scaleTargetRef" (dict "kind" "" "name" "") "maxReplicas" 0) "status" (dict "desiredReplicas" 0 "currentMetrics" (coalesce nil))) (dict)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "endpoints" (coalesce nil) "selector" (dict) "namespaceSelector" (dict))) (dict)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
