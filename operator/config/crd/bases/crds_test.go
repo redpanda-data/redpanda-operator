@@ -22,7 +22,7 @@ func TestCRDS(t *testing.T) {
 		"clusters.redpanda.vectorized.io":      {},
 		"consoles.cluster.redpanda.com":        {},
 		"consoles.redpanda.vectorized.io":      {},
-		"groups.cluster.redpanda.com":  {},
+		"groups.cluster.redpanda.com":          {},
 		"nodepools.cluster.redpanda.com":       {},
 		"redpandas.cluster.redpanda.com":       {},
 		"redpandaroles.cluster.redpanda.com":   {},
