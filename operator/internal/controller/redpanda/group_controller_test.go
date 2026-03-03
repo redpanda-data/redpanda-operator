@@ -52,7 +52,7 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 		}},
 	}
 
-	baseGroup := &redpandav1alpha2.RedpandaGroup{
+	baseGroup := &redpandav1alpha2.Group{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: metav1.NamespaceDefault,
 		},
@@ -63,7 +63,7 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 	}
 
 	for name, tt := range map[string]struct {
-		mutate            func(group *redpandav1alpha2.RedpandaGroup)
+		mutate            func(group *redpandav1alpha2.Group)
 		expectedCondition metav1.Condition
 		onlyCheckDeletion bool
 	}{
@@ -75,32 +75,32 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 			onlyCheckDeletion: true,
 		},
 		"success - without authorization": {
-			mutate: func(group *redpandav1alpha2.RedpandaGroup) {
+			mutate: func(group *redpandav1alpha2.Group) {
 				group.Spec.Authorization = nil
 			},
 			expectedCondition: environment.SyncedCondition,
 		},
 		"success - without authorization deletion cleanup": {
-			mutate: func(group *redpandav1alpha2.RedpandaGroup) {
+			mutate: func(group *redpandav1alpha2.Group) {
 				group.Spec.Authorization = nil
 			},
 			expectedCondition: environment.SyncedCondition,
 			onlyCheckDeletion: true,
 		},
 		"error - invalid cluster ref": {
-			mutate: func(group *redpandav1alpha2.RedpandaGroup) {
+			mutate: func(group *redpandav1alpha2.Group) {
 				group.Spec.ClusterSource = environment.ClusterSourceInvalidRef
 			},
 			expectedCondition: environment.InvalidClusterRefCondition,
 		},
 		"error - client error no SASL": {
-			mutate: func(group *redpandav1alpha2.RedpandaGroup) {
+			mutate: func(group *redpandav1alpha2.Group) {
 				group.Spec.ClusterSource = environment.ClusterSourceNoSASL
 			},
 			expectedCondition: environment.ClientErrorCondition,
 		},
 		"error - client error invalid credentials": {
-			mutate: func(group *redpandav1alpha2.RedpandaGroup) {
+			mutate: func(group *redpandav1alpha2.Group) {
 				group.Spec.ClusterSource = environment.ClusterSourceBadPassword
 			},
 			expectedCondition: environment.ClientErrorCondition,
@@ -263,7 +263,7 @@ func TestGroupACLConfigurations(t *testing.T) { // nolint:funlen // Comprehensiv
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			group := &redpandav1alpha2.RedpandaGroup{
+			group := &redpandav1alpha2.Group{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: metav1.NamespaceDefault,
 					Name:      "test-group-" + strconv.Itoa(int(time.Now().UnixNano())),
@@ -318,7 +318,7 @@ func TestGroupACLLifecycle(t *testing.T) {
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
-	group := &redpandav1alpha2.RedpandaGroup{
+	group := &redpandav1alpha2.Group{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: metav1.NamespaceDefault,
 			Name:      "lifecycle-group-" + strconv.Itoa(int(time.Now().UnixNano())),
@@ -538,7 +538,7 @@ func TestGroupOIDCIntegration(t *testing.T) { //nolint:funlen // End-to-end inte
 	}
 
 	setupGroup := func(t *testing.T) func(t *testing.T) {
-		group := &redpandav1alpha2.RedpandaGroup{
+		group := &redpandav1alpha2.Group{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "engineering",
 				Namespace: metav1.NamespaceDefault,
@@ -571,7 +571,7 @@ func TestGroupOIDCIntegration(t *testing.T) { //nolint:funlen // End-to-end inte
 		// Verify the group was synced successfully.
 		require.NoError(t, k8sClient.Get(ctx, key, group))
 		require.Len(t, group.Status.Conditions, 1)
-		require.Equal(t, metav1.ConditionTrue, group.Status.Conditions[0].Status, "RedpandaGroup not synced: %s", group.Status.Conditions[0].Message)
+		require.Equal(t, metav1.ConditionTrue, group.Status.Conditions[0].Status, "Group not synced: %s", group.Status.Conditions[0].Message)
 
 		// Verify ACLs were created for the Group principal.
 		syncer, err := environment.Factory.ACLs(ctx, group)
@@ -644,7 +644,7 @@ func TestGroupOIDCIntegration(t *testing.T) { //nolint:funlen // End-to-end inte
 	})
 
 	t.Run("without acls", func(t *testing.T) {
-		// Without any RedpandaGroup ACLs, the OIDC client should never gain
+		// Without any Group ACLs, the OIDC client should never gain
 		// access to any topics. Poll for 10 seconds to confirm access is
 		// consistently denied (guards against false negatives from async propagation).
 		require.Never(t, hasTopics([]string{"team-test", "secret-topic"}, []string{}), 10*time.Second, 1*time.Second, "OIDC client should never see test topics without ACLs")

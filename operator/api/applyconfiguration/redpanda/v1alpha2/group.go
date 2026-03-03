@@ -17,22 +17,22 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// RedpandaGroupApplyConfiguration represents a declarative configuration of the RedpandaGroup type for use
+// GroupApplyConfiguration represents a declarative configuration of the Group type for use
 // with apply.
-type RedpandaGroupApplyConfiguration struct {
+type GroupApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
 	Spec                             *GroupSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                           *GroupStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// RedpandaGroup constructs a declarative configuration of the RedpandaGroup type for use with
+// Group constructs a declarative configuration of the Group type for use with
 // apply.
-func RedpandaGroup(name, namespace string) *RedpandaGroupApplyConfiguration {
-	b := &RedpandaGroupApplyConfiguration{}
+func Group(name, namespace string) *GroupApplyConfiguration {
+	b := &GroupApplyConfiguration{}
 	b.WithName(name)
 	b.WithNamespace(namespace)
-	b.WithKind("RedpandaGroup")
+	b.WithKind("Group")
 	b.WithAPIVersion("cluster.redpanda.com/v1alpha2")
 	return b
 }
@@ -40,7 +40,7 @@ func RedpandaGroup(name, namespace string) *RedpandaGroupApplyConfiguration {
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithKind(value string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithKind(value string) *GroupApplyConfiguration {
 	b.TypeMetaApplyConfiguration.Kind = &value
 	return b
 }
@@ -48,7 +48,7 @@ func (b *RedpandaGroupApplyConfiguration) WithKind(value string) *RedpandaGroupA
 // WithAPIVersion sets the APIVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithAPIVersion(value string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithAPIVersion(value string) *GroupApplyConfiguration {
 	b.TypeMetaApplyConfiguration.APIVersion = &value
 	return b
 }
@@ -56,7 +56,7 @@ func (b *RedpandaGroupApplyConfiguration) WithAPIVersion(value string) *Redpanda
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithName(value string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithName(value string) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Name = &value
 	return b
@@ -65,7 +65,7 @@ func (b *RedpandaGroupApplyConfiguration) WithName(value string) *RedpandaGroupA
 // WithGenerateName sets the GenerateName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the GenerateName field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithGenerateName(value string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithGenerateName(value string) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.GenerateName = &value
 	return b
@@ -74,7 +74,7 @@ func (b *RedpandaGroupApplyConfiguration) WithGenerateName(value string) *Redpan
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithNamespace(value string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithNamespace(value string) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Namespace = &value
 	return b
@@ -83,7 +83,7 @@ func (b *RedpandaGroupApplyConfiguration) WithNamespace(value string) *RedpandaG
 // WithUID sets the UID field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UID field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithUID(value types.UID) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithUID(value types.UID) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.UID = &value
 	return b
@@ -92,7 +92,7 @@ func (b *RedpandaGroupApplyConfiguration) WithUID(value types.UID) *RedpandaGrou
 // WithResourceVersion sets the ResourceVersion field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithResourceVersion(value string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithResourceVersion(value string) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.ResourceVersion = &value
 	return b
@@ -101,7 +101,7 @@ func (b *RedpandaGroupApplyConfiguration) WithResourceVersion(value string) *Red
 // WithGeneration sets the Generation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Generation field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithGeneration(value int64) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithGeneration(value int64) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.Generation = &value
 	return b
@@ -110,7 +110,7 @@ func (b *RedpandaGroupApplyConfiguration) WithGeneration(value int64) *RedpandaG
 // WithCreationTimestamp sets the CreationTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithCreationTimestamp(value metav1.Time) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithCreationTimestamp(value metav1.Time) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
@@ -119,7 +119,7 @@ func (b *RedpandaGroupApplyConfiguration) WithCreationTimestamp(value metav1.Tim
 // WithDeletionTimestamp sets the DeletionTimestamp field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
@@ -128,7 +128,7 @@ func (b *RedpandaGroupApplyConfiguration) WithDeletionTimestamp(value metav1.Tim
 // WithDeletionGracePeriodSeconds sets the DeletionGracePeriodSeconds field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
@@ -138,7 +138,7 @@ func (b *RedpandaGroupApplyConfiguration) WithDeletionGracePeriodSeconds(value i
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *RedpandaGroupApplyConfiguration) WithLabels(entries map[string]string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithLabels(entries map[string]string) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
@@ -153,7 +153,7 @@ func (b *RedpandaGroupApplyConfiguration) WithLabels(entries map[string]string) 
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *RedpandaGroupApplyConfiguration) WithAnnotations(entries map[string]string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithAnnotations(entries map[string]string) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
 		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
@@ -167,7 +167,7 @@ func (b *RedpandaGroupApplyConfiguration) WithAnnotations(entries map[string]str
 // WithOwnerReferences adds the given value to the OwnerReferences field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the OwnerReferences field.
-func (b *RedpandaGroupApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerReferenceApplyConfiguration) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		if values[i] == nil {
@@ -181,7 +181,7 @@ func (b *RedpandaGroupApplyConfiguration) WithOwnerReferences(values ...*v1.Owne
 // WithFinalizers adds the given value to the Finalizers field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Finalizers field.
-func (b *RedpandaGroupApplyConfiguration) WithFinalizers(values ...string) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithFinalizers(values ...string) *GroupApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
 		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
@@ -189,7 +189,7 @@ func (b *RedpandaGroupApplyConfiguration) WithFinalizers(values ...string) *Redp
 	return b
 }
 
-func (b *RedpandaGroupApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
+func (b *GroupApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 	if b.ObjectMetaApplyConfiguration == nil {
 		b.ObjectMetaApplyConfiguration = &v1.ObjectMetaApplyConfiguration{}
 	}
@@ -198,7 +198,7 @@ func (b *RedpandaGroupApplyConfiguration) ensureObjectMetaApplyConfigurationExis
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithSpec(value *GroupSpecApplyConfiguration) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithSpec(value *GroupSpecApplyConfiguration) *GroupApplyConfiguration {
 	b.Spec = value
 	return b
 }
@@ -206,13 +206,13 @@ func (b *RedpandaGroupApplyConfiguration) WithSpec(value *GroupSpecApplyConfigur
 // WithStatus sets the Status field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Status field is set to the value of the last call.
-func (b *RedpandaGroupApplyConfiguration) WithStatus(value *GroupStatusApplyConfiguration) *RedpandaGroupApplyConfiguration {
+func (b *GroupApplyConfiguration) WithStatus(value *GroupStatusApplyConfiguration) *GroupApplyConfiguration {
 	b.Status = value
 	return b
 }
 
 // GetName retrieves the value of the Name field in the declarative configuration.
-func (b *RedpandaGroupApplyConfiguration) GetName() *string {
+func (b *GroupApplyConfiguration) GetName() *string {
 	b.ensureObjectMetaApplyConfigurationExists()
 	return b.ObjectMetaApplyConfiguration.Name
 }

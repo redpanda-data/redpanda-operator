@@ -465,7 +465,7 @@ func Run(
 	}
 
 	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "RedpandaGroup")
+		setupLog.Error(err, "unable to create controller", "controller", "Group")
 		return err
 	}
 

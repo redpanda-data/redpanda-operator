@@ -117,39 +117,8 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			},
 		},
 		{
-			name: "Redpanda",
-			obj: &Redpanda{
-				Spec: RedpandaSpec{
-					ClusterSpec: ptr.To(RedpandaClusterSpec{
-						Console: ptr.To(RedpandaConsole{
-							DeprecatedConfigMap:  ptr.To(ConsoleCreateObj{}),
-							DeprecatedConsole:    ptr.To(runtime.RawExtension{}),
-							DeprecatedEnterprise: ptr.To(runtime.RawExtension{}),
-							DeprecatedTests:      ptr.To(DeprecatedEnablable{}),
-						}),
-						DeprecatedFullNameOverride: "deprecated",
-						DeprecatedLicenseKey:       ptr.To("deprecated"),
-						DeprecatedLicenseSecretRef: ptr.To(LicenseSecretRef{}),
-						DeprecatedTests:            ptr.To(DeprecatedEnablable{}),
-					}),
-					DeprecatedMigration: ptr.To(DeprecatedMigration{}),
-				},
-			},
-			wantWarnings: []string{
-				"field 'spec.clusterSpec.fullNameOverride' is deprecated and set",
-				"field 'spec.clusterSpec.console.configmap' is deprecated and set",
-				"field 'spec.clusterSpec.console.console' is deprecated and set",
-				"field 'spec.clusterSpec.console.enterprise' is deprecated and set",
-				"field 'spec.clusterSpec.console.tests' is deprecated and set",
-				"field 'spec.clusterSpec.license_key' is deprecated and set",
-				"field 'spec.clusterSpec.license_secret_ref' is deprecated and set",
-				"field 'spec.clusterSpec.tests' is deprecated and set",
-				"field 'spec.migration' is deprecated and set",
-			},
-		},
-		{
-			name: "RedpandaGroup",
-			obj: &RedpandaGroup{
+			name: "Group",
+			obj: &Group{
 				Spec: GroupSpec{
 					ClusterSource: ptr.To(ClusterSource{
 						StaticConfiguration: ptr.To(StaticConfigurationSource{
@@ -218,6 +187,37 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 				"field 'spec.cluster.staticConfiguration.schemaRegistry.tls.keySecretRef' is deprecated and set",
 				"field 'spec.cluster.staticConfiguration.schemaRegistry.sasl.passwordSecretRef' is deprecated and set",
 				"field 'spec.cluster.staticConfiguration.schemaRegistry.sasl.token' is deprecated and set",
+			},
+		},
+		{
+			name: "Redpanda",
+			obj: &Redpanda{
+				Spec: RedpandaSpec{
+					ClusterSpec: ptr.To(RedpandaClusterSpec{
+						Console: ptr.To(RedpandaConsole{
+							DeprecatedConfigMap:  ptr.To(ConsoleCreateObj{}),
+							DeprecatedConsole:    ptr.To(runtime.RawExtension{}),
+							DeprecatedEnterprise: ptr.To(runtime.RawExtension{}),
+							DeprecatedTests:      ptr.To(DeprecatedEnablable{}),
+						}),
+						DeprecatedFullNameOverride: "deprecated",
+						DeprecatedLicenseKey:       ptr.To("deprecated"),
+						DeprecatedLicenseSecretRef: ptr.To(LicenseSecretRef{}),
+						DeprecatedTests:            ptr.To(DeprecatedEnablable{}),
+					}),
+					DeprecatedMigration: ptr.To(DeprecatedMigration{}),
+				},
+			},
+			wantWarnings: []string{
+				"field 'spec.clusterSpec.fullNameOverride' is deprecated and set",
+				"field 'spec.clusterSpec.console.configmap' is deprecated and set",
+				"field 'spec.clusterSpec.console.console' is deprecated and set",
+				"field 'spec.clusterSpec.console.enterprise' is deprecated and set",
+				"field 'spec.clusterSpec.console.tests' is deprecated and set",
+				"field 'spec.clusterSpec.license_key' is deprecated and set",
+				"field 'spec.clusterSpec.license_secret_ref' is deprecated and set",
+				"field 'spec.clusterSpec.tests' is deprecated and set",
+				"field 'spec.migration' is deprecated and set",
 			},
 		},
 		{

@@ -12,7 +12,7 @@ Feature: Group CRDs
     # in a cluster called "sasl". The group is granted read access to topics matching "team-".
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: RedpandaGroup
+    kind: Group
     metadata:
       name: engineering
     spec:
@@ -40,7 +40,7 @@ Feature: Group CRDs
     # The operator will ensure no ACLs exist for this group principal.
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: RedpandaGroup
+    kind: Group
     metadata:
       name: empty-group
     spec:
@@ -57,7 +57,7 @@ Feature: Group CRDs
     """
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: RedpandaGroup
+    kind: Group
     metadata:
       name: temp-group
     spec:
@@ -83,7 +83,7 @@ Feature: Group CRDs
     """
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: RedpandaGroup
+    kind: Group
     metadata:
       name: platform
     spec:
@@ -105,7 +105,7 @@ Feature: Group CRDs
     """
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: RedpandaGroup
+    kind: Group
     metadata:
       name: platform
     spec:
@@ -130,7 +130,7 @@ Feature: Group CRDs
     """
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: RedpandaGroup
+    kind: Group
     metadata:
       name: devops
     spec:
@@ -152,7 +152,7 @@ Feature: Group CRDs
     """
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
-    kind: RedpandaGroup
+    kind: Group
     metadata:
       name: devops
     spec:

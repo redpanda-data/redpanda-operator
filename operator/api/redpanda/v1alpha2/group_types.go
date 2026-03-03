@@ -16,7 +16,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
-// RedpandaGroup defines the CRD for managing ACLs for an OIDC group in Redpanda.
+// Group defines the CRD for managing ACLs for an OIDC group in Redpanda.
 // Groups are external identities sourced from OIDC identity providers via JWT token
 // claims. Unlike users, groups are not created in Redpanda — they exist externally.
 // This CRD allows the operator to manage Kafka ACLs for a group principal.
@@ -24,10 +24,10 @@ import (
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=rpg
+// +kubebuilder:resource:shortName=grp
 // +kubebuilder:printcolumn:name="Synced",type="string",JSONPath=`.status.conditions[?(@.type=="Synced")].status`
 // +kubebuilder:storageversion
-type RedpandaGroup struct {
+type Group struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -39,23 +39,23 @@ type RedpandaGroup struct {
 }
 
 var (
-	_ ClusterReferencingObject = (*RedpandaGroup)(nil)
-	_ AuthorizedObject         = (*RedpandaGroup)(nil)
+	_ ClusterReferencingObject = (*Group)(nil)
+	_ AuthorizedObject         = (*Group)(nil)
 )
 
 // GetPrincipal constructs the principal of a Group for defining ACLs.
-func (g *RedpandaGroup) GetPrincipal() string {
+func (g *Group) GetPrincipal() string {
 	return "Group:" + g.Name
 }
 
-func (g *RedpandaGroup) GetACLs() []ACLRule {
+func (g *Group) GetACLs() []ACLRule {
 	if g.Spec.Authorization == nil {
 		return nil
 	}
 	return g.Spec.Authorization.ACLs
 }
 
-func (g *RedpandaGroup) GetClusterSource() *ClusterSource {
+func (g *Group) GetClusterSource() *ClusterSource {
 	return g.Spec.ClusterSource
 }
 
@@ -88,15 +88,15 @@ type GroupStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// RedpandaGroupList contains a list of Redpanda group objects.
+// GroupList contains a list of Redpanda group objects.
 // +kubebuilder:object:root=true
-type RedpandaGroupList struct {
+type GroupList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	// Specifies a list of Redpanda group resources.
-	Items []RedpandaGroup `json:"items"`
+	Items []Group `json:"items"`
 }
 
-func (g *RedpandaGroupList) GetItems() []*RedpandaGroup {
+func (g *GroupList) GetItems() []*Group {
 	return functional.MapFn(ptr.To, g.Items)
 }

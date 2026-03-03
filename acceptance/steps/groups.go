@@ -24,7 +24,7 @@ import (
 )
 
 func groupIsSuccessfullySynced(ctx context.Context, t framework.TestingT, group string) {
-	var groupObject redpandav1alpha2.RedpandaGroup
+	var groupObject redpandav1alpha2.Group
 	require.NoError(t, t.Get(ctx, t.ResourceKey(group), &groupObject))
 
 	// make sure the resource is stable
@@ -51,7 +51,7 @@ func groupIsSuccessfullySynced(ctx context.Context, t framework.TestingT, group 
 }
 
 func iDeleteTheCRDGroup(ctx context.Context, t framework.TestingT, group string) {
-	var groupObject redpandav1alpha2.RedpandaGroup
+	var groupObject redpandav1alpha2.Group
 
 	t.Logf("Deleting group %q", group)
 	err := t.Get(ctx, t.ResourceKey(group), &groupObject)
@@ -81,7 +81,7 @@ func groupShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framewor
 	time.Sleep(5 * time.Second)
 
 	// Get the K8s group object
-	var groupObject redpandav1alpha2.RedpandaGroup
+	var groupObject redpandav1alpha2.Group
 	require.NoError(t, t.Get(ctx, t.ResourceKey(group), &groupObject))
 
 	clients := versionedClientsForCluster(ctx, version, cluster)
@@ -114,7 +114,7 @@ func groupShouldHaveACLsInCluster(ctx context.Context, t framework.TestingT, gro
 	t.Logf("Checking that group %q has ACLs in cluster %q", group, cluster)
 
 	// Get the K8s group object
-	var groupObject redpandav1alpha2.RedpandaGroup
+	var groupObject redpandav1alpha2.Group
 	require.NoError(t, t.Get(ctx, t.ResourceKey(group), &groupObject))
 
 	clients := versionedClientsForCluster(ctx, version, cluster)

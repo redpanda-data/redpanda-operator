@@ -31,11 +31,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandagroups,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandagroups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandagroups/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=Groups,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=Groups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=Groups/finalizers,verbs=update
 
-// GroupReconciler reconciles a RedpandaGroup object by managing ACLs
+// GroupReconciler reconciles a Group object by managing ACLs
 // for the group principal. Groups are external OIDC identities — the
 // operator does not create or delete group entities in Redpanda.
 type GroupReconciler struct {
@@ -45,18 +45,18 @@ type GroupReconciler struct {
 	extraOptions []kgo.Opt
 }
 
-func (r *GroupReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha2.RedpandaGroup]) client.Patch {
+func (r *GroupReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha2.Group]) client.Patch {
 	group := request.object
-	config := redpandav1alpha2ac.RedpandaGroup(group.Name, group.Namespace)
+	config := redpandav1alpha2ac.Group(group.Name, group.Namespace)
 	return kubernetes.ApplyPatch(config.WithFinalizers(FinalizerKey))
 }
 
-func (r *GroupReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaGroup]) (client.Patch, error) {
+func (r *GroupReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Group]) (client.Patch, error) {
 	group := request.object
 
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
-		config := redpandav1alpha2ac.RedpandaGroup(group.Name, group.Namespace)
+		config := redpandav1alpha2ac.Group(group.Name, group.Namespace)
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
@@ -86,7 +86,7 @@ func (r *GroupReconciler) SyncResource(ctx context.Context, request ResourceRequ
 	return createPatch(nil)
 }
 
-func (r *GroupReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaGroup]) error {
+func (r *GroupReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Group]) error {
 	request.logger.V(2).Info("Deleting group ACLs from cluster")
 
 	group := request.object
@@ -104,7 +104,7 @@ func (r *GroupReconciler) DeleteResource(ctx context.Context, request ResourceRe
 	return nil
 }
 
-func (r *GroupReconciler) aclClient(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaGroup]) (*acls.Syncer, error) {
+func (r *GroupReconciler) aclClient(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Group]) (*acls.Syncer, error) {
 	return request.factory.ACLs(ctx, request.object, r.extraOptions...)
 }
 
@@ -112,11 +112,11 @@ func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expande
 	factory := internalclient.NewFactory(mgr, expander)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
-		For(&redpandav1alpha2.RedpandaGroup{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+		For(&redpandav1alpha2.Group{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 
 	for _, clusterName := range mgr.GetClusterNames() {
 		if includeV1 {
-			enqueueV1Group, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "group_v1", clusterName, &redpandav1alpha2.RedpandaGroup{}, &redpandav1alpha2.RedpandaGroupList{})
+			enqueueV1Group, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "group_v1", clusterName, &redpandav1alpha2.Group{}, &redpandav1alpha2.GroupList{})
 			if err != nil {
 				return err
 			}
@@ -124,7 +124,7 @@ func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expande
 		}
 
 		if includeV2 {
-			enqueueV2Group, err := controller.RegisterClusterSourceIndex(ctx, mgr, "group", clusterName, &redpandav1alpha2.RedpandaGroup{}, &redpandav1alpha2.RedpandaGroupList{})
+			enqueueV2Group, err := controller.RegisterClusterSourceIndex(ctx, mgr, "group", clusterName, &redpandav1alpha2.Group{}, &redpandav1alpha2.GroupList{})
 			if err != nil {
 				return err
 			}

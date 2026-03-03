@@ -4,16 +4,16 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: redpandagroups.cluster.redpanda.com
+  name: groups.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
   names:
-    kind: RedpandaGroup
-    listKind: RedpandaGroupList
-    plural: redpandagroups
+    kind: Group
+    listKind: GroupList
+    plural: groups
     shortNames:
-    - rpg
-    singular: redpandagroup
+    - grp
+    singular: group
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -24,7 +24,7 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          RedpandaGroup defines the CRD for managing ACLs for an OIDC group in Redpanda.
+          Group defines the CRD for managing ACLs for an OIDC group in Redpanda.
           Groups are external identities sourced from OIDC identity providers via JWT token
           claims. Unlike users, groups are not created in Redpanda — they exist externally.
           This CRD allows the operator to manage Kafka ACLs for a group principal.
