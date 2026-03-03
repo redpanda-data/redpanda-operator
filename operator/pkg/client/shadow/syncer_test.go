@@ -205,9 +205,11 @@ func runShadowLinkEnabledCluster(t *testing.T, ctx context.Context, name, userna
 	}, nil)
 	require.NoError(t, err)
 
-	require.NoError(t, rpadminClient.SetLogLevel(ctx, "kafka/client", "trace", 120))
-	require.NoError(t, rpadminClient.SetLogLevel(ctx, "cluster_link", "trace", 120))
-	require.NoError(t, rpadminClient.SetLogLevel(ctx, "shadow_link_service", "trace", 120))
+	// Best-effort: enable trace logging for debugging. Logger names may
+	// vary across Redpanda versions, so failures are non-fatal.
+	_ = rpadminClient.SetLogLevel(ctx, "kafka/client", "trace", 120)
+	_ = rpadminClient.SetLogLevel(ctx, "cluster_link", "trace", 120)
+	_ = rpadminClient.SetLogLevel(ctx, "shadow_link_service", "trace", 120)
 	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(kafkaAddress), kgo.SASL(scram.Auth{
 		User: username,
 		Pass: password,
