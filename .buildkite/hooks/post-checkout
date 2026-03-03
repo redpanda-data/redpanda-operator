@@ -3,8 +3,8 @@
 # ignore errors
 set +e
 
-if [[ $BUILDKITE_AGENT_META_DATA_QUEUE == "pipeline-uploader" ]]; then
-  echo "Skipping on 'pipeline-uploader' agents"
+if [[ $BUILDKITE_AGENT_META_DATA_QUEUE == "devprod-t4gmicro" ]]; then
+  echo "Skipping on 'devprod-t4gmicro' agents"
   exit 0
 fi
 
