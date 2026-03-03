@@ -57,7 +57,7 @@ steps:
   - continue_on_failure: true
     wait: null
   - agents:
-      queue: pipeline-uploader
+      queue: devprod-t4gmicro
     allow_dependency_failure: true
     command: ""
     key: unit-parse
@@ -105,7 +105,7 @@ steps:
   - continue_on_failure: true
     wait: null
   - agents:
-      queue: pipeline-uploader
+      queue: devprod-t4gmicro
     allow_dependency_failure: true
     command: ""
     key: integration-parse
@@ -153,7 +153,7 @@ steps:
   - continue_on_failure: true
     wait: null
   - agents:
-      queue: pipeline-uploader
+      queue: devprod-t4gmicro
     allow_dependency_failure: true
     command: ""
     key: acceptance-parse
@@ -202,7 +202,7 @@ steps:
   - continue_on_failure: true
     wait: null
   - agents:
-      queue: pipeline-uploader
+      queue: devprod-t4gmicro
     allow_dependency_failure: true
     command: ""
     key: kuttl-v1-parse
@@ -247,7 +247,7 @@ steps:
   - continue_on_failure: true
     wait: null
   - agents:
-      queue: pipeline-uploader
+      queue: devprod-t4gmicro
     allow_dependency_failure: true
     command: ""
     key: kuttl-v1-nodepools-parse
