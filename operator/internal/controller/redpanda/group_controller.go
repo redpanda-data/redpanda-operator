@@ -31,9 +31,9 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=Groups,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=Groups/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=Groups/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=groups,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=groups/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=groups/finalizers,verbs=update
 
 // GroupReconciler reconciles a Group object by managing ACLs
 // for the group principal. Groups are external OIDC identities — the

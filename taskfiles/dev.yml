@@ -37,6 +37,13 @@ tasks:
     cmds:
       - ./ci/scripts/download-otel-artifacts.sh "{{.BRANCH}}" integration
 
+  download-kuttl-artifacts:
+    silent: true
+    vars:
+      BRANCH: '{{default "" .BRANCH}}'
+    cmds:
+      - ./ci/scripts/download-kuttl-artifacts.sh "{{.BRANCH}}"
+
   create-buildx-builder:
     cmds:
       - task: :dev:retry-task

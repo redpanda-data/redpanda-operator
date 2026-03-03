@@ -325,7 +325,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -341,7 +355,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -355,7 +369,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -368,20 +382,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -1055,7 +1055,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -1071,7 +1085,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -1085,7 +1099,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -1098,20 +1112,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -1593,7 +1593,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -1609,7 +1623,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -1623,7 +1637,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -1636,20 +1650,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -2350,7 +2350,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -2366,7 +2380,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -2380,7 +2394,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -2393,20 +2407,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -2908,7 +2908,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -2924,7 +2938,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -2938,7 +2952,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -2951,20 +2965,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -3651,7 +3651,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -3667,7 +3681,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -3681,7 +3695,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -3694,20 +3708,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -4353,7 +4353,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -4369,7 +4383,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -4383,7 +4397,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -4396,20 +4410,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -5299,7 +5299,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -5315,7 +5329,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -5329,7 +5343,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -5342,20 +5356,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -5942,7 +5942,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -5958,7 +5972,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -5972,7 +5986,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -5985,20 +5999,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -6686,7 +6686,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -6702,7 +6716,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -6716,7 +6730,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -6729,20 +6743,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -7228,7 +7228,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -7244,7 +7258,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -7258,7 +7272,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -7271,20 +7285,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -8010,7 +8010,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -8026,7 +8040,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -8040,7 +8054,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -8053,20 +8067,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -8640,7 +8640,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -8656,7 +8670,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -8670,7 +8684,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -8683,20 +8697,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -9468,7 +9468,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -9484,7 +9498,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -9498,7 +9512,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -9511,20 +9525,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -10131,7 +10131,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -10147,7 +10161,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -10161,7 +10175,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -10174,20 +10188,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -10890,7 +10890,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -10906,7 +10920,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -10920,7 +10934,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -10933,20 +10947,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -11435,7 +11435,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -11451,7 +11465,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -11465,7 +11479,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -11478,20 +11492,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -12184,7 +12184,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -12200,7 +12214,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -12214,7 +12228,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -12227,20 +12241,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -12731,7 +12731,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -12747,7 +12761,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -12761,7 +12775,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -12774,20 +12788,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -13513,7 +13513,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -13529,7 +13543,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -13543,7 +13557,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -13556,20 +13570,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -14058,7 +14058,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -14074,7 +14088,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -14088,7 +14102,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -14101,20 +14115,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -14644,7 +14644,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -14660,7 +14674,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -14674,7 +14688,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -14687,20 +14701,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -15203,7 +15203,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -15219,7 +15233,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -15233,7 +15247,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -15246,20 +15260,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -15958,7 +15958,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -15974,7 +15988,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -15988,7 +16002,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -16001,20 +16015,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -16679,7 +16679,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -16695,7 +16709,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -16709,7 +16723,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -16722,20 +16736,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -17639,7 +17639,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -17655,7 +17669,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -17669,7 +17683,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -17682,20 +17696,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -18193,7 +18193,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -18209,7 +18223,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -18223,7 +18237,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -18236,20 +18250,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -18827,7 +18827,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -18843,7 +18857,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -18857,7 +18871,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -18870,20 +18884,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -19360,7 +19360,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -19376,7 +19390,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -19390,7 +19404,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -19403,20 +19417,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -20117,7 +20117,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -20133,7 +20147,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -20147,7 +20161,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -20160,20 +20174,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -20670,7 +20670,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -20686,7 +20700,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -20700,7 +20714,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -20713,20 +20727,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -21420,7 +21420,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -21436,7 +21450,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -21450,7 +21464,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -21463,20 +21477,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -22332,7 +22332,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -22348,7 +22362,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -22362,7 +22376,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -22375,20 +22389,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -23297,7 +23297,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -23313,7 +23327,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -23327,7 +23341,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -23340,20 +23354,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -23851,7 +23851,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -23867,7 +23881,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -23881,7 +23895,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -23894,20 +23908,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -24640,7 +24640,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -24656,7 +24670,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -24670,7 +24684,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -24683,20 +24697,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -25343,7 +25343,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -25359,7 +25373,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -25373,7 +25387,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -25386,20 +25400,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -26249,7 +26249,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -26265,7 +26279,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -26279,7 +26293,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -26292,20 +26306,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -27164,7 +27164,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -27180,7 +27194,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -27194,7 +27208,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -27207,20 +27221,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -28063,7 +28063,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -28079,7 +28093,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -28093,7 +28107,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -28106,20 +28120,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -28768,7 +28768,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -28784,7 +28798,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -28798,7 +28812,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -28811,20 +28825,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -29913,7 +29913,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -29929,7 +29943,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -29943,7 +29957,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -29956,20 +29970,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -30466,7 +30466,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -30482,7 +30496,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -30496,7 +30510,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -30509,20 +30523,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -31228,7 +31228,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -31244,7 +31258,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -31258,7 +31272,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -31271,20 +31285,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -31948,7 +31948,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -31964,7 +31978,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -31978,7 +31992,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -31991,20 +32005,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -33017,7 +33017,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -33033,7 +33047,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -33047,7 +33061,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -33060,20 +33074,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -33914,7 +33914,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -33930,7 +33944,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -33944,7 +33958,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -33957,20 +33971,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -34864,7 +34864,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -34880,7 +34894,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -34894,7 +34908,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -34907,20 +34921,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -35828,7 +35828,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -35844,7 +35858,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -35858,7 +35872,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -35871,20 +35885,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -36805,7 +36805,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -36821,7 +36835,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -36835,7 +36849,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -36848,20 +36862,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -37369,7 +37369,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -37385,7 +37399,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -37399,7 +37413,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -37412,20 +37426,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -38331,7 +38331,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -38347,7 +38361,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -38361,7 +38375,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -38374,20 +38388,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -39044,7 +39044,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -39060,7 +39074,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -39074,7 +39088,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -39087,20 +39101,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -40035,7 +40035,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -40051,7 +40065,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -40065,7 +40079,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -40078,20 +40092,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -41270,7 +41270,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -41286,7 +41300,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -41300,7 +41314,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -41313,20 +41327,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -42416,7 +42416,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -42432,7 +42446,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -42446,7 +42460,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -42459,20 +42473,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -43080,7 +43080,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -43096,7 +43110,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -43110,7 +43124,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -43123,20 +43137,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -43861,7 +43861,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -43877,7 +43891,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -43891,7 +43905,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -43904,20 +43918,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -44568,7 +44568,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -44584,7 +44598,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -44598,7 +44612,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -44611,20 +44625,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -45782,7 +45782,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -45798,7 +45812,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -45812,7 +45826,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -45825,20 +45839,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -48049,7 +48049,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -48065,7 +48079,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -48079,7 +48093,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -48092,20 +48106,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -49365,7 +49365,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -49381,7 +49395,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -49395,7 +49409,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -49408,20 +49422,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -50874,7 +50874,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -50890,7 +50904,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -50904,7 +50918,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -50917,20 +50931,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -51930,7 +51930,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -51946,7 +51960,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -51960,7 +51974,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -51973,20 +51987,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -54165,7 +54165,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -54181,7 +54195,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -54195,7 +54209,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -54208,20 +54222,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -55460,7 +55460,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -55476,7 +55490,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -55490,7 +55504,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -55503,20 +55517,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -56123,7 +56123,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -56139,7 +56153,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -56153,7 +56167,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -56166,20 +56180,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -57455,7 +57455,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -57471,7 +57485,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -57485,7 +57499,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -57498,20 +57512,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -58782,7 +58782,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -58798,7 +58812,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -58812,7 +58826,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -58825,20 +58839,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -59828,7 +59828,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -59844,7 +59858,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -59858,7 +59872,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -59871,20 +59885,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -61239,7 +61239,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -61255,7 +61269,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -61269,7 +61283,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -61282,20 +61296,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -62523,7 +62523,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -62539,7 +62553,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -62553,7 +62567,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -62566,20 +62580,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -63207,7 +63207,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -63223,7 +63237,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -63237,7 +63251,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -63250,20 +63264,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -64303,7 +64303,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -64319,7 +64333,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -64333,7 +64347,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -64346,20 +64360,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -65155,7 +65155,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -65171,7 +65185,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -65185,7 +65199,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -65198,20 +65212,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -66493,7 +66493,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -66509,7 +66523,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -66523,7 +66537,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -66536,20 +66550,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -67156,7 +67156,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -67172,7 +67186,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -67186,7 +67200,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -67199,20 +67213,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -68395,7 +68395,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -68411,7 +68425,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -68425,7 +68439,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -68438,20 +68452,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -69061,7 +69061,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -69077,7 +69091,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -69091,7 +69105,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -69104,20 +69118,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -69834,7 +69834,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -69850,7 +69864,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -69864,7 +69878,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -69877,20 +69891,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -70463,7 +70463,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -70479,7 +70493,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -70493,7 +70507,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -70506,20 +70520,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -71236,7 +71236,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -71252,7 +71266,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -71266,7 +71280,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -71279,20 +71293,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -71864,7 +71864,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -71880,7 +71894,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -71894,7 +71908,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -71907,20 +71921,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -72593,7 +72593,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -72609,7 +72623,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -72623,7 +72637,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -72636,20 +72650,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -73131,7 +73131,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -73147,7 +73161,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -73161,7 +73175,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -73174,20 +73188,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -73877,7 +73877,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -73893,7 +73907,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -73907,7 +73921,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -73920,20 +73934,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -74415,7 +74415,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -74431,7 +74445,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -74445,7 +74459,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -74458,20 +74472,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -75144,7 +75144,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -75160,7 +75174,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -75174,7 +75188,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -75187,20 +75201,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -75682,7 +75682,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -75698,7 +75712,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -75712,7 +75726,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -75725,20 +75739,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -76411,7 +76411,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -76427,7 +76441,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -76441,7 +76455,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -76454,20 +76468,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -76949,7 +76949,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -76965,7 +76979,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -76979,7 +76993,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -76992,20 +77006,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -77686,7 +77686,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -77702,7 +77716,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -77716,7 +77730,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -77729,20 +77743,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -78224,7 +78224,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -78240,7 +78254,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -78254,7 +78268,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -78267,20 +78281,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -78961,7 +78961,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -78977,7 +78991,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -78991,7 +79005,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -79004,20 +79018,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -79509,7 +79509,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -79525,7 +79539,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -79539,7 +79553,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -79552,20 +79566,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -80312,7 +80312,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -80328,7 +80342,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -80342,7 +80356,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -80355,20 +80369,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -80941,7 +80941,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -80957,7 +80971,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -80971,7 +80985,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -80984,20 +80998,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -81801,7 +81801,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -81817,7 +81831,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -81831,7 +81845,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -81844,20 +81858,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -82339,7 +82339,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -82355,7 +82369,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -82369,7 +82383,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -82382,20 +82396,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -83075,7 +83075,21 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
+  - consoles
+  - nodepools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -83091,7 +83105,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -83105,7 +83119,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -83118,20 +83132,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  - nodepools
-  - redpandas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:

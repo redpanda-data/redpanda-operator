@@ -145,14 +145,12 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups
-  - redpandaroles
-  - schemas
-  - shadowlinks
-  - stretchclusters
-  - topics
-  - users
+  - consoles
+  - nodepools
+  - redpandas
   verbs:
+  - create
+  - delete
   - get
   - list
   - patch
@@ -161,22 +159,8 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - Groups/finalizers
-  - nodepools/finalizers
-  - redpandaroles/finalizers
-  - redpandas/finalizers
-  - schemas/finalizers
-  - shadowlinks/finalizers
-  - stretchclusters/finalizers
-  - topics/finalizers
-  - users/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - Groups/status
   - consoles/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -192,17 +176,33 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - consoles
-  - nodepools
-  - redpandas
+  - groups
+  - redpandaroles
+  - schemas
+  - shadowlinks
+  - stretchclusters
+  - topics
+  - users
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/finalizers
+  - nodepools/finalizers
+  - redpandaroles/finalizers
+  - redpandas/finalizers
+  - schemas/finalizers
+  - shadowlinks/finalizers
+  - stretchclusters/finalizers
+  - topics/finalizers
+  - users/finalizers
+  verbs:
+  - update
 - apiGroups:
   - coordination.k8s.io
   resources:
