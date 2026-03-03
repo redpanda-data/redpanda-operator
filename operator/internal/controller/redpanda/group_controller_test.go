@@ -16,7 +16,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl/oauth"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -470,5 +473,180 @@ func TestGroupACLLifecycle(t *testing.T) {
 		_, err = environment.Reconciler.Reconcile(ctx, req)
 		require.NoError(t, err)
 		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, group)))
+	})
+}
+
+func TestGroupOIDCIntegration(t *testing.T) { //nolint:funlen // End-to-end integration test.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
+	defer cancel()
+
+	oidcConfig := OIDCConfig{
+		Email:        "testuser@example.com",
+		Password:     "password",
+		Groups:       []string{"engineering"},
+		ClientID:     "redpanda",
+		ClientSecret: "redpanda-secret",
+		Scopes:       "openid groups email",
+	}
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &GroupReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	}, WithOIDC(oidcConfig))
+
+	// initial test setup
+	{
+		// Create test topics as superuser.
+		superuserClient, err := kgo.NewClient(
+			kgo.SeedBrokers(environment.KafkaURL),
+			kgo.SASL(scram.Auth{User: "superuser", Pass: "password"}.AsSha256Mechanism()),
+		)
+		require.NoError(t, err)
+		defer superuserClient.Close()
+
+		superuserAdmin := kadm.NewClient(superuserClient)
+
+		// "team-test" will be the authorized topic; "secret-topic" will be unauthorized.
+		_, err = superuserAdmin.CreateTopic(ctx, 1, 1, nil, "team-test")
+		require.NoError(t, err)
+		_, err = superuserAdmin.CreateTopic(ctx, 1, 1, nil, "secret-topic")
+		require.NoError(t, err)
+
+		// Seed "team-test" with a message so we can verify consume access later.
+		produceResults := superuserClient.ProduceSync(ctx, &kgo.Record{
+			Topic: "team-test",
+			Value: []byte("hello from superuser"),
+		})
+		require.NoError(t, produceResults.FirstErr())
+	}
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+	// Obtain a JWT from Dex for a user in the "engineering" group.
+	idToken := environment.FetchOIDCToken(t)
+	newOIDCClient := func(t *testing.T) (*kgo.Client, *kadm.Client) {
+		t.Helper()
+		cl, err := kgo.NewClient(
+			kgo.SeedBrokers(environment.KafkaURL),
+			kgo.SASL(oauth.Auth{Token: idToken}.AsMechanism()),
+			kgo.RecordRetries(0),
+			kgo.RetryTimeout(5*time.Second),
+		)
+		require.NoError(t, err)
+		t.Cleanup(cl.Close)
+		return cl, kadm.NewClient(cl)
+	}
+
+	setupGroup := func(t *testing.T) func(t *testing.T) {
+		group := &redpandav1alpha2.RedpandaGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "engineering",
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: redpandav1alpha2.GroupSpec{
+				ClusterSource: environment.ClusterSourceValid,
+				Authorization: &redpandav1alpha2.GroupAuthorizationSpec{
+					ACLs: []redpandav1alpha2.ACLRule{{
+						Type: redpandav1alpha2.ACLTypeAllow,
+						Resource: redpandav1alpha2.ACLResourceSpec{
+							Type: redpandav1alpha2.ResourceTypeTopic,
+							Name: "team-test",
+						},
+						Operations: []redpandav1alpha2.ACLOperation{
+							redpandav1alpha2.ACLOperationRead,
+							redpandav1alpha2.ACLOperationDescribe,
+						},
+					}},
+				},
+			},
+		}
+
+		key := client.ObjectKeyFromObject(group)
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+		require.NoError(t, k8sClient.Create(ctx, group))
+		_, err := environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		// Verify the group was synced successfully.
+		require.NoError(t, k8sClient.Get(ctx, key, group))
+		require.Len(t, group.Status.Conditions, 1)
+		require.Equal(t, metav1.ConditionTrue, group.Status.Conditions[0].Status, "RedpandaGroup not synced: %s", group.Status.Conditions[0].Message)
+
+		// Verify ACLs were created for the Group principal.
+		syncer, err := environment.Factory.ACLs(ctx, group)
+		require.NoError(t, err)
+		defer syncer.Close()
+
+		acls, err := syncer.ListACLs(ctx, group.GetPrincipal())
+		require.NoError(t, err)
+		require.Len(t, acls, 2, "expected 2 ACLs (Read + Describe) for Group:engineering")
+
+		return func(t *testing.T) {
+			// delete the group and verify ACLs are removed.
+			require.NoError(t, k8sClient.Delete(ctx, group))
+			_, err = environment.Reconciler.Reconcile(ctx, req)
+			require.NoError(t, err)
+			require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, group)))
+
+			// Create a fresh syncer — the one from setupGroup may have a stale connection.
+			cleanupSyncer, err := environment.Factory.ACLs(ctx, group)
+			require.NoError(t, err)
+			defer cleanupSyncer.Close()
+
+			acls, err := cleanupSyncer.ListACLs(ctx, group.GetPrincipal())
+			require.NoError(t, err)
+			require.Len(t, acls, 0, "ACLs should be removed after group deletion")
+		}
+	}
+
+	hasTopics := func(want []string, missing []string) func() bool {
+		return func() bool {
+			_, admin := newOIDCClient(t)
+			topics, err := admin.ListTopics(ctx)
+			if err != nil {
+				return false
+			}
+			for _, topic := range want {
+				if _, ok := topics[topic]; !ok {
+					return false
+				}
+			}
+			for _, topic := range missing {
+				if _, ok := topics[topic]; ok {
+					return false
+				}
+			}
+			return true
+		}
+	}
+
+	t.Run("with acls", func(t *testing.T) {
+		cleanup := setupGroup(t)
+		defer cleanup(t)
+
+		// Check Authorized topics.
+		require.Eventually(t, hasTopics([]string{"team-test"}, []string{"secret-topic"}), 10*time.Second, 1*time.Second, "OIDC client should eventually see 'team-test' once Redpanda finishes OIDC key sync")
+
+		// DENIED
+
+		// Produce to authorized topic (no Write ACL).
+		oidcClient, oidcAdmin := newOIDCClient(t)
+		produceResults := oidcClient.ProduceSync(ctx, &kgo.Record{
+			Topic: "team-test",
+			Value: []byte("unauthorized write attempt"),
+		})
+		require.Error(t, produceResults.FirstErr(), "producing to 'team-test' should fail (Write not in Group:engineering ACL)")
+
+		// Create topic (no Cluster-level Create ACL).
+		_, err = oidcAdmin.CreateTopic(ctx, 1, 1, nil, "oidc-created-topic")
+		require.Error(t, err, "creating a topic should fail (no Create ACL for Group:engineering)")
+	})
+
+	t.Run("without acls", func(t *testing.T) {
+		// Without any RedpandaGroup ACLs, the OIDC client should never gain
+		// access to any topics. Poll for 10 seconds to confirm access is
+		// consistently denied (guards against false negatives from async propagation).
+		require.Never(t, hasTopics([]string{"team-test", "secret-topic"}, []string{}), 10*time.Second, 1*time.Second, "OIDC client should never see test topics without ACLs")
 	})
 }
