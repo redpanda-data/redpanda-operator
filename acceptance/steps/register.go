@@ -55,7 +55,7 @@ func init() {
 	// Group scenario steps
 	framework.RegisterStep(`^group "([^"]*)" is successfully synced$`, groupIsSuccessfullySynced)
 	framework.RegisterStep(`^I delete the CRD group "([^"]*)"$`, iDeleteTheCRDGroup)
-	framework.RegisterStep(`^group "([^"]*)" should have ACLs for topic pattern "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, groupShouldHaveACLsForTopicPatternInCluster)
+	framework.RegisterStep(`^group "([^"]*)" should have (\d+) ACLs for topic pattern "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, groupShouldHaveNACLsForTopicPatternInCluster)
 	framework.RegisterStep(`^group "([^"]*)" should have ACLs in( vectorized)? cluster "([^"]*)"$`, groupShouldHaveACLsInCluster)
 	framework.RegisterStep(`^there should be no ACLs for group "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldBeNoACLsForGroupInCluster)
 

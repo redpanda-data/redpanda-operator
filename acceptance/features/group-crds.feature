@@ -30,7 +30,7 @@ Feature: Group CRDs
 # end::manage-group-acls[]
     """
     And group "engineering" is successfully synced
-    Then group "engineering" should have ACLs for topic pattern "team-" in cluster "sasl"
+    Then group "engineering" should have 2 ACLs for topic pattern "team-" in cluster "sasl"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage group without authorization
@@ -100,7 +100,7 @@ Feature: Group CRDs
             operations: [Read]
     """
     And group "platform" is successfully synced
-    Then group "platform" should have ACLs for topic pattern "platform-" in cluster "sasl"
+    Then group "platform" should have 1 ACLs for topic pattern "platform-" in cluster "sasl"
     When I apply Kubernetes manifest:
     """
     ---
@@ -122,7 +122,7 @@ Feature: Group CRDs
             operations: [Read, Write, Describe]
     """
     And group "platform" is successfully synced
-    Then group "platform" should have ACLs for topic pattern "platform-" in cluster "sasl"
+    Then group "platform" should have 3 ACLs for topic pattern "platform-" in cluster "sasl"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Remove group authorization
@@ -147,7 +147,7 @@ Feature: Group CRDs
             operations: [Read]
     """
     And group "devops" is successfully synced
-    Then group "devops" should have ACLs for topic pattern "devops-" in cluster "sasl"
+    Then group "devops" should have 1 ACLs for topic pattern "devops-" in cluster "sasl"
     When I apply Kubernetes manifest:
     """
     ---

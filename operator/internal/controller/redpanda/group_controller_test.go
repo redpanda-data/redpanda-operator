@@ -65,27 +65,15 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 	for name, tt := range map[string]struct {
 		mutate            func(group *redpandav1alpha2.Group)
 		expectedCondition metav1.Condition
-		onlyCheckDeletion bool
 	}{
 		"success - with authorization": {
 			expectedCondition: environment.SyncedCondition,
-		},
-		"success - with authorization deletion cleanup": {
-			expectedCondition: environment.SyncedCondition,
-			onlyCheckDeletion: true,
 		},
 		"success - without authorization": {
 			mutate: func(group *redpandav1alpha2.Group) {
 				group.Spec.Authorization = nil
 			},
 			expectedCondition: environment.SyncedCondition,
-		},
-		"success - without authorization deletion cleanup": {
-			mutate: func(group *redpandav1alpha2.Group) {
-				group.Spec.Authorization = nil
-			},
-			expectedCondition: environment.SyncedCondition,
-			onlyCheckDeletion: true,
 		},
 		"error - invalid cluster ref": {
 			mutate: func(group *redpandav1alpha2.Group) {
@@ -131,7 +119,7 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 			require.Equal(t, tt.expectedCondition.Status, group.Status.Conditions[0].Status)
 			require.Equal(t, tt.expectedCondition.Reason, group.Status.Conditions[0].Reason)
 
-			if tt.expectedCondition.Status == metav1.ConditionTrue { //nolint:nestif // ignore
+			if tt.expectedCondition.Status == metav1.ConditionTrue {
 				syncer, err := environment.Factory.ACLs(ctx, group)
 				require.NoError(t, err)
 				defer syncer.Close()
@@ -148,21 +136,19 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 					require.Len(t, acls, 0)
 				}
 
-				if !tt.onlyCheckDeletion {
-					if group.Spec.Authorization != nil {
-						// now clear out authorization and re-check
-						group.Spec.Authorization = nil
-						require.NoError(t, k8sClient.Update(ctx, group))
-						_, err = environment.Reconciler.Reconcile(ctx, req)
-						require.NoError(t, err)
-						require.NoError(t, k8sClient.Get(ctx, key, group))
-					}
-
-					// make sure we no longer have ACLs
-					acls, err := syncer.ListACLs(ctx, group.GetPrincipal())
+				if group.Spec.Authorization != nil {
+					// clear out authorization and verify ACLs are removed
+					group.Spec.Authorization = nil
+					require.NoError(t, k8sClient.Update(ctx, group))
+					_, err = environment.Reconciler.Reconcile(ctx, req)
 					require.NoError(t, err)
-					require.Len(t, acls, 0)
+					require.NoError(t, k8sClient.Get(ctx, key, group))
 				}
+
+				// make sure we no longer have ACLs
+				acls, err := syncer.ListACLs(ctx, group.GetPrincipal())
+				require.NoError(t, err)
+				require.Len(t, acls, 0)
 
 				// clean up and make sure we properly delete everything
 				require.NoError(t, k8sClient.Delete(ctx, group))
@@ -171,7 +157,7 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 				require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, group)))
 
 				// make sure we no longer have ACLs
-				acls, err := syncer.ListACLs(ctx, group.GetPrincipal())
+				acls, err = syncer.ListACLs(ctx, group.GetPrincipal())
 				require.NoError(t, err)
 				require.Len(t, acls, 0)
 

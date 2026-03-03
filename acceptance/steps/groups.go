@@ -74,13 +74,9 @@ func iDeleteTheCRDGroup(ctx context.Context, t framework.TestingT, group string)
 	}, 60*time.Second, 2*time.Second, "Group %q should be fully deleted", group)
 }
 
-func groupShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework.TestingT, group, pattern, version, cluster string) {
-	t.Logf("Checking ACLs for group %q in cluster %q", group, cluster)
+func groupShouldHaveNACLsForTopicPatternInCluster(ctx context.Context, t framework.TestingT, group string, count int, pattern, version, cluster string) {
+	t.Logf("Checking that group %q has %d ACLs for topic pattern %q in cluster %q", group, count, pattern, cluster)
 
-	// Add a small delay to ensure cluster is fully ready
-	time.Sleep(5 * time.Second)
-
-	// Get the K8s group object
 	var groupObject redpandav1alpha2.Group
 	require.NoError(t, t.Get(ctx, t.ResourceKey(group), &groupObject))
 
@@ -88,26 +84,21 @@ func groupShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framewor
 	aclClient := clients.ACLs(ctx)
 	defer aclClient.Close()
 
-	// List ACLs for the group principal
 	principal := groupObject.GetPrincipal()
-	t.Logf("Listing ACLs for group %q principal %q", group, principal)
 	rules, err := aclClient.ListACLs(ctx, principal)
 	if err != nil {
 		t.Fatalf("Failed to list ACLs for group %q (principal %q): %v", group, principal, err)
 	}
-	require.NotEmpty(t, rules, "Group %q should have ACLs", group)
 
-	// Check for topic pattern ACL
-	found := false
+	var matched int
 	for _, rule := range rules {
 		if rule.Resource.Type == redpandav1alpha2.ResourceTypeTopic &&
 			rule.Resource.Name == pattern &&
 			ptr.Deref(rule.Resource.PatternType, redpandav1alpha2.PatternTypeLiteral) == redpandav1alpha2.PatternTypePrefixed {
-			found = true
-			break
+			matched++
 		}
 	}
-	require.True(t, found, "Group %q should have ACL for topic pattern %q", group, pattern)
+	require.Equal(t, count, matched, "Group %q should have %d ACLs for topic pattern %q, got %d", group, count, pattern, matched)
 }
 
 func groupShouldHaveACLsInCluster(ctx context.Context, t framework.TestingT, group, version, cluster string) {
