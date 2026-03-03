@@ -44,6 +44,13 @@ for cl in $(kubectl -n $script_namespace get cluster --output=jsonpath='{.items.
   done
 done
 
+# Dump operator controller-manager logs
+for pod in $(kubectl -n $script_namespace get pods -l control-plane=controller-manager --output=jsonpath='{.items..metadata.name}'); do
+  kubectl -n $script_namespace logs $pod --all-containers >$ARTIFACTS_PATH/operator-logs-$pod.txt || true
+  kubectl -n $script_namespace logs $pod --all-containers -p >$ARTIFACTS_PATH/operator-logs-previous-$pod.txt || true
+done
+kubectl -n $script_namespace describe deploy controller-manager >$ARTIFACTS_PATH/operator-deployment.txt || true
+
 kubectl get -n $script_namespace certificates -o yaml >$ARTIFACTS_PATH/certificates.yaml
 kubectl get -n $script_namespace certificatesigningrequests -o yaml >$ARTIFACTS_PATH/certificatesigningrequests.yaml
 kubectl get -n $script_namespace issuers -o yaml >$ARTIFACTS_PATH/issuers.yaml
