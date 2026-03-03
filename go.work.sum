@@ -24,6 +24,7 @@ buf.build/gen/go/redpandadata/common/connectrpc/go v1.16.2-20240508150812-e0d0fb
 buf.build/gen/go/redpandadata/common/connectrpc/go v1.18.1-20240917150400-3f349e63f44a.1 h1:EPRfGAJDTnM3J3MPGMPEs+HBezpiE/8lTWB3kdlQTGI=
 buf.build/gen/go/redpandadata/common/connectrpc/go v1.18.1-20240917150400-3f349e63f44a.1/go.mod h1:ZNgPT3k1W0p+EkMibCzOqoHOhNDi1ym6RH7/kGEHeKE=
 buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.34.2-20240715174743-9c0afe867874.2/go.mod h1:wThyg02xJx4K/DA5fg0QlKts8XVPyTT86JC8hPfEzno=
+buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.10-20260217173213-e6e10c02e902.1/go.mod h1:QenSPzqxZpyo9hHIpRzTetvDchelVDzimnmaggHKenc=
 buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.16.2-20240620104934-3415ce922cfb.1/go.mod h1:R0DNyd3sxZqaTQrcjSgGaJqHndFCf3kKHBbXgKYzKDY=
 buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.34.2-20240620104934-3415ce922cfb.2/go.mod h1:AcLjVYZHtwlZvBrjuqyjtZtHv9BbDaHD6C92lO/gJFI=
 buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.36.2-20250404200318-65f29ddd7b29.1/go.mod h1:zTNjffbkXs9K5/sbSlagide7l0hSTs+Oa1j39yENO8M=
@@ -2489,6 +2490,7 @@ github.com/redpanda-data/common-go/api v0.0.0-20250701102610-07660e078862/go.mod
 github.com/redpanda-data/common-go/api v0.0.0-20251118002524-720a3c2f5569 h1:BEoWWptXOLTozgptV9jUd2CJDFy9+R0dmdGv9Gr32dw=
 github.com/redpanda-data/common-go/api v0.0.0-20251118002524-720a3c2f5569/go.mod h1:klAmWfc8Q3hEZk8geFTMu6f2sk3VUKRS7cv/LvB05ig=
 github.com/redpanda-data/common-go/kube v0.0.0-20260116214328-0862a76e8f5e/go.mod h1:Ye/yB6LyJWUe0FkA6HCUOEflk4N+a4ycrw0J0Mrt0Es=
+github.com/redpanda-data/common-go/net v0.1.0/go.mod h1:iOdNkjxM7a1T8F3cYHTaKIPFCHzzp/ia6TN+Z+7Tt5w=
 github.com/redpanda-data/common-go/proto v0.0.0-20250422172326-6a3bcb14b829 h1:fx1Z+t/fa0vd7kAblgCrdYRW3QHc3svYiVnO1DadS94=
 github.com/redpanda-data/common-go/proto v0.0.0-20250422172326-6a3bcb14b829/go.mod h1:6WXvgZCZIkbQCNsvU5zTx/+ub5eXTuCcl90i5xkhMw0=
 github.com/redpanda-data/common-go/rpadmin v0.1.14-0.20250425125657-8ab73f3ad62e/go.mod h1:zgE/M2UihQZRdivHfbm4x9Rb3Vm/crO5kiX3GQrxhG4=
@@ -3128,6 +3130,7 @@ golang.org/x/mod v0.25.0/go.mod h1:IXM97Txy2VM4PJ3gI61r1YEk/gAj6zAHN3AdZt6S9Ww=
 golang.org/x/mod v0.26.0/go.mod h1:/j6NAhSk8iQ723BGAUyoAcn7SlD7s15Dp9Nd/SfeaFQ=
 golang.org/x/mod v0.27.0/go.mod h1:rWI627Fq0DEoudcK+MBkNkCe0EetEaDSwJJkCcjpazc=
 golang.org/x/mod v0.29.0/go.mod h1:NyhrlYXJ2H4eJiRy/WDBO6HMqZQ6q9nk4JzS3NuCK+w=
+golang.org/x/mod v0.31.0/go.mod h1:43JraMp9cGx1Rx3AqioxrbrhNsLl2l/iNAvuBkrezpg=
 golang.org/x/mod v0.32.0/go.mod h1:SgipZ/3h2Ci89DlEtEXWUk/HteuRin+HHhN+WbNhguU=
 golang.org/x/net v0.0.0-20180724234803-3673e40ba225/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20180906233101-161cd47e91fd/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
@@ -3526,6 +3529,7 @@ golang.org/x/tools v0.33.0/go.mod h1:CIJMaWEY88juyUfo7UbgPqbC8rU2OqfAV1h2Qp0oMYI
 golang.org/x/tools v0.35.0/go.mod h1:NKdj5HkL/73byiZSJjqJgKn3ep7KjFkBOkR/Hps3VPw=
 golang.org/x/tools v0.36.0/go.mod h1:WBDiHKJK8YgLHlcQPYQzNCkUxUypCaa5ZegCVutKm+s=
 golang.org/x/tools v0.38.0/go.mod h1:yEsQ/d/YK8cjh0L6rZlY8tgtlKiBNTL14pGDJPJpYQs=
+golang.org/x/tools v0.40.0/go.mod h1:Ik/tzLRlbscWpqqMRjyWYDisX8bG13FrdXp3o4Sr9lc=
 golang.org/x/tools v0.41.0/go.mod h1:XSY6eDqxVNiYgezAVqqCeihT4j1U2CCsqvH3WhQpnlg=
 golang.org/x/tools/go/expect v0.1.0-deprecated/go.mod h1:eihoPOH+FgIqa3FpoTwguz/bVUSGBlGQU67vpBeOrBY=
 golang.org/x/tools/go/expect v0.1.1-deprecated h1:jpBZDwmgPhXsKZC6WhL20P4b/wmnpsEAGHaNy0n/rJM=

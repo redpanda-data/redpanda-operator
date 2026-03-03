@@ -25,6 +25,7 @@ func TestCRDS(t *testing.T) {
 		"nodepools.cluster.redpanda.com":       {},
 		"redpandas.cluster.redpanda.com":       {},
 		"redpandaroles.cluster.redpanda.com":   {},
+		"redpandagroups.cluster.redpanda.com":  {},
 		"schemas.cluster.redpanda.com":         {},
 		"shadowlinks.cluster.redpanda.com":     {},
 		"stretchclusters.cluster.redpanda.com": {},

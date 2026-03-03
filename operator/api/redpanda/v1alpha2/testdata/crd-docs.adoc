@@ -15,6 +15,7 @@
 .Resource Types
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandagroup[$$RedpandaGroup$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlink[$$ShadowLink$$]
@@ -165,6 +166,7 @@ Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupauthorizationspec[$$GroupAuthorizationSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthorizationspec[$$UserAuthorizationSpec$$]
 ****
@@ -618,6 +620,7 @@ ClusterSource defines how to connect to a particular Redpanda cluster.
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
@@ -1313,6 +1316,76 @@ FilterType specifies the type, either include or exclude of a consumer group fil
 | *`expectedFS`* __string__ |  |  | 
 | *`extraVolumeMounts`* __string__ | Adds extra volume mounts. + |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies the resource requirements. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupauthorizationspec"]
+==== GroupAuthorizationSpec
+
+
+
+GroupAuthorizationSpec defines authorization rules for this group.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`acls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclrule[$$ACLRule$$] array__ | List of ACL rules which should be applied to this group. + |  | MaxItems: 1024 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec"]
+==== GroupSpec
+
+
+
+GroupSpec defines the configuration of a Redpanda group.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandagroup[$$RedpandaGroup$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the group's ACLs should be managed. +
+It is used in constructing the client created to configure a cluster. + |  | Required: \{} +
+
+| *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupauthorizationspec[$$GroupAuthorizationSpec$$]__ | Authorization rules defined for this group. The operator always manages ACLs +
+for the group principal. When omitted or empty, any existing ACLs for this +
+group are removed. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupstatus"]
+==== GroupStatus
+
+
+
+GroupStatus defines the observed state of a Redpanda group.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandagroup[$$RedpandaGroup$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda group. + |  | 
 |===
 
 
@@ -2654,6 +2727,44 @@ Please consider use Enterprise in RedpandaClusterSpec type. +
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandagroup"]
+==== RedpandaGroup
+
+
+
+RedpandaGroup defines the CRD for managing ACLs for an OIDC group in Redpanda.
+Groups are external identities sourced from OIDC identity providers via JWT token
+claims. Unlike users, groups are not created in Redpanda — they exist externally.
+This CRD allows the operator to manage Kafka ACLs for a group principal.
+Group-based authorization must be enabled in Redpanda (enterprise feature).
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `RedpandaGroup` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]__ | Defines the desired state of the Redpanda group. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupstatus[$$GroupStatus$$]__ | Represents the current status of the Redpanda group. + | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:Pending status:Unknown type:Synced]] } | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage"]
 ==== RedpandaImage
 
@@ -3000,8 +3111,10 @@ RoleSpec defines the configuration of a Redpanda role.
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the role should be created. +
 It is used in constructing the client created to configure a cluster. + |  | Required: \{} +
 
-| *`principals`* __string array__ | Principals defines the list of users assigned to this role. +
-Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. + |  | MaxItems: 1024 +
+| *`principals`* __string array__ | Principals defines the list of users or groups assigned to this role. +
+Format: Type:Name (e.g., User:john, Group:engineering). If type is omitted, defaults to User. +
+Supported principal types are User and Group. Group principals correspond to +
+OIDC identity provider groups and require group-based authorization to be enabled in Redpanda. + |  | MaxItems: 1024 +
 
 | *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-roleauthorizationspec[$$RoleAuthorizationSpec$$]__ | Authorization rules defined for this role. If specified, the operator will manage ACLs for this role. +
 If omitted, ACLs should be managed separately using Redpanda's ACL management. + |  | 

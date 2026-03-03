@@ -36,8 +36,8 @@ require (
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.36.10-20221127060915-a1ecdc58eccd.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.10-20251106193941-bb850a944663.1 // indirect
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20251111205446-9c61b5cb371f.2 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20260217173213-e6e10c02e902.2 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260217173213-e6e10c02e902.1 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go/auth v0.16.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
@@ -216,7 +216,7 @@ require (
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
-	github.com/redpanda-data/common-go/rpadmin v0.2.0 // indirect
+	github.com/redpanda-data/common-go/rpadmin v0.2.1-0.20260303144042-e901a764ea09 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186 // indirect
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a // indirect

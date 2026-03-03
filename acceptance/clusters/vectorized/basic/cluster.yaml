@@ -6,13 +6,15 @@ spec:
   image: ${DEFAULT_REDPANDA_REPO}
   version: ${DEFAULT_REDPANDA_TAG}
   replicas: 1
+  # 512Mi is required for v26.1+ brokers which OOM during startup with 256Mi,
+  # even in developer mode.
   resources:
     requests:
       cpu: "100m"
-      memory: 256Mi
+      memory: 512Mi
     limits:
       cpu: "100m"
-      memory: 256Mi
+      memory: 512Mi
   configuration:
     rpcServer:
       port: 33145

@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Adds group-based access control (GBAC) support to the Kubernetes operator both as a standalone RedpandaGroup CRD and allowing for Role-based principal binding.
+time: 2026-03-03T11:19:44.718134-05:00

@@ -6,7 +6,7 @@ require (
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.67.5
 	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a
-	github.com/redpanda-data/common-go/rpadmin v0.2.0
+	github.com/redpanda-data/common-go/rpadmin v0.2.1-0.20260303144042-e901a764ea09
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
@@ -27,8 +27,8 @@ require (
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.36.10-20221127060915-a1ecdc58eccd.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.10-20251106193941-bb850a944663.1 // indirect
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20251111205446-9c61b5cb371f.2 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20260217173213-e6e10c02e902.2 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260217173213-e6e10c02e902.1 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go/auth v0.16.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect

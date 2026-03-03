@@ -3,7 +3,7 @@ module github.com/redpanda-data/redpanda-operator/operator
 go 1.26.0
 
 require (
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260217173213-e6e10c02e902.1
 	connectrpc.com/connect v1.19.1
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -30,7 +30,7 @@ require (
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1
-	github.com/redpanda-data/common-go/rpadmin v0.2.0
+	github.com/redpanda-data/common-go/rpadmin v0.2.1-0.20260303144042-e901a764ea09
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.3.1
@@ -77,7 +77,7 @@ require (
 	buf.build/gen/go/redpandadata/cloud/connectrpc/go v1.18.1-20250616170632-3de895655308.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.10-20251106193941-bb850a944663.1 // indirect
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20251111205446-9c61b5cb371f.2 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20260217173213-e6e10c02e902.2 // indirect
 	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.18.1-20250404200318-65f29ddd7b29.1 // indirect
 	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.36.5-20250404200318-65f29ddd7b29.1 // indirect
 	buf.build/gen/go/redpandadata/gatekeeper/connectrpc/go v1.18.1-20241209180130-05cf059c71c1.1 // indirect

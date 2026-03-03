@@ -23,8 +23,8 @@ require (
 )
 
 require (
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20251111205446-9c61b5cb371f.2 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260108182238-df92733e0119.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.1-20260217173213-e6e10c02e902.2 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260217173213-e6e10c02e902.1 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go/auth v0.16.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
@@ -194,7 +194,7 @@ require (
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
-	github.com/redpanda-data/common-go/rpadmin v0.2.0 // indirect
+	github.com/redpanda-data/common-go/rpadmin v0.2.1-0.20260303144042-e901a764ea09 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect

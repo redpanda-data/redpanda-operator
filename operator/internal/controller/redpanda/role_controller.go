@@ -44,6 +44,8 @@ type RoleReconciler struct {
 	// to change the way the underlying clients
 	// function, i.e. setting low timeouts
 	extraOptions []kgo.Opt
+	// rolesOptions configures the roles client, e.g. roles.WithV2Disabled()
+	rolesOptions []roles.Option
 }
 
 // isRoleRename returns true if a role rename operation is needed.
@@ -249,7 +251,7 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 
 func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (*roles.Client, *acls.Syncer, bool, error) {
 	role := request.object
-	rolesClient, err := request.factory.Roles(ctx, role)
+	rolesClient, err := request.factory.Roles(ctx, role, r.rolesOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
