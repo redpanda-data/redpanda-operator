@@ -314,6 +314,16 @@ func TestRoleValidation(t *testing.T) {
 				role.Spec.Principals = []string{"john", "jane"}
 			},
 		},
+		"principals - group principals": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.Principals = []string{"Group:engineering", "Group:platform"}
+			},
+		},
+		"principals - mixed user and group principals": {
+			mutate: func(role *RedpandaRole) {
+				role.Spec.Principals = []string{"User:john", "Group:engineering"}
+			},
+		},
 		// authorization (optional)
 		"authorization topic": {
 			mutate: func(role *RedpandaRole) {

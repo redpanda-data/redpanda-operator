@@ -52,6 +52,13 @@ func init() {
 	framework.RegisterStep(`^"([^"]*)" should exist and be able to authenticate to the( vectorized)? "([^"]*)" cluster$`, shouldExistAndBeAbleToAuthenticateToTheCluster)
 	framework.RegisterStep(`^"([^"]*)" should be able to authenticate to the( vectorized)? "([^"]*)" cluster with password "([^"]*)" and mechanism "([^"]*)"$`, shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism)
 
+	// Group scenario steps
+	framework.RegisterStep(`^group "([^"]*)" is successfully synced$`, groupIsSuccessfullySynced)
+	framework.RegisterStep(`^I delete the CRD group "([^"]*)"$`, iDeleteTheCRDGroup)
+	framework.RegisterStep(`^group "([^"]*)" should have (\d+) ACLs for topic pattern "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, groupShouldHaveNACLsForTopicPatternInCluster)
+	framework.RegisterStep(`^group "([^"]*)" should have ACLs in( vectorized)? cluster "([^"]*)"$`, groupShouldHaveACLsInCluster)
+	framework.RegisterStep(`^there should be no ACLs for group "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldBeNoACLsForGroupInCluster)
+
 	// Role scenario steps
 	framework.RegisterStep(`^role "([^"]*)" is successfully synced$`, roleIsSuccessfullySynced)
 	framework.RegisterStep(`^I delete the CRD role "([^"]*)"$`, iDeleteTheCRDRole)

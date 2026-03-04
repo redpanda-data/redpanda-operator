@@ -102,6 +102,23 @@ rules:
   - apiGroups:
       - cluster.redpanda.com
     resources:
+      - groups
+      - redpandaroles
+      - schemas
+      - shadowlinks
+      - stretchclusters
+      - topics
+      - users
+    verbs:
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - cluster.redpanda.com
+    resources:
+      - groups/finalizers
       - nodepools/finalizers
       - redpandaroles/finalizers
       - redpandas/finalizers
@@ -115,6 +132,7 @@ rules:
   - apiGroups:
       - cluster.redpanda.com
     resources:
+      - groups/status
       - nodepools/status
       - redpandaroles/status
       - redpandas/status
@@ -127,21 +145,6 @@ rules:
       - get
       - patch
       - update
-  - apiGroups:
-      - cluster.redpanda.com
-    resources:
-      - redpandaroles
-      - schemas
-      - shadowlinks
-      - stretchclusters
-      - topics
-      - users
-    verbs:
-      - get
-      - list
-      - patch
-      - update
-      - watch
   - apiGroups:
       - coordination.k8s.io
     resources:

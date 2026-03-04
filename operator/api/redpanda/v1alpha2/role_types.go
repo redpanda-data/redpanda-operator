@@ -104,8 +104,10 @@ type RoleSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	// +required
 	ClusterSource *ClusterSource `json:"cluster"`
-	// Principals defines the list of users assigned to this role.
-	// Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+	// Principals defines the list of users or groups assigned to this role.
+	// Format: Type:Name (e.g., User:john, Group:engineering). If type is omitted, defaults to User.
+	// Supported principal types are User and Group. Group principals correspond to
+	// OIDC identity provider groups and require group-based authorization to be enabled in Redpanda.
 	// +kubebuilder:validation:MaxItems=1024
 	Principals []string `json:"principals,omitempty"`
 	// Authorization rules defined for this role. If specified, the operator will manage ACLs for this role.

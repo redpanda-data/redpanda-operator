@@ -22,6 +22,7 @@ func TestCRDS(t *testing.T) {
 		"clusters.redpanda.vectorized.io":      {},
 		"consoles.cluster.redpanda.com":        {},
 		"consoles.redpanda.vectorized.io":      {},
+		"groups.cluster.redpanda.com":          {},
 		"nodepools.cluster.redpanda.com":       {},
 		"redpandas.cluster.redpanda.com":       {},
 		"redpandaroles.cluster.redpanda.com":   {},
@@ -40,6 +41,7 @@ func TestCRDS(t *testing.T) {
 	require.Equal(t, names, foundNames)
 
 	require.Equal(t, "consoles.cluster.redpanda.com", crds.Console().Name)
+	require.Equal(t, "groups.cluster.redpanda.com", crds.Group().Name)
 	require.Equal(t, "nodepools.cluster.redpanda.com", crds.NodePool().Name)
 	require.Equal(t, "redpandas.cluster.redpanda.com", crds.Redpanda().Name)
 	require.Equal(t, "redpandaroles.cluster.redpanda.com", crds.Role().Name)
