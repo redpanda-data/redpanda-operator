@@ -41,10 +41,14 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 				{
 					Port:   "https",
 					Path:   "/metrics",
-					Scheme: "https",
-					TLSConfig: &monitoringv1.TLSConfig{
-						SafeTLSConfig: monitoringv1.SafeTLSConfig{
-							InsecureSkipVerify: ptr.To(true),
+					Scheme: ptr.To(monitoringv1.SchemeHTTPS),
+					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+							TLSConfig: &monitoringv1.TLSConfig{
+								SafeTLSConfig: monitoringv1.SafeTLSConfig{
+									InsecureSkipVerify: ptr.To(true),
+								},
+							},
 						},
 					},
 					BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",

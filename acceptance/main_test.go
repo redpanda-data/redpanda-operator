@@ -58,6 +58,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
 			imageRepo + ":" + imageTag,
+			steps.DefaultRedpandaRepo + ":" + steps.DefaultRedpandaTag,
 			"docker.redpanda.com/redpandadata/redpanda-operator:v2.4.5",
 			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
 			"docker.redpanda.com/redpandadata/redpanda:v25.2.1",

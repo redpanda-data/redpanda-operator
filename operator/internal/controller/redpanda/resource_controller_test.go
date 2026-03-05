@@ -11,9 +11,14 @@ package redpanda
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -21,7 +26,11 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
+	tcnetwork "github.com/testcontainers/testcontainers-go/network"
+	"github.com/testcontainers/testcontainers-go/wait"
+	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +47,73 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
+// OIDCConfig configures a Dex OIDC provider for integration testing.
+// The fields are interpolated into both the Dex server config and the
+// Redpanda bootstrap config.
+type OIDCConfig struct {
+	// Email is the static user's email address used for authentication.
+	Email string
+	// Password is the static user's password (plaintext — will be bcrypt-hashed for Dex).
+	Password string
+	// Groups is the list of groups the static user belongs to.
+	Groups []string
+	// ClientID is the OAuth2 client ID (used by both Dex and Redpanda).
+	ClientID string
+	// ClientSecret is the OAuth2 client secret for the Dex static client.
+	ClientSecret string
+	// Scopes is the OAuth2 scopes to request (e.g., "openid groups email").
+	Scopes string
+}
+
+func (c *OIDCConfig) dexConfigYAML() string {
+	hash, err := bcrypt.GenerateFromPassword([]byte(c.Password), bcrypt.DefaultCost)
+	if err != nil {
+		panic(fmt.Sprintf("bcrypt hash: %v", err))
+	}
+
+	groups := ""
+	for _, g := range c.Groups {
+		groups += fmt.Sprintf("\n      - %q", g)
+	}
+	return fmt.Sprintf(`issuer: http://dex:5556/dex
+storage:
+  type: memory
+web:
+  http: 0.0.0.0:5556
+enablePasswordDB: true
+oauth2:
+  passwordConnector: local
+staticClients:
+  - id: %s
+    secret: %s
+    name: 'Test'
+    redirectURIs:
+      - 'http://localhost/callback'
+staticPasswords:
+  - email: %q
+    hash: %q
+    username: %q
+    userID: "test-user-1"
+    groups:%s
+`, c.ClientID, c.ClientSecret, c.Email, string(hash), c.Email, groups)
+}
+
+// TestOption configures InitializeResourceReconcilerTest.
+type TestOption func(*testOptions)
+
+type testOptions struct {
+	oidc *OIDCConfig
+}
+
+// WithOIDC enables OIDC integration testing. A Dex container and shared Docker
+// network are created, and Redpanda is configured with OAUTHBEARER SASL backed
+// by the Dex OIDC provider.
+func WithOIDC(config OIDCConfig) TestOption {
+	return func(o *testOptions) {
+		o.oidc = &config
+	}
+}
+
 type ResourceReconcilerTestEnvironment[T any, U Resource[T]] struct {
 	Reconciler                 *ResourceController[T, U]
 	Factory                    *internalclient.Factory
@@ -51,9 +127,52 @@ type ResourceReconcilerTestEnvironment[T any, U Resource[T]] struct {
 	AdminURL                   string
 	KafkaURL                   string
 	SchemaRegistryURL          string
+
+	oidcConfig *OIDCConfig
+	dexURL     string
 }
 
-func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx context.Context, reconciler ResourceReconciler[U]) *ResourceReconcilerTestEnvironment[T, U] {
+// FetchOIDCToken obtains a JWT from the Dex OIDC provider using the OAuth2
+// password grant with the credentials from the OIDCConfig. Panics if WithOIDC
+// was not used.
+func (e *ResourceReconcilerTestEnvironment[T, U]) FetchOIDCToken(t *testing.T) string {
+	t.Helper()
+	require.NotNil(t, e.oidcConfig, "FetchOIDCToken requires WithOIDC")
+
+	data := url.Values{
+		"grant_type": {"password"},
+		"username":   {e.oidcConfig.Email},
+		"password":   {e.oidcConfig.Password},
+		"scope":      {e.oidcConfig.Scopes},
+		"client_id":  {e.oidcConfig.ClientID},
+	}
+
+	req, err := http.NewRequest(http.MethodPost, e.dexURL+"/dex/token", strings.NewReader(data.Encode()))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth(e.oidcConfig.ClientID, e.oidcConfig.ClientSecret)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode, "Dex token endpoint returned non-200 status")
+
+	var tok struct {
+		IDToken string `json:"id_token"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&tok))
+	require.NotEmpty(t, tok.IDToken, "Dex returned empty id_token")
+
+	return tok.IDToken
+}
+
+func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx context.Context, reconciler ResourceReconciler[U], opts ...TestOption) *ResourceReconcilerTestEnvironment[T, U] {
+	var options testOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	server := &envtest.APIServer{}
 	etcd := &envtest.Etcd{}
 
@@ -73,18 +192,67 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 		_ = testEnv.Stop()
 	})
 
-	container, err := redpanda.Run(ctx, os.Getenv("TEST_REDPANDA_REPO")+":"+os.Getenv("TEST_REDPANDA_VERSION"),
+	testImage := os.Getenv("TEST_REDPANDA_REPO") + ":" + os.Getenv("TEST_REDPANDA_VERSION")
+
+	rpOpts := []testcontainers.ContainerCustomizer{
 		redpanda.WithEnableSchemaRegistryHTTPBasicAuth(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),
 		redpanda.WithSuperusers("superuser"),
 		redpanda.WithNewServiceAccount("superuser", "password"),
-	)
+	}
+
+	var dexURL string
+	if options.oidc != nil {
+		// Create shared Docker network for Dex <-> Redpanda communication.
+		testNet, err := tcnetwork.New(ctx)
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = testNet.Remove(context.Background()) })
+
+		// Start Dex OIDC provider.
+		dexContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+			ContainerRequest: testcontainers.ContainerRequest{
+				Image:        "dexidp/dex:v2.45.0",
+				ExposedPorts: []string{"5556/tcp"},
+				Cmd:          []string{"dex", "serve", "/etc/dex/config.yaml"},
+				Files: []testcontainers.ContainerFile{{
+					Reader:            strings.NewReader(options.oidc.dexConfigYAML()),
+					ContainerFilePath: "/etc/dex/config.yaml",
+					FileMode:          0o644,
+				}},
+				WaitingFor: wait.ForHTTP("/dex/.well-known/openid-configuration").WithPort("5556/tcp"),
+				Networks:   []string{testNet.Name},
+				NetworkAliases: map[string][]string{
+					testNet.Name: {"dex"},
+				},
+			},
+			Started: true,
+		})
+		require.NoError(t, err)
+		t.Cleanup(func() { _ = dexContainer.Terminate(context.Background()) })
+		dumpContainerLogsOnFailure(t, "Dex", dexContainer)
+
+		dexHost, err := dexContainer.Host(ctx)
+		require.NoError(t, err)
+		dexPort, err := dexContainer.MappedPort(ctx, "5556/tcp")
+		require.NoError(t, err)
+		dexURL = fmt.Sprintf("http://%s:%s", dexHost, dexPort.Port())
+
+		rpOpts = append(rpOpts,
+			redpanda.WithBootstrapConfig("sasl_mechanisms", `["SCRAM", "OAUTHBEARER"]`),
+			redpanda.WithBootstrapConfig("oidc_discovery_url", "http://dex:5556/dex/.well-known/openid-configuration"),
+			redpanda.WithBootstrapConfig("oidc_token_audience", options.oidc.ClientID),
+			tcnetwork.WithNetwork([]string{"redpanda"}, testNet),
+		)
+	}
+
+	container, err := redpanda.Run(ctx, testImage, rpOpts...)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
 		_ = container.Terminate(context.Background())
 	})
+	dumpContainerLogsOnFailure(t, "Redpanda", container)
 
 	kafkaAddress, err := container.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
@@ -268,6 +436,8 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 		AdminURL:                   adminAPI,
 		KafkaURL:                   kafkaAddress,
 		SchemaRegistryURL:          schemaRegistry,
+		oidcConfig:                 options.oidc,
+		dexURL:                     dexURL,
 	}
 }
 
@@ -294,7 +464,7 @@ func (r *testReconciler) FinalizerPatch(request ResourceRequest[*testObject]) cl
 		Kind:       "testObject",
 		APIVersion: redpandav1alpha2.GroupVersion.String(),
 	}
-	return client.Apply
+	return client.Apply //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 }
 
 func (r *testReconciler) SyncResource(ctx context.Context, request ResourceRequest[*testObject]) (client.Patch, error) {
@@ -461,4 +631,31 @@ func TestIsNetworkDialError(t *testing.T) {
 			assert.Equal(t, tt.expected, result, "error: %v", tt.err)
 		})
 	}
+}
+
+// dumpContainerLogsOnFailure registers a t.Cleanup that dumps the given
+// container's logs when the test has failed. This is invaluable for debugging
+// server-side issues (e.g., OIDC key fetch failures, auth errors).
+func dumpContainerLogsOnFailure(t *testing.T, name string, container testcontainers.Container) {
+	t.Helper()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+		// Use a fresh context since the test context is likely canceled by now.
+		logCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		reader, err := container.Logs(logCtx)
+		if err != nil {
+			t.Logf("Failed to get %s container logs: %v", name, err)
+			return
+		}
+		defer reader.Close()
+		logs, err := io.ReadAll(reader)
+		if err != nil {
+			t.Logf("Failed to read %s container logs: %v", name, err)
+			return
+		}
+		t.Logf("=== %s container logs ===\n%s\n=== end %s logs ===", name, string(logs), name)
+	})
 }

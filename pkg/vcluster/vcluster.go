@@ -279,7 +279,7 @@ func (c *Cluster) KubectlApply(ctx context.Context, manifest []byte) error {
 	logger := log.FromContext(ctx)
 	return c.doKubectl(ctx, manifest, func(k8sclient client.Client, decoded *unstructured.Unstructured) error {
 		logger.Info("patching object", "name", decoded.GetName(), "namespace", decoded.GetNamespace(), "gvk", decoded.GroupVersionKind().String())
-		return k8sclient.Patch(ctx, decoded, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))
+		return k8sclient.Apply(ctx, client.ApplyConfigurationFromUnstructured(decoded), client.ForceOwnership, client.FieldOwner("tests"))
 	})
 }
 

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.20.1
   name: redpandaroles.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
@@ -2476,8 +2476,10 @@ spec:
                 type: boolean
               principals:
                 description: |-
-                  Principals defines the list of users assigned to this role.
-                  Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+                  Principals defines the list of users or groups assigned to this role.
+                  Format: Type:Name (e.g., User:john, Group:engineering). If type is omitted, defaults to User.
+                  Supported principal types are User and Group. Group principals correspond to
+                  OIDC identity provider groups and require group-based authorization to be enabled in Redpanda.
                 items:
                   type: string
                 maxItems: 1024

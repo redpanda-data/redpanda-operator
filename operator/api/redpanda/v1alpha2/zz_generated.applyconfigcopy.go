@@ -924,6 +924,13 @@ func DeepCopyPodSpecApplyConfiguration(in *corev1ac.PodSpecApplyConfiguration) *
 								(*(out).PodCertificate).CertificateChainPath = new(string)
 								*(*(out).PodCertificate).CertificateChainPath = *(*(in).PodCertificate).CertificateChainPath
 							}
+
+							if (*(in).PodCertificate).UserAnnotations != nil {
+								(*(out).PodCertificate).UserAnnotations = make(map[string]string, len((*(in).PodCertificate).UserAnnotations))
+								for k, v := range (*(in).PodCertificate).UserAnnotations {
+									(*(out).PodCertificate).UserAnnotations[k] = v
+								}
+							}
 						}
 					}
 				}
@@ -5040,6 +5047,24 @@ func DeepCopyPodSpecApplyConfiguration(in *corev1ac.PodSpecApplyConfiguration) *
 	if in.HostnameOverride != nil {
 		out.HostnameOverride = new(string)
 		*out.HostnameOverride = *in.HostnameOverride
+	}
+	if in.WorkloadRef != nil {
+		out.WorkloadRef = new(corev1ac.WorkloadReferenceApplyConfiguration)
+
+		if (*in.WorkloadRef).Name != nil {
+			(*out.WorkloadRef).Name = new(string)
+			*(*out.WorkloadRef).Name = *(*in.WorkloadRef).Name
+		}
+
+		if (*in.WorkloadRef).PodGroup != nil {
+			(*out.WorkloadRef).PodGroup = new(string)
+			*(*out.WorkloadRef).PodGroup = *(*in.WorkloadRef).PodGroup
+		}
+
+		if (*in.WorkloadRef).PodGroupReplicaKey != nil {
+			(*out.WorkloadRef).PodGroupReplicaKey = new(string)
+			*(*out.WorkloadRef).PodGroupReplicaKey = *(*in.WorkloadRef).PodGroupReplicaKey
+		}
 	}
 	return out
 }

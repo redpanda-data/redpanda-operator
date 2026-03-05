@@ -49,7 +49,7 @@ func TestClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, c)
 
-	test := func(t *testing.T, container *redpanda.Container) {
+	test := func(t *testing.T, container *redpanda.Container, opts ...Option) {
 		admin, err := container.AdminAPIAddress(ctx)
 		require.NoError(t, err)
 
@@ -59,9 +59,13 @@ func TestClient(t *testing.T) {
 		}, nil)
 		require.NoError(t, err)
 
-		rolesClient, err := NewClient(ctx, rpadminClient)
+		rolesClient, err := NewClient(ctx, rpadminClient, opts...)
 		require.NoError(t, err)
 		defer rolesClient.Close()
+
+		// Group principals are only supported when the v2 SecurityService API is available.
+		// This covers both explicit WithV2Disabled() and clusters too old to support it.
+		supportsGroups := rolesClient.SupportsGroups()
 
 		// Test role lifecycle
 		roleName := "test-role-" + strconv.Itoa(int(time.Now().UnixNano()))
@@ -105,6 +109,26 @@ func TestClient(t *testing.T) {
 			require.NoError(t, err)
 		})
 
+		t.Run("UpdateWithGroupPrincipals", func(t *testing.T) {
+			if !supportsGroups {
+				t.Skip("Skipping: v2 SecurityService API not available, Group principals not supported")
+			}
+			// Add group principals alongside user principals
+			role.Spec.Principals = []string{"User:testuser1", "Group:engineering"}
+			err := rolesClient.Update(ctx, role)
+			require.NoError(t, err)
+		})
+
+		t.Run("UpdateGroupOnlyPrincipals", func(t *testing.T) {
+			if !supportsGroups {
+				t.Skip("Skipping: v2 SecurityService API not available, Group principals not supported")
+			}
+			// Replace all with group-only principals
+			role.Spec.Principals = []string{"Group:engineering", "Group:platform"}
+			err := rolesClient.Update(ctx, role)
+			require.NoError(t, err)
+		})
+
 		t.Run("UpdateAddMembersAgain", func(t *testing.T) {
 			// Add principals back
 			role.Spec.Principals = []string{"User:finaluser"}
@@ -143,7 +167,13 @@ func TestClient(t *testing.T) {
 			require.NoError(t, container.Terminate(ctx))
 		}()
 
-		test(t, container)
+		t.Run("v2", func(t *testing.T) {
+			test(t, container)
+		})
+
+		t.Run("v1", func(t *testing.T) {
+			test(t, container, WithV2Disabled())
+		})
 	})
 
 	t.Run("v24.1.1 release", func(t *testing.T) {
@@ -179,65 +209,48 @@ func TestClient(t *testing.T) {
 	})
 }
 
-// Test utility functions
-func TestCalculateMembershipChanges(t *testing.T) {
+func TestMembersToStringSlice(t *testing.T) {
 	tests := []struct {
-		name           string
-		current        []string
-		desired        []string
-		expectedAdd    []string
-		expectedRemove []string
+		name     string
+		members  []rpadmin.RoleMember
+		expected []string
 	}{
 		{
-			name:           "no changes needed",
-			current:        []string{"User:alice", "User:bob"},
-			desired:        []string{"User:alice", "User:bob"},
-			expectedAdd:    []string{},
-			expectedRemove: []string{},
+			name:     "empty members",
+			members:  []rpadmin.RoleMember{},
+			expected: []string{},
 		},
 		{
-			name:           "add new members",
-			current:        []string{"User:alice"},
-			desired:        []string{"User:alice", "User:bob", "User:charlie"},
-			expectedAdd:    []string{"User:bob", "User:charlie"},
-			expectedRemove: []string{},
+			name: "user members only",
+			members: []rpadmin.RoleMember{
+				{Name: "alice", PrincipalType: "User"},
+				{Name: "bob", PrincipalType: "User"},
+			},
+			expected: []string{"User:alice", "User:bob"},
 		},
 		{
-			name:           "remove members",
-			current:        []string{"User:alice", "User:bob", "User:charlie"},
-			desired:        []string{"User:alice"},
-			expectedAdd:    []string{},
-			expectedRemove: []string{"User:bob", "User:charlie"},
+			name: "group members only",
+			members: []rpadmin.RoleMember{
+				{Name: "engineering", PrincipalType: "Group"},
+				{Name: "platform", PrincipalType: "Group"},
+			},
+			expected: []string{"Group:engineering", "Group:platform"},
 		},
 		{
-			name:           "replace all members",
-			current:        []string{"User:alice", "User:bob"},
-			desired:        []string{"User:charlie", "User:dave"},
-			expectedAdd:    []string{"User:charlie", "User:dave"},
-			expectedRemove: []string{"User:alice", "User:bob"},
-		},
-		{
-			name:           "empty to some",
-			current:        []string{},
-			desired:        []string{"User:alice"},
-			expectedAdd:    []string{"User:alice"},
-			expectedRemove: []string{},
-		},
-		{
-			name:           "some to empty",
-			current:        []string{"User:alice"},
-			desired:        []string{},
-			expectedAdd:    []string{},
-			expectedRemove: []string{"User:alice"},
+			name: "mixed user and group members",
+			members: []rpadmin.RoleMember{
+				{Name: "alice", PrincipalType: "User"},
+				{Name: "engineering", PrincipalType: "Group"},
+				{Name: "bob", PrincipalType: "User"},
+			},
+			expected: []string{"User:alice", "Group:engineering", "User:bob"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			toAdd, toRemove := calculateMembershipChanges(tt.current, tt.desired)
-
-			require.ElementsMatch(t, tt.expectedAdd, toAdd, "toAdd should match expected")
-			require.ElementsMatch(t, tt.expectedRemove, toRemove, "toRemove should match expected")
+			result := membersToStringSlice(tt.members)
+			require.Equal(t, tt.expected, result)
 		})
 	}
 }

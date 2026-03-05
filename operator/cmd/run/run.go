@@ -464,7 +464,12 @@ func Run(
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Group")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}

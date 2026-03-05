@@ -24,15 +24,14 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 	}
 
 	endpoint := monitoringv1.Endpoint{
-		Interval:    state.Values.Monitoring.ScrapeInterval,
-		Path:        "/public_metrics",
-		Port:        "admin",
-		EnableHttp2: state.Values.Monitoring.EnableHTTP2,
-		Scheme:      "http",
+		Interval: state.Values.Monitoring.ScrapeInterval,
+		Path:     "/public_metrics",
+		Port:     "admin",
+		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
 	}
 
 	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) || state.Values.Monitoring.TLSConfig != nil {
-		endpoint.Scheme = "https"
+		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
 		endpoint.TLSConfig = state.Values.Monitoring.TLSConfig
 
 		if endpoint.TLSConfig == nil {

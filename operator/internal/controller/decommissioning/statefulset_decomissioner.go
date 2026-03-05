@@ -141,7 +141,7 @@ func NewStatefulSetDecommissioner(mgr ctrl.Manager, getter ClientGetter, options
 	k8sClient := mgr.GetClient()
 
 	decommissioner := &StatefulSetDecomissioner{
-		recorder:             mgr.GetEventRecorderFor("broker-decommissioner"),
+		recorder:             mgr.GetEventRecorderFor("broker-decommissioner"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 		client:               k8sClient,
 		getAdminClient:       getter,
 		requeueTimeout:       defaultRequeueTimeout,

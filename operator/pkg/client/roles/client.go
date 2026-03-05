@@ -13,35 +13,80 @@ import (
 	"context"
 	stderrors "errors"
 	"net/http"
-	"slices"
-	"strings"
 
+	adminv2 "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
+	"connectrpc.com/connect"
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	rolesinternal "github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles/internal"
+	rolesv2 "github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles/v2"
 )
 
+// Re-export constants and types from the internal package for external use.
 const (
-	PrincipalTypeUser = "User"
+	PrincipalTypeUser  = rolesinternal.PrincipalTypeUser
+	PrincipalTypeGroup = rolesinternal.PrincipalTypeGroup
 )
+
+// ParsedPrincipal represents a parsed principal with type and name.
+type ParsedPrincipal = rolesinternal.ParsedPrincipal
+
+// Option is a functional option for configuring the Client.
+type Option func(*clientOptions)
+
+type clientOptions struct {
+	disableV2 bool
+}
+
+// WithV2Disabled disables the v2 SecurityService API probe and forces
+// the client to use the v1 REST admin API. This is useful in tests
+// to verify the v1 code path.
+func WithV2Disabled() Option {
+	return func(o *clientOptions) {
+		o.disableV2 = true
+	}
+}
 
 // Client is a high-level client for managing roles in a Redpanda cluster.
+// It transparently delegates to the v2 SecurityService API when available,
+// falling back to the v1 REST admin API for older clusters.
 type Client struct {
 	adminClient *rpadmin.AdminAPI
+	v2Client    *rolesv2.Client
 }
 
 // NewClient returns a high-level client that is able to manage roles in a Redpanda cluster.
-func NewClient(ctx context.Context, adminClient *rpadmin.AdminAPI) (*Client, error) {
-	// Verify admin client connectivity (similar to how users client verifies API versions)
+// By default, it probes whether the cluster supports the v2 SecurityService API and
+// delegates to it if available. Use WithV2Disabled() to force the v1 code path.
+func NewClient(ctx context.Context, adminClient *rpadmin.AdminAPI, opts ...Option) (*Client, error) {
+	var options clientOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	// Verify admin client connectivity
 	_, err := adminClient.Brokers(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to verify admin client connectivity")
 	}
 
-	return &Client{
+	c := &Client{
 		adminClient: adminClient,
-	}, nil
+	}
+
+	// Probe v2 API availability
+	if !options.disableV2 {
+		_, err := adminClient.SecurityService().ListRoles(ctx, connect.NewRequest(
+			adminv2.ListRolesRequest_builder{}.Build(),
+		))
+		if err == nil {
+			c.v2Client = rolesv2.NewClient(adminClient)
+		}
+	}
+
+	return c, nil
 }
 
 // Close closes the underlying client connections.
@@ -49,15 +94,10 @@ func (c *Client) Close() {
 	c.adminClient.Close()
 }
 
-// validateRole checks that the role is valid for operations.
-// Although Kubernetes enforces non-empty names for resources,
-// this defensive check protects against nil pointers and manually
-// constructed role objects in tests or internal code.
-func validateRole(role *redpandav1alpha2.RedpandaRole) error {
-	if role == nil || role.Name == "" {
-		return errors.New("role is nil or has empty name")
-	}
-	return nil
+// SupportsGroups reports whether the cluster supports Group principals
+// in role membership (i.e., the v2 SecurityService API is available).
+func (c *Client) SupportsGroups() bool {
+	return c.v2Client != nil
 }
 
 // membersToStringSlice converts RoleMember slice to principal string slice.
@@ -72,18 +112,20 @@ func membersToStringSlice(members []rpadmin.RoleMember) []string {
 
 // Has checks if a role exists in the Redpanda cluster.
 func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.RedpandaRole) (bool, error) {
-	if err := validateRole(role); err != nil {
+	if c.v2Client != nil {
+		return c.v2Client.Has(ctx, role)
+	}
+
+	if err := rolesinternal.ValidateRole(role); err != nil {
 		return false, err
 	}
 
 	effectiveRoleName := role.GetEffectiveRoleName()
 	_, err := c.adminClient.Role(ctx, effectiveRoleName)
 	if err != nil {
-		// Check if error indicates role doesn't exist using proper error unwrapping
 		if isNotFoundError(err) {
 			return false, nil
 		}
-		// Return the error if it's not a "not found" error
 		return false, errors.Wrapf(err, "checking if role %s exists", effectiveRoleName)
 	}
 	return true, nil
@@ -91,7 +133,11 @@ func (c *Client) Has(ctx context.Context, role *redpandav1alpha2.RedpandaRole) (
 
 // Create creates a role in the Redpanda cluster.
 func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
-	if err := validateRole(role); err != nil {
+	if c.v2Client != nil {
+		return c.v2Client.Create(ctx, role)
+	}
+
+	if err := rolesinternal.ValidateRole(role); err != nil {
 		return err
 	}
 
@@ -127,18 +173,19 @@ func (c *Client) Create(ctx context.Context, role *redpandav1alpha2.RedpandaRole
 
 // Delete removes a role from the Redpanda cluster.
 func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
-	if err := validateRole(role); err != nil {
+	if c.v2Client != nil {
+		return c.v2Client.Delete(ctx, role)
+	}
+
+	if err := rolesinternal.ValidateRole(role); err != nil {
 		return err
 	}
 
 	effectiveRoleName := role.GetEffectiveRoleName()
 
-	// Delete role and its associated ACLs
 	err := c.adminClient.DeleteRole(ctx, effectiveRoleName, true)
 	if err != nil {
-		// Check if role already doesn't exist (404) - this is not an error for deletion
 		if isNotFoundError(err) {
-			// Role already doesn't exist, consider deletion successful
 			return nil
 		}
 		return errors.Wrapf(err, "deleting role %s", effectiveRoleName)
@@ -148,13 +195,16 @@ func (c *Client) Delete(ctx context.Context, role *redpandav1alpha2.RedpandaRole
 
 // Update updates an existing role in the Redpanda cluster.
 func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
-	if err := validateRole(role); err != nil {
+	if c.v2Client != nil {
+		return c.v2Client.Update(ctx, role)
+	}
+
+	if err := rolesinternal.ValidateRole(role); err != nil {
 		return err
 	}
 
 	effectiveRoleName := role.GetEffectiveRoleName()
 
-	// Check if role exists
 	exists, err := c.Has(ctx, role)
 	if err != nil {
 		return errors.Wrapf(err, "checking if role %s exists", effectiveRoleName)
@@ -163,19 +213,14 @@ func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.RedpandaRole
 		return errors.Newf("role %s does not exist", effectiveRoleName)
 	}
 
-	// Get current role members
 	currentMembersResp, err := c.adminClient.RoleMembers(ctx, effectiveRoleName)
 	if err != nil {
 		return errors.Wrapf(err, "getting current role members for %s", effectiveRoleName)
 	}
 
-	// Convert current members to string slice for comparison
 	currentPrincipalNames := membersToStringSlice(currentMembersResp.Members)
+	toAdd, toRemove := rolesinternal.CalculateMembershipChanges(currentPrincipalNames, role.Spec.Principals)
 
-	// Calculate members to add and remove
-	toAdd, toRemove := calculateMembershipChanges(currentPrincipalNames, role.Spec.Principals)
-
-	// Update membership if there are changes
 	if len(toAdd) > 0 || len(toRemove) > 0 {
 		err = c.updateRoleMembers(ctx, effectiveRoleName, toAdd, toRemove)
 		if err != nil {
@@ -189,27 +234,27 @@ func (c *Client) Update(ctx context.Context, role *redpandav1alpha2.RedpandaRole
 // ClearPrincipals removes all principals from a role, used when transitioning
 // from managed to unmanaged principals.
 func (c *Client) ClearPrincipals(ctx context.Context, role *redpandav1alpha2.RedpandaRole) error {
-	if err := validateRole(role); err != nil {
+	if c.v2Client != nil {
+		return c.v2Client.ClearPrincipals(ctx, role)
+	}
+
+	if err := rolesinternal.ValidateRole(role); err != nil {
 		return err
 	}
 
 	effectiveRoleName := role.GetEffectiveRoleName()
 
-	// Get current role members
 	currentMembersResp, err := c.adminClient.RoleMembers(ctx, effectiveRoleName)
 	if err != nil {
 		return errors.Wrapf(err, "getting current role members for %s", effectiveRoleName)
 	}
 
-	// If there are no members, nothing to clear
 	if len(currentMembersResp.Members) == 0 {
 		return nil
 	}
 
-	// Convert all current members to string slice for removal
 	currentPrincipalNames := membersToStringSlice(currentMembersResp.Members)
 
-	// Remove all current members
 	err = c.updateRoleMembers(ctx, effectiveRoleName, nil, currentPrincipalNames)
 	if err != nil {
 		return errors.Wrapf(err, "clearing principals for role %s", effectiveRoleName)
@@ -224,7 +269,6 @@ func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, 
 		return errors.New("role name cannot be empty")
 	}
 
-	// Convert to RoleMember structs using new parsing logic
 	addMembers := make([]rpadmin.RoleMember, len(toAdd))
 	removeMembers := make([]rpadmin.RoleMember, len(toRemove))
 
@@ -232,8 +276,7 @@ func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, 
 		if principal == "" {
 			return errors.Newf("principal at index %d is empty", i)
 		}
-		// Parse principal to extract type and name
-		parsed := parsePrincipal(principal)
+		parsed := rolesinternal.ParsePrincipal(principal)
 		addMembers[i] = rpadmin.RoleMember{
 			Name:          parsed.Name,
 			PrincipalType: parsed.Type,
@@ -244,15 +287,13 @@ func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, 
 		if principal == "" {
 			return errors.Newf("principal at index %d is empty", i)
 		}
-		// Parse principal to extract type and name
-		parsed := parsePrincipal(principal)
+		parsed := rolesinternal.ParsePrincipal(principal)
 		removeMembers[i] = rpadmin.RoleMember{
 			Name:          parsed.Name,
 			PrincipalType: parsed.Type,
 		}
 	}
 
-	// Use bulk update for efficiency
 	if len(addMembers) > 0 || len(removeMembers) > 0 {
 		_, err := c.adminClient.UpdateRoleMembership(ctx, roleName, addMembers, removeMembers, false)
 		if err != nil {
@@ -263,25 +304,6 @@ func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, 
 	return nil
 }
 
-// calculateMembershipChanges determines which principals to add and remove
-func calculateMembershipChanges(current, desired []string) (toAdd, toRemove []string) {
-	// Find principals to add (in desired but not in current)
-	for _, principal := range desired {
-		if !slices.Contains(current, principal) {
-			toAdd = append(toAdd, principal)
-		}
-	}
-
-	// Find principals to remove (in current but not in desired)
-	for _, principal := range current {
-		if !slices.Contains(desired, principal) {
-			toRemove = append(toRemove, principal)
-		}
-	}
-
-	return toAdd, toRemove
-}
-
 // isNotFoundError checks if the error is a 404 Not Found HTTP error
 func isNotFoundError(err error) bool {
 	var httpErr *rpadmin.HTTPResponseError
@@ -289,31 +311,4 @@ func isNotFoundError(err error) bool {
 		return httpErr.Response.StatusCode == http.StatusNotFound
 	}
 	return false
-}
-
-// ParsedPrincipal represents a parsed principal with type and name
-type ParsedPrincipal struct {
-	Type string
-	Name string
-}
-
-// parsePrincipal extracts the type and name from a principal string.
-// Handles "Type:Name" format and defaults to User type if no prefix.
-// Returns ParsedPrincipal with both type and name for better extensibility.
-func parsePrincipal(p string) ParsedPrincipal {
-	// Handle "Type:Name" format
-	if idx := strings.Index(p, ":"); idx > 0 {
-		principalType := p[:idx]
-		name := p[idx+1:]
-		return ParsedPrincipal{
-			Type: principalType,
-			Name: name,
-		}
-	}
-
-	// Default to User type if no prefix
-	return ParsedPrincipal{
-		Type: PrincipalTypeUser,
-		Name: p,
-	}
 }

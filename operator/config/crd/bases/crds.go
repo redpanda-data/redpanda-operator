@@ -103,6 +103,11 @@ func User() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("users.cluster.redpanda.com"))
 }
 
+// Group returns the Group CustomResourceDefinition.
+func Group() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("groups.cluster.redpanda.com"))
+}
+
 // Schema returns the Schema CustomResourceDefinition.
 func Schema() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("schemas.cluster.redpanda.com"))

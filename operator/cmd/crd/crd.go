@@ -33,6 +33,7 @@ var (
 	stableCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.Console(),
 		crds.Redpanda(),
+		crds.Group(),
 		crds.Role(),
 		crds.Schema(),
 		crds.ShadowLink(),
