@@ -49,6 +49,7 @@ type NodePoolReconciler struct {
 }
 
 // SetupWithManager sets up the controller with the Manager.
+<<<<<<< HEAD
 func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
 	if err != nil {
@@ -59,6 +60,12 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 		For(&redpandav1alpha2.NodePool{}).
 		Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster).
 		Watches(&appsv1.StatefulSet{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+=======
+func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		For(&redpandav1alpha2.NodePool{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
+		Watches(&appsv1.StatefulSet{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 			labels := o.GetLabels()
 			if labels == nil {
 				return nil
@@ -77,8 +84,23 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 					Name:      name,
 				},
 			}}
+<<<<<<< HEAD
 		})).
 		Complete(r)
+=======
+		}))
+
+	for _, clusterName := range mgr.GetClusterNames() {
+		enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", clusterName, &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
+		if err != nil {
+			return err
+		}
+
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster, controller.WatchOptions(clusterName)...)
+	}
+
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 }
 
 // Reconcile reconciles NodePool objects
