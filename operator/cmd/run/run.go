@@ -402,7 +402,11 @@ func Run(
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
 			UseNodePools:         opts.enableV2NodepoolController,
+<<<<<<< HEAD
 		}).SetupWithManager(ctx, mgr); err != nil {
+=======
+		}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
@@ -413,8 +417,13 @@ func Run(
 		// NodePool Reconciler
 		if opts.enableV2NodepoolController {
 			if err := (&redpandacontrollers.NodePoolReconciler{
+<<<<<<< HEAD
 				Client: mgr.GetClient(),
 			}).SetupWithManager(ctx, mgr); err != nil {
+=======
+				Manager: mcmanager,
+			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 				return err
 			}
@@ -437,34 +446,63 @@ func Run(
 				return err
 			}
 
+<<<<<<< HEAD
 			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr); err != nil {
+=======
+			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}
 		}
 	}
 
+<<<<<<< HEAD
 	if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+=======
+	if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 		setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 		return err
 	}
 
+<<<<<<< HEAD
 	if err := redpandacontrollers.SetupTopicController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+=======
+	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
 
+<<<<<<< HEAD
 	if err := redpandacontrollers.SetupUserController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+=======
+	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
+<<<<<<< HEAD
 	if err := redpandacontrollers.SetupRoleController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+=======
+	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
 
+<<<<<<< HEAD
 	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+=======
+	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Group")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}
