@@ -50,6 +50,7 @@ type ResourceController[T any, U Resource[T]] struct {
 
 	reconciler      ResourceReconciler[U]
 	name            string
+	namespace       string
 	periodicTimeout time.Duration
 }
 
@@ -67,7 +68,21 @@ func (r *ResourceController[T, U]) PeriodicallyReconcile(timeout time.Duration) 
 	return r
 }
 
+<<<<<<< HEAD
 func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+=======
+func (r *ResourceController[T, U]) FilterNamespace(namespace string) *ResourceController[T, U] {
+	r.namespace = namespace
+	return r
+}
+
+func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
+	if r.namespace != "" && req.Namespace != r.namespace {
+		// no-op on mismatched filtered namespace
+		return ctrl.Result{}, nil
+	}
+
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 	l := log.FromContext(ctx).WithName(fmt.Sprintf("%s.Reconcile", r.name))
 	l.V(1).Info("Starting reconcile loop")
 	start := time.Now()

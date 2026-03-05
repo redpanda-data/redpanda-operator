@@ -555,16 +555,104 @@ func Run(
 			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
+<<<<<<< HEAD
 		}).SetupWithManager(ctx, mgr); err != nil {
+=======
+			UseNodePools:         opts.enableV2NodepoolController,
+		}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
 
+<<<<<<< HEAD
 		if err = (&redpandacontrollers.TopicReconciler{
 			Client:        mgr.GetClient(),
 			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
+=======
+		// the following 2 controllers depend on the Redpanda controller being run, so
+		// only run them if we run the Redpanda controller
+
+		// NodePool Reconciler
+		if opts.enableV2NodepoolController {
+			if err := (&redpandacontrollers.NodePoolReconciler{
+				Manager: mcmanager,
+			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+				return err
+			}
+		}
+
+		// Console Reconciler.
+		if opts.enableConsoleController {
+			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+				Options: client.Options{
+					Scheme: mgr.GetScheme(),
+					// mgr's GetClient sets the cache, to have a fully compatible ctl, we
+					// need to set the cache as well.
+					Cache: &client.CacheOptions{
+						Reader: mgr.GetCache(),
+					},
+				},
+				FieldManager: string(lifecycle.DefaultFieldOwner),
+			})
+			if err != nil {
+				return err
+			}
+
+			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "Console")
+				return err
+			}
+		}
+	}
+
+	if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Topic")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "User")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Group")
+		return err
+	}
+
+	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Schema")
+		return err
+	}
+
+	// Next configure and setup optional controllers.
+
+	if v1Controllers {
+		setupLog.Info("setting up vectorized controllers")
+		if err := setupVectorizedControllers(ctx, mgr, factory, cloudExpander, opts); err != nil {
+			return err
+		}
+	}
+
+	if opts.ControllerEnabled(NodeWatcherController) {
+		if err = (&nodewatcher.RedpandaNodePVCReconciler{
+			Client:       mgr.GetClient(),
+			OperatorMode: true,
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err

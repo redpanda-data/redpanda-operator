@@ -123,7 +123,41 @@ func (r *TopicReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+<<<<<<< HEAD
 func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
+=======
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
+	r := &TopicReconciler{
+		Manager: mgr,
+		Factory: internalclient.NewFactory(mgr, expander),
+	}
+
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		For(&redpandav1alpha2.Topic{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+
+	for _, clusterName := range mgr.GetClusterNames() {
+		if includeV1 {
+			enqueueV1Schema, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "topic_v1", clusterName, &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+			if err != nil {
+				return err
+			}
+			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, controller.WatchOptions(clusterName)...)
+		}
+
+		if includeV2 {
+			enqueueV2Topic, err := controller.RegisterClusterSourceIndex(ctx, mgr, "topic", clusterName, &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+			if err != nil {
+				return err
+			}
+			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic, controller.WatchOptions(clusterName)...)
+		}
+	}
+
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
+}
+
+func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 	l = l.WithName("reconcile")
 
 	interval := metav1.Duration{Duration: time.Second * 3}
