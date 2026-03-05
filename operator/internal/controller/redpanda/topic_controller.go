@@ -119,9 +119,20 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return result, err
 }
 
+<<<<<<< HEAD
 func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
+=======
+func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
+	if r.RecordEvents {
+		return c.GetEventRecorderFor("TopicReconciler") //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
+	}
+	return nil
+}
+
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 	r := &TopicReconciler{
 		Client:        c,
 		Factory:       internalclient.NewFactory(config, c, expander),
@@ -148,7 +159,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic)
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {

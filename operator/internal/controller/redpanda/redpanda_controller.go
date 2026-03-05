@@ -113,6 +113,7 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
+<<<<<<< HEAD
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	enqueueClusterFromNodePool := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 		pool := o.(*redpandav1alpha2.NodePool)
@@ -123,6 +124,10 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 			},
 		}}
 	})
+=======
+func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
+	builder := mcbuilder.ControllerManagedBy(mgr)
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 
 	builder := ctrl.NewControllerManagedBy(mgr)
 
@@ -134,7 +139,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 		builder.Watches(&redpandav1alpha2.NodePool{}, enqueueClusterFromNodePool)
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 type clusterReconciliationState struct {
