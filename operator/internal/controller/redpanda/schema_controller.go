@@ -84,10 +84,15 @@ func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceR
 	return nil
 }
 
+<<<<<<< HEAD
 func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c, expander)
+=======
+func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
+	factory := internalclient.NewFactory(mgr, expander)
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Schema{})
@@ -113,5 +118,5 @@ func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secr
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
-	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }
