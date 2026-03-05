@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
@@ -29,6 +30,7 @@ func main() {
 		operatorNamespace string
 		serviceName       string
 		kubeconfigPath    string
+		dnsOverrides      []string
 	)
 	rootCmd := &cobra.Command{
 		Use:   "multicluster-bootstrap",
@@ -42,6 +44,7 @@ func main() {
 				operatorNamespace,
 				serviceName,
 				kubeconfigPath,
+				dnsOverrides,
 			)
 		},
 	}
@@ -50,6 +53,7 @@ func main() {
 	rootCmd.Flags().StringVar(&operatorNamespace, "operatorNamespace", "", "")
 	rootCmd.Flags().StringVar(&serviceName, "serviceName", "redpanda-operator-multicluster", "")
 	rootCmd.Flags().StringVar(&kubeconfigPath, "kubeconfigPath", "", "")
+	rootCmd.Flags().StringArrayVar(&dnsOverrides, "dns-override", []string{}, "DNS overrides in the format <context>=<dns-name>")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Printf("%+v\n", err)
@@ -128,6 +132,7 @@ func run(
 	operatorNamespace string,
 	serviceName string,
 	kubeconfigPath string,
+	dnsOverrides []string,
 ) {
 	log.Println("Creating certificates")
 
@@ -143,14 +148,26 @@ func run(
 		log.Fatalf("Failed to parse kubeconfig: %v", err)
 	}
 
+	overrides := make(map[string]string)
+	for _, override := range dnsOverrides {
+		parts := strings.SplitN(override, "=", 2)
+		if len(parts) != 2 {
+			log.Fatalf("Invalid DNS override format: %s", override)
+		}
+		contextName := parts[0]
+		dnsName := parts[1]
+		overrides[contextName] = dnsName
+	}
+
 	// Convert ClusterInfo to RemoteConfiguration
 	for _, clusterInfo := range clusterInfos {
 		log.Printf("Adding cluster from context: %s (cluster: %s, user: %s)",
 			clusterInfo.ContextName, clusterInfo.ClusterName, clusterInfo.UserName)
 
 		remoteClusters = append(remoteClusters, bootstrap.RemoteConfiguration{
-			KubeConfig:  clusterInfo.Config,
-			ContextName: clusterInfo.ContextName,
+			KubeConfig:     clusterInfo.Config,
+			ContextName:    clusterInfo.ContextName,
+			ServiceAddress: overrides[clusterInfo.ContextName],
 		})
 	}
 
