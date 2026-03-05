@@ -740,9 +740,19 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
+<<<<<<< HEAD
 	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
 		dialer := kube.NewPodDialer(mgr.GetConfig())
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithDialer(dialer.DialContext)
+=======
+	s.env.SetupManager(s.setupRBAC(), func(mgr multicluster.Manager) error {
+		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
+		s.clientFactory = internalclient.NewFactory(mgr, nil).WithDialer(dialer.DialContext)
+
+		s.Require().NoError((&redpanda.NodePoolReconciler{
+			Manager: mgr,
+		}).SetupWithManager(s.ctx, mgr, ""))
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
@@ -750,6 +760,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 			KubeConfig:    mgr.GetConfig(),
 			EventRecorder: mgr.GetEventRecorderFor("Redpanda"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
 			ClientFactory: s.clientFactory,
+<<<<<<< HEAD
 			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(lifecycle.Image{
 				Repository: "localhost/redpanda-operator",
 				Tag:        "dev",
@@ -757,6 +768,15 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 				CloudSecretsEnabled: false,
 			})),
 		}).SetupWithManager(s.ctx, mgr)
+=======
+			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(
+				lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
+				lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
+				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
+			)),
+			UseNodePools: true,
+		}).SetupWithManager(s.ctx, mgr, "")
+>>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with
