@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -224,10 +225,23 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 
 	// Examine if the object is under deletion
 	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
-		// clean up all dependant resources
+		// clean up all dependant infrastructure resources (StatefulSets, Services, etc.)
 		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
 			return r.syncStatus(ctx, cluster, state, reconcile.Result{}, err)
 		}
+
+		// Delete all sub-resources (RedpandaRole, User, Topic, Group,
+		// Schema, ShadowLink) that reference this cluster. This happens
+		// after DeleteAll because the brokers are being torn down anyway —
+		// sub-resource controllers will hit connection errors which
+		// ignoreAllConnectionErrors handles by removing their finalizers.
+		if remaining, err := r.deleteSubResources(ctx, k8sClient, rp); err != nil {
+			return r.syncStatus(ctx, cluster, state, ctrl.Result{}, err)
+		} else if remaining > 0 {
+			logger.V(1).Info("Waiting for sub-resources to be deleted", "remaining", remaining)
+			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: 5 * time.Second}, nil)
+		}
+
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
 			if err := k8sClient.Update(ctx, rp); err != nil {
 				logger.Error(err, "updating cluster finalizer")
@@ -282,6 +296,95 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	// we're at the end of reconciliation, so sync back our status
 	log.FromContext(ctx).V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
+}
+
+// subResourceDeleter deletes all instances of a sub-resource type
+// that reference a given Redpanda cluster. Returns count of resources
+// still pending deletion and any errors.
+type subResourceDeleter func(ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda) (int, error)
+
+// subResourceDeleters lists all sub-resource types that should be
+// cascade-deleted when a Redpanda cluster is removed. To add a new
+// sub-resource type, append an entry here.
+var subResourceDeleters = []subResourceDeleter{
+	makeDeleter[*redpandav1alpha2.RedpandaRole]("role", &redpandav1alpha2.RedpandaRoleList{}),
+	makeDeleter[*redpandav1alpha2.User]("user", &redpandav1alpha2.UserList{}),
+	makeDeleter[*redpandav1alpha2.Topic]("topic", &redpandav1alpha2.TopicList{}),
+	makeDeleter[*redpandav1alpha2.Group]("group", &redpandav1alpha2.GroupList{}),
+	makeDeleter[*redpandav1alpha2.Schema]("schema", &redpandav1alpha2.SchemaList{}),
+	makeDeleter[*redpandav1alpha2.ShadowLink]("shadow_link", &redpandav1alpha2.ShadowLinkList{}),
+}
+
+func makeDeleter[T client.Object, U interface {
+	client.ObjectList
+	GetItems() []T
+}](name string, list U) subResourceDeleter {
+	return func(ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda) (int, error) {
+		// Allocate a fresh list to avoid sharing the captured pointer across
+		// calls. FromSourceCluster currently does this internally via reflect,
+		// but we do it here defensively so correctness does not depend on that
+		// implementation detail.
+		freshList := reflect.New(reflect.TypeOf(list).Elem()).Interface().(U)
+		return deleteReferencingResources(ctx, c, rp, name, freshList)
+	}
+}
+
+// deleteSubResources deletes all sub-resources (RedpandaRole, User, Topic,
+// Group, Schema, ShadowLink) that reference the given Redpanda cluster.
+// It returns the number of sub-resources still remaining (pending full deletion)
+// and any errors encountered during the process.
+func (r *RedpandaReconciler) deleteSubResources(ctx context.Context, k8sClient client.Client, rp *redpandav1alpha2.Redpanda) (int, error) {
+	var remaining int
+	var deleteErrors error
+	for _, del := range subResourceDeleters {
+		n, err := del(ctx, k8sClient, rp)
+		remaining += n
+		deleteErrors = errors.Join(deleteErrors, err)
+	}
+	return remaining, deleteErrors
+}
+
+// deleteReferencingResources is a generic helper that finds and deletes all
+// instances of a sub-resource type that reference the given Redpanda cluster.
+// It returns the count of resources still remaining and any errors.
+func deleteReferencingResources[T client.Object, U interface {
+	client.ObjectList
+	GetItems() []T
+}](ctx context.Context, k8sClient client.Client, rp *redpandav1alpha2.Redpanda, name string, list U) (int, error) {
+	logger := log.FromContext(ctx)
+
+	items, err := controller.FromSourceCluster(ctx, k8sClient, name, rp, list)
+	if err != nil {
+		return 0, errors.Wrapf(err, "listing %s sub-resources", name)
+	}
+
+	remaining := 0
+	var deleteErrors error
+
+	for _, item := range items {
+		if !item.GetDeletionTimestamp().IsZero() {
+			// Already being deleted, count as remaining
+			remaining++
+			continue
+		}
+
+		logger.V(1).Info("Deleting sub-resource referencing cluster",
+			"kind", name,
+			"name", item.GetName(),
+			"namespace", item.GetNamespace(),
+		)
+
+		if err := k8sClient.Delete(ctx, item); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			deleteErrors = errors.Join(deleteErrors, errors.Wrapf(err, "deleting %s/%s", name, item.GetName()))
+			continue
+		}
+		remaining++
+	}
+
+	return remaining, deleteErrors
 }
 
 func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpandav1alpha2.Redpanda, cluster cluster.Cluster) (*clusterReconciliationState, error) {
