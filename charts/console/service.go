@@ -17,9 +17,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+const servicePortName = "http"
+
 func Service(state *RenderState) *corev1.Service {
 	port := corev1.ServicePort{
-		Name:     "http",
+		Name:     servicePortName,
 		Port:     int32(state.Values.Service.Port),
 		Protocol: corev1.ProtocolTCP,
 	}

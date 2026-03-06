@@ -18,11 +18,13 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/imdario/mergo"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,6 +53,7 @@ const (
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="monitoring.coreos.com",resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 
 type Controller struct {
 	Ctl *kube.Ctl
@@ -73,6 +76,14 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 
 	// NB: As of writing, all console types are namespace scoped.
 	for _, t := range console.Types() {
+		// this will skip watch for ServiceMonitor if they are not installed in the cluster.
+		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
+		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
+		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
+			if c.skipServiceMonitorWatchIfNotInstalled(ctx) {
+				continue
+			}
+		}
 		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 	}
 
@@ -276,6 +287,18 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, cr *redpandav1alpha2.
 	cr.Spec.Secret.Authentication.JWTSigningKey = ptr.To(string(secret.Data["key"]))
 
 	return nil
+}
+
+func (c *Controller) skipServiceMonitorWatchIfNotInstalled(ctx context.Context) (skip bool) {
+	var serviceMonitorList monitoringv1.ServiceMonitorList
+	err := c.Ctl.List(ctx, "default", &serviceMonitorList)
+	if errors.Is(err, &meta.NoKindMatchError{}) {
+		return true
+	} else if err != nil {
+		log.Error(ctx, err, "could not list ServiceMonitors")
+		return true
+	}
+	return false
 }
 
 // render implements [kube.Renderer].

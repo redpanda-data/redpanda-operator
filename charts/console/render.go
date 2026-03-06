@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -45,6 +46,7 @@ const (
 // +gotohelm:ignore=true
 func init() {
 	must(scheme.AddToScheme(Scheme))
+	must(monitoringv1.AddToScheme(Scheme))
 }
 
 // +gotohelm:ignore=true
@@ -167,6 +169,7 @@ func Render(state *RenderState) []kube.Object {
 		Ingress(state),
 		Deployment(state),
 		HorizontalPodAutoscaler(state),
+		ServiceMonitor(state),
 	}
 
 	// NB: This slice may contain nil interfaces!
@@ -184,6 +187,7 @@ func Types() []kube.Object {
 		&networkingv1.Ingress{},
 		&appsv1.Deployment{},
 		&autoscalingv2.HorizontalPodAutoscaler{},
+		&monitoringv1.ServiceMonitor{},
 	}
 }
 

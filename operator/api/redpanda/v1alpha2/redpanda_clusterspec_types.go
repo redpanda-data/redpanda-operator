@@ -305,6 +305,8 @@ type RedpandaConsole struct {
 	// Settings for console's Deployment's liveness probe.
 	LivenessProbe *LivenessProbe `json:"livenessProbe,omitempty"`
 
+	Monitoring *MonitoringConfig `json:"monitoring,omitempty"`
+
 	// Deprecated fields below
 
 	// Deprecated: Use `config` instead

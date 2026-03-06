@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/require"
@@ -232,6 +233,10 @@ func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, console *redpandav1alp
 
 	var objects []kube.Object
 	for _, objType := range consolechart.Types() {
+		// skip ServiceMonitor here as it is optional and created only when monitoring.enabled is true
+		if _, ok := objType.(*monitoringv1.ServiceMonitor); ok {
+			continue
+		}
 		list, err := kube.ListFor(ctl.Scheme(), objType)
 		require.NoError(t, err)
 
