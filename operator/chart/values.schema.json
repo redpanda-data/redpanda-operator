@@ -5934,9 +5934,6 @@
               "type": "object"
             }
           },
-          "required": [
-            "spec"
-          ],
           "type": "object"
         }
       },
@@ -11392,9 +11389,6 @@
               "type": "object"
             }
           },
-          "required": [
-            "spec"
-          ],
           "type": "object"
         }
       },
@@ -16728,9 +16722,6 @@
           "type": "object"
         }
       },
-      "required": [
-        "spec"
-      ],
       "type": "object"
     },
     "rbac": {

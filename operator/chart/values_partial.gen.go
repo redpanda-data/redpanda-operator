@@ -114,7 +114,7 @@ type PartialEnterprise struct {
 
 type PartialPodTemplateSpec struct {
 	Metadata *PartialMetadata "json:\"metadata,omitempty\""
-	Spec     *corev1.PodSpec  "json:\"spec,omitempty\" jsonschema:\"required\""
+	Spec     *corev1.PodSpec  "json:\"spec,omitempty\""
 }
 
 type PartialHealthConfig struct {

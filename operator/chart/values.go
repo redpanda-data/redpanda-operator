@@ -99,7 +99,7 @@ type CRDs struct {
 
 type PodTemplateSpec struct {
 	Metadata Metadata       `json:"metadata,omitempty"`
-	Spec     corev1.PodSpec `json:"spec,omitempty" jsonschema:"required"`
+	Spec     corev1.PodSpec `json:"spec,omitempty"`
 }
 
 type Metadata struct {

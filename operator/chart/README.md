@@ -129,12 +129,6 @@ Specifies whether to install experimental CRDs. If this is true both experimenta
 
 **Default:** `false`
 
-### [crds.podTemplate](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds.podTemplate)
-
-Allows customizing the PodTemplateSpec of the CRD pre-install hook Job. Merged on top of chart-managed defaults via StrategicMergePatch semantics. Only the `spec` field is respected; metadata (`labels`/`annotations`) is currently ignored.
-
-**Default:** `{}`
-
 ### [enterprise](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=enterprise)
 
 Enterprise (optional) For details, see the [License documentation](https://docs.redpanda.com/docs/get-started/licenses/?platform=kubernetes#redpanda-enterprise-edition).
@@ -197,9 +191,9 @@ Log level Valid values (from least to most verbose) are: `warn`, `info`, `debug`
 
 ### [migrationJob](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=migrationJob)
 
-Allows customizing the PodTemplateSpec of the post-upgrade migration hook Job. Merged on top of chart-managed defaults via StrategicMergePatch semantics. Only the `spec` field is respected.
+Allows customizing the PodTemplateSpec of the post-upgrade migration hook Job. Merged on top of chart-managed defaults via StrategicMergePatch semantics. Only the `spec` field is respected. Example:   migrationJob:     podTemplate:       spec:         securityContext:           runAsNonRoot: true
 
-**Default:** `{"podTemplate":{}}`
+**Default:** `{}`
 
 ### [monitoring](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring)
 
@@ -334,10 +328,6 @@ Sets deployment strategy. For details, see the [Kubernetes documentation](https:
 Taints to be tolerated by Pods. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).
 
 **Default:** `[]`
-
-### [vectorizedControllers.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=vectorizedControllers.enabled)
-
-**Default:** `false`
 
 ### [webhook](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=webhook)
 
