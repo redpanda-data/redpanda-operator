@@ -70,8 +70,17 @@ type Values struct {
 	LivenessProbe         *corev1.Probe                 `json:"livenessProbe,omitempty"`
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
+	MigrationJob          MigrationJob                  `json:"migrationJob"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
 	Multicluster          Multicluster                  `json:"multicluster"`
+}
+
+type MigrationJob struct {
+	// PodTemplate allows overriding the spec of the post-upgrade migration
+	// hook Job's Pod, e.g. to set a securityContext, add tolerations, or tune
+	// container settings. Merged via StrategicMergePatch semantics on top of
+	// the chart-managed defaults.
+	PodTemplate *PodTemplateSpec `json:"podTemplate,omitempty"`
 }
 
 type VectorizedControllers struct {
@@ -79,8 +88,13 @@ type VectorizedControllers struct {
 }
 
 type CRDs struct {
-	Enabled      bool `json:"enabled"`
-	Experimental bool `json:"experimental"`
+	Enabled      bool             `json:"enabled"`
+	Experimental bool             `json:"experimental"`
+	// PodTemplate allows overriding the spec of the CRD pre-install hook Job's
+	// Pod, e.g. to set a securityContext, add tolerations, or tune container
+	// settings. Merged via StrategicMergePatch semantics on top of the
+	// chart-managed defaults.
+	PodTemplate  *PodTemplateSpec `json:"podTemplate,omitempty"`
 }
 
 type PodTemplateSpec struct {

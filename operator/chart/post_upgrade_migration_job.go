@@ -25,6 +25,32 @@ import (
 func PostUpgradeMigrationJob(dot *helmette.Dot) *batchv1.Job {
 	values := helmette.Unwrap[Values](dot.Values)
 
+	basePodTemplate := corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: values.PodAnnotations,
+			Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
+		},
+		Spec: corev1.PodSpec{
+			RestartPolicy:                 corev1.RestartPolicyOnFailure,
+			AutomountServiceAccountToken:  ptr.To(false),
+			TerminationGracePeriodSeconds: ptr.To(int64(10)),
+			ImagePullSecrets:              values.ImagePullSecrets,
+			ServiceAccountName:            MigrationJobServiceAccountName(dot),
+			NodeSelector:                  values.NodeSelector,
+			Tolerations:                   values.Tolerations,
+			Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},
+			Containers:                    migrationJobContainers(dot),
+		},
+	}
+
+	podTemplate := basePodTemplate
+	if values.MigrationJob.PodTemplate != nil {
+		patch := corev1.PodTemplateSpec{
+			Spec: values.MigrationJob.PodTemplate.Spec,
+		}
+		podTemplate = StrategicMergePatch(&patch, basePodTemplate)
+	}
+
 	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "batch/v1",
@@ -44,23 +70,7 @@ func PostUpgradeMigrationJob(dot *helmette.Dot) *batchv1.Job {
 			},
 		},
 		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: values.PodAnnotations,
-					Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
-				},
-				Spec: corev1.PodSpec{
-					RestartPolicy:                 corev1.RestartPolicyOnFailure,
-					AutomountServiceAccountToken:  ptr.To(false),
-					TerminationGracePeriodSeconds: ptr.To(int64(10)),
-					ImagePullSecrets:              values.ImagePullSecrets,
-					ServiceAccountName:            MigrationJobServiceAccountName(dot),
-					NodeSelector:                  values.NodeSelector,
-					Tolerations:                   values.Tolerations,
-					Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},
-					Containers:                    migrationJobContainers(dot),
-				},
-			},
+			Template: podTemplate,
 		},
 	}
 }

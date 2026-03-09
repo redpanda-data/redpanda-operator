@@ -30,6 +30,36 @@ func PreInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 		return nil
 	}
 
+	basePodTemplate := corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: values.PodAnnotations,
+			Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
+		},
+		Spec: corev1.PodSpec{
+			RestartPolicy:                 corev1.RestartPolicyOnFailure,
+			AutomountServiceAccountToken:  ptr.To(false),
+			TerminationGracePeriodSeconds: ptr.To(int64(10)),
+			ImagePullSecrets:              values.ImagePullSecrets,
+			ServiceAccountName:            CRDJobServiceAccountName(dot),
+			NodeSelector:                  values.NodeSelector,
+			Tolerations:                   values.Tolerations,
+			Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},
+			Containers:                    crdJobContainers(dot),
+		},
+	}
+
+	podTemplate := basePodTemplate
+	if values.CRDs.PodTemplate != nil {
+		// only merge the spec portion; metadata labels/annotations are not
+		// currently applied to the hook job.  Restricting to the spec avoids
+		// nil-pointer dereferences when users supply a podTemplate with only a
+		// spec (metadata may be omitted).
+		patch := corev1.PodTemplateSpec{
+			Spec: values.CRDs.PodTemplate.Spec,
+		}
+		podTemplate = StrategicMergePatch(&patch, basePodTemplate)
+	}
+
 	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "batch/v1",
@@ -48,23 +78,7 @@ func PreInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 			},
 		},
 		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: values.PodAnnotations,
-					Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
-				},
-				Spec: corev1.PodSpec{
-					RestartPolicy:                 corev1.RestartPolicyOnFailure,
-					AutomountServiceAccountToken:  ptr.To(false),
-					TerminationGracePeriodSeconds: ptr.To(int64(10)),
-					ImagePullSecrets:              values.ImagePullSecrets,
-					ServiceAccountName:            CRDJobServiceAccountName(dot),
-					NodeSelector:                  values.NodeSelector,
-					Tolerations:                   values.Tolerations,
-					Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},
-					Containers:                    crdJobContainers(dot),
-				},
-			},
+			Template: podTemplate,
 		},
 	}
 }

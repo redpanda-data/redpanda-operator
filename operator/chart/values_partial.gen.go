@@ -47,6 +47,7 @@ type PartialValues struct {
 	LivenessProbe         *corev1.Probe                 "json:\"livenessProbe,omitempty\""
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
+	MigrationJob          *PartialMigrationJob          "json:\"migrationJob,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
 }
@@ -87,8 +88,13 @@ type PartialMonitoringConfig struct {
 }
 
 type PartialCRDs struct {
-	Enabled      *bool "json:\"enabled,omitempty\""
-	Experimental *bool "json:\"experimental,omitempty\""
+	Enabled      *bool                   "json:\"enabled,omitempty\""
+	Experimental *bool                   "json:\"experimental,omitempty\""
+	PodTemplate  *PartialPodTemplateSpec "json:\"podTemplate,omitempty\""
+}
+
+type PartialMigrationJob struct {
+	PodTemplate *PartialPodTemplateSpec "json:\"podTemplate,omitempty\""
 }
 
 type PartialVectorizedControllers struct {
