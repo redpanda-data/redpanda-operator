@@ -90,7 +90,7 @@ serviceAccount:
   # a name is generated using the `redpanda-operator.fullname` template.
   # name:
 
-# -- Flags to control CRD installation.
+  # -- Flags to control CRD installation.
 crds:
   # -- Specifies whether to install stable CRDs
   enabled: false
@@ -98,28 +98,17 @@ crds:
   experimental: false
   # -- Allows customizing the PodTemplateSpec of the CRD pre-install hook Job.
   # Merged on top of chart-managed defaults via StrategicMergePatch semantics.
-  # Only the `spec` field is respected; metadata (`labels`/`annotations`) is
-  # currently ignored.  This avoids helm template errors when providing only a
-  # spec.  Use the spec to set a pod-level or container-level securityContext,
-  # tolerations, nodeSelector, etc.
-  # Example:
-  #   podTemplate:
-  #     spec:
-  #       securityContext:
-  #         runAsNonRoot: true
-  #         runAsUser: 65532
-  #       containers:
-  #         - name: crd-installation
-  #           securityContext:
-  #             runAsNonRoot: true
-  #             allowPrivilegeEscalation: false
-  #             readOnlyRootFilesystem: true
-  # podTemplate: {}
+  # Only the `spec` field is respected; metadata (`labels`/`annotations`) is currently ignored.
+  podTemplate: {}
+  #  spec:
+  #    securityContext:
+  #      runAsNonRoot: true
+  #      runAsUser: 65532
 
-# -- Sets resources requests/limits for Redpanda Operator Pods.
-# By default requests and limits are not set to increase the chances that the charts run on environments with few
-# resources, such as Minikube. To specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after `resources`.
+  # -- Sets resources requests/limits for Redpanda Operator Pods.
+  # By default requests and limits are not set to increase the chances that the charts run on environments with few
+  # resources, such as Minikube. To specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after `resources`.
 resources: {}
 #  limits:
 #   cpu: 100m
@@ -163,24 +152,16 @@ additionalCmdFlags: []
 # For example, `my.k8s.service: redpanda-operator`.
 commonLabels: {}
 
-# -- Override the PodTemplateSpec of the post-upgrade migration hook Job.
+# -- Allows customizing the PodTemplateSpec of the post-upgrade migration hook Job.
 # Merged on top of chart-managed defaults via StrategicMergePatch semantics.
 # Only the `spec` field is respected.
-# Example:
-#   migrationJob:
-#     podTemplate:
-#       spec:
-#         securityContext:
-#           runAsNonRoot: true
-#           runAsUser: 65532
-#         containers:
-#           - name: migration
-#             securityContext:
-#               allowPrivilegeEscalation: false
-migrationJob: {}
-
-# @ignored
-# Enables controllers for the Resources in the Vectorized group.
+migrationJob:
+  podTemplate: {}
+  #  spec:
+  #    securityContext:
+  #      runAsNonRoot: true
+  # @ignored
+  # Enables controllers for the Resources in the Vectorized group.
 vectorizedControllers:
   enabled: false
 
@@ -207,28 +188,28 @@ podTemplate:
     securityContext:
       runAsUser: 65532
     containers:
-      - name: manager
-        resources: {}
-        # securityContext: {}
-        # env: []
+    - name: manager
+      resources: {}
+      # securityContext: {}
+      # env: []
 
-# -- Sets operator container security context
-# For details,
-# see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#security-context-1).
-# operatorSecurityContext:
+      # -- Sets operator container security context
+      # For details,
+      # see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#security-context-1).
+      # operatorSecurityContext:
 
-# -- Sets operator container liveness probe various durations
-# For details,
-# see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#Probe).
-# livenessProbe:
+      # -- Sets operator container liveness probe various durations
+      # For details,
+      # see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#Probe).
+      # livenessProbe:
 
-# -- Sets operator container readiness probe various durations
-# For details,
-# see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#Probe).
-# readinessProbe:
+      # -- Sets operator container readiness probe various durations
+      # For details,
+      # see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#Probe).
+      # readinessProbe:
 
-# @ignored
-# Multicluster settings
+      # @ignored
+      # Multicluster settings
 multicluster:
   enabled: false
   name: ""

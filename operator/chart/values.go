@@ -88,13 +88,13 @@ type VectorizedControllers struct {
 }
 
 type CRDs struct {
-	Enabled      bool             `json:"enabled"`
-	Experimental bool             `json:"experimental"`
+	Enabled      bool `json:"enabled"`
+	Experimental bool `json:"experimental"`
 	// PodTemplate allows overriding the spec of the CRD pre-install hook Job's
 	// Pod, e.g. to set a securityContext, add tolerations, or tune container
 	// settings. Merged via StrategicMergePatch semantics on top of the
 	// chart-managed defaults.
-	PodTemplate  *PodTemplateSpec `json:"podTemplate,omitempty"`
+	PodTemplate *PodTemplateSpec `json:"podTemplate,omitempty"`
 }
 
 type PodTemplateSpec struct {
