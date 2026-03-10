@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	retain = flag.Bool("retain", false, "if true, no clean up will be performed.")
-	update = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
+	retain                = flag.Bool("retain", false, "if true, no clean up will be performed.")
+	update                = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
+	multiClusterSetupOnly = flag.Bool("multi-cluster-setup-only", false, "if true, only the multi-cluster setup will be performed.")
 )
 
 // TestType represents the type of test being run, i.e. unit, integration, or acceptance
@@ -95,6 +96,10 @@ func Retain() bool {
 // computed files should be updated instead of asserted against.
 func Update() bool {
 	return *update
+}
+
+func MultiClusterSetupOnly() bool {
+	return *multiClusterSetupOnly
 }
 
 // TempDir is wrapper around [testing.T.TempDir] that respects [Retain].

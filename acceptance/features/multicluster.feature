@@ -1,7 +1,7 @@
 @operator:none
 Feature: Multicluster Operator
 
-  @skip:gke @skip:aks @skip:eks @skip:k3d
+  @skip:gke @skip:aks @skip:eks
   Scenario: Multicluster finalizers
     Given I create a multicluster operator named "multicluster" with 3 nodes
     And I apply a multicluster Kubernetes manifest to "multicluster":
@@ -12,5 +12,25 @@ Feature: Multicluster Operator
     metadata:
       name: cluster
       namespace: default
+    spec:
+      rbac:
+        enabled: true
     """
     Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
+    And I apply a NodePool Kubernetes manifest to "multicluster":
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: NodePool
+    metadata:
+      name: stretch-cluster-nodepool
+      namespace: default
+    spec:
+      clusterRef:
+        group: cluster.redpanda.com
+        kind: StretchCluster
+        name: cluster
+      replicas: 1
+      image:
+        repository: redpandadata/redpanda
+    """

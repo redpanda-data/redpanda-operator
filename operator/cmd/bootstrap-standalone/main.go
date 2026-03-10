@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
@@ -29,7 +30,7 @@ func main() {
 		operatorNamespace string
 		serviceName       string
 		kubeconfigPath    string
-		dnsOverrides		 []string
+		dnsOverrides      []string
 	)
 	rootCmd := &cobra.Command{
 		Use:   "multicluster-bootstrap",
@@ -133,7 +134,6 @@ func run(
 	kubeconfigPath string,
 	dnsOverrides []string,
 ) {
-) {
 	log.Println("Creating certificates")
 
 	remoteClusters := []bootstrap.RemoteConfiguration{}
@@ -165,8 +165,8 @@ func run(
 			clusterInfo.ContextName, clusterInfo.ClusterName, clusterInfo.UserName)
 
 		remoteClusters = append(remoteClusters, bootstrap.RemoteConfiguration{
-			KubeConfig:  clusterInfo.Config,
-			ContextName: clusterInfo.ContextName,
+			KubeConfig:     clusterInfo.Config,
+			ContextName:    clusterInfo.ContextName,
 			ServiceAddress: overrides[clusterInfo.ContextName],
 		})
 	}

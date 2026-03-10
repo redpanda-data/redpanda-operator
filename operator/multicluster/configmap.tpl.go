@@ -125,10 +125,15 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool P
 	}
 
 	if includeNonHashableItems {
-		servers := state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
+		servers := make([]map[string]any, 0)
+		//servers := state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
 
-		for _, set := range state.Pools {
-			servers = append(servers, state.Values.Listeners.CreateSeedServers(set.Statefulset.Replicas, fmt.Sprintf("%s%s", Fullname(state), set.Suffix()), InternalDomain(state))...)
+		//for _, set := range state.Pools {
+		//	servers = append(servers, state.Values.Listeners.CreateSeedServers(set.Statefulset.Replicas, fmt.Sprintf("%s%s", Fullname(state), set.Suffix()), InternalDomain(state))...)
+		//}
+
+		for _, svcPerPod := range state.SeedServers {
+			servers = append(servers, state.Values.Listeners.CreateMulticlusterSeedServers(svcPerPod)...)
 		}
 
 		redpanda["seed_servers"] = servers

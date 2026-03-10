@@ -14,6 +14,7 @@ import (
 	"strconv"
 
 	"github.com/cockroachdb/errors"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -47,9 +48,15 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		return nil, errors.WithStack(err)
 	}
 
-	state, err := conversion.ConvertStretchClusterToRenderState(cl.GetConfig(), &conversion.V2Defaulters{}, cluster.StretchCluster, cluster.NodePools, clusterName)
+	state, err := conversion.ConvertStretchClusterToRenderState(cl.GetConfig(), &conversion.V2Defaulters{}, cluster.StretchCluster, cluster.GetNodePoolsForCluster(clusterName), clusterName)
 	if err != nil {
 		return nil, errors.WithStack(err)
+	}
+
+	state.SeedServers = []string{
+		"cluster-external-0.default.svc.cluster.local",
+		"cluster-external-1.default.svc.cluster.local",
+		"cluster-external-2.default.svc.cluster.local",
 	}
 
 	resources, err := redpanda.RenderResources(state)
@@ -57,6 +64,18 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		return nil, errors.WithStack(err)
 	}
 
+	services, oldServiceName := m.renderServiceForCluster(state)
+
+	state.Values.Service.Name = ptr.To(oldServiceName)
+
+	for _, service := range services {
+		resources = append(resources, service)
+	}
+
+	return resources, nil
+}
+
+func (m *StretchClusterSimpleResourceRenderer) renderServiceForCluster(state *redpanda.RenderState) ([]*corev1.Service, string) {
 	oldServiceName := ""
 	if state.Values.Service != nil {
 		if state.Values.Service.Name != nil {
@@ -65,6 +84,7 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 	} else {
 		state.Values.Service = &redpanda.Service{}
 	}
+	var services []*corev1.Service
 	for _, pool := range state.Pools {
 		for i := 0; i < int(pool.Statefulset.Replicas); i++ {
 			if oldServiceName != "" {
@@ -78,13 +98,37 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 			svc.Annotations = pool.ServiceAnnotations
 			svc.Spec.Selector = redpanda.StatefulSetPodLabelsSelector(state, pool)
 
-			resources = append(resources, svc)
+			services = append(services, svc)
 		}
 	}
+	return services, oldServiceName
+}
 
-	state.Values.Service.Name = ptr.To(oldServiceName)
+func (m *StretchClusterSimpleResourceRenderer) RenderPoolsServices(ctx context.Context, cluster *StretchClusterWithPools) ([]*corev1.Service, error) {
+	var services []*corev1.Service
+	var errs []error
+	for _, clusterName := range m.mgr.GetClusterNames() {
+		cl, err := m.mgr.GetCluster(ctx, clusterName)
+		if err != nil {
+			errs = append(errs, errors.WithStack(err))
+			continue
+		}
 
-	return resources, nil
+		state, err := conversion.ConvertStretchClusterToRenderState(cl.GetConfig(), &conversion.V2Defaulters{}, cluster.StretchCluster, cluster.GetNodePoolsForCluster(clusterName), clusterName)
+		if err != nil {
+			errs = append(errs, errors.WithStack(err))
+			continue
+		}
+		servicesInCluster, _ := m.renderServiceForCluster(state)
+		services = append(services, servicesInCluster...)
+	}
+	if len(errs) > 0 {
+		// warn here
+	}
+	if len(services) == 0 {
+		// error here
+	}
+	return services, nil
 }
 
 // WatchedResourceTypes returns the list of all the resources that the cluster

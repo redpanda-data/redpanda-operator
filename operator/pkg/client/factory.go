@@ -16,6 +16,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/console/backend/pkg/config"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -264,6 +265,10 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
 		return c.redpandaAdminForV1Cluster(ctx, cluster, clusterName)
+	}
+
+	if cluster, ok := obj.(*lifecycle.PoolServicesTracker); ok {
+		return c.redpandaAdminForStretchCluster(cluster)
 	}
 
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
@@ -657,4 +662,14 @@ func (c *Factory) kafkaUserAuth() (kgo.Opt, error) {
 	}
 
 	return nil, nil
+}
+
+func (c *Factory) redpandaAdminForStretchCluster(servicesTracker *lifecycle.PoolServicesTracker) (*rpadmin.AdminAPI, error) {
+	// call simple renderer for service created for pool, then find admin port there
+	hosts := servicesTracker.GetAdminAPIHosts()
+	adminClient, err := redpanda.AdminClientForStretch(c.dialer, hosts)
+	if err != nil {
+		return nil, err
+	}
+	return adminClient, nil
 }

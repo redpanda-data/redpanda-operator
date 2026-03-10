@@ -56,6 +56,7 @@ type MulticlusterReconciler struct {
 type stretchClusterReconciliationState struct {
 	cluster               *lifecycle.StretchClusterWithPools
 	pools                 *lifecycle.PoolTracker
+	poolsServices         *lifecycle.PoolServicesTracker
 	status                *lifecycle.ClusterStatus
 	restartOnConfigChange bool
 	admin                 *rpadmin.AdminAPI
@@ -181,38 +182,29 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		// if we have an error or an explicit requeue from one of our
 		// sub reconcilers, then just early return
 		if err != nil || result.RequeueAfter > 0 {
-			l.V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
+			l.V(log.DebugLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
 			return r.syncStatus(ctx, cluster, state, result, err)
 		}
 	}
 
 	// we're at the end of reconciliation, so sync back our status
-	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
+	l.V(log.DebugLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
 }
 
 func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster, cluster cluster.Cluster) (*stretchClusterReconciliationState, error) {
 	logger := log.FromContext(ctx)
+	logger.V(log.DebugLevel).Info("fetchInitialState")
 
-	// fetch any related node pools
-	var existingPools []*redpandav1alpha2.NodePool
-	poolList := &redpandav1alpha2.NodePoolList{}
-	err := cluster.GetClient().List(ctx, poolList, &client.ListOptions{
-		Namespace: sc.Namespace,
-	})
+	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames())
+
+	// grab NodePools from all connected clusters
+	nodePools, err := r.LifecycleClient.FetchExistingNodePoolsFromAllClusters(ctx, sccluster)
 	if err != nil {
-		logger.Error(err, "fetching desired node pools")
+		logger.Error(err, "fetching nodepools")
 		return nil, err
 	}
-	// Filter pools that reference this stretch cluster
-	for i := range poolList.Items {
-		pool := &poolList.Items[i]
-		if pool.Spec.ClusterRef.Name == sc.Name {
-			existingPools = append(existingPools, pool)
-		}
-	}
-
-	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames(), existingPools...)
+	sccluster.NodePools = nodePools
 
 	// grab our existing and desired pool resources
 	// so that we can immediately calculate cluster status
@@ -240,9 +232,16 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, "No pods are ready")
 	}
 
+	poolServicesTracker, err := r.LifecycleClient.GetPoolsServices(ctx, sccluster)
+	if err != nil {
+		logger.Error(err, "fetching pools services")
+		return nil, err
+	}
+
 	return &stretchClusterReconciliationState{
 		cluster:               sccluster,
 		pools:                 pools,
+		poolsServices:         poolServicesTracker,
 		status:                status,
 		restartOnConfigChange: restartOnConfigChange,
 	}, nil
@@ -289,16 +288,16 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	}()
 
 	if !state.pools.CheckScale() {
-		logger.V(log.TraceLevel).Info("scale operation currently underway")
+		logger.V(log.DebugLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 
-	logger.V(log.TraceLevel).Info("ready to scale and apply node pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
+	logger.V(log.DebugLevel).Info("ready to scale and apply node pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
 
 	// first create any pools that don't currently exists
 	for _, set := range state.pools.ToCreate() {
-		logger.V(log.TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.DebugLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "creating statefulset")
@@ -307,7 +306,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 
 	// next scale up any under-provisioned pools and patch them to use the new spec
 	for _, set := range state.pools.ToScaleUp() {
-		logger.V(log.TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.DebugLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "scaling up statefulset")
@@ -317,7 +316,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	// now make sure all of the patch any sets that might have changed without affecting the cluster size
 	// here we can just wholesale patch everything
 	for _, set := range state.pools.RequiresUpdate() {
-		logger.V(log.TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.DebugLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "updating statefulset")
 		}
@@ -327,6 +326,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	requeue := !(state.pools.AnyReady() || state.pools.AllZero())
 
 	if requeue {
+		logger.V(log.DebugLevel).Info("reconcilePools requeueAfter")
 		result.RequeueAfter = requeueTimeout
 	}
 	return result, nil
@@ -339,7 +339,7 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 
 	logger := log.FromContext(ctx)
 
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.cluster.StretchCluster)
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.poolsServices)
 	if err != nil {
 		logger.Error(err, "error fetching redpanda admin client")
 		return ctrl.Result{}, err
@@ -416,7 +416,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// at this point any set that needs to be deleted should have 0 replicas
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
-		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.DebugLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := cluster.GetClient().Delete(ctx, set.StatefulSet); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
@@ -446,7 +446,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 		if shouldRoll {
 			rolled = true
-			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
+			logger.V(log.DebugLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
 			if err := cluster.GetClient().Delete(ctx, pod.Pod); err != nil {
 				return ctrl.Result{}, errors.Wrap(err, "deleting pod")
@@ -598,7 +598,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 	// 4. Tracking config version for restart-on-change functionality
 	//
 	// For now, mark as applied to allow other reconciliation to proceed
-	logger.V(log.TraceLevel).Info("cluster configuration reconciliation not yet fully implemented for StretchCluster")
+	logger.V(log.DebugLevel).Info("cluster configuration reconciliation not yet fully implemented for StretchCluster")
 	state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
 
 	return ctrl.Result{}, nil
@@ -607,7 +607,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 func (r *MulticlusterReconciler) syncStatus(ctx context.Context, cluster cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
 	original := state.cluster.StretchCluster.Status.DeepCopy()
 	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) {
-		log.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
+		log.FromContext(ctx).V(log.DebugLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
 		syncErr := cluster.GetClient().Status().Update(ctx, state.cluster.StretchCluster)
 		err = errors.Join(syncErr, err)
 	}
@@ -638,7 +638,7 @@ func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *
 // a single less replica.
 func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
-	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+	logger.V(log.DebugLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	brokerID, ok := brokerMap[set.LastPod.GetName()]
 	if ok {
@@ -657,7 +657,7 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 		}
 	}
 
-	logger.V(log.TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+	logger.V(log.DebugLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// now patch the statefulset to remove the pod
 	if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
@@ -671,12 +671,12 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 // decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
 func (r *MulticlusterReconciler) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerID int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].decommissionBroker", *cluster))
-	logger.V(log.TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+	logger.V(log.DebugLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "is not decommissioning") {
-			logger.V(log.TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+			logger.V(log.DebugLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
 				return false, errors.Wrap(err, "decommissioning broker")
@@ -687,7 +687,7 @@ func (r *MulticlusterReconciler) decommissionBroker(ctx context.Context, admin *
 		return false, errors.Wrap(err, "fetching decommission status")
 	}
 	if !decommissionStatus.Finished {
-		logger.V(log.TraceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+		logger.V(log.DebugLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 		// just requeue since we're still decommissioning
 		return true, nil
@@ -730,11 +730,20 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
 		// Consider an upstream fix.
 		SkipNameValidation: ptr.To(true),
-	}).For(&redpandav1alpha2.StretchCluster{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).Complete(&MulticlusterReconciler{Manager: mgr})
+	}).For(
+		&redpandav1alpha2.StretchCluster{},
+		mcbuilder.WithEngageWithLocalCluster(true),
+		mcbuilder.WithEngageWithProviderClusters(true)).Complete(
+		&MulticlusterReconciler{
+			Manager:         mgr,
+			LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+			ClientFactory:   factory,
+		},
+	)
 }

@@ -42,6 +42,7 @@ var (
 		certmanagerv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		redpandav1alpha2.Install,
+		monitoringv1.AddToScheme,
 	}
 
 	MulticlusterScheme *runtime.Scheme

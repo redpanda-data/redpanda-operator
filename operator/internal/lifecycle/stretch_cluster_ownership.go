@@ -10,6 +10,11 @@
 package lifecycle
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/redpanda-data/common-go/kube"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -67,4 +72,21 @@ func (m *StretchClusterOwnershipResolver) OwnerForObject(object client.Object) *
 		}
 	}
 	return nil
+}
+
+func (m *StretchClusterOwnershipResolver) ResolveOwnerReference(ctx context.Context, owner *StretchClusterWithPools, clusterName string, ctl *kube.Ctl) (*StretchClusterWithPools, error) {
+	sc := &redpandav1alpha2.StretchCluster{}
+	err := ctl.Get(ctx, client.ObjectKey{Name: owner.GetName(), Namespace: owner.GetNamespace()}, sc)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get StretchCluster %s/%s : %w", owner.GetNamespace(), owner.GetName(), err)
+	}
+	if owner.GetUID() != sc.GetUID() {
+		// this means that owner got assigned incorrectly to StretchCluster from a different k8s cluster.
+		// We need to fix it, so every resource owner is a StretchCluster from the same cluster as the resource itself.
+		newOwner := NewStretchClusterWithPools(sc.DeepCopy(), owner.clusters, owner.NodePools...)
+		newOwner.Kind = "StretchCluster"
+		newOwner.APIVersion = redpandav1alpha2.GroupVersion.String()
+		return newOwner, nil
+	}
+	return owner, nil
 }

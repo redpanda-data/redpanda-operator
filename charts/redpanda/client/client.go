@@ -67,6 +67,36 @@ func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rp
 	return client, nil
 }
 
+func AdminClientForStretch(dialer DialContextFunc, hosts []string) (*rpadmin.AdminAPI, error) {
+	//if params.AdminAuthParams.Username != "" {
+	//	auth = &rpadmin.BasicAuth{
+	//		Username: params.AdminAuthParams.Username,
+	//		Password: params.AdminAuthParams.Password,
+	//	}
+	//} else {
+	auth := &rpadmin.BasicAuth{
+		Username: "admin",
+		Password: "admin",
+	}
+	//}
+	params := &AdminConnectionParams{Hosts: hosts, AdminAuthParams: AdminAuthParams{
+		Username: auth.Username,
+		Password: auth.Password,
+	},
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	// NB: rpadmin automatically infers http or https, if not provided, based on the tlsConfig.
+	client, err := rpadmin.NewAdminAPIWithDialer(params.Hosts, auth, params.TLSConfig, dialer)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return client, nil
+}
+
 type AdminAuthParams struct {
 	Username string
 	Password string
@@ -83,13 +113,6 @@ func AdminClientConnectionInfo(state *redpanda.RenderState, dialer DialContextFu
 	var err error
 
 	params := &AdminConnectionParams{}
-
-	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
-		params.TLSConfig, err = state.TLSConfig(state.Values.Listeners.Admin.TLS)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	username, password, _, err := authFromState(state)
 	if err != nil {

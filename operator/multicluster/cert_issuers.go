@@ -39,9 +39,7 @@ func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmana
 	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
 		inUseCerts[name] = true
 	}
-	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
-		inUseCerts[name] = true
-	}
+	fmt.Printf("IN USE SERVER CERTS: %v\n", inUseCerts)
 
 	for name := range helmette.SortedMap(inUseCerts) {
 		data := state.Values.TLS.Certs.MustGet(name)

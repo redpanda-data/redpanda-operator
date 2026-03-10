@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"slices"
 	"testing"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/trace"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -148,6 +150,17 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 			SkipVCluster: true,
 		}))
 	}
+	cloudSecrets := lifecycle.CloudSecretsFlags{
+		CloudSecretsEnabled: false,
+	}
+	redpandaImage := lifecycle.Image{
+		Repository: os.Getenv("TEST_REDPANDA_REPO"),
+		Tag:        os.Getenv("TEST_REDPANDA_VERSION"),
+	}
+	sidecarImage := lifecycle.Image{
+		Repository: "localhost/redpanda-operator",
+		Tag:        "dev",
+	}
 
 	for i, env := range s.envs {
 		peers := []multicluster.RaftCluster{}
@@ -160,7 +173,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		}
 
 		env.SetupMulticlusterManager(s.setupMulticlusterRBAC(env), fmt.Sprintf("127.0.0.1:%d", ports[i]), peers, func(mgr multicluster.Manager) error {
-			return redpanda.SetupMulticlusterController(s.ctx, mgr)
+			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil)
 		})
 	}
 }

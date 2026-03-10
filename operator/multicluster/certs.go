@@ -53,6 +53,16 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			names = append(names, fmt.Sprintf("*.%s.%s.svc.%s", service, ns, domain))
 			names = append(names, fmt.Sprintf("*.%s.%s.svc", service, ns))
 			names = append(names, fmt.Sprintf("*.%s.%s", service, ns))
+			// TODO: remove
+			names = append(names, "cluster-external-0.default")
+			names = append(names, "cluster-external-0.default.svc")
+			names = append(names, "cluster-external-0.default.svc.cluster.local")
+			names = append(names, "cluster-external-1.default")
+			names = append(names, "cluster-external-1.default.svc")
+			names = append(names, "cluster-external-1.default.svc.cluster.local")
+			names = append(names, "cluster-external-2.default")
+			names = append(names, "cluster-external-2.default.svc")
+			names = append(names, "cluster-external-2.default.svc.cluster.local")
 		}
 
 		if state.Values.External.Domain != nil {

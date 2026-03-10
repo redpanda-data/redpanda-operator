@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
 	"k8s.io/utils/ptr"
@@ -35,11 +36,32 @@ func ConvertStretchClusterToRenderState(config *kube.RESTConfig, defaulters *V2D
 				Statefulset: &redpandav1alpha2.Statefulset{
 					Replicas: ptr.To(0),
 				},
+				ServiceAccount: &redpandav1alpha2.ServiceAccount{
+					Name:   ptr.To(cluster.Name),
+					Create: ptr.To(true),
+				},
+				Auth: &redpandav1alpha2.Auth{
+					SASL: &redpandav1alpha2.SASL{
+						Enabled: ptr.To(true),
+						Users: []redpandav1alpha2.UsersItems{
+							{
+								Mechanism: ptr.To(string(redpandav1alpha2.SASLMechanismScramSHA512)),
+								Name:      ptr.To("admin"),
+								Password:  ptr.To("admin"),
+							},
+						},
+					},
+				},
 			},
 		},
 	}
 
-	rp.Name = rp.ObjectMeta.Name + "-" + clusterName
+	// handle empty cluster name - it comes from "sigs.k8s.io/multicluster-runtime/pkg/manager".LocalCluster constant
+	//if clusterName == "" {
+	rp.Name = rp.ObjectMeta.Name
+	//} else {
+	//	rp.Name = rp.ObjectMeta.Name + "-" + clusterName
+	//}
 
 	if err := convertJSONNotNil(&cluster.Spec, rp.Spec.ClusterSpec); err != nil {
 		return nil, errors.WithStack(err)
@@ -59,10 +81,34 @@ func ConvertStretchClusterToRenderState(config *kube.RESTConfig, defaulters *V2D
 
 	return redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
 		v25State := &redpandav25.RenderState{
-			Release:               state.Release,
-			Files:                 state.Files,
-			Chart:                 state.Chart,
-			Values:                redpandav25.Values{},
+			Release: state.Release,
+			Files:   state.Files,
+			Chart:   state.Chart,
+			Values: redpandav25.Values{
+				TLS: redpandav25.TLS{
+					Enabled: true,
+					Certs: map[string]redpandav25.TLSCert{
+						"default": {
+							Enabled:   ptr.To(true),
+							CAEnabled: true,
+							IssuerRef: &cmmetav1.ObjectReference{
+								Name:  "cluster-default-root-issuer",
+								Kind:  "Issuer",
+								Group: "cert-manager.io",
+							},
+						},
+						"external": {
+							Enabled:   ptr.To(true),
+							CAEnabled: true,
+							IssuerRef: &cmmetav1.ObjectReference{
+								Name:  "cluster-external-root-issuer",
+								Kind:  "Issuer",
+								Group: "cert-manager.io",
+							},
+						},
+					},
+				},
+			},
 			BootstrapUserSecret:   state.BootstrapUserSecret,
 			BootstrapUserPassword: state.BootstrapUserPassword,
 			StatefulSetPodLabels:  state.StatefulSetPodLabels,

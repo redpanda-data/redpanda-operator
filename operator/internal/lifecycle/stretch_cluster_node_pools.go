@@ -54,6 +54,7 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 	for _, set := range state.Pools {
 		sets = append(sets, redpanda.StatefulSet(state, set))
 	}
+	redpanda.RenderNodePools(state)
 
 	return sets, nil
 }
@@ -64,7 +65,7 @@ func (m *StretchNodePoolRenderer) convertToRender(ctx context.Context, cluster *
 		return nil, errors.WithStack(err)
 	}
 
-	return conversion.ConvertStretchClusterToRenderState(cl.GetConfig(), &conversion.V2Defaulters{}, cluster.StretchCluster, cluster.NodePools, clusterName)
+	return conversion.ConvertStretchClusterToRenderState(cl.GetConfig(), &conversion.V2Defaulters{}, cluster.StretchCluster, cluster.GetNodePoolsForCluster(clusterName), clusterName)
 }
 
 // IsNodePool returns whether or not the object passed to it should be considered a node pool.

@@ -29,6 +29,7 @@ import (
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 	"github.com/redpanda-data/redpanda-operator/harpoon/internal/tracking"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func setShortTimeout(timeout *time.Duration, short time.Duration) {
@@ -173,6 +174,11 @@ func (b *SuiteBuilder) OnScenario(fn func(context.Context, TestingT, ...ParsedTa
 }
 
 func (b *SuiteBuilder) WithHelmChart(url, repo, chart string, options helm.InstallOptions) *SuiteBuilder {
+	if chart == "cert-manager" && testutil.MultiClusterSetupOnly() {
+		// skip cert-manager in k3s installation, as each vCluster instance will run its own one
+		return b
+	}
+
 	b.helmCharts = append(b.helmCharts, helmChart{
 		url:     url,
 		repo:    repo,
@@ -259,6 +265,10 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 			Name: "acceptance",
 			TestSuiteInitializer: func(suiteContext *godog.TestSuiteContext) {
 				cleanup := func(ctx context.Context) {
+					if testutil.MultiClusterSetupOnly() {
+						// skip cleanup
+						return
+					}
 					if kubeOptions != nil {
 						// teardown in reverse order from setup
 						for _, directory := range b.crdDirectories {
@@ -336,6 +346,10 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 
 					if tracker.SuiteFailed() && b.testingOpts.RetainOnFailure {
 						fmt.Println("skipping cleanup due to test failure and retain flag being set")
+						return
+					}
+					if testutil.MultiClusterSetupOnly() {
+						// skip cleanup
 						return
 					}
 					cleanup(ctx)

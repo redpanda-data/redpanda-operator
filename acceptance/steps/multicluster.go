@@ -12,9 +12,12 @@ package steps
 import (
 	"context"
 	"fmt"
+	"os"
 	"slices"
+	"strings"
 	"time"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -22,11 +25,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
@@ -38,6 +45,28 @@ func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlApply(ctx, manifest))
 	}
+}
+
+func (v vclusterNodes) ApplyAllWithModifiedName(ctx context.Context, manifest *godog.DocString) {
+	t := framework.T(ctx)
+	for _, node := range v {
+		t.Logf("applying manifest to %q", node.Name())
+		//modified := strings.Replace(manifest.Content, "name: stretch-cluster-nodepool", "name: stretch-cluster-nodepool-"+node.Name(), 1)
+		require.NoError(t, node.KubectlApply(ctx, []byte(manifest.Content)))
+	}
+}
+
+func (v vclusterNodes) ApplyInFirst(ctx context.Context, manifest []byte) {
+	t := framework.T(ctx)
+
+	for _, node := range v {
+		if node.Name() != "vc-0" {
+			continue
+		}
+		t.Logf("applying manifest to %q", node.Name())
+		require.NoError(t, node.KubectlApply(ctx, manifest))
+	}
+
 }
 
 func (v vclusterNodes) DeleteAll(ctx context.Context, manifest []byte) {
@@ -98,8 +127,17 @@ func getNodes(ctx context.Context, name string) vclusterNodes {
 
 func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
 	nodes := getNodes(ctx, clusterName)
+	//nodes.ApplyInFirst(ctx, []byte(manifest.Content))
 	nodes.ApplyAll(ctx, []byte(manifest.Content))
-	t.Cleanup(func(ctx context.Context) {
+	cleanupWrapper(t, func(ctx context.Context) {
+		nodes.DeleteAll(ctx, []byte(manifest.Content))
+	})
+}
+
+func applyNodePoolWithStretchCluster(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
+	nodes := getNodes(ctx, clusterName)
+	nodes.ApplyAllWithModifiedName(ctx, manifest)
+	cleanupWrapper(t, func(ctx context.Context) {
 		nodes.DeleteAll(ctx, []byte(manifest.Content))
 	})
 }
@@ -112,18 +150,22 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 
 func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {
 	namespace := metav1.NamespaceDefault
-
+	redpandaLicense := os.Getenv("REDPANDA_LICENSE_KEY")
+	require.NotEmpty(t, redpandaLicense, "REDPANDA_LICENSE_KEY env var must be set")
+	// create license secret in the k3s cluster
 	vclusters := []*vclusterNode{}
 	t.Logf("creating %d vclusters", clusters)
 	for i := range clusters {
 		t.Logf("creating vcluster %d", i+1)
-		cluster, err := vcluster.New(ctx, t.RestConfig())
+		cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)))
 		require.NoError(t, err)
-		cluster.SetScheme(t.Scheme())
+		scheme := t.Scheme()
+		require.NoError(t, certmanagerv1.AddToScheme(scheme))
+		cluster.SetScheme(scheme)
 
 		t.Logf("finished creating vcluster %d (name: %q)", i+1, cluster.Name())
 
-		t.Cleanup(func(ctx context.Context) {
+		cleanupWrapper(t, func(ctx context.Context) {
 			require.NoError(t, cluster.Delete())
 		})
 		c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
@@ -176,7 +218,7 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 			}
 			cluster.externalIP = operatorService.Spec.ClusterIPs[0]
 			return true
-		}, 1*time.Minute, 1*time.Second, fmt.Sprintf("cluster %s never got operator cluster ip", cluster.Name()))
+		}, 3*time.Minute, 1*time.Second, fmt.Sprintf("cluster %s never got operator cluster ip", cluster.Name()))
 	}
 
 	// next we bootstrap TLS for Raft in the cluster
@@ -203,13 +245,131 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 
 	// and finally we do the operator installation in each cluster
 	for _, cluster := range vclusters {
+		t.Logf("creating license secret in %q", cluster.Name())
+		require.NoError(t, cluster.Create(ctx, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "redpanda-license",
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				"redpanda.license": []byte(redpandaLicense),
+			},
+		}))
+
+		t.Logf("creating cluster-external secret for redpanda RPC TLS in %q", cluster.Name())
+		rootCertSecretData := `
+apiVersion: v1
+data:
+  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJsVENDQVR5Z0F3SUJBZ0lRYjNRRUM0Y0d0bFA4R3l3WnQ3b3lFakFLQmdncWhrak9QUVFEQWpBck1Ta3cKSndZRFZRUURFeUJqYkhWemRHVnlMV1JsWm1GMWJIUXRjbTl2ZEMxalpYSjBhV1pwWTJGMFpUQWVGdzB5TmpBegpNVGd4TWpFMU16RmFGdzB6TVRBek1UY3hNakUxTXpGYU1Dc3hLVEFuQmdOVkJBTVRJR05zZFhOMFpYSXRaR1ZtCllYVnNkQzF5YjI5MExXTmxjblJwWm1sallYUmxNRmt3RXdZSEtvWkl6ajBDQVFZSUtvWkl6ajBEQVFjRFFnQUUKNDhic3FIVnhlSFdjSzBIT0NRTXY0dk16OXhEQTFIY0dWVnBwTXNBL3ZRSSt0Mnp2QlJOY0d3d2F0RGVJT3VidApSQlFybzYrK2ZhcUZVR1lVVng5Y0thTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRkVjd215Tk5nWGRCSS83NEhyS1JSWDQ1TzNpb01Bb0dDQ3FHU000OUJBTUMKQTBjQU1FUUNJQXI3UHFRK2NVLzlmWG1hSW4wWnJWWjZzcjR5MVo1MkZBeHc2VWxod0FkUUFpQjJCT0szNlozcgpQK1IrWkN5ZU9RQlhqQkpWd3RiUkxuRSs0OUxKcWdYelJnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJsVENDQVR5Z0F3SUJBZ0lRYjNRRUM0Y0d0bFA4R3l3WnQ3b3lFakFLQmdncWhrak9QUVFEQWpBck1Ta3cKSndZRFZRUURFeUJqYkhWemRHVnlMV1JsWm1GMWJIUXRjbTl2ZEMxalpYSjBhV1pwWTJGMFpUQWVGdzB5TmpBegpNVGd4TWpFMU16RmFGdzB6TVRBek1UY3hNakUxTXpGYU1Dc3hLVEFuQmdOVkJBTVRJR05zZFhOMFpYSXRaR1ZtCllYVnNkQzF5YjI5MExXTmxjblJwWm1sallYUmxNRmt3RXdZSEtvWkl6ajBDQVFZSUtvWkl6ajBEQVFjRFFnQUUKNDhic3FIVnhlSFdjSzBIT0NRTXY0dk16OXhEQTFIY0dWVnBwTXNBL3ZRSSt0Mnp2QlJOY0d3d2F0RGVJT3VidApSQlFybzYrK2ZhcUZVR1lVVng5Y0thTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRkVjd215Tk5nWGRCSS83NEhyS1JSWDQ1TzNpb01Bb0dDQ3FHU000OUJBTUMKQTBjQU1FUUNJQXI3UHFRK2NVLzlmWG1hSW4wWnJWWjZzcjR5MVo1MkZBeHc2VWxod0FkUUFpQjJCT0szNlozcgpQK1IrWkN5ZU9RQlhqQkpWd3RiUkxuRSs0OUxKcWdYelJnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUJPR2Mwek9ZM3pTZUl5MVJFa3EwTmpXQ3plQWd6djdSLy9FTVFwL2huNG9vQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFNDhic3FIVnhlSFdjSzBIT0NRTXY0dk16OXhEQTFIY0dWVnBwTXNBL3ZRSSt0Mnp2QlJOYwpHd3dhdERlSU91YnRSQlFybzYrK2ZhcUZVR1lVVng5Y0tRPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
+kind: Secret
+metadata:
+  annotations:
+    cert-manager.io/alt-names: ""
+    cert-manager.io/certificate-name: cluster-default-root-certificate
+    cert-manager.io/common-name: cluster-default-root-certificate
+    cert-manager.io/ip-sans: ""
+    cert-manager.io/issuer-group: cert-manager.io
+    cert-manager.io/issuer-kind: Issuer
+    cert-manager.io/issuer-name: cluster-default-selfsigned-issuer
+    cert-manager.io/uri-sans: ""
+  name: cluster-default-root-certificate
+  namespace: default
+type: kubernetes.io/tls
+
+`
+		externalCertSecretData := `
+apiVersion: v1
+data:
+  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJtRENDQVQ2Z0F3SUJBZ0lRWkR5ZlYvalBSUkxHdHJScWRKSDZkekFLQmdncWhrak9QUVFEQWpBc01Tb3cKS0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0ZEdWeWJtRnNMWEp2YjNRdFkyVnlkR2xtYVdOaGRHVXdIaGNOTWpZdwpNekU0TVRJeE5UTXhXaGNOTXpFd016RTNNVEl4TlRNeFdqQXNNU293S0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0CmRHVnlibUZzTFhKdmIzUXRZMlZ5ZEdsbWFXTmhkR1V3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkMKQUFTWVhNc0VSamJNY1hkNVJQOTVlKzFQYng5MGlhL2RWYm1rU241UlhlVm5XemVLWWM4TEJvcjFaYTNzNS92WApqNHlUOG44eFFwY3FLVklvOWhnSzBDQVRvMEl3UURBT0JnTlZIUThCQWY4RUJBTUNBcVF3RHdZRFZSMFRBUUgvCkJBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUdwc21abmNrSTZYejBqVzkvbk5RaG15aVpGVXdDZ1lJS29aSXpqMEUKQXdJRFNBQXdSUUlnVDRTMldUNXRXOWsreWZVUUx4NE9oNUJWZk9TbkJKRjFtRHZxSjV3OW5mRUNJUURYRklBdAoxeFpvcEoxa1ZVdE1ITXVHTzIzN2tydXFVYXNhNXZrbGZPdkNkdz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJtRENDQVQ2Z0F3SUJBZ0lRWkR5ZlYvalBSUkxHdHJScWRKSDZkekFLQmdncWhrak9QUVFEQWpBc01Tb3cKS0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0ZEdWeWJtRnNMWEp2YjNRdFkyVnlkR2xtYVdOaGRHVXdIaGNOTWpZdwpNekU0TVRJeE5UTXhXaGNOTXpFd016RTNNVEl4TlRNeFdqQXNNU293S0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0CmRHVnlibUZzTFhKdmIzUXRZMlZ5ZEdsbWFXTmhkR1V3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkMKQUFTWVhNc0VSamJNY1hkNVJQOTVlKzFQYng5MGlhL2RWYm1rU241UlhlVm5XemVLWWM4TEJvcjFaYTNzNS92WApqNHlUOG44eFFwY3FLVklvOWhnSzBDQVRvMEl3UURBT0JnTlZIUThCQWY4RUJBTUNBcVF3RHdZRFZSMFRBUUgvCkJBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUdwc21abmNrSTZYejBqVzkvbk5RaG15aVpGVXdDZ1lJS29aSXpqMEUKQXdJRFNBQXdSUUlnVDRTMldUNXRXOWsreWZVUUx4NE9oNUJWZk9TbkJKRjFtRHZxSjV3OW5mRUNJUURYRklBdAoxeFpvcEoxa1ZVdE1ITXVHTzIzN2tydXFVYXNhNXZrbGZPdkNkdz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  tls.key: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUlhRlpCQ1Fia3ZJTVZ0eGpUbTBPRWxPTWRjRnBxZVorUWM0SkVmZDV5dHFvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFbUZ6TEJFWTJ6SEYzZVVUL2VYdnRUMjhmZEltdjNWVzVwRXArVVYzbFoxczNpbUhQQ3dhSwo5V1d0N09mNzE0K01rL0ovTVVLWEtpbFNLUFlZQ3RBZ0V3PT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
+kind: Secret
+metadata:
+  annotations:
+    cert-manager.io/alt-names: ""
+    cert-manager.io/certificate-name: cluster-external-root-certificate
+    cert-manager.io/common-name: cluster-external-root-certificate
+    cert-manager.io/ip-sans: ""
+    cert-manager.io/issuer-group: cert-manager.io
+    cert-manager.io/issuer-kind: Issuer
+    cert-manager.io/issuer-name: cluster-external-selfsigned-issuer
+    cert-manager.io/uri-sans: ""
+  name: cluster-external-root-certificate
+  namespace: default
+type: kubernetes.io/tls
+
+`
+		rootIssuerData := `
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: cluster
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v2
+    cluster.redpanda.com/owner: cluster
+    helm.sh/chart: redpanda-25.3.1
+  name: cluster-default-root-issuer
+  namespace: default
+spec:
+  ca:
+    secretName: cluster-default-root-certificate
+
+
+`
+		externalIssuerData := `
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: cluster
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    cluster.redpanda.com/namespace: default
+    cluster.redpanda.com/operator: v2
+    cluster.redpanda.com/owner: cluster
+    helm.sh/chart: redpanda-25.3.1
+  name: cluster-external-root-issuer
+  namespace: default
+spec:
+  ca:
+    secretName: cluster-external-root-certificate
+
+`
+		rootSecret := unmarshalSecret(t, rootCertSecretData)
+		externalSecret := unmarshalSecret(t, externalCertSecretData)
+		require.NoError(t, cluster.Create(ctx, rootSecret))
+		require.NoError(t, cluster.Create(ctx, externalSecret))
+
+		rootIssuer := unmarshalIssuer(t, rootIssuerData)
+		externalIssuer := unmarshalIssuer(t, externalIssuerData)
+		require.NoError(t, retry.OnError(wait.Backoff{
+			Steps:    15,
+			Duration: 1 * time.Second,
+			Factor:   1.0,
+			Jitter:   0.1,
+		}, func(err error) bool {
+			return err != nil && strings.Contains(err.Error(), "webhook")
+		}, func() error {
+			return cluster.Create(ctx, rootIssuer)
+		}))
+		require.NoError(t, cluster.Create(ctx, externalIssuer))
+
 		t.Logf("deploying operator in %q", cluster.Name())
 		rel, err := cluster.HelmInstall(ctx, "../operator/chart", helm.InstallOptions{
 			Name: "redpanda",
 			Values: map[string]any{
 				"crds": map[string]any{
-					"enabled": true,
+					"enabled":      true,
+					"experimental": true,
 				},
+				"logLevel": "debug",
 				"multicluster": map[string]any{
 					"enabled":                  true,
 					"name":                     cluster.Name(),
@@ -220,14 +380,40 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 					"repository": "localhost/redpanda-operator",
 					"tag":        "dev",
 				},
+				"enterprise": map[string]any{
+					"licenseSecretRef": map[string]any{
+						"name": "redpanda-license",
+						"key":  "redpanda.license",
+					},
+				},
 			},
 			Namespace: namespace,
 		})
 		require.NoError(t, err)
-		t.Cleanup(func(ctx context.Context) {
+		cleanupWrapper(t, func(ctx context.Context) {
 			require.NoError(t, cluster.HelmUninstall(ctx, rel))
 		})
 	}
 
 	return stashNodes(ctx, clusterName, vclusters)
+}
+
+func cleanupWrapper(t framework.TestingT, f func(ctx context.Context)) {
+	if testutil.MultiClusterSetupOnly() {
+		// skip cleanup
+		return
+	}
+	t.Cleanup(f)
+}
+
+func unmarshalSecret(t framework.TestingT, data string) *corev1.Secret {
+	secret := &corev1.Secret{}
+	require.NoError(t, yaml.Unmarshal([]byte(data), secret))
+	return secret
+}
+
+func unmarshalIssuer(t framework.TestingT, data string) *certmanagerv1.Issuer {
+	issuer := &certmanagerv1.Issuer{}
+	require.NoError(t, yaml.Unmarshal([]byte(data), issuer))
+	return issuer
 }

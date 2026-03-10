@@ -47,6 +47,8 @@ type RenderState struct {
 	// Pools contains the list of NodePools that are being rendered.
 	Pools []Pool
 
+	SeedServers []string
+
 	// Dot is the underlying [helmette.Dot] that was used to construct this
 	// RenderState.
 	// TODO: remove this eventually once we get templating figured out.
@@ -72,6 +74,9 @@ func (r *RenderState) FetchBootstrapUser() {
 	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
 	if existing, ok := helmette.Lookup[corev1.Secret](r.Dot, r.Release.Namespace, secretName); ok {
 		// make any existing secret immutable
+		// (Paweł): we need to remove UID here, because otherwise it fails to be created in the clusters
+		// other than local cluster where operator leader runs.
+		existing.SetUID("")
 		existing.Immutable = ptr.To(true)
 		r.BootstrapUserSecret = existing
 		selector := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))

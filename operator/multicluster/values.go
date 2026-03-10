@@ -959,6 +959,18 @@ func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain s
 	return result
 }
 
+func (l *Listeners) CreateMulticlusterSeedServers(address string) []map[string]any {
+	var result []map[string]any
+
+	result = append(result, map[string]any{
+		"host": map[string]any{
+			"address": address,
+			"port":    l.RPC.Port,
+		},
+	})
+	return result
+}
+
 // TrustStoreVolume returns a [corev1.Volume] containing a projected volume
 // that mounts all required truststore files. If no truststores are configured,
 // it returns nil.
