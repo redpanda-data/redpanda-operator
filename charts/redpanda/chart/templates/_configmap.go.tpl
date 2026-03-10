@@ -5,7 +5,7 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $cms := (list (get (fromJson (include "redpanda.RedpandaConfigMap" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
+{{- $cms := (list (get (fromJson (include "redpanda.RedpandaConfigMap" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
 {{- range $_, $set := $state.Pools -}}
 {{- $cms = (concat (default (list) $cms) (list (get (fromJson (include "redpanda.RedpandaConfigMap" (dict "a" (list $state $set)))) "r"))) -}}
 {{- end -}}
@@ -120,10 +120,10 @@
 {{- $redpandaYaml := (dict "redpanda" $redpanda "schema_registry" (get (fromJson (include "redpanda.schemaRegistry" (dict "a" (list $state)))) "r") "pandaproxy" (get (fromJson (include "redpanda.pandaProxyListener" (dict "a" (list $state)))) "r") "config_file" "/etc/redpanda/redpanda.yaml") -}}
 {{- if $includeNonHashableItems -}}
 {{- $_ := (set $redpandaYaml "rpk" (get (fromJson (include "redpanda.rpkNodeConfig" (dict "a" (list $state $pool)))) "r")) -}}
-{{- $_ := (set $redpandaYaml "pandaproxy_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state)))) "r")) -}}
-{{- $_ := (set $redpandaYaml "schema_registry_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state)))) "r")) -}}
+{{- $_ := (set $redpandaYaml "pandaproxy_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state "pandaproxy")))) "r")) -}}
+{{- $_ := (set $redpandaYaml "schema_registry_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state "schema_registry")))) "r")) -}}
 {{- if (and (and (get (fromJson (include "redpanda.RedpandaAtLeast_23_3_0" (dict "a" (list $state)))) "r") $state.Values.auditLogging.enabled) (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r")) -}}
-{{- $_ := (set $redpandaYaml "audit_log_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state)))) "r")) -}}
+{{- $_ := (set $redpandaYaml "audit_log_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state "audit_log")))) "r")) -}}
 {{- end -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -330,7 +330,7 @@
 {{- $port := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $bl := (get (fromJson (include "redpanda.brokersFor" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" ""))) (dict "Statefulset" $state.Values.statefulset)) $port)))) "r") -}}
+{{- $bl := (get (fromJson (include "redpanda.brokersFor" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)) $port)))) "r") -}}
 {{- range $_, $set := $state.Pools -}}
 {{- $bl = (concat (default (list) $bl) (default (list) (get (fromJson (include "redpanda.brokersFor" (dict "a" (list $state $set $port)))) "r"))) -}}
 {{- end -}}
@@ -465,14 +465,33 @@
 
 {{- define "redpanda.kafkaClient" -}}
 {{- $state := (index .a 0) -}}
+{{- $clientType := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $brokerList := (list) -}}
+{{- $useLocalhostKey := (printf "%s_client.use_localhost" $clientType) -}}
+{{- $useLocalhost := false -}}
+{{- $_506_val_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.node $useLocalhostKey (coalesce nil))))) "r") -}}
+{{- $val := (index $_506_val_ok 0) -}}
+{{- $ok := (index $_506_val_ok 1) -}}
+{{- if $ok -}}
+{{- if (kindIs "bool" $val) -}}
+{{- $useLocalhost = (eq $val true) -}}
+{{- else -}}{{- if (kindIs "string" $val) -}}
+{{- $strVal := (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $val)))) "r") -}}
+{{- $useLocalhost = (or (or (or (eq $strVal "true") (eq $strVal "True")) (eq $strVal "TRUE")) (eq $strVal "1")) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if $useLocalhost -}}
+{{- $brokerList = (concat (default (list) $brokerList) (list (dict "address" "localhost" "port" ($state.Values.listeners.kafka.port | int)))) -}}
+{{- else -}}
 {{- range $_, $broker := (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state -1)))) "r") -}}
 {{- $brokerList = (concat (default (list) $brokerList) (list (dict "address" $broker "port" ($state.Values.listeners.kafka.port | int)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
+{{- end -}}
 {{- end -}}
 {{- $kafkaTLS := $state.Values.listeners.kafka.tls -}}
 {{- $brokerTLS := (coalesce nil) -}}
@@ -623,17 +642,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_671_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_14 := (index $_671_value_14_ok_15 0) -}}
-{{- $ok_15 := (index $_671_value_14_ok_15 1) -}}
+{{- $_692_value_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_14 := (index $_692_value_14_ok_15 0) -}}
+{{- $ok_15 := (index $_692_value_14_ok_15 1) -}}
 {{- if $ok_15 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_14) false (hasKey $enabledOptions $value_14)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_678_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_16 := (index $_678_value_16_ok_17 0) -}}
-{{- $ok_17 := (index $_678_value_16_ok_17 1) -}}
+{{- $_699_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_16 := (index $_699_value_16_ok_17 0) -}}
+{{- $ok_17 := (index $_699_value_16_ok_17 1) -}}
 {{- if $ok_17 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_16) false (hasKey $enabledOptions $value_16)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}

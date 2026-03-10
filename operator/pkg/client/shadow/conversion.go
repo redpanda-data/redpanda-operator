@@ -102,6 +102,14 @@ func convertAuthenticationSettingsToAPIAuthSettings(authSettings *Authentication
 		return nil
 	}
 	settings := &adminv2api.AuthenticationConfiguration{}
+	if authSettings.Mechanism == redpandav1alpha2.SASLMechanismPlain {
+		settings.SetPlainConfiguration(&adminv2api.PlainConfig{
+			Username:    authSettings.Username,
+			Password:    authSettings.Password,
+			PasswordSet: true,
+		})
+		return settings
+	}
 	settings.SetScramConfiguration(&adminv2api.ScramConfig{
 		Username:       authSettings.Username,
 		Password:       authSettings.Password,

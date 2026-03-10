@@ -530,15 +530,13 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 
 	rp := s.minimalRP()
 	rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
-		Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
-			PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
-				Containers: []applycorev1.ContainerApplyConfiguration{{
-					Name: ptr.To("redpanda"),
-					Env: []applycorev1.EnvVarApplyConfiguration{
-						*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
-					},
-				}},
-			},
+		Spec: &applycorev1.PodSpecApplyConfiguration{
+			Containers: []applycorev1.ContainerApplyConfiguration{{
+				Name: ptr.To("redpanda"),
+				Env: []applycorev1.EnvVarApplyConfiguration{
+					*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+				},
+			}},
 		},
 	}
 	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
@@ -671,15 +669,13 @@ func (s *RedpandaControllerSuite) TestLicense() {
 		}
 		if !c.license {
 			rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
-				Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
-					PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
-						Containers: []applycorev1.ContainerApplyConfiguration{{
-							Name: ptr.To("redpanda"),
-							Env: []applycorev1.EnvVarApplyConfiguration{
-								*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
-							},
-						}},
-					},
+				Spec: &applycorev1.PodSpecApplyConfiguration{
+					Containers: []applycorev1.ContainerApplyConfiguration{{
+						Name: ptr.To("redpanda"),
+						Env: []applycorev1.EnvVarApplyConfiguration{
+							*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+						},
+					}},
 				},
 			}
 		}
@@ -934,7 +930,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
 			Manager: mgr,
-		}).SetupWithManager(s.ctx, mgr))
+		}).SetupWithManager(s.ctx, mgr, ""))
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
@@ -946,7 +942,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
 			UseNodePools: true,
-		}).SetupWithManager(s.ctx, mgr)
+		}).SetupWithManager(s.ctx, mgr, "")
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with
@@ -1129,7 +1125,7 @@ func (s *RedpandaControllerSuite) apply(objs ...client.Object) {
 		obj.SetResourceVersion("")
 		obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 	}
 }
 

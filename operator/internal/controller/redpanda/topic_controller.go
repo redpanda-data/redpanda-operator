@@ -134,12 +134,12 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req mcreconcile.Request
 
 func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
 	if r.RecordEvents {
-		return c.GetEventRecorderFor("TopicReconciler")
+		return c.GetEventRecorderFor("TopicReconciler") //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
 	}
 	return nil
 }
 
-func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	r := &TopicReconciler{
 		Manager: mgr,
 		Factory: internalclient.NewFactory(mgr, expander),
@@ -166,7 +166,7 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 		}
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
@@ -185,6 +185,12 @@ func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRe
 
 	kafkaClient, err := r.createKafkaClient(ctx, topic, l)
 	if err != nil {
+		// If topic is being deleted, allow finalizer removal when we can't
+		// establish a connection. This prevents namespaces from getting stuck
+		// in Terminating state when secrets are deleted before the Topic.
+		if !topic.ObjectMeta.DeletionTimestamp.IsZero() && ignoreAllConnectionErrors(l, err) == nil {
+			return redpandav1alpha2.TopicReady(topic), ctrl.Result{}, nil
+		}
 		return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, err
 	}
 	defer kafkaClient.Close()
@@ -203,6 +209,12 @@ func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRe
 		l.V(log.DebugLevel).Info("delete topic", "topic-name", topic.GetTopicName())
 		err = r.deleteTopic(ctx, recorder, topic, kafkaClient)
 		if err != nil {
+			// Allow finalizer removal if we can't connect to the broker.
+			// This prevents topics from getting stuck in Terminating state
+			// when the broker is unreachable.
+			if ignoreAllConnectionErrors(l, err) == nil {
+				return redpandav1alpha2.TopicReady(topic), ctrl.Result{}, nil
+			}
 			return redpandav1alpha2.TopicFailed(topic), ctrl.Result{}, fmt.Errorf("unable to delete topic: %w", err)
 		}
 		return redpandav1alpha2.TopicReady(topic), ctrl.Result{}, nil

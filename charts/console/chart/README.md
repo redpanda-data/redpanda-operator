@@ -197,6 +197,18 @@ Settings for liveness and readiness probes. For details, see the [Kubernetes doc
 {"failureThreshold":3,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":1}
 ```
 
+### [monitoring.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=monitoring.enabled)
+
+**Default:** `false`
+
+### [monitoring.labels](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=monitoring.labels)
+
+**Default:** `{}`
+
+### [monitoring.scrapeInterval](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=monitoring.scrapeInterval)
+
+**Default:** `"1m"`
+
 ### [nameOverride](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=nameOverride)
 
 Override `console.name` template.

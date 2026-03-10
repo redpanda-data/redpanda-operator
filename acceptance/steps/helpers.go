@@ -263,14 +263,17 @@ func (c *clusterClients) EnableFeature(ctx context.Context, feature string) {
 	require.NoError(t, err)
 }
 
-// Set log level for given logger.
+// Set log level for given logger. Best-effort: the logger may not exist
+// in all Redpanda versions, so failures are logged but not fatal.
 func (c *clusterClients) SetLogLevel(ctx context.Context, level, logger string) {
 	t := framework.T(ctx)
 
 	admin := c.RedpandaAdmin(ctx)
 	defer admin.Close()
 
-	require.NoError(t, admin.SetLogLevel(ctx, logger, level, 0))
+	if err := admin.SetLogLevel(ctx, logger, level, 0); err != nil {
+		t.Logf("warning: failed to set log level %s for logger %s (non-fatal): %v", level, logger, err)
+	}
 }
 
 func (c *clusterClients) checkTopic(ctx context.Context, topic string, exists bool, message string) {

@@ -1894,6 +1894,7 @@ type jsonTag struct {
 	Name      string
 	Inline    bool
 	OmitEmpty bool
+	OmitZero  bool
 }
 
 func parseTag(tag string) jsonTag {
@@ -1915,6 +1916,7 @@ func parseTag(tag string) jsonTag {
 		Name:      match[1][:idx],
 		Inline:    strings.Contains(match[1], "inline"),
 		OmitEmpty: strings.Contains(match[1], "omitempty"),
+		OmitZero:  strings.Contains(match[1], "omitzero"),
 	}
 }
 
@@ -1961,6 +1963,9 @@ func (f *structField) IncludeInZero() bool {
 	// those annotations. It may be possible to fix by using one of Kubernetes'
 	// marshallers?
 	if f.JSONOmit() {
+		return false
+	}
+	if f.Tag.OmitZero {
 		return false
 	}
 	if f.Tag.OmitEmpty && omitemptyRespected(f.Field.Type()) {

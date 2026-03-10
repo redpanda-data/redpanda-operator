@@ -12,11 +12,12 @@ package multicluster
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/url"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/license"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -66,6 +67,8 @@ type MulticlusterOptions struct {
 	WebhookKeyPath         string
 
 	peersStrings []string
+
+	LicenseFilePath string
 }
 
 func (o *MulticlusterOptions) validate() error {
@@ -149,6 +152,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.BaseTag, "base-tag", "", "base image tag for sidecars and init containers")
 	cmd.Flags().StringVar(&o.MetricsCertPath, "metrics-cert-path", "", "The path to the metrics server certificate file, implies secure serving of metrics")
 	cmd.Flags().StringVar(&o.MetricsKeyPath, "metrics-key-path", "", "The path to the metrics server key file, implies secure serving of metrics.")
+	cmd.Flags().StringVar(&o.LicenseFilePath, "license-file-path", "", "The path to the Redpanda License.")
 }
 
 func Command() *cobra.Command {
@@ -176,6 +180,22 @@ func Run(
 	if err := opts.validate(); err != nil {
 		return err
 	}
+
+	l, err := license.ReadLicense(opts.LicenseFilePath)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if err = license.CheckExpiration(l.Expires()); err != nil {
+		return errors.WithStack(err)
+	}
+
+	// as AllowsEnterpriseFeatures function checks expiration and license type in the above
+	// if statement the expiration is checked and here we validate the type of the license
+	if !l.AllowsEnterpriseFeatures() {
+		return errors.New("Operator requires enterprise license")
+	}
+
 	k8sConfig, err := ctrl.GetConfig()
 	if err != nil {
 		return err

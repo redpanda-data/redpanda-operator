@@ -11,12 +11,16 @@
 
 package v1alpha2
 
+import (
+	v1 "k8s.io/client-go/applyconfigurations/core/v1"
+)
+
 // PodTemplateApplyConfiguration represents a declarative configuration of the PodTemplate type for use
 // with apply.
 type PodTemplateApplyConfiguration struct {
-	Labels      map[string]string                            `json:"labels,omitempty"`
-	Annotations map[string]string                            `json:"annotations,omitempty"`
-	Spec        *PodSpecApplyConfigurationApplyConfiguration `json:"spec,omitempty"`
+	Labels      map[string]string             `json:"labels,omitempty"`
+	Annotations map[string]string             `json:"annotations,omitempty"`
+	Spec        *v1.PodSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
 // PodTemplateApplyConfiguration constructs a declarative configuration of the PodTemplate type for use with
@@ -56,7 +60,7 @@ func (b *PodTemplateApplyConfiguration) WithAnnotations(entries map[string]strin
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *PodTemplateApplyConfiguration) WithSpec(value *PodSpecApplyConfigurationApplyConfiguration) *PodTemplateApplyConfiguration {
-	b.Spec = value
+func (b *PodTemplateApplyConfiguration) WithSpec(value v1.PodSpecApplyConfiguration) *PodTemplateApplyConfiguration {
+	b.Spec = &value
 	return b
 }

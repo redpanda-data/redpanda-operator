@@ -14,6 +14,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,17 @@ type RoleReconciler struct {
 	// to change the way the underlying clients
 	// function, i.e. setting low timeouts
 	extraOptions []kgo.Opt
+	// rolesOptions configures the roles client, e.g. roles.WithV2Disabled()
+	rolesOptions []roles.Option
+}
+
+// isRoleRename returns true if a role rename operation is needed.
+// A rename is needed when:
+// - We have a previous effective name tracked in status (not empty)
+// - The effective name has changed
+// - We are managing this role
+func isRoleRename(previousEffectiveName, currentEffectiveName string, hasManagedRole bool) bool {
+	return previousEffectiveName != "" && previousEffectiveName != currentEffectiveName && hasManagedRole
 }
 
 func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha2.RedpandaRole]) client.Patch {
@@ -55,6 +67,10 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	role := request.object
 	hasManagedACLs, hasManagedRole, hasManagedPrincipals := role.HasManagedACLs(), role.HasManagedRole(), role.HasManagedPrincipals()
 	shouldManageACLs, shouldManageRole, shouldManagePrincipals := role.ShouldManageACLs(), role.ShouldManageRole(), role.ShouldManagePrincipals()
+
+	// Get current and previous effective role names to detect renames
+	currentEffectiveName := role.GetEffectiveRoleName()
+	previousEffectiveName := role.Status.EffectiveRoleName
 
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
@@ -71,6 +87,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithManagedRole(hasManagedRole).
 			WithManagedACLs(hasManagedACLs).
 			WithManagedPrincipals(hasManagedPrincipals).
+			WithEffectiveRoleName(currentEffectiveName).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -83,6 +100,47 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer rolesClient.Close()
 	defer syncer.Close()
 
+	// Handle role rename if effective name changed
+	if isRoleRename(previousEffectiveName, currentEffectiveName, hasManagedRole) {
+		request.logger.V(1).Info("Role rename", "from", previousEffectiveName, "to", currentEffectiveName)
+
+		// Create new role
+		if !hasRole {
+			if err := rolesClient.Create(ctx, role); err != nil {
+				return createPatch(errors.Wrap(err, "creating renamed role"))
+			}
+		} else {
+			request.logger.V(1).Info("New role already exists, skipping creation", "role", currentEffectiveName)
+		}
+
+		// Sync new ACLs first
+		if shouldManageACLs {
+			if err := syncer.Sync(ctx, role); err != nil {
+				return createPatch(errors.Wrap(err, "syncing new ACLs"))
+			}
+		}
+
+		// Clean up old resources
+		previousRole := &redpandav1alpha2.RedpandaRole{
+			ObjectMeta: metav1.ObjectMeta{Name: previousEffectiveName},
+		}
+
+		if hasManagedACLs {
+			if err := syncer.DeleteAll(ctx, previousRole); err != nil {
+				return createPatch(errors.Wrap(err, "deleting old ACLs"))
+			}
+		}
+
+		if err := rolesClient.Delete(ctx, previousRole); err != nil {
+			return createPatch(errors.Wrap(err, "deleting old role"))
+		}
+
+		hasManagedRole = true
+		hasManagedPrincipals = shouldManagePrincipals
+		hasManagedACLs = shouldManageACLs
+		return createPatch(nil)
+	}
+
 	if !hasRole && shouldManageRole {
 		if err := rolesClient.Create(ctx, role); err != nil {
 			return createPatch(err)
@@ -92,20 +150,17 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	}
 
 	if hasRole && shouldManageRole {
-		// Update principals if we should manage them
 		if shouldManagePrincipals {
 			if err := rolesClient.Update(ctx, role); err != nil {
 				return createPatch(err)
 			}
 			hasManagedPrincipals = true
 		} else if hasManagedPrincipals {
-			// If we were managing principals but shouldn't anymore, clear them
 			if err := rolesClient.ClearPrincipals(ctx, role); err != nil {
 				return createPatch(err)
 			}
 			hasManagedPrincipals = false
 		}
-		// Always claim ownership when managing a role
 		hasManagedRole = true
 	}
 
@@ -147,17 +202,47 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	defer rolesClient.Close()
 	defer syncer.Close()
 
+	// Get current and previous effective names for comprehensive cleanup
+	currentEffectiveName := role.GetEffectiveRoleName()
+	previousEffectiveName := role.Status.EffectiveRoleName
+
+	// Delete current role (from spec)
 	if hasRole && hasManagedRole {
-		request.logger.V(2).Info("Deleting managed role")
+		request.logger.V(2).Info("Deleting current managed role", "name", currentEffectiveName)
 		if err := rolesClient.Delete(ctx, role); err != nil {
+			return ignoreAllConnectionErrors(request.logger, err)
+		}
+	}
+
+	// Delete previous role if different (handles incomplete rename scenarios)
+	if isRoleRename(previousEffectiveName, currentEffectiveName, hasManagedRole) {
+		request.logger.V(2).Info("Deleting previous role from incomplete rename", "name", previousEffectiveName)
+		previousRole := &redpandav1alpha2.RedpandaRole{
+			ObjectMeta: metav1.ObjectMeta{Name: previousEffectiveName},
+		}
+		if err := rolesClient.Delete(ctx, previousRole); err != nil {
 			return ignoreAllConnectionErrors(request.logger, err)
 		}
 	}
 
 	if hasManagedACLs {
 		request.logger.V(2).Info("Deleting managed ACLs")
+
 		if err := syncer.DeleteAll(ctx, role); err != nil {
 			return ignoreAllConnectionErrors(request.logger, err)
+		}
+
+		// Delete ACLs for previous principal if it differs (handles rename scenarios)
+		if previousEffectiveName != "" && previousEffectiveName != currentEffectiveName {
+			request.logger.V(2).Info("Deleting ACLs for previous principal", "previousName", previousEffectiveName)
+
+			previousRole := &redpandav1alpha2.RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{Name: previousEffectiveName},
+			}
+
+			if err := syncer.DeleteAll(ctx, previousRole); err != nil {
+				return ignoreAllConnectionErrors(request.logger, err)
+			}
 		}
 	}
 
@@ -166,7 +251,7 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 
 func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (*roles.Client, *acls.Syncer, bool, error) {
 	role := request.object
-	rolesClient, err := request.factory.Roles(ctx, role)
+	rolesClient, err := request.factory.Roles(ctx, role, r.rolesOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -184,7 +269,7 @@ func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request Resource
 	return rolesClient, syncer, hasRole, nil
 }
 
-func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -214,5 +299,5 @@ func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
-	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }

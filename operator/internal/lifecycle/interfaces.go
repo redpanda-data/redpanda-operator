@@ -16,9 +16,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 // ClusterStatus represents a generic status of a cluster
@@ -151,4 +151,4 @@ type ResourceManagerFactory[T any, U Cluster[T]] func(mgr ctrl.Manager) (Ownersh
 // MulticlusterResourceManagerFactory bundles together concrete implementations of OwnershipResolver
 // ClusterStatusUpdater, NodePoolRenderer, and SimpleResourceRenderer for our various
 // cluster versions.
-type MulticlusterResourceManagerFactory[T any, U Cluster[T]] func(mgr mcmanager.Manager) (OwnershipResolver[T, U], ClusterStatusUpdater[T, U], NodePoolRenderer[T, U], SimpleResourceRenderer[T, U])
+type MulticlusterResourceManagerFactory[T any, U Cluster[T]] func(mgr multicluster.Manager) (OwnershipResolver[T, U], ClusterStatusUpdater[T, U], NodePoolRenderer[T, U], SimpleResourceRenderer[T, U])

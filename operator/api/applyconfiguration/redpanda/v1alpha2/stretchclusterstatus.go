@@ -18,7 +18,9 @@ import (
 // StretchClusterStatusApplyConfiguration represents a declarative configuration of the StretchClusterStatus type for use
 // with apply.
 type StretchClusterStatusApplyConfiguration struct {
-	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	Conditions    []v1.ConditionApplyConfiguration           `json:"conditions,omitempty"`
+	NodePools     []EmbeddedNodePoolStatusApplyConfiguration `json:"nodePools,omitempty"`
+	ConfigVersion *string                                    `json:"configVersion,omitempty"`
 }
 
 // StretchClusterStatusApplyConfiguration constructs a declarative configuration of the StretchClusterStatus type for use with
@@ -37,5 +39,26 @@ func (b *StretchClusterStatusApplyConfiguration) WithConditions(values ...*v1.Co
 		}
 		b.Conditions = append(b.Conditions, *values[i])
 	}
+	return b
+}
+
+// WithNodePools adds the given value to the NodePools field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the NodePools field.
+func (b *StretchClusterStatusApplyConfiguration) WithNodePools(values ...*EmbeddedNodePoolStatusApplyConfiguration) *StretchClusterStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithNodePools")
+		}
+		b.NodePools = append(b.NodePools, *values[i])
+	}
+	return b
+}
+
+// WithConfigVersion sets the ConfigVersion field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ConfigVersion field is set to the value of the last call.
+func (b *StretchClusterStatusApplyConfiguration) WithConfigVersion(value string) *StretchClusterStatusApplyConfiguration {
+	b.ConfigVersion = &value
 	return b
 }

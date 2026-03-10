@@ -32,7 +32,7 @@ var (
 
 	// Known/Permitted Agent Pools
 
-	AgentsPipeLineUploader = map[string]any{"queue": "pipeline-uploader"}
+	AgentsPipeLineUploader = map[string]any{"queue": "devprod-t4gmicro"}
 	AgentsLarge            = map[string]any{"queue": "k8s-m6id12xlarge"}
 )
 

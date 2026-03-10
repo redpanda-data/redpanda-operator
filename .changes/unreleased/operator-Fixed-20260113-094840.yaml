@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Properly handle PLAIN-based authentication for source ShadowLink clusters.
+time: 2026-01-13T09:48:40.583361-05:00

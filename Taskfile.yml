@@ -104,6 +104,7 @@ tasks:
       # for _some_ of k8s:generate. For simplicity, we just run update-licenses
       # twice.
       - task: dev:update-licenses
+      - task: generate:applyconfig-copy
       - task: k8s:generate
       - task: dev:update-licenses
       - task: charts:generate
@@ -119,6 +120,12 @@ tasks:
     - build:gen
     cmds:
     - gen pipeline testsuite > .buildkite/testsuite.yml
+
+  generate:applyconfig-copy:
+    deps:
+    - build:gen
+    cmds:
+    - gen applyconfig-copy --header "licenses/boilerplate.go.txt" --package "v1alpha2" --out "./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy.go"  --test "./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy_test.go" --struct "PodSpecApplyConfiguration" k8s.io/client-go/applyconfigurations/core/v1
 
   generate:third-party-licenses-list:
     dir: operator

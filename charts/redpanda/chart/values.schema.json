@@ -3132,6 +3132,12 @@
                                 },
                                 "signerName": {
                                   "type": "string"
+                                },
+                                "userAnnotations": {
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  },
+                                  "type": "object"
                                 }
                               },
                               "type": "object"
@@ -3643,6 +3649,24 @@
             },
             "timeoutSeconds": {
               "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "monitoring": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "labels": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "scrapeInterval": {
+              "type": "string"
             }
           },
           "type": "object"
@@ -10515,6 +10539,12 @@
                                     },
                                     "signerName": {
                                       "type": "string"
+                                    },
+                                    "userAnnotations": {
+                                      "additionalProperties": {
+                                        "type": "string"
+                                      },
+                                      "type": "object"
                                     }
                                   },
                                   "type": "object"
@@ -10764,6 +10794,21 @@
                   "type": "null"
                 }
               ]
+            },
+            "workloadRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "podGroup": {
+                  "type": "string"
+                },
+                "podGroupReplicaKey": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"
@@ -15732,6 +15777,12 @@
                                         },
                                         "signerName": {
                                           "type": "string"
+                                        },
+                                        "userAnnotations": {
+                                          "additionalProperties": {
+                                            "type": "string"
+                                          },
+                                          "type": "object"
                                         }
                                       },
                                       "type": "object"
@@ -15981,6 +16032,21 @@
                       "type": "null"
                     }
                   ]
+                },
+                "workloadRef": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "podGroup": {
+                      "type": "string"
+                    },
+                    "podGroupReplicaKey": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               },
               "type": "object"
@@ -21268,6 +21334,12 @@
                                         },
                                         "signerName": {
                                           "type": "string"
+                                        },
+                                        "userAnnotations": {
+                                          "additionalProperties": {
+                                            "type": "string"
+                                          },
+                                          "type": "object"
                                         }
                                       },
                                       "type": "object"
@@ -21517,6 +21589,21 @@
                       "type": "null"
                     }
                   ]
+                },
+                "workloadRef": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "podGroup": {
+                      "type": "string"
+                    },
+                    "podGroupReplicaKey": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
                 }
               },
               "type": "object"
@@ -21801,7 +21888,7 @@
                   ]
                 },
                 "cloud_storage_credentials_source": {
-                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$",
+                  "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata|azure_aks_oidc_federation)$",
                   "type": "string"
                 },
                 "cloud_storage_disable_tls": {
@@ -22002,7 +22089,7 @@
               ]
             },
             "cloud_storage_credentials_source": {
-              "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata)$",
+              "pattern": "^(config_file|aws_instance_metadata|sts|gcp_instance_metadata|azure_vm_instance_metadata|azure_aks_oidc_federation)$",
               "type": "string"
             },
             "cloud_storage_disable_tls": {

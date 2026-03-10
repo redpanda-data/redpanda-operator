@@ -12,6 +12,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
+	copy "github.com/redpanda-data/redpanda-operator/gen/applyconfig-copy"
 	"github.com/redpanda-data/redpanda-operator/gen/partial"
 	"github.com/redpanda-data/redpanda-operator/gen/pipeline"
 	"github.com/redpanda-data/redpanda-operator/gen/schema"
@@ -27,6 +28,7 @@ func main() {
 		partial.Cmd(),
 		pipeline.Cmd(),
 		schema.Cmd(),
+		copy.Cmd(),
 	)
 
 	if err := root.Execute(); err != nil {

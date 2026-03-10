@@ -52,6 +52,13 @@ func init() {
 	framework.RegisterStep(`^"([^"]*)" should exist and be able to authenticate to the( vectorized)? "([^"]*)" cluster$`, shouldExistAndBeAbleToAuthenticateToTheCluster)
 	framework.RegisterStep(`^"([^"]*)" should be able to authenticate to the( vectorized)? "([^"]*)" cluster with password "([^"]*)" and mechanism "([^"]*)"$`, shouldBeAbleToAuthenticateToTheClusterWithPasswordAndMechanism)
 
+	// Group scenario steps
+	framework.RegisterStep(`^group "([^"]*)" is successfully synced$`, groupIsSuccessfullySynced)
+	framework.RegisterStep(`^I delete the CRD group "([^"]*)"$`, iDeleteTheCRDGroup)
+	framework.RegisterStep(`^group "([^"]*)" should have (\d+) ACLs for topic pattern "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, groupShouldHaveNACLsForTopicPatternInCluster)
+	framework.RegisterStep(`^group "([^"]*)" should have ACLs in( vectorized)? cluster "([^"]*)"$`, groupShouldHaveACLsInCluster)
+	framework.RegisterStep(`^there should be no ACLs for group "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldBeNoACLsForGroupInCluster)
+
 	// Role scenario steps
 	framework.RegisterStep(`^role "([^"]*)" is successfully synced$`, roleIsSuccessfullySynced)
 	framework.RegisterStep(`^I delete the CRD role "([^"]*)"$`, iDeleteTheCRDRole)
@@ -67,6 +74,11 @@ func init() {
 	framework.RegisterStep(`^there should still be role "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereShouldStillBeRole)
 	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have no members in( vectorized)? cluster "([^"]*)"$`, roleShouldHaveNoMembersInCluster)
 	framework.RegisterStep(`^RedpandaRole "([^"]*)" should have status field "([^"]*)" set to "([^"]*)"$`, redpandaRoleShouldHaveStatusFieldSetTo)
+
+	// Direct testing with effective role names (using the role name as it appears in Redpanda)
+	framework.RegisterStep(`^role "([^"]*)" should exist in( vectorized)? cluster "([^"]*)" with effective name "([^"]*)"$`, roleShouldExistInClusterWithEffectiveName)
+	framework.RegisterStep(`^there should be no role "([^"]*)" in( vectorized)? cluster "([^"]*)" with effective name "([^"]*)"$`, thereShouldBeNoRoleInClusterWithEffectiveName)
+	framework.RegisterStep(`^role "([^"]*)" should have members "([^"]*)" in( vectorized)? cluster "([^"]*)" with effective name "([^"]*)"$`, roleShouldHaveMembersWithEffectiveName)
 
 	// Metrics scenario steps
 	framework.RegisterStep(`^the operator is running$`, operatorIsRunning)
@@ -122,6 +134,11 @@ func init() {
 	// Console scenario steps
 	framework.RegisterStep(`^Console "([^"]+)" will be healthy`, consoleIsHealthy)
 	framework.RegisterStep(`^the migrated console cluster "([^"]+)" should have (\d+) warning(s)?$`, consoleHasWarnings)
+
+	// Regression steps
+	framework.RegisterStep(`^service "([^"]*)" should have field managers:$`, checkResourceFieldManagers)
+	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
+	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
 
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)

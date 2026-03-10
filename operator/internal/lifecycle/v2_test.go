@@ -11,21 +11,19 @@ package lifecycle
 
 import (
 	"context"
-	"io"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 	"golang.org/x/tools/txtar"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
@@ -59,15 +57,7 @@ func TestV2ResourceClient(t *testing.T) {
 		}
 	})
 
-	opts := []zap.Opts{
-		zap.UseDevMode(true), zap.Level(zapcore.DebugLevel),
-	}
-
-	if !testing.Verbose() {
-		opts = append(opts, zap.WriteTo(io.Discard))
-	}
-
-	logger := zap.New(opts...)
+	logger := testr.NewWithOptions(t, testr.Options{Verbosity: 6})
 
 	manager, err := multicluster.NewSingleClusterManager(config, ctrl.Options{
 		Scheme: controller.V2Scheme,
@@ -90,12 +80,12 @@ func TestV2ResourceClient(t *testing.T) {
 		}
 	}()
 
-	casesArchive, err := txtar.ParseFile("testdata/cases.txtar")
+	casesArchive, err := txtar.ParseFile("testdata/redpanda-cases.txtar")
 	require.NoError(t, err)
 
-	goldenPools := testutil.NewTxTar(t, "testdata/cases.pools.golden.txtar")
-	goldenResources := testutil.NewTxTar(t, "testdata/cases.resources.golden.txtar")
-	goldenValues := testutil.NewTxTar(t, "testdata/cases.values.golden.txtar")
+	goldenPools := testutil.NewTxTar(t, "testdata/redpanda-cases.pools.golden.txtar")
+	goldenResources := testutil.NewTxTar(t, "testdata/redpanda-cases.resources.golden.txtar")
+	goldenValues := testutil.NewTxTar(t, "testdata/redpanda-cases.values.golden.txtar")
 
 	cloudSecrets := CloudSecretsFlags{
 		CloudSecretsEnabled: false,

@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/cockroachdb/errors"
@@ -429,9 +430,18 @@ func preparePandaproxyClient(
 	// Alternatively, localhost could be used to the same end but using DNS
 	// might save us in some cases where the local broker is having some
 	// trouble and it makes the config more generally reusable.
+	// Can be overridden to localhost via additionalConfiguration:
+	//   pandaproxy_client.use_localhost: "true"
+	brokerAddress := serviceFQDN
+	if useLocalhost, exists := pandaCluster.Spec.AdditionalConfiguration["pandaproxy_client.use_localhost"]; exists {
+		if parsedBool, err := strconv.ParseBool(useLocalhost); err == nil && parsedBool {
+			brokerAddress = "localhost"
+		}
+	}
+
 	cfg.Node.PandaproxyClient = &config.KafkaClient{
 		Brokers: []config.SocketAddress{
-			{Address: serviceFQDN, Port: pandaCluster.InternalListener().Port},
+			{Address: brokerAddress, Port: pandaCluster.InternalListener().Port},
 		},
 	}
 
@@ -497,9 +507,18 @@ func prepareSchemaRegistryClient(
 	// Alternatively, localhost could be used to the same end but using DNS
 	// might save us in some cases where the local broker is having some
 	// trouble and it makes the config more generally reusable.
+	// Can be overridden to localhost via additionalConfiguration:
+	//   schema_registry_client.use_localhost: "true"
+	brokerAddress := serviceFQDN
+	if useLocalhost, exists := pandaCluster.Spec.AdditionalConfiguration["schema_registry_client.use_localhost"]; exists {
+		if parsedBool, err := strconv.ParseBool(useLocalhost); err == nil && parsedBool {
+			brokerAddress = "localhost"
+		}
+	}
+
 	cfg.Node.SchemaRegistryClient = &config.KafkaClient{
 		Brokers: []config.SocketAddress{
-			{Address: serviceFQDN, Port: pandaCluster.InternalListener().Port},
+			{Address: brokerAddress, Port: pandaCluster.InternalListener().Port},
 		},
 	}
 

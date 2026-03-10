@@ -2792,6 +2792,12 @@
                             },
                             "signerName": {
                               "type": "string"
+                            },
+                            "userAnnotations": {
+                              "additionalProperties": {
+                                "type": "string"
+                              },
+                              "type": "object"
                             }
                           },
                           "type": "object"
@@ -3303,6 +3309,24 @@
         },
         "timeoutSeconds": {
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "monitoring": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "scrapeInterval": {
+          "type": "string"
         }
       },
       "type": "object"

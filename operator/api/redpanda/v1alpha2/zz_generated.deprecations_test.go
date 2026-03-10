@@ -117,6 +117,79 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			},
 		},
 		{
+			name: "Group",
+			obj: &Group{
+				Spec: GroupSpec{
+					ClusterSource: ptr.To(ClusterSource{
+						StaticConfiguration: ptr.To(StaticConfigurationSource{
+							Admin: ptr.To(AdminAPISpec{
+								SASL: ptr.To(AdminSASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							Kafka: ptr.To(KafkaAPISpec{
+								SASL: ptr.To(KafkaSASL{
+									AWSMskIam: ptr.To(KafkaSASLAWSMskIam{
+										DeprecatedSecretKey:    ptr.To(SecretKeyRef{}),
+										DeprecatedSessionToken: ptr.To(SecretKeyRef{}),
+									}),
+									DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									GSSAPIConfig: ptr.To(KafkaSASLGSSAPI{
+										DeprecatedPassword: ptr.To(SecretKeyRef{}),
+									}),
+									OAUth: ptr.To(KafkaSASLOAuthBearer{
+										DeprecatedToken: ptr.To(SecretKeyRef{}),
+									}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+							SchemaRegistry: ptr.To(SchemaRegistrySpec{
+								SASL: ptr.To(SchemaRegistrySASL{
+									DeprecatedAuthToken: ptr.To(SecretKeyRef{}),
+									DeprecatedPassword:  ptr.To(SecretKeyRef{}),
+								}),
+								TLS: ptr.To(CommonTLS{
+									DeprecatedCaCert: ptr.To(SecretKeyRef{}),
+									DeprecatedCert:   ptr.To(SecretKeyRef{}),
+									DeprecatedKey:    ptr.To(SecretKeyRef{}),
+								}),
+							}),
+						}),
+					}),
+				},
+			},
+			wantWarnings: []string{
+				"field 'spec.cluster.staticConfiguration.kafka.tls.caCertSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.kafka.tls.certSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.kafka.tls.keySecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.kafka.sasl.oauth.tokenSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.kafka.sasl.gssapi.passwordSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.kafka.sasl.awsMskIam.secretKeySecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.kafka.sasl.awsMskIam.sessionTokenSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.kafka.sasl.passwordSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.admin.tls.caCertSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.admin.tls.certSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.admin.tls.keySecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.admin.sasl.passwordSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.admin.sasl.token' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.schemaRegistry.tls.caCertSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.schemaRegistry.tls.certSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.schemaRegistry.tls.keySecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.schemaRegistry.sasl.passwordSecretRef' is deprecated and set",
+				"field 'spec.cluster.staticConfiguration.schemaRegistry.sasl.token' is deprecated and set",
+			},
+		},
+		{
 			name: "Redpanda",
 			obj: &Redpanda{
 				Spec: RedpandaSpec{

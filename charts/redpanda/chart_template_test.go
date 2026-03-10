@@ -595,13 +595,12 @@ func findAndExecJSONPath(t *testing.T, objs []kube.Object, gvk, key, jsonPath st
 		if obj.GetNamespace()+"/"+obj.GetName() != key {
 			continue
 		}
-
 		execJSONPath(t, obj, jsonPath, fn)
 
 		return
 	}
 
-	t.Fatalf("object %q of kind %q not found", gvk, key)
+	t.Fatalf("object %q with namespace/name %q not found", gvk, key)
 }
 
 func execJSONPath(t *testing.T, obj any, jsonPath string, fn func(any)) {

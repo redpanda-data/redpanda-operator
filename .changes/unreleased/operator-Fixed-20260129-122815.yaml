@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: In previous versions of the operator a field manager was unknowingly changed for resources that were synchronized via server-side apply. This can cause problems with modifying fields such as Service and StatefulSet port definitions. A post-upgrade migration job was added to remove any unwanted field managers.
+time: 2026-01-29T12:28:15.717527-05:00

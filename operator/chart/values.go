@@ -37,7 +37,12 @@ type Multicluster struct {
 	Peers                        []Peer `json:"peers"`
 }
 
+type Enterprise struct {
+	LicenseSecretRef *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
+}
+
 type Values struct {
+	Enterprise            *Enterprise                   `json:"enterprise,omitempty"`
 	NameOverride          string                        `json:"nameOverride"`
 	FullnameOverride      string                        `json:"fullnameOverride"`
 	ReplicaCount          int32                         `json:"replicaCount"`

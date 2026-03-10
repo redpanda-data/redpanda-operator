@@ -42,6 +42,8 @@ const (
 	DefaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
 
 	webhookCertificatePath = "/tmp/k8s-webhook-server/serving-certs"
+
+	licenseFilePath = "/redpanda/license"
 )
 
 func Deployment(dot *helmette.Dot) *appsv1.Deployment {
@@ -224,6 +226,19 @@ func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 		serviceAccountTokenVolume(),
 	}
 
+	if values.Enterprise.LicenseSecretRef != nil &&
+		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
+		vol = append(vol, corev1.Volume{
+			Name: "license",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: ptr.To(int32(420)),
+					SecretName:  values.Enterprise.LicenseSecretRef.Name,
+				},
+			},
+		})
+	}
+
 	if !values.Webhook.Enabled {
 		return vol
 	}
@@ -304,6 +319,15 @@ func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 
 	volMount := []corev1.VolumeMount{serviceAccountTokenVolumeMount()}
 
+	if values.Enterprise.LicenseSecretRef != nil &&
+		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
+		volMount = append(volMount, corev1.VolumeMount{
+			Name:      "license",
+			MountPath: licenseFilePath,
+			ReadOnly:  true,
+		})
+	}
+
 	if !values.Webhook.Enabled {
 		return volMount
 	}
@@ -335,6 +359,15 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--configurator-tag":              containerTag(dot),
 		"--configurator-base-image":       values.Image.Repository,
 		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
+	}
+
+	if values.Enterprise.LicenseSecretRef != nil &&
+		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
+		if values.Enterprise.LicenseSecretRef.Key != "" {
+			defaults["--license-file-path"] = fmt.Sprintf("%s/%s", licenseFilePath, values.Enterprise.LicenseSecretRef.Key)
+		} else {
+			defaults["--license-file-path"] = fmt.Sprintf("%s/%s", licenseFilePath, values.Enterprise.LicenseSecretRef.Name)
+		}
 	}
 
 	if values.Webhook.Enabled {

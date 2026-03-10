@@ -298,7 +298,7 @@ listeners:
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 # ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
 # ASSERT-VALID-RPK-CONFIGURATION
-# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "http"]
+# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "HTTP"]
 monitoring:
   enabled: true
 
@@ -307,6 +307,18 @@ listeners:
     tls:
       enabled: false
 
+-- service-monitor-for-console-without-tls --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+# ASSERT-VALID-RPK-CONFIGURATION
+# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda-console", "{.spec.endpoints[0].scheme}", "HTTP"]
+console:
+  enabled: true
+  monitoring:
+    enabled: true
+
 -- service-monitor-with-tls-in-admin-api --
 # By default Admin API listeners has enabled TLS but this explicitly enable this
 # ASSERT-NO-ERROR
@@ -314,7 +326,7 @@ listeners:
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 # ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
 # ASSERT-VALID-RPK-CONFIGURATION
-# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "https"]
+# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "HTTPS"]
 monitoring:
   enabled: true
 

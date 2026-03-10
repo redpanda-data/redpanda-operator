@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Added `Internal` boolean field to RedpandaRole spec to enable managing Redpanda internal roles (prefixed with "__") using standard Kubernetes resource names.
+time: 2026-01-21T18:05:40.867383428+01:00

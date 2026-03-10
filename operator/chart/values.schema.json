@@ -680,6 +680,27 @@
       },
       "type": "object"
     },
+    "enterprise": {
+      "additionalProperties": false,
+      "properties": {
+        "licenseSecretRef": {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "optional": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "fullnameOverride": {
       "type": "string"
     },
@@ -5902,6 +5923,12 @@
                                     },
                                     "signerName": {
                                       "type": "string"
+                                    },
+                                    "userAnnotations": {
+                                      "additionalProperties": {
+                                        "type": "string"
+                                      },
+                                      "type": "object"
                                     }
                                   },
                                   "type": "object"
@@ -6151,6 +6178,21 @@
                   "type": "null"
                 }
               ]
+            },
+            "workloadRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "podGroup": {
+                  "type": "string"
+                },
+                "podGroupReplicaKey": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"

@@ -16,6 +16,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
+const (
+	// InternalRolePrefix is the prefix used for internal role names in Redpanda
+	InternalRolePrefix = "__"
+)
+
 // RedpandaRole defines the CRD for a Redpanda role.
 // +genclient
 // +kubebuilder:object:root=true
@@ -40,9 +45,18 @@ var (
 	_ AuthorizedObject         = (*RedpandaRole)(nil)
 )
 
+// GetEffectiveRoleName returns the actual role name used in Redpanda.
+// Returns "__<name>" when Internal is true, otherwise returns "<name>".
+func (r *RedpandaRole) GetEffectiveRoleName() string {
+	if r.Spec.Internal {
+		return InternalRolePrefix + r.Name
+	}
+	return r.Name
+}
+
 // GetPrincipal constructs the principal of a Role for defining ACLs.
 func (r *RedpandaRole) GetPrincipal() string {
-	return "RedpandaRole:" + r.Name
+	return "RedpandaRole:" + r.GetEffectiveRoleName()
 }
 
 func (r *RedpandaRole) GetACLs() []ACLRule {
@@ -90,13 +104,20 @@ type RoleSpec struct {
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	// +required
 	ClusterSource *ClusterSource `json:"cluster"`
-	// Principals defines the list of users assigned to this role.
-	// Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User.
+	// Principals defines the list of users or groups assigned to this role.
+	// Format: Type:Name (e.g., User:john, Group:engineering). If type is omitted, defaults to User.
+	// Supported principal types are User and Group. Group principals correspond to
+	// OIDC identity provider groups and require group-based authorization to be enabled in Redpanda.
 	// +kubebuilder:validation:MaxItems=1024
 	Principals []string `json:"principals,omitempty"`
 	// Authorization rules defined for this role. If specified, the operator will manage ACLs for this role.
 	// If omitted, ACLs should be managed separately using Redpanda's ACL management.
 	Authorization *RoleAuthorizationSpec `json:"authorization,omitempty"`
+	// Internal marks this role as an internal Redpanda role with "__" prefix.
+	// When true, the effective role name becomes "__<kubernetes-name>".
+	// When false (default), the effective role name is the Kubernetes resource name.
+	// +optional
+	Internal bool `json:"internal,omitempty"`
 }
 
 // RoleAuthorizationSpec defines authorization rules for this role.
@@ -121,6 +142,10 @@ type RoleStatus struct {
 	// ManagedPrincipals returns whether the role has managed principals (membership)
 	// that are being reconciled by the operator.
 	ManagedPrincipals bool `json:"managedPrincipals,omitempty"`
+	// EffectiveRoleName stores the last known effective role name that was successfully
+	// reconciled. This is used to detect role renames and clean up the old role.
+	// +optional
+	EffectiveRoleName string `json:"effectiveRoleName,omitempty"`
 }
 
 // RedpandaRoleList contains a list of Redpanda role objects.

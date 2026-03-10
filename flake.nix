@@ -42,13 +42,19 @@
 
           devshells.default = {
             env = [
-              { name = "GOROOT"; value = "${pkgs.go}/share/go"; }
+              { name = "CGO_ENABLED"; value = "0"; }
+              { name = "GOROOT"; value = "${pkgs.go_1_26}/share/go"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
               { name = "TEST_REDPANDA_REPO"; eval = "redpandadata/redpanda-unstable"; }
-              { name = "TEST_REDPANDA_VERSION"; eval = "v25.3.1-rc2"; }
+              { name = "TEST_REDPANDA_VERSION"; eval = "v26.1.1-rc1"; }
               { name = "CGO_ENABLED"; eval = "0"; }
+              # This is a workaround for rpk packages using buf-built grpc-gateway protobuf options, whereas the kubernetes ecosystem
+              # uses the google provided libraries, which conflict due to them being the same library. We put this here primarily for
+              # tests run on a local environment so that we can use the same typical "go test" workflow we otherwise would normally.
+              # Eventually we should remove this and our reliance on internal rpk libraries.
+              { name = "GOLANG_PROTOBUF_REGISTRATION_CONFLICT"; eval = "ignore"; }
             ];
 
             # If the version of the installed binary is important make sure to
@@ -73,7 +79,7 @@
               pkgs.go-licenses
               pkgs.go-task
               pkgs.go-tools
-              pkgs.go
+              pkgs.go_1_26
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.gotestsum

@@ -238,9 +238,26 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
+	// Probe v2 support once for all subtests. We need a temporary role object
+	// to create a roles client via the factory.
+	probeRole := &redpandav1alpha2.RedpandaRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceDefault,
+			Name:      "probe-role",
+		},
+		Spec: redpandav1alpha2.RoleSpec{
+			ClusterSource: environment.ClusterSourceValid,
+		},
+	}
+	probeClient, err := environment.Factory.Roles(ctx, probeRole)
+	require.NoError(t, err)
+	supportsGroups := probeClient.SupportsGroups()
+	probeClient.Close()
+
 	// Test different role configurations
 	testCases := []struct {
 		name             string
+		requiresGroups   bool // if true, skip when v2 SecurityService API is unavailable
 		principals       []string
 		authorization    *redpandav1alpha2.RoleAuthorizationSpec
 		expectedACLs     int
@@ -256,6 +273,26 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 			shouldManageRole: true,
 			shouldManageACLs: false,
 			description:      "Role with principals only, no ACLs",
+		},
+		{
+			name:             "group-principals-only-mode",
+			requiresGroups:   true,
+			principals:       []string{"Group:engineering", "Group:platform"},
+			authorization:    nil,
+			expectedACLs:     0,
+			shouldManageRole: true,
+			shouldManageACLs: false,
+			description:      "Role with group principals only, no ACLs",
+		},
+		{
+			name:             "mixed-user-group-principals",
+			requiresGroups:   true,
+			principals:       []string{"User:alice", "Group:engineering"},
+			authorization:    nil,
+			expectedACLs:     0,
+			shouldManageRole: true,
+			shouldManageACLs: false,
+			description:      "Role with mixed user and group principals, no ACLs",
 		},
 		{
 			name:       "acls-only-mode",
@@ -276,6 +313,27 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 			shouldManageRole: true,
 			shouldManageACLs: true,
 			description:      "Role with ACLs only, no principals",
+		},
+		{
+			name:           "combined-mode-group-principals-with-acls",
+			requiresGroups: true,
+			principals:     []string{"Group:engineering", "User:alice"},
+			authorization: &redpandav1alpha2.RoleAuthorizationSpec{
+				ACLs: []redpandav1alpha2.ACLRule{{
+					Type: redpandav1alpha2.ACLTypeAllow,
+					Resource: redpandav1alpha2.ACLResourceSpec{
+						Type: redpandav1alpha2.ResourceTypeTopic,
+						Name: "team-topic",
+					},
+					Operations: []redpandav1alpha2.ACLOperation{
+						redpandav1alpha2.ACLOperationRead,
+					},
+				}},
+			},
+			expectedACLs:     1,
+			shouldManageRole: true,
+			shouldManageACLs: true,
+			description:      "Role with group and user principals plus ACLs",
 		},
 		{
 			name:       "combined-mode",
@@ -314,6 +372,9 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.requiresGroups && !supportsGroups {
+				t.Skip("Skipping: v2 SecurityService API not available, Group principals not supported")
+			}
 			role := &redpandav1alpha2.RedpandaRole{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: metav1.NamespaceDefault,
@@ -704,7 +765,77 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 		require.True(t, hasRole, "Role should still exist after member replacement")
 	})
 
-	// Test 4: Remove all members (empty principals list)
+	// Test 4: Add group principals
+	t.Run("add_group_principals", func(t *testing.T) {
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		supportsGroups := rolesClient.SupportsGroups()
+		rolesClient.Close()
+
+		if !supportsGroups {
+			t.Skip("Skipping: v2 SecurityService API not available, Group principals not supported")
+		}
+
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Principals = []string{"User:dave", "User:eve", "Group:engineering"}
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.True(t, role.Status.ManagedPrincipals)
+		require.Equal(t, []string{"User:dave", "User:eve", "Group:engineering"}, role.Spec.Principals)
+
+		rolesClient, err = environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should still exist after adding group principals")
+	})
+
+	// Test 5: Replace with group-only principals
+	t.Run("group_only_principals", func(t *testing.T) {
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		supportsGroups := rolesClient.SupportsGroups()
+		rolesClient.Close()
+
+		if !supportsGroups {
+			t.Skip("Skipping: v2 SecurityService API not available, Group principals not supported")
+		}
+
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Principals = []string{"Group:engineering", "Group:platform"}
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.True(t, role.Status.ManagedPrincipals)
+		require.Equal(t, []string{"Group:engineering", "Group:platform"}, role.Spec.Principals)
+
+		rolesClient, err = environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should still exist with group-only principals")
+	})
+
+	// Test 6: Remove all members (empty principals list)
 	t.Run("remove_all_members", func(t *testing.T) {
 		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
 		require.NoError(t, err)
@@ -729,6 +860,158 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 		hasRole, err := rolesClient.Has(ctx, role)
 		require.NoError(t, err)
 		require.True(t, hasRole, "Role should still exist with empty membership")
+	})
+
+	// Cleanup
+	t.Run("cleanup", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Delete(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
+	})
+}
+
+func TestRoleRename(t *testing.T) {
+	// Tests role rename happy path: K8s name → internal name → different internal name
+	// Verifies old roles are deleted and new roles created without orphaning.
+	//
+	// Unhappy path scenarios (documented for future implementation with mocks):
+	//
+	// Scenario 1: New role creation fails
+	//   - Rename detected, hasRole=false
+	//   - Create() returns error
+	//   - createPatch returns error
+	//   - Status NOT updated (keeps previousEffectiveName)
+	//   - Next reconciliation retries from beginning
+	//
+	// Scenario 2: Old role deletion fails
+	//   - Rename detected, hasRole=false
+	//   - Create() succeeds, new role exists
+	//   - DeleteByName() returns error
+	//   - createPatch returns error
+	//   - Status NOT updated (keeps previousEffectiveName)
+	//   - Next reconciliation: hasRole=true (skip create), retry delete
+	//
+	// Scenario 3: Retry after deletion failure
+	//   - Rename still detected (status has old name)
+	//   - hasRole=true (new role exists from previous attempt)
+	//   - Logs "New role already exists, skipping creation"
+	//   - DeleteByName() succeeds this time
+	//   - createPatch(nil) updates status to currentEffectiveName
+	//   - Rename complete, no orphaned roles
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	// Create role with initial name (no internal name)
+	role := &redpandav1alpha2.RedpandaRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceDefault,
+			Name:      "updateable-role",
+		},
+		Spec: redpandav1alpha2.RoleSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Principals:    []string{"User:user1", "User:user2"},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(role)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	// Phase 1: Create role without internal name
+	t.Run("create_role_without_internal_name", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Create(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.Equal(t, "updateable-role", role.Status.EffectiveRoleName, "Status should track effective name")
+
+		// Verify role exists in cluster with K8s name
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role should exist with name 'updateable-role'")
+	})
+
+	// Phase 2: Rename by setting internal flag
+	t.Run("rename_via_internal_flag", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Internal = true
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.True(t, role.Status.ManagedRole)
+		require.Equal(t, "__updateable-role", role.Status.EffectiveRoleName, "Status should update to new effective name")
+
+		// Verify new role exists
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasNewRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasNewRole, "New role '__updateable-role' should exist")
+
+		// Verify old role is deleted
+		oldRole := role.DeepCopy()
+		oldRole.Spec.Internal = false // This makes GetEffectiveRoleName return "updateable-role"
+		hasOldRole, err := rolesClient.Has(ctx, oldRole)
+		require.NoError(t, err)
+		require.False(t, hasOldRole, "Old role 'updateable-role' should be deleted")
+	})
+
+	// Phase 3: Toggle internal flag back to verify multiple renames work
+	t.Run("toggle_internal_back", func(t *testing.T) {
+		k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		role.Spec.Internal = false
+
+		require.NoError(t, k8sClient.Update(ctx, role))
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, role))
+		require.Equal(t, "updateable-role", role.Status.EffectiveRoleName, "Status should update back to K8s name")
+
+		// Verify role with K8s name exists
+		rolesClient, err := environment.Factory.Roles(ctx, role)
+		require.NoError(t, err)
+		defer rolesClient.Close()
+
+		hasRole, err := rolesClient.Has(ctx, role)
+		require.NoError(t, err)
+		require.True(t, hasRole, "Role 'updateable-role' should exist")
+
+		// Check previous internal name is gone
+		previousRole := role.DeepCopy()
+		previousRole.Spec.Internal = true
+		hasPreviousRole, err := rolesClient.Has(ctx, previousRole)
+		require.NoError(t, err)
+		require.False(t, hasPreviousRole, "Previous role '__updateable-role' should be deleted")
 	})
 
 	// Cleanup
