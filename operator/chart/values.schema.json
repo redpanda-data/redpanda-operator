@@ -897,11 +897,23 @@
               "items": {
                 "additionalProperties": false,
                 "properties": {
+                  "additionalAnnotation": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
                   "address": {
                     "type": "string"
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "selectorOverwrite": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
                   }
                 },
                 "required": [
@@ -916,6 +928,9 @@
               "type": "null"
             }
           ]
+        },
+        "servicePerOperatorDeployment": {
+          "type": "boolean"
         }
       },
       "type": "object"

@@ -97,6 +97,7 @@ type PartialVectorizedControllers struct {
 
 type PartialMulticluster struct {
 	Enabled                      *bool         "json:\"enabled,omitempty\""
+	ServicePerOperatorDeployment *bool         "json:\"servicePerOperatorDeployment,omitempty\""
 	Name                         *string       "json:\"name,omitempty\""
 	KubernetesAPIExternalAddress *string       "json:\"apiServerExternalAddress,omitempty\""
 	Peers                        []PartialPeer "json:\"peers,omitempty\""
@@ -134,6 +135,8 @@ type PartialMetadata struct {
 }
 
 type PartialPeer struct {
-	Name    *string "json:\"name,omitempty\" jsonschema:\"required\""
-	Address *string "json:\"address,omitempty\" jsonschema:\"required\""
+	Name                 *string           "json:\"name,omitempty\" jsonschema:\"required\""
+	Address              *string           "json:\"address,omitempty\" jsonschema:\"required\""
+	AdditionalAnnotation map[string]string "json:\"additionalAnnotation,omitempty\""
+	SelectorOverwrite    map[string]string "json:\"selectorOverwrite,omitempty\""
 }
