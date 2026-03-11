@@ -959,6 +959,26 @@ statefulset:
   - --overprovisioned
   - --default-log-level warn
 
+-- lock-memory-with-resources --
+# Verify that --lock-memory in additionalRedpandaCmdFlags is correctly translated
+# to enable_memory_locking: true when resources.requests and resources.limits are
+# set. When limits/requests are set, GetRedpandaFlags intentionally omits
+# --lock-memory (expecting the user to set it via additionalRedpandaCmdFlags), and
+# the chart extracts it into the enable_memory_locking field (due to an rpk buglet
+# where --lock-memory in additional_start_flags is ignored by rpk).
+# The checksum annotation must include enable_memory_locking so pods roll when changed.
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "enable_memory_locking: true"]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--lock-memory"]
+resources:
+  requests:
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+statefulset:
+  additionalRedpandaCmdFlags:
+  - --lock-memory
+
 -- name-overrides --
 # Assert that no empty container is generated when using nameOverride or fullnameOverride.
 # It's (likely) acceptable for the container names themselves to change. This

@@ -578,6 +578,11 @@
 {{- $dependencies = (concat (default (list) $dependencies) (list $state.Values.external.addresses)) -}}
 {{- end -}}
 {{- end -}}
+{{- $_1015_lockMemory_overprovisioned_flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $state.Values $pool)))) "r") -}}
+{{- $lockMemory := (index $_1015_lockMemory_overprovisioned_flags 0) -}}
+{{- $overprovisioned := (index $_1015_lockMemory_overprovisioned_flags 1) -}}
+{{- $flags := (index $_1015_lockMemory_overprovisioned_flags 2) -}}
+{{- $dependencies = (concat (default (list) $dependencies) (list $lockMemory $overprovisioned $flags)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (sha256sum (toJson $dependencies))) | toJson -}}
 {{- break -}}

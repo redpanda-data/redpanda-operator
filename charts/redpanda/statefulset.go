@@ -999,6 +999,14 @@ func statefulSetChecksumAnnotation(state *RenderState, pool Pool) string {
 			dependencies = append(dependencies, state.Values.External.Addresses)
 		}
 	}
+	// NB: The rpk section is excluded from RedpandaConfigFile (via
+	// includeNonHashableItems=false) to avoid rolling pods when only replica
+	// count changes (broker addresses in the rpk section are replica-dependent).
+	// However, startup flags derived from additionalRedpandaCmdFlags
+	// (enable_memory_locking, overprovisioned, additional_start_flags) must
+	// still trigger a roll when changed, so we include them separately here.
+	lockMemory, overprovisioned, flags := RedpandaAdditionalStartFlags(&state.Values, pool)
+	dependencies = append(dependencies, lockMemory, overprovisioned, flags)
 	return helmette.Sha256Sum(helmette.ToJSON(dependencies))
 }
 
