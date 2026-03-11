@@ -65,6 +65,10 @@ func render(dot *helmette.Dot) []kube.Object {
 		MigrationJobServiceAccount(dot),
 	}
 
+	for _, svc := range StretchClusterService(dot) {
+		manifests = append(manifests, &svc)
+	}
+
 	for _, cr := range ClusterRoles(dot) {
 		manifests = append(manifests, &cr)
 	}
