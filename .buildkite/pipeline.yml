@@ -29,7 +29,7 @@ steps:
   - key: ci-entry-point
     label: Operator CI Entrypoint
     agents:
-      queue: pipeline-uploader
+      queue: devprod-t4gmicro
     # Run for:
     # - all pull requests that aren't from forks
     # - nightly test schedule or nightly triggered from buildkite ui
