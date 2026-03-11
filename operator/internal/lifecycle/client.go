@@ -221,7 +221,6 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 // a tracker that can be used for determining necessary operations on the pools.
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
-
 	for _, clusterName := range r.clusterList(cluster) {
 		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
 		if err != nil {

@@ -18,6 +18,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/license"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap/zapcore"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -345,7 +346,21 @@ func Run(
 		return fmt.Errorf("initializing cluster: %w", err)
 	}
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager); err != nil {
+	cloudSecrets := lifecycle.CloudSecretsFlags{
+		CloudSecretsEnabled: false,
+	}
+
+	sidecarImage := lifecycle.Image{
+		Repository: opts.BaseImage,
+		Tag:        opts.BaseTag,
+	}
+
+	redpandaImage := lifecycle.Image{
+		Repository: opts.BaseImage,
+		Tag:        opts.BaseTag,
+	}
+
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}
