@@ -730,7 +730,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -743,6 +743,7 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		&MulticlusterReconciler{
 			Manager:         mgr,
 			LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+			ClientFactory:   factory,
 		},
 	)
 }

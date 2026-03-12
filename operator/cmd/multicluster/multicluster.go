@@ -19,6 +19,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/license"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap/zapcore"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -360,7 +361,9 @@ func Run(
 		Tag:        opts.BaseTag,
 	}
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets); err != nil {
+	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(10 * time.Second)
+
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}

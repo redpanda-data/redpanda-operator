@@ -172,7 +172,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		}
 
 		env.SetupMulticlusterManager(s.setupMulticlusterRBAC(env), fmt.Sprintf("127.0.0.1:%d", ports[i]), peers, func(mgr multicluster.Manager) error {
-			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets)
+			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil)
 		})
 	}
 }
