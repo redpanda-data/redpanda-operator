@@ -28,7 +28,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-basic-a-statefulset
           app.kubernetes.io/instance: compat-test-
@@ -384,7 +384,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-basic-b-statefulset
           app.kubernetes.io/instance: compat-test-
@@ -741,7 +741,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-basic-a-statefulset
           app.kubernetes.io/instance: nodepool-basic-test-
@@ -1097,7 +1097,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-basic-b-statefulset
           app.kubernetes.io/instance: nodepool-basic-test-

@@ -27,7 +27,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: basic-test
@@ -66,7 +66,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           lifecycle:
             postStart:
               exec:
@@ -199,7 +199,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: tuning
           resources: {}
           securityContext:
@@ -238,7 +238,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -383,7 +383,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: compat-test
@@ -422,7 +422,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           lifecycle:
             postStart:
               exec:
@@ -575,7 +575,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -721,7 +721,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-pool-statefulset
           app.kubernetes.io/instance: compat-test
@@ -941,7 +941,7 @@
             xfs & wait $!
           command:
           - /bin/sh
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: fs-validator
           resources:
             limits:
@@ -1158,7 +1158,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: console-disabled
@@ -1197,7 +1197,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           lifecycle:
             postStart:
               exec:
@@ -1330,7 +1330,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: tuning
           resources: {}
           securityContext:
@@ -1369,7 +1369,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1514,7 +1514,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
@@ -1553,7 +1553,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           lifecycle:
             postStart:
               exec:
@@ -1686,7 +1686,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: tuning
           resources: {}
           securityContext:
@@ -1725,7 +1725,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1871,7 +1871,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-basic-a-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
@@ -1910,7 +1910,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           lifecycle:
             postStart:
               exec:
@@ -2041,7 +2041,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: tuning
           resources: {}
           securityContext:
@@ -2080,7 +2080,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -2226,7 +2226,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+          config.redpanda.com/checksum: 5fa1a93aaf96bea11c311bd90ca43b382893ab790a7206d1244adde8ba29a2ab
         labels:
           app.kubernetes.io/component: redpanda-basic-b-statefulset
           app.kubernetes.io/instance: nodepool-basic-test
@@ -2265,7 +2265,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           lifecycle:
             postStart:
               exec:
@@ -2396,7 +2396,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: tuning
           resources: {}
           securityContext:
@@ -2435,7 +2435,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v26.1.1-rc1
+          image: :v25.3.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
