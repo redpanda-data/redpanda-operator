@@ -78,6 +78,20 @@ func (r *RedpandaRole) HasManagedACLs() bool {
 	return r.Status.ManagedACLs
 }
 
+// ShouldManageSRACLs returns true if the role has SR ACL rules defined.
+func (r *RedpandaRole) ShouldManageSRACLs() bool {
+	if r.Spec.Authorization == nil {
+		return false
+	}
+	_, sr := PartitionACLs(r.Spec.Authorization.ACLs)
+	return len(sr) > 0
+}
+
+// HasManagedSRACLs returns true if the role has managed SR ACLs that need cleanup.
+func (r *RedpandaRole) HasManagedSRACLs() bool {
+	return r.Status.ManagedSRACLs
+}
+
 func (r *RedpandaRole) ShouldManageRole() bool {
 	// Always manage the role if it has a spec (similar to how users work)
 	return true
@@ -146,6 +160,9 @@ type RoleStatus struct {
 	// reconciled. This is used to detect role renames and clean up the old role.
 	// +optional
 	EffectiveRoleName string `json:"effectiveRoleName,omitempty"`
+	// ManagedSRACLs returns whether the role has managed Schema Registry ACLs
+	// that need to be cleaned up.
+	ManagedSRACLs bool `json:"managedSrAcls,omitempty"`
 }
 
 // RedpandaRoleList contains a list of Redpanda role objects.

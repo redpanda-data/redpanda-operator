@@ -53,7 +53,7 @@ func (r *UserReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha
 
 func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) (client.Patch, error) {
 	user := request.object
-	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
+	hasManagedACLs, hasManagedUser, hasManagedSRACLs := user.HasManagedACLs(), user.HasManagedUser(), user.HasManagedSRACLs()
 	shouldManageACLs, shouldManageUser := user.ShouldManageACLs(), user.ShouldManageUser()
 
 	createPatch := func(err error) (client.Patch, error) {
@@ -70,6 +70,7 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithObservedGeneration(user.Generation).
 			WithManagedUser(hasManagedUser).
 			WithManagedACLs(hasManagedACLs).
+			WithManagedSRACLs(hasManagedSRACLs).
 			WithConditions(utils.StatusConditionConfigs(user.Status.Conditions, user.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -101,6 +102,7 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedACLs = true
+		hasManagedSRACLs = user.ShouldManageSRACLs() && syncer.HasSRClient()
 	}
 
 	if !shouldManageACLs && hasManagedACLs {
@@ -108,6 +110,7 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedACLs = false
+		hasManagedSRACLs = false
 	}
 
 	return createPatch(nil)

@@ -160,7 +160,7 @@ spec:
                             description: ACLOperation specifies the type of operation
                               for an ACL.
                             type: string
-                          maxItems: 11
+                          maxItems: 12
                           minItems: 1
                           type: array
                         resource:
@@ -198,6 +198,8 @@ spec:
                               - group
                               - cluster
                               - transactionalId
+                              - subject
+                              - registry
                               type: string
                           required:
                           - name
@@ -205,15 +207,18 @@ spec:
                           type: object
                           x-kubernetes-validations:
                           - message: prefixed pattern type only supported for ['group',
-                              'topic', 'transactionalId']
-                            rule: 'self.type in [''group'', ''topic'', ''transactionalId'']
-                              ? true : !has(self.patternType) || self.patternType
+                              'topic', 'transactionalId', 'subject']
+                            rule: 'self.type in [''group'', ''topic'', ''transactionalId'',
+                              ''subject''] ? true : !has(self.patternType) || self.patternType
                               != ''prefixed'''
-                          - message: name must not be specified for type ['cluster']
-                            rule: 'self.type == "cluster" ? (self.name == "") : true'
-                          - message: acl rules on non-cluster resources must specify
-                              a name
-                            rule: 'self.type == "cluster" ? true : (self.name != "")'
+                          - message: name must not be specified for type ['cluster',
+                              'registry']
+                            rule: 'self.type in ["cluster", "registry"] ? (self.name
+                              == "") : true'
+                          - message: acl rules on non-cluster, non-registry resources
+                              must specify a name
+                            rule: 'self.type in ["cluster", "registry"] ? true : (self.name
+                              != "")'
                         type:
                           description: |-
                             Type specifies the type of ACL rule to create. Valid values are:
@@ -251,6 +256,16 @@ spec:
                           o in [''Alter'', ''AlterConfigs'', ''ClusterAction'', ''Create'',
                           ''Describe'', ''DescribeConfigs'', ''IdempotentWrite''])
                           : true'
+                      - message: supported subject operations are ['Read', 'Write',
+                          'Delete', 'Describe', 'DescribeConfigs', 'AlterConfigs']
+                        rule: 'self.resource.type == ''subject'' ? self.operations.all(o,
+                          o in [''Read'', ''Write'', ''Delete'', ''Describe'', ''DescribeConfigs'',
+                          ''AlterConfigs'']) : true'
+                      - message: supported registry operations are ['Read', 'Write',
+                          'Delete', 'Describe', 'DescribeConfigs', 'AlterConfigs']
+                        rule: 'self.resource.type == ''registry'' ? self.operations.all(o,
+                          o in [''Read'', ''Write'', ''Delete'', ''Describe'', ''DescribeConfigs'',
+                          ''AlterConfigs'']) : true'
                     maxItems: 1024
                     type: array
                   type:
@@ -2653,6 +2668,11 @@ spec:
                 description: |-
                   ManagedACLs returns whether the user has managed ACLs that need
                   to be cleaned up.
+                type: boolean
+              managedSrAcls:
+                description: |-
+                  ManagedSRACLs returns whether the user has managed Schema Registry ACLs
+                  that need to be cleaned up.
                 type: boolean
               managedUser:
                 description: |-

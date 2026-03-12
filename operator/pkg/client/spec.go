@@ -21,6 +21,8 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 
+	crclient "sigs.k8s.io/controller-runtime/pkg/client"
+
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
@@ -151,16 +153,8 @@ func (c *Factory) redpandaAdminForSpec(ctx context.Context, spec *ir.AdminAPISpe
 	return rpclient, nil
 }
 
-func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegistrySpec, clusterName string) (*sr.Client, error) {
-	if len(spec.URLs) == 0 {
-		return nil, ErrEmptyURLList
-	}
-
-	client, err := c.GetClient(ctx, clusterName)
-	if err != nil {
-		return nil, err
-	}
-
+// buildSchemaRegistryHTTPClient builds the shared http.Client + transport for SR connections.
+func (c *Factory) buildSchemaRegistryHTTPClient(ctx context.Context, spec *ir.SchemaRegistrySpec, k8sClient crclient.Client) (*http.Client, error) {
 	// These transport values come from the TLS client options found here:
 	// https://github.com/twmb/franz-go/blob/cea7aa5d803781e5f0162187795482ba1990c729/pkg/sr/clientopt.go#L48-L68
 	transport := &http.Transport{
@@ -174,23 +168,40 @@ func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegi
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 
-	var tlsConfig *tls.Config
 	if spec.TLS != nil {
-		tlsConfig, err = spec.TLS.Config(ctx, client, c.secretExpander)
+		tlsConfig, err := spec.TLS.Config(ctx, k8sClient, c.secretExpander)
 		if err != nil {
 			return nil, err
 		}
 		transport.TLSClientConfig = tlsConfig
 	}
 
-	opts := []sr.ClientOpt{
-		sr.HTTPClient(&http.Client{
-			Timeout:   5 * time.Second,
-			Transport: transport,
-		}),
+	return &http.Client{
+		Timeout:   5 * time.Second,
+		Transport: transport,
+	}, nil
+}
+
+func (c *Factory) schemaRegistryForSpec(ctx context.Context, spec *ir.SchemaRegistrySpec, clusterName string) (*sr.Client, error) {
+	if len(spec.URLs) == 0 {
+		return nil, ErrEmptyURLList
 	}
 
-	authOpt, err := spec.SASL.AsOption(ctx, client, c.secretExpander)
+	k8sClient, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	httpClient, err := c.buildSchemaRegistryHTTPClient(ctx, spec, k8sClient)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := []sr.ClientOpt{
+		sr.HTTPClient(httpClient),
+	}
+
+	authOpt, err := spec.SASL.AsOption(ctx, k8sClient, c.secretExpander)
 	if err != nil {
 		return nil, err
 	}

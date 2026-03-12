@@ -65,7 +65,7 @@ func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha
 
 func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (client.Patch, error) {
 	role := request.object
-	hasManagedACLs, hasManagedRole, hasManagedPrincipals := role.HasManagedACLs(), role.HasManagedRole(), role.HasManagedPrincipals()
+	hasManagedACLs, hasManagedRole, hasManagedPrincipals, hasManagedSRACLs := role.HasManagedACLs(), role.HasManagedRole(), role.HasManagedPrincipals(), role.HasManagedSRACLs()
 	shouldManageACLs, shouldManageRole, shouldManagePrincipals := role.ShouldManageACLs(), role.ShouldManageRole(), role.ShouldManagePrincipals()
 
 	// Get current and previous effective role names to detect renames
@@ -86,6 +86,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithObservedGeneration(role.Generation).
 			WithManagedRole(hasManagedRole).
 			WithManagedACLs(hasManagedACLs).
+			WithManagedSRACLs(hasManagedSRACLs).
 			WithManagedPrincipals(hasManagedPrincipals).
 			WithEffectiveRoleName(currentEffectiveName).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
@@ -118,6 +119,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			if err := syncer.Sync(ctx, role); err != nil {
 				return createPatch(errors.Wrap(err, "syncing new ACLs"))
 			}
+			hasManagedSRACLs = role.ShouldManageSRACLs() && syncer.HasSRClient()
 		}
 
 		// Clean up old resources
@@ -177,6 +179,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedACLs = true
+		hasManagedSRACLs = role.ShouldManageSRACLs() && syncer.HasSRClient()
 	}
 
 	if !shouldManageACLs && hasManagedACLs {
@@ -184,6 +187,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedACLs = false
+		hasManagedSRACLs = false
 	}
 
 	return createPatch(nil)

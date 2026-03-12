@@ -612,6 +612,8 @@ github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd
 github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:y+TN+dzE/I/CnBIQesZ51SlixR3shI6QNhdZ55E0Yu8=
 github.com/redpanda-data/common-go/rpadmin v0.2.1-0.20260303144042-e901a764ea09 h1:pFxfVtfY7ZZrbuGxvuddGip1adDIWOdgJ5wBX04vkjs=
 github.com/redpanda-data/common-go/rpadmin v0.2.1-0.20260303144042-e901a764ea09/go.mod h1:uOAY10WXPtcDPU0aUdpkqHR+b1BqUvRhlvMf0vha73A=
+github.com/redpanda-data/common-go/rpsr v0.1.4 h1:d9lu5q5wyhZWBYR1GnZkq+eZGKU0qoaSwwybRS9Uk2k=
+github.com/redpanda-data/common-go/rpsr v0.1.4/go.mod h1:qVa7b0yaCRdZDn5dcZ9CazqVr4jYbgtOJUywI2X3G3I=
 github.com/redpanda-data/common-go/secrets v0.1.4 h1:CGp3KolGnjcJvIafTwf7Hlj5ztLOJCjgkegRu7IAkSw=
 github.com/redpanda-data/common-go/secrets v0.1.4/go.mod h1:WjUU/5saSXwItZx6veFOGbQZUgPQz4MQ65z22y0Ky84=
 github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186 h1:kfhe8NbuBsXmBF68CnDaA0dDTWICNxwrC3rsO0h3WIg=
@@ -705,8 +707,8 @@ github.com/twmb/franz-go/pkg/kmsg v1.12.0 h1:CbatD7ers1KzDNgJqPbKOq0Bz/WLBdsTH75
 github.com/twmb/franz-go/pkg/kmsg v1.12.0/go.mod h1:+DPt4NC8RmI6hqb8G09+3giKObE6uD2Eya6CfqBpeJY=
 github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0 h1:alKdbddkPw3rDh+AwmUEwh6HNYgTvDSFIe/GWYRR9RM=
 github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0/go.mod h1:k8BoBjyUbFj34f0rRbn+Ky12sZFAPbmShrg0karAIMo=
-github.com/twmb/franz-go/pkg/sr v1.5.0 h1:KQH8veHxKyAjT4U4/rziJnSEfafuluznLoxhrp0yJfo=
-github.com/twmb/franz-go/pkg/sr v1.5.0/go.mod h1:O4o4mUMNfmyEt2HcuM+qZdc6KrcStvjgxWR6Cfvmukw=
+github.com/twmb/franz-go/pkg/sr v1.7.0 h1:wHStlO6aOPWWgZ68ZYcdtQe9tRbkcTc1gRLbgs+8QAA=
+github.com/twmb/franz-go/pkg/sr v1.7.0/go.mod h1:64CsHlsQnyFRq1sYPcCmlRrEG3PlLPb6cDddx2wGr28=
 github.com/twmb/tlscfg v1.2.1 h1:IU2efmP9utQEIV2fufpZjPq7xgcZK4qu25viD51BB44=
 github.com/twmb/tlscfg v1.2.1/go.mod h1:GameEQddljI+8Es373JfQEBvtI4dCTLKWGJbqT2kErs=
 github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 h1:JwtAtbp7r/7QSyGz8mKUbYJBg2+6Cd7OjM8o/GNOcVo=
@@ -838,8 +840,8 @@ golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
-golang.org/x/sync v0.19.0 h1:vV+1eWNmZ5geRlYjzm2adRgW2/mcpevXNg50YZtPCE4=
-golang.org/x/sync v0.19.0/go.mod h1:9KTHXmSnoGruLpwFjVSX0lNNA75CykiMECbovNTZqGI=
+golang.org/x/sync v0.20.0 h1:e0PTpb7pjO8GAtTs2dQ6jYa5BWYlMuX047Dco/pItO4=
+golang.org/x/sync v0.20.0/go.mod h1:9xrNwdLfx4jkKbNva9FpL6vEN7evnE43NNNJQ2LF3+0=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=

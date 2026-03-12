@@ -80,6 +80,20 @@ func (u *User) HasManagedACLs() bool {
 	return u.Status.ManagedACLs
 }
 
+// ShouldManageSRACLs returns true if the user has SR ACL rules defined.
+func (u *User) ShouldManageSRACLs() bool {
+	if u.Spec.Authorization == nil {
+		return false
+	}
+	_, sr := PartitionACLs(u.Spec.Authorization.ACLs)
+	return len(sr) > 0
+}
+
+// HasManagedSRACLs returns true if the user has managed SR ACLs that need cleanup.
+func (u *User) HasManagedSRACLs() bool {
+	return u.Status.ManagedSRACLs
+}
+
 // UserSpec defines the configuration of a Redpanda user.
 type UserSpec struct {
 	// ClusterSource is a reference to the cluster where the user should be created.
@@ -289,6 +303,8 @@ func (a ACLOperation) ToKafka() kmsg.ACLOperation {
 // +kubebuilder:validation:XValidation:message="supported group operations are ['Delete', 'Describe', 'Read']",rule="self.resource.type == 'group' ? self.operations.all(o, o in ['Delete', 'Describe', 'Read']) : true"
 // +kubebuilder:validation:XValidation:message="supported transactionalId operations are ['Describe', 'Write']",rule="self.resource.type == 'transactionalId' ? self.operations.all(o, o in ['Describe', 'Write']) : true"
 // +kubebuilder:validation:XValidation:message="supported cluster operations are ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']",rule="self.resource.type == 'cluster' ? self.operations.all(o, o in ['Alter', 'AlterConfigs', 'ClusterAction', 'Create', 'Describe', 'DescribeConfigs', 'IdempotentWrite']) : true"
+// +kubebuilder:validation:XValidation:message="supported subject operations are ['Read', 'Write', 'Delete', 'Describe', 'DescribeConfigs', 'AlterConfigs']",rule="self.resource.type == 'subject' ? self.operations.all(o, o in ['Read', 'Write', 'Delete', 'Describe', 'DescribeConfigs', 'AlterConfigs']) : true"
+// +kubebuilder:validation:XValidation:message="supported registry operations are ['Read', 'Write', 'Delete', 'Describe', 'DescribeConfigs', 'AlterConfigs']",rule="self.resource.type == 'registry' ? self.operations.all(o, o in ['Read', 'Write', 'Delete', 'Describe', 'DescribeConfigs', 'AlterConfigs']) : true"
 type ACLRule struct {
 	// Type specifies the type of ACL rule to create. Valid values are:
 	// - allow
@@ -312,7 +328,7 @@ type ACLRule struct {
 	// - AlterConfigs
 	// - DescribeConfigs
 	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:MaxItems=11
+	// +kubebuilder:validation:MaxItems=12
 	// +kubebuilder:validation:item:MaxLength=15
 	// +kubebuilder:validation:item:UniqueItems=true
 	Operations []ACLOperation `json:"operations"`
@@ -401,7 +417,7 @@ func (p *PatternType) ToKafka() kmsg.ACLResourcePatternType {
 }
 
 // ResourceType specifies the type of resource an ACL is applied to.
-// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId
+// +kubebuilder:validation:Enum=topic;group;cluster;transactionalId;subject;registry
 type ResourceType string
 
 const (
@@ -448,10 +464,27 @@ func (t ResourceType) ToKafka() kmsg.ACLResourceType {
 	return kmsg.ACLResourceTypeUnknown
 }
 
+// IsSR returns true if this resource type is a Schema Registry resource type.
+func (t ResourceType) IsSR() bool {
+	return t == ResourceTypeSchemaRegistrySubject || t == ResourceTypeSchemaRegistryRegistry
+}
+
+// PartitionACLs splits ACL rules into Kafka ACLs and Schema Registry ACLs.
+func PartitionACLs(rules []ACLRule) (kafka []ACLRule, sr []ACLRule) {
+	for _, rule := range rules {
+		if rule.Resource.Type.IsSR() {
+			sr = append(sr, rule)
+		} else {
+			kafka = append(kafka, rule)
+		}
+	}
+	return
+}
+
 // ACLResourceSpec indicates the resource for which given ACL rule applies.
-// +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic', 'transactionalId']",rule="self.type in ['group', 'topic', 'transactionalId'] ? true : !has(self.patternType) || self.patternType != 'prefixed'"
-// +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster']",rule=`self.type == "cluster" ? (self.name == "") : true`
-// +kubebuilder:validation:XValidation:message="acl rules on non-cluster resources must specify a name",rule=`self.type == "cluster" ? true : (self.name != "")`
+// +kubebuilder:validation:XValidation:message="prefixed pattern type only supported for ['group', 'topic', 'transactionalId', 'subject']",rule="self.type in ['group', 'topic', 'transactionalId', 'subject'] ? true : !has(self.patternType) || self.patternType != 'prefixed'"
+// +kubebuilder:validation:XValidation:message="name must not be specified for type ['cluster', 'registry']",rule=`self.type in ["cluster", "registry"] ? (self.name == "") : true`
+// +kubebuilder:validation:XValidation:message="acl rules on non-cluster, non-registry resources must specify a name",rule=`self.type in ["cluster", "registry"] ? true : (self.name != "")`
 type ACLResourceSpec struct {
 	// Type specifies the type of resource an ACL is applied to. Valid values:
 	// - topic
@@ -496,6 +529,11 @@ func (s ACLResourceSpec) GetName() string {
 		return "kafka-cluster"
 	}
 
+	if s.Type == ResourceTypeSchemaRegistryRegistry {
+		// registry is a singleton resource with no name
+		return ""
+	}
+
 	return s.Name
 }
 
@@ -511,6 +549,9 @@ type UserStatus struct {
 	// ManagedUser returns whether the user has a managed SCRAM user that need
 	// to be cleaned up.
 	ManagedUser bool `json:"managedUser,omitempty"`
+	// ManagedSRACLs returns whether the user has managed Schema Registry ACLs
+	// that need to be cleaned up.
+	ManagedSRACLs bool `json:"managedSrAcls,omitempty"`
 }
 
 // UserList contains a list of Redpanda user objects.

@@ -24,6 +24,7 @@ type RoleStatusApplyConfiguration struct {
 	ManagedRole        *bool                            `json:"managedRole,omitempty"`
 	ManagedPrincipals  *bool                            `json:"managedPrincipals,omitempty"`
 	EffectiveRoleName  *string                          `json:"effectiveRoleName,omitempty"`
+	ManagedSRACLs      *bool                            `json:"managedSrAcls,omitempty"`
 }
 
 // RoleStatusApplyConfiguration constructs a declarative configuration of the RoleStatus type for use with
@@ -82,5 +83,13 @@ func (b *RoleStatusApplyConfiguration) WithManagedPrincipals(value bool) *RoleSt
 // If called multiple times, the EffectiveRoleName field is set to the value of the last call.
 func (b *RoleStatusApplyConfiguration) WithEffectiveRoleName(value string) *RoleStatusApplyConfiguration {
 	b.EffectiveRoleName = &value
+	return b
+}
+
+// WithManagedSRACLs sets the ManagedSRACLs field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ManagedSRACLs field is set to the value of the last call.
+func (b *RoleStatusApplyConfiguration) WithManagedSRACLs(value bool) *RoleStatusApplyConfiguration {
+	b.ManagedSRACLs = &value
 	return b
 }
