@@ -13,7 +13,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/twmb/franz-go v1.20.4
 	github.com/twmb/franz-go/pkg/kadm v1.17.1
-	github.com/twmb/franz-go/pkg/sr v1.5.0
+	github.com/twmb/franz-go/pkg/sr v1.7.0
 	k8s.io/api v0.35.1
 	k8s.io/apimachinery v0.35.1
 	k8s.io/client-go v0.35.1
@@ -219,6 +219,7 @@ require (
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
+	github.com/redpanda-data/common-go/rpsr v0.1.4 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0 // indirect
@@ -283,7 +284,7 @@ require (
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/term v0.40.0 // indirect
 	golang.org/x/text v0.34.0 // indirect

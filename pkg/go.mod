@@ -24,11 +24,11 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/twmb/franz-go v1.20.4
 	github.com/twmb/franz-go/pkg/sasl/kerberos v1.1.0
-	github.com/twmb/franz-go/pkg/sr v1.5.0
+	github.com/twmb/franz-go/pkg/sr v1.7.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.etcd.io/raft/v3 v3.6.0
 	golang.org/x/mod v0.33.0
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
