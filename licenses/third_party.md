@@ -12,8 +12,6 @@ run `task generate:third-party-licenses-list`
 
 | software     | license        |
 | :----------: | :------------: |
-| buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate | [Apache-2.0](https://github.com/bufbuild/protovalidate/blob/main/LICENSE) |
-| buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go/protoc-gen-openapiv2/options | [Unknown](https://github.com/grpc-ecosystem/grpc-gateway/blob/main/LICENSE) |
 | cel.dev/expr | [Apache-2.0](https://github.com/google/cel-spec/blob/v0.25.1/LICENSE) |
 | cloud.google.com/go/auth | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/auth/v0.16.5/auth/LICENSE) |
 | cloud.google.com/go/auth/oauth2adapt | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/auth/oauth2adapt/v0.2.8/auth/oauth2adapt/LICENSE) |
@@ -62,7 +60,6 @@ run `task generate:third-party-licenses-list`
 | github.com/buger/jsonparser | [MIT](https://github.com/buger/jsonparser/blob/v1.1.1/LICENSE) |
 | github.com/cenkalti/backoff/v5 | [MIT](https://github.com/cenkalti/backoff/blob/v5.0.3/LICENSE) |
 | github.com/cert-manager/cert-manager/pkg/apis | [Apache-2.0](https://github.com/cert-manager/cert-manager/blob/v1.19.3/LICENSE) |
-| github.com/cespare/xxhash/v2 | [MIT](https://github.com/cespare/xxhash/blob/v2.3.0/LICENSE.txt) |
 | github.com/chai2010/gettext-go | [BSD-3-Clause](https://github.com/chai2010/gettext-go/blob/v1.0.2/LICENSE) |
 | github.com/cisco-open/k8s-objectmatcher/patch | [Apache-2.0](https://github.com/cisco-open/k8s-objectmatcher/blob/v1.9.0/LICENSE) |
 | github.com/cloudhut/common | [Apache-2.0](https://github.com/cloudhut/common/blob/v0.11.0/LICENSE) |
@@ -154,8 +151,6 @@ run `task generate:third-party-licenses-list`
 | github.com/klauspost/compress | [Apache-2.0](https://github.com/klauspost/compress/blob/v1.18.4/LICENSE) |
 | github.com/klauspost/compress | [BSD-3-Clause](https://github.com/klauspost/compress/blob/v1.18.4/LICENSE) |
 | github.com/klauspost/compress/internal/snapref | [BSD-3-Clause](https://github.com/klauspost/compress/blob/v1.18.4/internal/snapref/LICENSE) |
-| github.com/klauspost/compress/s2 | [BSD-3-Clause](https://github.com/klauspost/compress/blob/v1.18.4/s2/LICENSE) |
-| github.com/klauspost/compress/zstd/internal/xxhash | [MIT](https://github.com/klauspost/compress/blob/v1.18.4/zstd/internal/xxhash/LICENSE.txt) |
 | github.com/knadh/koanf/maps | [MIT](https://github.com/knadh/koanf/blob/maps/v0.1.2/maps/LICENSE) |
 | github.com/knadh/koanf/parsers/yaml | [MIT](https://github.com/knadh/koanf/blob/parsers/yaml/v1.1.0/parsers/yaml/LICENSE) |
 | github.com/knadh/koanf/providers/confmap | [MIT](https://github.com/knadh/koanf/blob/providers/confmap/v1.0.0/providers/confmap/LICENSE) |
@@ -192,7 +187,6 @@ run `task generate:third-party-licenses-list`
 | github.com/moby/sys/mountinfo | [Apache-2.0](https://github.com/moby/sys/blob/mountinfo/v0.7.2/mountinfo/LICENSE) |
 | github.com/moby/term | [Apache-2.0](https://github.com/moby/term/blob/v0.5.2/LICENSE) |
 | github.com/modern-go/concurrent | [Apache-2.0](https://github.com/modern-go/concurrent/blob/bacd9c7ef1dd/LICENSE) |
-| github.com/modern-go/reflect2 | [Apache-2.0](https://github.com/modern-go/reflect2/blob/35a7c28c31ee/LICENSE) |
 | github.com/monochromegane/go-gitignore | [MIT](https://github.com/monochromegane/go-gitignore/blob/205db1a8cc00/LICENSE) |
 | github.com/munnerz/goautoneg | [BSD-3-Clause](https://github.com/munnerz/goautoneg/blob/a7dc8b61c822/LICENSE) |
 | github.com/mxk/go-flowrate/flowrate | [BSD-3-Clause](https://github.com/mxk/go-flowrate/blob/cca7078d478f/LICENSE) |
