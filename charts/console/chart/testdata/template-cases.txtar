@@ -80,6 +80,33 @@ gateway:
   path: '{{ "/" }}'
   pathType: PathPrefix
 
+-- ingress-and-gateway-templating --
+ingress:
+ enabled: true
+ annotations:
+   ingress: test
+ hosts:
+ - host: '{{ "a-host" | quote }}'
+   paths:
+   - path: /
+     pathType: Exact
+ tls:
+ - secretName: my-secret
+   hosts:
+   - '{{ "blah" | quote }}'
+gateway:
+  enabled: true
+  annotations:
+    gateway: test
+  parentRefs:
+    - name: '{{ "public-gateway" | quote }}'
+      namespace: '{{ "networking" | quote }}'
+      sectionName: '{{ "http" | quote }}'
+  hostnames:
+    - '{{ "console.example.local" | quote }}'
+  path: '{{ "/" }}'
+  pathType: PathPrefix
+
 -- no-registry --
 image:
   registry: ""
