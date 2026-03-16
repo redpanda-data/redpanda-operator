@@ -2,7 +2,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -50,7 +49,6 @@
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -80,7 +78,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -97,7 +94,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -308,7 +304,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -349,7 +344,6 @@
           ca_file: ca.crt
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -366,7 +360,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -386,7 +379,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -407,7 +399,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -427,7 +418,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -448,7 +438,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -478,7 +467,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -508,7 +496,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -549,7 +536,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -590,7 +576,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -625,7 +610,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -655,7 +639,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -680,7 +663,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -705,7 +687,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -801,7 +782,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: basic-test
@@ -863,7 +843,6 @@
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: Console
   metadata:
-    creationTimestamp: null
     labels:
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
@@ -882,7 +861,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -930,7 +908,6 @@
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -960,7 +937,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -977,7 +953,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1247,7 +1222,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1486,7 +1460,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1518,7 +1491,6 @@
           ca_file: ca.crt
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1535,7 +1507,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1555,7 +1526,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1576,7 +1546,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1596,7 +1565,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1617,7 +1585,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1647,7 +1614,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1677,7 +1643,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1718,7 +1683,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1759,7 +1723,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1794,7 +1757,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1824,7 +1786,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1849,7 +1810,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1874,7 +1834,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -1970,7 +1929,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -2014,7 +1972,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -2112,7 +2069,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: compat-test
@@ -2170,7 +2126,6 @@
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: Console
   metadata:
-    creationTimestamp: null
     labels:
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
@@ -2189,7 +2144,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2237,7 +2191,6 @@
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2267,7 +2220,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2284,7 +2236,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2495,7 +2446,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2536,7 +2486,6 @@
           ca_file: ca.crt
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2553,7 +2502,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2573,7 +2521,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2594,7 +2541,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2614,7 +2560,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2635,7 +2580,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2665,7 +2609,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2695,7 +2638,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2736,7 +2678,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2777,7 +2718,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2812,7 +2752,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2842,7 +2781,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2867,7 +2805,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2892,7 +2829,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -2988,7 +2924,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: console-disabled
@@ -3051,7 +2986,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3099,7 +3033,6 @@
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3129,7 +3062,6 @@
   automountServiceAccountToken: false
   kind: ServiceAccount
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3146,7 +3078,6 @@
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3377,7 +3308,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3577,7 +3507,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3777,7 +3706,6 @@
           port: 9093
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3818,7 +3746,6 @@
           ca_file: ca.crt
   kind: ConfigMap
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3835,7 +3762,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3855,7 +3781,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3876,7 +3801,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3896,7 +3820,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Issuer
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3917,7 +3840,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3947,7 +3869,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -3977,7 +3898,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4018,7 +3938,6 @@
 - apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4059,7 +3978,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4094,7 +4012,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4124,7 +4041,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4149,7 +4065,6 @@
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4174,7 +4089,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4270,7 +4184,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4332,7 +4245,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4382,7 +4294,6 @@
 - apiVersion: v1
   kind: Secret
   metadata:
-    creationTimestamp: null
     labels:
       app.kubernetes.io/component: redpanda
       app.kubernetes.io/instance: nodepool-basic-test
@@ -4432,7 +4343,6 @@
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: Console
   metadata:
-    creationTimestamp: null
     labels:
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2

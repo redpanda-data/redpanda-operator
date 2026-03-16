@@ -322,7 +322,7 @@ func (s *ProberSuite) setupRBAC() string {
 	}
 
 	for _, obj := range objs {
-		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 	}
 
 	return "user"

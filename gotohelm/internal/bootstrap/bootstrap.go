@@ -49,7 +49,7 @@ const (
 )
 
 // typeatest is the implementation of the go syntax `_, _ := m.(t)`.
-func typetest(typ string, value, zero any) []any {
+func typetest(typ string, value, zero any) []any { //nolint:unparam // zero is used by generated code
 	if TypeIs(typ, value) {
 		return []any{value, true}
 	}
@@ -65,7 +65,7 @@ func typeassertion(typ string, value any) any {
 }
 
 // dicttest is the implementation of the go syntax `_, _ := m[k]`.
-func dicttest(m map[string]any, key string, zero any) []any {
+func dicttest(m map[string]any, key string, zero any) []any { //nolint:unparam // zero is used by generated code
 	if HasKey(m, key) {
 		return []any{m[key], true}
 	}
@@ -220,7 +220,7 @@ func resource_MustParse(repr any) any {
 
 	// No support for switches or maps with non-string keys.
 	// So we fake a map[float64]string with two slices and a for loop.
-	strs := []string{"", "m", "k", "M", "G", "T", "P", "Ki", "Mi", "Gi", "Ti", "Pi"}
+	strs := []string{"", "m", "k", "M", "G", "T", "P", "Ki", "Mi", "Gi", "Ti", "Pi"} //nolint:staticcheck // SA4006 false positive: strs is used below
 	scales := []float64{1.0, milli, kilo, mega, giga, terra, peta, kibi, mebi, gibi, tebi, pebi}
 
 	idx := -1

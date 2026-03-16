@@ -137,7 +137,6 @@ a prefix. Prefixed patterns can only be specified when using types `topic`, `gro
 
 ACLRule defines an ACL rule applied to the given user.
 
-
 Validations taken from https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=75978240
 
 
@@ -243,8 +242,10 @@ AdminAPISpec defines client configuration for connecting to Redpanda's admin API
 |===
 | Field | Description | Default | Validation
 | *`urls`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
-| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl[$$AdminSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | Optional: \{} +
+
+| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminsasl[$$AdminSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | Optional: \{} +
+
 |===
 
 
@@ -265,10 +266,13 @@ AdminSASL configures credentials to connect to Redpanda cluster that has authent
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`username`* __string__ | Specifies the username. + |  | 
+| *`username`* __string__ | Specifies the username. + |  | Optional: \{} +
+
 | *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
-| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | 
-| *`authToken`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies token for token-based authentication (only used if no username/password are provided). + |  | 
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | Optional: \{} +
+
+| *`authToken`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies token for token-based authentication (only used if no username/password are provided). + |  | Optional: \{} +
+
 | *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `password` instead + |  | 
 | *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `authToken` instead + |  | 
 |===
@@ -510,30 +514,28 @@ Certificate configures TLS certificates.
 | *`chartVersion`* __string__ | Defines the version of the Redpanda Helm chart to deploy. + |  | 
 | *`helmRepositoryName`* __string__ | Defines the chart repository to use. Defaults to `redpanda` if not defined. + |  | 
 | *`timeout`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | Specifies the time to wait for any individual Kubernetes operation (like Jobs +
-for hooks) during Helm actions. Defaults to `15m0s`. + |  | Pattern: `^([0-9]+(\.[0-9]+)?(ms|s|m|h))+$` +
+for hooks) during Helm actions. Defaults to `15m0s`. + |  | Pattern: `^([0-9]+(\.[0-9]+)?(ms\|s\|m\|h))+$` +
 Type: string +
+Optional: \{} +
 
 | *`upgrade`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Defines how to handle upgrades, including failures. + |  | 
 | *`useFlux`* __boolean__ | Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart. +
 This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other +
 ChartRef fields to be ignored. +
 
-
 Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.21` or the corresponding +
 version of the Redpanda chart. +
-
 
 Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is +
 manually deleted. +
 
-
 To dynamically switch Flux controllers (HelmRelease and HelmRepository), setting `useFlux` to `false` +
 will suspend these resources instead of removing them. +
 
-
 References: +
 - https://fluxcd.io/flux/components/helm/helmreleases/#suspend +
-- https://fluxcd.io/flux/components/source/helmrepositories/#suspend + |  | 
+- https://fluxcd.io/flux/components/source/helmrepositories/#suspend + |  | Optional: \{} +
+
 |===
 
 
@@ -574,7 +576,7 @@ ClusterRef represents a reference to a cluster that is being targeted.
 If unspecified, defaults to "cluster.redpanda.com". + |  | 
 | *`kind`* __string__ | Kind is used to override the object kind that this reference points to. +
 If unspecified, defaults to "Redpanda". + |  | 
-| *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: {} +
+| *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: \{} +
 
 |===
 
@@ -641,7 +643,8 @@ specification. + |  |
 | *`caCertSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "caCert". + |  | 
 | *`certSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "cert". + |  | 
 | *`keySecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: replaced by "key". + |  | 
-| *`insecureSkipTlsVerify`* __boolean__ | InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda + |  | 
+| *`insecureSkipTlsVerify`* __boolean__ | InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda + |  | Optional: \{} +
+
 |===
 
 
@@ -764,13 +767,11 @@ Configuration was copied from https://github.com/twmb/franz-go/blob/01651affd204
 the value will be null. + |  | 
 | *`readOnly`* __boolean__ | ReadOnly signifies whether this is not a dynamic config option. +
 
-
 Note that this field is not always correct, and you may need to check +
 whether the Source is any dynamic enum. See franz-go#91 for more details. + |  | 
 | *`isDefault`* __boolean__ | IsDefault is whether this is a default config option. This has been +
 replaced in favor of Source. + |  | 
 | *`source`* __string__ | Source is where this config entry is from. +
-
 
 This field has a default of -1. + |  | 
 | *`isSensitive`* __boolean__ | IsSensitive signifies whether this is a sensitive config key, which +
@@ -876,11 +877,13 @@ Console defines the CRD for Redpanda Console instances.
 Servers may infer this from the endpoint the client submits requests to. +
 Cannot be updated. +
 In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
 | *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
 Servers should convert recognized schemas to the latest internal value, and +
 may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]__ |  |  | 
@@ -988,14 +991,20 @@ Setting this field has no effect. + |  |
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`observedGeneration`* __integer__ | The generation observed by the Console controller. + |  | 
-| *`replicas`* __integer__ | Total number of non-terminating Pods targeted by this Console's Deployment. + |  | 
-| *`updatedReplicas`* __integer__ | Total number of non-terminating pods targeted by this Console's Deployment that have the desired template spec. + |  | 
-| *`readyReplicas`* __integer__ | Total number of non-terminating pods targeted by this Console's Deployment with a Ready Condition. + |  | 
-| *`availableReplicas`* __integer__ | Total number of available non-terminating pods (ready for at least minReadySeconds) targeted by this Console's Deployment. + |  | 
+| *`observedGeneration`* __integer__ | The generation observed by the Console controller. + |  | Optional: \{} +
+
+| *`replicas`* __integer__ | Total number of non-terminating Pods targeted by this Console's Deployment. + |  | Optional: \{} +
+
+| *`updatedReplicas`* __integer__ | Total number of non-terminating pods targeted by this Console's Deployment that have the desired template spec. + |  | Optional: \{} +
+
+| *`readyReplicas`* __integer__ | Total number of non-terminating pods targeted by this Console's Deployment with a Ready Condition. + |  | Optional: \{} +
+
+| *`availableReplicas`* __integer__ | Total number of available non-terminating pods (ready for at least minReadySeconds) targeted by this Console's Deployment. + |  | Optional: \{} +
+
 | *`unavailableReplicas`* __integer__ | Total number of unavailable pods targeted by this deployment. This is the total number of +
 pods that are still required for the deployment to have 100% available capacity. They may +
-either be pods that are running but not yet available or pods that still have not been created. + |  | 
+either be pods that are running but not yet available or pods that still have not been created. + |  | Optional: \{} +
+
 |===
 
 
@@ -1555,8 +1564,10 @@ KafkaAPISpec configures client configuration settings for connecting to Redpanda
 | Field | Description | Default | Validation
 | *`brokers`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | MinItems: 1 +
 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
-| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | Optional: \{} +
+
+| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasl[$$KafkaSASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | Optional: \{} +
+
 |===
 
 
@@ -1581,12 +1592,17 @@ KafkaSASL configures credentials to connect to Redpanda cluster that has authent
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`username`* __string__ | Specifies the username. + |  | 
-| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | 
+| *`username`* __string__ | Specifies the username. + |  | Optional: \{} +
+
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | Optional: \{} +
+
 | *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
-| *`oauth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]__ |  |  | 
-| *`gssapi`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]__ |  |  | 
-| *`awsMskIam`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]__ |  |  | 
+| *`oauth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]__ |  |  | Optional: \{} +
+
+| *`gssapi`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]__ |  |  | Optional: \{} +
+
+| *`awsMskIam`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]__ |  |  | Optional: \{} +
+
 | *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `password` instead + |  | 
 |===
 
@@ -1617,7 +1633,6 @@ See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html + |  |
 | *`sessionTokenSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `sessionToken` instead + |  | 
 | *`userAgent`* __string__ | UserAgent is the user agent to for the client to use when connecting +
 to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>". +
-
 
 Setting a UserAgent allows authorizing based on the aws:UserAgent +
 condition key; see the following link for more details: +
@@ -1788,7 +1803,6 @@ ListenerTLS configures TLS configuration for each listener in the Helm values.
 | *`cert`* __string__ | References a specific certificate for the listener. + |  | 
 | *`enabled`* __boolean__ | Specifies whether TLS is enabled for the listener. + |  | 
 | *`secretRef`* __string__ | References a Secret resource containing TLS credentials for the listener. +
-
 
 Deprecated: Setting SecretRef has no affect and will be removed in +
 future releases. + |  | 
@@ -2010,7 +2024,8 @@ PasswordSource contains the source for a password.
 | *`secretKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | SecretKeyRef specifies the secret used in reading a User password. +
 If the Secret exists and has a value in it, then that value is used. +
 If the Secret does not exist, or is empty, a password is generated and +
-stored based on this configuration. + |  | 
+stored based on this configuration. + |  | Required: \{} +
+
 |===
 
 
@@ -2416,11 +2431,13 @@ Redpanda defines the CRD for Redpanda clusters.
 Servers may infer this from the endpoint the client submits requests to. +
 Cannot be updated. +
 In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
 | *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
 Servers should convert recognized schemas to the latest internal value, and +
 may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec[$$RedpandaSpec$$]__ | Defines the desired state of the Redpanda cluster. + |  | 
@@ -2664,10 +2681,14 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 | Field | Description | Default | Validation
 | *`violation`* __boolean__ |  |  | 
 | *`inUseFeatures`* __string array__ |  |  | 
-| *`expired`* __boolean__ |  |  | 
-| *`type`* __string__ |  |  | 
-| *`organization`* __string__ |  |  | 
-| *`expiration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#time-v1-meta[$$Time$$]__ |  |  | 
+| *`expired`* __boolean__ |  |  | Optional: \{} +
+
+| *`type`* __string__ |  |  | Optional: \{} +
+
+| *`organization`* __string__ |  |  | Optional: \{} +
+
+| *`expiration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#time-v1-meta[$$Time$$]__ |  |  | Optional: \{} +
+
 |===
 
 
@@ -2678,13 +2699,10 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 
 RedpandaMemory allows you to optionally specify the memory size for the Redpanda process, including the Seastar subsystem. By default, this section is omitted, and memory sizes are calculated automatically based on the container's total memory allocation. When you configure this section and manually set the memory and reserveMemory values, the automatic calculation is disabled.
 
-
 If you are setting these values manually, follow these guidelines carefully. Incorrect settings can lead to performance degradation, instability, or even data loss. The total memory allocated to a container is determined as the sum of the following two areas:
-
 
 - Redpanda (including Seastar):
 Defined by the `--memory` parameter. Includes the memory used by the Redpanda process and the reserved memory allocated for Seastar. A minimum of 2Gi per core is required, and this value typically accounts for ~80% of the container’s total memory. For production, allocate at least 8Gi.
-
 
 - Operating system (OS):
 Defined by the `--reserve-memory` parameter. Represents the memory available for the operating system and other processes within the container.
@@ -2724,11 +2742,13 @@ RedpandaRole defines the CRD for a Redpanda role.
 Servers may infer this from the endpoint the client submits requests to. +
 Cannot be updated. +
 In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
 | *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
 Servers should convert recognized schemas to the latest internal value, and +
 may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]__ | Defines the desired state of the Redpanda role. + |  | 
@@ -2796,33 +2816,48 @@ RedpandaStatus defines the observed state of Redpanda
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | Optional: \{} +
+
 | *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
-installed license in the Redpanda cluster. + |  | 
+installed license in the Redpanda cluster. + |  | Optional: \{} +
+
 | *`configVersion`* __string__ | ConfigVersion contains the configuration version written in +
-Redpanda used for restarting broker nodes as necessary. + |  | 
+Redpanda used for restarting broker nodes as necessary. + |  | Optional: \{} +
+
 | *`observedGeneration`* __integer__ | Specifies the last observed generation. +
-deprecated + |  | 
+deprecated + |  | Optional: \{} +
+
 | *`lastHandledReconcileAt`* __string__ | LastHandledReconcileAt holds the value of the most recent +
 reconcile request value, so a change of the annotation value +
 can be detected. +
-deprecated + |  | 
+deprecated + |  | Optional: \{} +
+
 | *`lastAppliedRevision`* __string__ | LastAppliedRevision is the revision of the last successfully applied source. +
-deprecated + |  | 
+deprecated + |  | Optional: \{} +
+
 | *`lastAttemptedRevision`* __string__ | LastAttemptedRevision is the revision of the last reconciliation attempt. +
-deprecated + |  | 
-| *`helmRelease`* __string__ | deprecated + |  | 
-| *`helmReleaseReady`* __boolean__ | deprecated + |  | 
-| *`helmRepository`* __string__ | deprecated + |  | 
-| *`helmRepositoryReady`* __boolean__ | deprecated + |  | 
-| *`upgradeFailures`* __integer__ | deprecated + |  | 
+deprecated + |  | Optional: \{} +
+
+| *`helmRelease`* __string__ | deprecated + |  | Optional: \{} +
+
+| *`helmReleaseReady`* __boolean__ | deprecated + |  | Optional: \{} +
+
+| *`helmRepository`* __string__ | deprecated + |  | Optional: \{} +
+
+| *`helmRepositoryReady`* __boolean__ | deprecated + |  | Optional: \{} +
+
+| *`upgradeFailures`* __integer__ | deprecated + |  | Optional: \{} +
+
 | *`failures`* __integer__ | Failures is the reconciliation failure count against the latest desired +
 state. It is reset after a successful reconciliation. +
-deprecated + |  | 
-| *`installFailures`* __integer__ | deprecated + |  | 
+deprecated + |  | Optional: \{} +
+
+| *`installFailures`* __integer__ | deprecated + |  | Optional: \{} +
+
 | *`decommissioningNode`* __integer__ | ManagedDecommissioningNode indicates that a node is currently being +
 decommissioned from the cluster and provides its ordinal number. +
-deprecated + |  | 
+deprecated + |  | Optional: \{} +
+
 |===
 
 
@@ -2878,7 +2913,6 @@ https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcereq
 and parameters such as `--memory`, `--reserve-memory`, and `--smp`. This
 calculation supports two modes:
 
-
   - Explicit mode (recommended):  Activated when `Limits` and `Requests` are
     set. In this mode, the CLI flags are calculated directly based on the
     provided `Limits` and `Requests`. This mode ensures predictable resource
@@ -2886,13 +2920,11 @@ calculation supports two modes:
     tuning is required, the CLI flags can be manually overridden using
     `statefulset.additionalRedpandaCmdFlags`.
 
-
   - Legacy mode (default): Used when `Limits` and `Requests` are not set.
     In this mode, the container resources and CLI flags are calculated using
     built-in default logic, where 80% of the container's memory is allocated
     to Redpanda and the rest is reserved for system overhead. Legacy mode is
     intended for backward compatibility and less controlled environments.
-
 
 Explicit mode offers better control and aligns with Kubernetes best
 practices. Legacy mode is a fallback for users who have not defined `Limits`
@@ -2955,7 +2987,8 @@ RoleSpec defines the configuration of a Redpanda role.
 |===
 | Field | Description | Default | Validation
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the role should be created. +
-It is used in constructing the client created to configure a cluster. + |  | 
+It is used in constructing the client created to configure a cluster. + |  | Required: \{} +
+
 | *`principals`* __string array__ | Principals defines the list of users assigned to this role. +
 Format: Type:Name (e.g., User:john, User:jane). If type is omitted, defaults to User. + |  | MaxItems: 1024 +
 
@@ -3056,11 +3089,13 @@ Schema defines the CRD for a Redpanda schema.
 Servers may infer this from the endpoint the client submits requests to. +
 Cannot be updated. +
 In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
 | *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
 Servers should convert recognized schemas to the latest internal value, and +
 may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]__ | Defines the desired state of the Redpanda schema. + |  | 
@@ -3146,9 +3181,12 @@ SchemaRegistrySASL configures credentials to connect to Redpanda cluster that ha
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`username`* __string__ | Specifies the username. + |  | 
-| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | 
-| *`authToken`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ |  |  | 
+| *`username`* __string__ | Specifies the username. + |  | Optional: \{} +
+
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Specifies the password. + |  | Optional: \{} +
+
+| *`authToken`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ |  |  | Optional: \{} +
+
 | *`mechanism`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | Specifies the SASL/SCRAM authentication mechanism. + |  | 
 | *`passwordSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `password` instead + |  | 
 | *`token`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-secretkeyref[$$SecretKeyRef$$]__ | Deprecated: use `authToken` instead + |  | 
@@ -3198,8 +3236,10 @@ SchemaRegistrySpec defines client configuration for connecting to Redpanda's adm
 |===
 | Field | Description | Default | Validation
 | *`urls`* __string array__ | Specifies a list of broker addresses in the format <host>:<port> + |  | 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | 
-| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | Defines TLS configuration settings for Redpanda clusters that have TLS enabled. + |  | Optional: \{} +
+
+| *`sasl`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]__ | Defines authentication configuration settings for Redpanda clusters that have authentication enabled. + |  | Optional: \{} +
+
 |===
 
 
@@ -3221,8 +3261,10 @@ SchemaSpec defines the configuration of a Redpanda schema.
 |===
 | Field | Description | Default | Validation
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster hosting the schema registry. +
-It is used in constructing the client created to configure a cluster. + |  | 
-| *`text`* __string__ | Text is the actual unescaped text of a schema. + |  | 
+It is used in constructing the client created to configure a cluster. + |  | Required: \{} +
+
+| *`text`* __string__ | Text is the actual unescaped text of a schema. + |  | Required: \{} +
+
 | *`schemaType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schematype[$$SchemaType$$]__ | Type is the type of a schema. The default type is avro. + | avro | Enum: [avro protobuf json] +
 
 | *`references`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemareference[$$SchemaReference$$] array__ | References declares other schemas this schema references. See the +
@@ -3326,7 +3368,8 @@ See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
 | Field | Description | Default | Validation
 | *`name`* __string__ | Name of the referent. +
 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names + |  | 
-| *`key`* __string__ | Key in Secret data to get value from + |  | 
+| *`key`* __string__ | Key in Secret data to get value from + |  | Optional: \{} +
+
 |===
 
 
@@ -3797,7 +3840,6 @@ Tiered configures storage for the Tiered Storage cache. See https://docs.redpand
 | Field | Description | Default | Validation
 | *`mountType`* __string__ | mountType can be one of: +
 
-
 - `none`: Does not mount a volume. Tiered storage will use the same volume as the one defined for the Redpanda data directory. +
 - `hostPath`: Uses the path specified in `hostPath` on the worker node that the Pod is running on. +
 - `emptyDir`: Mounts an empty directory every time the Pod starts. +
@@ -3880,11 +3922,13 @@ Topic defines the CRD for Topic resources. See https://docs.redpanda.com/current
 Servers may infer this from the endpoint the client submits requests to. +
 Cannot be updated. +
 In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
 | *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
 Servers should convert recognized schemas to the latest internal value, and +
 may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec[$$TopicSpec$$]__ | Defines the desired state of the Topic resource. + |  | 
@@ -3963,8 +4007,10 @@ TopicStatus defines the observed state of the Topic resource.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Topic. + |  | 
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Topic. + |  | 
+| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Topic. + |  | Optional: \{} +
+
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Topic. + |  | Optional: \{} +
+
 | *`topicConfiguration`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configuration[$$Configuration$$] array__ | TopicConfiguration is the last snapshot of the topic configuration during successful reconciliation. + |  | 
 |===
 
@@ -4112,11 +4158,13 @@ User defines the CRD for a Redpanda user.
 Servers may infer this from the endpoint the client submits requests to. +
 Cannot be updated. +
 In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
 | *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
 Servers should convert recognized schemas to the latest internal value, and +
 may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | 
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]__ | Defines the desired state of the Redpanda user. + |  | 
@@ -4192,7 +4240,8 @@ UserSpec defines the configuration of a Redpanda user.
 |===
 | Field | Description | Default | Validation
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the cluster where the user should be created. +
-It is used in constructing the client created to configure a cluster. + |  | 
+It is used in constructing the client created to configure a cluster. + |  | Required: \{} +
+
 | *`authentication`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userauthenticationspec[$$UserAuthenticationSpec$$]__ | Authentication defines the authentication information for a user. If no +
 Authentication credentials are specified, then no user will be created. +
 This is useful when wanting to manage ACLs for an already-existing user. + |  | 
