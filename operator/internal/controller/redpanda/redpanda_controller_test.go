@@ -925,7 +925,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
 			Client: mgr.GetClient(),
-		}).SetupWithManager(s.ctx, mgr))
+		}).SetupWithManager(s.ctx, mgr, ""))
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
@@ -939,7 +939,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
 			UseNodePools: true,
-		}).SetupWithManager(s.ctx, mgr)
+		}).SetupWithManager(s.ctx, mgr, "")
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with

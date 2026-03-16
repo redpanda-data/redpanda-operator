@@ -49,7 +49,7 @@ type NodePoolReconciler struct {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
 	enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Mana
 				},
 			}}
 		})).
-		Complete(r)
+		Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 // Reconcile reconciles NodePool objects

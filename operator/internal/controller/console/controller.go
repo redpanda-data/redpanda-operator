@@ -58,7 +58,7 @@ type Controller struct {
 	rng *rand.Rand
 }
 
-func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
 	// If rng is not set for testing, create and seed a new one.
 	if c.rng == nil {
 		// TODO: Weak RNG is probably acceptable here but best to doublecheck
@@ -83,7 +83,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager) err
 		// If a redpanda is updated, any console's referring to it will be
 		// re-reconciled.
 		Watches(&redpandav1alpha2.Redpanda{}, eventHandler).
-		Complete(c)
+		Complete(controller.FilterNamespaceReconciler(namespace, c))
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

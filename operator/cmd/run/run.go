@@ -399,7 +399,7 @@ func Run(
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
 			UseNodePools:         opts.enableV2NodepoolController,
-		}).SetupWithManager(ctx, mgr); err != nil {
+		}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
@@ -411,7 +411,7 @@ func Run(
 		if opts.enableV2NodepoolController {
 			if err := (&redpandacontrollers.NodePoolReconciler{
 				Client: mgr.GetClient(),
-			}).SetupWithManager(ctx, mgr); err != nil {
+			}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 				return err
 			}
@@ -434,7 +434,7 @@ func Run(
 				return err
 			}
 
-			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr); err != nil {
+			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}
@@ -443,28 +443,28 @@ func Run(
 
 	// ShadowLink Reconciler
 	if opts.enableShadowLinksController {
-		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
 		}
 	}
 
-	if err := redpandacontrollers.SetupTopicController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupUserController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}
