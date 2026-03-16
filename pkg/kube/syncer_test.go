@@ -86,7 +86,7 @@ func TestSyncer(t *testing.T) {
 		defer func() { r.ObjNotInScheme = false }()
 
 		_, err := syncer.Sync(t.Context())
-		require.EqualError(t, err, `no kind is registered for the type v1.CustomResourceDefinition in scheme "pkg/runtime/scheme.go:110"`)
+		require.ErrorContains(t, err, `no kind is registered for the type v1.CustomResourceDefinition in scheme`)
 	})
 
 	t.Run("NotInAPI", func(t *testing.T) {
