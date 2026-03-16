@@ -69,7 +69,7 @@
           - name: REDPANDA_METRICS_K8S_VERSION
             value: v1.32.0
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: helm
+            value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: 25.3.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
@@ -435,7 +435,7 @@
           - name: REDPANDA_METRICS_K8S_VERSION
             value: v1.32.0
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: helm
+            value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: 25.3.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
@@ -805,7 +805,7 @@
           - name: REDPANDA_METRICS_K8S_VERSION
             value: v1.32.0
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: helm
+            value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: 25.3.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
@@ -1230,7 +1230,7 @@
           - name: REDPANDA_METRICS_K8S_VERSION
             value: v1.32.0
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: helm
+            value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: 25.3.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
@@ -1596,7 +1596,7 @@
           - name: REDPANDA_METRICS_K8S_VERSION
             value: v1.32.0
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: helm
+            value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: 25.3.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
@@ -1963,7 +1963,7 @@
           - name: REDPANDA_METRICS_K8S_VERSION
             value: v1.32.0
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: helm
+            value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: 25.3.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
@@ -2328,7 +2328,7 @@
           - name: REDPANDA_METRICS_K8S_VERSION
             value: v1.32.0
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
-            value: helm
+            value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: 25.3.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
