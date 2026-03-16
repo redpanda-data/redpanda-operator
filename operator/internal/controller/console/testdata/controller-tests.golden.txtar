@@ -83,7 +83,7 @@
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
             value: redpandadata/console:v3.3.2
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
-            value: ba8384c4-49f2-4f10-98ab-186d386f8b85
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -288,7 +288,7 @@
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
             value: redpandadata/console:v3.3.2
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
-            value: ba8384c4-49f2-4f10-98ab-186d386f8b85
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -473,7 +473,7 @@
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
             value: redpandadata/console:v3.3.2
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
-            value: ba8384c4-49f2-4f10-98ab-186d386f8b85
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -683,7 +683,7 @@
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
             value: redpandadata/console:v3.3.2
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
-            value: ba8384c4-49f2-4f10-98ab-186d386f8b85
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
