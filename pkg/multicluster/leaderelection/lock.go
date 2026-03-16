@@ -27,38 +27,68 @@ import (
 const (
 	defaultHeartbeatInterval = 1 * time.Second
 	defaultElectionTimeout   = 10 * time.Second
+	defaultGRPCMaxBackoff    = 5 * time.Second
 )
 
 var discardLogger = &raft.DefaultLogger{Logger: log.New(io.Discard, "", 0)}
 
+// LeaderCallbacks contains the functions invoked when raft leadership
+// transitions occur.
 type LeaderCallbacks struct {
-	SetLeader        func(leader uint64)
+	// SetLeader is called whenever the known raft leader changes.
+	SetLeader func(leader uint64)
+	// OnStartedLeading is called when this node becomes the raft leader.
+	// The provided context is cancelled when leadership is lost.
 	OnStartedLeading func(ctx context.Context)
+	// OnStoppedLeading is called when this node loses raft leadership.
 	OnStoppedLeading func()
 }
 
+// LockerNode identifies a single node in the raft cluster.
 type LockerNode struct {
-	ID      uint64
+	// ID is the unique raft node identifier (typically a hash of the cluster name).
+	ID uint64
+	// Address is the host:port where this node's gRPC transport listens.
 	Address string
 }
 
+// LockConfiguration holds the configuration for a raft-based distributed
+// lock, including node identity, peer topology, TLS, and timing parameters.
 type LockConfiguration struct {
-	ID      uint64
+	// ID is the unique raft node identifier for this node.
+	ID uint64
+	// Address is the host:port this node's gRPC transport listens on.
 	Address string
-	Meta    []byte
-	Peers   []LockerNode
+	// Meta is opaque metadata attached to this node.
+	Meta []byte
+	// Peers lists all nodes in the raft cluster.
+	Peers []LockerNode
+	// Fetcher provides kubeconfig retrieval for bootstrap mode.
 	Fetcher KubeconfigFetcher
 
-	Insecure         bool
+	// Insecure disables TLS on the gRPC transport.
+	Insecure bool
+	// ServerTLSOptions are custom TLS config mutators for the inbound gRPC listener.
 	ServerTLSOptions []func(*tls.Config)
+	// ClientTLSOptions are custom TLS config mutators for outbound gRPC connections.
 	ClientTLSOptions []func(*tls.Config)
-	CA               []byte
-	PrivateKey       []byte
-	Certificate      []byte
+	// CA is the PEM-encoded CA certificate.
+	CA []byte
+	// PrivateKey is the PEM-encoded TLS private key.
+	PrivateKey []byte
+	// Certificate is the PEM-encoded TLS certificate.
+	Certificate []byte
 
-	ElectionTimeout   time.Duration
+	// ElectionTimeout is the raft election timeout. Zero uses the default (10s).
+	ElectionTimeout time.Duration
+	// HeartbeatInterval is the raft heartbeat interval. Zero uses the default (1s).
 	HeartbeatInterval time.Duration
-	Logger            raft.Logger
+	// GRPCMaxBackoff caps the exponential backoff delay between gRPC
+	// reconnection attempts. A shorter value speeds up recovery when a
+	// peer restarts (e.g. after a failover). Zero uses the default (5s).
+	GRPCMaxBackoff time.Duration
+	// Logger is used for raft-internal logging.
+	Logger raft.Logger
 }
 
 func (c *LockConfiguration) validate() error {
@@ -109,6 +139,95 @@ func asPeers(nodes []LockerNode) []raft.Peer {
 	return peers
 }
 
+// Run starts the raft node and gRPC transport, blocking until ctx is cancelled
+// or an unrecoverable error occurs. Leadership transitions are reported via callbacks.
+//
+// # Recovery Semantics
+//
+// This raft implementation uses in-memory storage (no WAL). When a node
+// restarts it has an empty log and must catch up from the leader via snapshot.
+// Three mechanisms cooperate to ensure recovery succeeds:
+//
+// 1. PreVote prevents term inflation. Without PreVote, a restarting node
+// runs elections that fail (its log is behind), but each attempt increments
+// its term. When it later contacts the leader, the inflated term forces
+// the leader to step down. The new election restarts the cycle. PreVote
+// requires a majority to agree the election could succeed before advancing
+// the term, breaking this livelock.
+//
+// 2. Synthetic MsgHeartbeatResp reactivates inactive peers. The raft library
+// marks peers as inactive when they miss heartbeats and stops sending them
+// messages. A restarting peer can only send MsgPreVote (which doesn't touch
+// the leader's progress tracker), so without intervention it stays inactive
+// permanently. The Send handler intercepts any inbound message from a peer
+// and, if this node is the leader, steps a synthetic MsgHeartbeatResp to
+// mark the peer active again.
+//
+// 3. ReportUnreachable on rejected heartbeats transitions the progress
+// tracker from StateReplicate to StateProbe. When a peer restarts fresh,
+// the leader may still have it tracked in StateReplicate with Match equal
+// to the old lastIndex. Heartbeats to the new peer are rejected by the
+// commit guard (Commit > lastIndex), returning Applied=false. Without
+// ReportUnreachable, the progress stays in StateReplicate, which prevents
+// sendAppend from being called (IsPaused returns true when the inflight
+// buffer is full). Calling ReportUnreachable transitions to StateProbe,
+// where sendAppend always fires, allowing the leader to discover the peer
+// is behind and send a snapshot.
+//
+// # Recovery Timeline
+//
+// When a node dies and its replacement starts (e.g. a standby acquiring the
+// K8s lease in double leader-election mode), recovery proceeds through these
+// phases:
+//
+//   - gRPC reconnection: The leader's gRPC client reconnects to the new peer.
+//     The default GRPCMaxBackoff of 5s caps the exponential backoff so
+//     reconnection completes within a few seconds.
+//
+//   - Peer reactivation: Once the connection is established, the new peer
+//     sends a MsgPreVote to the leader. The Send handler steps a synthetic
+//     MsgHeartbeatResp, reactivating the peer's progress tracker. This
+//     happens on the first message exchange after reconnection.
+//
+//   - Progress tracker repair: The leader sends a heartbeat to the newly
+//     active peer. The commit guard rejects it (Applied=false) because the
+//     peer's log only has N ConfChange entries. ReportUnreachable transitions
+//     the progress from StateReplicate to StateProbe.
+//
+//   - Snapshot delivery: In StateProbe, the leader calls sendAppend, which
+//     discovers the peer is far behind and sends a MsgSnap. The peer applies
+//     the snapshot, advancing its lastIndex to match the leader's.
+//
+//   - Steady state: Subsequent heartbeats pass the commit guard. The peer
+//     responds normally and transitions to StateReplicate.
+//
+// Total recovery time is approximately:
+//
+//	GRPCMaxBackoff                           // reconnection (default 5s)
+//	+ ElectionTimeout                        // peer runs a PreVote round
+//	+ 2-3 × HeartbeatInterval               // reactivation + probe + snapshot
+//
+// With defaults (ElectionTimeout=10s, HeartbeatInterval=1s, GRPCMaxBackoff=5s):
+// worst case is ~18s.
+//
+// # Timeout Constraints
+//
+// The raft tick period is fixed at 10ms. ElectionTimeout and HeartbeatInterval
+// are converted to ticks by dividing by 10ms. The following constraints apply:
+//
+//   - ElectionTimeout must be >= 10 × HeartbeatInterval. The raft library
+//     enforces ElectionTick >= 10 × HeartbeatTick internally. This gives
+//     heartbeats enough time to propagate before an election is triggered.
+//
+//   - GRPCMaxBackoff should be <= HeartbeatInterval for fast recovery. If
+//     it's much larger, a restarting peer may miss many heartbeat cycles
+//     while the gRPC client backs off, delaying the reconnection that
+//     triggers the recovery chain.
+//
+//   - In double leader-election mode (K8s lease + raft), the K8s lease
+//     duration bounds how quickly a standby can replace a dead active
+//     replica. The total failover time is LeaseDuration (for the standby
+//     to acquire the lease) + the raft recovery time above.
 func Run(ctx context.Context, config LockConfiguration, callbacks *LeaderCallbacks) error {
 	return run(ctx, config, nil, callbacks)
 }
@@ -118,15 +237,19 @@ func run(ctx context.Context, config LockConfiguration, transportCallback func(t
 		return err
 	}
 
+	if config.GRPCMaxBackoff == 0 {
+		config.GRPCMaxBackoff = defaultGRPCMaxBackoff
+	}
+
 	nodes := peersForNodes(config.Peers)
 	var transport *grpcTransport
 	var err error
 	if config.Insecure {
-		transport, err = newInsecureGRPCTransport(config.Meta, config.Address, nodes, config.Fetcher)
+		transport, err = newInsecureGRPCTransport(config.Meta, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff)
 	} else if len(config.ServerTLSOptions) == 0 || len(config.ClientTLSOptions) == 0 {
-		transport, err = newGRPCTransport(config.Meta, config.Certificate, config.PrivateKey, config.CA, config.Address, nodes, config.Fetcher)
+		transport, err = newGRPCTransport(config.Meta, config.Certificate, config.PrivateKey, config.CA, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff)
 	} else {
-		transport, err = newGRPCTransportWithOptions(config.Meta, config.ServerTLSOptions, config.ClientTLSOptions, config.Address, nodes, config.Fetcher)
+		transport, err = newGRPCTransportWithOptions(config.Meta, config.ServerTLSOptions, config.ClientTLSOptions, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff)
 	}
 	if err != nil {
 		return err
@@ -208,6 +331,7 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 		MaxSizePerMsg:   1024 * 1024,
 		MaxInflightMsgs: 256,
 		CheckQuorum:     true,
+		PreVote:         true,
 		Logger:          config.Logger,
 	}, asPeers(config.Peers))
 
@@ -327,7 +451,17 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 						// return Applied=false while its snapshot catch-up is in
 						// progress; retrying here would block the Ready loop for
 						// a full second per heartbeat per lagging peer.
+						//
+						// However, we must still report the peer as unreachable so
+						// that the progress tracker transitions from StateReplicate
+						// to StateProbe. Without this, a replaced follower (fresh
+						// MemoryStorage) that rejects heartbeats via the commit
+						// guard leaves the leader's progress in StateReplicate with
+						// Match == lastIndex, preventing sendAppend from ever being
+						// called — even after the synthetic MsgHeartbeatResp
+						// reactivation.
 						if msg.Type == raftpb.MsgHeartbeat {
+							node.ReportUnreachable(msg.To)
 							break
 						}
 						// attempt to apply again in a second

@@ -12,7 +12,6 @@ package redpanda_test
 import (
 	"context"
 	"fmt"
-	"net"
 	"slices"
 	"testing"
 	"time"
@@ -134,7 +133,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 	s.ctx = trace.Test(t)
 
 	clusterSize := 3
-	ports := getFreePorts(t, clusterSize)
+	ports := testutil.FreePorts(t, clusterSize)
 
 	for i := range clusterSize {
 		s.envs = append(s.envs, testenv.New(t, testenv.Options{
@@ -244,26 +243,4 @@ func (s *MulticlusterControllerSuite) setupMulticlusterRBAC(env *testenv.Env) st
 	)
 
 	return name
-}
-
-func getFreePorts(t *testing.T, n int) []int {
-	t.Helper()
-
-	ports := make([]int, 0, n)
-	listeners := make([]net.Listener, 0, n)
-
-	for range n {
-		l, err := net.Listen("tcp", "127.0.0.1:0")
-		if err != nil {
-			t.Fatalf("error getting free port: %v", err)
-		}
-		listeners = append(listeners, l)
-		ports = append(ports, l.Addr().(*net.TCPAddr).Port)
-	}
-
-	for _, l := range listeners {
-		l.Close()
-	}
-
-	return ports
 }

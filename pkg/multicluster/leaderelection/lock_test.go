@@ -13,7 +13,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
 	"reflect"
 	"sync/atomic"
 	"testing"
@@ -22,6 +21,7 @@ import (
 	"go.etcd.io/raft/v3"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 // TestLaggingPeerCatchesUpViaSnapshot reproduces the "need non-empty snapshot"
@@ -478,7 +478,7 @@ func setupLockTest(t *testing.T, ctx context.Context, n int) []*testLeader {
 		t.Fatalf("at least one lock configuration is required")
 	}
 
-	ports := getFreePorts(t, n)
+	ports := testutil.FreePorts(t, n)
 
 	leaders := []*testLeader{}
 	nodes := []LockerNode{}
@@ -524,26 +524,6 @@ func setupLockTest(t *testing.T, ctx context.Context, n int) []*testLeader {
 	}
 
 	return leaders
-}
-
-func getFreePorts(t *testing.T, n int) []int {
-	ports := make([]int, 0, n)
-	listeners := make([]net.Listener, 0, n)
-
-	for i := 0; i < n; i++ {
-		l, err := net.Listen("tcp", "127.0.0.1:0")
-		if err != nil {
-			t.Fatalf("error getting free port: %v", err)
-		}
-		listeners = append(listeners, l)
-		ports = append(ports, l.Addr().(*net.TCPAddr).Port)
-	}
-
-	for _, l := range listeners {
-		l.Close()
-	}
-
-	return ports
 }
 
 func testLogger(t *testing.T) raft.Logger {

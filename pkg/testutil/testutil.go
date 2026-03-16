@@ -12,6 +12,7 @@ package testutil
 import (
 	"context"
 	"flag"
+	"net"
 	"os"
 	"strings"
 	"testing"
@@ -232,3 +233,24 @@ var (
 	AssertGolden = goldenfile.AssertGolden
 	NewTxTar     = goldenfile.NewTxTar
 )
+
+// FreePorts allocates n free TCP ports on localhost by briefly binding to
+// port 0 and returning the assigned ports. All listeners are closed before
+// returning so the ports can be reused by the caller.
+func FreePorts(t *testing.T, n int) []int {
+	t.Helper()
+	ports := make([]int, 0, n)
+	listeners := make([]net.Listener, 0, n)
+	for range n {
+		l, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatalf("error getting free port: %v", err)
+		}
+		listeners = append(listeners, l)
+		ports = append(ports, l.Addr().(*net.TCPAddr).Port)
+	}
+	for _, l := range listeners {
+		l.Close() //nolint:gosec // best-effort cleanup in test helper; error is not actionable
+	}
+	return ports
+}
