@@ -924,13 +924,8 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		s.clientFactory = internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient(), nil).WithDialer(dialer.DialContext)
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
-<<<<<<< HEAD
 			Client: mgr.GetClient(),
-		}).SetupWithManager(s.ctx, mgr))
-=======
-			Manager: mgr,
 		}).SetupWithManager(s.ctx, mgr, ""))
->>>>>>> 63f112a4 (Filter out noise for controllers when running in namespace-scoped mode (#1270))
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
