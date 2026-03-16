@@ -100,6 +100,16 @@ func groupShouldHaveNACLsForTopicPatternInCluster(ctx context.Context, t framewo
 		}
 	}
 	require.Equal(t, count, matched, "Group %q should have %d ACLs for topic pattern %q, got %d", group, count, pattern, matched)
+
+	// Also check SR ACLs if the group has subject-type ACL rules
+	if groupObject.Spec.Authorization != nil && hasSubjectACLRules(groupObject.Spec.Authorization.ACLs) {
+		srClient := clients.SchemaRegistryACLs(ctx)
+		srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+		if err != nil {
+			t.Fatalf("Failed to list SR ACLs for group %q (principal %q): %v", group, principal, err)
+		}
+		require.NotEmpty(t, srACLs, "Group %q should have SR ACLs", group)
+	}
 }
 
 func groupShouldHaveACLsInCluster(ctx context.Context, t framework.TestingT, group, version, cluster string) {
@@ -120,13 +130,15 @@ func groupShouldHaveACLsInCluster(ctx context.Context, t framework.TestingT, gro
 	}
 	require.NotEmpty(t, rules, "Group %q should have Kafka ACLs", group)
 
-	// Also check SR ACLs
-	srClient := clients.SchemaRegistryACLs(ctx)
-	srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
-	if err != nil {
-		t.Fatalf("Failed to list SR ACLs for group %q (principal %q): %v", group, principal, err)
+	// Also check SR ACLs if the group has subject-type ACL rules
+	if groupObject.Spec.Authorization != nil && hasSubjectACLRules(groupObject.Spec.Authorization.ACLs) {
+		srClient := clients.SchemaRegistryACLs(ctx)
+		srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+		if err != nil {
+			t.Fatalf("Failed to list SR ACLs for group %q (principal %q): %v", group, principal, err)
+		}
+		require.NotEmpty(t, srACLs, "Group %q should have SR ACLs", group)
 	}
-	require.NotEmpty(t, srACLs, "Group %q should have SR ACLs", group)
 }
 
 func thereShouldBeNoACLsForGroupInCluster(ctx context.Context, t framework.TestingT, group, version, cluster string) {

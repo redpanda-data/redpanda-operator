@@ -222,13 +222,15 @@ func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework
 	}
 	require.True(t, found, "Role %q should have ACL for topic pattern %q", role, pattern)
 
-	// Also check SR ACLs exist for this role
-	srClient := clients.SchemaRegistryACLs(ctx)
-	srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
-	if err != nil {
-		t.Fatalf("Failed to list SR ACLs for role %q (principal %q): %v", role, principal, err)
+	// Also check SR ACLs exist for this role if it has subject-type ACL rules
+	if roleObject.Spec.Authorization != nil && hasSubjectACLRules(roleObject.Spec.Authorization.ACLs) {
+		srClient := clients.SchemaRegistryACLs(ctx)
+		srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+		if err != nil {
+			t.Fatalf("Failed to list SR ACLs for role %q (principal %q): %v", role, principal, err)
+		}
+		require.NotEmpty(t, srACLs, "Role %q should have SR ACLs", role)
 	}
-	require.NotEmpty(t, srACLs, "Role %q should have SR ACLs", role)
 }
 
 func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
@@ -247,6 +249,14 @@ func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.Testi
 		t.Fatalf("Failed to list ACLs for role %q (principal %q): %v", role, principal, err)
 	}
 	require.Empty(t, rules, "Role %q should have no managed ACLs", role)
+
+	// Also check SR ACLs are cleaned up
+	srClient := clients.SchemaRegistryACLs(ctx)
+	srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+	if err != nil {
+		t.Fatalf("Failed to list SR ACLs for role %q (principal %q): %v", role, principal, err)
+	}
+	require.Empty(t, srACLs, "Role %q should have no SR ACLs", role)
 }
 
 func thereShouldBeNoACLsForRoleInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {
@@ -265,6 +275,14 @@ func thereShouldBeNoACLsForRoleInCluster(ctx context.Context, t framework.Testin
 		t.Fatalf("Failed to list ACLs for role %q (principal %q): %v", role, principal, err)
 	}
 	require.Empty(t, rules, "There should be no ACLs for role %q", role)
+
+	// Also check SR ACLs are cleaned up
+	srClient := clients.SchemaRegistryACLs(ctx)
+	srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+	if err != nil {
+		t.Fatalf("Failed to list SR ACLs for role %q (principal %q): %v", role, principal, err)
+	}
+	require.Empty(t, srACLs, "There should be no SR ACLs for role %q", role)
 }
 
 func thereIsNoRole(ctx context.Context, effectiveRoleName, version, cluster string) {

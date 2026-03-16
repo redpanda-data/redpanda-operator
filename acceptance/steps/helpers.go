@@ -88,6 +88,17 @@ func (c *clusterClients) SchemaRegistryACLs(ctx context.Context) rpsr.ACLClient 
 	return client
 }
 
+// hasSubjectACLRules returns true if any of the given ACL rules target a
+// Schema Registry subject resource type.
+func hasSubjectACLRules(rules []redpandav1alpha2.ACLRule) bool {
+	for _, rule := range rules {
+		if rule.Resource.Type == redpandav1alpha2.ResourceTypeSchemaRegistrySubject {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *clusterClients) Users(ctx context.Context) *users.Client {
 	t := framework.T(ctx)
 
