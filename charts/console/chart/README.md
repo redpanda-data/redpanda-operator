@@ -117,6 +117,28 @@ Override `console.fullname` template.
 
 **Default:** `""`
 
+### [gateway](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=gateway)
+
+Gateway API `HTTPRoute` settings.
+
+**Default:**
+
+```
+{"annotations":{},"enabled":false,"hostnames":["chart-example.local"],"parentRefs":[],"path":"/","pathType":"PathPrefix"}
+```
+
+### [gateway.parentRefs](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=gateway.parentRefs)
+
+Gateway parent references for this route. If no parentRefs are specified, the HTTPRoute is still rendered but will not attach to any Gateway until configured.
+
+**Default:** `[]`
+
+### [gateway.pathType](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=gateway.pathType)
+
+One of Exact, PathPrefix, or RegularExpression.
+
+**Default:** `"PathPrefix"`
+
 ### [image](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=image)
 
 Redpanda Console Docker image settings.

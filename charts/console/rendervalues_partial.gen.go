@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 type PartialRenderValues struct {
@@ -37,6 +38,7 @@ type PartialRenderValues struct {
 	SecurityContext              *applycorev1.SecurityContextApplyConfiguration    "json:\"securityContext,omitempty\""
 	Service                      *PartialServiceConfig                             "json:\"service,omitempty\""
 	Ingress                      *PartialIngressConfig                             "json:\"ingress,omitempty\""
+	Gateway                      *PartialGatewayConfig                             "json:\"gateway,omitempty\""
 	Resources                    *corev1.ResourceRequirements                      "json:\"resources,omitempty\""
 	Autoscaling                  *PartialAutoScaling                               "json:\"autoscaling,omitempty\""
 	NodeSelector                 map[string]string                                 "json:\"nodeSelector,omitempty\""
@@ -91,6 +93,15 @@ type PartialIngressConfig struct {
 	Annotations map[string]string         "json:\"annotations,omitempty\""
 	Hosts       []PartialIngressHost      "json:\"hosts,omitempty\""
 	TLS         []networkingv1.IngressTLS "json:\"tls,omitempty\""
+}
+
+type PartialGatewayConfig struct {
+	Enabled     *bool                           "json:\"enabled,omitempty\""
+	Annotations map[string]string               "json:\"annotations,omitempty\""
+	ParentRefs  []PartialGatewayParentReference "json:\"parentRefs,omitempty\""
+	Hostnames   []string                        "json:\"hostnames,omitempty\""
+	Path        *string                         "json:\"path,omitempty\""
+	PathType    *gatewayv1.PathMatchType        "json:\"pathType,omitempty\""
 }
 
 type PartialAutoScaling struct {
@@ -172,6 +183,12 @@ type PartialSchemaRegistrySecrets struct {
 type PartialIngressHost struct {
 	Host  *string              "json:\"host,omitempty\""
 	Paths []PartialIngressPath "json:\"paths,omitempty\""
+}
+
+type PartialGatewayParentReference struct {
+	Name        *string                "json:\"name,omitempty\""
+	Namespace   *string                "json:\"namespace,omitempty\""
+	SectionName *gatewayv1.SectionName "json:\"sectionName,omitempty\""
 }
 
 type PartialOIDCLoginSecrets struct {

@@ -66,6 +66,20 @@ ingress:
    hosts:
    - '{{ "blah" | quote }}'
 
+-- gateway-templating --
+gateway:
+  enabled: true
+  annotations:
+    gateway: test
+  parentRefs:
+    - name: '{{ "public-gateway" | quote }}'
+      namespace: '{{ "networking" | quote }}'
+      sectionName: '{{ "http" | quote }}'
+  hostnames:
+    - '{{ "console.example.local" | quote }}'
+  path: '{{ "/" }}'
+  pathType: PathPrefix
+
 -- no-registry --
 image:
   registry: ""

@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/utils/ptr"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // TestAppVersion asserts that the AppVersion const is inline with the version
@@ -83,6 +84,15 @@ func TestTypes(t *testing.T) {
 						},
 					},
 				},
+				Gateway: &PartialGatewayConfig{
+					Enabled: ptr.To(true),
+					ParentRefs: []PartialGatewayParentReference{
+						{
+							Name: ptr.To("public-gateway"),
+						},
+					},
+					Hostnames: []string{"console.example.com"},
+				},
 				Autoscaling: &PartialAutoScaling{
 					Enabled:     ptr.To(true),
 					MinReplicas: ptr.To(int32(1)),
@@ -106,6 +116,18 @@ func TestTypes(t *testing.T) {
 			values: PartialRenderValues{
 				Ingress: &PartialIngressConfig{
 					Enabled: ptr.To(false),
+				},
+				ConfigMap: &PartialCreatable{
+					Create: ptr.To(true),
+				},
+			},
+		},
+		{
+			name: "gateway disabled",
+			values: PartialRenderValues{
+				Gateway: &PartialGatewayConfig{
+					Enabled: ptr.To(false),
+					PathType: ptr.To(gatewayv1.PathMatchPathPrefix),
 				},
 				ConfigMap: &PartialCreatable{
 					Create: ptr.To(true),

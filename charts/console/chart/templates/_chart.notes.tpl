@@ -7,7 +7,14 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $commands := (list `1. Get the application URL by running these commands:`) -}}
-{{- if $values.ingress.enabled -}}
+{{- if $values.gateway.enabled -}}
+{{- range $_, $hostname := $values.gateway.hostnames -}}
+{{- $commands = (concat (default (list) $commands) (list (printf "http://%s%s" $hostname $values.gateway.path))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- else -}}{{- if $values.ingress.enabled -}}
 {{- $scheme := "http" -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.ingress.tls)))) "r") | int) (0 | int)) -}}
 {{- $scheme = "https" -}}
@@ -29,6 +36,7 @@
 {{- $commands = (concat (default (list) $commands) (list `    NOTE: It may take a few minutes for the LoadBalancer IP to be available.` (printf `          You can watch the status of by running 'kubectl get --namespace %s svc -w %s'` $dot.Release.Namespace (get (fromJson (include "chart.Fullname" (dict "a" (list $dot)))) "r")) (printf `  export SERVICE_IP=$(kubectl get svc --namespace %s %s --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")` $dot.Release.Namespace (get (fromJson (include "chart.Fullname" (dict "a" (list $dot)))) "r")) (printf `  echo http://$SERVICE_IP:%d` ($values.service.port | int)))) -}}
 {{- else -}}{{- if (contains "ClusterIP" (toString $values.service.type)) -}}
 {{- $commands = (concat (default (list) $commands) (list (printf `  export POD_NAME=$(kubectl get pods --namespace %s -l "app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" -o jsonpath="{.items[0].metadata.name}")` $dot.Release.Namespace (get (fromJson (include "chart.Name" (dict "a" (list $dot)))) "r") $dot.Release.Name) (printf `  export CONTAINER_PORT=$(kubectl get pod --namespace %s $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")` $dot.Release.Namespace) `  echo "Visit http://127.0.0.1:8080 to use your application"` (printf `  kubectl --namespace %s port-forward $POD_NAME 8080:$CONTAINER_PORT` $dot.Release.Namespace))) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
