@@ -118,6 +118,11 @@ type grpcTransport struct {
 	node     raft.Node
 	nodeLock sync.RWMutex
 
+	// storage is set by runRaft after creating MemoryStorage so that the Send
+	// handler can consult LastIndex before stepping heartbeat messages.
+	storage     *raft.MemoryStorage
+	storageLock sync.RWMutex
+
 	kubeconfigFetcher KubeconfigFetcher
 
 	serverCredentials credentials.TransportCredentials
@@ -219,6 +224,18 @@ func (t *grpcTransport) getNode() raft.Node {
 	return t.node
 }
 
+func (t *grpcTransport) setStorage(s *raft.MemoryStorage) {
+	t.storageLock.Lock()
+	defer t.storageLock.Unlock()
+	t.storage = s
+}
+
+func (t *grpcTransport) getStorage() *raft.MemoryStorage {
+	t.storageLock.RLock()
+	defer t.storageLock.RUnlock()
+	return t.storage
+}
+
 func (t *grpcTransport) client() (transportv1.TransportServiceClient, error) {
 	peer, err := newPeer(t.addr, t.clientCredentials)
 	if err != nil {
@@ -255,9 +272,33 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 		if err := msg.Unmarshal(req.Payload); err != nil {
 			return &transportv1.SendResponse{Applied: false}, nil
 		}
-		if err := node.Step(ctx, msg); err == nil {
+
+		// Guard against "tocommit(X) is out of range [lastIndex(Y)]" panic.
+		//
+		// When a node restarts fresh, raft.StartNode populates its log with N
+		// ConfChange entries (N = number of peers), so lastIndex = N. If the
+		// existing cluster has already committed beyond N, the raft library's
+		// handleHeartbeat will call commitTo(Commit) and panic because
+		// Commit > lastIndex.
+		//
+		// We intercept such heartbeats before passing them to node.Step and
+		// return Applied=false, signalling the leader to retry on the next
+		// heartbeat tick. Meanwhile the leader discovers the follower is
+		// lagging via MsgApp rejection and sends a MsgSnap, after which
+		// lastIndex advances to the snapshot index and heartbeats are safe.
+		if msg.Type == raftpb.MsgHeartbeat {
+			if s := t.getStorage(); s != nil {
+				if lastIdx, err := s.LastIndex(); err == nil && msg.Commit > lastIdx {
+					return &transportv1.SendResponse{Applied: false}, nil
+				}
+			}
+		}
+
+		err := node.Step(ctx, msg)
+		if err == nil {
 			return &transportv1.SendResponse{Applied: true}, nil
 		}
+		t.logger.Errorf("error occurred: %v", err)
 	}
 	return &transportv1.SendResponse{Applied: false}, nil
 }

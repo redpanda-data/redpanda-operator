@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.etcd.io/raft/v3"
+	"go.etcd.io/raft/v3/raftpb"
 
 	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
@@ -183,6 +184,11 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 
 	storage := raft.NewMemoryStorage()
 
+	// Expose storage to the transport so its Send handler can guard against
+	// MsgHeartbeat messages whose Commit index exceeds our current lastIndex
+	// (which would otherwise panic inside the raft library via commitTo).
+	transport.setStorage(storage)
+
 	if config.ElectionTimeout == 0 {
 		config.ElectionTimeout = defaultElectionTimeout
 	}
@@ -207,6 +213,16 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 
 	transport.setNode(node)
 
+	// confState captures the static cluster membership and is embedded in every
+	// snapshot. CreateSnapshot must be called before Compact so the storage
+	// always has a non-empty snapshot to send to lagging peers; without it,
+	// maybeSendSnapshot panics with "need non-empty snapshot".
+	voters := make([]uint64, 0, len(config.Peers))
+	for _, p := range config.Peers {
+		voters = append(voters, p.ID)
+	}
+	confState := raftpb.ConfState{Voters: voters}
+
 	go func() {
 		compactions := 1000 // every 10 seconds
 		for {
@@ -216,7 +232,18 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 			case <-time.After(10 * time.Millisecond):
 				node.Tick()
 				if compactions == 0 {
-					_ = storage.Compact(node.Status().Applied)
+					applied := node.Status().Applied
+					// Guard against a race: node.Status().Applied can reflect entries
+					// that the raft node has accepted into its unstable log but that our
+					// Ready loop has not yet written to MemoryStorage via storage.Append.
+					// CreateSnapshot panics if the requested index exceeds lastindex, so
+					// skip this compaction cycle and retry in the next one.
+					lastStored, err := storage.LastIndex()
+					if err == nil && applied > 0 && applied <= lastStored {
+						if _, err := storage.CreateSnapshot(applied, &confState, nil); err == nil {
+							_ = storage.Compact(applied)
+						}
+					}
 					compactions = 1000
 				}
 				compactions--
@@ -295,6 +322,14 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 						break
 					}
 					if !applied {
+						// Heartbeats are periodic: the leader sends the next one at
+						// the next HeartbeatTick. A fresh follower may transiently
+						// return Applied=false while its snapshot catch-up is in
+						// progress; retrying here would block the Ready loop for
+						// a full second per heartbeat per lagging peer.
+						if msg.Type == raftpb.MsgHeartbeat {
+							break
+						}
 						// attempt to apply again in a second
 						time.Sleep(1 * time.Second)
 					} else {
