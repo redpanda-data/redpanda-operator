@@ -3179,8 +3179,6 @@ that are being reconciled by the operator. + |  |
 | *`effectiveRoleName`* __string__ | EffectiveRoleName stores the last known effective role name that was successfully +
 reconciled. This is used to detect role renames and clean up the old role. + |  | Optional: \{} +
 
-| *`managedSrAcls`* __boolean__ | ManagedSRACLs returns whether the role has managed Schema Registry ACLs +
-that need to be cleaned up. + |  | 
 |===
 
 
@@ -4884,8 +4882,6 @@ UserStatus defines the observed state of a Redpanda user
 to be cleaned up. + |  | 
 | *`managedUser`* __boolean__ | ManagedUser returns whether the user has a managed SCRAM user that need +
 to be cleaned up. + |  | 
-| *`managedSrAcls`* __boolean__ | ManagedSRACLs returns whether the user has managed Schema Registry ACLs +
-that need to be cleaned up. + |  | 
 |===
 
 

@@ -25,6 +25,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -76,6 +77,15 @@ func (c *clusterClients) ACLs(ctx context.Context) *acls.Syncer {
 	syncer, err := c.factory.ACLs(ctx, c.resourceTarget)
 	require.NoError(t, err)
 	return syncer
+}
+
+func (c *clusterClients) SchemaRegistryACLs(ctx context.Context) rpsr.ACLClient {
+	t := framework.T(ctx)
+
+	client, err := c.factory.SchemaRegistryACLClient(ctx, c.resourceTarget)
+	require.NoError(t, err)
+	require.NotNil(t, client, "Schema Registry ACL client should be available")
+	return client
 }
 
 func (c *clusterClients) Users(ctx context.Context) *users.Client {

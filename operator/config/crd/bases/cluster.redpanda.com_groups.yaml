@@ -196,11 +196,6 @@ spec:
                           ''AlterConfigs'']) : true'
                     maxItems: 1024
                     type: array
-                    x-kubernetes-validations:
-                    - message: Schema Registry resource types (subject, registry)
-                        are not supported for Group ACLs
-                      rule: self.all(acl, acl.resource.type != 'subject' && acl.resource.type
-                        != 'registry')
                 type: object
               cluster:
                 description: |-

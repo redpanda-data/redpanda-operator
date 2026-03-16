@@ -133,6 +133,36 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			},
 			expectedCondition: environment.ClientErrorCondition,
 		},
+		"partial sync - SR ACLs without SR configured": {
+			mutate: func(user *redpandav1alpha2.User) {
+				user.Spec.ClusterSource = environment.ClusterSourceNoSchemaRegistry
+				user.Spec.Authorization = &redpandav1alpha2.UserAuthorizationSpec{
+					ACLs: []redpandav1alpha2.ACLRule{
+						{
+							Type: redpandav1alpha2.ACLTypeAllow,
+							Resource: redpandav1alpha2.ACLResourceSpec{
+								Type: redpandav1alpha2.ResourceTypeTopic,
+								Name: "test-topic",
+							},
+							Operations: []redpandav1alpha2.ACLOperation{
+								redpandav1alpha2.ACLOperationRead,
+							},
+						},
+						{
+							Type: redpandav1alpha2.ACLTypeAllow,
+							Resource: redpandav1alpha2.ACLResourceSpec{
+								Type: redpandav1alpha2.ResourceTypeSchemaRegistrySubject,
+								Name: "test-subject",
+							},
+							Operations: []redpandav1alpha2.ACLOperation{
+								redpandav1alpha2.ACLOperationRead,
+							},
+						},
+					},
+				}
+			},
+			expectedCondition: environment.PartiallySyncedCondition,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			user := baseUser.DeepCopy()

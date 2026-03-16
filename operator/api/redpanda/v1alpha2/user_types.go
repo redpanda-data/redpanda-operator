@@ -89,11 +89,6 @@ func (u *User) ShouldManageSRACLs() bool {
 	return len(sr) > 0
 }
 
-// HasManagedSRACLs returns true if the user has managed SR ACLs that need cleanup.
-func (u *User) HasManagedSRACLs() bool {
-	return u.Status.ManagedSRACLs
-}
-
 // UserSpec defines the configuration of a Redpanda user.
 type UserSpec struct {
 	// ClusterSource is a reference to the cluster where the user should be created.
@@ -549,9 +544,6 @@ type UserStatus struct {
 	// ManagedUser returns whether the user has a managed SCRAM user that need
 	// to be cleaned up.
 	ManagedUser bool `json:"managedUser,omitempty"`
-	// ManagedSRACLs returns whether the user has managed Schema Registry ACLs
-	// that need to be cleaned up.
-	ManagedSRACLs bool `json:"managedSrAcls,omitempty"`
 }
 
 // UserList contains a list of Redpanda user objects.

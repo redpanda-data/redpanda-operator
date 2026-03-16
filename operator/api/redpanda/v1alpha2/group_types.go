@@ -77,7 +77,6 @@ type GroupSpec struct {
 type GroupAuthorizationSpec struct {
 	// List of ACL rules which should be applied to this group.
 	// +kubebuilder:validation:MaxItems=1024
-	// +kubebuilder:validation:XValidation:rule="self.all(acl, acl.resource.type != 'subject' && acl.resource.type != 'registry')",message="Schema Registry resource types (subject, registry) are not supported for Group ACLs"
 	ACLs []ACLRule `json:"acls,omitempty"`
 }
 

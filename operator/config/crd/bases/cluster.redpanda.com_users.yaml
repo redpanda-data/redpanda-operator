@@ -2669,11 +2669,6 @@ spec:
                   ManagedACLs returns whether the user has managed ACLs that need
                   to be cleaned up.
                 type: boolean
-              managedSrAcls:
-                description: |-
-                  ManagedSRACLs returns whether the user has managed Schema Registry ACLs
-                  that need to be cleaned up.
-                type: boolean
               managedUser:
                 description: |-
                   ManagedUser returns whether the user has a managed SCRAM user that need

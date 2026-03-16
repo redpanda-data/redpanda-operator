@@ -2589,11 +2589,6 @@ spec:
                   ManagedRole returns whether the role has been created in Redpanda and needs
                   to be cleaned up.
                 type: boolean
-              managedSrAcls:
-                description: |-
-                  ManagedSRACLs returns whether the role has managed Schema Registry ACLs
-                  that need to be cleaned up.
-                type: boolean
               observedGeneration:
                 description: Specifies the last observed generation.
                 format: int64

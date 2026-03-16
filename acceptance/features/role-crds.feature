@@ -64,6 +64,12 @@ Feature: Role CRDs
               name: public-
               patternType: prefixed
             operations: [Read, Describe]
+          - type: allow
+            resource:
+              type: subject
+              name: public-
+              patternType: prefixed
+            operations: [Read, Describe]
 # end::manage-roles-with-authorization[]
     """
     And role "read-only-role" is successfully synced
@@ -100,6 +106,12 @@ Feature: Role CRDs
           - type: allow
             resource:
               type: topic
+              name: some-topic
+              patternType: prefixed
+            operations: [Read]
+          - type: allow
+            resource:
+              type: subject
               name: some-topic
               patternType: prefixed
             operations: [Read]

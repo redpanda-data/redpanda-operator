@@ -11,6 +11,7 @@ package acls
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/redpanda-data/common-go/rpsr"
@@ -21,6 +22,12 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
 )
+
+// ErrSchemaRegistryNotConfigured is returned by Sync when the object contains
+// Schema Registry ACL rules but no SR client was provided. Kafka ACLs are
+// still synced successfully; callers can check for this error to report a
+// partial sync to the user.
+var ErrSchemaRegistryNotConfigured = errors.New("schema registry ACL client not configured; schema registry ACLs were not synced")
 
 // Syncer synchronizes ACLs for the given object to Redpanda.
 type Syncer struct {
@@ -43,11 +50,21 @@ func NewSyncer(client *kgo.Client, srClient rpsr.ACLClient) *Syncer {
 // any additional ACLs that were found, and creating any that need to be created.
 // Rules are partitioned by resource type: Kafka resource types go through the
 // Kafka protocol, Schema Registry resource types go through the SR HTTP API.
+//
+// Kafka ACLs are always synced first. If the object contains Schema Registry
+// ACL rules but no SR client was provided, Sync returns
+// ErrSchemaRegistryNotConfigured after the Kafka ACLs have already been
+// applied. Callers should check for this sentinel error (via errors.Is) to
+// detect and report the partial synchronization to the user.
 func (s *Syncer) Sync(ctx context.Context, o redpandav1alpha2.AuthorizedObject) error {
 	kafkaRules, srRules := redpandav1alpha2.PartitionACLs(o.GetACLs())
 
 	if _, _, err := s.syncACL(ctx, o.GetPrincipal(), kafkaRules); err != nil {
 		return err
+	}
+
+	if len(srRules) > 0 && s.srClient == nil {
+		return ErrSchemaRegistryNotConfigured
 	}
 
 	if s.srClient != nil {
@@ -70,11 +87,6 @@ func (s *Syncer) DeleteAll(ctx context.Context, o redpandav1alpha2.AuthorizedObj
 		}
 	}
 	return nil
-}
-
-// HasSRClient reports whether the syncer has a Schema Registry ACL client.
-func (s *Syncer) HasSRClient() bool {
-	return s.srClient != nil
 }
 
 // Close closes the underlying client connections.

@@ -385,7 +385,7 @@ func (c *Factory) ACLsForCluster(ctx context.Context, obj redpandav1alpha2.Clust
 		return nil, err
 	}
 
-	srClient, err := c.SRACLClient(ctx, obj, clusterName)
+	srClient, err := c.SchemaRegistryACLClientForCluster(ctx, obj, clusterName)
 	if err != nil {
 		kafkaClient.Close()
 		return nil, err
@@ -394,9 +394,15 @@ func (c *Factory) ACLsForCluster(ctx context.Context, obj redpandav1alpha2.Clust
 	return acls.NewSyncer(kafkaClient, srClient), nil
 }
 
-// SRACLClient builds an SR ACL client for the given object. Returns (nil, nil)
+// SchemaRegistryACLClient builds an SR ACL client for the given object. Returns (nil, nil)
 // when Schema Registry is not configured for the cluster.
-func (c *Factory) SRACLClient(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (rpsr.ACLClient, error) {
+func (c *Factory) SchemaRegistryACLClient(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (rpsr.ACLClient, error) {
+	return c.SchemaRegistryACLClientForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+// SchemaRegistryACLClientForCluster builds an SR ACL client for the given object and cluster. Returns (nil, nil)
+// when Schema Registry is not configured for the cluster.
+func (c *Factory) SchemaRegistryACLClientForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (rpsr.ACLClient, error) {
 	srCl, err := c.SchemaRegistryClientForCluster(ctx, obj, clusterName)
 	if isSchemaRegistryNotConfigured(err) {
 		return nil, nil

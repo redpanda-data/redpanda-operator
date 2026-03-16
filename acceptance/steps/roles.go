@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -220,6 +221,14 @@ func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework
 		}
 	}
 	require.True(t, found, "Role %q should have ACL for topic pattern %q", role, pattern)
+
+	// Also check SR ACLs exist for this role
+	srClient := clients.SchemaRegistryACLs(ctx)
+	srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+	if err != nil {
+		t.Fatalf("Failed to list SR ACLs for role %q (principal %q): %v", role, principal, err)
+	}
+	require.NotEmpty(t, srACLs, "Role %q should have SR ACLs", role)
 }
 
 func roleShouldHaveNoManagedACLsInCluster(ctx context.Context, t framework.TestingT, role, version, cluster string) {

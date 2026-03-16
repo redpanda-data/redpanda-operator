@@ -115,18 +115,20 @@ func WithOIDC(config OIDCConfig) TestOption {
 }
 
 type ResourceReconcilerTestEnvironment[T any, U Resource[T]] struct {
-	Reconciler                 *ResourceController[T, U]
-	Factory                    *internalclient.Factory
-	ClusterSourceValid         *redpandav1alpha2.ClusterSource
-	ClusterSourceNoSASL        *redpandav1alpha2.ClusterSource
-	ClusterSourceBadPassword   *redpandav1alpha2.ClusterSource
-	ClusterSourceInvalidRef    *redpandav1alpha2.ClusterSource
-	SyncedCondition            metav1.Condition
-	InvalidClusterRefCondition metav1.Condition
-	ClientErrorCondition       metav1.Condition
-	AdminURL                   string
-	KafkaURL                   string
-	SchemaRegistryURL          string
+	Reconciler                    *ResourceController[T, U]
+	Factory                       *internalclient.Factory
+	ClusterSourceValid            *redpandav1alpha2.ClusterSource
+	ClusterSourceNoSASL           *redpandav1alpha2.ClusterSource
+	ClusterSourceBadPassword      *redpandav1alpha2.ClusterSource
+	ClusterSourceInvalidRef       *redpandav1alpha2.ClusterSource
+	ClusterSourceNoSchemaRegistry *redpandav1alpha2.ClusterSource
+	SyncedCondition               metav1.Condition
+	PartiallySyncedCondition      metav1.Condition
+	InvalidClusterRefCondition    metav1.Condition
+	ClientErrorCondition          metav1.Condition
+	AdminURL                      string
+	KafkaURL                      string
+	SchemaRegistryURL             string
 
 	oidcConfig *OIDCConfig
 	dexURL     string
@@ -407,6 +409,42 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 		},
 	}
 
+	noSchemaRegistryClusterSource := &redpandav1alpha2.ClusterSource{
+		StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
+			Kafka: &redpandav1alpha2.KafkaAPISpec{
+				Brokers: []string{kafkaAddress},
+				SASL: &redpandav1alpha2.KafkaSASL{
+					Username: "superuser",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "superuser",
+							},
+							Key: "password",
+						},
+					},
+					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+				},
+			},
+			Admin: &redpandav1alpha2.AdminAPISpec{
+				URLs: []string{adminAPI},
+				SASL: &redpandav1alpha2.AdminSASL{
+					Username: "superuser",
+					Password: &redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "superuser",
+							},
+							Key: "password",
+						},
+					},
+					Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+				},
+			},
+			// No SchemaRegistry configured
+		},
+	}
+
 	invalidClusterRefSource := &redpandav1alpha2.ClusterSource{
 		ClusterRef: &redpandav1alpha2.ClusterRef{
 			Name: "nonexistent",
@@ -414,6 +452,8 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	}
 
 	syncedClusterRefCondition := redpandav1alpha2.ResourceSyncedCondition("test")
+
+	partiallySyncedCondition := redpandav1alpha2.ResourcePartiallySyncedCondition("test", errors.New("test"))
 
 	invalidClusterRefCondition := redpandav1alpha2.ResourceNotSyncedCondition(
 		redpandav1alpha2.ResourceConditionReasonClusterRefInvalid, errors.New("test"),
@@ -424,20 +464,22 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	)
 
 	return &ResourceReconcilerTestEnvironment[T, U]{
-		Reconciler:                 NewResourceController(mgr, factory, reconciler, "Test"),
-		Factory:                    factory,
-		ClusterSourceValid:         validClusterSource,
-		ClusterSourceNoSASL:        invalidAuthClusterSourceNoSASL,
-		ClusterSourceBadPassword:   invalidAuthClusterSourceBadPassword,
-		ClusterSourceInvalidRef:    invalidClusterRefSource,
-		SyncedCondition:            syncedClusterRefCondition,
-		InvalidClusterRefCondition: invalidClusterRefCondition,
-		ClientErrorCondition:       clientErrorCondition,
-		AdminURL:                   adminAPI,
-		KafkaURL:                   kafkaAddress,
-		SchemaRegistryURL:          schemaRegistry,
-		oidcConfig:                 options.oidc,
-		dexURL:                     dexURL,
+		Reconciler:                    NewResourceController(mgr, factory, reconciler, "Test"),
+		Factory:                       factory,
+		ClusterSourceValid:            validClusterSource,
+		ClusterSourceNoSASL:           invalidAuthClusterSourceNoSASL,
+		ClusterSourceBadPassword:      invalidAuthClusterSourceBadPassword,
+		ClusterSourceInvalidRef:       invalidClusterRefSource,
+		ClusterSourceNoSchemaRegistry: noSchemaRegistryClusterSource,
+		SyncedCondition:               syncedClusterRefCondition,
+		PartiallySyncedCondition:      partiallySyncedCondition,
+		InvalidClusterRefCondition:    invalidClusterRefCondition,
+		ClientErrorCondition:          clientErrorCondition,
+		AdminURL:                      adminAPI,
+		KafkaURL:                      kafkaAddress,
+		SchemaRegistryURL:             schemaRegistry,
+		oidcConfig:                    options.oidc,
+		dexURL:                        dexURL,
 	}
 }
 

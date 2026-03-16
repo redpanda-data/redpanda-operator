@@ -22,7 +22,6 @@ type UserStatusApplyConfiguration struct {
 	Conditions         []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 	ManagedACLs        *bool                            `json:"managedAcls,omitempty"`
 	ManagedUser        *bool                            `json:"managedUser,omitempty"`
-	ManagedSRACLs      *bool                            `json:"managedSrAcls,omitempty"`
 }
 
 // UserStatusApplyConfiguration constructs a declarative configuration of the UserStatus type for use with
@@ -65,13 +64,5 @@ func (b *UserStatusApplyConfiguration) WithManagedACLs(value bool) *UserStatusAp
 // If called multiple times, the ManagedUser field is set to the value of the last call.
 func (b *UserStatusApplyConfiguration) WithManagedUser(value bool) *UserStatusApplyConfiguration {
 	b.ManagedUser = &value
-	return b
-}
-
-// WithManagedSRACLs sets the ManagedSRACLs field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ManagedSRACLs field is set to the value of the last call.
-func (b *UserStatusApplyConfiguration) WithManagedSRACLs(value bool) *UserStatusApplyConfiguration {
-	b.ManagedSRACLs = &value
 	return b
 }

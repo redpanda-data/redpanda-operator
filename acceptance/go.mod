@@ -7,6 +7,7 @@ require (
 	github.com/prometheus/common v0.67.5
 	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a
 	github.com/redpanda-data/common-go/rpadmin v0.2.1-0.20260303144042-e901a764ea09
+	github.com/redpanda-data/common-go/rpsr v0.1.4
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/operator v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
@@ -219,7 +220,6 @@ require (
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
-	github.com/redpanda-data/common-go/rpsr v0.1.4 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20251127091030-9718993ad186 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.3.0 // indirect

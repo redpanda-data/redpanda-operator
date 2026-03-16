@@ -12,6 +12,7 @@ package redpanda
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -53,8 +54,10 @@ func (r *UserReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha
 
 func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) (client.Patch, error) {
 	user := request.object
-	hasManagedACLs, hasManagedUser, hasManagedSRACLs := user.HasManagedACLs(), user.HasManagedUser(), user.HasManagedSRACLs()
+	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 	shouldManageACLs, shouldManageUser := user.ShouldManageACLs(), user.ShouldManageUser()
+
+	var srSyncWarning error
 
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
@@ -62,6 +65,8 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
+		} else if srSyncWarning != nil {
+			syncCondition = redpandav1alpha2.ResourcePartiallySyncedCondition(user.Name, srSyncWarning)
 		} else {
 			syncCondition = redpandav1alpha2.ResourceSyncedCondition(user.Name)
 		}
@@ -70,7 +75,6 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithObservedGeneration(user.Generation).
 			WithManagedUser(hasManagedUser).
 			WithManagedACLs(hasManagedACLs).
-			WithManagedSRACLs(hasManagedSRACLs).
 			WithConditions(utils.StatusConditionConfigs(user.Status.Conditions, user.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -99,10 +103,12 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, user); err != nil {
-			return createPatch(err)
+			if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+				return createPatch(err)
+			}
+			srSyncWarning = err
 		}
 		hasManagedACLs = true
-		hasManagedSRACLs = user.ShouldManageSRACLs() && syncer.HasSRClient()
 	}
 
 	if !shouldManageACLs && hasManagedACLs {
@@ -110,7 +116,6 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedACLs = false
-		hasManagedSRACLs = false
 	}
 
 	return createPatch(nil)

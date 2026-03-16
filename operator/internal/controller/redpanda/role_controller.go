@@ -65,12 +65,14 @@ func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha
 
 func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (client.Patch, error) {
 	role := request.object
-	hasManagedACLs, hasManagedRole, hasManagedPrincipals, hasManagedSRACLs := role.HasManagedACLs(), role.HasManagedRole(), role.HasManagedPrincipals(), role.HasManagedSRACLs()
+	hasManagedACLs, hasManagedRole, hasManagedPrincipals := role.HasManagedACLs(), role.HasManagedRole(), role.HasManagedPrincipals()
 	shouldManageACLs, shouldManageRole, shouldManagePrincipals := role.ShouldManageACLs(), role.ShouldManageRole(), role.ShouldManagePrincipals()
 
 	// Get current and previous effective role names to detect renames
 	currentEffectiveName := role.GetEffectiveRoleName()
 	previousEffectiveName := role.Status.EffectiveRoleName
+
+	var srSyncWarning error
 
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
@@ -78,6 +80,8 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
+		} else if srSyncWarning != nil {
+			syncCondition = redpandav1alpha2.ResourcePartiallySyncedCondition(role.Name, srSyncWarning)
 		} else {
 			syncCondition = redpandav1alpha2.ResourceSyncedCondition(role.Name)
 		}
@@ -86,7 +90,6 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithObservedGeneration(role.Generation).
 			WithManagedRole(hasManagedRole).
 			WithManagedACLs(hasManagedACLs).
-			WithManagedSRACLs(hasManagedSRACLs).
 			WithManagedPrincipals(hasManagedPrincipals).
 			WithEffectiveRoleName(currentEffectiveName).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
@@ -117,9 +120,11 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 		// Sync new ACLs first
 		if shouldManageACLs {
 			if err := syncer.Sync(ctx, role); err != nil {
-				return createPatch(errors.Wrap(err, "syncing new ACLs"))
+				if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+					return createPatch(errors.Wrap(err, "syncing new ACLs"))
+				}
+				srSyncWarning = err
 			}
-			hasManagedSRACLs = role.ShouldManageSRACLs() && syncer.HasSRClient()
 		}
 
 		// Clean up old resources
@@ -176,10 +181,12 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, role); err != nil {
-			return createPatch(err)
+			if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+				return createPatch(err)
+			}
+			srSyncWarning = err
 		}
 		hasManagedACLs = true
-		hasManagedSRACLs = role.ShouldManageSRACLs() && syncer.HasSRClient()
 	}
 
 	if !shouldManageACLs && hasManagedACLs {
@@ -187,7 +194,6 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 		hasManagedACLs = false
-		hasManagedSRACLs = false
 	}
 
 	return createPatch(nil)
