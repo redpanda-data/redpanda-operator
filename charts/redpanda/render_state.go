@@ -59,6 +59,10 @@ type RenderState struct {
 	// CloudEnvironment is the Cloud environment (Azure, GCP, AWS) that this is deployed
 	// in, if not set, will attempt to be determined via the Kubernetes version string
 	CloudEnvironment string
+
+	// OperatorVersion is the version of the operator deploying this chart.
+	// When set, it overrides Chart.Version for metrics reporting.
+	OperatorVersion string
 }
 
 // FetchBootstrapUser attempts to locate an existing bootstrap user secret in

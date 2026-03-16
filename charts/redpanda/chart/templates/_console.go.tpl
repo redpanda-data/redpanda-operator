@@ -10,7 +10,22 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $consoleState := (get (fromJson (include "chart.DotToState" (dict "a" (list (index $state.Dot.Subcharts "console"))))) "r") -}}
+{{- $consoleDot := (index $state.Dot.Subcharts "console") -}}
+{{- $consoleState := (get (fromJson (include "chart.DotToState" (dict "a" (list $consoleDot)))) "r") -}}
+{{- $kubeVersion := $consoleDot.Capabilities.KubeVersion.Version -}}
+{{- $_ := (set $consoleState "Metrics" (mustMergeOverwrite (dict "ViaOperator" false "CloudEnvironment" "" "KubernetesVersion" "" "ChartVersion" "" "ClusterID" "") (dict "KubernetesVersion" $kubeVersion "ChartVersion" $consoleDot.Chart.Version))) -}}
+{{- $_42_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
+{{- $namespace := (index $_42_namespace_ok 0) -}}
+{{- $ok := (index $_42_namespace_ok 1) -}}
+{{- if $ok -}}
+{{- $_ := (set $consoleState.Metrics "ClusterID" (toString $namespace.metadata.uid)) -}}
+{{- end -}}
+{{- if (contains "-gke" $kubeVersion) -}}
+{{- $_ := (set $consoleState.Metrics "CloudEnvironment" "GCP") -}}
+{{- else -}}{{- if (contains "-eks" $kubeVersion) -}}
+{{- $_ := (set $consoleState.Metrics "CloudEnvironment" "AWS") -}}
+{{- end -}}
+{{- end -}}
 {{- $staticCfg := (get (fromJson (include "redpanda.RenderState.AsStaticConfigSource" (dict "a" (list $state)))) "r") -}}
 {{- $overlay := (get (fromJson (include "console.StaticConfigurationSourceToPartialRenderValues" (dict "a" (list $staticCfg)))) "r") -}}
 {{- $_ := (set $consoleState.Values.configmap "create" true) -}}

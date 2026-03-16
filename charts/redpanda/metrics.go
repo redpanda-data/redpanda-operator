@@ -51,6 +51,11 @@ func MetricsEnvironmentVariables(state *RenderState, pool Pool) []corev1.EnvVar 
 	if state.ViaOperator {
 		deploymentType = deploymentTypeOperator
 	}
+	chartVersion := state.Dot.Chart.Version
+	if state.OperatorVersion != "" {
+		chartVersion = state.OperatorVersion
+	}
+
 	envvars := []corev1.EnvVar{{
 		Name:  MetricsEnvVarKubernetesVersion,
 		Value: state.Dot.Capabilities.KubeVersion.Version,
@@ -59,7 +64,7 @@ func MetricsEnvironmentVariables(state *RenderState, pool Pool) []corev1.EnvVar 
 		Value: deploymentType,
 	}, {
 		Name:  MetricsEnvVarChartVersion,
-		Value: state.Dot.Chart.Version,
+		Value: chartVersion,
 	}, {
 		Name:  MetricsEnvVarOperatorVersion,
 		Value: fmt.Sprintf(`%s:%s`, pool.Statefulset.SideCars.Image.Repository, pool.Statefulset.SideCars.Image.Tag),

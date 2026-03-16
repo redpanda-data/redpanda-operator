@@ -11,7 +11,10 @@
 package redpanda
 
 import (
+	"strings"
+
 	"github.com/redpanda-data/common-go/kube"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
@@ -27,7 +30,24 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 		return nil
 	}
 
-	consoleState := consolechart.DotToState(state.Dot.Subcharts["console"])
+	consoleDot := state.Dot.Subcharts["console"]
+	consoleState := consolechart.DotToState(consoleDot)
+
+	// Populate metrics state from the subchart's capabilities.
+	kubeVersion := consoleDot.Capabilities.KubeVersion.Version
+	consoleState.Metrics = console.MetricsState{
+		KubernetesVersion: kubeVersion,
+		ChartVersion:      consoleDot.Chart.Version,
+	}
+	namespace, ok := helmette.Lookup[corev1.Namespace](consoleDot, "", "kube-system")
+	if ok {
+		consoleState.Metrics.ClusterID = string(namespace.ObjectMeta.UID)
+	}
+	if strings.Contains(kubeVersion, "-gke") {
+		consoleState.Metrics.CloudEnvironment = "GCP"
+	} else if strings.Contains(kubeVersion, "-eks") {
+		consoleState.Metrics.CloudEnvironment = "AWS"
+	}
 
 	staticCfg := state.AsStaticConfigSource()
 	overlay := console.StaticConfigurationSourceToPartialRenderValues(&staticCfg)

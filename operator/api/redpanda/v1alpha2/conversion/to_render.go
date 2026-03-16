@@ -22,6 +22,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 )
 
 // V2Defaults contains the default values for the v2 CRD conversion.
@@ -46,6 +47,9 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 	}
 
 	return redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
+		state.ViaOperator = true
+		state.OperatorVersion = version.Version
+
 		if err := convertV2Fields(state, &state.Values, spec); err != nil {
 			return err
 		}

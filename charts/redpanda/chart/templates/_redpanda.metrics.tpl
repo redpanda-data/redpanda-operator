@@ -21,10 +21,14 @@
 {{- if $state.ViaOperator -}}
 {{- $deploymentType = "operator" -}}
 {{- end -}}
-{{- $envvars := (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_VERSION" "value" $state.Dot.Capabilities.KubeVersion.Version)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE" "value" $deploymentType)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_CHART_VERSION" "value" $state.Dot.Chart.Version)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION" "value" (printf `%s:%s` $pool.Statefulset.sideCars.image.repository $pool.Statefulset.sideCars.image.tag)))) -}}
-{{- $_69_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
-{{- $namespace := (index $_69_namespace_ok 0) -}}
-{{- $ok := (index $_69_namespace_ok 1) -}}
+{{- $chartVersion := $state.Dot.Chart.Version -}}
+{{- if (ne $state.OperatorVersion "") -}}
+{{- $chartVersion = $state.OperatorVersion -}}
+{{- end -}}
+{{- $envvars := (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_VERSION" "value" $state.Dot.Capabilities.KubeVersion.Version)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE" "value" $deploymentType)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_CHART_VERSION" "value" $chartVersion)) (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION" "value" (printf `%s:%s` $pool.Statefulset.sideCars.image.repository $pool.Statefulset.sideCars.image.tag)))) -}}
+{{- $_74_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
+{{- $namespace := (index $_74_namespace_ok 0) -}}
+{{- $ok := (index $_74_namespace_ok 1) -}}
 {{- if $ok -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_CLUSTER_ID" "value" (toString $namespace.metadata.uid))))) -}}
 {{- end -}}

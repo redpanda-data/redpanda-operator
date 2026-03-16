@@ -160,7 +160,7 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 								},
 							},
 							Resources: state.Values.Resources,
-							Env:       consoleContainerEnv(state),
+							Env:       append(consoleContainerEnv(state), MetricsEnvironmentVariables(state)...),
 							EnvFrom:   state.Values.ExtraEnvFrom,
 						},
 					}, state.Values.ExtraContainers...),

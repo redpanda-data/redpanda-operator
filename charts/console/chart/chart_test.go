@@ -221,7 +221,9 @@ func TestGoHelmEquivalence(t *testing.T) {
 		},
 	}
 
-	goObjs, err := Chart.Render(nil, helmette.Release{
+	goObjs, err := Chart.WithSyntheticKubeVersion(&helmette.KubeVersion{
+		Version: "v1.99.0",
+	}).Render(nil, helmette.Release{
 		Name:      "gotohelm",
 		Namespace: "mynamespace",
 		Service:   "Helm",
