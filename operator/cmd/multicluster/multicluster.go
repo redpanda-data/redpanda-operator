@@ -66,6 +66,12 @@ type MulticlusterOptions struct {
 	WebhookCertPath        string
 	WebhookKeyPath         string
 
+	LeaderElectionID            string
+	LeaderElectionNamespace     string
+	LeaderElectionLeaseDuration time.Duration
+	LeaderElectionRenewDeadline time.Duration
+	LeaderElectionRetryPeriod   time.Duration
+
 	peersStrings []string
 
 	LicenseFilePath string
@@ -153,6 +159,11 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.MetricsCertPath, "metrics-cert-path", "", "The path to the metrics server certificate file, implies secure serving of metrics")
 	cmd.Flags().StringVar(&o.MetricsKeyPath, "metrics-key-path", "", "The path to the metrics server key file, implies secure serving of metrics.")
 	cmd.Flags().StringVar(&o.LicenseFilePath, "license-file-path", "", "The path to the Redpanda License.")
+	cmd.Flags().StringVar(&o.LeaderElectionID, "local-leader-election-id", "redpanda-multicluster-raft-leader", "Name of the K8s Lease resource for local leader election")
+	cmd.Flags().StringVar(&o.LeaderElectionNamespace, "local-leader-election-namespace", "", "Namespace for the local leader election Lease (defaults to pod namespace)")
+	cmd.Flags().DurationVar(&o.LeaderElectionLeaseDuration, "local-leader-election-lease-duration", 0, "Duration of the local leader election lease (0 uses controller-runtime default of 15s)")
+	cmd.Flags().DurationVar(&o.LeaderElectionRenewDeadline, "local-leader-election-renew-deadline", 0, "Renew deadline for the local leader election lease (0 uses controller-runtime default of 10s)")
+	cmd.Flags().DurationVar(&o.LeaderElectionRetryPeriod, "local-leader-election-retry-period", 0, "Retry period for the local leader election lease (0 uses controller-runtime default of 2s)")
 }
 
 func Command() *cobra.Command {
@@ -215,6 +226,13 @@ func Run(
 		KubeconfigNamespace: opts.KubeconfigNamespace,
 		KubeconfigName:      opts.KubeconfigName,
 		HealthProbeAddress:  opts.HealthProbeBindAddress,
+		LocalLeaderElection: &multicluster.LocalLeaderElectionConfig{
+			ID:            opts.LeaderElectionID,
+			Namespace:     opts.LeaderElectionNamespace,
+			LeaseDuration: opts.LeaderElectionLeaseDuration,
+			RenewDeadline: opts.LeaderElectionRenewDeadline,
+			RetryPeriod:   opts.LeaderElectionRetryPeriod,
+		},
 	}
 
 	// Disabling http/2 is to

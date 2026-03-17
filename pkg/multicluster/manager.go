@@ -17,11 +17,18 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 )
 
+// Manager extends the multicluster manager interface with raft leader
+// awareness, dynamic cluster management, and health checking.
 type Manager interface {
 	mcmanager.Manager
+	// GetLeader returns the name of the current raft leader cluster, or
+	// empty if no leader has been elected yet.
 	GetLeader() string
+	// GetClusterNames returns the names of all clusters known to this manager.
 	GetClusterNames() []string
-	// the context passed here, when canceled will stop the cluster
+	// AddOrReplaceCluster registers or replaces a cluster. Cancelling ctx
+	// stops the cluster.
 	AddOrReplaceCluster(ctx context.Context, clusterName string, cl cluster.Cluster) error
+	// Health reports whether the manager's raft group is healthy.
 	Health(req *http.Request) error
 }
