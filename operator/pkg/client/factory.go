@@ -15,6 +15,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/redpanda-data/console/backend/pkg/config"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
@@ -384,7 +385,36 @@ func (c *Factory) ACLsForCluster(ctx context.Context, obj redpandav1alpha2.Clust
 		return nil, err
 	}
 
-	return acls.NewSyncer(kafkaClient), nil
+	srClient, err := c.SchemaRegistryACLClientForCluster(ctx, obj, clusterName)
+	if err != nil {
+		kafkaClient.Close()
+		return nil, err
+	}
+
+	return acls.NewSyncer(kafkaClient, srClient), nil
+}
+
+// SchemaRegistryACLClient builds an SR ACL client for the given object. Returns (nil, nil)
+// when Schema Registry is not configured for the cluster.
+func (c *Factory) SchemaRegistryACLClient(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (rpsr.ACLClient, error) {
+	return c.SchemaRegistryACLClientForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+// SchemaRegistryACLClientForCluster builds an SR ACL client for the given object and cluster. Returns (nil, nil)
+// when Schema Registry is not configured for the cluster.
+func (c *Factory) SchemaRegistryACLClientForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (rpsr.ACLClient, error) {
+	srCl, err := c.SchemaRegistryClientForCluster(ctx, obj, clusterName)
+	if isSchemaRegistryNotConfigured(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return rpsr.NewClient(srCl)
+}
+
+func isSchemaRegistryNotConfigured(err error) bool {
+	return errors.Is(err, ErrInvalidSchemaRegistryClientObject) || errors.Is(err, ErrEmptyURLList)
 }
 
 func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {

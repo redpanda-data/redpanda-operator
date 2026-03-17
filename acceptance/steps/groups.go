@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,6 +100,16 @@ func groupShouldHaveNACLsForTopicPatternInCluster(ctx context.Context, t framewo
 		}
 	}
 	require.Equal(t, count, matched, "Group %q should have %d ACLs for topic pattern %q, got %d", group, count, pattern, matched)
+
+	// Also check SR ACLs if the group has subject-type ACL rules
+	if groupObject.Spec.Authorization != nil && hasSubjectACLRules(groupObject.Spec.Authorization.ACLs) {
+		srClient := clients.SchemaRegistryACLs(ctx)
+		srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+		if err != nil {
+			t.Fatalf("Failed to list SR ACLs for group %q (principal %q): %v", group, principal, err)
+		}
+		require.NotEmpty(t, srACLs, "Group %q should have SR ACLs", group)
+	}
 }
 
 func groupShouldHaveACLsInCluster(ctx context.Context, t framework.TestingT, group, version, cluster string) {
@@ -117,7 +128,17 @@ func groupShouldHaveACLsInCluster(ctx context.Context, t framework.TestingT, gro
 	if err != nil {
 		t.Fatalf("Failed to list ACLs for group %q (principal %q): %v", group, principal, err)
 	}
-	require.NotEmpty(t, rules, "Group %q should have ACLs", group)
+	require.NotEmpty(t, rules, "Group %q should have Kafka ACLs", group)
+
+	// Also check SR ACLs if the group has subject-type ACL rules
+	if groupObject.Spec.Authorization != nil && hasSubjectACLRules(groupObject.Spec.Authorization.ACLs) {
+		srClient := clients.SchemaRegistryACLs(ctx)
+		srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+		if err != nil {
+			t.Fatalf("Failed to list SR ACLs for group %q (principal %q): %v", group, principal, err)
+		}
+		require.NotEmpty(t, srACLs, "Group %q should have SR ACLs", group)
+	}
 }
 
 func thereShouldBeNoACLsForGroupInCluster(ctx context.Context, t framework.TestingT, group, version, cluster string) {
@@ -135,5 +156,16 @@ func thereShouldBeNoACLsForGroupInCluster(ctx context.Context, t framework.Testi
 			return false
 		}
 		return len(rules) == 0
-	}, 60*time.Second, 2*time.Second, "Group %q should have no ACLs", group)
+	}, 60*time.Second, 2*time.Second, "Group %q should have no Kafka ACLs", group)
+
+	// Also check SR ACLs are cleaned up
+	srClient := clients.SchemaRegistryACLs(ctx)
+	require.Eventually(t, func() bool {
+		srACLs, err := srClient.ListACLs(ctx, &rpsr.ACL{Principal: principal})
+		if err != nil {
+			t.Logf("Error listing SR ACLs for group %q: %v", group, err)
+			return false
+		}
+		return len(srACLs) == 0
+	}, 60*time.Second, 2*time.Second, "Group %q should have no SR ACLs", group)
 }

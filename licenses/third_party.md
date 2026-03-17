@@ -236,7 +236,7 @@ run `task generate:third-party-licenses-list`
 | github.com/twmb/franz-go/pkg/kadm | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/kadm/v1.17.1/pkg/kadm/LICENSE) |
 | github.com/twmb/franz-go/pkg/kmsg | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/kmsg/v1.12.0/pkg/kmsg/LICENSE) |
 | github.com/twmb/franz-go/pkg/sasl/kerberos | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/sasl/kerberos/v1.1.0/pkg/sasl/kerberos/LICENSE) |
-| github.com/twmb/franz-go/pkg/sr | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/sr/v1.5.0/pkg/sr/LICENSE) |
+| github.com/twmb/franz-go/pkg/sr | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/sr/v1.7.0/pkg/sr/LICENSE) |
 | github.com/twmb/tlscfg | [BSD-3-Clause](https://github.com/twmb/tlscfg/blob/v1.2.1/LICENSE) |
 | github.com/virtuald/go-ordered-json | [BSD-3-Clause](https://github.com/virtuald/go-ordered-json/blob/b18e6e673d74/LICENSE) |
 | github.com/wk8/go-ordered-map/v2 | [Apache-2.0](https://github.com/wk8/go-ordered-map/blob/v2.1.8/LICENSE) |
@@ -277,7 +277,7 @@ run `task generate:third-party-licenses-list`
 | golang.org/x/mod/semver | [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.33.0:LICENSE) |
 | golang.org/x/net | [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.50.0:LICENSE) |
 | golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.35.0:LICENSE) |
-| golang.org/x/sync | [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.19.0:LICENSE) |
+| golang.org/x/sync | [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.20.0:LICENSE) |
 | golang.org/x/sys | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.41.0:LICENSE) |
 | golang.org/x/term | [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.40.0:LICENSE) |
 | golang.org/x/text | [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.34.0:LICENSE) |

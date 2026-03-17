@@ -12,6 +12,7 @@ package redpanda
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -56,12 +57,16 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 	shouldManageACLs, shouldManageUser := user.ShouldManageACLs(), user.ShouldManageUser()
 
+	var srSyncWarning error
+
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.User(user.Name, user.Namespace)
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
+		} else if srSyncWarning != nil {
+			syncCondition = redpandav1alpha2.ResourcePartiallySyncedCondition(user.Name, srSyncWarning)
 		} else {
 			syncCondition = redpandav1alpha2.ResourceSyncedCondition(user.Name)
 		}
@@ -98,7 +103,10 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, user); err != nil {
-			return createPatch(err)
+			if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+				return createPatch(err)
+			}
+			srSyncWarning = err
 		}
 		hasManagedACLs = true
 	}

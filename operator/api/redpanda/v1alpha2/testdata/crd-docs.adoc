@@ -112,7 +112,7 @@ ACLOperation specifies the type of operation for an ACL.
 | *`name`* __string__ |  | * | 
 | *`patternType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-patterntype[$$PatternType$$]__ |  |  | Enum: [literal prefixed] +
 
-| *`resourceType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetype[$$ResourceType$$]__ |  |  | Enum: [topic group cluster transactionalId] +
+| *`resourceType`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resourcetype[$$ResourceType$$]__ |  |  | Enum: [topic group cluster transactionalId subject registry] +
 
 |===
 
@@ -138,7 +138,7 @@ ACLResourceSpec indicates the resource for which given ACL rule applies.
 - topic +
 - group +
 - cluster +
-- transactionalId + |  | Enum: [topic group cluster transactionalId] +
+- transactionalId + |  | Enum: [topic group cluster transactionalId subject registry] +
 
 | *`name`* __string__ | Name of resource for which given ACL rule applies. If using type `cluster` this must not be specified. +
 Can be combined with patternType field to use prefix pattern. + |  | 
@@ -191,7 +191,7 @@ If not set, it defaults to *, allowing or denying the action from any host. + | 
 - ClusterAction +
 - Create +
 - AlterConfigs +
-- DescribeConfigs + |  | MaxItems: 11 +
+- DescribeConfigs + |  | MaxItems: 12 +
 MinItems: 1 +
 
 |===
@@ -3041,7 +3041,7 @@ _Underlying type:_ _string_
 ResourceType specifies the type of resource an ACL is applied to.
 
 .Validation:
-- Enum: [topic group cluster transactionalId]
+- Enum: [topic group cluster transactionalId subject registry]
 
 .Appears In:
 ****

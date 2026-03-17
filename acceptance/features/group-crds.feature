@@ -9,7 +9,8 @@ Feature: Group CRDs
     """
 # tag::manage-group-acls[]
     # In this example manifest, ACLs are created for an OIDC group called "engineering"
-    # in a cluster called "sasl". The group is granted read access to topics matching "team-".
+    # in a cluster called "sasl". The group is granted read access to topics matching "team-"
+    # and read access to Schema Registry subjects matching "team-".
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Group
@@ -24,6 +25,12 @@ Feature: Group CRDs
           - type: allow
             resource:
               type: topic
+              name: team-
+              patternType: prefixed
+            operations: [Read, Describe]
+          - type: allow
+            resource:
+              type: subject
               name: team-
               patternType: prefixed
             operations: [Read, Describe]
@@ -70,6 +77,11 @@ Feature: Group CRDs
             resource:
               type: topic
               name: temp-topic
+            operations: [Read]
+          - type: allow
+            resource:
+              type: subject
+              name: temp-subject
             operations: [Read]
     """
     And group "temp-group" is successfully synced

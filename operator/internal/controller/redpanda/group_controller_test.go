@@ -93,6 +93,36 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 			},
 			expectedCondition: environment.ClientErrorCondition,
 		},
+		"partial sync - SR ACLs without SR configured": {
+			mutate: func(group *redpandav1alpha2.Group) {
+				group.Spec.ClusterSource = environment.ClusterSourceNoSchemaRegistry
+				group.Spec.Authorization = &redpandav1alpha2.GroupAuthorizationSpec{
+					ACLs: []redpandav1alpha2.ACLRule{
+						{
+							Type: redpandav1alpha2.ACLTypeAllow,
+							Resource: redpandav1alpha2.ACLResourceSpec{
+								Type: redpandav1alpha2.ResourceTypeTopic,
+								Name: "test-topic",
+							},
+							Operations: []redpandav1alpha2.ACLOperation{
+								redpandav1alpha2.ACLOperationRead,
+							},
+						},
+						{
+							Type: redpandav1alpha2.ACLTypeAllow,
+							Resource: redpandav1alpha2.ACLResourceSpec{
+								Type: redpandav1alpha2.ResourceTypeSchemaRegistrySubject,
+								Name: "test-subject",
+							},
+							Operations: []redpandav1alpha2.ACLOperation{
+								redpandav1alpha2.ACLOperationRead,
+							},
+						},
+					},
+				}
+			},
+			expectedCondition: environment.PartiallySyncedCondition,
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			group := baseGroup.DeepCopy()

@@ -157,6 +157,8 @@ spec:
                               - group
                               - cluster
                               - transactionalId
+                              - subject
+                              - registry
                               type: string
                           required:
                           - name
