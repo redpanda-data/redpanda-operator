@@ -29,7 +29,7 @@ kind v0.31.0 go1.25.7
 
 -- kubectl --
 # kubectl version --client=true
-Client Version: v1.35.0
+Client Version: v1.35.2
 Kustomize Version: v5.7.1
 
 -- kustomize --

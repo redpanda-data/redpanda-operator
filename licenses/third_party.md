@@ -272,7 +272,7 @@ run `task generate:third-party-licenses-list`
 | golang.org/x/net | [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.50.0:LICENSE) |
 | golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.35.0:LICENSE) |
 | golang.org/x/sync | [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.20.0:LICENSE) |
-| golang.org/x/sys | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.41.0:LICENSE) |
+| golang.org/x/sys/execabs | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.41.0:LICENSE) |
 | golang.org/x/term | [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.40.0:LICENSE) |
 | golang.org/x/text | [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.34.0:LICENSE) |
 | golang.org/x/time/rate | [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.14.0:LICENSE) |

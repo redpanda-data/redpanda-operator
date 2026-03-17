@@ -115,7 +115,7 @@ func New(t *testing.T, options Options) *Env {
 		require.NoError(t, host.ImportImage(image))
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background()) //nolint:gosec
 
 	var cluster *vcluster.Cluster
 	config := host.RESTConfig()
