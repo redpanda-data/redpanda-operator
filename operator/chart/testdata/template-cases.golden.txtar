@@ -94,6 +94,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -288,6 +290,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -848,6 +852,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -1042,6 +1048,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -1410,6 +1418,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -1604,6 +1614,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -2191,6 +2203,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -2385,6 +2399,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -2773,6 +2789,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -2967,6 +2985,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -3540,6 +3560,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -3734,6 +3756,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -4108,6 +4132,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -4460,6 +4486,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -5078,6 +5106,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -5430,6 +5460,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -5903,6 +5935,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -6097,6 +6131,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -6671,6 +6707,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -6865,6 +6903,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -7237,6 +7277,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -7431,6 +7473,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -8043,6 +8087,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -8237,6 +8283,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -8697,6 +8745,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -8891,6 +8941,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -9549,6 +9601,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -9743,6 +9797,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -10236,6 +10292,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -10430,6 +10488,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -11019,6 +11079,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -11213,6 +11275,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -11588,6 +11652,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -11782,6 +11848,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -12361,6 +12429,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -12555,6 +12625,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -12932,6 +13004,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -13126,6 +13200,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -13738,6 +13814,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -13932,6 +14010,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -14307,6 +14387,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -14501,6 +14583,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -14917,6 +15001,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -15111,6 +15197,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -15500,6 +15588,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -15694,6 +15784,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -16279,6 +16371,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -16473,6 +16567,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -16866,6 +16962,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -17218,6 +17316,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -17850,6 +17950,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -18202,6 +18304,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -18586,6 +18690,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -18780,6 +18886,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -19244,6 +19352,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -19438,6 +19548,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -19801,6 +19913,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -19995,6 +20109,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -20582,6 +20698,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -20776,6 +20894,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -21159,6 +21279,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -21353,6 +21475,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -21933,6 +22057,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -22127,6 +22253,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -22869,6 +22997,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -23063,6 +23193,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -23858,6 +23990,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -24052,6 +24186,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -24436,6 +24572,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -24630,6 +24768,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -25249,6 +25389,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -25443,6 +25585,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -25818,6 +25962,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -26170,6 +26316,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -26748,6 +26896,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -27100,6 +27250,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -27845,6 +27997,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -28039,6 +28193,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -28768,6 +28924,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -28962,6 +29120,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -29339,6 +29499,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -29691,6 +29853,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -30508,6 +30672,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -30860,6 +31026,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -31243,6 +31411,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -31437,6 +31607,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -32029,6 +32201,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -32223,6 +32397,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -32615,6 +32791,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -32967,6 +33145,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -33708,6 +33888,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -34060,6 +34242,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -34787,6 +34971,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -34981,6 +35167,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -35761,6 +35949,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -35955,6 +36145,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -36749,6 +36941,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -36943,6 +37137,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -37750,6 +37946,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -37944,6 +38142,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -38338,6 +38538,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -38532,6 +38734,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -39324,6 +39528,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -39518,6 +39724,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -39903,6 +40111,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -40255,6 +40465,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -40918,6 +41130,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -41270,6 +41484,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -42335,6 +42551,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -42529,6 +42747,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -43505,6 +43725,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -43699,6 +43921,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -44193,6 +44417,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -44387,6 +44613,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -44998,6 +45226,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -45192,6 +45422,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -45729,6 +45961,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -45923,6 +46157,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -46967,6 +47203,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -47161,6 +47399,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -49100,6 +49340,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -49452,6 +49694,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -50440,6 +50684,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -50792,6 +51038,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -52131,6 +52379,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -52325,6 +52575,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -53211,6 +53463,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -53405,6 +53659,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -55470,6 +55726,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -55664,6 +55922,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -56789,6 +57049,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -56983,6 +57245,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -57476,6 +57740,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -57670,6 +57936,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -58832,6 +59100,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -59026,6 +59296,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -60183,6 +60455,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -60377,6 +60651,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -61253,6 +61529,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -61447,6 +61725,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -62530,6 +62810,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -62882,6 +63164,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -63838,6 +64122,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -64190,6 +64476,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -64704,6 +64992,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -64898,6 +65188,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -65824,6 +66116,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -66018,6 +66312,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -66542,6 +66838,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -66894,6 +67192,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -67904,6 +68204,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -68256,6 +68558,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -68749,6 +69053,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -68943,6 +69249,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -70012,6 +70320,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -70206,6 +70516,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -70702,6 +71014,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -70896,6 +71210,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -71499,6 +71815,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -71693,6 +72011,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -72152,6 +72472,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -72346,6 +72668,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -72949,6 +73273,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -73143,6 +73469,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -73601,6 +73929,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -73795,6 +74125,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -74354,6 +74686,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -74548,6 +74882,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -74916,6 +75252,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -75110,6 +75448,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -75686,6 +76026,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -75880,6 +76222,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -76248,6 +76592,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -76442,6 +76788,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -77001,6 +77349,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -77195,6 +77545,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -77563,6 +77915,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -77757,6 +78111,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -78316,6 +78672,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -78510,6 +78868,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -78878,6 +79238,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -79072,6 +79434,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -79639,6 +80003,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -79833,6 +80199,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -80201,6 +80569,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -80395,6 +80765,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -80962,6 +81334,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -81156,6 +81530,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -81524,6 +81900,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -81728,6 +82106,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -82351,6 +82731,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -82555,6 +82937,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -83014,6 +83398,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -83208,6 +83594,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -83898,6 +84286,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -84092,6 +84482,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -84460,6 +84852,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -84654,6 +85048,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -85220,6 +85616,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -85414,6 +85812,8 @@ rules:
   - namespaces
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:

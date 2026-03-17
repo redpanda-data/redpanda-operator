@@ -100,7 +100,7 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;create;update;patch;delete;list;watch
 // +kubebuilder:rbac:groups=cert-manager.io,resources=issuers,verbs=get;create;update;patch;delete;list;watch
 // +kubebuilder:rbac:groups="monitoring.coreos.com",resources=podmonitors;servicemonitors,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get
+// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 
 // Console chart
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
