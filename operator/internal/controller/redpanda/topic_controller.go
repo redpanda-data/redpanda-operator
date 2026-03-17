@@ -119,9 +119,10 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return result, err
 }
 
-func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
+
 	r := &TopicReconciler{
 		Client:        c,
 		Factory:       internalclient.NewFactory(config, c, expander),
@@ -148,7 +149,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic)
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
