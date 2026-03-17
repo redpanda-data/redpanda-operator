@@ -182,6 +182,7 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 		"--kubernetes-api-address":    values.Multicluster.KubernetesAPIExternalAddress,
 		"--kubeconfig-namespace":      dot.Release.Namespace,
 		"--kubeconfig-name":           Fullname(dot),
+		"--enable-v2-nodepools":       "true",
 	}
 
 	if values.Webhook.Enabled {
