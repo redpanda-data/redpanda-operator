@@ -51,6 +51,18 @@ type RenderState struct {
 	// RenderState.
 	// TODO: remove this eventually once we get templating figured out.
 	Dot *helmette.Dot
+
+	// ViaOperator is a flag that says that this rendering function is being
+	// called via an operator.
+	ViaOperator bool
+
+	// CloudEnvironment is the Cloud environment (Azure, GCP, AWS) that this is deployed
+	// in, if not set, will attempt to be determined via the Kubernetes version string
+	CloudEnvironment string
+
+	// OperatorVersion is the version of the operator deploying this chart.
+	// When set, it overrides Chart.Version for metrics reporting.
+	OperatorVersion string
 }
 
 // FetchBootstrapUser attempts to locate an existing bootstrap user secret in

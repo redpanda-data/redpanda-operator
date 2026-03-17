@@ -107,8 +107,8 @@ type PartialExternalConfig struct {
 }
 
 type PartialLogging struct {
-	LogLevel    *string "json:\"logLevel,omitempty\" jsonschema:\"required,pattern=^(error|warn|info|debug|trace)$\""
-	UseageStats *struct {
+	LogLevel   *string "json:\"logLevel,omitempty\" jsonschema:\"required,pattern=^(error|warn|info|debug|trace)$\""
+	UsageStats *struct {
 		Enabled   *bool   "json:\"enabled,omitempty\" jsonschema:\"required\""
 		ClusterID *string "json:\"clusterId,omitempty\""
 	} "json:\"usageStats,omitempty\" jsonschema:\"required\""

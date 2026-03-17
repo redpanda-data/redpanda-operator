@@ -1206,7 +1206,9 @@ func TestGoHelmEquivalence(t *testing.T) {
 				},
 			}
 
-			goObjs, err := redpanda.Chart.Render(nil, helmette.Release{
+			goObjs, err := redpanda.Chart.WithSyntheticKubeVersion(&helmette.KubeVersion{
+				Version: "v1.99.0-gke",
+			}).Render(nil, helmette.Release{
 				Name:      "gotohelm",
 				Namespace: "mynamespace",
 				Service:   "Helm",
@@ -1214,9 +1216,10 @@ func TestGoHelmEquivalence(t *testing.T) {
 			require.NoError(t, err)
 
 			rendered, err := client.Template(context.Background(), chartDir, helm.TemplateOptions{
-				Name:      "gotohelm",
-				Namespace: "mynamespace",
-				Values:    values,
+				Name:        "gotohelm",
+				Namespace:   "mynamespace",
+				Values:      values,
+				KubeVersion: "v1.99.0-gke",
 			})
 			require.NoError(t, err)
 

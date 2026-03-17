@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
@@ -29,12 +30,27 @@ import (
 
 type RenderFunc func(*helmette.Dot) []kube.Object
 
+// capabilitiesCache holds lazily resolved Kubernetes capabilities. It is
+// allocated once per top-level chart and shared (via pointer) with shallow
+// copies created for subcharts in Load, avoiding a copied-lock bug.
+type capabilitiesCache struct {
+	// mu guards cached and capabilities. We use a mutex rather than sync.Once
+	// so that a transient failure (e.g. Dot() called with an empty rest.Config)
+	// does not permanently cache the error.
+	mu     sync.Mutex
+	cached bool
+	caps   helmette.Capabilities
+}
+
 type GoChart struct {
+	kubeversion   *helmette.KubeVersion
 	metadata      chart.Metadata
 	defaultValues []byte
 	renderFunc    RenderFunc
 	dependencies  []Dependency
 	fs            fs.FS
+
+	capCache *capabilitiesCache
 }
 
 // MustLoad delegates to [Load] but panics upon any errors.
@@ -121,6 +137,7 @@ func Load(f fs.FS, render RenderFunc, subcharts ...*GoChart) (*GoChart, error) {
 		renderFunc:    render,
 		dependencies:  deps,
 		fs:            f,
+		capCache:      &capabilitiesCache{},
 	}, nil
 }
 
@@ -213,6 +230,45 @@ func (c *GoChart) LoadValues(values any) (helmette.Values, error) {
 	return merged, nil
 }
 
+// WithSyntheticKubeVersion allows a caller to override the KubeVersion passed
+// off to the underlying go-rendered chart.
+func (c *GoChart) WithSyntheticKubeVersion(version *helmette.KubeVersion) *GoChart {
+	return &GoChart{
+		kubeversion:   version,
+		metadata:      c.metadata,
+		defaultValues: c.defaultValues,
+		renderFunc:    c.renderFunc,
+		dependencies:  c.dependencies,
+		fs:            c.fs,
+		capCache:      c.capCache,
+	}
+}
+
+// resolveCapabilities returns cached capabilities if available, otherwise
+// queries the Kubernetes API server and caches the result on success. Failures
+// are not cached so that a transient error (e.g. an empty rest.Config from a
+// sidecar context) does not permanently poison the cache for the main
+// reconciler. If resolution fails, empty capabilities are returned because
+// capabilities are only used for non-critical metadata (e.g. metrics env vars)
+// and should not block reconciliation.
+func (c *GoChart) resolveCapabilities(cfg *kube.RESTConfig) helmette.Capabilities {
+	c.capCache.mu.Lock()
+	defer c.capCache.mu.Unlock()
+
+	if c.capCache.cached {
+		return c.capCache.caps
+	}
+
+	caps, err := helmette.NewCapabilities(cfg)
+	if err != nil {
+		return helmette.Capabilities{}
+	}
+
+	c.capCache.caps = caps
+	c.capCache.cached = true
+	return caps
+}
+
 // Dot constructs a [helmette.Dot] for this chart and any dependencies it has,
 // taking into consideration the dependencies' condition.
 func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any) (*helmette.Dot, error) {
@@ -243,8 +299,13 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		}
 
 		// 1. Load up the subchart's values with our subchart's stanza from the
-		// parent as a base.
-		subchartDot, err := dep.GoChart.Dot(cfg, release, depValues)
+		// parent as a base. Propagate any synthetic KubeVersion override to
+		// the subchart so it sees the same capabilities as the parent.
+		depChart := dep.GoChart
+		if c.kubeversion != nil {
+			depChart = depChart.WithSyntheticKubeVersion(c.kubeversion)
+		}
+		subchartDot, err := depChart.Dot(cfg, release, depValues)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -279,13 +340,19 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		return nil, errors.WithStack(err)
 	}
 
+	capabilities := c.resolveCapabilities(cfg)
+	if c.kubeversion != nil {
+		capabilities.KubeVersion = *c.kubeversion
+	}
+
 	return &helmette.Dot{
-		KubeConfig: cfg,
-		Release:    release,
-		Subcharts:  subcharts,
-		Values:     parentValues,
-		Templates:  templates,
-		Files:      helmette.NewFiles(c.fs),
+		KubeConfig:   cfg,
+		Release:      release,
+		Subcharts:    subcharts,
+		Values:       parentValues,
+		Templates:    templates,
+		Files:        helmette.NewFiles(c.fs),
+		Capabilities: capabilities,
 		Chart: helmette.Chart{
 			Name:       c.metadata.Name,
 			Version:    c.metadata.Version,

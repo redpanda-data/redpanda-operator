@@ -58,12 +58,28 @@ func must(err error) {
 	}
 }
 
+// MetricsState contains pre-computed values for metrics telemetry environment
+// variables injected into the Console container.
+type MetricsState struct {
+	// ViaOperator indicates this rendering is called from the operator.
+	ViaOperator bool
+	// CloudEnvironment is the Cloud environment (Azure, GCP, AWS).
+	CloudEnvironment string
+	// KubernetesVersion is the full Kubernetes server version string.
+	KubernetesVersion string
+	// ChartVersion is the Helm chart version.
+	ChartVersion string
+	// ClusterID is the UID of the kube-system namespace, used as a cluster fingerprint.
+	ClusterID string
+}
+
 type RenderState struct {
 	ReleaseName  string
 	Namespace    string
 	Template     func(string) string
 	CommonLabels map[string]string
 	Values       RenderValues
+	Metrics      MetricsState
 }
 
 // +gotohelm:ignore=true

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/redpanda-data/common-go/kube"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
@@ -46,6 +47,28 @@ var (
 // handle construction of [helmette.Dot], subcharting, and output filtering.
 func Render(dot *helmette.Dot) []kube.Object {
 	state := DotToState(dot)
+
+	// Compute metrics state from capabilities. This is done here rather
+	// than in DotToState because DotToState is also called from Fullname/Name
+	// via tpl contexts where Capabilities is not available.
+	kubeVersion := dot.Capabilities.KubeVersion.Version
+	state.Metrics = console.MetricsState{
+		KubernetesVersion: kubeVersion,
+		ChartVersion:      dot.Chart.Version,
+	}
+
+	// UID of the kube-system namespace to fingerprint the cluster.
+	namespace, ok := helmette.Lookup[corev1.Namespace](dot, "", "kube-system")
+	if ok {
+		state.Metrics.ClusterID = string(namespace.ObjectMeta.UID)
+	}
+
+	// Detect cloud environment from Kubernetes version string.
+	if strings.Contains(kubeVersion, "-gke") {
+		state.Metrics.CloudEnvironment = "GCP"
+	} else if strings.Contains(kubeVersion, "-eks") {
+		state.Metrics.CloudEnvironment = "AWS"
+	}
 
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you

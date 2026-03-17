@@ -129,6 +129,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -347,6 +355,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -559,6 +575,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -783,6 +807,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: hvGoJL
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -990,6 +1022,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: T50cZi
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -1210,6 +1250,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: xZty
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - prefix: cfVf
           secretRef:
@@ -1548,6 +1596,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console-YMl
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -1723,6 +1779,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: pN
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: RnJFs0:OQDirE
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: 7iw15D/RnJFs0:OQDirE
         imagePullPolicy: IfNotPresent
@@ -1938,6 +2002,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: rzd
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: V:iSGm6MT1
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: zT38Q/V:iSGm6MT1
         imagePullPolicy: IfNotPresent
@@ -2162,6 +2234,14 @@ spec:
           value: /etc/console/secrets/redpanda-admin-api-tls-key
         - name: REDPANDA_ADMINAPI_TLS_CERTFILEPATH
           value: /etc/console/secrets/redpanda-admin-api-tls-cert
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: OUS
@@ -2334,7 +2414,15 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env: []
+        env:
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -2533,6 +2621,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: l1Bnpx
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -2730,7 +2826,15 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env: []
+        env:
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 0YeLdES:1a4iH
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: 4A/0YeLdES:1a4iH
         imagePullPolicy: ""
@@ -3117,6 +3221,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: hbe
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: U:Tl0EP
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: d
@@ -3349,6 +3461,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: tmn2Kt
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - prefix: RyT9JuZ
         image: docker.redpanda.com/redpandadata/console:v3.3.2
@@ -3679,6 +3799,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: RttlJN
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -4140,6 +4268,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: 9RweMGWqBs
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: b4CZb:OoX
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: FezgEM/b4CZb:OoX
         imagePullPolicy: '&Ŕ<駄AG'
@@ -4533,6 +4669,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: 6maz
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: HV3:cI8TzaYkws
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: PYDGV/HV3:cI8TzaYkws
         imagePullPolicy: IfNotPresent
@@ -4831,6 +4975,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: 9XG3SZW
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: kPWhaC:BcBi
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - prefix: oK16T1
         - configMapRef:
@@ -5390,6 +5542,14 @@ spec:
           value: /etc/console/secrets/redpanda-admin-api-tls-ca
         - name: REDPANDA_ADMINAPI_TLS_CERTFILEPATH
           value: /etc/console/secrets/redpanda-admin-api-tls-cert
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 6V6:6uR
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - prefix: hg
           secretRef:
@@ -5696,6 +5856,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: NZ7h9
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: W3:2vPed
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: GNXgFQ/W3:2vPed
         imagePullPolicy: 韃ĝ
@@ -6035,6 +6203,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: Om7
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 0x6:PXKnRw
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: VPCZungXC/0x6:PXKnRw
         imagePullPolicy: Ą脡ɭ
@@ -6647,6 +6823,14 @@ spec:
           value: /etc/console/secrets/redpanda-admin-api-tls-key
         - name: REDPANDA_ADMINAPI_TLS_CERTFILEPATH
           value: /etc/console/secrets/redpanda-admin-api-tls-cert
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: Gaz:ahb
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - prefix: WwoB7
           secretRef:
@@ -7139,6 +7323,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: fXCb
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -7552,7 +7744,15 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env: []
+        env:
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: tdq9GJrg:J
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: Es
@@ -8105,7 +8305,15 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env: []
+        env:
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -8576,6 +8784,14 @@ spec:
           value: /etc/console/secrets/redpanda-admin-api-tls-key
         - name: REDPANDA_ADMINAPI_TLS_CERTFILEPATH
           value: /etc/console/secrets/redpanda-admin-api-tls-cert
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: ARBa:BetSp
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: I6Dbq
@@ -8984,6 +9200,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: HK
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 5q2qCT:z10JAfCu
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: nZ5PG/5q2qCT:z10JAfCu
         imagePullPolicy: IfNotPresent
@@ -9806,7 +10030,15 @@ spec:
       - args:
         - --config.filepath=/etc/console/configs/config.yaml
         command: null
-        env: []
+        env:
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: xY76Tj:AgKh6S1
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: nJXDn
@@ -10596,6 +10828,14 @@ spec:
               key: vPbHh
               name: oBAn1EoZmPzN
               optional: true
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: JAUpWzFL:3WF1aV
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: lo
@@ -11874,6 +12114,14 @@ spec:
               key: "n"
               name: RQLa2rQL7Y
               optional: false
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: EwU0pzhz:SmZAnO7
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: XB9ke7yB/EwU0pzhz:SmZAnO7
         imagePullPolicy: 垿儣Ƈ#WMƻ
@@ -12898,6 +13146,14 @@ spec:
           value: /etc/console/secrets/redpanda-admin-api-tls-key
         - name: REDPANDA_ADMINAPI_TLS_CERTFILEPATH
           value: /etc/console/secrets/redpanda-admin-api-tls-cert
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: f54I:iO
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: 3PT
@@ -14060,6 +14316,14 @@ spec:
               key: hmvX
               name: 18Z
               optional: true
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: qYQHJ:RIG
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: DR3hdrvZIv
@@ -15079,6 +15343,14 @@ spec:
           value: /etc/console/secrets/redpanda-admin-api-tls-key
         - name: REDPANDA_ADMINAPI_TLS_CERTFILEPATH
           value: /etc/console/secrets/redpanda-admin-api-tls-cert
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 46zHVEaIk:W
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: LIc
@@ -15806,6 +16078,14 @@ spec:
               key: CFh
               name: 8zez51Q
               optional: true
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 5OO0wF5p:i
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: l0qIdHu/5OO0wF5p:i
         imagePullPolicy: ź,Î斎殉媰Fƅ
@@ -16841,6 +17121,14 @@ spec:
               key: DDcgdcu
               name: oD38
               optional: true
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: TZqk:0fpMB
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: 2ECaB
@@ -17898,6 +18186,14 @@ spec:
             secretKeyRef:
               key: i3lK
               optional: true
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: lQjo:p
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: zUsK/lQjo:p
         imagePullPolicy: ȕ蚧竔/´苅oC
@@ -18671,6 +18967,14 @@ spec:
               key: s43
               name: LpaQ
               optional: true
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 9Gz:Tg
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: VHbf77MFq/9Gz:Tg
         imagePullPolicy: Ƀşb?師Ğ`3H觉趟糯襖
@@ -19525,6 +19829,14 @@ spec:
           value: /etc/console/secrets/redpanda-admin-api-tls-key
         - name: REDPANDA_ADMINAPI_TLS_CERTFILEPATH
           value: /etc/console/secrets/redpanda-admin-api-tls-cert
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: 8ZLfmymq:4BSL9iL
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - configMapRef:
             name: GTjM
@@ -20169,6 +20481,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -20355,6 +20675,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -20550,6 +20878,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom:
         - secretRef:
             name: my-client-secret-oidc
@@ -20752,6 +21088,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -21404,6 +21748,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:my-custom-tag
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: redpandadata/console:my-custom-tag
         imagePullPolicy: IfNotPresent
@@ -21589,6 +21941,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -21774,6 +22134,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -21968,6 +22336,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -22185,6 +22561,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -22370,6 +22754,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -22791,6 +23183,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -22996,6 +23396,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
@@ -23183,6 +23591,14 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.3.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.3.2
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
         envFrom: []
         image: docker.redpanda.com/redpandadata/console:v3.3.2
         imagePullPolicy: IfNotPresent
