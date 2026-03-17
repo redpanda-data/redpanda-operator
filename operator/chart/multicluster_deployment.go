@@ -53,7 +53,16 @@ func MulticlusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: SelectorLabels(dot),
 			},
-			Strategy: values.Strategy,
+			// Recreate is required for raft participants: running two pods with
+			// the same node ID simultaneously (the default RollingUpdate
+			// behaviour) prevents the new pod from ever winning an election
+			// (its log is far behind the cluster) and thus from ever passing
+			// the readiness check.  With Recreate, the old pod is terminated
+			// first; the 2-node quorum on the remaining clusters keeps the
+			// cluster healthy while the fresh node catches up via snapshot.
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RecreateDeploymentStrategyType,
+			},
 			Template: StrategicMergePatch(&corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      values.PodTemplate.Metadata.Labels,
