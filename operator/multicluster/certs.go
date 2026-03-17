@@ -7,65 +7,71 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_certs.go.tpl
-package redpanda
+package multicluster
 
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
-	fullname := Fullname(state)
-	service := ServiceName(state)
-	ns := state.Release.Namespace
-	// Trailing .'s don't play nice with TLS/SNI: https://datatracker.ietf.org/doc/html/rfc6066#section-3
-	// So we trim it when generating certificates.
-	domain := strings.TrimSuffix(state.Values.ClusterDomain, ".")
+// certificates returns all cert-manager Certificates (server + client) for the given RenderState.
+func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
+	fullname := state.fullname()
+	service := state.Spec().GetServiceName(state.fullname())
+	ns := state.namespace
+	// Trailing dots don't play nice with TLS/SNI.
+	domain := strings.TrimSuffix(state.Spec().GetClusterDomain(), ".")
+
+	tlsCfg := state.Spec().TLS
+	if tlsCfg == nil {
+		return nil, nil
+	}
 
 	var certs []*certmanagerv1.Certificate
-	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
-		data := state.Values.TLS.Certs.MustGet(name)
 
-		// Don't generate server Certificates if a secret is provided.
-		if !helmette.Empty(data.SecretRef) {
+	// Server certificates.
+	for _, name := range state.Spec().InUseServerCerts() {
+		cert := tlsCfg.Certs[name]
+
+		// Don't generate server certs if a secret is provided.
+		if cert != nil && cert.SecretRef != nil {
 			continue
 		}
 
 		var names []string
-		if data.IssuerRef == nil || ptr.Deref(data.ApplyInternalDNSNames, false) {
-			names = append(names, fmt.Sprintf("%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain))
-			names = append(names, fmt.Sprintf("%s-cluster.%s.%s.svc", fullname, service, ns))
-			names = append(names, fmt.Sprintf("%s-cluster.%s.%s", fullname, service, ns))
-			names = append(names, fmt.Sprintf("*.%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain))
-			names = append(names, fmt.Sprintf("*.%s-cluster.%s.%s.svc", fullname, service, ns))
-			names = append(names, fmt.Sprintf("*.%s-cluster.%s.%s", fullname, service, ns))
-			names = append(names, fmt.Sprintf("%s.%s.svc.%s", service, ns, domain))
-			names = append(names, fmt.Sprintf("%s.%s.svc", service, ns))
-			names = append(names, fmt.Sprintf("%s.%s", service, ns))
-			names = append(names, fmt.Sprintf("*.%s.%s.svc.%s", service, ns, domain))
-			names = append(names, fmt.Sprintf("*.%s.%s.svc", service, ns))
-			names = append(names, fmt.Sprintf("*.%s.%s", service, ns))
+		if cert == nil || cert.IssuerRef == nil || cert.ShouldApplyInternalDNSNames() {
+			names = append(names,
+				fmt.Sprintf("%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain),
+				fmt.Sprintf("%s-cluster.%s.%s.svc", fullname, service, ns),
+				fmt.Sprintf("%s-cluster.%s.%s", fullname, service, ns),
+				fmt.Sprintf("*.%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain),
+				fmt.Sprintf("*.%s-cluster.%s.%s.svc", fullname, service, ns),
+				fmt.Sprintf("*.%s-cluster.%s.%s", fullname, service, ns),
+				fmt.Sprintf("%s.%s.svc.%s", service, ns, domain),
+				fmt.Sprintf("%s.%s.svc", service, ns),
+				fmt.Sprintf("%s.%s", service, ns),
+				fmt.Sprintf("*.%s.%s.svc.%s", service, ns, domain),
+				fmt.Sprintf("*.%s.%s.svc", service, ns),
+				fmt.Sprintf("*.%s.%s", service, ns),
+			)
 		}
 
-		if state.Values.External.Domain != nil {
-			names = append(names, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
-			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)))
+		if ext := state.Spec().External; ext != nil && ext.Domain != nil {
+			expandedDomain, err := tplutil.Tpl(*ext.Domain, state.tplData())
+			if err != nil {
+				return nil, fmt.Errorf("expanding external domain template: %w", err)
+			}
+			names = append(names, expandedDomain)
+			names = append(names, fmt.Sprintf("*.%s", expandedDomain))
 		}
-
-		duration := helmette.Default("43800h", data.Duration)
-		issuerRef := ptr.Deref(data.IssuerRef, cmmetav1.ObjectReference{
-			Kind:  "Issuer",
-			Group: "cert-manager.io",
-			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
-		})
 
 		certs = append(certs, &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{
@@ -74,15 +80,15 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-%s-cert", fullname, name),
-				Labels:    FullLabels(state),
-				Namespace: state.Release.Namespace,
+				Labels:    state.commonLabels(),
+				Namespace: state.namespace,
 			},
 			Spec: certmanagerv1.CertificateSpec{
 				DNSNames:   names,
-				Duration:   helmette.MustDuration(duration),
+				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
-				IssuerRef:  issuerRef,
-				SecretName: data.ServerSecretName(state, name),
+				IssuerRef:  certIssuerRef(fullname, name, cert),
+				SecretName: state.Spec().TLS.CertServerSecretName(state.fullname(), name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
@@ -91,30 +97,18 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 		})
 	}
 
-	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
-		data := state.Values.TLS.Certs.MustGet(name)
+	// Client certificates.
+	for _, name := range state.Spec().InUseClientCerts() {
+		cert := tlsCfg.Certs[name]
 
-		if data.SecretRef != nil && data.ClientSecretRef == nil {
-			panic(fmt.Sprintf(".clientSecretRef MUST be set if .secretRef is set and require_client_auth is true: Cert %q", name))
+		if cert != nil {
+			if cert.SecretRef != nil && cert.ClientSecretRef == nil {
+				return nil, fmt.Errorf(".clientSecretRef MUST be set if .secretRef is set and require_client_auth is true: Cert %q", name)
+			}
+			if cert.ClientSecretRef != nil {
+				continue
+			}
 		}
-
-		// Don't generate a client Certificate if a client secret is provided.
-		if data.ClientSecretRef != nil {
-			continue
-		}
-
-		issuerRef := cmmetav1.ObjectReference{
-			Group: "cert-manager.io",
-			Kind:  "Issuer",
-			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
-		}
-
-		if data.IssuerRef != nil {
-			issuerRef = *data.IssuerRef
-			issuerRef.Group = "cert-manager.io"
-		}
-
-		duration := helmette.Default("43800h", data.Duration)
 
 		certs = append(certs, &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{
@@ -123,22 +117,47 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-%s-client", fullname, name),
-				Namespace: state.Release.Namespace,
-				Labels:    FullLabels(state),
+				Namespace: state.namespace,
+				Labels:    state.commonLabels(),
 			},
 			Spec: certmanagerv1.CertificateSpec{
 				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),
-				Duration:   helmette.MustDuration(duration),
+				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
-				SecretName: data.ClientSecretName(state, name),
+				SecretName: state.Spec().TLS.CertClientSecretName(state.fullname(), name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
 				},
-				IssuerRef: issuerRef,
+				IssuerRef: certIssuerRef(fullname, name, cert),
 			},
 		})
 	}
 
-	return certs
+	return certs, nil
+}
+
+// certDuration returns the certificate duration, falling back to defaultCertDuration.
+func certDuration(cert *redpandav1alpha2.Certificate) time.Duration {
+	if cert != nil && cert.Duration != nil {
+		return cert.Duration.Duration
+	}
+	return defaultCertDuration
+}
+
+// certIssuerRef returns the issuer reference for a certificate. If the cert has
+// an explicit IssuerRef, it is used; otherwise a default root-issuer is generated.
+func certIssuerRef(fullname, certName string, cert *redpandav1alpha2.Certificate) cmmetav1.ObjectReference {
+	if cert != nil && cert.IssuerRef != nil {
+		return cmmetav1.ObjectReference{
+			Name:  cert.IssuerRef.GetName(),
+			Kind:  cert.IssuerRef.GetKind(),
+			Group: cert.IssuerRef.GetGroup(),
+		}
+	}
+	return cmmetav1.ObjectReference{
+		Kind:  "Issuer",
+		Group: "cert-manager.io",
+		Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, certName),
+	}
 }
