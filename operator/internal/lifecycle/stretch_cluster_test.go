@@ -29,7 +29,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	redpandachart "github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -67,7 +67,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
-				DisableFor: append(redpandachart.Types(), &redpandav1alpha2.StretchCluster{}, &corev1.Namespace{}),
+				DisableFor: append(multiclusterRenderer.Types(), &redpandav1alpha2.StretchCluster{}, &corev1.Namespace{}),
 			},
 		},
 	})
@@ -86,6 +86,17 @@ func TestStretchClusterResourceClient(t *testing.T) {
 	goldenResources := testutil.NewTxTar(t, "testdata/stretch-cluster-cases.resources.golden.txtar")
 	goldenValues := testutil.NewTxTar(t, "testdata/stretch-cluster-cases.values.golden.txtar")
 
+	// Set default image tags for rendering. These are package-level vars
+	// so tests can control them. Save and restore to avoid affecting other tests.
+	origRedpandaTag := redpandav1alpha2.DefaultRedpandaImageTag
+	origOperatorTag := redpandav1alpha2.DefaultOperatorImageTag
+	redpandav1alpha2.DefaultRedpandaImageTag = "v25.3.1"
+	redpandav1alpha2.DefaultOperatorImageTag = "v25.3.1"
+	t.Cleanup(func() {
+		redpandav1alpha2.DefaultRedpandaImageTag = origRedpandaTag
+		redpandav1alpha2.DefaultOperatorImageTag = origOperatorTag
+	})
+
 	cloudSecrets := CloudSecretsFlags{
 		CloudSecretsEnabled: false,
 	}
@@ -100,7 +111,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 
 	resourceClient := NewMulticlusterResourceClient(manager, StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets))
 
-	require.EqualValues(t, redpandachart.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
+	require.EqualValues(t, multiclusterRenderer.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
 
 	decoder := serializer.NewCodecFactory(controller.MulticlusterScheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
 
@@ -147,12 +158,15 @@ func TestStretchClusterResourceClient(t *testing.T) {
 
 			require.NotEmpty(t, ownerLabels)
 
-			state, err := resourceClient.nodePoolRenderer.(*StretchNodePoolRenderer).convertToRender(ctx, cluster, "")
+			cl, err := manager.GetCluster(ctx, "")
+			require.NoError(t, err)
+
+			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.NodePools, "")
 			require.NoError(t, err)
 
 			yamlBytes, err := yaml.Marshal(map[string]any{
-				"values": state.Values,
-				"pools":  state.Pools,
+				"spec":  state.Spec(),
+				"pools": state.Pools(),
 			})
 			require.NoError(t, err)
 			goldenValues.AssertGolden(t, testutil.YAML, file.Name, yamlBytes)

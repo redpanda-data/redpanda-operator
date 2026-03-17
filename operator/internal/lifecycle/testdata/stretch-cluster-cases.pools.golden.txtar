@@ -7,13 +7,12 @@
     labels:
       app.kubernetes.io/component: redpanda-basic-a
       app.kubernetes.io/instance: compat-test-
-      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/nodepool-generation: "0"
       cluster.redpanda.com/nodepool-name: basic-a
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-25.3.1
     name: compat-test-basic-a
     namespace: compat-test
   spec:
@@ -32,10 +31,9 @@
         labels:
           app.kubernetes.io/component: redpanda-basic-a-statefulset
           app.kubernetes.io/instance: compat-test-
-          app.kubernetes.io/managed-by: Helm
+          app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-25.3.1
           redpanda.com/poddisruptionbudget: compat-test
       spec:
         affinity:
@@ -67,6 +65,12 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: v25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
           image: docker.redpanda.com/redpandadata/redpanda:v25.3.1
           lifecycle:
             postStart:
@@ -157,7 +161,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-          - --selector=helm.sh/chart=redpanda-25.3.1,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test-
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -339,7 +343,7 @@
                     fieldPath: metadata.namespace
                   path: namespace
     updateStrategy:
-      type: RollingUpdate
+      type: OnDelete
     volumeClaimTemplates:
     - metadata:
         labels:
@@ -363,13 +367,12 @@
     labels:
       app.kubernetes.io/component: redpanda-basic-b
       app.kubernetes.io/instance: compat-test-
-      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/nodepool-generation: "0"
       cluster.redpanda.com/nodepool-name: basic-b
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-25.3.1
     name: compat-test-basic-b
     namespace: compat-test
   spec:
@@ -388,10 +391,9 @@
         labels:
           app.kubernetes.io/component: redpanda-basic-b-statefulset
           app.kubernetes.io/instance: compat-test-
-          app.kubernetes.io/managed-by: Helm
+          app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-25.3.1
           redpanda.com/poddisruptionbudget: compat-test
       spec:
         affinity:
@@ -423,6 +425,12 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: v25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/test:dev
           image: docker.redpanda.com/redpandadata/redpanda:v25.3.1
           lifecycle:
             postStart:
@@ -513,7 +521,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-          - --selector=helm.sh/chart=redpanda-25.3.1,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test-
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -695,7 +703,7 @@
                     fieldPath: metadata.namespace
                   path: namespace
     updateStrategy:
-      type: RollingUpdate
+      type: OnDelete
     volumeClaimTemplates:
     - metadata:
         labels:
@@ -720,13 +728,12 @@
     labels:
       app.kubernetes.io/component: redpanda-basic-a
       app.kubernetes.io/instance: nodepool-basic-test-
-      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/nodepool-generation: "0"
       cluster.redpanda.com/nodepool-name: basic-a
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-25.3.1
     name: nodepool-basic-test-basic-a
     namespace: nodepool-basic-test
   spec:
@@ -745,10 +752,9 @@
         labels:
           app.kubernetes.io/component: redpanda-basic-a-statefulset
           app.kubernetes.io/instance: nodepool-basic-test-
-          app.kubernetes.io/managed-by: Helm
+          app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-25.3.1
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -780,6 +786,12 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: v25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
           image: docker.redpanda.com/redpandadata/redpanda:v25.3.1
           lifecycle:
             postStart:
@@ -870,7 +882,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-          - --selector=helm.sh/chart=redpanda-25.3.1,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test-
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -1052,7 +1064,7 @@
                     fieldPath: metadata.namespace
                   path: namespace
     updateStrategy:
-      type: RollingUpdate
+      type: OnDelete
     volumeClaimTemplates:
     - metadata:
         labels:
@@ -1076,13 +1088,12 @@
     labels:
       app.kubernetes.io/component: redpanda-basic-b
       app.kubernetes.io/instance: nodepool-basic-test-
-      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/nodepool-generation: "0"
       cluster.redpanda.com/nodepool-name: basic-b
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-25.3.1
     name: nodepool-basic-test-basic-b
     namespace: nodepool-basic-test
   spec:
@@ -1101,10 +1112,9 @@
         labels:
           app.kubernetes.io/component: redpanda-basic-b-statefulset
           app.kubernetes.io/instance: nodepool-basic-test-
-          app.kubernetes.io/managed-by: Helm
+          app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-25.3.1
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -1136,6 +1146,12 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: v25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/test:dev
           image: docker.redpanda.com/redpandadata/redpanda:v25.3.1
           lifecycle:
             postStart:
@@ -1226,7 +1242,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-          - --selector=helm.sh/chart=redpanda-25.3.1,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test-
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -1408,7 +1424,7 @@
                     fieldPath: metadata.namespace
                   path: namespace
     updateStrategy:
-      type: RollingUpdate
+      type: OnDelete
     volumeClaimTemplates:
     - metadata:
         labels:
