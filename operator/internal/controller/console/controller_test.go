@@ -22,6 +22,7 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -294,5 +295,19 @@ func cleanObjectForGolden(scheme *runtime.Scheme, obj client.Object) {
 	if svc, ok := obj.(*corev1.Service); ok {
 		svc.Spec.ClusterIP = ""
 		svc.Spec.ClusterIPs = nil
+	}
+
+	// Clean deployment-specific dynamic fields
+	if deploy, ok := obj.(*appsv1.Deployment); ok {
+		for i, container := range deploy.Spec.Template.Spec.Containers {
+			for j, env := range container.Env {
+				if env.Name == "REDPANDA_METRICS_K8S_CLUSTER_ID" {
+					deploy.Spec.Template.Spec.Containers[i].Env[j].Value = "00000000-0000-0000-0000-000000000000"
+				}
+				if env.Name == "REDPANDA_METRICS_K8S_VERSION" {
+					deploy.Spec.Template.Spec.Containers[i].Env[j].Value = "v1.32.0"
+				}
+			}
+		}
 	}
 }
