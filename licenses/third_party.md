@@ -64,6 +64,7 @@ run `task generate:third-party-licenses-list`
 | github.com/cespare/xxhash/v2 | [MIT](https://github.com/cespare/xxhash/blob/v2.3.0/LICENSE.txt) |
 | github.com/chai2010/gettext-go | [BSD-3-Clause](https://github.com/chai2010/gettext-go/blob/v1.0.2/LICENSE) |
 | github.com/cisco-open/k8s-objectmatcher/patch | [Apache-2.0](https://github.com/cisco-open/k8s-objectmatcher/blob/v1.9.0/LICENSE) |
+<<<<<<< HEAD
 | github.com/cloudhut/common | [Apache-2.0](https://github.com/cloudhut/common/blob/v0.10.0/LICENSE) |
 | github.com/cockroachdb/errors | [Apache-2.0](https://github.com/cockroachdb/errors/blob/v1.11.3/LICENSE) |
 | github.com/cockroachdb/logtags | [Apache-2.0](https://github.com/cockroachdb/logtags/blob/21c54148d20b/LICENSE) |
@@ -73,6 +74,20 @@ run `task generate:third-party-licenses-list`
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.4.1/LICENSE) |
+=======
+| github.com/cloudhut/common | [Apache-2.0](https://github.com/cloudhut/common/blob/v0.11.0/LICENSE) |
+| github.com/cockroachdb/errors | [Apache-2.0](https://github.com/cockroachdb/errors/blob/v1.12.0/LICENSE) |
+| github.com/cockroachdb/logtags | [Apache-2.0](https://github.com/cockroachdb/logtags/blob/bb51bb14a506/LICENSE) |
+| github.com/cockroachdb/redact | [Apache-2.0](https://github.com/cockroachdb/redact/blob/v1.1.6/LICENSE) |
+| github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.30/LICENSE) |
+| github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v1.0.0/LICENSE) |
+| github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
+| github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
+| github.com/coreos/go-semver/semver | [Apache-2.0](https://github.com/coreos/go-semver/blob/v0.3.1/LICENSE) |
+| github.com/coreos/go-systemd/v22 | [Apache-2.0](https://github.com/coreos/go-systemd/blob/v22.7.0/LICENSE) |
+| github.com/cyphar/filepath-securejoin | [MPL-2.0](https://github.com/cyphar/filepath-securejoin/blob/v0.5.1/COPYING.md) |
+| github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.5.1/COPYING.md) |
+>>>>>>> 4cae1984 (Address snyk and govulncheck findings)
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
 | github.com/distribution/reference | [Apache-2.0](https://github.com/distribution/reference/blob/v0.6.0/LICENSE) |
 | github.com/emicklei/go-restful/v3 | [MIT](https://github.com/emicklei/go-restful/blob/v3.12.2/LICENSE) |
@@ -84,8 +99,13 @@ run `task generate:third-party-licenses-list`
 | github.com/fluxcd/pkg/runtime/logger | [Apache-2.0](https://github.com/fluxcd/pkg/blob/runtime/v0.43.3/runtime/LICENSE) |
 | github.com/fsnotify/fsnotify | [BSD-3-Clause](https://github.com/fsnotify/fsnotify/blob/v1.9.0/LICENSE) |
 | github.com/fxamacker/cbor/v2 | [MIT](https://github.com/fxamacker/cbor/blob/v2.9.0/LICENSE) |
+<<<<<<< HEAD
 | github.com/getsentry/sentry-go | [MIT](https://github.com/getsentry/sentry-go/blob/v0.27.0/LICENSE) |
 | github.com/go-chi/chi/v5 | [MIT](https://github.com/go-chi/chi/blob/v5.0.12/LICENSE) |
+=======
+| github.com/getsentry/sentry-go | [MIT](https://github.com/getsentry/sentry-go/blob/v0.42.0/LICENSE) |
+| github.com/go-chi/chi/v5 | [MIT](https://github.com/go-chi/chi/blob/v5.2.5/LICENSE) |
+>>>>>>> 4cae1984 (Address snyk and govulncheck findings)
 | github.com/go-errors/errors | [MIT](https://github.com/go-errors/errors/blob/v1.5.1/LICENSE.MIT) |
 | github.com/go-gorp/gorp/v3 | [MIT](https://github.com/go-gorp/gorp/blob/v3.1.0/LICENSE) |
 | github.com/go-logr/logr | [Apache-2.0](https://github.com/go-logr/logr/blob/v1.4.3/LICENSE) |
@@ -245,6 +265,7 @@ run `task generate:third-party-licenses-list`
 | go.uber.org/zap | [MIT](https://github.com/uber-go/zap/blob/v1.27.0/LICENSE) |
 | go.yaml.in/yaml/v2 | [Apache-2.0](https://github.com/yaml/go-yaml/blob/v2.4.3/LICENSE) |
 | go.yaml.in/yaml/v3 | [MIT](https://github.com/yaml/go-yaml/blob/v3.0.4/LICENSE) |
+<<<<<<< HEAD
 | golang.org/x/crypto | [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.48.0:LICENSE) |
 | golang.org/x/exp | [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/f9890c6a:LICENSE) |
 | golang.org/x/mod/semver | [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.32.0:LICENSE) |
@@ -256,6 +277,19 @@ run `task generate:third-party-licenses-list`
 | golang.org/x/text | [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.34.0:LICENSE) |
 | golang.org/x/time/rate | [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.11.0:LICENSE) |
 | golang.org/x/tools | [BSD-3-Clause](https://cs.opensource.google/go/x/tools/+/v0.41.0:LICENSE) |
+=======
+| golang.org/x/crypto | [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.49.0:LICENSE) |
+| golang.org/x/exp | [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/3dfff04d:LICENSE) |
+| golang.org/x/mod/semver | [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.33.0:LICENSE) |
+| golang.org/x/net | [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.52.0:LICENSE) |
+| golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.35.0:LICENSE) |
+| golang.org/x/sync | [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.20.0:LICENSE) |
+| golang.org/x/sys/execabs | [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.42.0:LICENSE) |
+| golang.org/x/term | [BSD-3-Clause](https://cs.opensource.google/go/x/term/+/v0.41.0:LICENSE) |
+| golang.org/x/text | [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.35.0:LICENSE) |
+| golang.org/x/time/rate | [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.14.0:LICENSE) |
+| golang.org/x/tools | [BSD-3-Clause](https://cs.opensource.google/go/x/tools/+/v0.42.0:LICENSE) |
+>>>>>>> 4cae1984 (Address snyk and govulncheck findings)
 | gomodules.xyz/jsonpatch/v2 | [Apache-2.0](https://github.com/gomodules/jsonpatch/blob/v2.5.0/v2/LICENSE) |
 | google.golang.org/api | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.227.0/LICENSE) |
 | google.golang.org/api/internal/third_party/uritemplates | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.227.0/internal/third_party/uritemplates/LICENSE) |
