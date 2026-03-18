@@ -39,13 +39,14 @@ var (
 		crds.ShadowLink(),
 		crds.Topic(),
 		crds.User(),
-		crds.NodePool(),
 	}
 	vectorizedCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.VectorizedCluster(),
 		crds.VectorizedConsole(),
 	}
-	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{}
+	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
+		crds.NodePool(),
+	}
 	multiclusterCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.StretchCluster(),
 		crds.NodePool(),
