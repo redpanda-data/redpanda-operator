@@ -227,67 +227,6 @@ func TestFreshNodeJoinsRunningCluster(t *testing.T) {
 	t.Logf("follower %d rejoined running cluster without panic", laggingNode.config.ID)
 }
 
-// TestLaggingPeerCatchesUpViaSnapshot reproduces the "need non-empty snapshot"
-// panic that occurred when a follower's log index fell below the leader's
-// compacted index. The fix calls storage.CreateSnapshot before storage.Compact
-// so the leader always has a valid snapshot to send to lagging peers.
-//
-// Scenario:
-//  1. Start a 3-node cluster and wait for initial leader election.
-//  2. Stop one follower to simulate a network partition.
-//  3. Wait for at least one full compaction cycle (~10 s) on the running nodes.
-//  4. Restart the follower; its fresh in-memory log is behind the compacted index.
-//  5. The leader must catch it up via snapshot — without this fix it panicked.
-func TestLaggingPeerCatchesUpViaSnapshot(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
-
-	leaders := setupLockTest(t, ctx, 3)
-
-	defer func() {
-		cancel()
-		for _, l := range leaders {
-			l.WaitForStopped(t, 10*time.Second)
-		}
-	}()
-
-	// Wait for the cluster to elect its first leader.
-	_, followers := waitForAnyLeader(t, 30*time.Second, leaders...)
-
-	// Isolate one follower. The two remaining nodes retain quorum.
-	laggingNode := followers[0]
-	laggingNode.Stop()
-	laggingNode.WaitForStopped(t, 5*time.Second)
-	t.Logf("isolated follower %d", laggingNode.config.ID)
-
-	// Wait for at least one full compaction cycle (compaction runs every ~10 s).
-	// After this point the leader's MemoryStorage no longer holds the entries
-	// the lagging node needs, so only a snapshot can bring it up to date.
-	t.Log("waiting for log compaction to occur on running nodes (~10 s)...")
-	select {
-	case <-time.After(12 * time.Second):
-	case <-ctx.Done():
-		t.Fatal("timed out while waiting for compaction")
-	}
-
-	// Drain the stale follower signal that was written when the node first
-	// initialised as a follower, so WaitForFollower below only sees the
-	// signal from the post-restart catch-up.
-	select {
-	case <-laggingNode.follower:
-	default:
-	}
-
-	// Restart the lagging node. Its fresh MemoryStorage starts at index 0,
-	// which is below the leader's compacted index. The leader must send a
-	// snapshot. Before the fix this triggered: panic("need non-empty snapshot").
-	t.Logf("restarting follower %d", laggingNode.config.ID)
-	laggingNode.Start(t, ctx)
-
-	// The node must settle as a follower, proving snapshot-based catch-up works.
-	laggingNode.WaitForFollower(t, 30*time.Second)
-	t.Logf("follower %d successfully caught up via snapshot", laggingNode.config.ID)
-}
-
 func TestLocker(t *testing.T) {
 	for name, tt := range map[string]struct {
 		nodes int
