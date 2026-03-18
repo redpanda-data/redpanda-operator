@@ -1,6 +1,6 @@
 module example.com/example
 
-go 1.26.0
+go 1.26.1
 
 require (
 	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a

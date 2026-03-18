@@ -8,7 +8,7 @@ changie version v1.24.0
 
 -- go --
 # go version | cut -d ' ' -f 1-3
-go version go1.26.0
+go version go1.26.1
 
 -- helm --
 # helm version
@@ -29,7 +29,7 @@ kind v0.31.0 go1.25.7
 
 -- kubectl --
 # kubectl version --client=true
-Client Version: v1.35.0
+Client Version: v1.35.2
 Kustomize Version: v5.7.1
 
 -- kustomize --

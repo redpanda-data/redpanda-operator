@@ -139,14 +139,96 @@ tasks:
     # Our own packages should not be reported as third party license
     # The example.com/example depedency is ignored as it's part of the
     # gotohelm test suite (visit ./pkg/gotohelm/testdata/src/example/go.mod)
+    # Starting at Go 1.26.1, go std libraries no longer work with go-licenses report
+    # so we have to explicitly enumerate them in the --ignore.
+    # Also, there are additional libraries that we have to ignore, since go-licenses fails
+    # saying that given library "contains non-Go code that can't be inspected for further dependencies".
+    # For more information, see https://github.com/google/go-licenses/issues/128
     - |
-      go-licenses report ./... --template ../licenses/third_party.md.tpl \
+      go-licenses report --template ../licenses/third_party.md.tpl \
       --ignore buf.build/gen/go/redpandadata \
+      --ignore buf.build/gen/go/bufbuild \
+      --ignore buf.build/gen/go/grpc-ecosystem \
       --ignore example.com/example \
       --ignore github.com/redpanda-data/common-go \
       --ignore github.com/redpanda-data/console/backend \
       --ignore github.com/redpanda-data/redpanda \
-      --ignore github.com/redpanda-data/redpanda-operator > ../licenses/third_party.md
+      --ignore github.com/redpanda-data/redpanda-operator \
+      --ignore archive \
+      --ignore bufio \
+      --ignore bytes \
+      --ignore cmp \
+      --ignore compress \
+      --ignore container \
+      --ignore context \
+      --ignore crypto \
+      --ignore database \
+      --ignore debug \
+      --ignore embed \
+      --ignore encoding \
+      --ignore errors \
+      --ignore expvar \
+      --ignore flag \
+      --ignore fmt \
+      --ignore go/ast \
+      --ignore go/build \
+      --ignore go/constant \
+      --ignore go/doc \
+      --ignore go/format \
+      --ignore go/importer \
+      --ignore go/internal/scannerhooks \
+      --ignore go/parser \
+      --ignore go/printer \
+      --ignore go/scanner \
+      --ignore go/token \
+      --ignore go/types \
+      --ignore go/version \
+      --ignore hash \
+      --ignore html \
+      --ignore image \
+      --ignore index \
+      --ignore internal \
+      --ignore io \
+      --ignore iter \
+      --ignore log \
+      --ignore maps \
+      --ignore math \
+      --ignore mime \
+      --ignore net \
+      --ignore os \
+      --ignore path \
+      --ignore plugin \
+      --ignore reflect \
+      --ignore regexp \
+      --ignore runtime \
+      --ignore slices \
+      --ignore sort \
+      --ignore strconv \
+      --ignore strings \
+      --ignore sync \
+      --ignore syscall \
+      --ignore testing \
+      --ignore text \
+      --ignore time \
+      --ignore unicode \
+      --ignore unique \
+      --ignore unsafe \
+      --ignore vendor \
+      --ignore weak \
+      --ignore github.com/modern-go/reflect2 \
+      --ignore golang.org/x/sys/unix \
+      --ignore golang.org/x/crypto/chacha20poly1305 \
+      --ignore golang.org/x/crypto/internal/poly1305 \
+      --ignore golang.org/x/sys/cpu \
+      --ignore github.com/cespare/xxhash/v2 \
+      --ignore github.com/klauspost/compress/s2 \
+      --ignore github.com/klauspost/compress/zstd \
+      --ignore github.com/klauspost/compress/huff0 \
+      --ignore github.com/klauspost/compress/internal/cpuinfo \
+      --ignore github.com/klauspost/compress/zstd/internal/xxhash \
+      --ignore github.com/pierrec/lz4/v4/internal/lz4block \
+      --ignore golang.org/x/crypto/salsa20/salsa \
+      ./... > ../licenses/third_party.md
 
   generate:changelog:
     generates:

@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/harpoon
 
-go 1.26.0
+go 1.26.1
 
 require (
 	github.com/cockroachdb/errors v1.12.0
