@@ -37,7 +37,6 @@ require (
 	connectrpc.com/connect v1.19.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	emperror.dev/errors v0.8.1 // indirect
-	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2 // indirect
