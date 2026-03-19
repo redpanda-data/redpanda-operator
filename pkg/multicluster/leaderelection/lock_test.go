@@ -263,6 +263,16 @@ func TestLocker(t *testing.T) {
 				t.Log("killing leader", currentLeader.config.ID)
 			}
 
+			// Wait for all stopped leaders to fully exit before restarting.
+			// Without this, the old goroutine may still be shutting down
+			// when Start spawns a new one, and the cleanup's WaitForStopped
+			// may consume the old goroutine's onStop signal — causing the
+			// test to "complete" while the new goroutine is still running,
+			// which panics on tst.Log after the test ends.
+			for _, leader := range stopped {
+				leader.WaitForStopped(t, 10*time.Second)
+			}
+
 			// restart and make sure that they become followers again
 			for _, leader := range stopped {
 				leader.Start(t, ctx)
