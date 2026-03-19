@@ -82547,7 +82547,6 @@ spec:
         - --base-tag=v25.3.1
         - --ca-file=/tls/ca.crt
         - --certificate-file=/tls/tls.crt
-        - --enable-v2-nodepools=true
         - --health-probe-bind-address=:8081
         - --kubeconfig-name=operator
         - --kubeconfig-namespace=default
