@@ -6999,6 +6999,91 @@ spec:
                   - name
                   type: object
                 type: array
+              gateway:
+                description: GatewayConfig configures a Gateway API HTTPRoute for
+                  Console.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  enabled:
+                    type: boolean
+                  hostnames:
+                    items:
+                      type: string
+                    type: array
+                  parentRefs:
+                    items:
+                      description: GatewayParentReference identifies a parent Gateway
+                        for the HTTPRoute.
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        sectionName:
+                          description: |-
+                            SectionName is the name of a section in a Kubernetes resource.
+
+                            In the following resources, SectionName is interpreted as the following:
+
+                            * Gateway: Listener name
+                            * HTTPRoute: HTTPRouteRule name
+                            * Service: Port name
+
+                            Section names can have a variety of forms, including RFC 1123 subdomains,
+                            RFC 1123 labels, or RFC 1035 labels.
+
+                            This validation is based off of the corresponding Kubernetes validation:
+                            https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L208
+
+                            Valid values include:
+
+                            * "example"
+                            * "foo-example"
+                            * "example.com"
+                            * "foo.example.com"
+
+                            Invalid values include:
+
+                            * "example.com/bar" - "/" is an invalid character
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  path:
+                    type: string
+                  pathType:
+                    description: |-
+                      PathMatchType specifies the semantics of how HTTP paths should be compared.
+                      Valid PathMatchType values, along with their support levels, are:
+
+                      * "Exact" - Core
+                      * "PathPrefix" - Core
+                      * "RegularExpression" - Implementation Specific
+
+                      PathPrefix and Exact paths must be syntactically valid:
+
+                      - Must begin with the `/` character
+                      - Must not contain consecutive `/` characters (e.g. `/foo///`, `//`).
+
+                      Note that values may be added to this enum, implementations
+                      must ensure that unknown values will not cause a crash.
+
+                      Unknown values here must result in the implementation setting the
+                      Accepted Condition for the Route to `status: False`, with a
+                      Reason of `UnsupportedValue`.
+                    enum:
+                    - Exact
+                    - PathPrefix
+                    - RegularExpression
+                    type: string
+                type: object
               image:
                 properties:
                   pullPolicy:

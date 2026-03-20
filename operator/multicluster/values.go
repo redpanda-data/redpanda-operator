@@ -904,11 +904,9 @@ func (l *Listeners) InUseServerCerts(tls *TLS) []string {
 	}
 
 	for _, listener := range listeners {
-		if !listener.TLS.IsEnabled(tls) {
-			continue
+		if listener.TLS.IsEnabled(tls) {
+			certs[listener.TLS.Cert] = true
 		}
-
-		certs[listener.TLS.Cert] = true
 
 		for _, external := range helmette.SortedMap(listener.External) {
 			if !external.IsEnabled() || !external.TLS.IsEnabled(&listener.TLS, tls) {
