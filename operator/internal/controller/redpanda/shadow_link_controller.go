@@ -140,7 +140,7 @@ func ShadowLinkTaskStatusesToConfigs(existing, updated []redpandav1alpha2.Shadow
 
 	findStatus := func(status redpandav1alpha2.ShadowLinkTaskStatus) *redpandav1alpha2.ShadowLinkTaskStatus {
 		for _, o := range existing {
-			if o.Name == status.Name {
+			if o.Name == status.Name && o.BrokerID == status.BrokerID && o.Shard == status.Shard {
 				return &o
 			}
 		}
@@ -164,11 +164,6 @@ func ShadowLinkTaskStatusesToConfigs(existing, updated []redpandav1alpha2.Shadow
 			continue
 		}
 
-		if existingTask.BrokerID != task.BrokerID {
-			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
-			continue
-		}
-
 		tasks = append(tasks, shadowLinkTaskStatusToConfig(existingTask.LastTransitionTime, *existingTask))
 	}
 
@@ -181,6 +176,7 @@ func shadowLinkTaskStatusToConfig(now metav1.Time, task redpandav1alpha2.ShadowL
 		WithState(task.State).
 		WithReason(task.Reason).
 		WithBrokerID(task.BrokerID).
+		WithShard(task.Shard).
 		WithLastTransitionTime(now)
 }
 
