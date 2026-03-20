@@ -238,6 +238,9 @@ type RedpandaConsole struct {
 	// Configures the Kubernetes Ingress resource for Redpanda Console.
 	Ingress *runtime.RawExtension `json:"ingress,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
+	// Configures a Gateway API HTTPRoute for Redpanda Console.
+	Gateway *runtime.RawExtension `json:"gateway,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// Configures resource requests and limits for the Pods that run Redpanda Console.
 	Resources *runtime.RawExtension `json:"resources,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields

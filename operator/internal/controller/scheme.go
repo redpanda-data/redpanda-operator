@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -34,6 +35,7 @@ var (
 		certmanagerv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		monitoringv1.AddToScheme,
+		gatewayv1.Install,
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
 	}
