@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Add Gateway API (HTTPRoute) support to Console CRD, allowing Console to be exposed via Gateway API controllers as an alternative to Ingress. Bumps sigs.k8s.io/gateway-api to v1.5.1.
+time: 2026-03-20T18:00:00.000000-05:00
