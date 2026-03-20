@@ -60,6 +60,11 @@ func RenderResources(state *RenderState) ([]kube.Object, error) {
 		return nil, err
 	}
 
+	lbServices, err := loadBalancerServices(state)
+	if err != nil {
+		return nil, err
+	}
+
 	var manifests []kube.Object
 	manifests = appendIfNotNil(manifests, nodePortService(state))
 	manifests = appendIfNotNil(manifests, pdb)
@@ -74,10 +79,6 @@ func RenderResources(state *RenderState) ([]kube.Object, error) {
 	manifests = appendIfNotNil(manifests, clusterRoles(state)...)
 	manifests = appendIfNotNil(manifests, roleBindings(state)...)
 	manifests = appendIfNotNil(manifests, clusterRoleBindings(state)...)
-	lbServices, err := loadBalancerServices(state)
-	if err != nil {
-		return nil, err
-	}
 	manifests = appendIfNotNil(manifests, lbServices...)
 	manifests = appendIfNotNil(manifests, secretObjs...)
 	manifests = appendIfNotNil(manifests, perPodServices(state)...)
