@@ -191,6 +191,7 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 		Namespace: owner.GetNamespace(),
 		Renderer: &renderer[T, U]{
 			Cluster:                owner,
+			ClusterName:            clusterName,
 			SimpleResourceRenderer: r.simpleResourceRenderer,
 		},
 		MigratedResource: func(o kube.Object) bool {
