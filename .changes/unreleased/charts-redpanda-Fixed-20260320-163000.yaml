@@ -1,4 +1,4 @@
 project: charts/redpanda
-kind: Fixed
-body: Fixed external listener TLS certificates not being mounted when the internal listener has TLS disabled. Previously, disabling TLS on an internal listener would skip certificate collection for all associated external sub-listeners, causing Redpanda to fail to start when an external listener referenced a TLS certificate.
+kind: Added
+body: Added support for enabling TLS on external listeners independently of the internal listener's TLS state. External sub-listener TLS certificates are now correctly mounted even when the internal listener has TLS disabled.
 time: 2026-03-20T16:30:00.000000-07:00
