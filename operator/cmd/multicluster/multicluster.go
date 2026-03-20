@@ -18,8 +18,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/license"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap/zapcore"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -33,6 +31,8 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/watcher"
 )
