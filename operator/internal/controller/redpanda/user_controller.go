@@ -159,7 +159,7 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
-func SetupUserController(ctx context.Context, mgr ctrl.Manager) error {
+func SetupUserController(ctx context.Context, mgr ctrl.Manager, namespace string) error {
 	c := mgr.GetClient()
 	config := mgr.GetConfig()
 	factory := internalclient.NewFactory(config, c)
@@ -177,5 +177,5 @@ func SetupUserController(ctx context.Context, mgr ctrl.Manager) error {
 		// Every 5 minutes try and check to make sure no manual modifications
 		// happened on the resource synced to the cluster and attempt to correct
 		// any drift.
-		Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+		Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }

@@ -202,7 +202,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 			CloudSecretsEnabled: false,
 		})),
 		EventRecorder: k8sManager.GetEventRecorderFor("RedpandaReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
-	}).SetupWithManager(ctx, k8sManager)
+	}).SetupWithManager(ctx, k8sManager, "")
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&olddecommission.DecommissionReconciler{

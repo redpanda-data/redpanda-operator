@@ -503,7 +503,7 @@ func Run(
 			Factory:       internalclient.NewFactory(mgr.GetConfig(), mgr.GetClient()).WithAdminClientTimeout(rpClientTimeout),
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr, ""); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err
 		}
@@ -555,7 +555,7 @@ func Run(
 			LifecycleClient:      lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(redpandaImage, cloudSecrets)),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
-		}).SetupWithManager(ctx, mgr); err != nil {
+		}).SetupWithManager(ctx, mgr, namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
 		}
@@ -565,17 +565,17 @@ func Run(
 			Factory:       factory,
 			Scheme:        mgr.GetScheme(),
 			EventRecorder: mgr.GetEventRecorderFor("TopicReconciler"), //nolint:staticcheck // TODO: migrate to GetEventRecorder (events.EventRecorder)
-		}).SetupWithManager(mgr); err != nil {
+		}).SetupWithManager(mgr, namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Topic")
 			return err
 		}
 
-		if err = redpandacontrollers.SetupUserController(ctx, mgr); err != nil {
+		if err = redpandacontrollers.SetupUserController(ctx, mgr, namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "User")
 			return err
 		}
 
-		if err = redpandacontrollers.SetupSchemaController(ctx, mgr); err != nil {
+		if err = redpandacontrollers.SetupSchemaController(ctx, mgr, namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Schema")
 			return err
 		}

@@ -33,6 +33,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v5"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
+	controller "github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -98,14 +99,14 @@ type RedpandaReconciler struct {
 // +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
 	builder := ctrl.NewControllerManagedBy(mgr)
 
 	if err := r.LifecycleClient.WatchResources(builder, &redpandav1alpha2.Redpanda{}); err != nil {
 		return err
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 func (r *RedpandaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, err error) {

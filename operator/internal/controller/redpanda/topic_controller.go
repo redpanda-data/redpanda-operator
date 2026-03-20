@@ -32,6 +32,7 @@ import (
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	controller "github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
@@ -117,10 +118,10 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *TopicReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *TopicReconciler) SetupWithManager(mgr ctrl.Manager, namespace string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Topic{}).
-		Complete(r)
+		Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 func (r *TopicReconciler) reconcile(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
