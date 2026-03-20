@@ -135,6 +135,7 @@ func run(
 func ensureCRD(ctx context.Context, k8sClient client.Client, crd *apiextensionsv1.CustomResourceDefinition) error {
 	var existing apiextensionsv1.CustomResourceDefinition
 	existing.Name = crd.Name
+	log.Printf("Installing %s CRDs", crd.Name)
 	_, err := controllerutil.CreateOrUpdate(ctx, k8sClient, &existing, func() error {
 		existing.Annotations = crd.Annotations
 		existing.Labels = crd.Labels
