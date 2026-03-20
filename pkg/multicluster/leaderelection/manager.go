@@ -24,6 +24,8 @@ import (
 
 type runFactory func(ctx context.Context) error
 
+// LeaderManager coordinates raft-based leader election and manages routines
+// that should only run on the raft leader node.
 type LeaderManager struct {
 	leaderRoutines []func(ctx context.Context) error
 
@@ -37,9 +39,13 @@ type LeaderManager struct {
 	runner   runFactory
 }
 
+// Health checks whether the raft group has a leader by querying the local
+// gRPC transport. If the raft node has not started yet (e.g. this replica
+// is a standby waiting for the K8s lease), the check returns healthy so
+// that Kubernetes does not restart a perfectly functional standby.
 func (lm *LeaderManager) Health(req *http.Request) error {
 	if lm.localClient == nil {
-		return errors.New("raft not started")
+		return nil
 	}
 	response, err := lm.localClient.Check(req.Context(), &transportv1.CheckRequest{})
 	if err != nil {
@@ -52,6 +58,9 @@ func (lm *LeaderManager) Health(req *http.Request) error {
 	return nil
 }
 
+// NewRaftLockManager creates a LeaderManager that runs raft-based leader
+// election using the given configuration. setLeader is called whenever the
+// known leader changes.
 func NewRaftLockManager(configuration LockConfiguration, setLeader func(uint64)) *LeaderManager {
 	manager := &LeaderManager{}
 	manager.runner = func(ctx context.Context) error {
@@ -97,6 +106,9 @@ func (lm *LeaderManager) runLeaderRoutines(ctx context.Context) {
 	}
 }
 
+// RegisterRoutine adds a function that will be started (in its own goroutine)
+// whenever this node becomes the raft leader. The context passed to fn is
+// cancelled when leadership is lost.
 func (lm *LeaderManager) RegisterRoutine(fn func(ctx context.Context) error) {
 	lm.mutex.Lock()
 	defer lm.mutex.Unlock()
@@ -104,10 +116,12 @@ func (lm *LeaderManager) RegisterRoutine(fn func(ctx context.Context) error) {
 	lm.leaderRoutines = append(lm.leaderRoutines, fn)
 }
 
+// IsLeader reports whether this node currently holds raft leadership.
 func (lm *LeaderManager) IsLeader() bool {
 	return lm.isLeader.Load()
 }
 
+// Run starts the raft node and blocks until ctx is cancelled.
 func (lm *LeaderManager) Run(ctx context.Context) error {
 	return lm.runner(ctx)
 }

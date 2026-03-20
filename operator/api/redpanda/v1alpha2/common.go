@@ -422,6 +422,7 @@ const (
 
 	ResourceConditionReasonPending              = "Pending"
 	ResourceConditionReasonSynced               = "Synced"
+	ResourceConditionReasonPartiallySynced      = "PartiallySynced"
 	ResourceConditionReasonClusterRefInvalid    = "ClusterRefInvalid"
 	ResourceConditionReasonConfigurationInvalid = "ConfigurationInvalid"
 	ResourceConditionReasonTerminalClientError  = "TerminalClientError"
@@ -434,6 +435,15 @@ func ResourceSyncedCondition(name string) metav1.Condition {
 		Status:  metav1.ConditionTrue,
 		Reason:  ResourceConditionReasonSynced,
 		Message: fmt.Sprintf("Successfully synced %q to cluster.", name),
+	}
+}
+
+func ResourcePartiallySyncedCondition(name string, err error) metav1.Condition {
+	return metav1.Condition{
+		Type:    ResourceConditionTypeSynced,
+		Status:  metav1.ConditionFalse,
+		Reason:  ResourceConditionReasonPartiallySynced,
+		Message: fmt.Sprintf("Partially synced %q to cluster: %v", name, err),
 	}
 }
 

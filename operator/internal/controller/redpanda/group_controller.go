@@ -12,6 +12,7 @@ package redpanda
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -54,12 +55,16 @@ func (r *GroupReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alph
 func (r *GroupReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Group]) (client.Patch, error) {
 	group := request.object
 
+	var srSyncWarning error
+
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.Group(group.Name, group.Namespace)
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
+		} else if srSyncWarning != nil {
+			syncCondition = redpandav1alpha2.ResourcePartiallySyncedCondition(group.Name, srSyncWarning)
 		} else {
 			syncCondition = redpandav1alpha2.ResourceSyncedCondition(group.Name)
 		}
@@ -80,7 +85,10 @@ func (r *GroupReconciler) SyncResource(ctx context.Context, request ResourceRequ
 	// Always sync ACLs. When Authorization is nil or empty, this removes
 	// any existing ACLs for the group principal.
 	if err := syncer.Sync(ctx, group); err != nil {
-		return createPatch(err)
+		if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+			return createPatch(err)
+		}
+		srSyncWarning = err
 	}
 
 	return createPatch(nil)

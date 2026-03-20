@@ -1153,12 +1153,12 @@ type SetDataDirOwnership struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
-func (t *SetDataDirOwnership) GetResources() *corev1.ResourceRequirements {
-	return t.Resources
+func (s *SetDataDirOwnership) GetResources() *corev1.ResourceRequirements {
+	return s.Resources
 }
 
-func (t *SetDataDirOwnership) GetExtraVolumeMounts() *string {
-	return t.ExtraVolumeMounts
+func (s *SetDataDirOwnership) GetExtraVolumeMounts() *string {
+	return s.ExtraVolumeMounts
 }
 
 // InitContainerImage configures the init container image used to perform initial setup tasks before the main containers start.
@@ -1190,12 +1190,12 @@ type FsValidator struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
-func (t *FsValidator) GetResources() *corev1.ResourceRequirements {
-	return t.Resources
+func (f *FsValidator) GetResources() *corev1.ResourceRequirements {
+	return f.Resources
 }
 
-func (t *FsValidator) GetExtraVolumeMounts() *string {
-	return t.ExtraVolumeMounts
+func (f *FsValidator) GetExtraVolumeMounts() *string {
+	return f.ExtraVolumeMounts
 }
 
 type Configurator struct {

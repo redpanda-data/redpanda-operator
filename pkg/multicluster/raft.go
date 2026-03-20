@@ -48,45 +48,111 @@ func stringToHash(s string) uint64 {
 	return h.Sum64()
 }
 
+// RaftCluster describes a single cluster participating in raft-based
+// leader election.
 type RaftCluster struct {
-	Name           string
-	Address        string
+	// Name uniquely identifies this cluster within the raft group.
+	Name string
+	// Address is the host:port where this cluster's raft transport listens.
+	Address string
+	// KubeconfigFile is an optional path to a kubeconfig for this cluster.
 	KubeconfigFile string
-	Kubeconfig     *rest.Config
+	// Kubeconfig is an optional pre-loaded REST config for this cluster.
+	Kubeconfig *rest.Config
 }
 
+// RaftConfiguration holds the full configuration for a raft-based multicluster
+// runtime manager, including cluster identity, peer topology, TLS, and optional
+// local leader election.
 type RaftConfiguration struct {
-	Name              string
-	Address           string
-	Peers             []RaftCluster
-	ElectionTimeout   time.Duration
+	// Name uniquely identifies this node within the raft group (must match
+	// one of the Peers entries).
+	Name string
+	// Address is the host:port this node's gRPC transport listens on.
+	Address string
+	// Peers is a list of all clusters in the raft group, including this one.
+	Peers []RaftCluster
+	// ElectionTimeout is the raft election timeout. Zero uses the default (10s).
+	ElectionTimeout time.Duration
+	// HeartbeatInterval is the raft heartbeat interval. Zero uses the default (1s).
 	HeartbeatInterval time.Duration
-	Meta              []byte
+	// GRPCMaxBackoff caps the exponential backoff delay between gRPC
+	// reconnection attempts to peers. A shorter value speeds up recovery
+	// when a peer restarts. Zero uses the default (5s).
+	GRPCMaxBackoff time.Duration
+	// Meta is opaque metadata attached to this node, accessible via the
+	// transport's Check RPC.
+	Meta []byte
 
-	Scheme             *runtime.Scheme
-	Logger             logr.Logger
-	Metrics            *metricsserver.Options
+	// Scheme is the runtime scheme used for all controller-runtime clusters.
+	Scheme *runtime.Scheme
+	// Logger is used for all raft and manager logging.
+	Logger logr.Logger
+	// Metrics configures the metrics server. Nil disables metrics.
+	Metrics *metricsserver.Options
+	// HealthProbeAddress is the bind address for the health probe endpoint.
 	HealthProbeAddress string
-	Webhooks           webhook.Server
-	RestConfig         *rest.Config
-	BaseContext        func() context.Context
+	// Webhooks configures the webhook server. Nil disables webhooks.
+	Webhooks webhook.Server
+	// RestConfig is the Kubernetes REST config for the local cluster.
+	// If nil, it is loaded from the default kubeconfig.
+	RestConfig *rest.Config
+	// BaseContext optionally provides a base context for the manager.
+	BaseContext func() context.Context
 
+	// Insecure disables TLS on the gRPC transport.
 	Insecure bool
-	// these are only used when the Insecure flag is set to false
-	CAFile           string
-	PrivateKeyFile   string
-	CertificateFile  string
+	// CAFile is the path to the CA certificate (used when Insecure is false
+	// and TLS options are not provided).
+	CAFile string
+	// PrivateKeyFile is the path to the TLS private key.
+	PrivateKeyFile string
+	// CertificateFile is the path to the TLS certificate.
+	CertificateFile string
+	// ClientTLSOptions are custom TLS config mutators for outbound gRPC connections.
 	ClientTLSOptions []func(*tls.Config)
+	// ServerTLSOptions are custom TLS config mutators for the inbound gRPC listener.
 	ServerTLSOptions []func(*tls.Config)
 
-	// these are used when bootstrapping mode is enabled
-	Bootstrap           bool
+	// Bootstrap enables bootstrap mode, where the raft leader fetches
+	// kubeconfigs from follower clusters to dynamically discover them.
+	Bootstrap bool
+	// KubernetesAPIServer is the advertised API server address used when
+	// generating kubeconfigs in bootstrap mode.
 	KubernetesAPIServer string
+	// KubeconfigNamespace is the namespace for the bootstrap kubeconfig secret.
 	KubeconfigNamespace string
-	KubeconfigName      string
+	// KubeconfigName is the name of the bootstrap kubeconfig secret.
+	KubeconfigName string
 
-	// For multicluster runtime to be able to run multiple controllers with the same name
+	// SkipNameValidation allows multiple controllers with the same name,
+	// needed for multicluster run in the same testing process.
 	SkipNameValidation bool
+
+	// LocalLeaderElection configures K8s lease-based leader election within
+	// the local cluster. When non-nil, only the pod holding the local lease
+	// participates in raft. This allows running multiple operator replicas
+	// per cluster for high availability — "double leader-election": first
+	// within the local cluster (K8s lease), then across clusters (raft).
+	LocalLeaderElection *LocalLeaderElectionConfig
+}
+
+// LocalLeaderElectionConfig holds the configuration for K8s lease-based
+// leader election within the local cluster.
+type LocalLeaderElectionConfig struct {
+	// ID is the name of the K8s Lease resource used for leader election.
+	ID string
+	// Namespace is the namespace where the Lease resource is created.
+	Namespace string
+	// LeaseDuration is how long a non-leader waits before attempting to
+	// acquire the lease.
+	LeaseDuration time.Duration
+	// RenewDeadline is how long the current leader retries renewing before
+	// giving up.
+	RenewDeadline time.Duration
+	// RetryPeriod is the interval between lease acquisition attempts by
+	// non-leaders.
+	RetryPeriod time.Duration
 }
 
 func (r RaftConfiguration) validate() error {
@@ -114,6 +180,8 @@ func (r RaftConfiguration) validate() error {
 	return nil
 }
 
+// NewRaftRuntimeManager creates a Manager backed by raft-based cross-cluster
+// leader election. Only the raft leader's manager starts controller runnables.
 func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 	if err := config.validate(); err != nil {
 		return nil, err
@@ -189,6 +257,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		Insecure:          config.Insecure,
 		ElectionTimeout:   config.ElectionTimeout,
 		HeartbeatInterval: config.HeartbeatInterval,
+		GRPCMaxBackoff:    config.GRPCMaxBackoff,
 		Logger:            &raftLogr{logger: config.Logger},
 	}
 
@@ -232,10 +301,25 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 
 	opts := manager.Options{
 		Scheme:         config.Scheme,
-		LeaderElection: false,
+		LeaderElection: config.LocalLeaderElection != nil,
 		Logger:         config.Logger,
 		WebhookServer:  config.Webhooks,
 		BaseContext:    config.BaseContext,
+	}
+	if lle := config.LocalLeaderElection; lle != nil {
+		opts.LeaderElectionID = lle.ID
+		opts.LeaderElectionNamespace = lle.Namespace
+		opts.LeaderElectionReleaseOnCancel = true
+		opts.LeaderElectionResourceLock = "leases"
+		if lle.LeaseDuration > 0 {
+			opts.LeaseDuration = &lle.LeaseDuration
+		}
+		if lle.RenewDeadline > 0 {
+			opts.RenewDeadline = &lle.RenewDeadline
+		}
+		if lle.RetryPeriod > 0 {
+			opts.RetryPeriod = &lle.RetryPeriod
+		}
 	}
 	if config.Metrics == nil {
 		opts.Metrics = server.Options{
@@ -313,7 +397,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		}
 	}
 
-	manager, err := newManager(config.Logger, restConfig, clusterProvider, restart, func() string {
+	manager, err := newManager(config.LocalLeaderElection != nil, config.Logger, restConfig, clusterProvider, restart, func() string {
 		return idsToNames[currentLeader.Load()]
 	}, func() map[string]cluster.Cluster {
 		clusters := map[string]cluster.Cluster{}
@@ -378,7 +462,7 @@ func (m *raftManager) Health(req *http.Request) error {
 	return m.manager.Health(req)
 }
 
-func newManager(logger logr.Logger, config *rest.Config, provider multicluster.Provider, restart chan struct{}, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
+func newManager(localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, restart chan struct{}, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
 	mgr, err := mcmanager.New(config, provider, opts)
 	if err != nil {
 		return nil, err
@@ -391,7 +475,7 @@ func newManager(logger logr.Logger, config *rest.Config, provider multicluster.P
 		return nil
 	})
 
-	runnable := &leaderRunnable{manager: manager, logger: logger, restart: restart, getClusters: getClusters}
+	runnable := &leaderRunnable{manager: manager, logger: logger, restart: restart, getClusters: getClusters, needsLocalLeaderElection: localLeaderElection}
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
@@ -419,11 +503,16 @@ type warmupRunnable interface {
 }
 
 type leaderRunnable struct {
-	runnables   []mcmanager.Runnable
-	manager     *leaderelection.LeaderManager
-	logger      logr.Logger
-	restart     chan struct{}
-	getClusters func() map[string]cluster.Cluster
+	runnables                []mcmanager.Runnable
+	manager                  *leaderelection.LeaderManager
+	logger                   logr.Logger
+	restart                  chan struct{}
+	getClusters              func() map[string]cluster.Cluster
+	needsLocalLeaderElection bool
+}
+
+func (l *leaderRunnable) NeedLeaderElection() bool {
+	return l.needsLocalLeaderElection
 }
 
 func (l *leaderRunnable) Add(r mcmanager.Runnable) {

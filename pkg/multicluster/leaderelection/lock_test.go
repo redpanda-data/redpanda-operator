@@ -13,7 +13,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
 	"reflect"
 	"sync/atomic"
 	"testing"
@@ -22,6 +21,7 @@ import (
 	"go.etcd.io/raft/v3"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 // TestLaggingPeerCatchesUpViaSnapshot reproduces the "need non-empty snapshot"
@@ -263,6 +263,16 @@ func TestLocker(t *testing.T) {
 				t.Log("killing leader", currentLeader.config.ID)
 			}
 
+			// Wait for all stopped leaders to fully exit before restarting.
+			// Without this, the old goroutine may still be shutting down
+			// when Start spawns a new one, and the cleanup's WaitForStopped
+			// may consume the old goroutine's onStop signal — causing the
+			// test to "complete" while the new goroutine is still running,
+			// which panics on tst.Log after the test ends.
+			for _, leader := range stopped {
+				leader.WaitForStopped(t, 10*time.Second)
+			}
+
 			// restart and make sure that they become followers again
 			for _, leader := range stopped {
 				leader.Start(t, ctx)
@@ -478,7 +488,7 @@ func setupLockTest(t *testing.T, ctx context.Context, n int) []*testLeader {
 		t.Fatalf("at least one lock configuration is required")
 	}
 
-	ports := getFreePorts(t, n)
+	ports := testutil.FreePorts(t, n)
 
 	leaders := []*testLeader{}
 	nodes := []LockerNode{}
@@ -524,26 +534,6 @@ func setupLockTest(t *testing.T, ctx context.Context, n int) []*testLeader {
 	}
 
 	return leaders
-}
-
-func getFreePorts(t *testing.T, n int) []int {
-	ports := make([]int, 0, n)
-	listeners := make([]net.Listener, 0, n)
-
-	for i := 0; i < n; i++ {
-		l, err := net.Listen("tcp", "127.0.0.1:0")
-		if err != nil {
-			t.Fatalf("error getting free port: %v", err)
-		}
-		listeners = append(listeners, l)
-		ports = append(ports, l.Addr().(*net.TCPAddr).Port)
-	}
-
-	for _, l := range listeners {
-		l.Close()
-	}
-
-	return ports
 }
 
 func testLogger(t *testing.T) raft.Logger {
