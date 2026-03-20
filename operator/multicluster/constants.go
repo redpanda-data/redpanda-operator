@@ -80,10 +80,11 @@ const (
 
 // Well-known Kubernetes label keys.
 const (
-	labelNameKey      = "app.kubernetes.io/name"
-	labelInstanceKey  = "app.kubernetes.io/instance"
-	labelComponentKey = "app.kubernetes.io/component"
-	labelManagedByKey = "app.kubernetes.io/managed-by"
+	labelNameKey        = "app.kubernetes.io/name"
+	labelInstanceKey    = "app.kubernetes.io/instance"
+	labelComponentKey   = "app.kubernetes.io/component"
+	labelManagedByKey   = "app.kubernetes.io/managed-by"
+	labelClusterNameKey = "app.kubernetes.io/cluster-name"
 
 	labelPDBKey     = "redpanda.com/poddisruptionbudget"
 	labelBrokerKey  = "cluster.redpanda.com/broker"

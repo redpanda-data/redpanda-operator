@@ -66,7 +66,7 @@ func NewRenderState(
 	// Apply Helm-equivalent defaults to nil fields.
 	cluster.Spec.MergeDefaults()
 
-	releaseName := cluster.Name + "-" + clusterName
+	releaseName := cluster.Name
 
 	var ctl *kube.Ctl
 	if config != nil {
@@ -105,10 +105,11 @@ func NewRenderState(
 func (r *RenderState) tplData() map[string]any {
 	return map[string]any{
 		"Release": map[string]any{
-			"Namespace": r.namespace,
-			"Name":      r.releaseName,
-			"Service":   "Helm",
-			"IsUpgrade": true,
+			"Namespace":   r.namespace,
+			"Name":        r.releaseName,
+			"Service":     "Helm",
+			"IsUpgrade":   true,
+			"ClusterName": r.clusterName,
 		},
 		"Name":      r.fullname(),
 		"Namespace": r.namespace,
@@ -131,10 +132,11 @@ func (r *RenderState) fullname() string {
 
 func (r *RenderState) commonLabels() map[string]string {
 	labels := map[string]string{
-		labelNameKey:      labelNameValue,
-		labelInstanceKey:  r.releaseName,
-		labelManagedByKey: labelManagedByValue,
-		labelComponentKey: labelNameValue,
+		labelNameKey:        labelNameValue,
+		labelInstanceKey:    r.releaseName,
+		labelManagedByKey:   labelManagedByValue,
+		labelComponentKey:   labelNameValue,
+		labelClusterNameKey: r.clusterName,
 	}
 	for k, v := range r.Spec().CommonLabels {
 		labels[k] = v
@@ -144,8 +146,9 @@ func (r *RenderState) commonLabels() map[string]string {
 
 func (r *RenderState) clusterPodLabelsSelector() map[string]string {
 	return map[string]string{
-		labelInstanceKey: r.releaseName,
-		labelNameKey:     labelNameValue,
+		labelInstanceKey:    r.releaseName,
+		labelNameKey:        labelNameValue,
+		labelClusterNameKey: r.clusterName,
 	}
 }
 

@@ -14,10 +14,10 @@ import (
 	"fmt"
 
 	"github.com/redpanda-data/common-go/kube"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // StretchClusterOwnershipResolver it's a copy of V2OwnershipResolver
@@ -76,13 +76,6 @@ func (m *StretchClusterOwnershipResolver) OwnerForObject(object client.Object) *
 }
 
 func (m *StretchClusterOwnershipResolver) ResolveOwnerReference(ctx context.Context, owner *StretchClusterWithPools, clusterName string, ctl *kube.Ctl) (*StretchClusterWithPools, error) {
-	//logger := log.FromContext(ctx).WithName("debug-ownership")
-
-	if clusterName == mcmanager.LocalCluster {
-		// no need to change owner
-		//logger.V(log.InfoLevel).Info(fmt.Sprintf("cluster name is local, no need to change owner (owner UID=%q)", owner.GetUID()))
-		// return owner, nil
-	}
 	sc := &redpandav1alpha2.StretchCluster{}
 	err := ctl.Get(ctx, client.ObjectKey{Name: owner.GetName(), Namespace: owner.GetNamespace()}, sc)
 	if err != nil {
@@ -95,10 +88,6 @@ func (m *StretchClusterOwnershipResolver) ResolveOwnerReference(ctx context.Cont
 		newOwner := NewStretchClusterWithPools(sc.DeepCopy(), owner.clusters, owner.NodePools...)
 		newOwner.Kind = "StretchCluster"
 		newOwner.APIVersion = redpandav1alpha2.GroupVersion.String()
-		//logger.V(log.InfoLevel).Info(fmt.Sprintf(
-		//	"changing owner as uid of original owner %q doesn't match with stretch cluster uid %q. New Owner: kind=%q version=%q uid=%q",
-		//	owner.GetUID(), sc.GetUID(), newOwner.Kind, newOwner.APIVersion, newOwner.GetUID()),
-		//)
 		return newOwner, nil
 	}
 	return owner, nil
