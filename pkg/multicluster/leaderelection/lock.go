@@ -429,7 +429,18 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 				}
 			}
 
-			// send out messages
+			// Apply snapshot before appending entries. When a fresh follower
+			// receives a MsgSnap from the leader, the raft node surfaces
+			// the snapshot in Ready. MemoryStorage must learn about it
+			// first; otherwise Append panics with "missing log entry"
+			// because there is a gap between MemoryStorage's last index
+			// and the first entry that follows the snapshot.
+			if !raft.IsEmptySnap(rd.Snapshot) {
+				if err := storage.ApplySnapshot(rd.Snapshot); err != nil && err != raft.ErrSnapOutOfDate {
+					config.Logger.Errorf("applying snapshot: %v", err)
+				}
+			}
+
 			_ = storage.Append(rd.Entries)
 			for _, msg := range rd.Messages {
 				if msg.To == config.ID {
@@ -446,26 +457,37 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 						break
 					}
 					if !applied {
-						// Heartbeats are periodic: the leader sends the next one at
-						// the next HeartbeatTick. A fresh follower may transiently
-						// return Applied=false while its snapshot catch-up is in
-						// progress; retrying here would block the Ready loop for
-						// a full second per heartbeat per lagging peer.
+						// The remote peer returned Applied=false, meaning it could
+						// not process the message (e.g. a fresh follower whose
+						// lastIndex is behind the leader's log).
 						//
-						// However, we must still report the peer as unreachable so
-						// that the progress tracker transitions from StateReplicate
-						// to StateProbe. Without this, a replaced follower (fresh
-						// MemoryStorage) that rejects heartbeats via the commit
-						// guard leaves the leader's progress in StateReplicate with
-						// Match == lastIndex, preventing sendAppend from ever being
-						// called — even after the synthetic MsgHeartbeatResp
-						// reactivation.
-						if msg.Type == raftpb.MsgHeartbeat {
-							node.ReportUnreachable(msg.To)
-							break
+						// Report the peer as unreachable so the progress tracker
+						// transitions from StateReplicate to StateProbe. Without
+						// this, a replaced follower (fresh MemoryStorage) that
+						// rejects messages via the transport guards leaves the
+						// leader's progress stuck, preventing snapshot catch-up.
+						node.ReportUnreachable(msg.To)
+
+						// Propose a no-op to advance the log past stale Match
+						// values. When a peer restarts with fresh MemoryStorage,
+						// the leader retains match=M from the dead peer, but
+						// lastIndex may equal M. The MsgHeartbeatResp handler
+						// only calls sendAppend when match < lastIndex, so
+						// without advancing the log, the leader never discovers
+						// it needs to send a snapshot. The no-op advances
+						// lastIndex to M+1, unblocking the sendAppend path.
+						// After compaction removes old entries, sendAppend
+						// enters the snapshot path and delivers the snapshot.
+						//
+						// Only propose when this node is the leader. Only
+						// the leader has stale Match values that need
+						// advancing, and non-leader proposals queue up
+						// without being committed, flooding the raft group
+						// during mass restarts (e.g. 13-node quorum test).
+						if transport.isLeader.Load() {
+							_ = node.Propose(ctx, nil)
 						}
-						// attempt to apply again in a second
-						time.Sleep(1 * time.Second)
+						break
 					} else {
 						break
 					}

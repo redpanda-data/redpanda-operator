@@ -302,22 +302,36 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 			return &transportv1.SendResponse{Applied: false}, nil
 		}
 
-		// Guard against "tocommit(X) is out of range [lastIndex(Y)]" panic.
+		// Guard against panics and deadlocks when a follower restarts with
+		// fresh MemoryStorage whose lastIndex is behind the leader's log.
 		//
-		// When a node restarts fresh, raft.StartNode populates its log with N
-		// ConfChange entries (N = number of peers), so lastIndex = N. If the
-		// existing cluster has already committed beyond N, the raft library's
-		// handleHeartbeat will call commitTo(Commit) and panic because
-		// Commit > lastIndex.
+		// raft.StartNode populates the log with N ConfChange entries
+		// (N = number of peers), so a fresh follower has lastIndex = N.
 		//
-		// We intercept such heartbeats before passing them to node.Step and
-		// return Applied=false, signalling the leader to retry on the next
-		// heartbeat tick. Meanwhile the leader discovers the follower is
-		// lagging via MsgApp rejection and sends a MsgSnap, after which
-		// lastIndex advances to the snapshot index and heartbeats are safe.
-		if msg.Type == raftpb.MsgHeartbeat {
-			if s := t.getStorage(); s != nil {
-				if lastIdx, err := s.LastIndex(); err == nil && msg.Commit > lastIdx {
+		// MsgHeartbeat guard: the leader's Commit may already exceed N.
+		// handleHeartbeat calls commitTo(Commit), which panics when
+		// Commit > lastIndex. We clamp Commit to lastIndex so the
+		// heartbeat is still processed by the raft node, which generates
+		// a proper MsgHeartbeatResp. This keeps the peer active in the
+		// leader's progress tracker — rejecting the heartbeat entirely
+		// would cause the leader to mark the peer inactive, preventing
+		// snapshot delivery after log compaction.
+		//
+		// MsgApp guard: when the leader's log is compacted exactly at the
+		// follower's stale Match index, the leader sends MsgApp with
+		// prevLogIndex = Match. The follower rejects (term mismatch), but
+		// the leader's MaybeDecrTo cannot decrease Next below Match+1,
+		// creating an infinite rejection loop. Rejecting the MsgApp
+		// before stepping avoids flooding. The leader-side handler for
+		// Applied=false proposes a no-op to advance lastIndex past the
+		// stale Match, enabling sendAppend to trigger the snapshot path
+		// after compaction.
+		if s := t.getStorage(); s != nil {
+			if lastIdx, err := s.LastIndex(); err == nil {
+				if msg.Type == raftpb.MsgHeartbeat && msg.Commit > lastIdx {
+					msg.Commit = lastIdx
+				}
+				if msg.Type == raftpb.MsgApp && msg.Index > lastIdx {
 					return &transportv1.SendResponse{Applied: false}, nil
 				}
 			}
