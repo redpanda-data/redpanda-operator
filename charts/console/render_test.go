@@ -178,6 +178,294 @@ func TestIngressGatewayMutualExclusion(t *testing.T) {
 	require.Contains(t, err.Error(), "ingress and gateway cannot both be enabled")
 }
 
+// findHTTPRoute extracts the rendered HTTPRoute from a Render output, or nil.
+func findHTTPRoute(objs []kube.Object) *gatewayv1.HTTPRoute {
+	for _, obj := range objs {
+		if !isNonNil(obj) {
+			continue
+		}
+		if hr, ok := obj.(*gatewayv1.HTTPRoute); ok {
+			return hr
+		}
+	}
+	return nil
+}
+
+func TestGatewayConfigFields(t *testing.T) {
+	t.Run("hostnames", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"a.example.com", "b.example.com"},
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.NotNil(t, hr)
+		require.Equal(t, []gatewayv1.Hostname{"a.example.com", "b.example.com"}, hr.Spec.Hostnames)
+	})
+
+	t.Run("change hostnames", func(t *testing.T) {
+		// First config
+		state1, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"old.example.com"},
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr1 := findHTTPRoute(Render(state1))
+		require.NotNil(t, hr1)
+		require.Equal(t, []gatewayv1.Hostname{"old.example.com"}, hr1.Spec.Hostnames)
+
+		// Updated config
+		state2, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"new.example.com", "also-new.example.com"},
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr2 := findHTTPRoute(Render(state2))
+		require.NotNil(t, hr2)
+		require.Equal(t, []gatewayv1.Hostname{"new.example.com", "also-new.example.com"}, hr2.Spec.Hostnames)
+	})
+
+	t.Run("path and pathType", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				Path:      ptr.To("/api/v1"),
+				PathType:  ptr.To(gatewayv1.PathMatchExact),
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.NotNil(t, hr)
+		require.Len(t, hr.Spec.Rules, 1)
+		require.Len(t, hr.Spec.Rules[0].Matches, 1)
+		match := hr.Spec.Rules[0].Matches[0]
+		require.NotNil(t, match.Path)
+		require.Equal(t, gatewayv1.PathMatchExact, *match.Path.Type)
+		require.Equal(t, "/api/v1", *match.Path.Value)
+	})
+
+	t.Run("change path", func(t *testing.T) {
+		state1, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				Path:      ptr.To("/old"),
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr1 := findHTTPRoute(Render(state1))
+		require.Equal(t, "/old", *hr1.Spec.Rules[0].Matches[0].Path.Value)
+
+		state2, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				Path:      ptr.To("/new/path"),
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr2 := findHTTPRoute(Render(state2))
+		require.Equal(t, "/new/path", *hr2.Spec.Rules[0].Matches[0].Path.Value)
+	})
+
+	t.Run("annotations", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				Annotations: map[string]string{
+					"example.com/team":  "platform",
+					"example.com/owner": "alice",
+				},
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.NotNil(t, hr)
+		require.Equal(t, "platform", hr.Annotations["example.com/team"])
+		require.Equal(t, "alice", hr.Annotations["example.com/owner"])
+	})
+
+	t.Run("change annotations", func(t *testing.T) {
+		state1, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:     ptr.To(true),
+				Hostnames:   []string{"console.example.com"},
+				Annotations: map[string]string{"old-key": "old-val"},
+				ParentRefs:  []PartialGatewayParentReference{{Name: ptr.To("gw")}},
+			},
+		})
+		require.NoError(t, err)
+		hr1 := findHTTPRoute(Render(state1))
+		require.Equal(t, "old-val", hr1.Annotations["old-key"])
+
+		state2, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:     ptr.To(true),
+				Hostnames:   []string{"console.example.com"},
+				Annotations: map[string]string{"new-key": "new-val"},
+				ParentRefs:  []PartialGatewayParentReference{{Name: ptr.To("gw")}},
+			},
+		})
+		require.NoError(t, err)
+		hr2 := findHTTPRoute(Render(state2))
+		require.Equal(t, "new-val", hr2.Annotations["new-key"])
+		require.Empty(t, hr2.Annotations["old-key"])
+	})
+
+	t.Run("parentRefs with all fields", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				ParentRefs: []PartialGatewayParentReference{
+					{
+						Name:        ptr.To("primary-gw"),
+						Namespace:   ptr.To("gateway-system"),
+						SectionName: ptr.To(gatewayv1.SectionName("https")),
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.NotNil(t, hr)
+		require.Len(t, hr.Spec.ParentRefs, 1)
+		ref := hr.Spec.ParentRefs[0]
+		require.Equal(t, gatewayv1.ObjectName("primary-gw"), ref.Name)
+		require.NotNil(t, ref.Namespace)
+		require.Equal(t, gatewayv1.Namespace("gateway-system"), *ref.Namespace)
+		require.NotNil(t, ref.SectionName)
+		require.Equal(t, gatewayv1.SectionName("https"), *ref.SectionName)
+	})
+
+	t.Run("multiple parentRefs", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("gw-a"), Namespace: ptr.To("ns-a")},
+					{Name: ptr.To("gw-b"), Namespace: ptr.To("ns-b"), SectionName: ptr.To(gatewayv1.SectionName("http"))},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.NotNil(t, hr)
+		require.Len(t, hr.Spec.ParentRefs, 2)
+		require.Equal(t, gatewayv1.ObjectName("gw-a"), hr.Spec.ParentRefs[0].Name)
+		require.Equal(t, gatewayv1.ObjectName("gw-b"), hr.Spec.ParentRefs[1].Name)
+		require.Equal(t, gatewayv1.SectionName("http"), *hr.Spec.ParentRefs[1].SectionName)
+	})
+
+	t.Run("change parentRefs", func(t *testing.T) {
+		state1, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:    ptr.To(true),
+				Hostnames:  []string{"console.example.com"},
+				ParentRefs: []PartialGatewayParentReference{{Name: ptr.To("old-gw")}},
+			},
+		})
+		require.NoError(t, err)
+		hr1 := findHTTPRoute(Render(state1))
+		require.Equal(t, gatewayv1.ObjectName("old-gw"), hr1.Spec.ParentRefs[0].Name)
+
+		state2, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("new-gw"), Namespace: ptr.To("new-ns")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr2 := findHTTPRoute(Render(state2))
+		require.Equal(t, gatewayv1.ObjectName("new-gw"), hr2.Spec.ParentRefs[0].Name)
+		require.Equal(t, gatewayv1.Namespace("new-ns"), *hr2.Spec.ParentRefs[0].Namespace)
+	})
+
+	t.Run("parentRef with only name", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:   ptr.To(true),
+				Hostnames: []string{"console.example.com"},
+				ParentRefs: []PartialGatewayParentReference{
+					{Name: ptr.To("simple-gw")},
+				},
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.Len(t, hr.Spec.ParentRefs, 1)
+		require.Equal(t, gatewayv1.ObjectName("simple-gw"), hr.Spec.ParentRefs[0].Name)
+		require.Nil(t, hr.Spec.ParentRefs[0].Namespace)
+		require.Nil(t, hr.Spec.ParentRefs[0].SectionName)
+	})
+
+	t.Run("default pathType is PathPrefix", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Gateway: &PartialGatewayConfig{
+				Enabled:    ptr.To(true),
+				Hostnames:  []string{"console.example.com"},
+				ParentRefs: []PartialGatewayParentReference{{Name: ptr.To("gw")}},
+				// PathType not set — should default to PathPrefix
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.NotNil(t, hr)
+		require.Equal(t, gatewayv1.PathMatchPathPrefix, *hr.Spec.Rules[0].Matches[0].Path.Type)
+	})
+
+	t.Run("backend service port from values", func(t *testing.T) {
+		state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+			Service: &PartialServiceConfig{
+				Port: ptr.To(int32(9090)),
+			},
+			Gateway: &PartialGatewayConfig{
+				Enabled:    ptr.To(true),
+				Hostnames:  []string{"console.example.com"},
+				ParentRefs: []PartialGatewayParentReference{{Name: ptr.To("gw")}},
+			},
+		})
+		require.NoError(t, err)
+		hr := findHTTPRoute(Render(state))
+		require.NotNil(t, hr)
+		require.Len(t, hr.Spec.Rules[0].BackendRefs, 1)
+		require.Equal(t, gatewayv1.PortNumber(9090), *hr.Spec.Rules[0].BackendRefs[0].Port)
+	})
+}
+
 // isNonNil returns true if the kube.Object interface holds a non-nil pointer.
 func isNonNil(obj kube.Object) bool {
 	return obj != nil && !reflect.ValueOf(obj).IsNil()

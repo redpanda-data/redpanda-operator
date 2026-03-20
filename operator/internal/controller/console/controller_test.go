@@ -104,6 +104,53 @@ func TestController(t *testing.T) {
 			},
 		},
 		{
+			name: "gateway-enabled",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-gateway",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ConsoleValues: redpandav1alpha2.ConsoleValues{
+						Gateway: &redpandav1alpha2.GatewayConfig{
+							Enabled:   ptr.To(true),
+							Hostnames: []string{"console.example.com"},
+							Path:      ptr.To("/"),
+							Annotations: map[string]string{
+								"example.com/team": "platform",
+							},
+							ParentRefs: []redpandav1alpha2.GatewayParentReference{
+								{
+									Name:      "my-gateway",
+									Namespace: ptr.To("gateway-system"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "gateway-custom-path",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-gw-path",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ConsoleValues: redpandav1alpha2.ConsoleValues{
+						Gateway: &redpandav1alpha2.GatewayConfig{
+							Enabled:   ptr.To(true),
+							Hostnames: []string{"console.example.com", "console.internal"},
+							Path:      ptr.To("/console"),
+							ParentRefs: []redpandav1alpha2.GatewayParentReference{
+								{Name: "gw-a"},
+								{Name: "gw-b", Namespace: ptr.To("other-ns")},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "jwt-set",
 			console: &redpandav1alpha2.Console{
 				ObjectMeta: metav1.ObjectMeta{
