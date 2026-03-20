@@ -397,7 +397,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		}
 	}
 
-	manager, err := newManager(config.LocalLeaderElection != nil, config.Logger, restConfig, clusterProvider, restart, func() string {
+	manager, err := newManager(config.Name, config.LocalLeaderElection != nil, config.Logger, restConfig, clusterProvider, restart, func() string {
 		return idsToNames[currentLeader.Load()]
 	}, func() map[string]cluster.Cluster {
 		clusters := map[string]cluster.Cluster{}
@@ -429,6 +429,7 @@ type raftManager struct {
 	runnable            *leaderRunnable
 	manager             *leaderelection.LeaderManager
 	logger              logr.Logger
+	localClusterName    string
 	getLeader           func() string
 	getClusters         func() map[string]cluster.Cluster
 	addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error
@@ -451,6 +452,10 @@ func (m *raftManager) GetClusterNames() []string {
 	return clusters
 }
 
+func (m *raftManager) GetLocalClusterName() string {
+	return m.localClusterName
+}
+
 func (m *raftManager) GetLeader() string {
 	if m.getLeader == nil {
 		return ""
@@ -462,7 +467,7 @@ func (m *raftManager) Health(req *http.Request) error {
 	return m.manager.Health(req)
 }
 
-func newManager(localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, restart chan struct{}, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
+func newManager(localClusterName string, localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, restart chan struct{}, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
 	mgr, err := mcmanager.New(config, provider, opts)
 	if err != nil {
 		return nil, err
@@ -479,7 +484,7 @@ func newManager(localLeaderElection bool, logger logr.Logger, config *rest.Confi
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
-	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
+	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger, localClusterName: localClusterName, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
 }
 
 func (m *raftManager) Add(r mcmanager.Runnable) error {

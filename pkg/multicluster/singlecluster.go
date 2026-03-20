@@ -33,6 +33,10 @@ func (s *singleClusterManager) GetClusterNames() []string {
 	return []string{mcmanager.LocalCluster}
 }
 
+func (s *singleClusterManager) GetLocalClusterName() string {
+	return mcmanager.LocalCluster
+}
+
 func (s *singleClusterManager) AddOrReplaceCluster(_ context.Context, _ string, _ cluster.Cluster) error {
 	return errors.New("adding a cluster not supported in single cluster mode")
 }

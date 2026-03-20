@@ -214,7 +214,12 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 // cleaning up any resources that should no longer exist.
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	var syncErr error
+	logger := log.FromContext(ctx).WithName("SyncAll")
+	clusterList := r.clusterList(owner)
+	logger.V(log.InfoLevel).Info("syncing all clusters", "clusterList", clusterList)
 	for _, clusterName := range r.clusterList(owner) {
+		msg := fmt.Sprintf("syncer called, clusterName=%q, owner.Name=%q owner.UID=%q owner.GroupVersionKind=%q", clusterName, owner.GetName(), owner.GetUID(), owner.GetObjectKind().GroupVersionKind().String())
+		logger.V(log.InfoLevel).Info(msg)
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			return err
