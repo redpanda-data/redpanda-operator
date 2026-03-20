@@ -429,7 +429,18 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 				}
 			}
 
-			// send out messages
+			// Apply snapshot before appending entries. When a fresh follower
+			// receives a MsgSnap from the leader, the raft node surfaces
+			// the snapshot in Ready. MemoryStorage must learn about it
+			// first; otherwise Append panics with "missing log entry"
+			// because there is a gap between MemoryStorage's last index
+			// and the first entry that follows the snapshot.
+			if !raft.IsEmptySnap(rd.Snapshot) {
+				if err := storage.ApplySnapshot(rd.Snapshot); err != nil && err != raft.ErrSnapOutOfDate {
+					config.Logger.Errorf("applying snapshot: %v", err)
+				}
+			}
+
 			_ = storage.Append(rd.Entries)
 			for _, msg := range rd.Messages {
 				if msg.To == config.ID {

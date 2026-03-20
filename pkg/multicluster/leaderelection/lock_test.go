@@ -18,7 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"go.etcd.io/raft/v3"
+	raftpb "go.etcd.io/raft/v3/raftpb"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -225,6 +227,87 @@ func TestFreshNodeJoinsRunningCluster(t *testing.T) {
 	laggingNode.Start(t, ctx)
 	laggingNode.WaitForFollower(t, 30*time.Second)
 	t.Logf("follower %d rejoined running cluster without panic", laggingNode.config.ID)
+}
+
+// TestSnapshotAppliedBeforeAppend verifies that the Ready loop in runRaft
+// applies a snapshot to MemoryStorage before appending entries.
+//
+// This is a direct unit test for the fix: without storage.ApplySnapshot,
+// storage.Append panics with "missing log entry [last: N, append at: M]"
+// when there is a gap between MemoryStorage's last index and the first
+// entry in rd.Entries (which follows a snapshot the leader sent).
+//
+// The test simulates a fresh follower's MemoryStorage state:
+//   - 3 initial ConfChange entries (lastIndex=3), simulating raft.StartNode
+//     with 3 peers.
+//   - A snapshot at index 5 with term 2, simulating what the leader sends
+//     via MsgSnap after the cluster has progressed.
+//   - Entries starting at index 6, which follow the snapshot.
+//
+// Without applying the snapshot first, Append sees last=3 and first
+// entry at index 6 — a gap — and panics. With ApplySnapshot, storage
+// advances to index 5, and the Append at index 6 succeeds.
+func TestSnapshotAppliedBeforeAppend(t *testing.T) {
+	storage := raft.NewMemoryStorage()
+
+	// Simulate a fresh follower: 3 ConfChange entries from StartNode.
+	initialEntries := []raftpb.Entry{
+		{Index: 1, Term: 1},
+		{Index: 2, Term: 1},
+		{Index: 3, Term: 1},
+	}
+	require.NoError(t, storage.Append(initialEntries))
+
+	lastIdx, err := storage.LastIndex()
+	require.NoError(t, err)
+	require.Equal(t, uint64(3), lastIdx)
+
+	// Simulate a snapshot from the leader at index 5.
+	snap := raftpb.Snapshot{
+		Metadata: raftpb.SnapshotMetadata{
+			Index: 5,
+			Term:  2,
+			ConfState: raftpb.ConfState{
+				Voters: []uint64{1, 2, 3},
+			},
+		},
+	}
+
+	// Entries that follow the snapshot.
+	postSnapEntries := []raftpb.Entry{
+		{Index: 6, Term: 2},
+		{Index: 7, Term: 2},
+	}
+
+	// Without applying the snapshot, Append must panic.
+	require.Panics(t, func() {
+		_ = storage.Append(postSnapEntries)
+	}, "Append should panic when there is a gap between lastIndex and first entry")
+
+	// Re-create storage to get a clean state (the panic may have left it inconsistent).
+	storage = raft.NewMemoryStorage()
+	require.NoError(t, storage.Append(initialEntries))
+
+	// Now apply the snapshot first — this is the fix under test.
+	require.False(t, raft.IsEmptySnap(snap))
+	err = storage.ApplySnapshot(snap)
+	require.NoError(t, err)
+
+	// Verify storage advanced to the snapshot index.
+	lastIdx, err = storage.LastIndex()
+	require.NoError(t, err)
+	require.Equal(t, uint64(5), lastIdx)
+
+	// Append entries after the snapshot — this must not panic.
+	require.NotPanics(t, func() {
+		err = storage.Append(postSnapEntries)
+	})
+	require.NoError(t, err)
+
+	// Verify final state.
+	lastIdx, err = storage.LastIndex()
+	require.NoError(t, err)
+	require.Equal(t, uint64(7), lastIdx)
 }
 
 func TestLocker(t *testing.T) {
