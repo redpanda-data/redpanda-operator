@@ -322,6 +322,11 @@ func Run(
 		return err
 	}
 
+	if err := redpandacontrollers.SetupCAController(ctx, manager); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "CA")
+		return err
+	}
+
 	if err := manager.GetLocalManager().Add(certWatcher); err != nil {
 		return err
 	}

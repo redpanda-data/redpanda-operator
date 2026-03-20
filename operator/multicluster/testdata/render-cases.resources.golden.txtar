@@ -320,37 +320,11 @@
       app.kubernetes.io/instance: audit-logging-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-test-default-selfsigned-issuer
-    namespace: audit-logging
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: audit-logging-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: audit-logging-test-default-root-issuer
     namespace: audit-logging
   spec:
     ca:
-      secretName: audit-logging-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: audit-logging-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: audit-logging-test-external-selfsigned-issuer
-    namespace: audit-logging
-  spec:
-    selfSigned: {}
+      secretName: audit-logging-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -364,53 +338,7 @@
     namespace: audit-logging
   spec:
     ca:
-      secretName: audit-logging-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: audit-logging-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: audit-logging-test-default-root-certificate
-    namespace: audit-logging
-  spec:
-    commonName: audit-logging-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: audit-logging-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: audit-logging-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: audit-logging-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: audit-logging-test-external-root-certificate
-    namespace: audit-logging
-  spec:
-    commonName: audit-logging-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: audit-logging-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: audit-logging-test-external-root-certificate
+      secretName: audit-logging-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -1126,41 +1054,11 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-test-default-selfsigned-issuer
-    namespace: common-labels
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: common-labels-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      env: staging
-      team: platform
     name: common-labels-test-default-root-issuer
     namespace: common-labels
   spec:
     ca:
-      secretName: common-labels-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: common-labels-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      env: staging
-      team: platform
-    name: common-labels-test-external-selfsigned-issuer
-    namespace: common-labels
-  spec:
-    selfSigned: {}
+      secretName: common-labels-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -1176,57 +1074,7 @@
     namespace: common-labels
   spec:
     ca:
-      secretName: common-labels-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: common-labels-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      env: staging
-      team: platform
-    name: common-labels-test-default-root-certificate
-    namespace: common-labels
-  spec:
-    commonName: common-labels-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: common-labels-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: common-labels-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: common-labels-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      env: staging
-      team: platform
-    name: common-labels-test-external-root-certificate
-    namespace: common-labels
-  spec:
-    commonName: common-labels-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: common-labels-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: common-labels-test-external-root-certificate
+      secretName: common-labels-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -1946,37 +1794,11 @@
       app.kubernetes.io/instance: custom-cluster-domain-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-test-default-selfsigned-issuer
-    namespace: custom-cluster-domain
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-cluster-domain-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: custom-cluster-domain-test-default-root-issuer
     namespace: custom-cluster-domain
   spec:
     ca:
-      secretName: custom-cluster-domain-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-cluster-domain-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-test-external-selfsigned-issuer
-    namespace: custom-cluster-domain
-  spec:
-    selfSigned: {}
+      secretName: custom-cluster-domain-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -1990,53 +1812,7 @@
     namespace: custom-cluster-domain
   spec:
     ca:
-      secretName: custom-cluster-domain-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-cluster-domain-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-test-default-root-certificate
-    namespace: custom-cluster-domain
-  spec:
-    commonName: custom-cluster-domain-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-cluster-domain-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-cluster-domain-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-cluster-domain-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-test-external-root-certificate
-    namespace: custom-cluster-domain
-  spec:
-    commonName: custom-cluster-domain-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-cluster-domain-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-cluster-domain-test-external-root-certificate
+      secretName: custom-cluster-domain-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -2739,37 +2515,11 @@
       app.kubernetes.io/instance: custom-config-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-test-default-selfsigned-issuer
-    namespace: custom-config
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-config-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: custom-config-test-default-root-issuer
     namespace: custom-config
   spec:
     ca:
-      secretName: custom-config-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-config-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-config-test-external-selfsigned-issuer
-    namespace: custom-config
-  spec:
-    selfSigned: {}
+      secretName: custom-config-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -2783,53 +2533,7 @@
     namespace: custom-config
   spec:
     ca:
-      secretName: custom-config-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-config-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-config-test-default-root-certificate
-    namespace: custom-config
-  spec:
-    commonName: custom-config-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-config-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-config-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-config-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-config-test-external-root-certificate
-    namespace: custom-config
-  spec:
-    commonName: custom-config-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-config-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-config-test-external-root-certificate
+      secretName: custom-config-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -3531,37 +3235,11 @@
       app.kubernetes.io/instance: custom-image-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-test-default-selfsigned-issuer
-    namespace: custom-image
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-image-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: custom-image-test-default-root-issuer
     namespace: custom-image
   spec:
     ca:
-      secretName: custom-image-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-image-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-image-test-external-selfsigned-issuer
-    namespace: custom-image
-  spec:
-    selfSigned: {}
+      secretName: custom-image-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -3575,53 +3253,7 @@
     namespace: custom-image
   spec:
     ca:
-      secretName: custom-image-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-image-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-image-test-default-root-certificate
-    namespace: custom-image
-  spec:
-    commonName: custom-image-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-image-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-image-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-image-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-image-test-external-root-certificate
-    namespace: custom-image
-  spec:
-    commonName: custom-image-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-image-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-image-test-external-root-certificate
+      secretName: custom-image-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -4323,37 +3955,11 @@
       app.kubernetes.io/instance: custom-resources-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-test-default-selfsigned-issuer
-    namespace: custom-resources
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: custom-resources-test-default-root-issuer
     namespace: custom-resources
   spec:
     ca:
-      secretName: custom-resources-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-resources-test-external-selfsigned-issuer
-    namespace: custom-resources
-  spec:
-    selfSigned: {}
+      secretName: custom-resources-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -4367,53 +3973,7 @@
     namespace: custom-resources
   spec:
     ca:
-      secretName: custom-resources-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-resources-test-default-root-certificate
-    namespace: custom-resources
-  spec:
-    commonName: custom-resources-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-resources-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-resources-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-resources-test-external-root-certificate
-    namespace: custom-resources
-  spec:
-    commonName: custom-resources-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-resources-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-resources-test-external-root-certificate
+      secretName: custom-resources-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -5115,37 +4675,11 @@
       app.kubernetes.io/instance: custom-resources-explicit-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-test-default-selfsigned-issuer
-    namespace: custom-resources-explicit
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-explicit-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: custom-resources-explicit-test-default-root-issuer
     namespace: custom-resources-explicit
   spec:
     ca:
-      secretName: custom-resources-explicit-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-explicit-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-test-external-selfsigned-issuer
-    namespace: custom-resources-explicit
-  spec:
-    selfSigned: {}
+      secretName: custom-resources-explicit-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -5159,53 +4693,7 @@
     namespace: custom-resources-explicit
   spec:
     ca:
-      secretName: custom-resources-explicit-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-explicit-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-test-default-root-certificate
-    namespace: custom-resources-explicit
-  spec:
-    commonName: custom-resources-explicit-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-resources-explicit-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-resources-explicit-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: custom-resources-explicit-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-test-external-root-certificate
-    namespace: custom-resources-explicit
-  spec:
-    commonName: custom-resources-explicit-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: custom-resources-explicit-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: custom-resources-explicit-test-external-root-certificate
+      secretName: custom-resources-explicit-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -5907,37 +5395,11 @@
       app.kubernetes.io/instance: enterprise-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-test-default-selfsigned-issuer
-    namespace: enterprise
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: enterprise-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: enterprise-test-default-root-issuer
     namespace: enterprise
   spec:
     ca:
-      secretName: enterprise-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: enterprise-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: enterprise-test-external-selfsigned-issuer
-    namespace: enterprise
-  spec:
-    selfSigned: {}
+      secretName: enterprise-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -5951,53 +5413,7 @@
     namespace: enterprise
   spec:
     ca:
-      secretName: enterprise-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: enterprise-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: enterprise-test-default-root-certificate
-    namespace: enterprise
-  spec:
-    commonName: enterprise-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: enterprise-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: enterprise-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: enterprise-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: enterprise-test-external-root-certificate
-    namespace: enterprise
-  spec:
-    commonName: enterprise-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: enterprise-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: enterprise-test-external-root-certificate
+      secretName: enterprise-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -6634,47 +6050,11 @@
       app.kubernetes.io/instance: external-loadbalancer-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-test-default-selfsigned-issuer
-    namespace: external-loadbalancer
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-loadbalancer-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: external-loadbalancer-test-default-root-issuer
     namespace: external-loadbalancer
   spec:
     ca:
-      secretName: external-loadbalancer-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-loadbalancer-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-test-default-root-certificate
-    namespace: external-loadbalancer
-  spec:
-    commonName: external-loadbalancer-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: external-loadbalancer-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: external-loadbalancer-test-default-root-certificate
+      secretName: external-loadbalancer-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -7449,37 +6829,11 @@
       app.kubernetes.io/instance: external-nodeport-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-test-default-selfsigned-issuer
-    namespace: external-nodeport
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-nodeport-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: external-nodeport-test-default-root-issuer
     namespace: external-nodeport
   spec:
     ca:
-      secretName: external-nodeport-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-nodeport-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-nodeport-test-external-selfsigned-issuer
-    namespace: external-nodeport
-  spec:
-    selfSigned: {}
+      secretName: external-nodeport-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -7493,53 +6847,7 @@
     namespace: external-nodeport
   spec:
     ca:
-      secretName: external-nodeport-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-nodeport-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-nodeport-test-default-root-certificate
-    namespace: external-nodeport
-  spec:
-    commonName: external-nodeport-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: external-nodeport-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: external-nodeport-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-nodeport-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-nodeport-test-external-root-certificate
-    namespace: external-nodeport
-  spec:
-    commonName: external-nodeport-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: external-nodeport-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: external-nodeport-test-external-root-certificate
+      secretName: external-nodeport-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -8204,47 +7512,11 @@
       app.kubernetes.io/instance: external-tls-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-test-default-selfsigned-issuer
-    namespace: external-tls
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-tls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: external-tls-test-default-root-issuer
     namespace: external-tls
   spec:
     ca:
-      secretName: external-tls-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-tls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-tls-test-default-root-certificate
-    namespace: external-tls
-  spec:
-    commonName: external-tls-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: external-tls-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: external-tls-test-default-root-certificate
+      secretName: external-tls-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -9277,49 +8549,11 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-test-default-selfsigned-issuer
-    namespace: full-featured
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
     name: full-featured-test-default-root-issuer
     namespace: full-featured
   spec:
     ca:
-      secretName: full-featured-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-test-default-root-certificate
-    namespace: full-featured
-  spec:
-    commonName: full-featured-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: full-featured-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: full-featured-test-default-root-certificate
+      secretName: full-featured-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -10444,37 +9678,11 @@
       app.kubernetes.io/instance: init-containers-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-test-default-selfsigned-issuer
-    namespace: init-containers
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: init-containers-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: init-containers-test-default-root-issuer
     namespace: init-containers
   spec:
     ca:
-      secretName: init-containers-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: init-containers-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: init-containers-test-external-selfsigned-issuer
-    namespace: init-containers
-  spec:
-    selfSigned: {}
+      secretName: init-containers-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -10488,53 +9696,7 @@
     namespace: init-containers
   spec:
     ca:
-      secretName: init-containers-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: init-containers-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: init-containers-test-default-root-certificate
-    namespace: init-containers
-  spec:
-    commonName: init-containers-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: init-containers-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: init-containers-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: init-containers-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: init-containers-test-external-root-certificate
-    namespace: init-containers
-  spec:
-    commonName: init-containers-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: init-containers-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: init-containers-test-external-root-certificate
+      secretName: init-containers-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -11287,37 +10449,11 @@
       app.kubernetes.io/instance: memory-locking-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-test-default-selfsigned-issuer
-    namespace: memory-locking
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: memory-locking-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: memory-locking-test-default-root-issuer
     namespace: memory-locking
   spec:
     ca:
-      secretName: memory-locking-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: memory-locking-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: memory-locking-test-external-selfsigned-issuer
-    namespace: memory-locking
-  spec:
-    selfSigned: {}
+      secretName: memory-locking-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -11331,53 +10467,7 @@
     namespace: memory-locking
   spec:
     ca:
-      secretName: memory-locking-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: memory-locking-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: memory-locking-test-default-root-certificate
-    namespace: memory-locking
-  spec:
-    commonName: memory-locking-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: memory-locking-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: memory-locking-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: memory-locking-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: memory-locking-test-external-root-certificate
-    namespace: memory-locking
-  spec:
-    commonName: memory-locking-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: memory-locking-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: memory-locking-test-external-root-certificate
+      secretName: memory-locking-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -12079,37 +11169,11 @@
       app.kubernetes.io/instance: minimal-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-test-default-selfsigned-issuer
-    namespace: minimal
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: minimal-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: minimal-test-default-root-issuer
     namespace: minimal
   spec:
     ca:
-      secretName: minimal-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: minimal-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: minimal-test-external-selfsigned-issuer
-    namespace: minimal
-  spec:
-    selfSigned: {}
+      secretName: minimal-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -12123,53 +11187,7 @@
     namespace: minimal
   spec:
     ca:
-      secretName: minimal-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: minimal-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: minimal-test-default-root-certificate
-    namespace: minimal
-  spec:
-    commonName: minimal-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: minimal-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: minimal-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: minimal-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: minimal-test-external-root-certificate
-    namespace: minimal
-  spec:
-    commonName: minimal-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: minimal-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: minimal-test-external-root-certificate
+      secretName: minimal-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -12896,37 +11914,11 @@
       app.kubernetes.io/instance: monitoring-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-test-default-selfsigned-issuer
-    namespace: monitoring
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: monitoring-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: monitoring-test-default-root-issuer
     namespace: monitoring
   spec:
     ca:
-      secretName: monitoring-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: monitoring-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: monitoring-test-external-selfsigned-issuer
-    namespace: monitoring
-  spec:
-    selfSigned: {}
+      secretName: monitoring-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -12940,53 +11932,7 @@
     namespace: monitoring
   spec:
     ca:
-      secretName: monitoring-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: monitoring-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: monitoring-test-default-root-certificate
-    namespace: monitoring
-  spec:
-    commonName: monitoring-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: monitoring-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: monitoring-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: monitoring-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: monitoring-test-external-root-certificate
-    namespace: monitoring
-  spec:
-    commonName: monitoring-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: monitoring-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: monitoring-test-external-root-certificate
+      secretName: monitoring-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -13902,37 +12848,11 @@
       app.kubernetes.io/instance: multi-pool-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-test-default-selfsigned-issuer
-    namespace: multi-pool
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: multi-pool-test-default-root-issuer
     namespace: multi-pool
   spec:
     ca:
-      secretName: multi-pool-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-test-external-selfsigned-issuer
-    namespace: multi-pool
-  spec:
-    selfSigned: {}
+      secretName: multi-pool-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -13946,53 +12866,7 @@
     namespace: multi-pool
   spec:
     ca:
-      secretName: multi-pool-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-test-default-root-certificate
-    namespace: multi-pool
-  spec:
-    commonName: multi-pool-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: multi-pool-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: multi-pool-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-test-external-root-certificate
-    namespace: multi-pool
-  spec:
-    commonName: multi-pool-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: multi-pool-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: multi-pool-test-external-root-certificate
+      secretName: multi-pool-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -14819,37 +13693,11 @@
       app.kubernetes.io/instance: rack-awareness-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-test-default-selfsigned-issuer
-    namespace: rack-awareness
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: rack-awareness-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: rack-awareness-test-default-root-issuer
     namespace: rack-awareness
   spec:
     ca:
-      secretName: rack-awareness-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: rack-awareness-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: rack-awareness-test-external-selfsigned-issuer
-    namespace: rack-awareness
-  spec:
-    selfSigned: {}
+      secretName: rack-awareness-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -14863,53 +13711,7 @@
     namespace: rack-awareness
   spec:
     ca:
-      secretName: rack-awareness-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: rack-awareness-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: rack-awareness-test-default-root-certificate
-    namespace: rack-awareness
-  spec:
-    commonName: rack-awareness-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: rack-awareness-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: rack-awareness-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: rack-awareness-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: rack-awareness-test-external-root-certificate
-    namespace: rack-awareness
-  spec:
-    commonName: rack-awareness-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: rack-awareness-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: rack-awareness-test-external-root-certificate
+      secretName: rack-awareness-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -15656,37 +14458,11 @@
       app.kubernetes.io/instance: sasl-scram256-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-test-default-selfsigned-issuer
-    namespace: sasl-scram256
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram256-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: sasl-scram256-test-default-root-issuer
     namespace: sasl-scram256
   spec:
     ca:
-      secretName: sasl-scram256-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram256-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: sasl-scram256-test-external-selfsigned-issuer
-    namespace: sasl-scram256
-  spec:
-    selfSigned: {}
+      secretName: sasl-scram256-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -15700,53 +14476,7 @@
     namespace: sasl-scram256
   spec:
     ca:
-      secretName: sasl-scram256-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram256-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: sasl-scram256-test-default-root-certificate
-    namespace: sasl-scram256
-  spec:
-    commonName: sasl-scram256-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: sasl-scram256-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: sasl-scram256-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram256-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: sasl-scram256-test-external-root-certificate
-    namespace: sasl-scram256
-  spec:
-    commonName: sasl-scram256-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: sasl-scram256-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: sasl-scram256-test-external-root-certificate
+      secretName: sasl-scram256-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -16466,37 +15196,11 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-test-default-selfsigned-issuer
-    namespace: sasl-scram512-with-tls
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram512-with-tls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: sasl-scram512-with-tls-test-default-root-issuer
     namespace: sasl-scram512-with-tls
   spec:
     ca:
-      secretName: sasl-scram512-with-tls-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram512-with-tls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-test-external-selfsigned-issuer
-    namespace: sasl-scram512-with-tls
-  spec:
-    selfSigned: {}
+      secretName: sasl-scram512-with-tls-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -16510,53 +15214,7 @@
     namespace: sasl-scram512-with-tls
   spec:
     ca:
-      secretName: sasl-scram512-with-tls-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram512-with-tls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-test-default-root-certificate
-    namespace: sasl-scram512-with-tls
-  spec:
-    commonName: sasl-scram512-with-tls-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: sasl-scram512-with-tls-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: sasl-scram512-with-tls-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: sasl-scram512-with-tls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-test-external-root-certificate
-    namespace: sasl-scram512-with-tls
-  spec:
-    commonName: sasl-scram512-with-tls-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: sasl-scram512-with-tls-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: sasl-scram512-with-tls-test-external-root-certificate
+      secretName: sasl-scram512-with-tls-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -17252,37 +15910,11 @@
       app.kubernetes.io/instance: single-replica-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-test-default-selfsigned-issuer
-    namespace: single-replica
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: single-replica-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: single-replica-test-default-root-issuer
     namespace: single-replica
   spec:
     ca:
-      secretName: single-replica-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: single-replica-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: single-replica-test-external-selfsigned-issuer
-    namespace: single-replica
-  spec:
-    selfSigned: {}
+      secretName: single-replica-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -17296,53 +15928,7 @@
     namespace: single-replica
   spec:
     ca:
-      secretName: single-replica-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: single-replica-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: single-replica-test-default-root-certificate
-    namespace: single-replica
-  spec:
-    commonName: single-replica-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: single-replica-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: single-replica-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: single-replica-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: single-replica-test-external-root-certificate
-    namespace: single-replica
-  spec:
-    commonName: single-replica-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: single-replica-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: single-replica-test-external-root-certificate
+      secretName: single-replica-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -17963,37 +16549,11 @@
       app.kubernetes.io/instance: storage-hostpath-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-test-default-selfsigned-issuer
-    namespace: storage-hostpath
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: storage-hostpath-test-default-root-issuer
     namespace: storage-hostpath
   spec:
     ca:
-      secretName: storage-hostpath-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: storage-hostpath-test-external-selfsigned-issuer
-    namespace: storage-hostpath
-  spec:
-    selfSigned: {}
+      secretName: storage-hostpath-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -18007,53 +16567,7 @@
     namespace: storage-hostpath
   spec:
     ca:
-      secretName: storage-hostpath-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: storage-hostpath-test-default-root-certificate
-    namespace: storage-hostpath
-  spec:
-    commonName: storage-hostpath-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: storage-hostpath-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: storage-hostpath-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: storage-hostpath-test-external-root-certificate
-    namespace: storage-hostpath
-  spec:
-    commonName: storage-hostpath-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: storage-hostpath-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: storage-hostpath-test-external-root-certificate
+      secretName: storage-hostpath-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -18755,37 +17269,11 @@
       app.kubernetes.io/instance: storage-pv-custom-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-test-default-selfsigned-issuer
-    namespace: storage-pv-custom
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-pv-custom-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: storage-pv-custom-test-default-root-issuer
     namespace: storage-pv-custom
   spec:
     ca:
-      secretName: storage-pv-custom-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-pv-custom-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-test-external-selfsigned-issuer
-    namespace: storage-pv-custom
-  spec:
-    selfSigned: {}
+      secretName: storage-pv-custom-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -18799,53 +17287,7 @@
     namespace: storage-pv-custom
   spec:
     ca:
-      secretName: storage-pv-custom-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-pv-custom-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-test-default-root-certificate
-    namespace: storage-pv-custom
-  spec:
-    commonName: storage-pv-custom-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: storage-pv-custom-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: storage-pv-custom-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: storage-pv-custom-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-test-external-root-certificate
-    namespace: storage-pv-custom
-  spec:
-    commonName: storage-pv-custom-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: storage-pv-custom-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: storage-pv-custom-test-external-root-certificate
+      secretName: storage-pv-custom-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -19547,37 +17989,11 @@
       app.kubernetes.io/instance: tiered-storage-emptydir-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-test-default-selfsigned-issuer
-    namespace: tiered-storage-emptydir
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-emptydir-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: tiered-storage-emptydir-test-default-root-issuer
     namespace: tiered-storage-emptydir
   spec:
     ca:
-      secretName: tiered-storage-emptydir-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-emptydir-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-test-external-selfsigned-issuer
-    namespace: tiered-storage-emptydir
-  spec:
-    selfSigned: {}
+      secretName: tiered-storage-emptydir-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -19591,53 +18007,7 @@
     namespace: tiered-storage-emptydir
   spec:
     ca:
-      secretName: tiered-storage-emptydir-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-emptydir-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-test-default-root-certificate
-    namespace: tiered-storage-emptydir
-  spec:
-    commonName: tiered-storage-emptydir-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tiered-storage-emptydir-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tiered-storage-emptydir-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-emptydir-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-test-external-root-certificate
-    namespace: tiered-storage-emptydir
-  spec:
-    commonName: tiered-storage-emptydir-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tiered-storage-emptydir-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tiered-storage-emptydir-test-external-root-certificate
+      secretName: tiered-storage-emptydir-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -20339,37 +18709,11 @@
       app.kubernetes.io/instance: tiered-storage-hostpath-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-test-default-selfsigned-issuer
-    namespace: tiered-storage-hostpath
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: tiered-storage-hostpath-test-default-root-issuer
     namespace: tiered-storage-hostpath
   spec:
     ca:
-      secretName: tiered-storage-hostpath-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-test-external-selfsigned-issuer
-    namespace: tiered-storage-hostpath
-  spec:
-    selfSigned: {}
+      secretName: tiered-storage-hostpath-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -20383,53 +18727,7 @@
     namespace: tiered-storage-hostpath
   spec:
     ca:
-      secretName: tiered-storage-hostpath-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-test-default-root-certificate
-    namespace: tiered-storage-hostpath
-  spec:
-    commonName: tiered-storage-hostpath-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tiered-storage-hostpath-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tiered-storage-hostpath-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-hostpath-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-test-external-root-certificate
-    namespace: tiered-storage-hostpath
-  spec:
-    commonName: tiered-storage-hostpath-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tiered-storage-hostpath-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tiered-storage-hostpath-test-external-root-certificate
+      secretName: tiered-storage-hostpath-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -21131,37 +19429,11 @@
       app.kubernetes.io/instance: tiered-storage-pv-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-test-default-selfsigned-issuer
-    namespace: tiered-storage-pv
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-pv-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: tiered-storage-pv-test-default-root-issuer
     namespace: tiered-storage-pv
   spec:
     ca:
-      secretName: tiered-storage-pv-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-pv-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-test-external-selfsigned-issuer
-    namespace: tiered-storage-pv
-  spec:
-    selfSigned: {}
+      secretName: tiered-storage-pv-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -21175,53 +19447,7 @@
     namespace: tiered-storage-pv
   spec:
     ca:
-      secretName: tiered-storage-pv-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-pv-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-test-default-root-certificate
-    namespace: tiered-storage-pv
-  spec:
-    commonName: tiered-storage-pv-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tiered-storage-pv-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tiered-storage-pv-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tiered-storage-pv-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-test-external-root-certificate
-    namespace: tiered-storage-pv
-  spec:
-    commonName: tiered-storage-pv-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tiered-storage-pv-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tiered-storage-pv-test-external-root-certificate
+      secretName: tiered-storage-pv-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -21933,37 +20159,11 @@
       app.kubernetes.io/instance: tls-mtls-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-test-default-selfsigned-issuer
-    namespace: tls-mtls
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-mtls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: tls-mtls-test-default-root-issuer
     namespace: tls-mtls
   spec:
     ca:
-      secretName: tls-mtls-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-mtls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tls-mtls-test-external-selfsigned-issuer
-    namespace: tls-mtls
-  spec:
-    selfSigned: {}
+      secretName: tls-mtls-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -21977,53 +20177,7 @@
     namespace: tls-mtls
   spec:
     ca:
-      secretName: tls-mtls-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-mtls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tls-mtls-test-default-root-certificate
-    namespace: tls-mtls
-  spec:
-    commonName: tls-mtls-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tls-mtls-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tls-mtls-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-mtls-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tls-mtls-test-external-root-certificate
-    namespace: tls-mtls
-  spec:
-    commonName: tls-mtls-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tls-mtls-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tls-mtls-test-external-root-certificate
+      secretName: tls-mtls-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -22747,37 +20901,11 @@
       app.kubernetes.io/instance: tls-self-signed-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-test-default-selfsigned-issuer
-    namespace: tls-self-signed
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-self-signed-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: tls-self-signed-test-default-root-issuer
     namespace: tls-self-signed
   spec:
     ca:
-      secretName: tls-self-signed-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-self-signed-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tls-self-signed-test-external-selfsigned-issuer
-    namespace: tls-self-signed
-  spec:
-    selfSigned: {}
+      secretName: tls-self-signed-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -22791,53 +20919,7 @@
     namespace: tls-self-signed
   spec:
     ca:
-      secretName: tls-self-signed-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-self-signed-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tls-self-signed-test-default-root-certificate
-    namespace: tls-self-signed
-  spec:
-    commonName: tls-self-signed-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tls-self-signed-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tls-self-signed-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-self-signed-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: tls-self-signed-test-external-root-certificate
-    namespace: tls-self-signed
-  spec:
-    commonName: tls-self-signed-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: tls-self-signed-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: tls-self-signed-test-external-root-certificate
+      secretName: tls-self-signed-external-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate

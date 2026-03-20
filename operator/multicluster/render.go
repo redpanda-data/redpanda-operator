@@ -68,7 +68,6 @@ func RenderResources(state *RenderState) ([]kube.Object, error) {
 	manifests = appendIfNotNil(manifests, serviceMonitor(state))
 	manifests = appendIfNotNil(manifests, configMaps(state)...)
 	manifests = appendIfNotNil(manifests, certIssuers(state)...)
-	manifests = appendIfNotNil(manifests, rootCAs(state)...)
 	manifests = appendIfNotNil(manifests, certs...)
 	manifests = appendIfNotNil(manifests, roles(state)...)
 	manifests = appendIfNotNil(manifests, clusterRoles(state)...)
