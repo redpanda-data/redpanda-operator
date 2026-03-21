@@ -32,6 +32,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
@@ -94,7 +95,13 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
 		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
 		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
-			if c.skipServiceMonitorWatchIfNotInstalled(ctx) {
+			if c.skipWatchIfNotInstalled(ctx, &monitoringv1.ServiceMonitorList{}, "ServiceMonitors") {
+				continue
+			}
+		}
+		// Skip HTTPRoute watch if Gateway API CRDs are not installed.
+		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
+			if c.skipWatchIfNotInstalled(ctx, &gatewayv1.HTTPRouteList{}, "HTTPRoutes") {
 				continue
 			}
 		}
@@ -337,13 +344,12 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, cr *redpandav1alpha2.
 	return nil
 }
 
-func (c *Controller) skipServiceMonitorWatchIfNotInstalled(ctx context.Context) (skip bool) {
-	var serviceMonitorList monitoringv1.ServiceMonitorList
-	err := c.Ctl.List(ctx, "default", &serviceMonitorList)
+func (c *Controller) skipWatchIfNotInstalled(ctx context.Context, list client.ObjectList, name string) (skip bool) {
+	err := c.Ctl.List(ctx, "default", list)
 	if errors.Is(err, &meta.NoKindMatchError{}) {
 		return true
 	} else if err != nil {
-		log.Error(ctx, err, "could not list ServiceMonitors")
+		log.Error(ctx, err, "could not list "+name)
 		return true
 	}
 	return false
