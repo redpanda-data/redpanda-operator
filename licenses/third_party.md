@@ -191,7 +191,7 @@ run `task generate:third-party-licenses-list`
 | github.com/monochromegane/go-gitignore | [MIT](https://github.com/monochromegane/go-gitignore/blob/205db1a8cc00/LICENSE) |
 | github.com/munnerz/goautoneg | [BSD-3-Clause](https://github.com/munnerz/goautoneg/blob/a7dc8b61c822/LICENSE) |
 | github.com/mxk/go-flowrate/flowrate | [BSD-3-Clause](https://github.com/mxk/go-flowrate/blob/cca7078d478f/LICENSE) |
-| github.com/onsi/gomega | [MIT](https://github.com/onsi/gomega/blob/v1.38.2/LICENSE) |
+| github.com/onsi/gomega | [MIT](https://github.com/onsi/gomega/blob/v1.39.1/LICENSE) |
 | github.com/opencontainers/go-digest | [Apache-2.0](https://github.com/opencontainers/go-digest/blob/d50d2fec9c98/LICENSE) |
 | github.com/opencontainers/image-spec/specs-go | [Apache-2.0](https://github.com/opencontainers/image-spec/blob/v1.1.1/LICENSE) |
 | github.com/peterbourgon/diskv | [MIT](https://github.com/peterbourgon/diskv/blob/v2.0.1/LICENSE) |
@@ -317,7 +317,7 @@ run `task generate:third-party-licenses-list`
 | pgregory.net/rapid | [MPL-2.0](https://github.com/chrisseto/rapid/blob/cdeef406c65c/LICENSE) |
 | sigs.k8s.io/apiserver-network-proxy/konnectivity-client | [Apache-2.0](https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/konnectivity-client/v0.34.0/konnectivity-client/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.23.1/LICENSE) |
-| sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.4.1/LICENSE) |
+| sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.5.1/LICENSE) |
 | sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.20.1/api/LICENSE) |
