@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	DefaultK3sImage   = `rancher/k3s:v1.29.6-k3s2`
+	DefaultK3sImage   = `rancher/k3s:v1.32.13-k3s1`
 	K3sImageEnv       = `K3S_IMAGE`
 	SharedClusterName = "testenv"
 )
