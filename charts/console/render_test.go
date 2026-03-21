@@ -102,7 +102,7 @@ func TestTypes(t *testing.T) {
 			name: "ingress disabled",
 			values: PartialRenderValues{
 				Ingress: &PartialIngressConfig{
-					Enabled:  ptr.To(false),
+					Enabled: ptr.To(false),
 				},
 				ConfigMap: &PartialCreatable{
 					Create: ptr.To(true),
@@ -113,7 +113,7 @@ func TestTypes(t *testing.T) {
 			name: "gateway disabled",
 			values: PartialRenderValues{
 				Gateway: &PartialGatewayConfig{
-					Enabled: ptr.To(false),
+					Enabled:  ptr.To(false),
 					PathType: ptr.To(gatewayv1.PathMatchPathPrefix),
 				},
 				ConfigMap: &PartialCreatable{
