@@ -161,8 +161,8 @@ func (s *ProberSuite) SetupSuite() {
 		Logger: log,
 		ImportImages: []string{
 			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
-			"registry.k8s.io/kube-controller-manager:v1.29.6",
-			"registry.k8s.io/kube-apiserver:v1.29.6",
+			"registry.k8s.io/kube-controller-manager:v1.32.13",
+			"registry.k8s.io/kube-apiserver:v1.32.13",
 			"quay.io/jetstack/cert-manager-controller:v1.8.0",
 			"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
 			"quay.io/jetstack/cert-manager-webhook:v1.8.0",
