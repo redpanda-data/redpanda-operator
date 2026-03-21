@@ -4,15 +4,15 @@
 }:
 let
   pname = "kuttl";
-  version = "0.19.0";
+  version = "0.25.0";
   src = {
     aarch64-darwin = fetchurl {
       url = "https://github.com/kudobuilder/kuttl/releases/download/v${version}/kubectl-kuttl_${version}_darwin_arm64";
-      hash = "sha256-OTEJUY2OhnrLf61lGPzEqbsA15Am992bCJfrtNOeDMg=";
+      hash = "sha256-hkuVA3QD54B3eSnx5C/rwACozQWEVZePmGodzbNZpTY=";
     };
     x86_64-linux = fetchurl {
       url = "https://github.com/kudobuilder/kuttl/releases/download/v${version}/kubectl-kuttl_${version}_linux_x86_64";
-      hash = "sha256-N2Fi6tKhaBUFw6RJw/AvOy5sj2BJY8WnKc975TKxrik=";
+      hash = "sha256-qiMK5qFMQp74ivkFQ+KbOf5b783KIBwCkbt4pNjj+NA=";
     };
   }.${stdenv.system} or (throw "${pname}-${version}: ${stdenv.system} is unsupported.");
 in
