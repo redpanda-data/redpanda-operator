@@ -146,6 +146,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - connects
   - consoles
   - nodepools
   - redpandas
@@ -160,6 +161,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - connects/status
   - consoles/status
   - groups/status
   - nodepools/status
@@ -193,6 +195,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - connects/finalizers
   - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers

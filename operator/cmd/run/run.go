@@ -37,6 +37,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	connectcontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/connect"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
@@ -85,6 +86,7 @@ type RunOptions struct {
 	enableRedpandaControllers bool
 
 	enableV2NodepoolController          bool
+	enableConnectController              bool
 	enableConsoleController             bool
 	managerOptions                      ctrl.Options
 	clusterDomain                       string
@@ -139,6 +141,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
 
 	// Controller flags.
+	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
 	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
@@ -439,6 +442,14 @@ func Run(
 
 			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig()}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
+				return err
+			}
+		}
+
+		// Connect Reconciler (enterprise feature, gated by license on each CR).
+		if opts.enableConnectController {
+			if err := (&connectcontroller.Controller{Client: mgr.GetClient()}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "Connect")
 				return err
 			}
 		}

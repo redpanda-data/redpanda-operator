@@ -1,0 +1,62 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: connect
+rules:
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - connects
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - patch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - connects/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - connects/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
