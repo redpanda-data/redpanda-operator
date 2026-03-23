@@ -13,6 +13,7 @@
 
 
 .Resource Types
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect[$$Connect$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-group[$$Group$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
@@ -617,6 +618,7 @@ ClusterSource defines how to connect to a particular Redpanda cluster.
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$ConnectSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
@@ -831,6 +833,111 @@ the dynamic configuration, while its "synonym" will be the default. + |  |
 | *`extraVolumeMounts`* __string__ |  |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
 | *`additionalCLIArgs`* __string array__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect"]
+==== Connect
+
+
+
+Connect defines a Redpanda Connect pipeline managed by the operator.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Connect` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$ConnectSpec$$]__ | Spec defines the desired state of the Connect pipeline. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectstatus[$$ConnectStatus$$]__ | Status represents the current observed state of the Connect pipeline. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec"]
+==== ConnectSpec
+
+
+
+ConnectSpec defines the desired state of a Redpanda Connect pipeline.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect[$$Connect$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`configYaml`* __string__ | ConfigYAML is the Redpanda Connect pipeline configuration in YAML format. +
+This follows the standard Redpanda Connect configuration schema with +
+input, pipeline, and output sections. + |  | Required: \{} +
+
+| *`replicas`* __integer__ | Replicas is the number of pipeline replicas to run. + | 1 | Minimum: 0 +
+Optional: \{} +
+
+| *`image`* __string__ | Image is the container image for the Redpanda Connect deployment. + |  | Optional: \{} +
+
+| *`paused`* __boolean__ | Paused stops the pipeline by scaling replicas to zero when set to true. + |  | Optional: \{} +
+
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Resources defines the compute resource requirements for the pipeline pods. + |  | Optional: \{} +
+
+| *`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core[$$EnvVar$$] array__ | Env specifies additional environment variables for the pipeline container. + |  | Optional: \{} +
+
+| *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | LicenseSecretRef is a reference to a Secret containing the Redpanda enterprise license. +
+The license is required for Redpanda Connect to operate. +
+The Secret must contain a key (default "license") with the license data. + |  | Required: \{} +
+
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the Redpanda cluster this pipeline connects to. + |  | Optional: \{} +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectstatus"]
+==== ConnectStatus
+
+
+
+ConnectStatus defines the observed state of a Connect resource.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect[$$Connect$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Connect resource. + |  | Optional: \{} +
+
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Connect resource. + |  | Optional: \{} +
+
+| *`phase`* __string__ | Phase describes the current phase of the pipeline lifecycle. + |  | Optional: \{} +
+
+| *`replicas`* __integer__ | Replicas is the number of desired replicas. + |  | Optional: \{} +
+
+| *`readyReplicas`* __integer__ | ReadyReplicas is the number of ready pipeline pods. + |  | Optional: \{} +
+
 |===
 
 

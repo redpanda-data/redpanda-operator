@@ -86,7 +86,7 @@ type RunOptions struct {
 	enableRedpandaControllers bool
 
 	enableV2NodepoolController          bool
-	enableConnectController              bool
+	enableConnectController             bool
 	enableConsoleController             bool
 	managerOptions                      ctrl.Options
 	clusterDomain                       string
