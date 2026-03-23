@@ -45,11 +45,19 @@ func statefulSetRedpandaEnv() []corev1.EnvVar {
 				},
 			},
 		},
+		{
+			Name: "ORDINAL_NUMBER",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.labels['apps.kubernetes.io/pod-index']",
+				},
+			},
+		},
 	}
 }
 
 func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", state.Spec().InternalDomain(state.fullname(), state.namespace))
+	internalAdvertiseAddress := fmt.Sprintf("%s-%s.%s", pool.GetName(), "$(ORDINAL_NUMBER)", state.namespace)
 
 	terminationGracePeriod := defaultTerminationGracePeriod
 
