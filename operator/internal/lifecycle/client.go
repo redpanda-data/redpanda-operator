@@ -20,7 +20,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -36,6 +35,7 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -151,13 +151,8 @@ func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus
 	return r.statusUpdater.Update(cluster, status)
 }
 
-func (r *ResourceClient[T, U]) GetPoolsServices(ctx context.Context, cluster *StretchClusterWithPools) (*PoolServicesTracker, error) {
-	services, err := r.simpleResourceRenderer.RenderPoolsServices(ctx, cluster)
-	if err != nil {
-		return nil, err
-	}
-	return &PoolServicesTracker{services: services}, nil
-
+func (r *ResourceClient[T, U]) GetAdminAPIEndpoints(cluster U) []string {
+	return r.simpleResourceRenderer.GetAdminAPIEndpoints(cluster)
 }
 
 type renderer[T any, U Cluster[T]] struct {
@@ -191,14 +186,14 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 			migratingResources[gvk.String()] = struct{}{}
 		}
 	}
-	//logger := log.FromContext(ctx).WithName("debug-ownership")
+	// logger := log.FromContext(ctx).WithName("debug-ownership")
 	owner, err = r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve owner reference: %w", err)
 	}
 
-	//msg := fmt.Sprintf("syncer called, clusterName=%q, owner.Name=%q owner.UID=%q owner.GroupVersionKind=%q", clusterName, owner.GetName(), owner.GetUID(), owner.GetObjectKind().GroupVersionKind().String())
-	//logger.V(log.InfoLevel).Info(msg)
+	// msg := fmt.Sprintf("syncer called, clusterName=%q, owner.Name=%q owner.UID=%q owner.GroupVersionKind=%q", clusterName, owner.GetName(), owner.GetUID(), owner.GetObjectKind().GroupVersionKind().String())
+	// logger.V(log.InfoLevel).Info(msg)
 
 	owner, err = r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
 	if err != nil {
@@ -234,12 +229,7 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 // cleaning up any resources that should no longer exist.
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	var syncErr error
-	logger := log.FromContext(ctx).WithName("SyncAll")
-	clusterList := r.clusterList(owner)
-	logger.V(log.InfoLevel).Info("syncing all clusters", "clusterList", clusterList)
 	for _, clusterName := range r.clusterList(owner) {
-		msg := fmt.Sprintf("syncer called, clusterName=%q, owner.Name=%q owner.UID=%q owner.GroupVersionKind=%q", clusterName, owner.GetName(), owner.GetUID(), owner.GetObjectKind().GroupVersionKind().String())
-		logger.V(log.InfoLevel).Info(msg)
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			return err
@@ -580,7 +570,6 @@ func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context
 		}
 	}
 	return nodePools, nil
-
 }
 
 func setConfigVersionLabels(labels map[string]string, configVersion string) map[string]string {

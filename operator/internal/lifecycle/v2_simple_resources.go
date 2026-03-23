@@ -13,7 +13,6 @@ import (
 	"context"
 
 	"github.com/redpanda-data/common-go/kube"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -134,8 +133,7 @@ func (m *V2SimpleResourceRenderer) MigratingResources() []client.Object {
 	}
 }
 
-// RenderPoolsServices returns services created for NodePools which are exposing admin API ports (among other ports)
-func (m *V2SimpleResourceRenderer) RenderPoolsServices(ctx context.Context, cluster *StretchClusterWithPools) ([]*corev1.Service, error) {
-	// no op
-	return nil, nil
+func (m *V2SimpleResourceRenderer) GetAdminAPIEndpoints(cluster *ClusterWithPools) []string {
+	// no-op
+	return nil
 }

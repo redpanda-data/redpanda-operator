@@ -15,7 +15,6 @@ import (
 	"strconv"
 
 	"github.com/redpanda-data/common-go/otelutil/log"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -82,23 +81,6 @@ type ClusterNamespacedName struct {
 
 func (c ClusterNamespacedName) String() string {
 	return fmt.Sprintf("%s/%s/%s", c.Cluster, c.Namespace, c.Name)
-}
-
-type PoolServicesTracker struct {
-	services []*corev1.Service
-}
-
-func (p *PoolServicesTracker) GetAdminAPIHosts() []string {
-	var hosts []string
-	for _, svc := range p.services {
-		for _, port := range svc.Spec.Ports {
-			if port.Name == redpanda.InternalAdminAPIPortName {
-				hosts = append(hosts, fmt.Sprintf("%s.%s:%d", svc.Name, svc.Namespace, port.Port))
-				break
-			}
-		}
-	}
-	return hosts
 }
 
 func objectKeyFromObject(o clusterObject) ClusterNamespacedName {

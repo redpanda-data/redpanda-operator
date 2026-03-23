@@ -79,7 +79,6 @@ func (v vclusterNodes) ApplyInFirst(ctx context.Context, manifest []byte) {
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlApply(ctx, manifest))
 	}
-
 }
 
 func (v vclusterNodes) DeleteAll(ctx context.Context, manifest []byte) {
@@ -140,7 +139,7 @@ func getNodes(ctx context.Context, name string) vclusterNodes {
 
 func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
 	nodes := getNodes(ctx, clusterName)
-	//nodes.ApplyInFirst(ctx, []byte(manifest.Content))
+	// nodes.ApplyInFirst(ctx, []byte(manifest.Content))
 	nodes.ApplyAll(ctx, []byte(manifest.Content))
 	cleanupWrapper(t, func(ctx context.Context) {
 		nodes.DeleteAll(ctx, []byte(manifest.Content))

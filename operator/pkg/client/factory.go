@@ -17,7 +17,6 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/redpanda-data/console/backend/pkg/config"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
 	"github.com/spf13/afero"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -87,6 +86,9 @@ type ClientFactory interface {
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
 	// RedpandaAdminClientForCluster is the same as RedpandaAdminClient but it takes a kubernetes cluster name.
 	RedpandaAdminClientForCluster(ctx context.Context, object any, clusterName string) (*rpadmin.AdminAPI, error)
+	// RedpandaAdminClientForMulticluster initialized a rpadmin.AdminAPI client based on the passed list of admin endpoints.
+	// endpoint has to be in format address:port (without scheme)
+	RedpandaAdminClientForMulticluster(adminAPIEndpoints []string) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
@@ -268,10 +270,6 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 		return c.redpandaAdminForV1Cluster(ctx, cluster, clusterName)
 	}
 
-	if cluster, ok := obj.(*lifecycle.PoolServicesTracker); ok {
-		return c.redpandaAdminForStretchCluster(cluster)
-	}
-
 	if profile, ok := obj.(*rpkconfig.RpkProfile); ok {
 		return c.redpandaAdminForRPKProfile(profile)
 	}
@@ -304,6 +302,10 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 	}
 
 	return nil, ErrInvalidRedpandaClientObject
+}
+
+func (c *Factory) RedpandaAdminClientForMulticluster(adminAPIEndpoints []string) (*rpadmin.AdminAPI, error) {
+	return c.redpandaAdminForStretchCluster(adminAPIEndpoints)
 }
 
 func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.AdminAPI, error) {
@@ -694,9 +696,8 @@ func (c *Factory) kafkaUserAuth() (kgo.Opt, error) {
 	return nil, nil
 }
 
-func (c *Factory) redpandaAdminForStretchCluster(servicesTracker *lifecycle.PoolServicesTracker) (*rpadmin.AdminAPI, error) {
+func (c *Factory) redpandaAdminForStretchCluster(hosts []string) (*rpadmin.AdminAPI, error) {
 	// call simple renderer for service created for pool, then find admin port there
-	hosts := servicesTracker.GetAdminAPIHosts()
 	adminClient, err := redpanda.AdminClientForStretch(c.dialer, hosts)
 	if err != nil {
 		return nil, err

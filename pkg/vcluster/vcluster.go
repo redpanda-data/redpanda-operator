@@ -141,17 +141,6 @@ func WithValues(values helm.RawYAML) Option {
 
 func WithDefaultValues() Option {
 	return WithValues(helm.RawYAML(DefaultValues))
-	return WithValues(helm.RawYAML(`
-networking:
-  replicateServices:
-    fromHost:
-    - from: vc-0/first-0-x-default-x-vc-0
-      to: default/first-0
-    - from: vc-1/second-0-x-default-x-vc-1
-      to: default/second-0
-    - from: vc-2/third-0-x-default-x-vc-2
-      to: default/third-0
-`))
 }
 
 func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {

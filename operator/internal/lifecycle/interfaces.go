@@ -14,7 +14,6 @@ import (
 
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -109,7 +108,7 @@ type SimpleResourceRenderer[T any, U Cluster[T]] interface {
 	// our controller should watch for changes to trigger reconciliation.
 	WatchedResourceTypes() []client.Object
 	// RenderPoolsServices returns services created for NodePools which are exposing admin API ports (among other ports)
-	RenderPoolsServices(ctx context.Context, cluster *StretchClusterWithPools) ([]*corev1.Service, error)
+	GetAdminAPIEndpoints(cluster U) []string
 }
 
 // MigratingRenderer allows an implementation to render resources that they

@@ -56,7 +56,6 @@ type MulticlusterReconciler struct {
 type stretchClusterReconciliationState struct {
 	cluster               *lifecycle.StretchClusterWithPools
 	pools                 *lifecycle.PoolTracker
-	poolsServices         *lifecycle.PoolServicesTracker
 	status                *lifecycle.ClusterStatus
 	restartOnConfigChange bool
 	admin                 *rpadmin.AdminAPI
@@ -127,7 +126,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		return ctrl.Result{}, nil
 	}
 
-	state, err := r.fetchInitialState(ctx, stretchCluster, cluster)
+	state, err := r.fetchInitialState(ctx, stretchCluster)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -192,7 +191,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
 }
 
-func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster, cluster cluster.Cluster) (*stretchClusterReconciliationState, error) {
+func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*stretchClusterReconciliationState, error) {
 	logger := log.FromContext(ctx)
 	logger.V(log.DebugLevel).Info("fetchInitialState")
 
@@ -232,16 +231,9 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, "No pods are ready")
 	}
 
-	poolServicesTracker, err := r.LifecycleClient.GetPoolsServices(ctx, sccluster)
-	if err != nil {
-		logger.Error(err, "fetching pools services")
-		return nil, err
-	}
-
 	return &stretchClusterReconciliationState{
 		cluster:               sccluster,
 		pools:                 pools,
-		poolsServices:         poolServicesTracker,
 		status:                status,
 		restartOnConfigChange: restartOnConfigChange,
 	}, nil
@@ -338,8 +330,12 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 	}
 
 	logger := log.FromContext(ctx)
+	adminAPIEndpoints := r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
+	if len(adminAPIEndpoints) == 0 {
+		return ctrl.Result{}, fmt.Errorf("no admin API endpoints found for cluster %s", state.cluster.Name)
+	}
 
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.poolsServices)
+	admin, err := r.ClientFactory.RedpandaAdminClientForMulticluster(adminAPIEndpoints)
 	if err != nil {
 		logger.Error(err, "error fetching redpanda admin client")
 		return ctrl.Result{}, err

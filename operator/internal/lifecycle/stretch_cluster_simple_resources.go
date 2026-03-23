@@ -14,11 +14,11 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // StretchClusterSimpleResourceRenderer represents a simple resource multiclusterRenderer for stretch clusters.
@@ -73,9 +73,15 @@ func (m *StretchClusterSimpleResourceRenderer) WatchedResourceTypes() []client.O
 	return multiclusterRenderer.Types()
 }
 
-func (m *StretchClusterSimpleResourceRenderer) RenderPoolsServices(ctx context.Context, cluster *StretchClusterWithPools) ([]*corev1.Service, error) {
-	// TODO: remove
-	return nil, nil
+func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *StretchClusterWithPools) []string {
+	var adminAPIEndpoints []string
+	for _, pool := range cluster.NodePools {
+		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
+			name := multiclusterRenderer.PerPodServiceName(pool.nodePool, i)
+			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), cluster.Spec.AdminPort()))
+		}
+	}
+	return adminAPIEndpoints
 }
 
 func SeedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*NodePoolInCluster) []string {
