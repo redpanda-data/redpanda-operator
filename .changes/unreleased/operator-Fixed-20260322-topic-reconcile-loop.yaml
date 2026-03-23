@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fixed topic controller tight reconciliation loop that ignored the configured spec.interval value, causing reconciliation every ~1 second instead of honoring the specified interval (e.g. 60s, 120s). Also bumped the default interval from 3s to 10s.
+time: 2026-03-22T00:00:00.000000+00:00
