@@ -756,7 +756,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 			}, lifecycle.CloudSecretsFlags{
 				CloudSecretsEnabled: false,
 			})),
-		}).SetupWithManager(s.ctx, mgr)
+		}).SetupWithManager(s.ctx, mgr, "")
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with
