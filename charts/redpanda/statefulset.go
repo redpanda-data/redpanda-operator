@@ -696,18 +696,10 @@ func statefulSetContainerRedpanda(dot *helmette.Dot) corev1.Container {
 			PeriodSeconds:       10,
 		},
 		LivenessProbe: &corev1.Probe{
-			// the livenessProbe just checks to see that the admin api is listening and returning 200s.
+			// the livenessProbe just checks to see that the admin api is listening.
 			ProbeHandler: corev1.ProbeHandler{
-				Exec: &corev1.ExecAction{
-					Command: []string{
-						`/bin/sh`,
-						`-c`,
-						fmt.Sprintf(`curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready"`,
-							adminTLSCurlFlags(dot),
-							adminInternalHTTPProtocol(dot),
-							adminApiURLs(dot),
-						),
-					},
+				TCPSocket: &corev1.TCPSocketAction{
+					Port: intstr.FromInt32(values.Listeners.Admin.Port),
 				},
 			},
 			FailureThreshold:    3,
