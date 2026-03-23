@@ -41,8 +41,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, selector
 
 	ports := perPodServicePorts(spec)
 
-	// Service name is the pool name + ordinal (no cluster prefix).
-	name := fmt.Sprintf("%s-%d", pool.Suffix()[1:], ordinal) // pool.Suffix() returns "-poolname", strip leading dash
+	name := PerPodServiceName(pool, ordinal)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -61,6 +60,11 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, selector
 			Ports:                    ports,
 		},
 	}
+}
+
+func PerPodServiceName(pool *redpandav1alpha2.NodePool, ordinal int32) string {
+	// Service name is the pool name + ordinal (no cluster prefix).
+	return fmt.Sprintf("%s-%d", pool.Suffix()[1:], ordinal) // pool.Suffix() returns "-poolname", strip leading dash
 }
 
 func perPodServicePorts(spec *redpandav1alpha2.StretchClusterSpec) []corev1.ServicePort {

@@ -36,6 +36,7 @@ type RenderState struct {
 
 	client *kube.Ctl
 
+	seedServers          []string
 	bootstrapUserSecret  *corev1.Secret
 	statefulSetPodLabels map[string]string
 	statefulSetSelector  map[string]string
@@ -48,7 +49,10 @@ type RenderState struct {
 func NewRenderState(
 	config *kube.RESTConfig,
 	cluster *redpandav1alpha2.StretchCluster,
+	// pools is a list of NodePools in given cluster, poolsForSeedServers contains NodePools across clusters,
+	// and it is used to generate seed_servers
 	pools []*redpandav1alpha2.NodePool,
+	seedServers []string,
 	clusterName string,
 ) (*RenderState, error) {
 	// Deep-copy to avoid mutating the caller's CRD objects.
@@ -86,6 +90,7 @@ func NewRenderState(
 		releaseName: releaseName,
 		namespace:   cluster.Namespace,
 		client:      ctl,
+		seedServers: seedServers,
 	}
 
 	if err := state.fetchBootstrapUser(); err != nil {

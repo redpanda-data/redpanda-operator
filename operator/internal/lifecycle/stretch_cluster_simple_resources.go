@@ -11,8 +11,10 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +46,13 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 	// of which operator instance (local vs remote) performs the reconciliation.
 	canonicalName := canonicalClusterName(clusterName, m.mgr)
 
-	state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetNodePoolsForCluster(canonicalName), canonicalName)
+	state, err := multiclusterRenderer.NewRenderState(
+		cl.GetConfig(),
+		cluster.StretchCluster,
+		cluster.GetNodePoolsForCluster(canonicalName),
+		SeedServersFromNodePools(cluster.StretchCluster, cluster.NodePools),
+		canonicalName,
+	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -68,4 +76,15 @@ func (m *StretchClusterSimpleResourceRenderer) WatchedResourceTypes() []client.O
 func (m *StretchClusterSimpleResourceRenderer) RenderPoolsServices(ctx context.Context, cluster *StretchClusterWithPools) ([]*corev1.Service, error) {
 	// TODO: remove
 	return nil, nil
+}
+
+func SeedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*NodePoolInCluster) []string {
+	var seedServers []string
+	for _, pool := range pools {
+		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
+			name := multiclusterRenderer.PerPodServiceName(pool.nodePool, i)
+			seedServers = append(seedServers, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), cluster.Spec.RPCPort()))
+		}
+	}
+	return seedServers
 }
