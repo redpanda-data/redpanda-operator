@@ -19,7 +19,7 @@ import (
 
 const (
 	// ConnectDefaultImage is the default Redpanda Connect container image.
-	ConnectDefaultImage = "docker.redpanda.com/redpandadata/connect:4.56.0"
+	ConnectDefaultImage = "docker.redpanda.com/redpandadata/connect:4.84.1"
 )
 
 // ConnectSpec defines the desired state of a Redpanda Connect pipeline.
