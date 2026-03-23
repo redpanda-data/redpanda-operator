@@ -50,50 +50,7 @@ const (
 	certManagerChartversion = "v1.8.0"
 )
 
-type Cluster struct {
-	config     *kube.RESTConfig
-	hostConfig *kube.RESTConfig
-	helm       *helm.Client
-	release    helm.Release
-	namespace  *corev1.Namespace
-	scheme     *runtime.Scheme
-}
-
-type VclusterOptions struct {
-	name   string
-	values helm.RawYAML
-}
-
-type Option interface {
-	Apply(opts *VclusterOptions)
-}
-
-type nameOption struct {
-	name string
-}
-
-func (o *nameOption) Apply(opts *VclusterOptions) {
-	opts.name = o.name
-}
-
-func WithName(name string) Option {
-	return &nameOption{name: name}
-}
-
-type valuesOption struct {
-	values []byte
-}
-
-func (o *valuesOption) Apply(opts *VclusterOptions) {
-	opts.values = o.values
-}
-
-func WithValues(values helm.RawYAML) Option {
-	return &valuesOption{values: values}
-}
-
-func WithDefaultValues() Option {
-	return WithValues(helm.RawYAML(`
+var DefaultValues = `
 sync:
   fromHost:
     nodes:
@@ -138,6 +95,53 @@ rbac:
            - get
            - list
            - watch
+`
+
+type Cluster struct {
+	config     *kube.RESTConfig
+	hostConfig *kube.RESTConfig
+	helm       *helm.Client
+	release    helm.Release
+	namespace  *corev1.Namespace
+	scheme     *runtime.Scheme
+}
+
+type VclusterOptions struct {
+	name   string
+	values helm.RawYAML
+}
+
+type Option interface {
+	Apply(opts *VclusterOptions)
+}
+
+type nameOption struct {
+	name string
+}
+
+func (o *nameOption) Apply(opts *VclusterOptions) {
+	opts.name = o.name
+}
+
+func WithName(name string) Option {
+	return &nameOption{name: name}
+}
+
+type valuesOption struct {
+	values []byte
+}
+
+func (o *valuesOption) Apply(opts *VclusterOptions) {
+	opts.values = o.values
+}
+
+func WithValues(values helm.RawYAML) Option {
+	return &valuesOption{values: values}
+}
+
+func WithDefaultValues() Option {
+	return WithValues(helm.RawYAML(DefaultValues))
+	return WithValues(helm.RawYAML(`
 networking:
   replicateServices:
     fromHost:

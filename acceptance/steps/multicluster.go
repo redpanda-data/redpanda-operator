@@ -170,7 +170,40 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	t.Logf("creating %d vclusters", clusters)
 	for i := range clusters {
 		t.Logf("creating vcluster %d", i+1)
-		cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)))
+		vClusterValues := vcluster.DefaultValues
+		switch i {
+		case 0:
+			vClusterValues += `
+networking:
+  replicateServices:
+    fromHost:
+    - from: vc-1/second-0-x-default-x-vc-1
+      to: default/second-0
+    - from: vc-2/third-0-x-default-x-vc-2
+      to: default/third-0
+`
+		case 1:
+			vClusterValues += `
+networking:
+  replicateServices:
+    fromHost:
+    - from: vc-0/first-0-x-default-x-vc-0
+      to: default/first-0
+    - from: vc-2/third-0-x-default-x-vc-2
+      to: default/third-0
+`
+		case 2:
+			vClusterValues += `
+networking:
+  replicateServices:
+    fromHost:
+    - from: vc-0/first-0-x-default-x-vc-0
+      to: default/first-0
+    - from: vc-1/second-0-x-default-x-vc-1
+      to: default/second-0
+`
+		}
+		cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)), vcluster.WithValues(helm.RawYAML(vClusterValues)))
 		require.NoError(t, err)
 		scheme := t.Scheme()
 		require.NoError(t, certmanagerv1.AddToScheme(scheme))
