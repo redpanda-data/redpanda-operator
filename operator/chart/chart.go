@@ -53,7 +53,6 @@ func render(dot *helmette.Dot) []kube.Object {
 		Certificate(dot),
 		ConfigMap(dot),
 		MetricsService(dot),
-		StretchClusterService(dot),
 		WebhookService(dot),
 		MutatingWebhookConfiguration(dot),
 		ValidatingWebhookConfiguration(dot),
@@ -66,12 +65,20 @@ func render(dot *helmette.Dot) []kube.Object {
 		MigrationJobServiceAccount(dot),
 	}
 
+	for _, svc := range StretchClusterService(dot) {
+		manifests = append(manifests, &svc)
+	}
+
 	for _, cr := range ClusterRoles(dot) {
 		manifests = append(manifests, &cr)
 	}
 
 	for _, crb := range ClusterRoleBindings(dot) {
 		manifests = append(manifests, &crb)
+	}
+
+	for _, svc := range StretchClusterService(dot) {
+		manifests = append(manifests, &svc)
 	}
 
 	// NB: This slice may contain nil interfaces!

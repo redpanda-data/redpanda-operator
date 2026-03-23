@@ -25,6 +25,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -76,6 +77,26 @@ func (c *clusterClients) ACLs(ctx context.Context) *acls.Syncer {
 	syncer, err := c.factory.ACLs(ctx, c.resourceTarget)
 	require.NoError(t, err)
 	return syncer
+}
+
+func (c *clusterClients) SchemaRegistryACLs(ctx context.Context) rpsr.ACLClient {
+	t := framework.T(ctx)
+
+	client, err := c.factory.SchemaRegistryACLClient(ctx, c.resourceTarget)
+	require.NoError(t, err)
+	require.NotNil(t, client, "Schema Registry ACL client should be available")
+	return client
+}
+
+// hasSubjectACLRules returns true if any of the given ACL rules target a
+// Schema Registry subject resource type.
+func hasSubjectACLRules(rules []redpandav1alpha2.ACLRule) bool {
+	for _, rule := range rules {
+		if rule.Resource.Type == redpandav1alpha2.ResourceTypeSchemaRegistrySubject {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *clusterClients) Users(ctx context.Context) *users.Client {
@@ -263,14 +284,17 @@ func (c *clusterClients) EnableFeature(ctx context.Context, feature string) {
 	require.NoError(t, err)
 }
 
-// Set log level for given logger.
+// Set log level for given logger. Best-effort: the logger may not exist
+// in all Redpanda versions, so failures are logged but not fatal.
 func (c *clusterClients) SetLogLevel(ctx context.Context, level, logger string) {
 	t := framework.T(ctx)
 
 	admin := c.RedpandaAdmin(ctx)
 	defer admin.Close()
 
-	require.NoError(t, admin.SetLogLevel(ctx, logger, level, 0))
+	if err := admin.SetLogLevel(ctx, logger, level, 0); err != nil {
+		t.Logf("warning: failed to set log level %s for logger %s (non-fatal): %v", level, logger, err)
+	}
 }
 
 func (c *clusterClients) checkTopic(ctx context.Context, topic string, exists bool, message string) {

@@ -12,6 +12,7 @@ package redpanda
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -56,12 +57,16 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 	shouldManageACLs, shouldManageUser := user.ShouldManageACLs(), user.ShouldManageUser()
 
+	var srSyncWarning error
+
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.User(user.Name, user.Namespace)
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
+		} else if srSyncWarning != nil {
+			syncCondition = redpandav1alpha2.ResourcePartiallySyncedCondition(user.Name, srSyncWarning)
 		} else {
 			syncCondition = redpandav1alpha2.ResourceSyncedCondition(user.Name)
 		}
@@ -98,7 +103,10 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, user); err != nil {
-			return createPatch(err)
+			if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+				return createPatch(err)
+			}
+			srSyncWarning = err
 		}
 		hasManagedACLs = true
 	}
@@ -163,7 +171,7 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
-func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -193,5 +201,5 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
-	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }

@@ -1,6 +1,6 @@
-{ buildGoModule, lib, fetchFromGitHub }:
+{ buildGo126Module, lib, fetchFromGitHub }:
 
-buildGoModule rec {
+buildGo126Module rec {
   pname = "goverter";
   version = "1.9.1";
 

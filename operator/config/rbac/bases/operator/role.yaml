@@ -30,6 +30,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
   - nodes
   verbs:
   - get
@@ -160,6 +161,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - consoles/status
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -175,19 +177,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - nodepools/finalizers
-  - redpandaroles/finalizers
-  - redpandas/finalizers
-  - schemas/finalizers
-  - shadowlinks/finalizers
-  - stretchclusters/finalizers
-  - topics/finalizers
-  - users/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
+  - groups
   - redpandaroles
   - schemas
   - shadowlinks
@@ -200,6 +190,20 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/finalizers
+  - nodepools/finalizers
+  - redpandaroles/finalizers
+  - redpandas/finalizers
+  - schemas/finalizers
+  - shadowlinks/finalizers
+  - stretchclusters/finalizers
+  - topics/finalizers
+  - users/finalizers
+  verbs:
+  - update
 - apiGroups:
   - coordination.k8s.io
   resources:

@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_serviceaccount.go.tpl
-package redpanda
+package multicluster
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -16,23 +15,9 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-// Create the name of the service account to use
-func ServiceAccountName(state *RenderState) string {
-	serviceAccount := state.Values.ServiceAccount
-
-	if serviceAccount.Create && serviceAccount.Name != "" {
-		return serviceAccount.Name
-	} else if serviceAccount.Create {
-		return Fullname(state)
-	} else if serviceAccount.Name != "" {
-		return serviceAccount.Name
-	}
-
-	return "default"
-}
-
-func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
-	if !state.Values.ServiceAccount.Create {
+func serviceAccount(state *RenderState) *corev1.ServiceAccount {
+	sa := state.Spec().ServiceAccount
+	if !sa.ShouldCreate() {
 		return nil
 	}
 
@@ -42,10 +27,10 @@ func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        ServiceAccountName(state),
-			Namespace:   state.Release.Namespace,
-			Labels:      FullLabels(state),
-			Annotations: state.Values.ServiceAccount.Annotations,
+			Name:        state.Spec().GetServiceAccountName(state.fullname()),
+			Namespace:   state.namespace,
+			Labels:      state.commonLabels(),
+			Annotations: sa.Annotations,
 		},
 		AutomountServiceAccountToken: ptr.To(false),
 	}

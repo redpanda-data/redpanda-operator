@@ -11,6 +11,7 @@
 package console
 
 import (
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -60,6 +61,7 @@ type RenderValues struct {
 	ConfigMap           Creatable                 `json:"configmap"`
 	Deployment          DeploymentConfig          `json:"deployment"`
 	Strategy            appsv1.DeploymentStrategy `json:"strategy"`
+	Monitoring          MonitoringConfig          `json:"monitoring"`
 }
 
 type DeploymentConfig struct {
@@ -186,4 +188,10 @@ type Image struct {
 	Repository string            `json:"repository"`
 	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 	Tag        string            `json:"tag"`
+}
+
+type MonitoringConfig struct {
+	Enabled        bool                  `json:"enabled"`
+	ScrapeInterval monitoringv1.Duration `json:"scrapeInterval"`
+	Labels         map[string]string     `json:"labels"`
 }

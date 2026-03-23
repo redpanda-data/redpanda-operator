@@ -44,6 +44,8 @@ type RoleReconciler struct {
 	// to change the way the underlying clients
 	// function, i.e. setting low timeouts
 	extraOptions []kgo.Opt
+	// rolesOptions configures the roles client, e.g. roles.WithV2Disabled()
+	rolesOptions []roles.Option
 }
 
 // isRoleRename returns true if a role rename operation is needed.
@@ -70,12 +72,16 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	currentEffectiveName := role.GetEffectiveRoleName()
 	previousEffectiveName := role.Status.EffectiveRoleName
 
+	var srSyncWarning error
+
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.RedpandaRole(role.Name, role.Namespace)
 
 		if err != nil {
 			syncCondition, err = handleResourceSyncErrors(err)
+		} else if srSyncWarning != nil {
+			syncCondition = redpandav1alpha2.ResourcePartiallySyncedCondition(role.Name, srSyncWarning)
 		} else {
 			syncCondition = redpandav1alpha2.ResourceSyncedCondition(role.Name)
 		}
@@ -114,7 +120,10 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 		// Sync new ACLs first
 		if shouldManageACLs {
 			if err := syncer.Sync(ctx, role); err != nil {
-				return createPatch(errors.Wrap(err, "syncing new ACLs"))
+				if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+					return createPatch(errors.Wrap(err, "syncing new ACLs"))
+				}
+				srSyncWarning = err
 			}
 		}
 
@@ -172,7 +181,10 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 	if shouldManageACLs {
 		if err := syncer.Sync(ctx, role); err != nil {
-			return createPatch(err)
+			if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
+				return createPatch(err)
+			}
+			srSyncWarning = err
 		}
 		hasManagedACLs = true
 	}
@@ -249,7 +261,7 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 
 func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (*roles.Client, *acls.Syncer, bool, error) {
 	role := request.object
-	rolesClient, err := request.factory.Roles(ctx, role)
+	rolesClient, err := request.factory.Roles(ctx, role, r.rolesOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -267,7 +279,7 @@ func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request Resource
 	return rolesClient, syncer, hasRole, nil
 }
 
-func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -297,5 +309,5 @@ func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
-	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute))
+	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }

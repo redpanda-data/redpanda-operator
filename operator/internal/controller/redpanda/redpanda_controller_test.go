@@ -930,7 +930,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 
 		s.Require().NoError((&redpanda.NodePoolReconciler{
 			Manager: mgr,
-		}).SetupWithManager(s.ctx, mgr))
+		}).SetupWithManager(s.ctx, mgr, ""))
 
 		// TODO should probably run other reconcilers here.
 		return (&redpanda.RedpandaReconciler{
@@ -942,7 +942,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
 			UseNodePools: true,
-		}).SetupWithManager(s.ctx, mgr)
+		}).SetupWithManager(s.ctx, mgr, "")
 	})
 
 	// NB: t.Cleanup is used here to properly order our shutdown logic with
@@ -1125,7 +1125,7 @@ func (s *RedpandaControllerSuite) apply(objs ...client.Object) {
 		obj.SetResourceVersion("")
 		obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+		s.Require().NoError(s.client.Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Client.Apply()
 	}
 }
 

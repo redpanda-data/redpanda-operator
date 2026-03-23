@@ -12,7 +12,6 @@ package redpanda_test
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"slices"
 	"testing"
@@ -21,7 +20,6 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/trace"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -34,6 +32,7 @@ import (
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -116,7 +115,7 @@ func (s *MulticlusterControllerSuite) ApplyAll(objs ...client.Object) {
 				obj.SetResourceVersion("")
 				obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-				s.Require().NoError(env.Client().Patch(s.ctx, obj.DeepCopyObject().(client.Object), client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+				s.Require().NoError(env.Client().Patch(s.ctx, obj.DeepCopyObject().(client.Object), client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Apply() with typed apply configurations
 			}
 		}
 		apply(objs...)
@@ -136,7 +135,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 	s.ctx = trace.Test(t)
 
 	clusterSize := 3
-	ports := getFreePorts(t, clusterSize)
+	ports := testutil.FreePorts(t, clusterSize)
 
 	for i := range clusterSize {
 		s.envs = append(s.envs, testenv.New(t, testenv.Options{
@@ -217,7 +216,7 @@ func (s *MulticlusterControllerSuite) setupMulticlusterRBAC(env *testenv.Env) st
 			obj.SetResourceVersion("")
 			obj.GetObjectKind().SetGroupVersionKind(gvk)
 
-			s.Require().NoError(env.Client().Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests")))
+			s.Require().NoError(env.Client().Patch(s.ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO: migrate to client.Apply() with typed apply configurations
 		}
 	}
 
@@ -257,26 +256,4 @@ func (s *MulticlusterControllerSuite) setupMulticlusterRBAC(env *testenv.Env) st
 	)
 
 	return name
-}
-
-func getFreePorts(t *testing.T, n int) []int {
-	t.Helper()
-
-	ports := make([]int, 0, n)
-	listeners := make([]net.Listener, 0, n)
-
-	for range n {
-		l, err := net.Listen("tcp", "127.0.0.1:0")
-		if err != nil {
-			t.Fatalf("error getting free port: %v", err)
-		}
-		listeners = append(listeners, l)
-		ports = append(ports, l.Addr().(*net.TCPAddr).Port)
-	}
-
-	for _, l := range listeners {
-		l.Close()
-	}
-
-	return ports
 }

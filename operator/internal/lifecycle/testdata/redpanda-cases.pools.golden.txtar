@@ -66,7 +66,17 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           lifecycle:
             postStart:
               exec:
@@ -199,7 +209,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: tuning
           resources: {}
           securityContext:
@@ -238,7 +248,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -422,7 +432,17 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           lifecycle:
             postStart:
               exec:
@@ -575,7 +595,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -782,6 +802,16 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
           image: foo:bar
           lifecycle:
             postStart:
@@ -941,7 +971,7 @@
             xfs & wait $!
           command:
           - /bin/sh
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: fs-validator
           resources:
             limits:
@@ -1197,7 +1227,17 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           lifecycle:
             postStart:
               exec:
@@ -1330,7 +1370,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: tuning
           resources: {}
           securityContext:
@@ -1369,7 +1409,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1553,7 +1593,17 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           lifecycle:
             postStart:
               exec:
@@ -1686,7 +1736,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: tuning
           resources: {}
           securityContext:
@@ -1725,7 +1775,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1910,7 +1960,17 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/redpanda-operator:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           lifecycle:
             postStart:
               exec:
@@ -2041,7 +2101,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: tuning
           resources: {}
           securityContext:
@@ -2080,7 +2140,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -2265,7 +2325,17 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          - name: REDPANDA_METRICS_K8S_VERSION
+            value: v1.32.0
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: 25.3.1
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: localhost/test:dev
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           lifecycle:
             postStart:
               exec:
@@ -2396,7 +2466,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: tuning
           resources: {}
           securityContext:
@@ -2435,7 +2505,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda-unstable:v25.3.1-rc2
+          image: redpandadata/redpanda-unstable:v26.1.1-rc1
           name: redpanda-configurator
           resources: {}
           volumeMounts:

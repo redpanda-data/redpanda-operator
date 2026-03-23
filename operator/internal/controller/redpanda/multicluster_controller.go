@@ -182,13 +182,13 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		// if we have an error or an explicit requeue from one of our
 		// sub reconcilers, then just early return
 		if err != nil || result.RequeueAfter > 0 {
-			l.V(log.DebugLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
+			l.V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
 			return r.syncStatus(ctx, cluster, state, result, err)
 		}
 	}
 
 	// we're at the end of reconciliation, so sync back our status
-	l.V(log.DebugLevel).Info("finished normal reconciliation loop")
+	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
 }
 
@@ -288,16 +288,16 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	}()
 
 	if !state.pools.CheckScale() {
-		logger.V(log.DebugLevel).Info("scale operation currently underway")
+		logger.V(log.TraceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 
-	logger.V(log.DebugLevel).Info("ready to scale and apply node pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
+	logger.V(log.TraceLevel).Info("ready to scale and apply node pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
 
 	// first create any pools that don't currently exists
 	for _, set := range state.pools.ToCreate() {
-		logger.V(log.DebugLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "creating statefulset")
@@ -306,7 +306,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 
 	// next scale up any under-provisioned pools and patch them to use the new spec
 	for _, set := range state.pools.ToScaleUp() {
-		logger.V(log.DebugLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "scaling up statefulset")
@@ -316,7 +316,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	// now make sure all of the patch any sets that might have changed without affecting the cluster size
 	// here we can just wholesale patch everything
 	for _, set := range state.pools.RequiresUpdate() {
-		logger.V(log.DebugLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "updating statefulset")
 		}
@@ -416,7 +416,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// at this point any set that needs to be deleted should have 0 replicas
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
-		logger.V(log.DebugLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := cluster.GetClient().Delete(ctx, set.StatefulSet); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
@@ -446,7 +446,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 		if shouldRoll {
 			rolled = true
-			logger.V(log.DebugLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
+			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
 			if err := cluster.GetClient().Delete(ctx, pod.Pod); err != nil {
 				return ctrl.Result{}, errors.Wrap(err, "deleting pod")
@@ -598,7 +598,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 	// 4. Tracking config version for restart-on-change functionality
 	//
 	// For now, mark as applied to allow other reconciliation to proceed
-	logger.V(log.DebugLevel).Info("cluster configuration reconciliation not yet fully implemented for StretchCluster")
+	logger.V(log.TraceLevel).Info("cluster configuration reconciliation not yet fully implemented for StretchCluster")
 	state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
 
 	return ctrl.Result{}, nil
@@ -607,7 +607,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 func (r *MulticlusterReconciler) syncStatus(ctx context.Context, cluster cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
 	original := state.cluster.StretchCluster.Status.DeepCopy()
 	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) {
-		log.FromContext(ctx).V(log.DebugLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
+		log.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
 		syncErr := cluster.GetClient().Status().Update(ctx, state.cluster.StretchCluster)
 		err = errors.Join(syncErr, err)
 	}
@@ -638,7 +638,7 @@ func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *
 // a single less replica.
 func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
-	logger.V(log.DebugLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	brokerID, ok := brokerMap[set.LastPod.GetName()]
 	if ok {
@@ -657,7 +657,7 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 		}
 	}
 
-	logger.V(log.DebugLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
+	logger.V(log.TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// now patch the statefulset to remove the pod
 	if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
@@ -671,12 +671,12 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 // decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
 func (r *MulticlusterReconciler) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerID int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].decommissionBroker", *cluster))
-	logger.V(log.DebugLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+	logger.V(log.TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)
 	if err != nil {
 		if strings.Contains(err.Error(), "is not decommissioning") {
-			logger.V(log.DebugLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+			logger.V(log.TraceLevel).Info("decommissioning broker", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
 				return false, errors.Wrap(err, "decommissioning broker")
@@ -687,7 +687,7 @@ func (r *MulticlusterReconciler) decommissionBroker(ctx context.Context, admin *
 		return false, errors.Wrap(err, "fetching decommission status")
 	}
 	if !decommissionStatus.Finished {
-		logger.V(log.DebugLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
+		logger.V(log.TraceLevel).Info("decommissioning in progress", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 		// just requeue since we're still decommissioning
 		return true, nil

@@ -272,7 +272,7 @@ func TestUserValidation(t *testing.T) {
 					}},
 				}
 			},
-			errors: []string{`acl rules on non-cluster resources must specify a name`},
+			errors: []string{`acl rules on non-cluster, non-registry resources must specify a name`},
 		},
 		"authorization topic - invalid operation": {
 			mutate: func(user *User) {
@@ -321,7 +321,7 @@ func TestUserValidation(t *testing.T) {
 					}},
 				}
 			},
-			errors: []string{`acl rules on non-cluster resources must specify a name`},
+			errors: []string{`acl rules on non-cluster, non-registry resources must specify a name`},
 		},
 		"authorization group - invalid operation": {
 			mutate: func(user *User) {
@@ -370,7 +370,7 @@ func TestUserValidation(t *testing.T) {
 					}},
 				}
 			},
-			errors: []string{`acl rules on non-cluster resources must specify a name`},
+			errors: []string{`acl rules on non-cluster, non-registry resources must specify a name`},
 		},
 		"authorization transactionalId - invalid operation": {
 			mutate: func(user *User) {
@@ -421,7 +421,7 @@ func TestUserValidation(t *testing.T) {
 					}},
 				}
 			},
-			errors: []string{`name must not be specified for type ['cluster']`},
+			errors: []string{`name must not be specified for type ['cluster', 'registry']`},
 		},
 		"authorization cluster - invalid operation": {
 			mutate: func(user *User) {
@@ -454,7 +454,7 @@ func TestUserValidation(t *testing.T) {
 					}},
 				}
 			},
-			errors: []string{`prefixed pattern type only supported for ['group', 'topic', 'transactionalId']`},
+			errors: []string{`prefixed pattern type only supported for ['group', 'topic', 'transactionalid', 'subject']`},
 		},
 		"authorization - deny": {
 			mutate: func(user *User) {

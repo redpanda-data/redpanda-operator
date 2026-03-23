@@ -14,15 +14,19 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/imdario/mergo"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,8 +36,10 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -45,23 +51,33 @@ const (
 )
 
 // console resources
+// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=consoles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=consoles/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="monitoring.coreos.com",resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 
 type Controller struct {
-	Ctl *kube.Ctl
+	Ctl    *kube.Ctl
+	Config *kube.RESTConfig
 
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
 	// value.
 	rng *rand.Rand
+
+	// capabilitiesMu guards capabilitiesCached and capabilities. We cache
+	// on first successful resolution since the K8s version doesn't change
+	// during the operator's lifetime.
+	capabilitiesMu     sync.Mutex
+	capabilitiesCached bool
+	capabilities       helmette.Capabilities
 }
 
-func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Manager) error {
+func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
 	// If rng is not set for testing, create and seed a new one.
 	if c.rng == nil {
 		// TODO: Weak RNG is probably acceptable here but best to doublecheck
@@ -73,6 +89,14 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 
 	// NB: As of writing, all console types are namespace scoped.
 	for _, t := range console.Types() {
+		// this will skip watch for ServiceMonitor if they are not installed in the cluster.
+		// If it gets installed during the operator runtime, we will need to restart the operator to start watching for it.
+		// While not ideal, given that we don't modify Console's ServiceMonitor at all, I think it's **fine**.
+		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
+			if c.skipServiceMonitorWatchIfNotInstalled(ctx) {
+				continue
+			}
+		}
 		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 	}
 
@@ -88,7 +112,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 		builder.Watches(&redpandav1alpha2.Redpanda{}, eventHandler, controller.WatchOptions(clusterName)...)
 	}
 
-	return builder.Complete(c)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, c))
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
@@ -201,12 +225,46 @@ func (c *Controller) ownershipLabelsFor(cr *redpandav1alpha2.Console) map[string
 	}
 }
 
-func (c *Controller) rendererFor(console *redpandav1alpha2.Console) *render {
+func (c *Controller) rendererFor(cr *redpandav1alpha2.Console) *render {
+	caps := c.resolveCapabilities()
+
+	metrics := console.MetricsState{
+		ViaOperator:       true,
+		KubernetesVersion: caps.KubeVersion.Version,
+		ChartVersion:      version.Version,
+	}
+
+	// Detect cloud environment from Kubernetes version string.
+	if strings.Contains(caps.KubeVersion.Version, "-gke") {
+		metrics.CloudEnvironment = "GCP"
+	} else if strings.Contains(caps.KubeVersion.Version, "-eks") {
+		metrics.CloudEnvironment = "AWS"
+	}
+
 	return &render{
 		ctl:     c.Ctl,
-		console: console,
-		labels:  c.ownershipLabelsFor(console),
+		console: cr,
+		labels:  c.ownershipLabelsFor(cr),
+		metrics: metrics,
 	}
+}
+
+func (c *Controller) resolveCapabilities() helmette.Capabilities {
+	c.capabilitiesMu.Lock()
+	defer c.capabilitiesMu.Unlock()
+
+	if c.capabilitiesCached {
+		return c.capabilities
+	}
+
+	caps, err := helmette.NewCapabilities(c.Config)
+	if err != nil {
+		return helmette.Capabilities{}
+	}
+
+	c.capabilities = caps
+	c.capabilitiesCached = true
+	return caps
 }
 
 func (c *Controller) randKey() []byte {
@@ -278,11 +336,24 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, cr *redpandav1alpha2.
 	return nil
 }
 
+func (c *Controller) skipServiceMonitorWatchIfNotInstalled(ctx context.Context) (skip bool) {
+	var serviceMonitorList monitoringv1.ServiceMonitorList
+	err := c.Ctl.List(ctx, "default", &serviceMonitorList)
+	if errors.Is(err, &meta.NoKindMatchError{}) {
+		return true
+	} else if err != nil {
+		log.Error(ctx, err, "could not list ServiceMonitors")
+		return true
+	}
+	return false
+}
+
 // render implements [kube.Renderer].
 type render struct {
 	ctl     *kube.Ctl
 	labels  map[string]string
 	console *redpandav1alpha2.Console
+	metrics console.MetricsState
 }
 
 func (r *render) Types() []kube.Object {
@@ -319,7 +390,23 @@ func (r *render) state(ctx context.Context) (*console.RenderState, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	return console.NewRenderState(r.console.Namespace, r.console.Name, r.labels, clusterValues)
+	state, err := console.NewRenderState(r.console.Namespace, r.console.Name, r.labels, clusterValues)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate metrics telemetry state. Cluster ID is resolved per-reconcile
+	// as the controller may not have access at startup.
+	metrics := r.metrics
+	if metrics.ClusterID == "" {
+		var ns corev1.Namespace
+		if err := r.ctl.Get(ctx, kube.ObjectKey{Name: "kube-system"}, &ns); err == nil {
+			metrics.ClusterID = string(ns.UID)
+		}
+	}
+	state.Metrics = metrics
+
+	return state, nil
 }
 
 // clusterFragment returns a [console.PartialRenderValues] containing details

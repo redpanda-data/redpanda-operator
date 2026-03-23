@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: Add two +kubebuilder:printcolumn annotations to the Topic struct, matching the same pattern used by the Redpanda CRD.
+time: 2026-02-19T04:04:09.727548+01:00

@@ -1,10 +1,10 @@
 { lib
-, buildGoModule
+, buildGo126Module
 , fetchFromGitHub
 ,
 }:
 
-buildGoModule rec {
+buildGo126Module rec {
   pname = "rp-controller-gen";
   version = "f50515c8d09311681834eaeed1a9a9ffe6ec1397";
 

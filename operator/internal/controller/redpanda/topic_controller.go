@@ -134,12 +134,12 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req mcreconcile.Request
 
 func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
 	if r.RecordEvents {
-		return c.GetEventRecorderFor("TopicReconciler")
+		return c.GetEventRecorderFor("TopicReconciler") //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
 	}
 	return nil
 }
 
-func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool) error {
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	r := &TopicReconciler{
 		Manager: mgr,
 		Factory: internalclient.NewFactory(mgr, expander),
@@ -166,7 +166,7 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 		}
 	}
 
-	return builder.Complete(r)
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
 func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {

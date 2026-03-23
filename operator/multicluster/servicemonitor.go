@@ -7,34 +7,46 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_servicemonitor.go.tpl
-package redpanda
+package multicluster
 
 import (
+	"encoding/json"
+
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
-	if !state.Values.Monitoring.Enabled {
+// serviceMonitor returns a ServiceMonitor for the Redpanda cluster.
+func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
+	if !state.Spec().Monitoring.IsEnabled() {
 		return nil
 	}
 
-	endpoint := monitoringv1.Endpoint{
-		Interval:    state.Values.Monitoring.ScrapeInterval,
-		Path:        "/public_metrics",
-		Port:        "admin",
-		EnableHttp2: state.Values.Monitoring.EnableHTTP2,
-		Scheme:      "http",
+	mon := state.Spec().Monitoring
+
+	var interval monitoringv1.Duration
+	if mon.ScrapeInterval != nil {
+		interval = monitoringv1.Duration(*mon.ScrapeInterval)
 	}
 
-	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) || state.Values.Monitoring.TLSConfig != nil {
-		endpoint.Scheme = "https"
-		endpoint.TLSConfig = state.Values.Monitoring.TLSConfig
+	endpoint := monitoringv1.Endpoint{
+		Interval: interval,
+		Path:     publicMetricsPath,
+		Port:     internalAdminAPIPortName,
+		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
+	}
 
+	if state.Spec().IsAdminTLSEnabled() || mon.TLSConfig != nil {
+		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
+
+		// Use custom TLS config if provided, otherwise fall back to insecure skip verify.
+		if mon.TLSConfig != nil {
+			var tlsConfig monitoringv1.TLSConfig
+			if err := json.Unmarshal(mon.TLSConfig.Raw, &tlsConfig); err == nil {
+				endpoint.TLSConfig = &tlsConfig
+			}
+		}
 		if endpoint.TLSConfig == nil {
 			endpoint.TLSConfig = &monitoringv1.TLSConfig{
 				SafeTLSConfig: monitoringv1.SafeTLSConfig{
@@ -44,23 +56,28 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 		}
 	}
 
+	labels := state.commonLabels()
+	for k, v := range mon.Labels {
+		labels[k] = v
+	}
+
 	return &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "monitoring.coreos.com/v1",
 			Kind:       monitoringv1.ServiceMonitorsKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(state),
-			Namespace: state.Release.Namespace,
-			Labels:    helmette.Merge(FullLabels(state), state.Values.Monitoring.Labels),
+			Name:      state.fullname(),
+			Namespace: state.namespace,
+			Labels:    labels,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{endpoint},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"monitoring.redpanda.com/enabled": "true",
-					"app.kubernetes.io/name":          Name(state),
-					"app.kubernetes.io/instance":      state.Release.Name,
+					labelMonitorKey:  "true",
+					labelNameKey:     labelNameValue,
+					labelInstanceKey: state.releaseName,
 				},
 			},
 		},

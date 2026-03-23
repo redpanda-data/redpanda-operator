@@ -6,6 +6,20 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $state := (get (fromJson (include "chart.DotToState" (dict "a" (list $dot)))) "r") -}}
+{{- $kubeVersion := $dot.Capabilities.KubeVersion.Version -}}
+{{- $_ := (set $state "Metrics" (mustMergeOverwrite (dict "ViaOperator" false "CloudEnvironment" "" "KubernetesVersion" "" "ChartVersion" "" "ClusterID" "") (dict "KubernetesVersion" $kubeVersion "ChartVersion" $dot.Chart.Version))) -}}
+{{- $_61_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
+{{- $namespace := (index $_61_namespace_ok 0) -}}
+{{- $ok := (index $_61_namespace_ok 1) -}}
+{{- if $ok -}}
+{{- $_ := (set $state.Metrics "ClusterID" (toString $namespace.metadata.uid)) -}}
+{{- end -}}
+{{- if (contains "-gke" $kubeVersion) -}}
+{{- $_ := (set $state.Metrics "CloudEnvironment" "GCP") -}}
+{{- else -}}{{- if (contains "-eks" $kubeVersion) -}}
+{{- $_ := (set $state.Metrics "CloudEnvironment" "AWS") -}}
+{{- end -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (get (fromJson (include "console.Render" (dict "a" (list $state)))) "r")) | toJson -}}
 {{- break -}}
@@ -22,7 +36,7 @@
 {{- $_ := (set $values.secret.authentication "jwtSigningKey" (randAlphaNum (32 | int))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "ReleaseName" "" "Namespace" "" "Template" (coalesce nil) "CommonLabels" (coalesce nil) "Values" (dict "replicaCount" 0 "nameOverride" "" "commonLabels" (coalesce nil) "fullnameOverride" "" "image" (dict "registry" "" "repository" "" "pullPolicy" "" "tag" "") "imagePullSecrets" (coalesce nil) "automountServiceAccountToken" false "serviceAccount" (dict "create" false "automountServiceAccountToken" false "annotations" (coalesce nil) "name" "") "annotations" (coalesce nil) "podAnnotations" (coalesce nil) "podLabels" (coalesce nil) "podSecurityContext" (dict) "securityContext" (dict) "service" (dict "type" "" "port" 0 "annotations" (coalesce nil)) "ingress" (dict "enabled" false "annotations" (coalesce nil) "hosts" (coalesce nil) "tls" (coalesce nil)) "resources" (dict) "autoscaling" (dict "enabled" false "minReplicas" 0 "maxReplicas" 0 "targetCPUUtilizationPercentage" (coalesce nil)) "nodeSelector" (coalesce nil) "tolerations" (coalesce nil) "affinity" (dict) "topologySpreadConstraints" (coalesce nil) "priorityClassName" "" "config" (coalesce nil) "extraEnv" (coalesce nil) "extraEnvFrom" (coalesce nil) "extraVolumes" (coalesce nil) "extraVolumeMounts" (coalesce nil) "extraContainers" (coalesce nil) "extraContainerPorts" (coalesce nil) "initContainers" (dict "extraInitContainers" (coalesce nil)) "secretMounts" (coalesce nil) "secret" (dict "create" false "kafka" (dict) "authentication" (dict "jwtSigningKey" "" "oidc" (dict)) "license" "" "redpanda" (dict "adminApi" (dict)) "serde" (dict) "schemaRegistry" (dict)) "livenessProbe" (dict) "readinessProbe" (dict) "configmap" (dict "create" false) "deployment" (dict "create" false) "strategy" (dict))) (dict "ReleaseName" $dot.Release.Name "Namespace" $dot.Release.Namespace "Values" $values "Template" (list "chart.templater.Template" $templater) "CommonLabels" (dict "helm.sh/chart" (get (fromJson (include "chart.ChartLabel" (dict "a" (list $dot)))) "r") "app.kubernetes.io/managed-by" $dot.Release.Service "app.kubernetes.io/version" $dot.Chart.AppVersion)))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "ReleaseName" "" "Namespace" "" "Template" (coalesce nil) "CommonLabels" (coalesce nil) "Values" (dict "replicaCount" 0 "nameOverride" "" "commonLabels" (coalesce nil) "fullnameOverride" "" "image" (dict "registry" "" "repository" "" "pullPolicy" "" "tag" "") "imagePullSecrets" (coalesce nil) "automountServiceAccountToken" false "serviceAccount" (dict "create" false "automountServiceAccountToken" false "annotations" (coalesce nil) "name" "") "annotations" (coalesce nil) "podAnnotations" (coalesce nil) "podLabels" (coalesce nil) "podSecurityContext" (dict) "securityContext" (dict) "service" (dict "type" "" "port" 0 "annotations" (coalesce nil)) "ingress" (dict "enabled" false "annotations" (coalesce nil) "hosts" (coalesce nil) "tls" (coalesce nil)) "resources" (dict) "autoscaling" (dict "enabled" false "minReplicas" 0 "maxReplicas" 0 "targetCPUUtilizationPercentage" (coalesce nil)) "nodeSelector" (coalesce nil) "tolerations" (coalesce nil) "affinity" (dict) "topologySpreadConstraints" (coalesce nil) "priorityClassName" "" "config" (coalesce nil) "extraEnv" (coalesce nil) "extraEnvFrom" (coalesce nil) "extraVolumes" (coalesce nil) "extraVolumeMounts" (coalesce nil) "extraContainers" (coalesce nil) "extraContainerPorts" (coalesce nil) "initContainers" (dict "extraInitContainers" (coalesce nil)) "secretMounts" (coalesce nil) "secret" (dict "create" false "kafka" (dict) "authentication" (dict "jwtSigningKey" "" "oidc" (dict)) "license" "" "redpanda" (dict "adminApi" (dict)) "serde" (dict) "schemaRegistry" (dict)) "livenessProbe" (dict) "readinessProbe" (dict) "configmap" (dict "create" false) "deployment" (dict "create" false) "strategy" (dict) "monitoring" (dict "enabled" false "scrapeInterval" "" "labels" (coalesce nil))) "Metrics" (dict "ViaOperator" false "CloudEnvironment" "" "KubernetesVersion" "" "ChartVersion" "" "ClusterID" "")) (dict "ReleaseName" $dot.Release.Name "Namespace" $dot.Release.Namespace "Values" $values "Template" (list "chart.templater.Template" $templater) "CommonLabels" (dict "helm.sh/chart" (get (fromJson (include "chart.ChartLabel" (dict "a" (list $dot)))) "r") "app.kubernetes.io/managed-by" $dot.Release.Service "app.kubernetes.io/version" $dot.Chart.AppVersion)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

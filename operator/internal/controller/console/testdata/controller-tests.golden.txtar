@@ -77,6 +77,13 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-cluster-ref-console
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+            value: redpandadata/console:v3.3.2
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -275,6 +282,13 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-jwt-set-console
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+            value: redpandadata/console:v3.3.2
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -453,6 +467,13 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-no-cluster-console
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+            value: redpandadata/console:v3.3.2
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -656,6 +677,13 @@
               secretKeyRef:
                 key: authentication-jwt-signingkey
                 name: console-static-console
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+            value: redpandadata/console:v3.3.2
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
           image: docker.redpanda.com/redpandadata/console:v3.3.2
           imagePullPolicy: IfNotPresent
           livenessProbe:

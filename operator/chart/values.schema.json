@@ -897,11 +897,23 @@
               "items": {
                 "additionalProperties": false,
                 "properties": {
+                  "additionalAnnotation": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
                   "address": {
                     "type": "string"
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "selectorOverwrite": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
                   }
                 },
                 "required": [
@@ -916,6 +928,9 @@
               "type": "null"
             }
           ]
+        },
+        "servicePerOperatorDeployment": {
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -5923,6 +5938,12 @@
                                     },
                                     "signerName": {
                                       "type": "string"
+                                    },
+                                    "userAnnotations": {
+                                      "additionalProperties": {
+                                        "type": "string"
+                                      },
+                                      "type": "object"
                                     }
                                   },
                                   "type": "object"
@@ -6172,6 +6193,21 @@
                   "type": "null"
                 }
               ]
+            },
+            "workloadRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "podGroup": {
+                  "type": "string"
+                },
+                "podGroupReplicaKey": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"

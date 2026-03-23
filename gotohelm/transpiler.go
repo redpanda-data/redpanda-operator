@@ -1283,7 +1283,6 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return litCall("_shims.get", args...)
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.FromYaml":
 		return litCall("_shims.fromYaml", args...)
-
 	case "github.com/redpanda-data/redpanda-operator/gotohelm/helmette.SortedMap":
 		// In go, map iteration is non-deterministic which can cause
 		// differences in go vs helm output. A ruleguard linter is responsible
@@ -1895,6 +1894,7 @@ type jsonTag struct {
 	Name      string
 	Inline    bool
 	OmitEmpty bool
+	OmitZero  bool
 }
 
 func parseTag(tag string) jsonTag {
@@ -1916,6 +1916,7 @@ func parseTag(tag string) jsonTag {
 		Name:      match[1][:idx],
 		Inline:    strings.Contains(match[1], "inline"),
 		OmitEmpty: strings.Contains(match[1], "omitempty"),
+		OmitZero:  strings.Contains(match[1], "omitzero"),
 	}
 }
 
@@ -1962,6 +1963,9 @@ func (f *structField) IncludeInZero() bool {
 	// those annotations. It may be possible to fix by using one of Kubernetes'
 	// marshallers?
 	if f.JSONOmit() {
+		return false
+	}
+	if f.Tag.OmitZero {
 		return false
 	}
 	if f.Tag.OmitEmpty && omitemptyRespected(f.Field.Type()) {

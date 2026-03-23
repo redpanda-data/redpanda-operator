@@ -7,8 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_service.internal.go.tpl
-package redpanda
+package multicluster
 
 import (
 	"fmt"
@@ -16,71 +15,80 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-const (
-	InternalAdminAPIPortName       = "admin"
-	InternalKafkaPortName          = "kafka"
-	InternalSchemaRegistryPortName = "schemaregistry"
-	InternalPandaProxyPortName     = "http"
-)
-
-func MonitoringEnabledLabel(state *RenderState) map[string]string {
-	return map[string]string{
-		// no gotohelm support for strconv.FormatBool
-		"monitoring.redpanda.com/enabled": fmt.Sprintf("%t", state.Values.Monitoring.Enabled),
-	}
-}
-
-func ServiceInternal(state *RenderState) *corev1.Service {
-	// This service is only used to create the DNS enteries for each pod in
+func serviceInternal(state *RenderState) *corev1.Service {
+	// This service is only used to create the DNS entries for each pod in
 	// the stateful set and allow the serviceMonitor to target the pods.
 	// This service should not be used by any client application.
-	ports := []corev1.ServicePort{}
+	var ports []corev1.ServicePort
 
-	ports = append(ports, corev1.ServicePort{
-		Name:        InternalAdminAPIPortName,
-		Protocol:    "TCP",
-		AppProtocol: state.Values.Listeners.Admin.AppProtocol,
-		Port:        state.Values.Listeners.Admin.Port,
-		TargetPort:  intstr.FromInt32(state.Values.Listeners.Admin.Port),
-	})
+	l := state.Spec().Listeners
 
-	if state.Values.Listeners.HTTP.Enabled {
+	// Admin listener.
+	if l == nil || l.Admin == nil || l.Admin.IsEnabled() {
+		adminPort := state.Spec().AdminPort()
+		adminServicePort := corev1.ServicePort{
+			Name:       internalAdminAPIPortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       adminPort,
+			TargetPort: intstr.FromInt32(adminPort),
+		}
+		if l != nil && l.Admin != nil {
+			adminServicePort.AppProtocol = l.Admin.AppProtocol
+		}
+		ports = append(ports, adminServicePort)
+	}
+
+	// HTTP proxy listener.
+	if l != nil && l.HTTP != nil && l.HTTP.IsEnabled() {
+		httpPort := state.Spec().HTTPPort()
 		ports = append(ports, corev1.ServicePort{
-			Name:       InternalPandaProxyPortName,
-			Protocol:   "TCP",
-			Port:       state.Values.Listeners.HTTP.Port,
-			TargetPort: intstr.FromInt32(state.Values.Listeners.HTTP.Port),
+			Name:       internalPandaProxyPortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       httpPort,
+			TargetPort: intstr.FromInt32(httpPort),
 		})
 	}
-	ports = append(ports, corev1.ServicePort{
-		Name:       InternalKafkaPortName,
-		Protocol:   "TCP",
-		Port:       state.Values.Listeners.Kafka.Port,
-		TargetPort: intstr.FromInt32(state.Values.Listeners.Kafka.Port),
-	})
-	ports = append(ports, corev1.ServicePort{
-		Name:       "rpc",
-		Protocol:   "TCP",
-		Port:       state.Values.Listeners.RPC.Port,
-		TargetPort: intstr.FromInt32(state.Values.Listeners.RPC.Port),
-	})
-	if state.Values.Listeners.SchemaRegistry.Enabled {
+
+	// Kafka listener.
+	if l == nil || l.Kafka == nil || l.Kafka.IsEnabled() {
+		kafkaPort := state.Spec().KafkaPort()
 		ports = append(ports, corev1.ServicePort{
-			Name:       InternalSchemaRegistryPortName,
-			Protocol:   "TCP",
-			Port:       state.Values.Listeners.SchemaRegistry.Port,
-			TargetPort: intstr.FromInt32(state.Values.Listeners.SchemaRegistry.Port),
+			Name:       internalKafkaPortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       kafkaPort,
+			TargetPort: intstr.FromInt32(kafkaPort),
+		})
+	}
+
+	// RPC listener (always required for inter-broker communication).
+	rpcPort := state.Spec().RPCPort()
+	ports = append(ports, corev1.ServicePort{
+		Name:       internalRPCPortName,
+		Protocol:   corev1.ProtocolTCP,
+		Port:       rpcPort,
+		TargetPort: intstr.FromInt32(rpcPort),
+	})
+
+	// Schema Registry listener.
+	if l != nil && l.SchemaRegistry != nil && l.SchemaRegistry.IsEnabled() {
+		srPort := state.Spec().SchemaRegistryPort()
+		ports = append(ports, corev1.ServicePort{
+			Name:       internalSchemaRegistryPortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       srPort,
+			TargetPort: intstr.FromInt32(srPort),
 		})
 	}
 
 	annotations := map[string]string{}
-	if state.Values.Service != nil {
-		annotations = state.Values.Service.Internal.Annotations
+	if svc := state.Spec().Service; svc != nil && svc.Internal != nil {
+		annotations = svc.Internal.Annotations
 	}
+
+	labels := state.commonLabels()
+	labels[labelMonitorKey] = fmt.Sprintf("%t", state.Spec().Monitoring.IsEnabled())
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -88,16 +96,16 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        ServiceName(state),
-			Namespace:   state.Release.Namespace,
-			Labels:      helmette.Merge(FullLabels(state), MonitoringEnabledLabel(state)),
+			Name:        state.Spec().GetServiceName(state.fullname()),
+			Namespace:   state.namespace,
+			Labels:      labels,
 			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,
 			PublishNotReadyAddresses: true,
 			ClusterIP:                corev1.ClusterIPNone,
-			Selector:                 ClusterPodLabelsSelector(state),
+			Selector:                 state.clusterPodLabelsSelector(),
 			Ports:                    ports,
 		},
 	}

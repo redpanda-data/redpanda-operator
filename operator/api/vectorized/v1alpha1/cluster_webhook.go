@@ -25,13 +25,11 @@ import (
 	schedulingv1 "k8s.io/api/scheduling/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
@@ -98,8 +96,7 @@ func (r *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	// But since we already have this webhook we just instantiate the client
 	// REF https://github.com/kubernetes-sigs/kubebuilder/issues/1216
 	kclient = mgr.GetClient()
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+	return ctrl.NewWebhookManagedBy(mgr, r).
 		WithDefaulter(&Cluster{}).
 		WithValidator(&Cluster{}).
 		Complete()
@@ -107,7 +104,7 @@ func (r *Cluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-redpanda-vectorized-io-v1alpha1-cluster,mutating=true,failurePolicy=fail,sideEffects=None,groups=redpanda.vectorized.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=mcluster.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.CustomDefaulter = &Cluster{}
+var _ admission.Defaulter[*Cluster] = &Cluster{}
 
 func redpandaResourceFields(c *Cluster) []redpandaResourceField {
 	var result []redpandaResourceField
@@ -135,17 +132,12 @@ func sidecarResourceFields(c *Cluster) []resourceField {
 
 // Default implements defaulting webhook logic - all defaults that should be
 // applied to cluster CRD after user submits it should be put in here
-func (r *Cluster) Default(_ context.Context, obj runtime.Object) error {
+func (r *Cluster) Default(_ context.Context, cl *Cluster) error {
 	log := ctrl.Log.WithName("Cluster.Default").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("defaulting")
 
-	if obj == nil {
+	if cl == nil {
 		return nil
-	}
-
-	cl, ok := obj.(*Cluster)
-	if !ok {
-		return fmt.Errorf("expected a Cluster but got a %T", obj)
 	}
 
 	if cl.Spec.Configuration.SchemaRegistry != nil && cl.Spec.Configuration.SchemaRegistry.Port == 0 {
@@ -211,20 +203,15 @@ func (r *Cluster) setDefaultAdditionalConfiguration() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-redpanda-vectorized-io-v1alpha1-cluster,mutating=false,failurePolicy=fail,sideEffects=None,groups=redpanda.vectorized.io,resources=clusters,verbs=create;update,versions=v1alpha1,name=vcluster.kb.io,admissionReviewVersions={v1,v1beta1}
 
-var _ webhook.CustomValidator = &Cluster{}
+var _ admission.Validator[*Cluster] = &Cluster{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (r *Cluster) ValidateCreate(ctx context.Context, cl *Cluster) (admission.Warnings, error) {
 	log := ctrl.Log.WithName("Cluster.ValidateCreate").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("validating create")
 
-	if obj == nil {
+	if cl == nil {
 		return nil, nil
-	}
-
-	cl, ok := obj.(*Cluster)
-	if !ok {
-		return nil, fmt.Errorf("expected a Cluster but got a %T", obj)
 	}
 
 	allErrs := cl.validateCommon(ctx, log)
@@ -239,26 +226,16 @@ func (r *Cluster) ValidateCreate(ctx context.Context, obj runtime.Object) (admis
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateUpdate(ctx context.Context, old runtime.Object, newObj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *Cluster) ValidateUpdate(ctx context.Context, oldCluster, cl *Cluster) (warnings admission.Warnings, err error) {
 	log := ctrl.Log.WithName("Cluster.ValidateUpdate").WithValues("namespace", r.Namespace, "name", r.Name)
 	log.Info("validating update")
 
-	if old == nil {
+	if oldCluster == nil {
 		return nil, nil
 	}
 
-	oldCluster, ok := old.(*Cluster)
-	if !ok {
-		return nil, fmt.Errorf("expected a Cluster but got a %T", old)
-	}
-
-	if newObj == nil {
+	if cl == nil {
 		return nil, nil
-	}
-
-	cl, ok := newObj.(*Cluster)
-	if !ok {
-		return nil, fmt.Errorf("expected a Cluster but got a %T", newObj)
 	}
 
 	// Don't validate if the cluster is being deleted.
@@ -1225,7 +1202,7 @@ func (r *Cluster) validateAdditionalConfiguration() field.ErrorList {
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Cluster) ValidateDelete(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
+func (r *Cluster) ValidateDelete(ctx context.Context, obj *Cluster) (warnings admission.Warnings, err error) {
 	// this is a stub to implement the interface. We do not validate on delete.
 	return nil, nil
 }

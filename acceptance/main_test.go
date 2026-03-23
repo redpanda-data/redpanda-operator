@@ -59,6 +59,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		WithImportedImages([]string{
 			imageRepo + ":" + imageTag,
 			"rancher/mirrored-library-busybox:1.36.1",
+			steps.DefaultRedpandaRepo + ":" + steps.DefaultRedpandaTag,
 			"docker.redpanda.com/redpandadata/redpanda-operator:v2.4.5",
 			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
 			"docker.redpanda.com/redpandadata/redpanda:v25.2.1",

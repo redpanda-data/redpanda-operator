@@ -15,13 +15,13 @@ import (
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
-	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
-	"github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-// NodePoolRenderer represents a node pool renderer for v2 clusters.
+// NodePoolRenderer represents a node pool multiclusterRenderer for stretch clusters.
 type StretchNodePoolRenderer struct {
 	mgr           multicluster.Manager
 	sideCarImage  Image
@@ -41,31 +41,26 @@ func NewStretchNodePoolRenderer(mgr multicluster.Manager, redpandaImage, sideCar
 	}
 }
 
-// Render returns a list of StatefulSets for the given Redpanda v2 cluster. It does this by
-// delegating to our particular resource rendering pipeline and filtering out anything that
-// isn't a node pool.
+// Render returns a list of StatefulSets for the given stretch cluster.
 func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchClusterWithPools, clusterName string) ([]*appsv1.StatefulSet, error) {
-	state, err := m.convertToRender(ctx, cluster, clusterName)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	sets := []*appsv1.StatefulSet{}
-	for _, set := range state.Pools {
-		sets = append(sets, redpanda.StatefulSet(state, set))
-	}
-	redpanda.RenderNodePools(state)
-
-	return sets, nil
-}
-
-func (m *StretchNodePoolRenderer) convertToRender(ctx context.Context, cluster *StretchClusterWithPools, clusterName string) (*redpanda.RenderState, error) {
 	cl, err := m.mgr.GetCluster(ctx, clusterName)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return conversion.ConvertStretchClusterToRenderState(cl.GetConfig(), &conversion.V2Defaulters{}, cluster.StretchCluster, cluster.GetNodePoolsForCluster(clusterName), clusterName)
+	// Use the canonical cluster name so that labels are identical regardless
+	// of which operator instance (local vs remote) performs the reconciliation.
+	canonicalName := clusterName
+	if canonicalName == mcmanager.LocalCluster {
+		canonicalName = m.mgr.GetLocalClusterName()
+	}
+
+	state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetNodePoolsForCluster(canonicalName), canonicalName)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return multiclusterRenderer.RenderNodePools(state)
 }
 
 // IsNodePool returns whether or not the object passed to it should be considered a node pool.

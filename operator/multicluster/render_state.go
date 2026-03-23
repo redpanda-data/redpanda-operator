@@ -7,203 +7,233 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_render_state.go.tpl
-package redpanda
+package multicluster
 
 import (
+	"context"
 	"fmt"
+	"sort"
 
+	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/ir"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
 // RenderState contains contextual information about the current rendering of
-// the chart.
+// stretch cluster resources. Exported methods are limited to those useful for
+// establishing client connections to the cluster.
 type RenderState struct {
-	// Metadata about the current Helm release.
-	Release *helmette.Release
-	// Files contains the static files that are part of the Helm chart.
-	Files *helmette.Files
-	// Chart is the helm chart being rendered.
-	Chart *helmette.Chart
+	cluster     *redpandav1alpha2.StretchCluster
+	pools       []*redpandav1alpha2.NodePool
+	clusterName string
+	releaseName string
+	namespace   string
 
-	// Values are the values used to render the chart.
-	Values Values
+	client *kube.Ctl
 
-	// BootstrapUserSecret is the Secret that may already exist in the cluster.
-	BootstrapUserSecret *corev1.Secret
-	// BootstrapPassword is the password of the bootstrap user, if it could be found.
-	BootstrapUserPassword string
-
-	// StatefulSetPodLabels contains the labels that may already exist for the default statefulset pod template.
-	StatefulSetPodLabels map[string]string
-	// StatefulSetSelector contains the selector that may already exist for the default statefulset.
-	StatefulSetSelector map[string]string
-
-	// Pools contains the list of NodePools that are being rendered.
-	Pools []Pool
-
-	SeedServers []string
-
-	// Dot is the underlying [helmette.Dot] that was used to construct this
-	// RenderState.
-	// TODO: remove this eventually once we get templating figured out.
-	Dot *helmette.Dot
+	bootstrapUserSecret  *corev1.Secret
+	statefulSetPodLabels map[string]string
+	statefulSetSelector  map[string]string
 }
 
-// FetchBootstrapUser attempts to locate an existing bootstrap user secret in
-// the cluster. If found, it is stored in [RenderState.BootstrapUserSecret
-func (r *RenderState) FetchBootstrapUser() {
-	if r.Values.Auth.SASL == nil || !r.Values.Auth.SASL.Enabled || r.Values.Auth.SASL.BootstrapUser.SecretKeyRef != nil {
-		return
+// NewRenderState constructs a RenderState from a StretchCluster, its NodePools,
+// and a cluster name. It uses the provided config for K8s lookups.
+// The cluster and pools are deep-copied so that merging defaults does not
+// mutate the caller's objects.
+func NewRenderState(
+	config *kube.RESTConfig,
+	cluster *redpandav1alpha2.StretchCluster,
+	pools []*redpandav1alpha2.NodePool,
+	clusterName string,
+) (*RenderState, error) {
+	// Deep-copy to avoid mutating the caller's CRD objects.
+	cluster = cluster.DeepCopy()
+	copiedPools := make([]*redpandav1alpha2.NodePool, len(pools))
+	for i, p := range pools {
+		copiedPools[i] = p.DeepCopy()
 	}
 
-	secretName := fmt.Sprintf("%s-bootstrap-user", Fullname(r))
+	// Sort pools by name for deterministic rendering order.
+	sort.Slice(copiedPools, func(i, j int) bool {
+		return copiedPools[i].Name < copiedPools[j].Name
+	})
 
-	// Some tools don't correctly set .Release.Upgrade (ArgoCD, gotohelm, helm
-	// template) which has lead us to incorrectly re-generate the bootstrap
-	// user password. Rather than gating, we always attempt a lookup as that's
-	// likely the safest option. Though it's likely that Lookup will be
-	// stubbed out in similar scenarios (helm template).
-	// TODO: Should we try to detect invalid configurations, panic, and request
-	// that a password be explicitly set?
-	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
-	if existing, ok := helmette.Lookup[corev1.Secret](r.Dot, r.Release.Namespace, secretName); ok {
-		// make any existing secret immutable
-		// (Paweł): we need to remove UID here, because otherwise it fails to be created in the clusters
-		// other than local cluster where operator leader runs.
-		existing.SetUID("")
-		existing.Immutable = ptr.To(true)
-		r.BootstrapUserSecret = existing
-		selector := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
-		if data, found := existing.Data[selector.Key]; found {
-			r.BootstrapUserPassword = string(data)
+	// Apply Helm-equivalent defaults to nil fields.
+	cluster.Spec.MergeDefaults()
+
+	releaseName := cluster.Name
+
+	var ctl *kube.Ctl
+	if config != nil {
+		var err error
+		ctl, err = kube.FromRESTConfig(config, kube.Options{
+			FieldManager: string(defaultFieldOwner),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("creating kubernetes client: %w", err)
 		}
 	}
+
+	state := &RenderState{
+		cluster:     cluster,
+		pools:       copiedPools,
+		clusterName: clusterName,
+		releaseName: releaseName,
+		namespace:   cluster.Namespace,
+		client:      ctl,
+	}
+
+	if err := state.fetchBootstrapUser(); err != nil {
+		return nil, err
+	}
+	if err := state.fetchStatefulSetPodSelector(); err != nil {
+		return nil, err
+	}
+
+	return state, nil
 }
 
-// FetchStatefulSetPodSelector attempts to locate an existing statefulset pod
-// selector in the cluster. If found, it is stored in [RenderState.StatefulSetPodLabels
-func (r *RenderState) FetchStatefulSetPodSelector() {
-	// TODO: this may be broken now that we no longer fully distinguish between upgrades/installs
-	// in controller applies
-	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
-	// New installs will get better selectors.
-	if r.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[appsv1.StatefulSet](r.Dot, r.Release.Namespace, Fullname(r)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
-			r.StatefulSetPodLabels = existing.Spec.Template.ObjectMeta.Labels
-			r.StatefulSetSelector = existing.Spec.Selector.MatchLabels
-		}
-	}
-}
-
-func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
-	username := r.Values.Auth.SASL.BootstrapUser.Username()
-	passwordRef := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
-
-	// Kafka API configuration
-	kafkaSpec := &ir.KafkaAPISpec{
-		Brokers: BrokerList(r, r.Values.Listeners.Kafka.Port),
-	}
-
-	// Add TLS configuration for Kafka if enabled
-	if r.Values.Listeners.Kafka.TLS.IsEnabled(&r.Values.TLS) {
-		kafkaSpec.TLS = r.Values.Listeners.Kafka.TLS.ToCommonTLS(r, &r.Values.TLS)
-	}
-
-	// TODO This check may need to be more complex.
-	// There's two cluster configs and then listener level configuration.
-	// Add SASL authentication using bootstrap user if enabled
-	if r.Values.Auth.IsSASLEnabled() {
-		kafkaSpec.SASL = &ir.KafkaSASL{
-			Username: username,
-			Password: &ir.ValueSource{
-				Namespace: r.Release.Namespace,
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: passwordRef.Name},
-					Key:                  passwordRef.Key,
-				},
-			},
-			Mechanism: ir.SASLMechanism(r.Values.Auth.SASL.BootstrapUser.GetMechanism()),
-		}
-	}
-
-	// Admin API configuration
-	var adminTLS *ir.CommonTLS
-	adminSchema := "http"
-	if r.Values.Listeners.Admin.TLS.IsEnabled(&r.Values.TLS) {
-		adminSchema = "https"
-		adminTLS = r.Values.Listeners.Admin.TLS.ToCommonTLS(r, &r.Values.TLS)
-	}
-
-	var adminAuth *ir.AdminAuth
-	adminAuthEnabled, _ := r.Values.Config.Cluster["admin_api_require_auth"].(bool)
-	if adminAuthEnabled {
-		adminAuth = &ir.AdminAuth{
-			Username: username,
-			Password: &ir.ValueSource{
-				Namespace: r.Release.Namespace,
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: passwordRef.Name},
-					Key:                  passwordRef.Key,
-				},
-			},
-		}
-	}
-
-	adminSpec := &ir.AdminAPISpec{
-		TLS:  adminTLS,
-		Auth: adminAuth,
-		URLs: []string{
-			// NB: Console uses SRV based service discovery and doesn't require a full list of addresses.
-			fmt.Sprintf("%s://%s:%d", adminSchema, InternalDomain(r), r.Values.Listeners.Admin.Port),
+// tplData returns the template context data for Go template expansion.
+// The shape mirrors Helm's built-in objects so that PodTemplate values
+// containing {{ .Release.Name }} etc. continue to work after migration
+// from the Helm chart.
+func (r *RenderState) tplData() map[string]any {
+	return map[string]any{
+		"Release": map[string]any{
+			"Namespace":   r.namespace,
+			"Name":        r.releaseName,
+			"Service":     "Helm",
+			"IsUpgrade":   true,
+			"ClusterName": r.clusterName,
 		},
+		"Name":      r.fullname(),
+		"Namespace": r.namespace,
+	}
+}
+
+// Spec returns the StretchClusterSpec. Exported for test/debugging access.
+func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
+	return &r.cluster.Spec
+}
+
+// Pools returns the list of NodePools. Exported for test/debugging access.
+func (r *RenderState) Pools() []*redpandav1alpha2.NodePool {
+	return r.pools
+}
+
+func (r *RenderState) fullname() string {
+	return tplutil.CleanForK8s(r.releaseName)
+}
+
+func (r *RenderState) commonLabels() map[string]string {
+	labels := map[string]string{
+		labelNameKey:        labelNameValue,
+		labelInstanceKey:    r.releaseName,
+		labelManagedByKey:   labelManagedByValue,
+		labelComponentKey:   labelNameValue,
+		labelClusterNameKey: r.clusterName,
+	}
+	for k, v := range r.Spec().CommonLabels {
+		labels[k] = v
+	}
+	return labels
+}
+
+func (r *RenderState) clusterPodLabelsSelector() map[string]string {
+	return map[string]string{
+		labelInstanceKey:    r.releaseName,
+		labelNameKey:        labelNameValue,
+		labelClusterNameKey: r.clusterName,
+	}
+}
+
+func (r *RenderState) poolFullname(pool *redpandav1alpha2.NodePool) string {
+	return fmt.Sprintf("%s%s", r.fullname(), pool.Suffix())
+}
+
+func (r *RenderState) totalReplicas() int32 {
+	var total int32
+	for _, pool := range r.pools {
+		total += pool.GetReplicas()
+	}
+	return total
+}
+
+// BrokerList returns a list of broker addresses for the given port.
+func (r *RenderState) BrokerList(port int32) []string {
+	var brokers []string
+	for _, pool := range r.pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			brokers = append(brokers, fmt.Sprintf("%s%s-%d.%s:%d",
+				r.fullname(), pool.Suffix(), i, r.Spec().InternalDomain(r.fullname(), r.namespace), port))
+		}
+	}
+	return brokers
+}
+
+func (r *RenderState) allPodNames() []string {
+	var names []string
+	for _, pool := range r.pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			names = append(names, fmt.Sprintf("%s-%d", r.poolFullname(pool), i))
+		}
+	}
+	return names
+}
+
+// fetchBootstrapUser looks up an existing bootstrap user secret so that we
+// re-emit it with the same password rather than generating a new random one
+// on every reconciliation. If the secret doesn't exist yet, secretBootstrapUser()
+// will create one with a fresh random password.
+func (r *RenderState) fetchBootstrapUser() error {
+	if r.client == nil || !r.Spec().Auth.IsSASLEnabled() {
+		return nil
 	}
 
-	// Schema Registry configuration (if enabled)
-	var schemaRegistrySpec *ir.SchemaRegistrySpec
-	if r.Values.Listeners.SchemaRegistry.Enabled {
-		var schemaTLS *ir.CommonTLS
-		schemaSchema := "http"
-		if r.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&r.Values.TLS) {
-			schemaSchema = "https"
-			schemaTLS = r.Values.Listeners.SchemaRegistry.TLS.ToCommonTLS(r, &r.Values.TLS)
-		}
-
-		var schemaURLs []string
-		brokers := BrokerList(r, r.Values.Listeners.SchemaRegistry.Port)
-		for _, broker := range brokers {
-			schemaURLs = append(schemaURLs, fmt.Sprintf("%s://%s", schemaSchema, broker))
-		}
-
-		schemaRegistrySpec = &ir.SchemaRegistrySpec{
-			URLs: schemaURLs,
-			TLS:  schemaTLS,
-		}
-
-		// TODO: This check is likely incorrect but it matches the historical
-		// behavior.
-		if r.Values.Auth.IsSASLEnabled() {
-			schemaRegistrySpec.SASL = &ir.SchemaRegistrySASL{
-				Username: username,
-				Password: &ir.ValueSource{
-					Namespace: r.Release.Namespace,
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: passwordRef.Name},
-						Key:                  passwordRef.Key,
-					},
-				},
-			}
-		}
+	sasl := r.Spec().Auth.SASL
+	// If the user explicitly provides a secretKeyRef, they own the secret.
+	if sasl.BootstrapUser != nil && sasl.BootstrapUser.SecretKeyRef != nil {
+		return nil
 	}
 
-	return ir.StaticConfigurationSource{
-		Kafka:          kafkaSpec,
-		Admin:          adminSpec,
-		SchemaRegistry: schemaRegistrySpec,
+	secretName := fmt.Sprintf("%s-bootstrap-user", r.fullname())
+
+	var existing corev1.Secret
+	if err := r.client.Get(context.Background(), kube.ObjectKey{Namespace: r.namespace, Name: secretName}, &existing); err != nil {
+		if k8sapierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("fetching bootstrap user secret %s/%s: %w", r.namespace, secretName, err)
 	}
+	existing.Immutable = ptr.To(true)
+	r.bootstrapUserSecret = &existing
+	return nil
+}
+
+// fetchStatefulSetPodSelector preserves the existing StatefulSet's label
+// selector. StatefulSet selectors are immutable after creation, so if the
+// labels were set incorrectly on first deploy, we must continue using them
+// rather than generating new ones that would cause an update rejection.
+// This only applies to the default (unnamed) pool for backward compatibility.
+func (r *RenderState) fetchStatefulSetPodSelector() error {
+	if r.client == nil {
+		return nil
+	}
+	var existing appsv1.StatefulSet
+	if err := r.client.Get(context.Background(), kube.ObjectKey{Namespace: r.namespace, Name: r.fullname()}, &existing); err != nil {
+		if k8sapierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("fetching statefulset %s/%s: %w", r.namespace, r.fullname(), err)
+	}
+	if len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
+		r.statefulSetPodLabels = existing.Spec.Template.ObjectMeta.Labels
+		r.statefulSetSelector = existing.Spec.Selector.MatchLabels
+	}
+	return nil
 }

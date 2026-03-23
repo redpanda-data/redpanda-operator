@@ -14,6 +14,7 @@
 package console
 
 import (
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -59,6 +60,7 @@ type PartialRenderValues struct {
 	ConfigMap                    *PartialCreatable                                 "json:\"configmap,omitempty\""
 	Deployment                   *PartialDeploymentConfig                          "json:\"deployment,omitempty\""
 	Strategy                     *appsv1.DeploymentStrategy                        "json:\"strategy,omitempty\""
+	Monitoring                   *PartialMonitoringConfig                          "json:\"monitoring,omitempty\""
 }
 
 type PartialImage struct {
@@ -121,6 +123,12 @@ type PartialDeploymentConfig struct {
 	Create    *bool    "json:\"create,omitempty\""
 	Command   []string "json:\"command,omitempty\""
 	ExtraArgs []string "json:\"extraArgs,omitempty\""
+}
+
+type PartialMonitoringConfig struct {
+	Enabled        *bool                  "json:\"enabled,omitempty\""
+	ScrapeInterval *monitoringv1.Duration "json:\"scrapeInterval,omitempty\""
+	Labels         map[string]string      "json:\"labels,omitempty\""
 }
 
 type PartialSecretMount struct {

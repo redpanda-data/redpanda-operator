@@ -1,30 +1,34 @@
-{ buildGo124Module, lib, fetchFromGitHub }:
+{ stdenv
+, fetchurl
+, lib
+}:
+let
+  pname = "controller-gen";
+  version = "0.20.1";
+  src = {
+    # Update hashes with: nix hash to-sri --type sha256 $(nix-prefetch-url $URL)
+    aarch64-darwin = fetchurl {
+      url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-darwin-arm64";
+      hash = "sha256-hJ1TRyvVyBQIXmiUKSCfQqjfwkKpG+KguQ2uxY7TYOA=";
+    };
+    x86_64-linux = fetchurl {
+      url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-linux-amd64";
+      hash = "sha256-VboKH3IFy1KbA8Ca8O4dN+D/MFRLE1acC/eHOXavbvM=";
+    };
+  }.${stdenv.system} or (throw "${pname}-${version}: ${stdenv.system} is unsupported.");
+in
+stdenv.mkDerivation {
+  inherit pname version src;
 
-buildGo124Module rec {
-  pname = "controller-tools";
-  version = "0.16.3";
+  phases = [ "installPhase" ];
 
-  src = fetchFromGitHub {
-    owner = "kubernetes-sigs";
-    repo = pname;
-    rev = "v${version}";
-    sha256 = "sha256-Txvzp8OcRTDCAB8nFrqj93X+Kk/sNPSSLOI07J3DwcM=";
-  };
-
-  vendorHash = "sha256-nwzXlsSG7JF145bf/AJZB1GbGJRHJC7Q73Jty6mHc/w=";
-
-  ldflags = [
-    "-s"
-    "-w"
-    "-X sigs.k8s.io/controller-tools/pkg/version.version=v${version}"
-  ];
-
-  doCheck = false;
-
-  subPackages = [
-    "cmd/controller-gen"
-    "cmd/helpgen"
-  ];
+  installPhase = ''
+    runHook preInstall
+    mkdir -p "$out/bin"
+    cp $src "$out/bin/controller-gen"
+    chmod 755 "$out/bin/controller-gen"
+    runHook postInstall
+  '';
 
   meta = with lib; {
     description = "Tools to use with the Kubernetes controller-runtime libraries";

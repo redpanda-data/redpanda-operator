@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.20.1
   name: stretchclusters.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
@@ -51,7 +51,7 @@ spec:
           spec:
             properties:
               auditLogging:
-                description: Defines the log level settings.
+                description: Defines audit logging settings.
                 properties:
                   clientMaxBufferSize:
                     description: Defines the number of bytes (in bytes) allocated
@@ -99,22 +99,101 @@ spec:
                       Redpanda will use the `internal_topic_replication_factor` cluster config value. Default is `null`
                     type: integer
                 type: object
+              auth:
+                description: Defines authentication settings for listeners.
+                properties:
+                  sasl:
+                    description: Configures SASL authentication in the Helm values.
+                    properties:
+                      bootstrapUser:
+                        description: Specifies configuration about the bootstrap user.
+                        properties:
+                          mechanism:
+                            description: Specifies the authentication mechanism to
+                              use for the bootstrap user. Options are `SCRAM-SHA-256`
+                              and `SCRAM-SHA-512`.
+                            type: string
+                          name:
+                            description: |-
+                              Name specifies the name of the bootstrap user created for the cluster, if unspecified
+                              defaults to "kubernetes-controller".
+                            type: string
+                          secretKeyRef:
+                            description: |-
+                              Specifies the location where the generated password will be written or a pre-existing
+                              password will be read from.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
+                      enabled:
+                        description: Enables SASL authentication. If you enable SASL
+                          authentication, you must provide a Secret name in `secretRef`.
+                        type: boolean
+                      mechanism:
+                        description: Specifies the default authentication mechanism
+                          to use for superusers. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+                        type: string
+                      secretRef:
+                        description: If `users` is empty, `secretRef` specifies the
+                          name of the Secret that contains your superuser credentials
+                          in the format <username>:<password>:<optional-authentication-mechanism>.
+                          Otherwise, `secretRef` specifies the name of the Secret
+                          that the chart creates to store the credentials in `users`.
+                        type: string
+                      users:
+                        description: Specifies a list of superuser credentials.
+                        items:
+                          description: UsersItems configures a list of superusers
+                            in the Helm values.
+                          properties:
+                            mechanism:
+                              description: Specifies the authentication mechanism
+                                to use for superusers. Overrides the default in `SASL`.
+                                Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+                              type: string
+                            name:
+                              description: Specifies the name of the superuser.
+                              type: string
+                            password:
+                              description: Specifies the superuser password.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                type: object
+              clusterDomain:
+                description: Customizes the Kubernetes cluster domain. This domain
+                  is used to generate the internal domains of the StatefulSet Pods.
+                  The default is the `cluster.local` domain.
+                type: string
               commonLabels:
                 additionalProperties:
                   type: string
                 description: Assigns custom labels to all resources generated by the
-                  Redpanda Helm chart. Specify labels as key/value pairs.
+                  operator. Specify labels as key/value pairs.
                 type: object
               config:
-                description: Defines configuration properties supported by Redpanda
-                  that may not work correctly in a Kubernetes cluster. Changing these
-                  values from the defaults comes with some risk. Use these properties
-                  to customize various Redpanda configurations that are not available
-                  in the rest of properties. These values have no impact on the configuration
-                  or behavior of the Kubernetes objects deployed by operator, and
-                  therefore should not be modified for the purpose of configuring
-                  those objects. Instead, these settings get passed directly to the
-                  Redpanda binary at startup.
+                description: Defines configuration properties supported by Redpanda.
                 properties:
                   cluster:
                     description: Specifies cluster configuration properties. See https://docs.redpanda.com/current/reference/cluster-properties/.
@@ -268,6 +347,70 @@ spec:
                         type: string
                     type: object
                 type: object
+              external:
+                description: Defines external access settings.
+                properties:
+                  addresses:
+                    description: Specifies addresses for the external listeners to
+                      advertise.Provide one entry for each broker in order of StatefulSet
+                      replicas. The number of brokers is defined in `statefulset.replicas`.
+                      The values can be IP addresses or DNS names. If `external.domain`
+                      is set, the domain is appended to these values.
+                    items:
+                      type: string
+                    type: array
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Adds custom annotations to the external Service.
+                    type: object
+                  domain:
+                    description: Specifies the domain to advertise to external clients.
+                      If specified, then it will be appended to the `external.addresses`
+                      values as each broker's advertised address.
+                    type: string
+                  enabled:
+                    description: Specifies whether the external access is enabled.
+                    type: boolean
+                  externalDns:
+                    description: Defines externalDNS configurations.
+                    properties:
+                      enabled:
+                        description: Specifies whether externalDNS annotations are
+                          added to LoadBalancer Services. If you enable externalDns,
+                          each LoadBalancer Service defined in `external.type` will
+                          be annotated with an external-dns hostname that matches
+                          `external.addresses[i]`.`external.domain`.
+                        type: boolean
+                    type: object
+                  prefixTemplate:
+                    description: Specifies a naming prefix template for external Services.
+                    type: string
+                  service:
+                    description: Configures the external Service resource.
+                    properties:
+                      enabled:
+                        description: Specifies whether to create the external Service.
+                          If set to `false`, the external Service type is not created.
+                          You can still set your cluster with external access but
+                          not create the supporting Service. Set this to `false` to
+                          manage your own Service.
+                        type: boolean
+                    type: object
+                  sourceRanges:
+                    description: Source range for external access. Only applicable
+                      when `external.type` is LoadBalancer.
+                    items:
+                      type: string
+                    type: array
+                  type:
+                    description: Specifies the external Service type. Only NodePort
+                      and LoadBalancer are supported. If undefined, then advertised
+                      listeners will be configured in Redpanda, but the Helm chart
+                      will not create a Service. NodePort is recommended in cases
+                      where latency is a priority.
+                    type: string
+                type: object
               image:
                 description: Defines the container image settings to use for the Redpanda
                   cluster.
@@ -303,29 +446,938 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              listeners:
+                description: Defines settings for listeners, including HTTP Proxy,
+                  Schema Registry, the Admin API and the Kafka API.
+                properties:
+                  admin:
+                    description: Configures settings for the Admin API listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  http:
+                    description: Configures settings for the HTTP Proxy listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  kafka:
+                    description: Configures settings for the Kafka API listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  rpc:
+                    description: Configures settings for the RPC API listener.
+                    properties:
+                      port:
+                        description: Specifies the container port number for the internal
+                          listener.
+                        type: integer
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  schemaRegistry:
+                    description: Configures settings for the Schema Registry listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                type: object
               logging:
                 description: Defines the log level settings.
                 properties:
                   logLevel:
-                    description: Sets the verbosity level of logs.
+                    description: Specifies the log level.
                     type: string
                   usageStats:
-                    description: Specifies whether to send usage statistics to Redpanda
-                      Data.
+                    description: Defines settings for usage statistics reporting.
                     properties:
-                      clusterId:
-                        description: Specifies the ID of your Redpanda cluster.
-                        type: string
                       enabled:
-                        description: Specifies whether usage reporting is enabled.
+                        description: Specifies whether usage statistics are enabled.
                         type: boolean
-                      organization:
-                        description: |-
-                          Specifies the name of the organization using the software. This can be useful for identifying and segmenting usage data by organization, if usage reporting is enabled.
-                          Deprecated: This value is no longer respected in the redpanda helm chart
-                          and will be removed in a future version.
-                        type: string
                     type: object
+                type: object
+              monitoring:
+                description: Defines settings for monitoring Redpanda.
+                properties:
+                  enableHttp2:
+                    type: boolean
+                  enabled:
+                    description: Specifies whether to create a ServiceMonitor that
+                      can be used by Prometheus Operator or VictoriaMetrics Operator
+                      to scrape the metrics.
+                    type: boolean
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Adds custom labels to the ServiceMonitor resource.
+                    type: object
+                  scrapeInterval:
+                    description: Specifies how often to scrape metrics.
+                    type: string
+                  tlsConfig:
+                    description: Specifies tls configuration properties.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 type: object
               rackAwareness:
                 description: Defines rack awareness settings.
@@ -357,6 +1409,108 @@ spec:
                     type: boolean
                   rpkDebugBundle:
                     type: boolean
+                type: object
+              resources:
+                description: Defines container resource settings.
+                properties:
+                  cpu:
+                    description: Specifies the number of CPU cores.
+                    properties:
+                      cores:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: 'Specifies the number of CPU cores available
+                          to the application. Redpanda makes use of a thread per core
+                          model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model.
+                          For this reason, Redpanda should only be given full cores.
+                          Note: You can increase cores, but decreasing cores is not
+                          currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350.
+                          This setting is equivalent to `--smp`, `resources.requests.cpu`,
+                          and `resources.limits.cpu`. For production, use `4` or greater.'
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      overprovisioned:
+                        description: 'Specifies whether Redpanda assumes it has all
+                          of the provisioned CPU. This should be `true` unless the
+                          container has CPU affinity. Equivalent to: `--idle-poll-time-us
+                          0`, `--thread-affinity 0`, and `--poll-aio 0`. If the value
+                          of full cores in `resources.cpu.cores` is less than `1`,
+                          this setting is set to `true`.'
+                        type: boolean
+                    type: object
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: Standard K8s resource limits.
+                    type: object
+                  memory:
+                    description: Specifies the amount of memory.
+                    properties:
+                      container:
+                        description: Defines resource limits for containers.
+                        properties:
+                          max:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Specifies the maximum resources that can
+                              be allocated to a container.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          min:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Specifies the minimum resources required
+                              for a container.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                        type: object
+                      enable_memory_locking:
+                        description: Enables memory locking. For production, set to
+                          `true`.
+                        type: boolean
+                      redpanda:
+                        description: Allows you to optionally specify the memory size
+                          for both the Redpanda process and the underlying reserved
+                          memory used by Seastar.
+                        properties:
+                          memory:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Memory for the Redpanda process. This must
+                              be lower than the container's memory (`resources.memory.container.min`
+                              if provided, otherwise `resources.memory.container.max`).
+                              Equivalent to `--memory`. For production, use 8Gi or
+                              greater.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          reserveMemory:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Memory reserved for the OS. Any value above
+                              1Gi will provide diminishing performance benefits. Equivalent
+                              to `--reserve-memory`. For production, use 1Gi.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                        type: object
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: Standard K8s resource requests.
+                    type: object
                 type: object
               service:
                 description: Defines settings for the headless ClusterIP Service.
@@ -396,14 +1550,11 @@ spec:
                 properties:
                   hostPath:
                     description: Specifies the absolute path on the worker node to
-                      store the Redpanda data directory. If unspecified, then an `emptyDir`
-                      volume is used. If specified but `persistentVolume.enabled`
-                      is true, `storage.hostPath` has no effect.
+                      store the Redpanda data directory.
                     type: string
                   persistentVolume:
                     description: Configures a PersistentVolumeClaim (PVC) template
-                      to create for each Pod. This PVC is used to store the Redpanda
-                      data directory.
+                      to create for each Pod.
                     properties:
                       annotations:
                         additionalProperties:
@@ -444,109 +1595,72 @@ spec:
                     description: Configures storage for the Tiered Storage cache.
                     properties:
                       config:
-                        description: Configures Tiered Storage, which requires an
-                          Enterprise license configured in `enterprise.licenseKey`
-                          or `enterprised.licenseSecretRef`.
+                        description: Configures Tiered Storage properties.
                         properties:
                           cloud_storage_api_endpoint:
-                            description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
                             type: string
                           cloud_storage_api_endpoint_port:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
                             type: integer
                           cloud_storage_azure_adls_endpoint:
-                            description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint.
                             type: string
                           cloud_storage_azure_adls_port:
-                            description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port.
                             type: integer
                           cloud_storage_azure_container:
-                            description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container.
                             type: string
                           cloud_storage_azure_managed_identity_id:
-                            description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id.
                             type: string
                           cloud_storage_azure_shared_key:
-                            description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key.
                             type: string
                           cloud_storage_azure_storage_account:
-                            description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account.
                             type: string
                           cloud_storage_bucket:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
                             type: string
                           cloud_storage_cache_check_interval:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval.
                             type: integer
                           cloud_storage_cache_directory:
-                            description: See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory.
                             type: string
                           cloud_storage_cache_size:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size.
                             type: string
                           cloud_storage_credentials_source:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source.
                             type: string
                           cloud_storage_disable_tls:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls.
                             type: boolean
                           cloud_storage_enable_remote_read:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read.
                             type: boolean
                           cloud_storage_enable_remote_write:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
                             type: boolean
                           cloud_storage_enabled:
-                            description: Enables Tiered Storage, if a license key
-                              is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
-                            x-kubernetes-preserve-unknown-fields: true
+                            type: boolean
                           cloud_storage_initial_backoff_ms:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
                             type: integer
                           cloud_storage_manifest_upload_timeout_ms:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms.
                             type: integer
                           cloud_storage_max_connection_idle_time_ms:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms.
                             type: integer
                           cloud_storage_max_connections:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections.
-                            type: integer
-                          cloud_storage_reconciliation_interval_ms:
-                            description: 'Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms.'
                             type: integer
                           cloud_storage_region:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region.
                             type: string
                           cloud_storage_segment_max_upload_interval_sec:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec.
                             type: integer
                           cloud_storage_segment_upload_timeout_ms:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms.
                             type: integer
                           cloud_storage_trust_file:
-                            description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file.
                             type: string
                           cloud_storage_upload_ctrl_d_coeff:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff.
                             type: integer
                           cloud_storage_upload_ctrl_max_shares:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares.
                             type: integer
                           cloud_storage_upload_ctrl_min_shares:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares.
                             type: integer
                           cloud_storage_upload_ctrl_p_coeff:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff.
                             type: integer
                           cloud_storage_upload_ctrl_update_interval_ms:
-                            description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms.
                             type: integer
                         type: object
                       credentialsSecretRef:
-                        description: CredentialSecretRef can be used to set `cloud_storage_secret_key`
-                          and/or `cloud_storage_access_key` from referenced Kubernetes
-                          Secret
+                        description: CredentialsSecretRef sets cloud_storage_secret_key
+                          and/or cloud_storage_access_key from a referenced Secret.
                         properties:
                           accessKey:
                             properties:
@@ -572,18 +1686,12 @@ spec:
                           to store the Tiered Storage cache.
                         type: string
                       mountType:
-                        description: |-
-                          mountType can be one of:
-
-                          - `none`: Does not mount a volume. Tiered storage will use the same volume as the one defined for the Redpanda data directory.
-                          - `hostPath`: Uses the path specified in `hostPath` on the worker node that the Pod is running on.
-                          - `emptyDir`: Mounts an empty directory every time the Pod starts.
-                          - `persistentVolume`: Creates and mounts a PersistentVolumeClaim using the template defined in `persistentVolume`.
+                        description: 'mountType: "none", "hostPath", "emptyDir", or
+                          "persistentVolume".'
                         type: string
                       persistentVolume:
                         description: Configures a PersistentVolumeClaim (PVC) template
-                          to create for each Pod. This PVC is used to store the Tiered
-                          Storage cache.
+                          for the Tiered Storage cache.
                         properties:
                           annotations:
                             additionalProperties:
@@ -623,85 +1731,83 @@ spec:
                         type: object
                     type: object
                 type: object
+              tls:
+                description: Defines TLS settings for listeners.
+                properties:
+                  certs:
+                    additionalProperties:
+                      description: Certificate configures TLS certificates.
+                      properties:
+                        applyInternalDNSNames:
+                          description: Specifies you wish to have Kubernetes internal
+                            dns names (IE the headless service of the redpanda StatefulSet)
+                            included in `dnsNames` of the  certificate even, when
+                            supplying an issuer.
+                          type: boolean
+                        caEnabled:
+                          description: Specifies whether to include the `ca.crt` file
+                            in the trust stores of all listeners. Set to `true` only
+                            for certificates that are not authenticated using public
+                            certificate authorities (CAs).
+                          type: boolean
+                        clientSecretRef:
+                          description: Specify the name of an existing Secret resource
+                            that contains your client TLS certificate.
+                          properties:
+                            name:
+                              description: Specifies the name of the Secret resource.
+                              type: string
+                          type: object
+                        duration:
+                          description: Specifies the validity duration of certificates
+                            generated with `issuerRef`.
+                          type: string
+                        enabled:
+                          type: boolean
+                        issuerRef:
+                          description: Specify the name of an existing Issuer or ClusterIssuer
+                            resource to use to generate certificates. Requires cert-manager.
+                            See https://cert-manager.io/v1.1-docs.
+                          properties:
+                            group:
+                              type: string
+                            kind:
+                              description: Specifies the kind of resource. One of
+                                `Issuer` or `ClusterIssuer`.
+                              type: string
+                            name:
+                              description: Specifies the name of the resource.
+                              type: string
+                          type: object
+                        secretRef:
+                          description: Specify the name of an existing Secret resource
+                            that contains your TLS certificate.
+                          properties:
+                            name:
+                              description: Specifies the name of the Secret resource.
+                              type: string
+                          type: object
+                      type: object
+                    description: Lists all available certificates in the cluster.
+                      You can reference a specific certificate’s name in each listener’s
+                      `listeners.<listener name>.tls.cert` setting.
+                    type: object
+                  enabled:
+                    description: Enables TLS globally for all listeners. Each listener
+                      must include a certificate name in its `<listener>.tls` object.
+                      To allow you to enable TLS for individual listeners, certificates
+                      are always loaded, even if TLS is disabled.
+                    type: boolean
+                type: object
               tuning:
                 description: Defines settings for the autotuner tool in Redpanda.
-                  The autotuner identifies the hardware configuration in the container
-                  and optimizes the Linux kernel to give you the best performance.
                 properties:
                   ballast_file_path:
-                    description: Specifies the file path for ballast file. A ballast
-                      file is an empty file that takes up disk space. If Redpanda
-                      runs out of disk space and becomes unavailable, you can delete
-                      the ballast file as a last resort. This clears up some space
-                      and gives you time to delete topics or records and change your
-                      retention properties.
+                    description: Specifies the file path for ballast file.
                     type: string
                   ballast_file_size:
                     description: Defines the size of the ballast file.
                     type: string
-                  extraVolumeMounts:
-                    description: Configures additional volume mounts for the Pod.
-                    type: string
-                  resources:
-                    description: Sets resource requirements such as CPU and memory
-                      limits.
-                    properties:
-                      claims:
-                        description: |-
-                          Claims lists the names of resources, defined in spec.resourceClaims,
-                          that are used by this container.
-
-                          This field depends on the
-                          DynamicResourceAllocation feature gate.
-
-                          This field is immutable. It can only be set for containers.
-                        items:
-                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
-                          properties:
-                            name:
-                              description: |-
-                                Name must match the name of one entry in pod.spec.resourceClaims of
-                                the Pod where this field is used. It makes that resource available
-                                inside a container.
-                              type: string
-                            request:
-                              description: |-
-                                Request is the name chosen for a request in the referenced claim.
-                                If empty, everything from the claim is made available, otherwise
-                                only the result of this request.
-                              type: string
-                          required:
-                          - name
-                          type: object
-                        type: array
-                        x-kubernetes-list-map-keys:
-                        - name
-                        x-kubernetes-list-type: map
-                      limits:
-                        additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        description: |-
-                          Limits describes the maximum amount of compute resources allowed.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                        type: object
-                      requests:
-                        additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                          x-kubernetes-int-or-string: true
-                        description: |-
-                          Requests describes the minimum amount of compute resources required.
-                          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-                          otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                        type: object
-                    type: object
                   tune_aio_events:
                     description: Specifies whether to increase the number of allowed
                       asynchronous IO events.
@@ -715,8 +1821,6 @@ spec:
                   well_known_io:
                     description: Specifies the vendor, VM type, and storage device
                       type that Redpanda runs on, in the format <vendor>:<vm>:<storage>.
-                      This hints to Redpanda which configuration values it should
-                      use for the Redpanda IO scheduler.
                     type: string
                 type: object
             type: object

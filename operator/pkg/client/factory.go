@@ -15,6 +15,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/redpanda-data/console/backend/pkg/config"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	rpkconfig "github.com/redpanda-data/redpanda/src/go/rpk/pkg/config"
@@ -107,10 +108,10 @@ type ClientFactory interface {
 	UsersForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*users.Client, error)
 
 	// Roles returns a high-level client for managing roles. Callers should always call Close on the returned *roles.Client, or it will leak
-	// goroutines.
-	Roles(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error)
+	// goroutines. It transparently delegates to the v2 SecurityService API when available, use roles.WithV2Disabled() to force the v1 path.
+	Roles(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...roles.Option) (*roles.Client, error)
 	// RolesForCluster is the same as Roles but it takes a kubernetes cluster name
-	RolesForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string) (*roles.Client, error)
+	RolesForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...roles.Option) (*roles.Client, error)
 
 	// Schemas returns a high-level client for synchronizing Schemas.
 	Schemas(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject) (*schemas.Syncer, error)
@@ -389,7 +390,36 @@ func (c *Factory) ACLsForCluster(ctx context.Context, obj redpandav1alpha2.Clust
 		return nil, err
 	}
 
-	return acls.NewSyncer(kafkaClient), nil
+	srClient, err := c.SchemaRegistryACLClientForCluster(ctx, obj, clusterName)
+	if err != nil {
+		kafkaClient.Close()
+		return nil, err
+	}
+
+	return acls.NewSyncer(kafkaClient, srClient), nil
+}
+
+// SchemaRegistryACLClient builds an SR ACL client for the given object. Returns (nil, nil)
+// when Schema Registry is not configured for the cluster.
+func (c *Factory) SchemaRegistryACLClient(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (rpsr.ACLClient, error) {
+	return c.SchemaRegistryACLClientForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+// SchemaRegistryACLClientForCluster builds an SR ACL client for the given object and cluster. Returns (nil, nil)
+// when Schema Registry is not configured for the cluster.
+func (c *Factory) SchemaRegistryACLClientForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (rpsr.ACLClient, error) {
+	srCl, err := c.SchemaRegistryClientForCluster(ctx, obj, clusterName)
+	if isSchemaRegistryNotConfigured(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return rpsr.NewClient(srCl)
+}
+
+func isSchemaRegistryNotConfigured(err error) bool {
+	return errors.Is(err, ErrInvalidSchemaRegistryClientObject) || errors.Is(err, ErrEmptyURLList)
 }
 
 func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
@@ -419,17 +449,17 @@ func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 	return c.UsersForCluster(ctx, obj, mcmanager.LocalCluster, opts...)
 }
 
-func (c *Factory) RolesForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (*roles.Client, error) {
+func (c *Factory) RolesForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...roles.Option) (*roles.Client, error) {
 	adminClient, err := c.RedpandaAdminClient(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
 
-	return roles.NewClient(ctx, adminClient)
+	return roles.NewClient(ctx, adminClient, opts...)
 }
 
-func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject) (*roles.Client, error) {
-	return c.RolesForCluster(ctx, obj, mcmanager.LocalCluster)
+func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...roles.Option) (*roles.Client, error) {
+	return c.RolesForCluster(ctx, obj, mcmanager.LocalCluster, opts...)
 }
 
 func (c *Factory) RemoteClusterSettingsForCluster(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (shadow.RemoteClusterSettings, error) {

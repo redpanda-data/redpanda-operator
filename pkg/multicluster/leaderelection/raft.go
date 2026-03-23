@@ -17,10 +17,12 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -34,11 +36,12 @@ type peer struct {
 	client transportv1.TransportServiceClient
 }
 
-func newPeer(addr string, credentials credentials.TransportCredentials) (*peer, error) {
+func newPeer(addr string, credentials credentials.TransportCredentials, extraOpts ...grpc.DialOption) (*peer, error) {
 	if credentials == nil {
 		credentials = insecure.NewCredentials()
 	}
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(credentials))
+	opts := append([]grpc.DialOption{grpc.WithTransportCredentials(credentials)}, extraOpts...)
+	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +52,8 @@ func newPeer(addr string, credentials credentials.TransportCredentials) (*peer, 
 	}, nil
 }
 
+// InsecureClientFor creates a gRPC transport client for the given node,
+// using TLS with InsecureSkipVerify when the config is not fully insecure.
 func InsecureClientFor(config LockConfiguration, node LockerNode) (transportv1.TransportServiceClient, error) {
 	var err error
 	var credentials credentials.TransportCredentials
@@ -70,6 +75,8 @@ func InsecureClientFor(config LockConfiguration, node LockerNode) (transportv1.T
 	return transportv1.NewTransportServiceClient(conn), nil
 }
 
+// ClientFor creates a gRPC transport client for the given node using the
+// TLS configuration from config.
 func ClientFor(config LockConfiguration, node LockerNode) (transportv1.TransportServiceClient, error) {
 	var err error
 	var creds credentials.TransportCredentials
@@ -97,10 +104,13 @@ func ClientFor(config LockConfiguration, node LockerNode) (transportv1.Transport
 	return transportv1.NewTransportServiceClient(conn), nil
 }
 
+// KubeconfigFetcher retrieves a kubeconfig for the local cluster, used in
+// bootstrap mode to share credentials with the raft leader.
 type KubeconfigFetcher interface {
 	Fetch(context.Context) ([]byte, error)
 }
 
+// KubeconfigFetcherFn is a function adapter for KubeconfigFetcher.
 type KubeconfigFetcherFn func(context.Context) ([]byte, error)
 
 func (fn KubeconfigFetcherFn) Fetch(ctx context.Context) ([]byte, error) {
@@ -118,17 +128,35 @@ type grpcTransport struct {
 	node     raft.Node
 	nodeLock sync.RWMutex
 
+	// storage is set by runRaft after creating MemoryStorage so that the Send
+	// handler can consult LastIndex before stepping heartbeat messages.
+	storage     *raft.MemoryStorage
+	storageLock sync.RWMutex
+
 	kubeconfigFetcher KubeconfigFetcher
 
 	serverCredentials credentials.TransportCredentials
 	clientCredentials credentials.TransportCredentials
+	extraDialOptions  []grpc.DialOption
 
 	logger raft.Logger
 
 	transportv1.UnimplementedTransportServiceServer
 }
 
-func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
+// backoffDialOption returns a grpc.DialOption that caps the exponential
+// backoff between reconnection attempts at maxDelay. If maxDelay is zero
+// the gRPC library default is used and nil is returned.
+func backoffDialOption(maxDelay time.Duration) []grpc.DialOption {
+	if maxDelay <= 0 {
+		return nil
+	}
+	bc := backoff.DefaultConfig
+	bc.MaxDelay = maxDelay
+	return []grpc.DialOption{grpc.WithConnectParams(grpc.ConnectParams{Backoff: bc})}
+}
+
+func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff time.Duration) (*grpcTransport, error) {
 	serverCredentials, err := serverTLSConfig(certPEM, keyPEM, caPEM)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize server credentials: %w", err)
@@ -138,9 +166,10 @@ func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, p
 		return nil, fmt.Errorf("unable to initialize client credentials: %w", err)
 	}
 
+	extraOpts := backoffDialOption(grpcMaxBackoff)
 	initializedPeers := make(map[uint64]*peer, len(peers))
 	for id, peer := range peers {
-		initialized, err := newPeer(peer, clientCredentials)
+		initialized, err := newPeer(peer, clientCredentials, extraOpts...)
 		if err != nil {
 			return nil, err
 		}
@@ -153,11 +182,12 @@ func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, p
 		peers:             initializedPeers,
 		serverCredentials: serverCredentials,
 		clientCredentials: clientCredentials,
+		extraDialOptions:  extraOpts,
 		kubeconfigFetcher: fetcher,
 	}, nil
 }
 
-func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
+func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff time.Duration) (*grpcTransport, error) {
 	serverTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
 	for _, opt := range serverOptions {
 		opt(serverTLSConfig)
@@ -170,9 +200,10 @@ func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []fun
 	}
 	clientCredentials := credentials.NewTLS(clientTLSConfig)
 
+	extraOpts := backoffDialOption(grpcMaxBackoff)
 	initializedPeers := make(map[uint64]*peer, len(peers))
 	for id, peer := range peers {
-		initialized, err := newPeer(peer, clientCredentials)
+		initialized, err := newPeer(peer, clientCredentials, extraOpts...)
 		if err != nil {
 			return nil, err
 		}
@@ -185,14 +216,16 @@ func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []fun
 		peers:             initializedPeers,
 		serverCredentials: serverCredentials,
 		clientCredentials: clientCredentials,
+		extraDialOptions:  extraOpts,
 		kubeconfigFetcher: fetcher,
 	}, nil
 }
 
-func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher) (*grpcTransport, error) {
+func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff time.Duration) (*grpcTransport, error) {
+	extraOpts := backoffDialOption(grpcMaxBackoff)
 	initializedPeers := make(map[uint64]*peer, len(peers))
 	for id, peer := range peers {
-		initialized, err := newPeer(peer, nil)
+		initialized, err := newPeer(peer, nil, extraOpts...)
 		if err != nil {
 			return nil, err
 		}
@@ -203,6 +236,7 @@ func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string,
 		meta:              meta,
 		addr:              addr,
 		peers:             initializedPeers,
+		extraDialOptions:  extraOpts,
 		kubeconfigFetcher: fetcher,
 	}, nil
 }
@@ -219,8 +253,20 @@ func (t *grpcTransport) getNode() raft.Node {
 	return t.node
 }
 
+func (t *grpcTransport) setStorage(s *raft.MemoryStorage) {
+	t.storageLock.Lock()
+	defer t.storageLock.Unlock()
+	t.storage = s
+}
+
+func (t *grpcTransport) getStorage() *raft.MemoryStorage {
+	t.storageLock.RLock()
+	defer t.storageLock.RUnlock()
+	return t.storage
+}
+
 func (t *grpcTransport) client() (transportv1.TransportServiceClient, error) {
-	peer, err := newPeer(t.addr, t.clientCredentials)
+	peer, err := newPeer(t.addr, t.clientCredentials, t.extraDialOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -255,9 +301,49 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 		if err := msg.Unmarshal(req.Payload); err != nil {
 			return &transportv1.SendResponse{Applied: false}, nil
 		}
-		if err := node.Step(ctx, msg); err == nil {
+
+		// Guard against "tocommit(X) is out of range [lastIndex(Y)]" panic.
+		//
+		// When a node restarts fresh, raft.StartNode populates its log with N
+		// ConfChange entries (N = number of peers), so lastIndex = N. If the
+		// existing cluster has already committed beyond N, the raft library's
+		// handleHeartbeat will call commitTo(Commit) and panic because
+		// Commit > lastIndex.
+		//
+		// We intercept such heartbeats before passing them to node.Step and
+		// return Applied=false, signalling the leader to retry on the next
+		// heartbeat tick. Meanwhile the leader discovers the follower is
+		// lagging via MsgApp rejection and sends a MsgSnap, after which
+		// lastIndex advances to the snapshot index and heartbeats are safe.
+		if msg.Type == raftpb.MsgHeartbeat {
+			if s := t.getStorage(); s != nil {
+				if lastIdx, err := s.LastIndex(); err == nil && msg.Commit > lastIdx {
+					return &transportv1.SendResponse{Applied: false}, nil
+				}
+			}
+		}
+
+		// When this node is the leader and it receives any message from a
+		// peer, step a synthetic MsgHeartbeatResp. This reactivates the
+		// peer's progress tracker (sets RecentActive=true, ProbeSent=false)
+		// which is critical when a peer restarts fresh: raft marks inactive
+		// peers and stops producing messages for them, but MsgVote (the only
+		// message a fresh peer can send) doesn't touch the progress tracker.
+		// Without this, the leader and restarted peer deadlock: the leader
+		// won't send because the peer is inactive, and the peer can't become
+		// active because it never receives from the leader.
+		if t.isLeader.Load() && msg.From != 0 {
+			_ = node.Step(ctx, raftpb.Message{
+				Type: raftpb.MsgHeartbeatResp,
+				From: msg.From,
+			})
+		}
+
+		err := node.Step(ctx, msg)
+		if err == nil {
 			return &transportv1.SendResponse{Applied: true}, nil
 		}
+		t.logger.Errorf("error occurred: %v", err)
 	}
 	return &transportv1.SendResponse{Applied: false}, nil
 }

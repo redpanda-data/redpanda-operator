@@ -22,35 +22,41 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func StretchClusterService(dot *helmette.Dot) *corev1.Service {
+func StretchClusterService(dot *helmette.Dot) []corev1.Service {
 	values := helmette.Unwrap[Values](dot.Values)
 
-	if !values.Multicluster.Enabled {
+	if !values.Multicluster.ServicePerOperatorDeployment {
 		return nil
 	}
 
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        cleanForK8sWithSuffix(Fullname(dot), "raft-service"),
-			Namespace:   dot.Release.Namespace,
-			Labels:      Labels(dot),
-			Annotations: values.Annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: SelectorLabels(dot),
-			Ports: []corev1.ServicePort{
-				{
-					Port:       int32(9443),
-					TargetPort: intstr.FromInt32(9443),
-				},
+	var svcs []corev1.Service
+	annotations := helmette.Default(map[string]string{}, values.Annotations)
+
+	for _, p := range values.Multicluster.Peers {
+		svcs = append(svcs, corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Service",
 			},
-			PublishNotReadyAddresses: true,
-		},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        cleanForK8sWithSuffix(fmt.Sprintf("%s-%s", p.Name, helmette.Default(dot.Chart.Name, values.NameOverride)), "raft-service"),
+				Namespace:   dot.Release.Namespace,
+				Labels:      Labels(dot),
+				Annotations: helmette.Merge(annotations, helmette.Default(map[string]string{}, p.AdditionalAnnotation)),
+			},
+			Spec: corev1.ServiceSpec{
+				Selector: p.SelectorOverwrite,
+				Ports: []corev1.ServicePort{
+					{
+						Port:       int32(9443),
+						TargetPort: intstr.FromInt32(9443),
+					},
+				},
+				PublishNotReadyAddresses: true,
+			},
+		})
 	}
+	return svcs
 }
 
 func WebhookService(dot *helmette.Dot) *corev1.Service {

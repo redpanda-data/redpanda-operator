@@ -203,9 +203,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -2064,9 +2062,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -2403,9 +2399,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -2618,9 +2612,7 @@ spec:
     - jKf
     - p
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -4214,9 +4206,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -4908,9 +4898,7 @@ spec:
     - klNT12U
     - 9e
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -5449,9 +5437,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -6253,9 +6239,7 @@ spec:
     matchNames:
     - FKCzSYm7gaXuLQ
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -7648,9 +7632,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -8125,9 +8107,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -8520,9 +8500,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -8604,9 +8582,7 @@ spec:
     matchNames:
     - UCZpu
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -8680,9 +8656,7 @@ spec:
   namespaceSelector:
     any: true
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:
@@ -9014,9 +8988,7 @@ spec:
     matchNames:
     - WZxK8iNK2gdU
   podMetricsEndpoints:
-  - bearerTokenSecret:
-      key: ""
-    path: /
+  - path: /
     port: prometheus
   selector:
     matchLabels:

@@ -1,10 +1,10 @@
 { lib
-, buildGo124Module
+, buildGo126Module
 , fetchFromGitHub
 ,
 }:
 
-buildGo124Module rec {
+buildGo126Module rec {
   pname = "licenseupdater";
   version = "315804cc1398cbcf7a1a689e3647d82e8a635b39";
 

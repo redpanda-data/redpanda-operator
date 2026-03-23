@@ -4,6 +4,7 @@
 package v1alpha2
 
 import (
+	v15 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v3 "github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	ir "github.com/redpanda-data/redpanda-operator/pkg/ir"
 	v12 "k8s.io/api/apps/v1"
@@ -165,6 +166,7 @@ func init() {
 			consolePartialRenderValues.ReadinessProbe = pV1ProbeApplyConfiguration2
 			consolePartialRenderValues.Deployment = autoconv_DeploymentConfig_console_PartialDeploymentConfig((*source).Deployment)
 			consolePartialRenderValues.Strategy = pV1DeploymentStrategyToPV1DeploymentStrategy((*source).Strategy)
+			consolePartialRenderValues.Monitoring = pV1alpha2MonitoringConfigToPConsolePartialMonitoringConfig((*source).Monitoring)
 			pConsolePartialRenderValues = &consolePartialRenderValues
 		}
 		return pConsolePartialRenderValues, nil
@@ -434,6 +436,7 @@ func init() {
 				return nil, err
 			}
 			v1alpha2ConsoleValues.Strategy = pV1DeploymentStrategy
+			v1alpha2ConsoleValues.Monitoring = pV1alpha2MonitoringConfigToPV1alpha2MonitoringConfig((*source).Monitoring)
 			pV1alpha2ConsoleValues = &v1alpha2ConsoleValues
 		}
 		return pV1alpha2ConsoleValues, nil
@@ -1240,6 +1243,50 @@ func pV1alpha2KafkaSecretsToPConsolePartialKafkaSecrets(source *KafkaSecrets) *v
 		pConsolePartialKafkaSecrets = &consolePartialKafkaSecrets
 	}
 	return pConsolePartialKafkaSecrets
+}
+func pV1alpha2MonitoringConfigToPConsolePartialMonitoringConfig(source *MonitoringConfig) *v3.PartialMonitoringConfig {
+	var pConsolePartialMonitoringConfig *v3.PartialMonitoringConfig
+	if source != nil {
+		var consolePartialMonitoringConfig v3.PartialMonitoringConfig
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			consolePartialMonitoringConfig.Enabled = &xbool
+		}
+		if (*source).ScrapeInterval != nil {
+			v1Duration := v15.Duration(*(*source).ScrapeInterval)
+			consolePartialMonitoringConfig.ScrapeInterval = &v1Duration
+		}
+		if (*source).Labels != nil {
+			consolePartialMonitoringConfig.Labels = make(map[string]string, len((*source).Labels))
+			for key, value := range (*source).Labels {
+				consolePartialMonitoringConfig.Labels[key] = value
+			}
+		}
+		pConsolePartialMonitoringConfig = &consolePartialMonitoringConfig
+	}
+	return pConsolePartialMonitoringConfig
+}
+func pV1alpha2MonitoringConfigToPV1alpha2MonitoringConfig(source *MonitoringConfig) *MonitoringConfig {
+	var pV1alpha2MonitoringConfig *MonitoringConfig
+	if source != nil {
+		var v1alpha2MonitoringConfig MonitoringConfig
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			v1alpha2MonitoringConfig.Enabled = &xbool
+		}
+		if (*source).ScrapeInterval != nil {
+			xstring := *(*source).ScrapeInterval
+			v1alpha2MonitoringConfig.ScrapeInterval = &xstring
+		}
+		if (*source).Labels != nil {
+			v1alpha2MonitoringConfig.Labels = make(map[string]string, len((*source).Labels))
+			for key, value := range (*source).Labels {
+				v1alpha2MonitoringConfig.Labels[key] = value
+			}
+		}
+		pV1alpha2MonitoringConfig = &v1alpha2MonitoringConfig
+	}
+	return pV1alpha2MonitoringConfig
 }
 func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLoginSecrets) *v3.PartialOIDCLoginSecrets {
 	var pConsolePartialOIDCLoginSecrets *v3.PartialOIDCLoginSecrets

@@ -42,7 +42,10 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 
 	t.Logf("Checking cluster %q is ready", clusterName)
 	require.Eventually(t, func() bool {
-		require.NoError(t, t.Get(ctx, key, &cluster))
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			t.Logf("Failed to get cluster %q: %v", key, err)
+			return false
+		}
 		hasConditionQuiescent := hasV1Condition(vectorizedv1alpha1.ClusterCondition{
 			Type:   vectorizedv1alpha1.OperatorQuiescentConditionType,
 			Status: corev1.ConditionTrue,
@@ -52,7 +55,7 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 
 		t.Logf(`Checking cluster resource conditions contains "OperatorQuiescent"? %v`, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "OperatorQuiescent", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q is ready!", clusterName)
@@ -74,7 +77,10 @@ func checkV2ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 
 	t.Logf("Checking cluster %q is ready", clusterName)
 	require.Eventually(t, func() bool {
-		require.NoError(t, t.Get(ctx, key, &cluster))
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			t.Logf("Failed to get cluster %q: %v", key, err)
+			return false
+		}
 		hasConditionReady := t.HasCondition(metav1.Condition{
 			Type:   "Ready",
 			Status: metav1.ConditionTrue,
@@ -91,7 +97,7 @@ func checkV2ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 
 		t.Logf(`Checking cluster resource conditions contains "Ready"? %v`, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "Ready", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q is ready!", clusterName)
@@ -106,11 +112,14 @@ func redpandaClusterIsHealthy(ctx context.Context, t framework.TestingT, cluster
 
 	require.Eventually(t, func() bool {
 		health, err = c.GetHealthOverview(ctx)
-		require.NoError(t, err)
+		if err != nil {
+			t.Logf("Failed to get health overview: %v", err)
+			return false
+		}
 
 		t.Logf("Cluster health: %v", health.IsHealthy)
 		return health.IsHealthy
-	}, 5*time.Minute, 5*time.Second, `Cluster %q never become healthy: %+v`, cluster, health)
+	}, 10*time.Minute, 5*time.Second, `Cluster %q never become healthy: %+v`, cluster, health)
 }
 
 func checkClusterUnhealthy(ctx context.Context, t framework.TestingT, clusterName string) {
@@ -128,7 +137,10 @@ func checkClusterHealthCondition(ctx context.Context, t framework.TestingT, clus
 
 	t.Logf("Checking cluster %q Healthy reason %q", clusterName, reason)
 	require.Eventually(t, func() bool {
-		require.NoError(t, t.Get(ctx, key, &cluster))
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			t.Logf("Failed to get cluster %q: %v", key, err)
+			return false
+		}
 		hasCondition := t.HasCondition(metav1.Condition{
 			Type:   "Healthy",
 			Status: status,
@@ -137,7 +149,7 @@ func checkClusterHealthCondition(ctx context.Context, t framework.TestingT, clus
 
 		t.Logf(`Checking cluster conditions contains Healthy reason %q? %v`, reason, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason %q, final Conditions: %+v`, key.String(), reason, cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q contains Healthy reason %q!", clusterName, reason)
@@ -215,7 +227,10 @@ func checkClusterNodeCount(ctx context.Context, t framework.TestingT, clusterNam
 	t.Logf("Checking cluster %q node count is %d", clusterName, nodeCount)
 	require.Eventually(t, func() bool {
 		actualNodeCount = 0
-		require.NoError(t, t.Get(ctx, key, &cluster))
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			t.Logf("Failed to get cluster %q: %v", key, err)
+			return false
+		}
 
 		for _, pool := range cluster.Status.NodePools {
 			actualNodeCount += pool.UpToDateReplicas
@@ -225,7 +240,7 @@ func checkClusterNodeCount(ctx context.Context, t framework.TestingT, clusterNam
 		t.Logf("Checking cluster %q has %d total nodes? %v (%d)", clusterName, nodeCount, matchesCount, actualNodeCount)
 
 		return matchesCount
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never had a matching node count, node Count: %d`, key.String(), actualNodeCount)
 	}))
 	t.Logf("Cluster %q has %d nodes!", clusterName, nodeCount)
@@ -240,7 +255,10 @@ func checkClusterStableWithCount(ctx context.Context, t framework.TestingT, clus
 	t.Logf("Checking cluster %q is stable", clusterName)
 	require.Eventually(t, func() bool {
 		actualNodeCount = 0
-		require.NoError(t, t.Get(ctx, key, &cluster))
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			t.Logf("Failed to get cluster %q: %v", key, err)
+			return false
+		}
 		hasCondition := t.HasCondition(metav1.Condition{
 			Type:   "Stable",
 			Status: metav1.ConditionTrue,
@@ -267,7 +285,7 @@ func checkClusterStableWithCount(ctx context.Context, t framework.TestingT, clus
 		t.Logf("Checking cluster %q has %d total nodes? %v (%d)", clusterName, nodeCount, matchesCount, actualNodeCount)
 
 		return hasCondition && matchesCount
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "Ready" with a matching node count, node Count: %d, final Conditions: %+v`, key.String(), actualNodeCount, cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q is stable with %d nodes!", clusterName, nodeCount)

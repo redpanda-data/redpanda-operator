@@ -33,6 +33,7 @@ var (
 	stableCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.Console(),
 		crds.Redpanda(),
+		crds.Group(),
 		crds.Role(),
 		crds.Schema(),
 		crds.ShadowLink(),
@@ -48,6 +49,7 @@ var (
 	}
 	multiclusterCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.StretchCluster(),
+		crds.NodePool(),
 	}
 	schemes = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,
@@ -133,6 +135,7 @@ func run(
 func ensureCRD(ctx context.Context, k8sClient client.Client, crd *apiextensionsv1.CustomResourceDefinition) error {
 	var existing apiextensionsv1.CustomResourceDefinition
 	existing.Name = crd.Name
+	log.Printf("Installing %s CRDs", crd.Name)
 	_, err := controllerutil.CreateOrUpdate(ctx, k8sClient, &existing, func() error {
 		existing.Annotations = crd.Annotations
 		existing.Labels = crd.Labels

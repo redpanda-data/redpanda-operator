@@ -7,139 +7,161 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_cert-issuers.go.tpl
-package redpanda
+package multicluster
 
 import (
 	"fmt"
+	"sort"
+	"time"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func CertIssuers(state *RenderState) []*certmanagerv1.Issuer {
-	issuers, _ := certIssuersAndCAs(state)
+// bootstrappedCert holds the resolved cert name and duration for certs that
+// need issuer/CA bootstrapping (i.e. not disabled, not user-provided, and
+// without an external issuer).
+type bootstrappedCert struct {
+	name     string
+	duration time.Duration
+}
+
+// bootstrappedCerts returns the set of in-use cert names that require
+// self-signed issuer and root CA bootstrapping. A cert is excluded if:
+//   - it's explicitly disabled
+//   - it has a user-provided SecretRef (externally managed cert)
+//   - it has an external IssuerRef (user manages their own cert-manager issuer)
+func bootstrappedCerts(spec *redpandav1alpha2.StretchClusterSpec) []bootstrappedCert {
+	tlsCfg := spec.TLS
+	if tlsCfg == nil {
+		return nil
+	}
+
+	inUseCerts := map[string]bool{}
+	for _, name := range spec.InUseServerCerts() {
+		inUseCerts[name] = true
+	}
+	for _, name := range spec.InUseClientCerts() {
+		inUseCerts[name] = true
+	}
+
+	sortedNames := make([]string, 0, len(inUseCerts))
+	for name := range inUseCerts {
+		sortedNames = append(sortedNames, name)
+	}
+	sort.Strings(sortedNames)
+
+	var result []bootstrappedCert
+	for _, name := range sortedNames {
+		cert := tlsCfg.Certs[name]
+
+		if cert != nil {
+			if !cert.IsEnabled() || cert.SecretRef != nil || cert.IssuerRef != nil {
+				continue
+			}
+		}
+
+		duration := defaultCertDuration
+		if cert != nil && cert.Duration != nil {
+			duration = cert.Duration.Duration
+		}
+
+		result = append(result, bootstrappedCert{name: name, duration: duration})
+	}
+	return result
+}
+
+// certIssuers returns all cert-manager Issuers for the given RenderState.
+// Each bootstrapped cert gets two issuers:
+//  1. A self-signed issuer — used only to sign the root CA certificate.
+//  2. A CA issuer backed by the root CA — used to sign the actual server/client certs.
+//
+// This two-level chain means leaf certs are signed by a proper CA (not self-signed),
+// which allows clients to verify the full chain using just the root CA's public key.
+func certIssuers(state *RenderState) []*certmanagerv1.Issuer {
+	fullname := state.fullname()
+	var issuers []*certmanagerv1.Issuer
+
+	for _, bc := range bootstrappedCerts(state.Spec()) {
+		// Self-signed issuer.
+		issuers = append(issuers, &certmanagerv1.Issuer{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "cert-manager.io/v1",
+				Kind:       "Issuer",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%s-selfsigned-issuer", fullname, bc.name),
+				Namespace: state.namespace,
+				Labels:    state.commonLabels(),
+			},
+			Spec: certmanagerv1.IssuerSpec{
+				IssuerConfig: certmanagerv1.IssuerConfig{
+					SelfSigned: &certmanagerv1.SelfSignedIssuer{},
+				},
+			},
+		})
+
+		// CA issuer backed by the root certificate.
+		issuers = append(issuers, &certmanagerv1.Issuer{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "cert-manager.io/v1",
+				Kind:       "Issuer",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-%s-root-issuer", fullname, bc.name),
+				Namespace: state.namespace,
+				Labels:    state.commonLabels(),
+			},
+			Spec: certmanagerv1.IssuerSpec{
+				IssuerConfig: certmanagerv1.IssuerConfig{
+					CA: &certmanagerv1.CAIssuer{
+						SecretName: fmt.Sprintf("%s-%s-root-certificate", fullname, bc.name),
+					},
+				},
+			},
+		})
+	}
+
 	return issuers
 }
 
-func RootCAs(state *RenderState) []*certmanagerv1.Certificate {
-	_, cas := certIssuersAndCAs(state)
-	return cas
-}
-
-func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmanagerv1.Certificate) {
-	var issuers []*certmanagerv1.Issuer
+// rootCAs returns all root CA Certificates for the given RenderState.
+func rootCAs(state *RenderState) []*certmanagerv1.Certificate {
+	fullname := state.fullname()
 	var certs []*certmanagerv1.Certificate
 
-	inUseCerts := map[string]bool{}
-	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
-		inUseCerts[name] = true
-	}
-	fmt.Printf("IN USE SERVER CERTS: %v\n", inUseCerts)
-
-	for name := range helmette.SortedMap(inUseCerts) {
-		data := state.Values.TLS.Certs.MustGet(name)
-
-		// If this certificate is disabled (.Enabled), provided directly by the
-		// end user (.SecretRef), or has an issuer provided (.IssuerRef), we
-		// don't need to bootstrap an issuer.
-		if !ptr.Deref(data.Enabled, true) || data.SecretRef != nil || data.IssuerRef != nil {
-			continue
-		}
-
-		// Otherwise we need to bootstrap a CA Issuer as explained here:
-		// https://cert-manager.io/docs/configuration/selfsigned/#bootstrapping-ca-issuers
-
-		// First we create a self-signed (self-signing) Issuer. Unlike what the name would
-		// indicate this Issuer does NOT have a key pair associated with it. It
-		// simply signs Certificates with their own private key.
-		// tl;dr: This Issuer is not self-signed but produces Certificates that
-		// are themselves self-signed.
-		// NB: Technically, we only need a single self signer. For backwards
-		// compatibility, we generate one per cert.
-		issuers = append(issuers,
-			&certmanagerv1.Issuer{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "cert-manager.io/v1",
-					Kind:       "Issuer",
+	for _, bc := range bootstrappedCerts(state.Spec()) {
+		rootName := fmt.Sprintf("%s-%s-root-certificate", fullname, bc.name)
+		certs = append(certs, &certmanagerv1.Certificate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "cert-manager.io/v1",
+				Kind:       "Certificate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      rootName,
+				Namespace: state.namespace,
+				Labels:    state.commonLabels(),
+			},
+			Spec: certmanagerv1.CertificateSpec{
+				Duration:   &metav1.Duration{Duration: bc.duration},
+				IsCA:       true,
+				CommonName: rootName,
+				SecretName: rootName,
+				PrivateKey: &certmanagerv1.CertificatePrivateKey{
+					Algorithm: "ECDSA",
+					Size:      256,
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
-				},
-				Spec: certmanagerv1.IssuerSpec{
-					IssuerConfig: certmanagerv1.IssuerConfig{
-						// SelfSigningIssuer would be a MUCH better name.
-						SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-					},
+				IssuerRef: cmmetav1.ObjectReference{
+					Name:  fmt.Sprintf("%s-%s-selfsigned-issuer", fullname, bc.name),
+					Kind:  "Issuer",
+					Group: "cert-manager.io",
 				},
 			},
-		)
-
-		// This is the CA that will be signed with it's own private key by the
-		// above issuer. It will then be used as the Root CA for the Issuer
-		// that the chart actually uses.
-		certs = append(certs,
-			&certmanagerv1.Certificate{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "cert-manager.io/v1",
-					Kind:       "Certificate",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
-				},
-				Spec: certmanagerv1.CertificateSpec{
-					Duration:   helmette.MustDuration(helmette.Default("43800h", data.Duration)),
-					IsCA:       true,
-					CommonName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
-					SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
-					PrivateKey: &certmanagerv1.CertificatePrivateKey{
-						Algorithm: "ECDSA",
-						Size:      256,
-					},
-					IssuerRef: cmmetav1.ObjectReference{
-						Name:  fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
-						Kind:  "Issuer",
-						Group: "cert-manager.io",
-					},
-				},
-			},
-		)
-
-		// This Issuer works like a normal CA Issuer using the above
-		// Certificate as it's root. NB: The root CA is self signed and
-		// therefore all Certificates from this Issuer will be self signed as
-		// well. That is distinct from the Issuer being a
-		// [certmanagerv1.SelfSignedIssuer].
-		issuers = append(issuers,
-			&certmanagerv1.Issuer{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "cert-manager.io/v1",
-					Kind:       "Issuer",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
-				},
-				Spec: certmanagerv1.IssuerSpec{
-					IssuerConfig: certmanagerv1.IssuerConfig{
-						CA: &certmanagerv1.CAIssuer{
-							SecretName: data.RootSecretName(state, name),
-						},
-					},
-				},
-			},
-		)
-
+		})
 	}
 
-	return issuers, certs
+	return certs
 }

@@ -12,6 +12,7 @@ package testutil
 import (
 	"context"
 	"flag"
+	"net"
 	"os"
 	"strings"
 	"testing"
@@ -21,9 +22,9 @@ import (
 )
 
 var (
+	multiClusterSetupOnly = flag.Bool("multi-cluster-setup-only", false, "if true, only the multi-cluster setup will be performed.")
 	retain                = flag.Bool("retain", false, "if true, no clean up will be performed.")
 	update                = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
-	multiClusterSetupOnly = flag.Bool("multi-cluster-setup-only", false, "if true, only the multi-cluster setup will be performed.")
 )
 
 // TestType represents the type of test being run, i.e. unit, integration, or acceptance
@@ -95,7 +96,7 @@ func Retain() bool {
 // Update returns value of the -update CLI flag. A value of true indicates that
 // computed files should be updated instead of asserted against.
 func Update() bool {
-	return *update
+	return *update || goldenfile.Update()
 }
 
 func MultiClusterSetupOnly() bool {
@@ -237,3 +238,24 @@ var (
 	AssertGolden = goldenfile.AssertGolden
 	NewTxTar     = goldenfile.NewTxTar
 )
+
+// FreePorts allocates n free TCP ports on localhost by briefly binding to
+// port 0 and returning the assigned ports. All listeners are closed before
+// returning so the ports can be reused by the caller.
+func FreePorts(t *testing.T, n int) []int {
+	t.Helper()
+	ports := make([]int, 0, n)
+	listeners := make([]net.Listener, 0, n)
+	for range n {
+		l, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatalf("error getting free port: %v", err)
+		}
+		listeners = append(listeners, l)
+		ports = append(ports, l.Addr().(*net.TCPAddr).Port)
+	}
+	for _, l := range listeners {
+		l.Close() //nolint:gosec // best-effort cleanup in test helper; error is not actionable
+	}
+	return ports
+}
