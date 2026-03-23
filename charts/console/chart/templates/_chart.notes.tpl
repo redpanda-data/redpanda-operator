@@ -14,7 +14,8 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- else -}}{{- if $values.ingress.enabled -}}
+{{- end -}}
+{{- if $values.ingress.enabled -}}
 {{- $scheme := "http" -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.ingress.tls)))) "r") | int) (0 | int)) -}}
 {{- $scheme = "https" -}}
@@ -29,7 +30,6 @@
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $commands)))) "r") | int) (1 | int)) -}}

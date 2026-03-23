@@ -148,8 +148,8 @@ func TestTypes(t *testing.T) {
 	}
 }
 
-func TestIngressGatewayMutualExclusion(t *testing.T) {
-	_, err := NewRenderState("test-namespace", "test-release", nil, PartialRenderValues{
+func TestIngressAndGatewayCoexistence(t *testing.T) {
+	state, err := NewRenderState("test-namespace", "test-release", nil, PartialRenderValues{
 		Ingress: &PartialIngressConfig{
 			Enabled: ptr.To(true),
 			Hosts: []PartialIngressHost{
@@ -174,8 +174,22 @@ func TestIngressGatewayMutualExclusion(t *testing.T) {
 			Hostnames: []string{"console.example.com"},
 		},
 	})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "ingress and gateway cannot both be enabled")
+	require.NoError(t, err)
+
+	var hasIngress, hasHTTPRoute bool
+	for _, obj := range Render(state) {
+		if !isNonNil(obj) {
+			continue
+		}
+		if _, ok := obj.(*networkingv1.Ingress); ok {
+			hasIngress = true
+		}
+		if _, ok := obj.(*gatewayv1.HTTPRoute); ok {
+			hasHTTPRoute = true
+		}
+	}
+	require.True(t, hasIngress, "both enabled should produce Ingress")
+	require.True(t, hasHTTPRoute, "both enabled should produce HTTPRoute")
 }
 
 // findHTTPRoute extracts the rendered HTTPRoute from a Render output, or nil.

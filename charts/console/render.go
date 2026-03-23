@@ -105,10 +105,6 @@ func NewRenderState(namespace, name string, labels map[string]string, values Par
 		return nil, errors.WithStack(err)
 	}
 
-	if rv.Ingress.Enabled && rv.Gateway.Enabled {
-		return nil, errors.New("ingress and gateway cannot both be enabled; use one or the other")
-	}
-
 	return &RenderState{
 		Namespace:    namespace,
 		ReleaseName:  name,

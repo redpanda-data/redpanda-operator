@@ -25,7 +25,8 @@ func Notes(dot *helmette.Dot) []string {
 		for _, hostname := range values.Gateway.Hostnames {
 			commands = append(commands, fmt.Sprintf("http://%s%s", hostname, values.Gateway.Path))
 		}
-	} else if values.Ingress.Enabled {
+	}
+	if values.Ingress.Enabled {
 		scheme := "http"
 		if len(values.Ingress.TLS) > 0 {
 			scheme = "https"
