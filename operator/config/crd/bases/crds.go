@@ -83,6 +83,11 @@ func All() []*apiextensionsv1.CustomResourceDefinition {
 	return ret
 }
 
+// Connect returns the Connect CustomResourceDefinition.
+func Connect() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("connects.cluster.redpanda.com"))
+}
+
 // Redpanda returns the Redpanda CustomResourceDefinition.
 func Redpanda() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("redpandas.cluster.redpanda.com"))

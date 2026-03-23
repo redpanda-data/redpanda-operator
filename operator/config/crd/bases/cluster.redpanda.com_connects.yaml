@@ -2339,11 +2339,31 @@ spec:
                 x-kubernetes-validations:
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
+              configFiles:
+                additionalProperties:
+                  type: string
+                description: |-
+                  ConfigFiles defines additional configuration files to mount alongside
+                  the main pipeline configuration. Each entry maps a filename to its content.
+                  Files are mounted in the /config directory alongside connect.yaml.
+                  The key "connect.yaml" is reserved and cannot be used.
+                  Maps to pipeline config files when migrating to Redpanda Cloud.
+                type: object
               configYaml:
                 description: |-
                   ConfigYAML is the Redpanda Connect pipeline configuration in YAML format.
                   This follows the standard Redpanda Connect configuration schema with
                   input, pipeline, and output sections.
+                type: string
+              description:
+                description: |-
+                  Description is an optional description of what this pipeline does.
+                  Maps to the pipeline description when migrating to Redpanda Cloud.
+                type: string
+              displayName:
+                description: |-
+                  DisplayName is a human-readable name for the pipeline.
+                  Maps to the pipeline display name when migrating to Redpanda Cloud.
                 type: string
               env:
                 description: Env specifies additional environment variables for the
@@ -2602,6 +2622,13 @@ spec:
                       otherwise to an implementation-defined value. Requests cannot exceed Limits.
                       More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                     type: object
+                type: object
+              tags:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Tags are key-value pairs for organizing and filtering pipelines.
+                  Maps to pipeline tags when migrating to Redpanda Cloud.
                 type: object
             required:
             - configYaml

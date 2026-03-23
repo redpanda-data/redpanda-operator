@@ -178,6 +178,12 @@ func (c *Controller) reconcileConfigMap(ctx context.Context, connect *redpandav1
 		cm.Data = map[string]string{
 			"connect.yaml": connect.Spec.ConfigYAML,
 		}
+		for filename, content := range connect.Spec.ConfigFiles {
+			if filename == "connect.yaml" {
+				return errors.New("configFiles cannot contain a key named \"connect.yaml\"; use configYaml instead")
+			}
+			cm.Data[filename] = content
+		}
 		return controllerutil.SetControllerReference(connect, cm, c.Scheme())
 	})
 	return err

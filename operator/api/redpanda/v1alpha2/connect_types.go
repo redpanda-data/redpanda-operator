@@ -30,6 +30,29 @@ type ConnectSpec struct {
 	// +kubebuilder:validation:Required
 	ConfigYAML string `json:"configYaml"`
 
+	// DisplayName is a human-readable name for the pipeline.
+	// Maps to the pipeline display name when migrating to Redpanda Cloud.
+	// +optional
+	DisplayName string `json:"displayName,omitempty"`
+
+	// Description is an optional description of what this pipeline does.
+	// Maps to the pipeline description when migrating to Redpanda Cloud.
+	// +optional
+	Description string `json:"description,omitempty"`
+
+	// Tags are key-value pairs for organizing and filtering pipelines.
+	// Maps to pipeline tags when migrating to Redpanda Cloud.
+	// +optional
+	Tags map[string]string `json:"tags,omitempty"`
+
+	// ConfigFiles defines additional configuration files to mount alongside
+	// the main pipeline configuration. Each entry maps a filename to its content.
+	// Files are mounted in the /config directory alongside connect.yaml.
+	// The key "connect.yaml" is reserved and cannot be used.
+	// Maps to pipeline config files when migrating to Redpanda Cloud.
+	// +optional
+	ConfigFiles map[string]string `json:"configFiles,omitempty"`
+
 	// Replicas is the number of pipeline replicas to run.
 	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=0
