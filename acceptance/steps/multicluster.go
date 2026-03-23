@@ -49,10 +49,23 @@ func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 
 func (v vclusterNodes) ApplyAllWithModifiedName(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
+	nameMap := map[string]string{
+		"vc-0": "first",
+		"vc-1": "second",
+		"vc-2": "third",
+	}
+
 	for _, node := range v {
+		nodepoolName := nameMap[node.Name()]
+		fullManifest := fmt.Sprintf(`
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: %s
+  namespace: default
+`, nodepoolName) + manifest.Content
 		t.Logf("applying manifest to %q", node.Name())
-		//modified := strings.Replace(manifest.Content, "name: stretch-cluster-nodepool", "name: stretch-cluster-nodepool-"+node.Name(), 1)
-		require.NoError(t, node.KubectlApply(ctx, []byte(manifest.Content)))
+		require.NoError(t, node.KubectlApply(ctx, []byte(fullManifest)))
 	}
 }
 
@@ -350,7 +363,7 @@ spec:
 		rootIssuer := unmarshalIssuer(t, rootIssuerData)
 		externalIssuer := unmarshalIssuer(t, externalIssuerData)
 		require.NoError(t, retry.OnError(wait.Backoff{
-			Steps:    15,
+			Steps:    100,
 			Duration: 1 * time.Second,
 			Factor:   1.0,
 			Jitter:   0.1,

@@ -50,10 +50,7 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 
 	// Use the canonical cluster name so that labels are identical regardless
 	// of which operator instance (local vs remote) performs the reconciliation.
-	canonicalName := clusterName
-	if canonicalName == mcmanager.LocalCluster {
-		canonicalName = m.mgr.GetLocalClusterName()
-	}
+	canonicalName := canonicalClusterName(clusterName, m.mgr)
 
 	state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetNodePoolsForCluster(canonicalName), canonicalName)
 	if err != nil {
@@ -66,4 +63,12 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 // IsNodePool returns whether or not the object passed to it should be considered a node pool.
 func (m *StretchNodePoolRenderer) IsNodePool(object client.Object) bool {
 	return isNodePool(object)
+}
+
+func canonicalClusterName(clusterName string, mgr multicluster.Manager) string {
+	canonicalName := clusterName
+	if canonicalName == mcmanager.LocalCluster {
+		canonicalName = mgr.GetLocalClusterName()
+	}
+	return canonicalName
 }

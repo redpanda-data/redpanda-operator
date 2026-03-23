@@ -573,7 +573,7 @@ func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context
 			clusterRef := pool.Spec.ClusterRef
 			if clusterRef.IsStretchCluster() && clusterRef.Name == cluster.GetName() {
 				nodePools = append(nodePools, &NodePoolInCluster{
-					cluster:  clusterName,
+					cluster:  canonicalClusterName(clusterName, r.manager),
 					nodePool: pool.DeepCopy(),
 				})
 			}

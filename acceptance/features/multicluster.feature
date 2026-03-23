@@ -19,12 +19,6 @@ Feature: Multicluster Operator
     Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
     And I apply a NodePool Kubernetes manifest to "multicluster":
     """
-    ---
-    apiVersion: cluster.redpanda.com/v1alpha2
-    kind: NodePool
-    metadata:
-      name: stretch-cluster-nodepool
-      namespace: default
     spec:
       clusterRef:
         group: cluster.redpanda.com
@@ -33,4 +27,8 @@ Feature: Multicluster Operator
       replicas: 1
       image:
         repository: redpandadata/redpanda
+        tag: v25.2.1
+      sidecarImage:
+        repository: localhost/redpanda-operator
+        tag: dev
     """
