@@ -5,8 +5,9 @@
   kind: StatefulSet
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-a
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -20,8 +21,9 @@
     replicas: 1
     selector:
       matchLabels:
+        app.kubernetes.io/cluster-name: ""
         app.kubernetes.io/component: redpanda-basic-a-statefulset
-        app.kubernetes.io/instance: compat-test-
+        app.kubernetes.io/instance: compat-test
         app.kubernetes.io/name: redpanda
     serviceName: compat-test
     template:
@@ -29,8 +31,9 @@
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
+          app.kubernetes.io/cluster-name: ""
           app.kubernetes.io/component: redpanda-basic-a-statefulset
-          app.kubernetes.io/instance: compat-test-
+          app.kubernetes.io/instance: compat-test
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
@@ -41,8 +44,9 @@
             requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
+                  app.kubernetes.io/cluster-name: ""
                   app.kubernetes.io/component: redpanda-basic-a-statefulset
-                  app.kubernetes.io/instance: compat-test-
+                  app.kubernetes.io/instance: compat-test
                   app.kubernetes.io/name: redpanda
               topologyKey: kubernetes.io/hostname
         automountServiceAccountToken: false
@@ -51,7 +55,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=$(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:33145
+          - --advertise-rpc-addr=basic-a-$(ORDINAL_NUMBER).compat-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -65,6 +69,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
@@ -161,7 +169,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -180,6 +188,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
           name: sidecar
           readinessProbe:
@@ -293,8 +305,9 @@
         topologySpreadConstraints:
         - labelSelector:
             matchLabels:
+              app.kubernetes.io/cluster-name: ""
               app.kubernetes.io/component: redpanda-basic-a-statefulset
-              app.kubernetes.io/instance: compat-test-
+              app.kubernetes.io/instance: compat-test
               app.kubernetes.io/name: redpanda
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -348,7 +361,7 @@
     - metadata:
         labels:
           app.kubernetes.io/component: redpanda
-          app.kubernetes.io/instance: compat-test-
+          app.kubernetes.io/instance: compat-test
           app.kubernetes.io/name: redpanda
         name: datadir
       spec:
@@ -365,8 +378,9 @@
   kind: StatefulSet
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-b
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -380,8 +394,9 @@
     replicas: 1
     selector:
       matchLabels:
+        app.kubernetes.io/cluster-name: ""
         app.kubernetes.io/component: redpanda-basic-b-statefulset
-        app.kubernetes.io/instance: compat-test-
+        app.kubernetes.io/instance: compat-test
         app.kubernetes.io/name: redpanda
     serviceName: compat-test
     template:
@@ -389,8 +404,9 @@
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
+          app.kubernetes.io/cluster-name: ""
           app.kubernetes.io/component: redpanda-basic-b-statefulset
-          app.kubernetes.io/instance: compat-test-
+          app.kubernetes.io/instance: compat-test
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
@@ -401,8 +417,9 @@
             requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
+                  app.kubernetes.io/cluster-name: ""
                   app.kubernetes.io/component: redpanda-basic-b-statefulset
-                  app.kubernetes.io/instance: compat-test-
+                  app.kubernetes.io/instance: compat-test
                   app.kubernetes.io/name: redpanda
               topologyKey: kubernetes.io/hostname
         automountServiceAccountToken: false
@@ -411,7 +428,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=$(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:33145
+          - --advertise-rpc-addr=basic-b-$(ORDINAL_NUMBER).compat-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -425,6 +442,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
@@ -521,7 +542,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -540,6 +561,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           image: localhost/test:dev
           name: sidecar
           readinessProbe:
@@ -653,8 +678,9 @@
         topologySpreadConstraints:
         - labelSelector:
             matchLabels:
+              app.kubernetes.io/cluster-name: ""
               app.kubernetes.io/component: redpanda-basic-b-statefulset
-              app.kubernetes.io/instance: compat-test-
+              app.kubernetes.io/instance: compat-test
               app.kubernetes.io/name: redpanda
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -708,7 +734,7 @@
     - metadata:
         labels:
           app.kubernetes.io/component: redpanda
-          app.kubernetes.io/instance: compat-test-
+          app.kubernetes.io/instance: compat-test
           app.kubernetes.io/name: redpanda
         name: datadir
       spec:
@@ -726,8 +752,9 @@
   kind: StatefulSet
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-a
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -741,8 +768,9 @@
     replicas: 1
     selector:
       matchLabels:
+        app.kubernetes.io/cluster-name: ""
         app.kubernetes.io/component: redpanda-basic-a-statefulset
-        app.kubernetes.io/instance: nodepool-basic-test-
+        app.kubernetes.io/instance: nodepool-basic-test
         app.kubernetes.io/name: redpanda
     serviceName: nodepool-basic-test
     template:
@@ -750,8 +778,9 @@
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
+          app.kubernetes.io/cluster-name: ""
           app.kubernetes.io/component: redpanda-basic-a-statefulset
-          app.kubernetes.io/instance: nodepool-basic-test-
+          app.kubernetes.io/instance: nodepool-basic-test
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
@@ -762,8 +791,9 @@
             requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
+                  app.kubernetes.io/cluster-name: ""
                   app.kubernetes.io/component: redpanda-basic-a-statefulset
-                  app.kubernetes.io/instance: nodepool-basic-test-
+                  app.kubernetes.io/instance: nodepool-basic-test
                   app.kubernetes.io/name: redpanda
               topologyKey: kubernetes.io/hostname
         automountServiceAccountToken: false
@@ -772,7 +802,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=$(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:33145
+          - --advertise-rpc-addr=basic-a-$(ORDINAL_NUMBER).nodepool-basic-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -786,6 +816,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
@@ -882,7 +916,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -901,6 +935,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
           name: sidecar
           readinessProbe:
@@ -1014,8 +1052,9 @@
         topologySpreadConstraints:
         - labelSelector:
             matchLabels:
+              app.kubernetes.io/cluster-name: ""
               app.kubernetes.io/component: redpanda-basic-a-statefulset
-              app.kubernetes.io/instance: nodepool-basic-test-
+              app.kubernetes.io/instance: nodepool-basic-test
               app.kubernetes.io/name: redpanda
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -1069,7 +1108,7 @@
     - metadata:
         labels:
           app.kubernetes.io/component: redpanda
-          app.kubernetes.io/instance: nodepool-basic-test-
+          app.kubernetes.io/instance: nodepool-basic-test
           app.kubernetes.io/name: redpanda
         name: datadir
       spec:
@@ -1086,8 +1125,9 @@
   kind: StatefulSet
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-b
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -1101,8 +1141,9 @@
     replicas: 1
     selector:
       matchLabels:
+        app.kubernetes.io/cluster-name: ""
         app.kubernetes.io/component: redpanda-basic-b-statefulset
-        app.kubernetes.io/instance: nodepool-basic-test-
+        app.kubernetes.io/instance: nodepool-basic-test
         app.kubernetes.io/name: redpanda
     serviceName: nodepool-basic-test
     template:
@@ -1110,8 +1151,9 @@
         annotations:
           config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
+          app.kubernetes.io/cluster-name: ""
           app.kubernetes.io/component: redpanda-basic-b-statefulset
-          app.kubernetes.io/instance: nodepool-basic-test-
+          app.kubernetes.io/instance: nodepool-basic-test
           app.kubernetes.io/managed-by: redpanda-operator
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
@@ -1122,8 +1164,9 @@
             requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
+                  app.kubernetes.io/cluster-name: ""
                   app.kubernetes.io/component: redpanda-basic-b-statefulset
-                  app.kubernetes.io/instance: nodepool-basic-test-
+                  app.kubernetes.io/instance: nodepool-basic-test
                   app.kubernetes.io/name: redpanda
               topologyKey: kubernetes.io/hostname
         automountServiceAccountToken: false
@@ -1132,7 +1175,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=$(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:33145
+          - --advertise-rpc-addr=basic-b-$(ORDINAL_NUMBER).nodepool-basic-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -1146,6 +1189,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
@@ -1242,7 +1289,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test-
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -1261,6 +1308,10 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
           image: localhost/test:dev
           name: sidecar
           readinessProbe:
@@ -1374,8 +1425,9 @@
         topologySpreadConstraints:
         - labelSelector:
             matchLabels:
+              app.kubernetes.io/cluster-name: ""
               app.kubernetes.io/component: redpanda-basic-b-statefulset
-              app.kubernetes.io/instance: nodepool-basic-test-
+              app.kubernetes.io/instance: nodepool-basic-test
               app.kubernetes.io/name: redpanda
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -1429,7 +1481,7 @@
     - metadata:
         labels:
           app.kubernetes.io/component: redpanda
-          app.kubernetes.io/instance: nodepool-basic-test-
+          app.kubernetes.io/instance: nodepool-basic-test
           app.kubernetes.io/name: redpanda
         name: datadir
       spec:

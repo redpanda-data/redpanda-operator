@@ -81895,6 +81895,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -81938,6 +81946,18 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -82081,6 +82101,14 @@ rules:
   - create
   - patch
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - controllerrevisions
@@ -82155,6 +82183,23 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - groups
+  - redpandaroles
+  - schemas
+  - shadowlinks
+  - stretchclusters
+  - topics
+  - users
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -82168,6 +82213,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -82180,21 +82226,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandaroles
-  - schemas
-  - shadowlinks
-  - stretchclusters
-  - topics
-  - users
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -82481,28 +82512,6 @@ spec:
     app.kubernetes.io/name: operator
 ---
 # Source: operator/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.3.1
-    helm.sh/chart: operator-25.3.1
-  name: operator-raft-service
-  namespace: default
-spec:
-  ports:
-  - port: 9443
-    targetPort: 9443
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/name: operator
----
-# Source: operator/templates/entry-point.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -82725,6 +82734,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -82768,6 +82785,18 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -82911,6 +82940,14 @@ rules:
   - create
   - patch
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - controllerrevisions
@@ -82985,6 +83022,23 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - groups
+  - redpandaroles
+  - schemas
+  - shadowlinks
+  - stretchclusters
+  - topics
+  - users
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/finalizers
   - nodepools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -82998,6 +83052,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - groups/status
   - nodepools/status
   - redpandaroles/status
   - redpandas/status
@@ -83010,21 +83065,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandaroles
-  - schemas
-  - shadowlinks
-  - stretchclusters
-  - topics
-  - users
-  verbs:
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -83973,28 +84013,6 @@ spec:
   - name: https
     port: 8443
     targetPort: https
-  selector:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/name: operator
----
-# Source: operator/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: null
-  labels:
-    app.kubernetes.io/instance: operator
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v25.3.1
-    helm.sh/chart: operator-25.3.1
-  name: operator-raft-service
-  namespace: default
-spec:
-  ports:
-  - port: 9443
-    targetPort: 9443
-  publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/name: operator

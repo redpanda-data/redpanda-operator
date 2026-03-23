@@ -729,8 +729,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -762,7 +763,8 @@
       targetPort: 0
     publishNotReadyAddresses: true
     selector:
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
     type: NodePort
@@ -772,8 +774,9 @@
   kind: PodDisruptionBudget
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -784,7 +787,8 @@
     maxUnavailable: 1
     selector:
       matchLabels:
-        app.kubernetes.io/instance: compat-test-
+        app.kubernetes.io/cluster-name: ""
+        app.kubernetes.io/instance: compat-test
         app.kubernetes.io/name: redpanda
         redpanda.com/poddisruptionbudget: compat-test
   status:
@@ -797,8 +801,9 @@
   kind: ServiceAccount
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -809,8 +814,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -843,7 +849,8 @@
       targetPort: 8081
     publishNotReadyAddresses: true
     selector:
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
   status:
@@ -939,11 +946,11 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.
-            port: 33145
+            address: basic-b-0.
+            port: "33145"
         - host:
-            address: compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.
-            port: 33145
+            address: basic-a-0.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1005,8 +1012,9 @@
   kind: ConfigMap
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1104,11 +1112,11 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.
-            port: 33145
+            address: basic-b-0.
+            port: "33145"
         - host:
-            address: compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.
-            port: 33145
+            address: basic-a-0.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1170,8 +1178,9 @@
   kind: ConfigMap
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1197,8 +1206,9 @@
   kind: ConfigMap
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1209,8 +1219,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1224,8 +1235,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1240,8 +1252,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1255,8 +1268,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1271,8 +1285,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1296,8 +1311,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1321,8 +1337,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1357,8 +1374,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1393,8 +1411,9 @@
   kind: Role
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1434,8 +1453,9 @@
   kind: RoleBinding
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1454,8 +1474,9 @@
   kind: Secret
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1546,8 +1567,9 @@
   kind: Secret
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1589,8 +1611,9 @@
   kind: Secret
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1632,8 +1655,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1665,8 +1689,9 @@
       targetPort: 8081
     publishNotReadyAddresses: true
     selector:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-a-statefulset
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
   status:
@@ -1675,8 +1700,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
@@ -1708,8 +1734,9 @@
       targetPort: 8081
     publishNotReadyAddresses: true
     selector:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-b-statefulset
-      app.kubernetes.io/instance: compat-test-
+      app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
   status:
@@ -1719,8 +1746,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -1752,7 +1780,8 @@
       targetPort: 0
     publishNotReadyAddresses: true
     selector:
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
     type: NodePort
@@ -1762,8 +1791,9 @@
   kind: PodDisruptionBudget
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -1774,7 +1804,8 @@
     maxUnavailable: 1
     selector:
       matchLabels:
-        app.kubernetes.io/instance: nodepool-basic-test-
+        app.kubernetes.io/cluster-name: ""
+        app.kubernetes.io/instance: nodepool-basic-test
         app.kubernetes.io/name: redpanda
         redpanda.com/poddisruptionbudget: nodepool-basic-test
   status:
@@ -1787,8 +1818,9 @@
   kind: ServiceAccount
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -1799,8 +1831,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -1833,7 +1866,8 @@
       targetPort: 8081
     publishNotReadyAddresses: true
     selector:
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
   status:
@@ -1929,11 +1963,11 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
-            port: 33145
+            address: basic-b-0.
+            port: "33145"
         - host:
-            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
-            port: 33145
+            address: basic-a-0.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1995,8 +2029,9 @@
   kind: ConfigMap
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2094,11 +2129,11 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
-            port: 33145
+            address: basic-b-0.
+            port: "33145"
         - host:
-            address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
-            port: 33145
+            address: basic-a-0.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -2160,8 +2195,9 @@
   kind: ConfigMap
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2187,8 +2223,9 @@
   kind: ConfigMap
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2199,8 +2236,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2214,8 +2252,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2230,8 +2269,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2245,8 +2285,9 @@
   kind: Issuer
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2261,8 +2302,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2286,8 +2328,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2311,8 +2354,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2347,8 +2391,9 @@
   kind: Certificate
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2383,8 +2428,9 @@
   kind: Role
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2424,8 +2470,9 @@
   kind: RoleBinding
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2444,8 +2491,9 @@
   kind: Secret
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2536,8 +2584,9 @@
   kind: Secret
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2579,8 +2628,9 @@
   kind: Secret
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2622,8 +2672,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2655,8 +2706,9 @@
       targetPort: 8081
     publishNotReadyAddresses: true
     selector:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-a-statefulset
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
   status:
@@ -2665,8 +2717,9 @@
   kind: Service
   metadata:
     labels:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
@@ -2698,8 +2751,9 @@
       targetPort: 8081
     publishNotReadyAddresses: true
     selector:
+      app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-b-statefulset
-      app.kubernetes.io/instance: nodepool-basic-test-
+      app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
   status:
