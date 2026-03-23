@@ -362,12 +362,22 @@ func TestIntegrationClientFactory(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, json.Unmarshal(data, cluster.Spec.ClusterSpec))
 
-				kafkaClient, err := factory.KafkaClient(t.Context(), &cluster)
-				require.NoError(t, err)
-				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
-				require.NoError(t, err)
-				require.Len(t, metadata.Brokers.NodeIDs(), 1)
-				kafkaClient.Close()
+				// Retry to guard against transient DNS resolution failures
+				// (e.g. SRV records not yet propagated after pod startup).
+				require.Eventually(t, func() bool {
+					kafkaClient, err := factory.KafkaClient(t.Context(), &cluster)
+					if err != nil {
+						t.Logf("KafkaClient error (will retry): %v", err)
+						return false
+					}
+					defer kafkaClient.Close()
+					metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
+					if err != nil {
+						t.Logf("BrokerMetadata error (will retry): %v", err)
+						return false
+					}
+					return len(metadata.Brokers.NodeIDs()) == 1
+				}, 2*time.Minute, 5*time.Second, "failed to connect to Kafka cluster via SRV lookup")
 			})
 
 			t.Run("KafkaAPISpec", func(t *testing.T) {
@@ -405,12 +415,21 @@ func TestIntegrationClientFactory(t *testing.T) {
 						},
 					}
 				}
-				kafkaClient, err := factory.KafkaClient(t.Context(), wrapSpec(name, &spec))
-				require.NoError(t, err)
-				metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
-				require.NoError(t, err)
-				require.Len(t, metadata.Brokers.NodeIDs(), 1)
-				kafkaClient.Close()
+				// Retry to guard against transient DNS resolution failures.
+				require.Eventually(t, func() bool {
+					kafkaClient, err := factory.KafkaClient(t.Context(), wrapSpec(name, &spec))
+					if err != nil {
+						t.Logf("KafkaClient error (will retry): %v", err)
+						return false
+					}
+					defer kafkaClient.Close()
+					metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
+					if err != nil {
+						t.Logf("BrokerMetadata error (will retry): %v", err)
+						return false
+					}
+					return len(metadata.Brokers.NodeIDs()) == 1
+				}, 2*time.Minute, 5*time.Second, "failed to connect to Kafka via KafkaAPISpec")
 			})
 		})
 	}
@@ -541,20 +560,36 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// check kafka connection
-	kafkaClient, err := factory.KafkaClient(t.Context(), &redpanda)
-	require.NoError(t, err)
-	metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
-	require.NoError(t, err)
-	require.Len(t, metadata.Brokers.NodeIDs(), 1)
-	kafkaClient.Close()
+	// Check kafka connection with retry to guard against transient DNS
+	// resolution failures (e.g. SRV records not yet propagated).
+	require.Eventually(t, func() bool {
+		kafkaClient, err := factory.KafkaClient(t.Context(), &redpanda)
+		if err != nil {
+			t.Logf("KafkaClient error (will retry): %v", err)
+			return false
+		}
+		defer kafkaClient.Close()
+		metadata, err := kadm.NewClient(kafkaClient).BrokerMetadata(t.Context())
+		if err != nil {
+			t.Logf("BrokerMetadata error (will retry): %v", err)
+			return false
+		}
+		return len(metadata.Brokers.NodeIDs()) == 1
+	}, 2*time.Minute, 5*time.Second, "failed to connect to Kafka with TLS")
 
-	// check admin connection
-	adminClient, err := factory.RedpandaAdminClient(t.Context(), &redpanda)
-	require.NoError(t, err)
-	defer adminClient.Close()
-
-	brokers, err := adminClient.Brokers(t.Context())
-	require.NoError(t, err)
-	require.Len(t, brokers, 1)
+	// Check admin connection with retry.
+	require.Eventually(t, func() bool {
+		adminClient, err := factory.RedpandaAdminClient(t.Context(), &redpanda)
+		if err != nil {
+			t.Logf("AdminClient error (will retry): %v", err)
+			return false
+		}
+		defer adminClient.Close()
+		brokers, err := adminClient.Brokers(t.Context())
+		if err != nil {
+			t.Logf("Brokers error (will retry): %v", err)
+			return false
+		}
+		return len(brokers) == 1
+	}, 2*time.Minute, 5*time.Second, "failed to connect to admin API with TLS")
 }
