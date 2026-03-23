@@ -38,10 +38,11 @@ The CI lint step (`taskfiles/ci.yml`) runs:
 
 ## Golden Test Files
 
-Multiple test suites use golden file comparison. The canonical update flag is:
-- `-update-golden` — used by `github.com/redpanda-data/common-go/goldenfile.TxTar`
+Multiple test suites use golden file comparison. To regenerate expected output instead of asserting, pass `-update-golden`:
 
-The legacy `-update` flag from `pkg/testutil.NewTxTar` also works (it delegates to `-update-golden`), but prefer `-update-golden` for clarity. Some tests may need both flags during the transition.
+```bash
+nix develop -c go test ./path/to/... -update-golden
+```
 
 ### Lifecycle golden tests
 
