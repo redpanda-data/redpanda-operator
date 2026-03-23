@@ -24,8 +24,7 @@ env:
 # - Use taskfile to gate execution of steps.
 # - Have a pipeline serve multiple purposes.
 steps:
-  # ci-entry-point kicks off the operator test suite using the minimum
-  # supported Kubernetes version (1.32.x via default K3S_IMAGE).
+  # ci-entry-point kicks off the complete operator test suite.
   # It is responsible for blocking or allowing GitHub PRs to be merged.
   - key: ci-entry-point
     label: Operator CI Entrypoint
@@ -33,22 +32,12 @@ steps:
       queue: devprod-t4gmicro
     # Run for:
     # - all pull requests that aren't from forks
+    # - nightly test schedule or nightly triggered from buildkite ui
     # - changes to main or release/* branches (webhooks are from github)
     if: |
       (build.pull_request.id != null && !build.pull_request.repository.fork) ||
+      ((build.source == "schedule" || build.source == "ui") && build.env("K8S_NIGHTLY") == "1") ||
       ((build.branch == "main" || build.branch =~ /^release\//) && build.source == "webhook")
-    command: buildkite-agent pipeline upload .buildkite/testsuite.yml
-
-  # ci-entry-point-nightly kicks off the operator test suite using the maximum
-  # supported Kubernetes version (1.35.x) to verify forward compatibility.
-  - key: ci-entry-point-nightly
-    label: "Operator CI Entrypoint (K8s Nightly)"
-    agents:
-      queue: devprod-t4gmicro
-    env:
-      K3S_IMAGE: "rancher/k3s:v1.35.2-k3s1"
-    if: |
-      (build.source == "schedule" || build.source == "ui") && build.env("K8S_NIGHTLY") == "1"
     command: buildkite-agent pipeline upload .buildkite/testsuite.yml
 
     # NOTE: This build IS NOT dependent on tests passing due to their current flakey state.

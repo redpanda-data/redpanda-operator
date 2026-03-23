@@ -38,11 +38,10 @@ The CI lint step (`taskfiles/ci.yml`) runs:
 
 ## Golden Test Files
 
-Multiple test suites use golden file comparison. There are TWO different update flags:
-- `-update` — used by `pkg/testutil.NewTxTar` (the local testutil library)
+Multiple test suites use golden file comparison. The canonical update flag is:
 - `-update-golden` — used by `github.com/redpanda-data/common-go/goldenfile.TxTar`
 
-Check which library the test uses before choosing the flag. Some tests need both flags.
+The legacy `-update` flag from `pkg/testutil.NewTxTar` also works (it delegates to `-update-golden`), but prefer `-update-golden` for clarity. Some tests may need both flags during the transition.
 
 ### Lifecycle golden tests
 
@@ -97,8 +96,8 @@ Search for `registry.k8s.io/kube-controller-manager:` and `registry.k8s.io/kube-
 #### 6. Tool version golden file (`pkg/lint/testdata/tool-versions.txtar`)
 If kuttl version changed, update the kuttl version entry.
 
-#### 7. Nightly pipeline (`.buildkite/pipeline.yml`)
-Set `K3S_IMAGE` env var on the nightly entry point to test the maximum K8s version.
+#### 7. Nightly K3S_IMAGE default (`flake.nix`)
+Update the `K3S_IMAGE` default in `flake.nix` devshell env to the maximum supported K8s version. Nightly builds and local `nix develop` sessions will use this. The Buildkite nightly schedule should set `K3S_IMAGE` via the schedule env to override the per-PR default.
 
 #### 8. envtest version (`flake.nix`)
 ```nix
@@ -121,27 +120,34 @@ GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore go test ./operator/...
 
 ## Common Commands
 
-```bash
-# Build all
-go build ./operator/... && go build ./charts/console/... && go build ./charts/redpanda/...
+All commands should be run inside the nix devshell to ensure correct tool versions and environment variables. Prefix commands with `nix develop -c` or enter the shell with `nix develop`.
 
-# Run unit tests (needs envtest)
-KUBEBUILDER_ASSETS="$(setup-envtest use -p path)" go test ./operator/...
+```bash
+# Enter nix devshell (recommended for interactive work)
+nix develop
+
+# Or prefix individual commands
+nix develop -c go build ./operator/...
+
+# Build all
+nix develop -c bash -c 'go build ./operator/... && go build ./charts/console/... && go build ./charts/redpanda/...'
+
+# Run unit tests (envtest is configured by the devshell)
+nix develop -c go test ./operator/...
 
 # Run chart template tests
-helm dep build charts/redpanda/chart && go test ./charts/redpanda/... -run TestTemplate
+nix develop -c bash -c 'helm dep build charts/redpanda/chart && go test ./charts/redpanda/... -run TestTemplate'
 
 # Regenerate gotohelm templates (from chart dir)
-gotohelm --write ./templates . --bundle <bundle-packages>
+nix develop -c gotohelm --write ./templates . --bundle <bundle-packages>
 
 # Regenerate CRDs and RBAC (from operator dir)
-controller-gen object:headerFile="../licenses/boilerplate.go.txt" paths='./...' crd webhook rbac:roleName=manager-role output:crd:artifacts:config=config/crd/bases output:rbac:artifacts:config=config/rbac/bases/operator
+nix develop -c controller-gen object:headerFile="../licenses/boilerplate.go.txt" paths='./...' crd webhook rbac:roleName=manager-role output:crd:artifacts:config=config/crd/bases output:rbac:artifacts:config=config/rbac/bases/operator
 
 # Run golangci-lint (v2 format)
-golangci-lint run --timeout 10m $(go work edit -json | jq -r '.Use.[].DiskPath + "/... "' | tr -d '\n')
-golangci-lint fmt <packages>
+nix develop -c bash -c 'golangci-lint run --timeout 10m $(go work edit -json | jq -r '"'"'.Use.[].DiskPath + "/... "'"'"' | tr -d '"'"'\n'"'"')'
+nix develop -c golangci-lint fmt <packages>
 
-# Update golden files
-go test ./path/to/... -update        # for testutil-based goldens
-go test ./path/to/... -update-golden # for common-go goldenfile-based goldens
+# Update golden files (prefer -update-golden)
+nix develop -c go test ./path/to/... -update-golden
 ```
