@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -146,7 +147,7 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 	}
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Topic{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+		For(&redpandav1alpha2.Topic{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true), mcbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 
 	for _, clusterName := range mgr.GetClusterNames() {
 		if includeV1 {
@@ -172,7 +173,7 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
 	l = l.WithName("reconcile")
 
-	interval := metav1.Duration{Duration: time.Second * 3}
+	interval := metav1.Duration{Duration: time.Second * 10}
 	if topic.Spec.SynchronizationInterval != nil {
 		interval = *topic.Spec.SynchronizationInterval
 	}

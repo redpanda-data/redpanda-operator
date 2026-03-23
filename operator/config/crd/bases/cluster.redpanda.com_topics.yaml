@@ -2339,10 +2339,10 @@ spec:
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
               interval:
-                default: 3s
+                default: 10s
                 description: |-
                   Defines when the topic controller will schedule the next reconciliation.
-                  Default is 3 seconds.
+                  Default is 10 seconds.
                 format: duration
                 type: string
               kafkaApiSpec:
@@ -5853,10 +5853,10 @@ spec:
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
               interval:
-                default: 3s
+                default: 10s
                 description: |-
                   Defines when the topic controller will schedule the next reconciliation.
-                  Default is 3 seconds.
+                  Default is 10 seconds.
                 format: duration
                 type: string
               kafkaApiSpec:

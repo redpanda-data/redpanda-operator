@@ -243,7 +243,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
-		assert.Equal(t, time.Second*3, result.RequeueAfter)
+		assert.Equal(t, time.Second*10, result.RequeueAfter)
 
 		var mrt kmsg.MetadataResponseTopic
 		{
@@ -662,7 +662,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		result, err := tr.Reconcile(ctx, req)
 		assert.NoError(t, err)
 
-		assert.Equal(t, time.Second*3, result.RequeueAfter)
+		assert.Equal(t, time.Second*10, result.RequeueAfter)
 
 		err = c.Get(ctx, types.NamespacedName{
 			Name:      topicName,

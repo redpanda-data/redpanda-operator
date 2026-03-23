@@ -63,10 +63,10 @@ type TopicSpec struct {
 	MetricsNamespace *string `json:"metricsNamespace,omitempty"`
 
 	// Defines when the topic controller will schedule the next reconciliation.
-	// Default is 3 seconds.
+	// Default is 10 seconds.
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Format=duration
-	// +kubebuilder:default="3s"
+	// +kubebuilder:default="10s"
 	SynchronizationInterval *metav1.Duration `json:"interval,omitempty"`
 }
 

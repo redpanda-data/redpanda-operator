@@ -4489,7 +4489,7 @@ name of the metric. This should be easier to identify if +
 multiple operator instances runs inside the same Kubernetes cluster. +
 By default, it is set to `redpanda-operator`. + |  | 
 | *`interval`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | Defines when the topic controller will schedule the next reconciliation. +
-Default is 3 seconds. + | 3s | Format: duration +
+Default is 10 seconds. + | 10s | Format: duration +
 Type: string +
 
 |===
