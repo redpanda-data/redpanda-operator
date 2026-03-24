@@ -310,7 +310,7 @@ tasks:
   test:pull-images:
     vars:
       DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
-      DEFAULT_SECOND_TEST_CERTMANAGER_VERSION: v1.8.0
+      DEFAULT_SECOND_TEST_CERTMANAGER_VERSION: v1.17.2
       DEFAULT_TEST_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda-unstable
       DEFAULT_TEST_REDPANDA_VERSION: v26.1.1-rc5
       DEFAULT_TEST_UPGRADE_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda

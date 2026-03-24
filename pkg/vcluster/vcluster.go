@@ -47,7 +47,7 @@ const (
 	// pinned to avoid sudden failures if there are backwards incompatible changes
 	// added.
 	vClusterChartVersion    = "v0.28.0"
-	certManagerChartversion = "v1.8.0"
+	certManagerChartversion = "v1.17.2"
 )
 
 type Cluster struct {
