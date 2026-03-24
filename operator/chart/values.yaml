@@ -149,6 +149,11 @@ commonLabels: {}
 vectorizedControllers:
   enabled: false
 
+# -- Enables the Redpanda Connect controller for managing Connect pipeline CRs.
+# Pipelines still require an enterprise license with the CONNECT product on each CR.
+connectController:
+  enabled: true
+
 # -- Configuration for monitoring.
 monitoring:
   # -- Creates a ServiceMonitor that can be used by Prometheus-Operator or VictoriaMetrics-Operator to scrape the metrics.

@@ -617,6 +617,15 @@
       },
       "type": "object"
     },
+    "connectController": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "config": {
       "additionalProperties": false,
       "properties": {
