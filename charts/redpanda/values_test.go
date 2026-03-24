@@ -627,6 +627,335 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 	}
 }
 
+func TestInUseServerCerts(t *testing.T) {
+	cases := map[string]struct {
+		TLS       TLS
+		Listeners Listeners
+		Expected  []string
+	}{
+		"internal TLS enabled collects internal cert": {
+			TLS: TLS{Enabled: false},
+			Listeners: Listeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+					Port: 9092,
+					TLS: InternalTLS{
+						Enabled: ptr.To(true),
+						Cert:    "default",
+					},
+				},
+				Admin:          ListenerConfig[NoAuth]{Port: 9644, TLS: InternalTLS{Cert: "default"}},
+				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Cert: "default"}},
+				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Cert: "default"}},
+				RPC: struct {
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+				}{Port: 33145, TLS: InternalTLS{Cert: "default"}},
+			},
+			Expected: []string{"default"},
+		},
+		"internal TLS disabled, external TLS enabled with explicit cert": {
+			TLS: TLS{
+				Enabled: true,
+				Certs: TLSCertMap{
+					"default":  TLSCert{},
+					"external": TLSCert{},
+				},
+			},
+			Listeners: Listeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+					Port: 9094,
+					TLS: InternalTLS{
+						Enabled: ptr.To(false),
+						Cert:    "default",
+					},
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"default": {
+							Port:    9095,
+							Enabled: ptr.To(true),
+							TLS: &ExternalTLS{
+								Enabled: ptr.To(true),
+								Cert:    ptr.To("external"),
+							},
+						},
+					},
+				},
+				Admin:          ListenerConfig[NoAuth]{Port: 9644, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				RPC: struct {
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+			},
+			Expected: []string{"external"},
+		},
+		"both internal and external TLS enabled with different certs": {
+			TLS: TLS{
+				Enabled: true,
+				Certs: TLSCertMap{
+					"default":  TLSCert{},
+					"external": TLSCert{},
+				},
+			},
+			Listeners: Listeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+					Port: 9094,
+					TLS: InternalTLS{
+						Enabled: ptr.To(true),
+						Cert:    "default",
+					},
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"default": {
+							Port:    9095,
+							Enabled: ptr.To(true),
+							TLS: &ExternalTLS{
+								Enabled: ptr.To(true),
+								Cert:    ptr.To("external"),
+							},
+						},
+					},
+				},
+				Admin:          ListenerConfig[NoAuth]{Port: 9644, TLS: InternalTLS{Cert: "default"}},
+				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Cert: "default"}},
+				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Cert: "default"}},
+				RPC: struct {
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+				}{Port: 33145, TLS: InternalTLS{Cert: "default"}},
+			},
+			Expected: []string{"default", "external"},
+		},
+		"all TLS disabled returns empty": {
+			TLS: TLS{Enabled: false},
+			Listeners: Listeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+					Port: 9094,
+					TLS: InternalTLS{
+						Enabled: ptr.To(false),
+						Cert:    "default",
+					},
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"default": {
+							Port:    9095,
+							Enabled: ptr.To(true),
+							TLS: &ExternalTLS{
+								Enabled: ptr.To(false),
+							},
+						},
+					},
+				},
+				Admin:          ListenerConfig[NoAuth]{Port: 9644, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				RPC: struct {
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+			},
+			Expected: []string{},
+		},
+		"customer scenario: global TLS on, all internal off, kafka external on with secretRef cert": {
+			TLS: TLS{
+				Enabled: true,
+				Certs: TLSCertMap{
+					"default":  TLSCert{},
+					"external": TLSCert{CAEnabled: false},
+				},
+			},
+			Listeners: Listeners{
+				Admin: ListenerConfig[NoAuth]{
+					Port: 9644,
+					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+				},
+				HTTP: ListenerConfig[HTTPAuthenticationMethod]{
+					Port: 8082,
+					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+				},
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+					Port: 9094,
+					TLS: InternalTLS{
+						Enabled: ptr.To(false),
+						Cert:    "default",
+					},
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"default": {
+							Port:    9095,
+							Enabled: ptr.To(true),
+							TLS: &ExternalTLS{
+								Enabled: ptr.To(true),
+								Cert:    ptr.To("external"),
+							},
+						},
+					},
+				},
+				SchemaRegistry: ListenerConfig[NoAuth]{
+					Port: 8081,
+					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+				},
+				RPC: struct {
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+			},
+			Expected: []string{"external"},
+		},
+		"multiple listeners with external-only TLS": {
+			TLS: TLS{
+				Enabled: true,
+				Certs: TLSCertMap{
+					"default":   TLSCert{},
+					"kafka-ext": TLSCert{},
+					"admin-ext": TLSCert{},
+				},
+			},
+			Listeners: Listeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+					Port: 9094,
+					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"default": {
+							Port:    9095,
+							Enabled: ptr.To(true),
+							TLS: &ExternalTLS{
+								Enabled: ptr.To(true),
+								Cert:    ptr.To("kafka-ext"),
+							},
+						},
+					},
+				},
+				Admin: ListenerConfig[NoAuth]{
+					Port: 9644,
+					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+					External: map[string]ExternalListener[NoAuth]{
+						"default": {
+							Port:    9645,
+							Enabled: ptr.To(true),
+							TLS: &ExternalTLS{
+								Enabled: ptr.To(true),
+								Cert:    ptr.To("admin-ext"),
+							},
+						},
+					},
+				},
+				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				RPC: struct {
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+			},
+			Expected: []string{"admin-ext", "kafka-ext"},
+		},
+		"disabled external listener should not include its cert": {
+			TLS: TLS{Enabled: true},
+			Listeners: Listeners{
+				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+					Port: 9094,
+					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+						"default": {
+							Port:    9095,
+							Enabled: ptr.To(false),
+							TLS: &ExternalTLS{
+								Enabled: ptr.To(true),
+								Cert:    ptr.To("external"),
+							},
+						},
+					},
+				},
+				Admin:          ListenerConfig[NoAuth]{Port: 9644, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+				RPC: struct {
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
+			},
+			Expected: []string{},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := tc.Listeners.InUseServerCerts(&tc.TLS)
+			assert.Equal(t, tc.Expected, result)
+		})
+	}
+}
+
+func TestExternalTLSIsEnabled(t *testing.T) {
+	cases := map[string]struct {
+		ExternalTLS *ExternalTLS
+		InternalTLS InternalTLS
+		GlobalTLS   TLS
+		Expected    bool
+	}{
+		"nil external TLS returns false": {
+			ExternalTLS: nil,
+			InternalTLS: InternalTLS{Enabled: ptr.To(true), Cert: "default"},
+			GlobalTLS:   TLS{Enabled: true},
+			Expected:    false,
+		},
+		"external explicitly enabled, internal disabled": {
+			ExternalTLS: &ExternalTLS{
+				Enabled: ptr.To(true),
+				Cert:    ptr.To("external"),
+			},
+			InternalTLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+			GlobalTLS:   TLS{Enabled: true},
+			Expected:    true,
+		},
+		"external explicitly disabled, internal enabled": {
+			ExternalTLS: &ExternalTLS{
+				Enabled: ptr.To(false),
+				Cert:    ptr.To("external"),
+			},
+			InternalTLS: InternalTLS{Enabled: ptr.To(true), Cert: "default"},
+			GlobalTLS:   TLS{Enabled: true},
+			Expected:    false,
+		},
+		"external not specified, falls back to internal enabled": {
+			ExternalTLS: &ExternalTLS{
+				Cert: ptr.To("external"),
+			},
+			InternalTLS: InternalTLS{Enabled: ptr.To(true), Cert: "default"},
+			GlobalTLS:   TLS{Enabled: true},
+			Expected:    true,
+		},
+		"external not specified, falls back to internal disabled": {
+			ExternalTLS: &ExternalTLS{
+				Cert: ptr.To("external"),
+			},
+			InternalTLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+			GlobalTLS:   TLS{Enabled: true},
+			Expected:    false,
+		},
+		"external enabled but no cert and internal has empty cert": {
+			ExternalTLS: &ExternalTLS{
+				Enabled: ptr.To(true),
+			},
+			InternalTLS: InternalTLS{Enabled: ptr.To(false), Cert: ""},
+			GlobalTLS:   TLS{Enabled: true},
+			Expected:    false,
+		},
+		"external enabled, cert falls back to internal cert name": {
+			ExternalTLS: &ExternalTLS{
+				Enabled: ptr.To(true),
+			},
+			InternalTLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"},
+			GlobalTLS:   TLS{Enabled: true},
+			Expected:    true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := tc.ExternalTLS.IsEnabled(&tc.InternalTLS, &tc.GlobalTLS)
+			assert.Equal(t, tc.Expected, result)
+		})
+	}
+}
+
 func TestRedpandaResources_RedpandaFlags(t *testing.T) {
 	cases := []struct {
 		Resources RedpandaResources
