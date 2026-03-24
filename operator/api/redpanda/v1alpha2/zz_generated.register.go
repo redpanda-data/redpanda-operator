@@ -54,14 +54,14 @@ func init() {
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Pipeline{},
-		&PipelineList{},
 		&Console{},
 		&ConsoleList{},
 		&Group{},
 		&GroupList{},
 		&NodePool{},
 		&NodePoolList{},
+		&Pipeline{},
+		&PipelineList{},
 		&Redpanda{},
 		&RedpandaList{},
 		&RedpandaRole{},

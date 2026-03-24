@@ -13,9 +13,9 @@
 
 
 .Resource Types
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Connect$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-group[$$Group$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Pipeline$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
@@ -618,9 +618,9 @@ ClusterSource defines how to connect to a particular Redpanda cluster.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$PipelineSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
@@ -833,138 +833,6 @@ the dynamic configuration, while its "synonym" will be the default. + |  |
 | *`extraVolumeMounts`* __string__ |  |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
 | *`additionalCLIArgs`* __string array__ |  |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect"]
-==== Connect
-
-
-
-Pipeline defines a Redpanda Pipeline pipeline managed by the operator.
-
-
-
-
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
-| *`kind`* __string__ | `Connect` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
-| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
- |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$PipelineSpec$$]__ | Spec defines the desired state of the Pipeline pipeline. + |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectstatus[$$PipelineStatus$$]__ | Status represents the current observed state of the Pipeline pipeline. + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec"]
-==== PipelineSpec
-
-
-
-PipelineSpec defines the desired state of a Redpanda Pipeline pipeline.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Connect$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`configYaml`* __string__ | ConfigYAML is the Redpanda Pipeline pipeline configuration in YAML format. +
-This follows the standard Redpanda Connect configuration schema with +
-input, pipeline, and output sections. + |  | Required: \{} +
-
-| *`displayName`* __string__ | DisplayName is a human-readable name for the pipeline. +
-Maps to the pipeline display name when migrating to Redpanda Cloud. + |  | Optional: \{} +
-
-| *`description`* __string__ | Description is an optional description of what this pipeline does. +
-Maps to the pipeline description when migrating to Redpanda Cloud. + |  | Optional: \{} +
-
-| *`tags`* __object (keys:string, values:string)__ | Tags are key-value pairs for organizing and filtering pipelines. +
-Maps to pipeline tags when migrating to Redpanda Cloud. + |  | Optional: \{} +
-
-| *`configFiles`* __object (keys:string, values:string)__ | ConfigFiles defines additional configuration files to mount alongside +
-the main pipeline configuration. Each entry maps a filename to its content. +
-Files are mounted in the /config directory alongside connect.yaml. +
-The key "connect.yaml" is reserved and cannot be used. +
-Maps to pipeline config files when migrating to Redpanda Cloud. + |  | Optional: \{} +
-
-| *`replicas`* __integer__ | Replicas is the number of pipeline replicas to run. + | 1 | Minimum: 0 +
-Optional: \{} +
-
-| *`image`* __string__ | Image is the container image for the Redpanda Connect deployment. + |  | Optional: \{} +
-
-| *`paused`* __boolean__ | Paused stops the pipeline by scaling replicas to zero when set to true. + |  | Optional: \{} +
-
-| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Resources defines the compute resource requirements for the pipeline pods. + |  | Optional: \{} +
-
-| *`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core[$$EnvVar$$] array__ | Env specifies additional environment variables for the pipeline container. + |  | Optional: \{} +
-
-| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes. + |  | Optional: \{} +
-
-| *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector constrains pipeline pods to nodes with matching labels. + |  | Optional: \{} +
-
-| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ | TopologySpreadConstraints controls how pipeline pods are spread across +
-topology domains such as availability zones. When Zones is specified, +
-a default topology spread constraint is generated automatically. +
-Any constraints specified here are used in addition to (or instead of) +
-the auto-generated zone constraint. + |  | Optional: \{} +
-
-| *`zones`* __string array__ | Zones specifies the availability zones across which pipeline pods should +
-be spread. When set, the controller configures: +
-- A node affinity to schedule pods only on nodes in these zones +
-- A topology spread constraint to distribute pods evenly across zones +
-The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
-
-| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the Redpanda cluster this pipeline connects to. + |  | Optional: \{} +
-
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectstatus"]
-==== PipelineStatus
-
-
-
-PipelineStatus defines the observed state of a Pipeline resource.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Connect$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Pipeline resource. + |  | Optional: \{} +
-
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Pipeline resource. + |  | Optional: \{} +
-
-| *`phase`* __string__ | Phase describes the current phase of the pipeline lifecycle. + |  | Optional: \{} +
-
-| *`replicas`* __integer__ | Replicas is the number of desired replicas. + |  | Optional: \{} +
-
-| *`readyReplicas`* __integer__ | ReadyReplicas is the number of ready pipeline pods. + |  | Optional: \{} +
-
 |===
 
 
@@ -2400,6 +2268,150 @@ PersistentVolume configures configurations for a PersistentVolumeClaim to use to
 | *`size`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the storage capacity required. + |  | 
 | *`storageClass`* __string__ | Specifies the StorageClass for the PersistentVolumeClaims to determine how PersistentVolumes are provisioned and managed. + |  | 
 | *`nameOverwrite`* __string__ | Option to change volume claim template name for tiered storage persistent volume if tiered.mountType is set to `persistentVolume` + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline"]
+==== Pipeline
+
+
+
+Connect defines a Redpanda Connect pipeline managed by the operator.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Pipeline` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]__ | Spec defines the desired state of the Connect pipeline. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus[$$PipelineStatus$$]__ | Status represents the current observed state of the Connect pipeline. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec"]
+==== PipelineSpec
+
+
+
+PipelineSpec defines the desired state of a Redpanda Connect pipeline.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Pipeline$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`configYaml`* __string__ | ConfigYAML is the Redpanda Connect pipeline configuration in YAML format. +
+This follows the standard Redpanda Connect configuration schema with +
+input, pipeline, and output sections. + |  | Required: \{} +
+
+| *`displayName`* __string__ | DisplayName is a human-readable name for the pipeline. +
+Maps to the pipeline display name when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`description`* __string__ | Description is an optional description of what this pipeline does. +
+Maps to the pipeline description when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`tags`* __object (keys:string, values:string)__ | Tags are key-value pairs for organizing and filtering pipelines. +
+Maps to pipeline tags when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`configFiles`* __object (keys:string, values:string)__ | ConfigFiles defines additional configuration files to mount alongside +
+the main pipeline configuration. Each entry maps a filename to its content. +
+Files are mounted in the /config directory alongside connect.yaml. +
+The key "connect.yaml" is reserved and cannot be used. +
+Maps to pipeline config files when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`replicas`* __integer__ | Replicas is the number of pipeline replicas to run. + | 1 | Minimum: 0 +
+Optional: \{} +
+
+| *`image`* __string__ | Image is the container image for the Redpanda Connect deployment. + |  | Optional: \{} +
+
+| *`paused`* __boolean__ | Paused stops the pipeline by scaling replicas to zero when set to true. + |  | Optional: \{} +
+
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Resources defines the compute resource requirements for the pipeline pods. + |  | Optional: \{} +
+
+| *`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core[$$EnvVar$$] array__ | Env specifies additional environment variables for the pipeline container. + |  | Optional: \{} +
+
+| *`secretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | SecretRef is a list of Kubernetes Secrets to expose as environment variables +
+in the pipeline container. All key-value pairs in each referenced Secret are +
+injected as environment variables, allowing the pipeline configuration to +
+reference them using Redpanda Connect's ${!env:VAR_NAME} or ${VAR_NAME} +
+interpolation syntax. +
+
+For example, if a Secret "my-creds" contains key "KAFKA_PASSWORD", the pipeline +
+configYaml can reference it as: +
+password: ${KAFKA_PASSWORD} +
+
+See: https://docs.redpanda.com/redpanda-connect/configuration/secrets/ + |  | Optional: \{} +
+
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes. + |  | Optional: \{} +
+
+| *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector constrains pipeline pods to nodes with matching labels. + |  | Optional: \{} +
+
+| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ | TopologySpreadConstraints controls how pipeline pods are spread across +
+topology domains such as availability zones. When Zones is specified, +
+a default topology spread constraint is generated automatically. +
+Any constraints specified here are used in addition to (or instead of) +
+the auto-generated zone constraint. + |  | Optional: \{} +
+
+| *`zones`* __string array__ | Zones specifies the availability zones across which pipeline pods should +
+be spread. When set, the controller configures: +
+- A node affinity to schedule pods only on nodes in these zones +
+- A topology spread constraint to distribute pods evenly across zones +
+The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
+
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the Redpanda cluster this pipeline connects to. + |  | Optional: \{} +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus"]
+==== PipelineStatus
+
+
+
+PipelineStatus defines the observed state of a Connect resource.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Pipeline$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Connect resource. + |  | Optional: \{} +
+
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Connect resource. + |  | Optional: \{} +
+
+| *`phase`* __string__ | Phase describes the current phase of the pipeline lifecycle. + |  | Optional: \{} +
+
+| *`replicas`* __integer__ | Replicas is the number of desired replicas. + |  | Optional: \{} +
+
+| *`readyReplicas`* __integer__ | ReadyReplicas is the number of ready pipeline pods. + |  | Optional: \{} +
+
 |===
 
 

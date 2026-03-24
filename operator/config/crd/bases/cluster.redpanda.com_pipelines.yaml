@@ -2610,14 +2610,24 @@ spec:
                   injected as environment variables, allowing the pipeline configuration to
                   reference them using Redpanda Connect's ${!env:VAR_NAME} or ${VAR_NAME}
                   interpolation syntax.
+
+                  For example, if a Secret "my-creds" contains key "KAFKA_PASSWORD", the pipeline
+                  configYaml can reference it as:
+                    password: ${KAFKA_PASSWORD}
+
+                  See: https://docs.redpanda.com/redpanda-connect/configuration/secrets/
                 items:
-                  description: LocalObjectReference contains enough information to let
-                    you locate the referenced object inside the same namespace.
+                  description: |-
+                    LocalObjectReference contains enough information to let you locate the
+                    referenced object inside the same namespace.
                   properties:
                     name:
                       default: ""
                       description: |-
                         Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                       type: string
                   type: object
