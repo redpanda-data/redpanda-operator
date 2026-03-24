@@ -104,6 +104,8 @@ type ShadowLinkTaskStatus struct {
 	Reason string `json:"reason,omitempty"`
 	// The broker the task is running on
 	BrokerID int32 `json:"brokerId,omitempty"`
+	// The shard the task is running on
+	Shard int32 `json:"shard,omitempty"`
 }
 
 // State of a shadow topic
