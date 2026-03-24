@@ -921,10 +921,16 @@ Optional: \{} +
 
 | *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector constrains pipeline pods to nodes with matching labels. + |  | Optional: \{} +
 
-| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ | TopologySpreadConstraints controls how pipeline pods are spread across topology domains such as availability zones. + |  | Optional: \{} +
+| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ | TopologySpreadConstraints controls how pipeline pods are spread across +
+topology domains such as availability zones. When Zones is specified, +
+a default topology spread constraint is generated automatically. +
+Any constraints specified here are used in addition to (or instead of) +
+the auto-generated zone constraint. + |  | Optional: \{} +
 
-| *`zones`* __string array__ | Zones specifies the availability zones across which pipeline pods should be spread. +
-When set, the controller configures a node affinity to schedule pods only on nodes in these zones and a topology spread constraint to distribute pods evenly across zones. +
+| *`zones`* __string array__ | Zones specifies the availability zones across which pipeline pods should +
+be spread. When set, the controller configures: +
+- A node affinity to schedule pods only on nodes in these zones +
+- A topology spread constraint to distribute pods evenly across zones +
 The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
 
 | *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | LicenseSecretRef is a reference to a Secret containing the Redpanda enterprise license. +
