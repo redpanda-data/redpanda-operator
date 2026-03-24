@@ -3,9 +3,8 @@ kind: Changed
 body: |
   The Redpanda Connect controller can now be enabled via the operator Helm chart
   by setting `connectController.enabled: true`. The controller is disabled by default.
-  The enterprise license is configured once at the operator level via
-  `enterprise.licenseSecretRef` in the Helm chart values — individual Connect
-  pipeline CRs do not need to specify a license.
+  The enterprise license is configured at the operator level via
+  `enterprise.licenseSecretRef` in the Helm chart values.
 
   To enable the Connect controller:
 
