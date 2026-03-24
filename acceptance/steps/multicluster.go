@@ -10,16 +10,20 @@
 package steps
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cucumber/godog"
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -28,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
@@ -37,7 +40,17 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
+const (
+	LicenseEnvVar = "REDPANDA_SAMPLE_LICENSE"
+)
+
 type vclusterNodes []*vclusterNode
+
+var nameMap = map[string]string{
+	"vc-0": "first",
+	"vc-1": "second",
+	"vc-2": "third",
+}
 
 func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	t := framework.T(ctx)
@@ -47,14 +60,8 @@ func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	}
 }
 
-func (v vclusterNodes) ApplyAllWithModifiedName(ctx context.Context, manifest *godog.DocString) {
+func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
-	nameMap := map[string]string{
-		"vc-0": "first",
-		"vc-1": "second",
-		"vc-2": "third",
-	}
-
 	for _, node := range v {
 		nodepoolName := nameMap[node.Name()]
 		fullManifest := fmt.Sprintf(`
@@ -69,15 +76,19 @@ metadata:
 	}
 }
 
-func (v vclusterNodes) ApplyInFirst(ctx context.Context, manifest []byte) {
+func (v vclusterNodes) DeleteNodepools(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
-
 	for _, node := range v {
-		if node.Name() != "vc-0" {
-			continue
-		}
+		nodepoolName := nameMap[node.Name()]
+		fullManifest := fmt.Sprintf(`
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: %s
+  namespace: default
+`, nodepoolName) + manifest.Content
 		t.Logf("applying manifest to %q", node.Name())
-		require.NoError(t, node.KubectlApply(ctx, manifest))
+		require.NoError(t, node.KubectlDelete(ctx, []byte(fullManifest)))
 	}
 }
 
@@ -123,10 +134,21 @@ func (n *vclusterNode) ExternalIP() string {
 	return n.externalIP
 }
 
-type multiclusterKey string
+type (
+	multiclusterKey         string
+	lastMulticlusterNameKey struct{}
+	rpkResultsKey           struct{}
+)
+
+type rpkExecResult struct {
+	clusterName string
+	clusterUID  string
+	nodeCount   int
+}
 
 func stashNodes(ctx context.Context, name string, nodes vclusterNodes) context.Context {
-	return context.WithValue(ctx, multiclusterKey(name), nodes)
+	ctx = context.WithValue(ctx, multiclusterKey(name), nodes)
+	return context.WithValue(ctx, lastMulticlusterNameKey{}, name)
 }
 
 func getNodes(ctx context.Context, name string) vclusterNodes {
@@ -148,9 +170,9 @@ func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.Testin
 
 func applyNodePoolWithStretchCluster(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
 	nodes := getNodes(ctx, clusterName)
-	nodes.ApplyAllWithModifiedName(ctx, manifest)
+	nodes.ApplyNodepoolsWithDifferentNamePerCluster(ctx, manifest)
 	cleanupWrapper(t, func(ctx context.Context) {
-		nodes.DeleteAll(ctx, []byte(manifest.Content))
+		nodes.DeleteNodepools(ctx, manifest)
 	})
 }
 
@@ -162,8 +184,8 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 
 func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {
 	namespace := metav1.NamespaceDefault
-	redpandaLicense := os.Getenv("REDPANDA_LICENSE_KEY")
-	require.NotEmpty(t, redpandaLicense, "REDPANDA_LICENSE_KEY env var must be set")
+	redpandaLicense := os.Getenv(LicenseEnvVar)
+	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
 	// create license secret in the k3s cluster
 	vclusters := []*vclusterNode{}
 	t.Logf("creating %d vclusters", clusters)
@@ -287,7 +309,10 @@ networking:
 	}
 	t.Log("bootstrapping multicluster TLS")
 	require.NoError(t, bootstrap.BootstrapKubernetesClusters(ctx, "redpanda-multicluster-operator", bootstrapConfig))
-
+	defaultSecret, err := generateCASecret("cluster", "default", namespace)
+	require.NoError(t, err)
+	externalSecret, err := generateCASecret("cluster", "external", namespace)
+	require.NoError(t, err)
 	// and finally we do the operator installation in each cluster
 	for _, cluster := range vclusters {
 		t.Logf("creating license secret in %q", cluster.Name())
@@ -300,100 +325,12 @@ networking:
 				"redpanda.license": []byte(redpandaLicense),
 			},
 		}))
+		t.Logf("creating TLS secrets and issuers in %q", cluster.Name())
+		require.NoError(t, cluster.Create(ctx, defaultSecret.DeepCopy()))
+		require.NoError(t, cluster.Create(ctx, externalSecret.DeepCopy()))
 
-		t.Logf("creating cluster-external secret for redpanda RPC TLS in %q", cluster.Name())
-		rootCertSecretData := `
-apiVersion: v1
-data:
-  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJsVENDQVR5Z0F3SUJBZ0lRYjNRRUM0Y0d0bFA4R3l3WnQ3b3lFakFLQmdncWhrak9QUVFEQWpBck1Ta3cKSndZRFZRUURFeUJqYkhWemRHVnlMV1JsWm1GMWJIUXRjbTl2ZEMxalpYSjBhV1pwWTJGMFpUQWVGdzB5TmpBegpNVGd4TWpFMU16RmFGdzB6TVRBek1UY3hNakUxTXpGYU1Dc3hLVEFuQmdOVkJBTVRJR05zZFhOMFpYSXRaR1ZtCllYVnNkQzF5YjI5MExXTmxjblJwWm1sallYUmxNRmt3RXdZSEtvWkl6ajBDQVFZSUtvWkl6ajBEQVFjRFFnQUUKNDhic3FIVnhlSFdjSzBIT0NRTXY0dk16OXhEQTFIY0dWVnBwTXNBL3ZRSSt0Mnp2QlJOY0d3d2F0RGVJT3VidApSQlFybzYrK2ZhcUZVR1lVVng5Y0thTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRkVjd215Tk5nWGRCSS83NEhyS1JSWDQ1TzNpb01Bb0dDQ3FHU000OUJBTUMKQTBjQU1FUUNJQXI3UHFRK2NVLzlmWG1hSW4wWnJWWjZzcjR5MVo1MkZBeHc2VWxod0FkUUFpQjJCT0szNlozcgpQK1IrWkN5ZU9RQlhqQkpWd3RiUkxuRSs0OUxKcWdYelJnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
-  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJsVENDQVR5Z0F3SUJBZ0lRYjNRRUM0Y0d0bFA4R3l3WnQ3b3lFakFLQmdncWhrak9QUVFEQWpBck1Ta3cKSndZRFZRUURFeUJqYkhWemRHVnlMV1JsWm1GMWJIUXRjbTl2ZEMxalpYSjBhV1pwWTJGMFpUQWVGdzB5TmpBegpNVGd4TWpFMU16RmFGdzB6TVRBek1UY3hNakUxTXpGYU1Dc3hLVEFuQmdOVkJBTVRJR05zZFhOMFpYSXRaR1ZtCllYVnNkQzF5YjI5MExXTmxjblJwWm1sallYUmxNRmt3RXdZSEtvWkl6ajBDQVFZSUtvWkl6ajBEQVFjRFFnQUUKNDhic3FIVnhlSFdjSzBIT0NRTXY0dk16OXhEQTFIY0dWVnBwTXNBL3ZRSSt0Mnp2QlJOY0d3d2F0RGVJT3VidApSQlFybzYrK2ZhcUZVR1lVVng5Y0thTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnS2tNQThHQTFVZEV3RUIvd1FGCk1BTUJBZjh3SFFZRFZSME9CQllFRkVjd215Tk5nWGRCSS83NEhyS1JSWDQ1TzNpb01Bb0dDQ3FHU000OUJBTUMKQTBjQU1FUUNJQXI3UHFRK2NVLzlmWG1hSW4wWnJWWjZzcjR5MVo1MkZBeHc2VWxod0FkUUFpQjJCT0szNlozcgpQK1IrWkN5ZU9RQlhqQkpWd3RiUkxuRSs0OUxKcWdYelJnPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
-  tls.key: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUJPR2Mwek9ZM3pTZUl5MVJFa3EwTmpXQ3plQWd6djdSLy9FTVFwL2huNG9vQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFNDhic3FIVnhlSFdjSzBIT0NRTXY0dk16OXhEQTFIY0dWVnBwTXNBL3ZRSSt0Mnp2QlJOYwpHd3dhdERlSU91YnRSQlFybzYrK2ZhcUZVR1lVVng5Y0tRPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
-kind: Secret
-metadata:
-  annotations:
-    cert-manager.io/alt-names: ""
-    cert-manager.io/certificate-name: cluster-default-root-certificate
-    cert-manager.io/common-name: cluster-default-root-certificate
-    cert-manager.io/ip-sans: ""
-    cert-manager.io/issuer-group: cert-manager.io
-    cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer-name: cluster-default-selfsigned-issuer
-    cert-manager.io/uri-sans: ""
-  name: cluster-default-root-certificate
-  namespace: default
-type: kubernetes.io/tls
-
-`
-		externalCertSecretData := `
-apiVersion: v1
-data:
-  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJtRENDQVQ2Z0F3SUJBZ0lRWkR5ZlYvalBSUkxHdHJScWRKSDZkekFLQmdncWhrak9QUVFEQWpBc01Tb3cKS0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0ZEdWeWJtRnNMWEp2YjNRdFkyVnlkR2xtYVdOaGRHVXdIaGNOTWpZdwpNekU0TVRJeE5UTXhXaGNOTXpFd016RTNNVEl4TlRNeFdqQXNNU293S0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0CmRHVnlibUZzTFhKdmIzUXRZMlZ5ZEdsbWFXTmhkR1V3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkMKQUFTWVhNc0VSamJNY1hkNVJQOTVlKzFQYng5MGlhL2RWYm1rU241UlhlVm5XemVLWWM4TEJvcjFaYTNzNS92WApqNHlUOG44eFFwY3FLVklvOWhnSzBDQVRvMEl3UURBT0JnTlZIUThCQWY4RUJBTUNBcVF3RHdZRFZSMFRBUUgvCkJBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUdwc21abmNrSTZYejBqVzkvbk5RaG15aVpGVXdDZ1lJS29aSXpqMEUKQXdJRFNBQXdSUUlnVDRTMldUNXRXOWsreWZVUUx4NE9oNUJWZk9TbkJKRjFtRHZxSjV3OW5mRUNJUURYRklBdAoxeFpvcEoxa1ZVdE1ITXVHTzIzN2tydXFVYXNhNXZrbGZPdkNkdz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJtRENDQVQ2Z0F3SUJBZ0lRWkR5ZlYvalBSUkxHdHJScWRKSDZkekFLQmdncWhrak9QUVFEQWpBc01Tb3cKS0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0ZEdWeWJtRnNMWEp2YjNRdFkyVnlkR2xtYVdOaGRHVXdIaGNOTWpZdwpNekU0TVRJeE5UTXhXaGNOTXpFd016RTNNVEl4TlRNeFdqQXNNU293S0FZRFZRUURFeUZqYkhWemRHVnlMV1Y0CmRHVnlibUZzTFhKdmIzUXRZMlZ5ZEdsbWFXTmhkR1V3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkMKQUFTWVhNc0VSamJNY1hkNVJQOTVlKzFQYng5MGlhL2RWYm1rU241UlhlVm5XemVLWWM4TEJvcjFaYTNzNS92WApqNHlUOG44eFFwY3FLVklvOWhnSzBDQVRvMEl3UURBT0JnTlZIUThCQWY4RUJBTUNBcVF3RHdZRFZSMFRBUUgvCkJBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVUdwc21abmNrSTZYejBqVzkvbk5RaG15aVpGVXdDZ1lJS29aSXpqMEUKQXdJRFNBQXdSUUlnVDRTMldUNXRXOWsreWZVUUx4NE9oNUJWZk9TbkJKRjFtRHZxSjV3OW5mRUNJUURYRklBdAoxeFpvcEoxa1ZVdE1ITXVHTzIzN2tydXFVYXNhNXZrbGZPdkNkdz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-  tls.key: LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUlhRlpCQ1Fia3ZJTVZ0eGpUbTBPRWxPTWRjRnBxZVorUWM0SkVmZDV5dHFvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFbUZ6TEJFWTJ6SEYzZVVUL2VYdnRUMjhmZEltdjNWVzVwRXArVVYzbFoxczNpbUhQQ3dhSwo5V1d0N09mNzE0K01rL0ovTVVLWEtpbFNLUFlZQ3RBZ0V3PT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=
-kind: Secret
-metadata:
-  annotations:
-    cert-manager.io/alt-names: ""
-    cert-manager.io/certificate-name: cluster-external-root-certificate
-    cert-manager.io/common-name: cluster-external-root-certificate
-    cert-manager.io/ip-sans: ""
-    cert-manager.io/issuer-group: cert-manager.io
-    cert-manager.io/issuer-kind: Issuer
-    cert-manager.io/issuer-name: cluster-external-selfsigned-issuer
-    cert-manager.io/uri-sans: ""
-  name: cluster-external-root-certificate
-  namespace: default
-type: kubernetes.io/tls
-
-`
-		rootIssuerData := `
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: cluster
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    cluster.redpanda.com/namespace: default
-    cluster.redpanda.com/operator: v2
-    cluster.redpanda.com/owner: cluster
-    helm.sh/chart: redpanda-25.3.1
-  name: cluster-default-root-issuer
-  namespace: default
-spec:
-  ca:
-    secretName: cluster-default-root-certificate
-
-
-`
-		externalIssuerData := `
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: cluster
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    cluster.redpanda.com/namespace: default
-    cluster.redpanda.com/operator: v2
-    cluster.redpanda.com/owner: cluster
-    helm.sh/chart: redpanda-25.3.1
-  name: cluster-external-root-issuer
-  namespace: default
-spec:
-  ca:
-    secretName: cluster-external-root-certificate
-
-`
-		rootSecret := unmarshalSecret(t, rootCertSecretData)
-		externalSecret := unmarshalSecret(t, externalCertSecretData)
-		require.NoError(t, cluster.Create(ctx, rootSecret))
-		require.NoError(t, cluster.Create(ctx, externalSecret))
-
-		rootIssuer := unmarshalIssuer(t, rootIssuerData)
-		externalIssuer := unmarshalIssuer(t, externalIssuerData)
+		defaultIssuer := newCAIssuer("cluster", "default", namespace)
+		externalIssuer := newCAIssuer("cluster", "external", namespace)
 		require.NoError(t, retry.OnError(wait.Backoff{
 			Steps:    100,
 			Duration: 1 * time.Second,
@@ -402,7 +339,7 @@ spec:
 		}, func(err error) bool {
 			return err != nil && strings.Contains(err.Error(), "webhook")
 		}, func() error {
-			return cluster.Create(ctx, rootIssuer)
+			return cluster.Create(ctx, defaultIssuer)
 		}))
 		require.NoError(t, cluster.Create(ctx, externalIssuer))
 
@@ -451,14 +388,222 @@ func cleanupWrapper(t framework.TestingT, f func(ctx context.Context)) {
 	t.Cleanup(f)
 }
 
-func unmarshalSecret(t framework.TestingT, data string) *corev1.Secret {
-	secret := &corev1.Secret{}
-	require.NoError(t, yaml.Unmarshal([]byte(data), secret))
-	return secret
+// generateCASecret generates a self-signed CA certificate using bootstrap.GenerateCA
+// and returns it as a kubernetes.io/tls Secret matching the naming convention used
+// by the Redpanda helm chart: {clusterName}-{listener}-root-certificate.
+func generateCASecret(clusterName, listener, namespace string) (*corev1.Secret, error) {
+	secretName := fmt.Sprintf("%s-%s-root-certificate", clusterName, listener)
+
+	ca, err := bootstrap.GenerateCA("redpanda", secretName, &bootstrap.CAConfiguration{
+		CALifetime: 48 * time.Hour,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	issuerName := fmt.Sprintf("%s-%s-selfsigned-issuer", clusterName, listener)
+
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+			Annotations: map[string]string{
+				"cert-manager.io/alt-names":        "",
+				"cert-manager.io/certificate-name": secretName,
+				"cert-manager.io/common-name":      secretName,
+				"cert-manager.io/ip-sans":          "",
+				"cert-manager.io/issuer-group":     "cert-manager.io",
+				"cert-manager.io/issuer-kind":      "Issuer",
+				"cert-manager.io/issuer-name":      issuerName,
+				"cert-manager.io/uri-sans":         "",
+			},
+		},
+		Type: corev1.SecretTypeTLS,
+		Data: map[string][]byte{
+			"ca.crt":  ca.Bytes(),
+			"tls.crt": ca.Bytes(),
+			"tls.key": ca.PrivateKeyBytes(),
+		},
+	}, nil
 }
 
-func unmarshalIssuer(t framework.TestingT, data string) *certmanagerv1.Issuer {
-	issuer := &certmanagerv1.Issuer{}
-	require.NoError(t, yaml.Unmarshal([]byte(data), issuer))
-	return issuer
+// newCAIssuer creates a cert-manager Issuer that references the CA secret
+// matching the naming convention: {clusterName}-{listener}-root-{certificate,issuer}.
+func newCAIssuer(clusterName, listener, namespace string) *certmanagerv1.Issuer {
+	secretName := fmt.Sprintf("%s-%s-root-certificate", clusterName, listener)
+	issuerName := fmt.Sprintf("%s-%s-root-issuer", clusterName, listener)
+
+	return &certmanagerv1.Issuer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      issuerName,
+			Namespace: namespace,
+		},
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				CA: &certmanagerv1.CAIssuer{
+					SecretName: secretName,
+				},
+			},
+		},
+	}
+}
+
+func getLastMulticlusterNodes(ctx context.Context) vclusterNodes {
+	name := ctx.Value(lastMulticlusterNameKey{}).(string)
+	return getNodes(ctx, name)
+}
+
+func expectStatefulsetsReady(ctx context.Context, t framework.TestingT, stsCount, clusterCount int32) {
+	nodes := getLastMulticlusterNodes(ctx)
+	require.Equal(t, int(clusterCount), len(nodes), "expected %d clusters but got %d", clusterCount, len(nodes))
+
+	require.Eventually(t, func() bool {
+		totalReady := int32(0)
+		for _, node := range nodes {
+			var stsList appsv1.StatefulSetList
+			if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{"app.kubernetes.io/name": "redpanda"}); err != nil {
+				t.Logf("error listing statefulsets in %s: %v", node.Name(), err)
+				return false
+			}
+			for _, sts := range stsList.Items {
+				if sts.Spec.Replicas != nil && sts.Status.ReadyReplicas == *sts.Spec.Replicas && *sts.Spec.Replicas > 0 {
+					totalReady++
+				}
+			}
+		}
+		t.Logf("ready statefulsets: %d/%d", totalReady, stsCount)
+		return totalReady >= stsCount
+	}, 10*time.Minute, 10*time.Second, "expected %d ready statefulsets across %d clusters", stsCount, clusterCount)
+}
+
+func executeCommandInStatefulsetContainers(ctx context.Context, t framework.TestingT, command string) context.Context {
+	nodes := getLastMulticlusterNodes(ctx)
+
+	var results []rpkExecResult
+
+	require.Eventually(t, func() bool {
+		results = nil
+		for _, node := range nodes {
+			var stsList appsv1.StatefulSetList
+			if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{"app.kubernetes.io/name": "redpanda"}); err != nil {
+				t.Logf("error listing statefulsets in %s: %v", node.Name(), err)
+				return false
+			}
+			if len(stsList.Items) == 0 {
+				t.Logf("no redpanda StatefulSets in %s", node.Name())
+				return false
+			}
+
+			sts := stsList.Items[0]
+			selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+			if err != nil {
+				t.Logf("error parsing selector for sts %s: %v", sts.Name, err)
+				return false
+			}
+
+			var pods corev1.PodList
+			if err := node.List(ctx, &pods, client.InNamespace("default"), client.MatchingLabelsSelector{Selector: selector}); err != nil {
+				t.Logf("error listing pods in %s: %v", node.Name(), err)
+				return false
+			}
+			if len(pods.Items) == 0 {
+				t.Logf("no pods for StatefulSet %s in %s", sts.Name, node.Name())
+				return false
+			}
+
+			pod := &pods.Items[0]
+			// PortForwardedRESTConfig starts a local TCP proxy so that SPDY-based
+			// exec can reach the vCluster API server (the regular RESTConfig uses
+			// a custom Dial that SPDY doesn't honor).
+			pfCfg, err := node.PortForwardedRESTConfig(ctx)
+			if err != nil {
+				t.Logf("error creating port-forwarded config for %s: %v", node.Name(), err)
+				return false
+			}
+			ctl, err := kube.FromRESTConfig(pfCfg)
+			if err != nil {
+				t.Logf("error creating kube ctl for %s: %v", node.Name(), err)
+				return false
+			}
+
+			// Run the specified command
+			var healthOut bytes.Buffer
+			if err := ctl.Exec(ctx, pod, kube.ExecOptions{
+				Container: "redpanda",
+				Command:   []string{"/bin/bash", "-c", command},
+				Stdout:    &healthOut,
+			}); err != nil {
+				t.Logf("error executing %q in %s: %v", command, node.Name(), err)
+				return false
+			}
+
+			output := healthOut.String()
+			nodeCount := parseNodeCountFromHealthOutput(output)
+			clusterUID := parseClusterUIDFromHealthOutput(output)
+
+			t.Logf("cluster %s: uid=%s, nodes=%d", node.Name(), clusterUID, nodeCount)
+
+			if clusterUID == "" || nodeCount == 0 {
+				t.Logf("incomplete results from %s, retrying", node.Name())
+				return false
+			}
+
+			results = append(results, rpkExecResult{
+				clusterName: node.Name(),
+				clusterUID:  clusterUID,
+				nodeCount:   nodeCount,
+			})
+		}
+		return true
+	}, 10*time.Minute, 10*time.Second, "failed to execute %q in all clusters", command)
+
+	return context.WithValue(ctx, rpkResultsKey{}, results)
+}
+
+func expectSameClusterUIDAndNodeCount(ctx context.Context, t framework.TestingT, expectedNodeCount int32) {
+	results := ctx.Value(rpkResultsKey{}).([]rpkExecResult)
+	require.NotEmpty(t, results, "no execution results found")
+
+	for _, result := range results {
+		require.Equal(t, int(expectedNodeCount), result.nodeCount,
+			"node count mismatch in cluster %s", result.clusterName)
+	}
+
+	for i := 1; i < len(results); i++ {
+		require.Equal(t, results[0].clusterUID, results[i].clusterUID,
+			"cluster UID mismatch between %s (%s) and %s (%s)",
+			results[0].clusterName, results[0].clusterUID,
+			results[i].clusterName, results[i].clusterUID)
+	}
+
+	t.Logf("all %d clusters report the same UID %s with %d nodes",
+		len(results), results[0].clusterUID, expectedNodeCount)
+}
+
+// parseNodeCountFromHealthOutput parses the "All nodes" line from rpk cluster health output.
+// Example: "All nodes:             [0 1 2]" → 3
+var allNodesRe = regexp.MustCompile(`All nodes:\s*\[([^\]]*)\]`)
+
+func parseNodeCountFromHealthOutput(output string) int {
+	matches := allNodesRe.FindStringSubmatch(output)
+	if len(matches) < 2 {
+		return 0
+	}
+	nodeList := strings.TrimSpace(matches[1])
+	if nodeList == "" {
+		return 0
+	}
+	return len(strings.Fields(nodeList))
+}
+
+// parseClusterUIDFromHealthOutput parses the cluster ID from rpk cluster health output.
+// Example line: "Cluster ID:           abc-123-def"
+var clusterIDRe = regexp.MustCompile(`(?m)Cluster UUID:\s+(\S+)`)
+
+func parseClusterUIDFromHealthOutput(output string) string {
+	matches := clusterIDRe.FindStringSubmatch(output)
+	if len(matches) < 2 {
+		return ""
+	}
+	return matches[1]
 }

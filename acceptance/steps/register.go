@@ -107,6 +107,9 @@ func init() {
 	framework.RegisterStep(`^I apply a multicluster Kubernetes manifest to "([^"]*)":$`, iApplyKuberneteMulticlusterManifest)
 	framework.RegisterStep(`^in "([^"]*)" the Kubernetes object "([^"]*)" in namespace "([^"]*)" of type "([^"]*)" should have finalizer "([^"]*)"$`, checkMulticlusterFinalizers)
 	framework.RegisterStep(`^I apply a NodePool Kubernetes manifest to "([^"]*)":$`, applyNodePoolWithStretchCluster)
+	framework.RegisterStep(`^I expect (\d+) statefulsets in (\d+) kubernetes cluster to be created and eventually ready$`, expectStatefulsetsReady)
+	framework.RegisterStep(`^I execute "([^"]*)" command in the statefulset container in each cluster$`, executeCommandInStatefulsetContainers)
+	framework.RegisterStep(`^I expect them to return the same Redpanda cluster UID and the node count equal to (\d+)$`, expectSameClusterUIDAndNodeCount)
 
 	// Scaling scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)

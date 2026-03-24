@@ -68,7 +68,7 @@ func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rp
 }
 
 func AdminClientForStretch(dialer DialContextFunc, hosts []string) (*rpadmin.AdminAPI, error) {
-	// TODO: fix this
+	// TODO: fix this once we implement distributing the bootstrap admin
 	//if params.AdminAuthParams.Username != "" {
 	//	auth = &rpadmin.BasicAuth{
 	//		Username: params.AdminAuthParams.Username,
@@ -115,6 +115,13 @@ func AdminClientConnectionInfo(state *redpanda.RenderState, dialer DialContextFu
 	var err error
 
 	params := &AdminConnectionParams{}
+
+	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
+		params.TLSConfig, err = state.TLSConfig(state.Values.Listeners.Admin.TLS)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	username, password, _, err := authFromState(state)
 	if err != nil {

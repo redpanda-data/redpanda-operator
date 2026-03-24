@@ -32,3 +32,6 @@ Feature: Multicluster Operator
         repository: localhost/redpanda-operator
         tag: dev
     """
+    And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
+    When I execute "rpk cluster health" command in the statefulset container in each cluster
+    And I expect them to return the same Redpanda cluster UID and the node count equal to 3
