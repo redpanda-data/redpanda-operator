@@ -891,6 +891,21 @@ ConnectSpec defines the desired state of a Redpanda Connect pipeline.
 This follows the standard Redpanda Connect configuration schema with +
 input, pipeline, and output sections. + |  | Required: \{} +
 
+| *`displayName`* __string__ | DisplayName is a human-readable name for the pipeline. +
+Maps to the pipeline display name when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`description`* __string__ | Description is an optional description of what this pipeline does. +
+Maps to the pipeline description when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`tags`* __object (keys:string, values:string)__ | Tags are key-value pairs for organizing and filtering pipelines. +
+Maps to pipeline tags when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`configFiles`* __object (keys:string, values:string)__ | ConfigFiles defines additional configuration files to mount alongside +
+the main pipeline configuration. Each entry maps a filename to its content. +
+Files are mounted in the /config directory alongside connect.yaml. +
+The key "connect.yaml" is reserved and cannot be used. +
+Maps to pipeline config files when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
 | *`replicas`* __integer__ | Replicas is the number of pipeline replicas to run. + | 1 | Minimum: 0 +
 Optional: \{} +
 
