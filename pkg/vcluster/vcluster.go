@@ -46,7 +46,7 @@ const (
 	// vClusterChartVersion is the pinned version of the vCluster helm chart. It's
 	// pinned to avoid sudden failures if there are backwards incompatible changes
 	// added.
-	vClusterChartVersion    = "v0.28.0"
+	vClusterChartVersion    = "v0.31.2"
 	certManagerChartversion = "v1.17.2"
 )
 
