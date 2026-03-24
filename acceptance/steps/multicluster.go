@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -177,9 +179,33 @@ func applyNodePoolWithStretchCluster(ctx context.Context, t framework.TestingT, 
 }
 
 func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clusterName, name, namespace, groupVersionKind, finalizer string) {
-	getNodes(ctx, clusterName).CheckAll(ctx, types.NamespacedName{Namespace: namespace, Name: name}, groupVersionKind, func(o client.Object) bool {
+	nn := types.NamespacedName{Namespace: namespace, Name: name}
+
+	getNodes(ctx, clusterName).CheckAll(ctx, nn, groupVersionKind, func(o client.Object) bool {
 		return slices.Contains(o.GetFinalizers(), finalizer)
 	})
+
+	// After the finalizer is set, the reconciler should have also set SpecSynced=True.
+	nodes := getNodes(ctx, clusterName)
+	for _, node := range nodes {
+		require.Eventually(t, func() bool {
+			var sc redpandav1alpha2.StretchCluster
+			if err := node.Get(ctx, nn, &sc); err != nil {
+				t.Logf("error fetching StretchCluster from %s: %v", node.Name(), err)
+				return false
+			}
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			if cond == nil {
+				t.Logf("SpecSynced condition not yet present on %s", node.Name())
+				return false
+			}
+			if cond.Status != metav1.ConditionTrue {
+				t.Logf("SpecSynced=%s on %s: %s", cond.Status, node.Name(), cond.Message)
+				return false
+			}
+			return true
+		}, 1*time.Minute, 1*time.Second, "SpecSynced=True condition never appeared on %s", node.Name())
+	}
 }
 
 func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {

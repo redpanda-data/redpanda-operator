@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -23,6 +24,8 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.opentelemetry.io/otel/attribute"
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -126,6 +129,12 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		return ctrl.Result{}, nil
 	}
 
+	// Check that .spec is consistent across all clusters before proceeding.
+	// If there's drift, block reconciliation until the user fixes it.
+	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, cluster, stretchCluster); drifted || driftErr != nil {
+		return driftResult, driftErr
+	}
+
 	state, err := r.fetchInitialState(ctx, stretchCluster)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -189,6 +198,85 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// we're at the end of reconciliation, so sync back our status
 	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
+}
+
+// checkSpecConsistency fetches the StretchCluster from every known cluster and
+// verifies that .Spec is identical. If drift is detected it sets SpecSynced=False,
+// persists the status, and returns drifted=true so the caller can abort reconciliation.
+// When specs are aligned it sets SpecSynced=True.
+func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, cl cluster.Cluster, sc *redpandav1alpha2.StretchCluster) (drifted bool, _ ctrl.Result, _ error) {
+	l := log.FromContext(ctx).WithName("checkSpecConsistency")
+
+	localSpec := sc.Spec
+	var driftDetails []string
+
+	for _, clusterName := range r.Manager.GetClusterNames() {
+		remote, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			return false, ctrl.Result{}, errors.Wrapf(err, "fetching cluster %q for spec consistency check", clusterName)
+		}
+
+		remoteSC := &redpandav1alpha2.StretchCluster{}
+		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
+			return false, ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %q", clusterName)
+		}
+
+		if !apiequality.Semantic.DeepEqual(localSpec, remoteSC.Spec) {
+			fields := specDiffFields(localSpec, remoteSC.Spec)
+			driftDetails = append(driftDetails, fmt.Sprintf("%s (fields: %s)", clusterName, strings.Join(fields, ", ")))
+		}
+	}
+
+	if len(driftDetails) == 0 {
+		apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
+			Type:               redpandav1alpha2.ConditionTypeSpecSynced,
+			Status:             metav1.ConditionTrue,
+			ObservedGeneration: sc.Generation,
+			Reason:             "Synced",
+			Message:            "Spec is consistent across all clusters",
+		})
+		return false, ctrl.Result{}, nil
+	}
+
+	msg := fmt.Sprintf("StretchCluster .spec differs on clusters: %s — reconciliation is blocked until specs are aligned", strings.Join(driftDetails, "; "))
+	l.Info(msg)
+
+	apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
+		Type:               redpandav1alpha2.ConditionTypeSpecSynced,
+		Status:             metav1.ConditionFalse,
+		ObservedGeneration: sc.Generation,
+		Reason:             "DriftDetected",
+		Message:            msg,
+	})
+
+	// Persist the condition.
+	if err := cl.GetClient().Status().Update(ctx, sc); err != nil {
+		return true, ctrl.Result{}, err
+	}
+
+	return true, ctrl.Result{RequeueAfter: requeueTimeout}, nil
+}
+
+// specDiffFields returns the top-level JSON field names of StretchClusterSpec
+// that differ between a and b.
+func specDiffFields(a, b redpandav1alpha2.StretchClusterSpec) []string {
+	av := reflect.ValueOf(a)
+	bv := reflect.ValueOf(b)
+	t := av.Type()
+
+	var fields []string
+	for i := range t.NumField() {
+		if !apiequality.Semantic.DeepEqual(av.Field(i).Interface(), bv.Field(i).Interface()) {
+			name := t.Field(i).Name
+			if tag, ok := t.Field(i).Tag.Lookup("json"); ok {
+				if jsonName, _, _ := strings.Cut(tag, ","); jsonName != "" {
+					name = jsonName
+				}
+			}
+			fields = append(fields, name)
+		}
+	}
+	return fields
 }
 
 func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*stretchClusterReconciliationState, error) {
