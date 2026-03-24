@@ -41,7 +41,7 @@ func TestCRDS(t *testing.T) {
 
 	require.Equal(t, names, foundNames)
 
-	require.Equal(t, "connects.cluster.redpanda.com", crds.Connect().Name)
+	require.Equal(t, "connects.cluster.redpanda.com", crds.Pipeline().Name)
 	require.Equal(t, "consoles.cluster.redpanda.com", crds.Console().Name)
 	require.Equal(t, "groups.cluster.redpanda.com", crds.Group().Name)
 	require.Equal(t, "nodepools.cluster.redpanda.com", crds.NodePool().Name)

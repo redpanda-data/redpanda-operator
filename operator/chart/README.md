@@ -122,7 +122,7 @@ Sets the port for the webhook server to listen on.
 
 **Default:** `9443`
 
-### [connectController](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController)
+### [pipelineController](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=pipelineController)
 
 Enables the Redpanda Connect controller for managing Connect pipeline CRs. Pipelines still require an enterprise license with the CONNECT product on each CR.
 

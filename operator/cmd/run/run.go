@@ -37,7 +37,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	connectcontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/connect"
+	pipelinecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/pipeline"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
@@ -451,8 +451,8 @@ func Run(
 
 		// Connect Reconciler (enterprise feature, gated by license on each CR or operator-level license).
 		if opts.enableConnectController {
-			if err := (&connectcontroller.Controller{Client: mgr.GetClient(), LicenseFilePath: opts.licenseFilePath}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
-				setupLog.Error(err, "unable to create controller", "controller", "Connect")
+			if err := (&pipelinecontroller.Controller{Client: mgr.GetClient(), LicenseFilePath: opts.licenseFilePath}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
 				return err
 			}
 		}

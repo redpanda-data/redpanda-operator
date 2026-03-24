@@ -13,7 +13,7 @@
 
 
 .Resource Types
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect[$$Connect$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Connect$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-group[$$Group$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
@@ -618,7 +618,7 @@ ClusterSource defines how to connect to a particular Redpanda cluster.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$ConnectSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$PipelineSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
@@ -841,7 +841,7 @@ the dynamic configuration, while its "synonym" will be the default. + |  |
 
 
 
-Connect defines a Redpanda Connect pipeline managed by the operator.
+Pipeline defines a Redpanda Pipeline pipeline managed by the operator.
 
 
 
@@ -865,29 +865,29 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$ConnectSpec$$]__ | Spec defines the desired state of the Connect pipeline. + |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectstatus[$$ConnectStatus$$]__ | Status represents the current observed state of the Connect pipeline. + |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec[$$PipelineSpec$$]__ | Spec defines the desired state of the Pipeline pipeline. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectstatus[$$PipelineStatus$$]__ | Status represents the current observed state of the Pipeline pipeline. + |  | 
 |===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectspec"]
-==== ConnectSpec
+==== PipelineSpec
 
 
 
-ConnectSpec defines the desired state of a Redpanda Connect pipeline.
+PipelineSpec defines the desired state of a Redpanda Pipeline pipeline.
 
 
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect[$$Connect$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Connect$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`configYaml`* __string__ | ConfigYAML is the Redpanda Connect pipeline configuration in YAML format. +
+| *`configYaml`* __string__ | ConfigYAML is the Redpanda Pipeline pipeline configuration in YAML format. +
 This follows the standard Redpanda Connect configuration schema with +
 input, pipeline, and output sections. + |  | Required: \{} +
 
@@ -939,25 +939,25 @@ The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connectstatus"]
-==== ConnectStatus
+==== PipelineStatus
 
 
 
-ConnectStatus defines the observed state of a Connect resource.
+PipelineStatus defines the observed state of a Pipeline resource.
 
 
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-connect[$$Connect$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Connect$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Connect resource. + |  | Optional: \{} +
+| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Pipeline resource. + |  | Optional: \{} +
 
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Connect resource. + |  | Optional: \{} +
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Pipeline resource. + |  | Optional: \{} +
 
 | *`phase`* __string__ | Phase describes the current phase of the pipeline lifecycle. + |  | Optional: \{} +
 

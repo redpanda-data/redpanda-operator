@@ -4,16 +4,16 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: connects.cluster.redpanda.com
+  name: pipelines.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
   names:
-    kind: Connect
-    listKind: ConnectList
-    plural: connects
+    kind: Pipeline
+    listKind: PipelineList
+    plural: pipelines
     shortNames:
     - rpcn
-    singular: connect
+    singular: pipeline
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -2603,6 +2603,26 @@ spec:
                       More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                     type: object
                 type: object
+              secretRef:
+                description: |-
+                  SecretRef is a list of Kubernetes Secrets to expose as environment variables
+                  in the pipeline container. All key-value pairs in each referenced Secret are
+                  injected as environment variables, allowing the pipeline configuration to
+                  reference them using Redpanda Connect's ${!env:VAR_NAME} or ${VAR_NAME}
+                  interpolation syntax.
+                items:
+                  description: LocalObjectReference contains enough information to let
+                    you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               tags:
                 additionalProperties:
                   type: string

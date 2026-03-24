@@ -1,2 +1,2 @@
 kind: Added
-body: Add Connect CRD and controller for managing Redpanda Connect pipelines via the operator, gated by enterprise license validation.
+body: Add Pipeline CRD and controller for managing Redpanda Connect pipelines via the operator, gated by enterprise license validation.

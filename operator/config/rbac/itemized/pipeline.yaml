@@ -2,12 +2,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: connect
+  name: pipeline
 rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - connects
+  - pipelines
   verbs:
   - get
   - list

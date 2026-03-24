@@ -2,7 +2,7 @@ project: operator
 kind: Changed
 body: |
   The Redpanda Connect controller can now be enabled via the operator Helm chart
-  by setting `connectController.enabled: true`. The controller is disabled by default.
+  by setting `pipelineController.enabled: true`. The controller is disabled by default.
   The enterprise license is configured at the operator level via
   `enterprise.licenseSecretRef` in the Helm chart values.
 
@@ -10,7 +10,7 @@ body: |
 
   ```
   helm install redpanda-operator redpanda/operator \
-    --set connectController.enabled=true \
+    --set pipelineController.enabled=true \
     --set enterprise.licenseSecretRef.name=redpanda-license \
     --set enterprise.licenseSecretRef.key=license
   ```

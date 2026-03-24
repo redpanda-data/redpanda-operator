@@ -8,7 +8,7 @@
 // by the Apache License, Version 2.0
 
 // Package connect implements the controller for the Connect CRD.
-package connect
+package pipeline
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	FinalizerKey = "connect.redpanda.com/finalizer"
+	FinalizerKey = "pipeline.redpanda.com/finalizer"
 
 	// Default resource requests for Connect pods.
 	defaultMemoryRequest = "256Mi"
@@ -48,16 +48,16 @@ type Controller struct {
 	LicenseFilePath string
 }
 
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=connects,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=connects/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=connects/finalizers,verbs=update
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Connect{}).
+		For(&redpandav1alpha2.Pipeline{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.ConfigMap{})
 
@@ -67,7 +67,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx).WithName("connect")
 
-	var connect redpandav1alpha2.Connect
+	var connect redpandav1alpha2.Pipeline
 	if err := c.Get(ctx, req.NamespacedName, &connect); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -129,7 +129,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
-func (c *Controller) validateLicense(_ context.Context, _ *redpandav1alpha2.Connect) error {
+func (c *Controller) validateLicense(_ context.Context, _ *redpandav1alpha2.Pipeline) error {
 	if c.LicenseFilePath == "" {
 		return errors.New("no license configured: set enterprise.licenseSecretRef in the operator Helm chart values")
 	}
@@ -154,7 +154,7 @@ func (c *Controller) validateLicense(_ context.Context, _ *redpandav1alpha2.Conn
 	return nil
 }
 
-func (c *Controller) reconcileConfigMap(ctx context.Context, connect *redpandav1alpha2.Connect) error {
+func (c *Controller) reconcileConfigMap(ctx context.Context, connect *redpandav1alpha2.Pipeline) error {
 	name := connect.Name
 	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: connect.Namespace}}
 
@@ -173,7 +173,7 @@ func (c *Controller) reconcileConfigMap(ctx context.Context, connect *redpandav1
 	return err
 }
 
-func (c *Controller) reconcileDeployment(ctx context.Context, connect *redpandav1alpha2.Connect) error {
+func (c *Controller) reconcileDeployment(ctx context.Context, connect *redpandav1alpha2.Pipeline) error {
 	name := connect.Name
 	replicas := connect.GetReplicas()
 	image := connect.GetImage()
@@ -224,6 +224,7 @@ func (c *Controller) reconcileDeployment(ctx context.Context, connect *redpandav
 							{Name: "http", ContainerPort: 4195, Protocol: corev1.ProtocolTCP},
 						},
 						Env:       connect.Spec.Env,
+						EnvFrom:   buildEnvFrom(connect),
 						Resources: resources,
 						VolumeMounts: []corev1.VolumeMount{
 							{
@@ -258,11 +259,29 @@ func (c *Controller) reconcileDeployment(ctx context.Context, connect *redpandav
 	return err
 }
 
+// buildEnvFrom constructs EnvFromSource entries for each referenced Secret,
+// injecting all key-value pairs as environment variables into the container.
+func buildEnvFrom(pipeline *redpandav1alpha2.Pipeline) []corev1.EnvFromSource {
+	if len(pipeline.Spec.SecretRef) == 0 {
+		return nil
+	}
+
+	envFrom := make([]corev1.EnvFromSource, 0, len(pipeline.Spec.SecretRef))
+	for _, ref := range pipeline.Spec.SecretRef {
+		envFrom = append(envFrom, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: ref,
+			},
+		})
+	}
+	return envFrom
+}
+
 const zoneTopologyKey = "topology.kubernetes.io/zone"
 
 // buildAffinity constructs a node affinity that restricts pods to the specified
 // zones. Returns nil if no zones are configured.
-func buildAffinity(connect *redpandav1alpha2.Connect) *corev1.Affinity {
+func buildAffinity(connect *redpandav1alpha2.Pipeline) *corev1.Affinity {
 	if len(connect.Spec.Zones) == 0 {
 		return nil
 	}
@@ -290,7 +309,7 @@ func buildAffinity(connect *redpandav1alpha2.Connect) *corev1.Affinity {
 // the pipeline. If zones are configured and no explicit constraints are
 // provided, a default constraint is generated to spread pods evenly across
 // the specified zones.
-func buildTopologySpreadConstraints(connect *redpandav1alpha2.Connect, selectorLabels map[string]string) []corev1.TopologySpreadConstraint {
+func buildTopologySpreadConstraints(connect *redpandav1alpha2.Pipeline, selectorLabels map[string]string) []corev1.TopologySpreadConstraint {
 	// Explicit constraints take precedence.
 	if len(connect.Spec.TopologySpreadConstraints) > 0 {
 		return connect.Spec.TopologySpreadConstraints
@@ -313,7 +332,7 @@ func buildTopologySpreadConstraints(connect *redpandav1alpha2.Connect, selectorL
 	return nil
 }
 
-func (c *Controller) updateStatus(ctx context.Context, connect *redpandav1alpha2.Connect) error {
+func (c *Controller) updateStatus(ctx context.Context, connect *redpandav1alpha2.Pipeline) error {
 	name := connect.Name
 
 	var dp appsv1.Deployment
@@ -350,7 +369,7 @@ func (c *Controller) updateStatus(ctx context.Context, connect *redpandav1alpha2
 	return c.Status().Update(ctx, connect)
 }
 
-func (c *Controller) setCondition(connect *redpandav1alpha2.Connect, status metav1.ConditionStatus, reason, message string) {
+func (c *Controller) setCondition(connect *redpandav1alpha2.Pipeline, status metav1.ConditionStatus, reason, message string) {
 	condition := metav1.Condition{
 		Type:               redpandav1alpha2.ReadyCondition,
 		Status:             status,

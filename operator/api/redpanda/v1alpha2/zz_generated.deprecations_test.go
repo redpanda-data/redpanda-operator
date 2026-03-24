@@ -44,9 +44,9 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 		wantWarnings []string
 	}{
 		{
-			name: "Connect",
+			name: "Pipeline",
 			obj: &Connect{
-				Spec: ConnectSpec{
+				Spec: PipelineSpec{
 					ClusterSource: ptr.To(ClusterSource{
 						StaticConfiguration: ptr.To(StaticConfigurationSource{
 							Admin: ptr.To(AdminAPISpec{

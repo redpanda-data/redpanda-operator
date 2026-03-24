@@ -48,7 +48,7 @@ type PartialValues struct {
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
-	ConnectController     *PartialConnectController     "json:\"connectController,omitempty\""
+	PipelineController     *PartialPipelineController     "json:\"pipelineController,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
 }
 
@@ -96,7 +96,7 @@ type PartialVectorizedControllers struct {
 	Enabled *bool "json:\"enabled,omitempty\""
 }
 
-type PartialConnectController struct {
+type PartialPipelineController struct {
 	Enabled *bool "json:\"enabled,omitempty\""
 }
 

@@ -18,12 +18,12 @@ import (
 )
 
 const (
-	// ConnectDefaultImage is the default Redpanda Connect container image.
-	ConnectDefaultImage = "docker.redpanda.com/redpandadata/connect:4.84.1"
+	// PipelineDefaultImage is the default Redpanda Connect container image.
+	PipelineDefaultImage = "docker.redpanda.com/redpandadata/connect:4.84.1"
 )
 
-// ConnectSpec defines the desired state of a Redpanda Connect pipeline.
-type ConnectSpec struct {
+// PipelineSpec defines the desired state of a Redpanda Connect pipeline.
+type PipelineSpec struct {
 	// ConfigYAML is the Redpanda Connect pipeline configuration in YAML format.
 	// This follows the standard Redpanda Connect configuration schema with
 	// input, pipeline, and output sections.
@@ -75,6 +75,20 @@ type ConnectSpec struct {
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
+	// SecretRef is a list of Kubernetes Secrets to expose as environment variables
+	// in the pipeline container. All key-value pairs in each referenced Secret are
+	// injected as environment variables, allowing the pipeline configuration to
+	// reference them using Redpanda Connect's ${!env:VAR_NAME} or ${VAR_NAME}
+	// interpolation syntax.
+	//
+	// For example, if a Secret "my-creds" contains key "KAFKA_PASSWORD", the pipeline
+	// configYaml can reference it as:
+	//   password: ${KAFKA_PASSWORD}
+	//
+	// See: https://docs.redpanda.com/redpanda-connect/configuration/secrets/
+	// +optional
+	SecretRef []corev1.LocalObjectReference `json:"secretRef,omitempty"`
+
 	// Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
@@ -104,8 +118,8 @@ type ConnectSpec struct {
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
 }
 
-// ConnectStatus defines the observed state of a Connect resource.
-type ConnectStatus struct {
+// PipelineStatus defines the observed state of a Connect resource.
+type PipelineStatus struct {
 	// ObservedGeneration is the last observed generation of the Connect resource.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -130,52 +144,52 @@ type ConnectStatus struct {
 // Connect defines a Redpanda Connect pipeline managed by the operator.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=connects,shortName=rpcn
+// +kubebuilder:resource:path=pipelines,shortName=rpcn
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Replicas",type="integer",JSONPath=".spec.replicas"
 // +kubebuilder:printcolumn:name="Available",type="integer",JSONPath=".status.readyReplicas"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:storageversion
-type Connect struct {
+type Pipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the desired state of the Connect pipeline.
-	Spec ConnectSpec `json:"spec,omitempty"`
+	Spec PipelineSpec `json:"spec,omitempty"`
 
 	// Status represents the current observed state of the Connect pipeline.
-	Status ConnectStatus `json:"status,omitempty"`
+	Status PipelineStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// ConnectList contains a list of Connect resources.
-type ConnectList struct {
+// PipelineList contains a list of Connect resources.
+type PipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Connect `json:"items"`
+	Items           []Pipeline `json:"items"`
 }
 
-func (c *ConnectList) GetItems() []*Connect {
+func (c *PipelineList) GetItems() []*Pipeline {
 	return functional.MapFn(ptr.To, c.Items)
 }
 
 // GetClusterSource returns the cluster source reference if set.
-func (c *Connect) GetClusterSource() *ClusterSource {
+func (c *Pipeline) GetClusterSource() *ClusterSource {
 	return c.Spec.ClusterSource
 }
 
 // GetImage returns the configured image or the default.
-func (c *Connect) GetImage() string {
+func (c *Pipeline) GetImage() string {
 	if c.Spec.Image != nil && *c.Spec.Image != "" {
 		return *c.Spec.Image
 	}
-	return ConnectDefaultImage
+	return PipelineDefaultImage
 }
 
 // GetReplicas returns the effective replica count, respecting the paused state.
-func (c *Connect) GetReplicas() int32 {
+func (c *Pipeline) GetReplicas() int32 {
 	if c.Spec.Paused {
 		return 0
 	}

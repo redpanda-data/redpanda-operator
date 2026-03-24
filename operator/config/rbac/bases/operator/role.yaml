@@ -146,7 +146,7 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
-  - connects
+  - pipelines
   - groups
   - redpandaroles
   - schemas

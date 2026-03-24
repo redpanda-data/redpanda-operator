@@ -171,7 +171,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled) "--enable-connect" (printf "%t" $values.connectController.enabled)) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled) "--enable-connect" (printf "%t" $values.pipelineController.enabled)) -}}
 {{- if (and (ne (toJson $values.enterprise.licenseSecretRef) "null") (not (empty $values.enterprise.licenseSecretRef.name))) -}}
 {{- if (ne $values.enterprise.licenseSecretRef.key "") -}}
 {{- $_ := (set $defaults "--license-file-path" (printf "%s/%s" "/redpanda/license" $values.enterprise.licenseSecretRef.key)) -}}

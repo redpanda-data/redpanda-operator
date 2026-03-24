@@ -74,7 +74,7 @@ type Values struct {
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
-	ConnectController     ConnectController             `json:"connectController"`
+	PipelineController     PipelineController             `json:"pipelineController"`
 	Multicluster          Multicluster                  `json:"multicluster"`
 }
 
@@ -82,7 +82,7 @@ type VectorizedControllers struct {
 	Enabled bool `json:"enabled"`
 }
 
-type ConnectController struct {
+type PipelineController struct {
 	Enabled bool `json:"enabled"`
 }
 
