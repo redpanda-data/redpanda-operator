@@ -917,6 +917,16 @@ Optional: \{} +
 
 | *`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#envvar-v1-core[$$EnvVar$$] array__ | Env specifies additional environment variables for the pipeline container. + |  | Optional: \{} +
 
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes. + |  | Optional: \{} +
+
+| *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector constrains pipeline pods to nodes with matching labels. + |  | Optional: \{} +
+
+| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ | TopologySpreadConstraints controls how pipeline pods are spread across topology domains such as availability zones. + |  | Optional: \{} +
+
+| *`zones`* __string array__ | Zones specifies the availability zones across which pipeline pods should be spread. +
+When set, the controller configures a node affinity to schedule pods only on nodes in these zones and a topology spread constraint to distribute pods evenly across zones. +
+The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
+
 | *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | LicenseSecretRef is a reference to a Secret containing the Redpanda enterprise license. +
 The license is required for Redpanda Connect to operate. +
 The Secret must contain a key (default "license") with the license data. + |  | Required: \{} +

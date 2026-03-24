@@ -262,12 +262,71 @@ func (c *Controller) reconcileDeployment(ctx context.Context, connect *redpandav
 						},
 					},
 				},
+				NodeSelector:              connect.Spec.NodeSelector,
+				Tolerations:               connect.Spec.Tolerations,
+				Affinity:                  buildAffinity(connect),
+				TopologySpreadConstraints: buildTopologySpreadConstraints(connect, labels),
 			},
 		}
 
 		return controllerutil.SetControllerReference(connect, dp, c.Scheme())
 	})
 	return err
+}
+
+const zoneTopologyKey = "topology.kubernetes.io/zone"
+
+// buildAffinity constructs a node affinity that restricts pods to the specified
+// zones. Returns nil if no zones are configured.
+func buildAffinity(connect *redpandav1alpha2.Connect) *corev1.Affinity {
+	if len(connect.Spec.Zones) == 0 {
+		return nil
+	}
+
+	return &corev1.Affinity{
+		NodeAffinity: &corev1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{
+					{
+						MatchExpressions: []corev1.NodeSelectorRequirement{
+							{
+								Key:      zoneTopologyKey,
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   connect.Spec.Zones,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// buildTopologySpreadConstraints returns the topology spread constraints for
+// the pipeline. If zones are configured and no explicit constraints are
+// provided, a default constraint is generated to spread pods evenly across
+// the specified zones.
+func buildTopologySpreadConstraints(connect *redpandav1alpha2.Connect, selectorLabels map[string]string) []corev1.TopologySpreadConstraint {
+	// Explicit constraints take precedence.
+	if len(connect.Spec.TopologySpreadConstraints) > 0 {
+		return connect.Spec.TopologySpreadConstraints
+	}
+
+	// Auto-generate a zone spread constraint when zones are specified.
+	if len(connect.Spec.Zones) > 0 {
+		return []corev1.TopologySpreadConstraint{
+			{
+				MaxSkew:           1,
+				TopologyKey:       zoneTopologyKey,
+				WhenUnsatisfiable: corev1.ScheduleAnyway,
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: selectorLabels,
+				},
+			},
+		}
+	}
+
+	return nil
 }
 
 func (c *Controller) updateStatus(ctx context.Context, connect *redpandav1alpha2.Connect) error {

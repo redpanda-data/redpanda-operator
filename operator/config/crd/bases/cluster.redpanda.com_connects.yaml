@@ -2630,6 +2630,58 @@ spec:
                   Tags are key-value pairs for organizing and filtering pipelines.
                   Maps to pipeline tags when migrating to Redpanda Cloud.
                 type: object
+              tolerations:
+                description: Tolerations for the pipeline pods, allowing them to be
+                  scheduled on tainted nodes.
+                items:
+                  description: The pod this Toleration is attached to tolerates any
+                    taint that matches the triple <key,value,effect> using the matching
+                    operator <operator>.
+                  properties:
+                    effect:
+                      description: Effect indicates the taint effect to match.
+                      type: string
+                    key:
+                      description: Key is the taint key that the toleration applies to.
+                      type: string
+                    operator:
+                      description: Operator represents a key's relationship to the value.
+                      type: string
+                    tolerationSeconds:
+                      description: TolerationSeconds represents the period of time the
+                        toleration tolerates the taint.
+                      format: int64
+                      type: integer
+                    value:
+                      description: Value is the taint value the toleration matches to.
+                      type: string
+                  type: object
+                type: array
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: NodeSelector constrains pipeline pods to nodes with matching
+                  labels.
+                type: object
+              topologySpreadConstraints:
+                description: |-
+                  TopologySpreadConstraints controls how pipeline pods are spread across
+                  topology domains such as availability zones.
+                items:
+                  description: TopologySpreadConstraint specifies how to spread matching
+                    pods among the given topology.
+                  x-kubernetes-preserve-unknown-fields: true
+                type: array
+              zones:
+                description: |-
+                  Zones specifies the availability zones across which pipeline pods should
+                  be spread. When set, the controller configures a node affinity to schedule
+                  pods only on nodes in these zones and a topology spread constraint to
+                  distribute pods evenly across zones.
+                  The zone label used is "topology.kubernetes.io/zone".
+                items:
+                  type: string
+                type: array
             required:
             - configYaml
             - licenseSecretRef

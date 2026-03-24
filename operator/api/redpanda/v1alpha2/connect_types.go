@@ -75,6 +75,30 @@ type ConnectSpec struct {
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
+	// Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// NodeSelector constrains pipeline pods to nodes with matching labels.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// TopologySpreadConstraints controls how pipeline pods are spread across
+	// topology domains such as availability zones. When Zones is specified,
+	// a default topology spread constraint is generated automatically.
+	// Any constraints specified here are used in addition to (or instead of)
+	// the auto-generated zone constraint.
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+
+	// Zones specifies the availability zones across which pipeline pods should
+	// be spread. When set, the controller configures:
+	//   - A node affinity to schedule pods only on nodes in these zones
+	//   - A topology spread constraint to distribute pods evenly across zones
+	// The zone label used is "topology.kubernetes.io/zone".
+	// +optional
+	Zones []string `json:"zones,omitempty"`
+
 	// LicenseSecretRef is a reference to a Secret containing the Redpanda enterprise license.
 	// The license is required for Redpanda Connect to operate.
 	// The Secret must contain a key (default "license") with the license data.
