@@ -118,6 +118,7 @@ type RunOptions struct {
 	cloudSecretsEnabled                 bool
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
+	licenseFilePath                     string
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
@@ -139,6 +140,8 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
 	cmd.Flags().StringVar(&o.metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	cmd.Flags().BoolVar(&o.webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
+
+	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file")
 
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", true, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
@@ -446,9 +449,9 @@ func Run(
 			}
 		}
 
-		// Connect Reconciler (enterprise feature, gated by license on each CR).
+		// Connect Reconciler (enterprise feature, gated by license on each CR or operator-level license).
 		if opts.enableConnectController {
-			if err := (&connectcontroller.Controller{Client: mgr.GetClient()}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+			if err := (&connectcontroller.Controller{Client: mgr.GetClient(), LicenseFilePath: opts.licenseFilePath}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Connect")
 				return err
 			}

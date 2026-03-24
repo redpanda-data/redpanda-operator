@@ -933,9 +933,10 @@ be spread. When set, the controller configures: +
 - A topology spread constraint to distribute pods evenly across zones +
 The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
 
-| *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | LicenseSecretRef is a reference to a Secret containing the Redpanda enterprise license. +
+| *`licenseSecretRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | LicenseSecretRef is an optional reference to a Secret containing the Redpanda enterprise license. +
 The license is required for Redpanda Connect to operate. +
-The Secret must contain a key (default "license") with the license data. + |  | Required: \{} +
+The Secret must contain a key (default "license") with the license data. +
+If not set, the operator-level license (configured via enterprise.licenseSecretRef in the operator Helm chart values) will be used. + |  | Optional: \{} +
 
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the Redpanda cluster this pipeline connects to. + |  | Optional: \{} +
 

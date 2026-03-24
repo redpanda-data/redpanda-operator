@@ -2529,9 +2529,11 @@ spec:
                 type: string
               licenseSecretRef:
                 description: |-
-                  LicenseSecretRef is a reference to a Secret containing the Redpanda enterprise license.
+                  LicenseSecretRef is an optional reference to a Secret containing the Redpanda enterprise license.
                   The license is required for Redpanda Connect to operate.
                   The Secret must contain a key (default "license") with the license data.
+                  If not set, the operator-level license (configured via enterprise.licenseSecretRef in the
+                  operator Helm chart values) will be used.
                 properties:
                   key:
                     description: The key of the secret to select from.  Must be a
@@ -2868,7 +2870,6 @@ spec:
                 type: array
             required:
             - configYaml
-            - licenseSecretRef
             type: object
           status:
             description: Status represents the current observed state of the Connect
