@@ -144,7 +144,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file")
 
 	// Controller flags.
-	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", true, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
+	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
 	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")

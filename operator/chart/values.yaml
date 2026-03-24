@@ -152,7 +152,7 @@ vectorizedControllers:
 # -- Enables the Redpanda Connect controller for managing Connect pipeline CRs.
 # Pipelines still require an enterprise license with the CONNECT product on each CR.
 connectController:
-  enabled: true
+  enabled: false
 
 # -- Configuration for monitoring.
 monitoring:

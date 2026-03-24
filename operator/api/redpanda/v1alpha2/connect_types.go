@@ -99,14 +99,6 @@ type ConnectSpec struct {
 	// +optional
 	Zones []string `json:"zones,omitempty"`
 
-	// LicenseSecretRef is an optional reference to a Secret containing the Redpanda enterprise license.
-	// The license is required for Redpanda Connect to operate.
-	// The Secret must contain a key (default "license") with the license data.
-	// If not set, the operator-level license (configured via enterprise.licenseSecretRef in the
-	// operator Helm chart values) will be used.
-	// +optional
-	LicenseSecretRef *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
-
 	// ClusterSource is a reference to the Redpanda cluster this pipeline connects to.
 	// +optional
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`

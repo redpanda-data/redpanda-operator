@@ -668,6 +668,15 @@
       },
       "type": "object"
     },
+    "connectController": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "crds": {
       "additionalProperties": false,
       "properties": {
@@ -675,15 +684,6 @@
           "type": "boolean"
         },
         "experimental": {
-          "type": "boolean"
-        }
-      },
-      "type": "object"
-    },
-    "connectController": {
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
           "type": "boolean"
         }
       },

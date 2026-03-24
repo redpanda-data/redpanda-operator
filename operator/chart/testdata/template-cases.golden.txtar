@@ -729,7 +729,7 @@ spec:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-image-pull-policy=IfNotPresent
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -2054,7 +2054,7 @@ spec:
       - args:
         - --configurator-base-image=82
         - --configurator-tag=UkFHNyv
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -3425,7 +3425,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -4927,7 +4927,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -6576,7 +6576,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -7916,7 +7916,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -9386,7 +9386,7 @@ spec:
       - args:
         - --configurator-base-image=Fd0
         - --configurator-tag=cOgp6ac
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -10946,7 +10946,7 @@ spec:
       - args:
         - --configurator-base-image=1F5
         - --configurator-tag=82lZfTf2
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -12297,7 +12297,7 @@ spec:
       - args:
         - --configurator-base-image=Hol
         - --configurator-tag=8ePENyCLz
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -13649,7 +13649,7 @@ spec:
       - args:
         - --configurator-base-image=j
         - --configurator-tag=efh5i
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -14865,7 +14865,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -16240,7 +16240,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -17815,7 +17815,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -19227,7 +19227,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -20566,7 +20566,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -21930,7 +21930,7 @@ spec:
       - args:
         - --configurator-base-image=YVfoVe
         - --configurator-tag=wqmCFiuJSq
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -22709,7 +22709,7 @@ spec:
       - args:
         - --configurator-base-image=5ZJUE
         - --configurator-tag=25V2E90p
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -23690,7 +23690,7 @@ spec:
       - args:
         - --configurator-base-image=hchsZ8
         - --configurator-tag=9lUTX
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -25274,7 +25274,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -26782,7 +26782,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -27709,7 +27709,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -28792,7 +28792,7 @@ spec:
       - args:
         - --configurator-base-image=T1Xvq
         - --configurator-tag=JedSySWkwU
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -30396,7 +30396,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -32077,7 +32077,7 @@ spec:
       - args:
         - --configurator-base-image=cWng
         - --configurator-tag=afUH16iMvi
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -33554,7 +33554,7 @@ spec:
       - args:
         - --configurator-base-image=8ta
         - --configurator-tag=N5m1k
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -34722,7 +34722,7 @@ spec:
       - args:
         - --configurator-base-image=OLVAhRBe
         - --configurator-tag=iR9tH
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -35572,7 +35572,7 @@ spec:
       - args:
         - --configurator-base-image=Jy
         - --configurator-tag=QK8rajxXu7
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -36687,7 +36687,7 @@ spec:
       - args:
         - --configurator-base-image
         - --configurator-tag=yLRNE5
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -37776,7 +37776,7 @@ spec:
       - args:
         - --configurator-base-image=O
         - --configurator-tag=F0pU
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -39337,7 +39337,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -40861,7 +40861,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -42090,7 +42090,7 @@ spec:
       - args:
         - --configurator-base-image=h6rx
         - --configurator-tag=yXNMX
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -43464,7 +43464,7 @@ spec:
       - args:
         - --configurator-base-image
         - --configurator-tag=vO
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -44968,7 +44968,7 @@ spec:
       - args:
         - --configurator-base-image=HJ
         - --configurator-tag=0ORIQruw
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -46881,7 +46881,7 @@ spec:
       - args:
         - --configurator-base-image=JoEOn0Quud0uJ
         - --configurator-tag=Jzj6fJDqK
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -48068,7 +48068,7 @@ spec:
       - args:
         - --configurator-base-image=bR
         - --configurator-tag=TxCthY7Ie
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -48699,7 +48699,7 @@ spec:
       - args:
         - --configurator-base-image
         - --configurator-tag=9dFbDt
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -50314,7 +50314,7 @@ spec:
       - args:
         - --configurator-base-image=HOES5h7c
         - --configurator-tag=blks9
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -51890,7 +51890,7 @@ spec:
       - args:
         - --configurator-base-image=cbG
         - --configurator-tag=0q7KunZ1RCP
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -53111,7 +53111,7 @@ spec:
       - args:
         - --configurator-base-image=RF7Jmqe27
         - --configurator-tag=bC
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -54318,7 +54318,7 @@ spec:
       - args:
         - --configurator-base-image=UqP
         - --configurator-tag=XrgP
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -55140,7 +55140,7 @@ spec:
       - args:
         - --configurator-base-image=0HXtC
         - --configurator-tag=xSn6
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -56687,7 +56687,7 @@ spec:
       - args:
         - --configurator-base-image=95JHcsXy
         - --configurator-tag=YVZ
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -58788,7 +58788,7 @@ spec:
       - args:
         - --configurator-base-image=gkRs29P
         - --configurator-tag=kgK
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -60066,7 +60066,7 @@ spec:
       - args:
         - --configurator-base-image=UG
         - --configurator-tag=zsECOIlUnlWTDC
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -61213,7 +61213,7 @@ spec:
       - args:
         - --configurator-base-image=929tqf
         - --configurator-tag=VZB
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -62349,7 +62349,7 @@ spec:
       - args:
         - --configurator-base-image=FlBYj
         - --configurator-tag=fS
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -63725,7 +63725,7 @@ spec:
       - args:
         - --configurator-base-image=Iedc3BYXQ
         - --configurator-tag=UoBs
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -65693,7 +65693,7 @@ spec:
       - args:
         - --configurator-base-image=zg2YXP
         - --configurator-tag=Cp
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -67892,7 +67892,7 @@ spec:
       - args:
         - --configurator-base-image=mLw
         - --configurator-tag=5QaeLH
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
@@ -69956,7 +69956,7 @@ spec:
       - args:
         - --configurator-base-image=ZuVTlT
         - --configurator-tag=J
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -71699,7 +71699,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -73158,7 +73158,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -74616,7 +74616,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -75940,7 +75940,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -77281,7 +77281,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -78605,7 +78605,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -79929,7 +79929,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -81261,7 +81261,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -84112,7 +84112,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
@@ -85546,7 +85546,7 @@ spec:
       - args:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v25.3.1
-        - --enable-connect=true
+        - --enable-connect=false
         - --enable-console=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081

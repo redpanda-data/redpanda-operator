@@ -962,11 +962,6 @@ func (in *ConnectSpec) DeepCopyInto(out *ConnectSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.LicenseSecretRef != nil {
-		in, out := &in.LicenseSecretRef, &out.LicenseSecretRef
-		*out = new(v1.SecretKeySelector)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.ClusterSource != nil {
 		in, out := &in.ClusterSource, &out.ClusterSource
 		*out = new(ClusterSource)

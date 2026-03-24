@@ -38,16 +38,13 @@ const (
 	// Default resource requests for Connect pods.
 	defaultMemoryRequest = "256Mi"
 	defaultCPURequest    = "100m"
-
-	// Default license key in Secret data.
-	defaultLicenseKey = "license"
 )
 
 // Controller reconciles Connect resources.
 type Controller struct {
 	client.Client
-	// LicenseFilePath is the path to the operator-level enterprise license file.
-	// When set, Connect CRs that do not specify spec.licenseSecretRef will use this license.
+	// LicenseFilePath is the path to the operator-level enterprise license file,
+	// configured via enterprise.licenseSecretRef in the operator Helm chart values.
 	LicenseFilePath string
 }
 
@@ -132,10 +129,14 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
-func (c *Controller) validateLicense(ctx context.Context, connect *redpandav1alpha2.Connect) error {
-	l, err := c.loadLicense(ctx, connect)
+func (c *Controller) validateLicense(_ context.Context, _ *redpandav1alpha2.Connect) error {
+	if c.LicenseFilePath == "" {
+		return errors.New("no license configured: set enterprise.licenseSecretRef in the operator Helm chart values")
+	}
+
+	l, err := license.ReadLicense(c.LicenseFilePath)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read license")
 	}
 
 	if err := license.CheckExpiration(l.Expires()); err != nil {
@@ -151,51 +152,6 @@ func (c *Controller) validateLicense(ctx context.Context, connect *redpandav1alp
 	}
 
 	return nil
-}
-
-// loadLicense returns the license for this Connect CR. It first checks
-// spec.licenseSecretRef on the CR, then falls back to the operator-level
-// license file (configured via enterprise.licenseSecretRef in the operator
-// Helm chart values).
-func (c *Controller) loadLicense(ctx context.Context, connect *redpandav1alpha2.Connect) (license.RedpandaLicense, error) {
-	// If the CR specifies a license secret, use it.
-	if connect.Spec.LicenseSecretRef != nil {
-		ref := connect.Spec.LicenseSecretRef
-		key := ref.Key
-		if key == "" {
-			key = defaultLicenseKey
-		}
-
-		var secret corev1.Secret
-		if err := c.Get(ctx, types.NamespacedName{
-			Name:      ref.Name,
-			Namespace: connect.Namespace,
-		}, &secret); err != nil {
-			return nil, errors.Wrap(err, "failed to get license secret")
-		}
-
-		data, ok := secret.Data[key]
-		if !ok {
-			return nil, errors.Newf("key %q not found in Secret %s/%s", key, connect.Namespace, ref.Name)
-		}
-
-		l, err := license.ParseLicense(data)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse license")
-		}
-		return l, nil
-	}
-
-	// Fall back to the operator-level license file.
-	if c.LicenseFilePath != "" {
-		l, err := license.ReadLicense(c.LicenseFilePath)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read operator-level license")
-		}
-		return l, nil
-	}
-
-	return nil, errors.New("no license configured: set spec.licenseSecretRef on the Connect CR or configure enterprise.licenseSecretRef in the operator Helm chart values")
 }
 
 func (c *Controller) reconcileConfigMap(ctx context.Context, connect *redpandav1alpha2.Connect) error {

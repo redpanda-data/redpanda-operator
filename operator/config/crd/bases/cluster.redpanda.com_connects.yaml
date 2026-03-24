@@ -2527,34 +2527,6 @@ spec:
                 description: Image is the container image for the Redpanda Connect
                   deployment.
                 type: string
-              licenseSecretRef:
-                description: |-
-                  LicenseSecretRef is an optional reference to a Secret containing the Redpanda enterprise license.
-                  The license is required for Redpanda Connect to operate.
-                  The Secret must contain a key (default "license") with the license data.
-                  If not set, the operator-level license (configured via enterprise.licenseSecretRef in the
-                  operator Helm chart values) will be used.
-                properties:
-                  key:
-                    description: The key of the secret to select from.  Must be a
-                      valid secret key.
-                    type: string
-                  name:
-                    default: ""
-                    description: |-
-                      Name of the referent.
-                      This field is effectively required, but due to backwards compatibility is
-                      allowed to be empty. Instances of this type with an empty value here are
-                      almost certainly wrong.
-                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    type: string
-                  optional:
-                    description: Specify whether the Secret or its key must be defined
-                    type: boolean
-                required:
-                - key
-                type: object
-                x-kubernetes-map-type: atomic
               nodeSelector:
                 additionalProperties:
                   type: string
