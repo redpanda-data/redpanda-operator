@@ -126,7 +126,7 @@ Sets the port for the webhook server to listen on.
 
 Enables the Redpanda Connect controller for managing Connect pipeline CRs. Pipelines still require an enterprise license with the CONNECT product on each CR.
 
-**Default:** `{"enabled":true}`
+**Default:** `{"enabled":false}`
 
 ### [crds](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds)
 
