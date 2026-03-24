@@ -4,7 +4,7 @@
 Feature: Operator upgrade regressions
   @skip:gke @skip:aks @skip:eks
   Scenario: Regression - field managers
-    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
+    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.2.2 with values:
     """
     crds:
       enabled: true

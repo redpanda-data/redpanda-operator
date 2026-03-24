@@ -1,8 +1,8 @@
 @operator:none @vcluster
 Feature: Upgrading the operator
   @skip:gke @skip:aks @skip:eks
-  Scenario: Operator upgrade from 25.1.3
-    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
+  Scenario: Operator upgrade from 25.2.2
+    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.2.2 with values:
     """
     crds:
       enabled: true
