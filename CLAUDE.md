@@ -105,6 +105,29 @@ Update the `K3S_IMAGE` default in `flake.nix` devshell env to the maximum suppor
 { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.XX.x)"; }
 ```
 
+#### 9. vcluster version (`pkg/vcluster/vcluster.go` + `Taskfile.yml`)
+vcluster is used by acceptance and integration tests to create isolated K8s environments. The vcluster version must support the host K8s version.
+- `pkg/vcluster/vcluster.go`: `vClusterChartVersion` constant
+- `Taskfile.yml`: `DEFAULT_TEST_VCLUSTER_VERSION`
+- Integration test files: `ghcr.io/loft-sh/vcluster-pro:<version>` image refs in `factory_test.go`, `redpanda_controller_test.go`, `broker_test.go`
+
+Known compatibility: v0.28.0 fails on K8s 1.32+ (vcluster pod never initializes). Use v0.31.2+ for K8s 1.32.
+
+#### 10. cert-manager version in vcluster (`pkg/vcluster/vcluster.go` + `Taskfile.yml`)
+cert-manager is deployed inside vclusters for webhook TLS certificates. The version must support the K8s version running inside the vcluster.
+- `pkg/vcluster/vcluster.go`: `certManagerChartversion` constant
+- `Taskfile.yml`: `DEFAULT_SECOND_TEST_CERTMANAGER_VERSION`
+- Integration test files: `quay.io/jetstack/cert-manager-*:<version>` image refs
+
+Known compatibility: v1.8.0 only supports K8s 1.19-1.24. Use v1.17.2+ for K8s 1.32.
+
+#### 11. Acceptance upgrade test versions (`acceptance/features/*.feature` + `acceptance/steps/defaults.go`)
+Upgrade tests install an old operator version, create a cluster, then upgrade to the current dev build. Update:
+- `acceptance/features/operator-upgrades.feature`: `--version v25.X.Y` in helm install
+- `acceptance/features/upgrade-regressions.feature`: `--version v25.X.Y` in helm install (the intermediate upgrade step should use the local dev chart `"../operator/chart"`)
+- `acceptance/features/console-upgrades.feature`: `--version v25.X.Y` in helm install
+- `acceptance/steps/defaults.go`: `DefaultRedpandaRepo` and `DefaultRedpandaTag` for the Redpanda image used in clusters
+
 ## Proto Conflict
 
 The operator module has a known protobuf namespace conflict between `buf.build/gen/go/grpc-ecosystem/grpc-gateway` and `github.com/grpc-ecosystem/grpc-gateway/v2`. This causes a panic at test runtime.
