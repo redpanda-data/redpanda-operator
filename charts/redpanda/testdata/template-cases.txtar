@@ -365,7 +365,7 @@ statefulset:
 # ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "{.partition_autobalancing_node_autodecommission_time}", "1800"]
 
 image:
-  tag: v26.1.0
+  tag: v26.1.1
 
 -- no-autodecommission-pre-26-1 --
 # Redpanda < 26.1 should NOT set the auto-decommission timeout.
@@ -379,7 +379,7 @@ image:
 # ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "{.partition_autobalancing_node_autodecommission_time}", "3600"]
 
 image:
-  tag: v26.1.0
+  tag: v26.1.1
 
 config:
   cluster:

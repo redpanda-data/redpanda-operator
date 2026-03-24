@@ -82,7 +82,7 @@
 {{- $_114___ok_3 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.cluster "partition_autobalancing_node_autodecommission_time" (coalesce nil))))) "r") -}}
 {{- $_ := (index $_114___ok_3 0) -}}
 {{- $ok_3 := (index $_114___ok_3 1) -}}
-{{- if (and (not $ok_3) (get (fromJson (include "redpanda.RedpandaAtLeast_26_1_0" (dict "a" (list $state)))) "r")) -}}
+{{- if (and (not $ok_3) (get (fromJson (include "redpanda.RedpandaAtLeast_26_1_1" (dict "a" (list $state)))) "r")) -}}
 {{- $_ := (set $bootstrap "partition_autobalancing_node_autodecommission_time" (1800 | int)) -}}
 {{- end -}}
 {{- $template := (dict) -}}

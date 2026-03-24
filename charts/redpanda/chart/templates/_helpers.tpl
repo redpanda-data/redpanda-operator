@@ -158,8 +158,8 @@ Use AppVersion if image.tag is not set
 {{- define "redpanda-atleast-23-3-0" -}}
 {{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_3_0" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
-{{- define "redpanda-atleast-26-1-0" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_26_1_0" (dict "a" (list .))) | fromJson) "r")) }}
+{{- define "redpanda-atleast-26-1-1" -}}
+{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_26_1_1" (dict "a" (list .))) | fromJson) "r")) }}
 {{- end -}}
 
 {{- define "redpanda-22-2-x-without-sasl" -}}

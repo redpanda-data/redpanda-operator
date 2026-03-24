@@ -110,7 +110,7 @@ func BootstrapContents(state *RenderState, pool Pool) (map[string]string, []clus
 	// partition_autobalancing_node_autodecommission_time. Enable by default
 	// with a 30 minute timeout (only effective when partition_autobalancing_mode
 	// is set to "continuous").
-	if _, ok := state.Values.Config.Cluster["partition_autobalancing_node_autodecommission_time"]; !ok && RedpandaAtLeast_26_1_0(state) {
+	if _, ok := state.Values.Config.Cluster["partition_autobalancing_node_autodecommission_time"]; !ok && RedpandaAtLeast_26_1_1(state) {
 		bootstrap["partition_autobalancing_node_autodecommission_time"] = 1800
 	}
 
