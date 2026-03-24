@@ -106,6 +106,14 @@ func BootstrapContents(state *RenderState, pool Pool) (map[string]string, []clus
 		bootstrap["storage_min_free_bytes"] = state.Values.Storage.StorageMinFreeBytes()
 	}
 
+	// Redpanda 26.1+ supports built-in ghost node auto-decommissioning via
+	// partition_autobalancing_node_autodecommission_time. Enable by default
+	// with a 30 minute timeout (only effective when partition_autobalancing_mode
+	// is set to "continuous").
+	if _, ok := state.Values.Config.Cluster["partition_autobalancing_node_autodecommission_time"]; !ok && RedpandaAtLeast_26_1_0(state) {
+		bootstrap["partition_autobalancing_node_autodecommission_time"] = 1800
+	}
+
 	template := map[string]string{}
 	for k, v := range bootstrap {
 		template[k] = helmette.ToJSON(v)

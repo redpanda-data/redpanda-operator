@@ -79,6 +79,12 @@
 {{- if (not $ok_2) -}}
 {{- $_ := (set $bootstrap "storage_min_free_bytes" ((get (fromJson (include "redpanda.Storage.StorageMinFreeBytes" (dict "a" (list $state.Values.storage)))) "r") | int64)) -}}
 {{- end -}}
+{{- $_114___ok_3 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.cluster "partition_autobalancing_node_autodecommission_time" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_114___ok_3 0) -}}
+{{- $ok_3 := (index $_114___ok_3 1) -}}
+{{- if (and (not $ok_3) (get (fromJson (include "redpanda.RedpandaAtLeast_26_1_0" (dict "a" (list $state)))) "r")) -}}
+{{- $_ := (set $bootstrap "partition_autobalancing_node_autodecommission_time" (1800 | int)) -}}
+{{- end -}}
 {{- $template := (dict) -}}
 {{- range $k, $v := $bootstrap -}}
 {{- $_ := (set $template $k (toJson $v)) -}}

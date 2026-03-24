@@ -360,6 +360,31 @@ statefulset:
 statefulset:
   replicas: 1
 
+-- implicit-autodecommission-26-1 --
+# Redpanda 26.1+ should enable auto-decommission with 1800s default timeout.
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "{.partition_autobalancing_node_autodecommission_time}", "1800"]
+
+image:
+  tag: v26.1.0
+
+-- no-autodecommission-pre-26-1 --
+# Redpanda < 26.1 should NOT set the auto-decommission timeout.
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "\"partition_autobalancing_node_autodecommission_time\""]
+
+image:
+  tag: v25.3.1
+
+-- explicit-autodecommission-override --
+# User can override the auto-decommission timeout on 26.1+.
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "{.partition_autobalancing_node_autodecommission_time}", "3600"]
+
+image:
+  tag: v26.1.0
+
+config:
+  cluster:
+    partition_autobalancing_node_autodecommission_time: 3600
+
 -- service-account-token-automount-false --
 # Assert that all instances of .automountServiceAccountToken are false by default.
 # ASSERT-NO-ERROR

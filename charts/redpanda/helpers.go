@@ -39,6 +39,8 @@ const (
 	redpanda_23_2_1 = ">=23.2.1-0 || <0.0.1-0"
 	//nolint:stylecheck
 	redpanda_23_3_0 = ">=23.3.0-0 || <0.0.1-0"
+	//nolint:stylecheck
+	redpanda_26_1_0 = ">=26.1.0-0 || <0.0.1-0"
 )
 
 // Create chart name and version as used by the chart label.
@@ -267,6 +269,11 @@ func RedpandaAtLeast_23_2_1(state *RenderState) bool {
 //nolint:stylecheck
 func RedpandaAtLeast_23_3_0(state *RenderState) bool {
 	return redpandaAtLeast(state, redpanda_23_3_0)
+}
+
+//nolint:stylecheck
+func RedpandaAtLeast_26_1_0(state *RenderState) bool {
+	return redpandaAtLeast(state, redpanda_26_1_0)
 }
 
 func redpandaAtLeast(state *RenderState, constraint string) bool {
