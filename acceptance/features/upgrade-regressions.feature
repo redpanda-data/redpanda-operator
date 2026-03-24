@@ -39,11 +39,8 @@ Feature: Operator upgrade regressions
     """
     *kube.Ctl
     """
-    Then I helm upgrade "redpanda-operator" "../operator/chart" with values:
+    Then I helm upgrade "redpanda-operator" "redpanda/operator" --version v25.3.1 with values:
     """
-    image:
-      tag: dev
-      repository: localhost/redpanda-operator
     crds:
       enabled: true
     """
