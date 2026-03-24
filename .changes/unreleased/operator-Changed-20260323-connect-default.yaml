@@ -1,0 +1,15 @@
+project: operator
+kind: Changed
+body: |
+  The Redpanda Connect controller is now enabled by default. Previously, the operator
+  had to be started with `--enable-connect` to activate the Connect controller. It is
+  now enabled out of the box and can be disabled via the operator Helm chart by setting
+  `connectController.enabled: false`. Note that individual Connect pipeline CRs still
+  require a valid enterprise license with the CONNECT product.
+
+  To disable the Connect controller upon upgrade:
+
+  ```
+  helm upgrade redpanda-operator redpanda/operator --set connectController.enabled=false
+  ```
+time: 2026-03-23T15:00:00.000000-04:00
