@@ -3855,6 +3855,7 @@ ShadowLinkStatus defines the observed state of any node pools tied to this clust
 | *`state`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-taskstate[$$TaskState$$]__ | State of the task + |  | 
 | *`reason`* __string__ | Reason for task being in state + |  | 
 | *`brokerId`* __integer__ | The broker the task is running on + |  | 
+| *`shard`* __integer__ | The shard the task is running on + |  | 
 |===
 
 

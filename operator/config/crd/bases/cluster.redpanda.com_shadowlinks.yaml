@@ -4985,6 +4985,10 @@ spec:
                     reason:
                       description: Reason for task being in state
                       type: string
+                    shard:
+                      description: The shard the task is running on
+                      format: int32
+                      type: integer
                     state:
                       description: State of the task
                       type: string

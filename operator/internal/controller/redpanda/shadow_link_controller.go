@@ -15,7 +15,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -107,7 +109,7 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *
 	factory := internalclient.NewFactory(config, c, expander)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.ShadowLink{})
+		For(&redpandav1alpha2.ShadowLink{}, builder.WithPredicates(predicate.GenerationChangedPredicate{}))
 
 	if includeV1 {
 		enqueueV1ShadowLink, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
@@ -139,7 +141,7 @@ func ShadowLinkTaskStatusesToConfigs(existing, updated []redpandav1alpha2.Shadow
 
 	findStatus := func(status redpandav1alpha2.ShadowLinkTaskStatus) *redpandav1alpha2.ShadowLinkTaskStatus {
 		for _, o := range existing {
-			if o.Name == status.Name {
+			if o.Name == status.Name && o.BrokerID == status.BrokerID && o.Shard == status.Shard {
 				return &o
 			}
 		}
@@ -163,11 +165,6 @@ func ShadowLinkTaskStatusesToConfigs(existing, updated []redpandav1alpha2.Shadow
 			continue
 		}
 
-		if existingTask.BrokerID != task.BrokerID {
-			tasks = append(tasks, shadowLinkTaskStatusToConfig(now, task))
-			continue
-		}
-
 		tasks = append(tasks, shadowLinkTaskStatusToConfig(existingTask.LastTransitionTime, *existingTask))
 	}
 
@@ -180,6 +177,7 @@ func shadowLinkTaskStatusToConfig(now metav1.Time, task redpandav1alpha2.ShadowL
 		WithState(task.State).
 		WithReason(task.Reason).
 		WithBrokerID(task.BrokerID).
+		WithShard(task.Shard).
 		WithLastTransitionTime(now)
 }
 
