@@ -345,7 +345,7 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--configurator-tag":              containerTag(dot),
 		"--configurator-base-image":       values.Image.Repository,
 		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
-		"--enable-connect":                fmt.Sprintf("%t", values.PipelineController.Enabled),
+		"--enable-connect":                fmt.Sprintf("%t", values.ConnectController.Enabled),
 	}
 
 	addLicenseFilePathArg(defaults, values)

@@ -668,7 +668,7 @@
       },
       "type": "object"
     },
-    "pipelineController": {
+    "connectController": {
       "additionalProperties": false,
       "properties": {
         "enabled": {
