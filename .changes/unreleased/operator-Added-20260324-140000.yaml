@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Enable Redpanda 26.1's built-in ghost node auto-decommissioning by default. When managing Redpanda >= 26.1.1 clusters, the operator sets `partition_autobalancing_node_autodecommission_time` to 1800 seconds (30 minutes). This can be overridden or disabled via `spec.clusterSpec.config.cluster.partition_autobalancing_node_autodecommission_time` in the Redpanda CRD.
+time: 2026-03-24T14:00:00.000000-04:00

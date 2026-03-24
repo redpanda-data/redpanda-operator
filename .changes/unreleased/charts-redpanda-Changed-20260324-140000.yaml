@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: For Redpanda >= 26.1.1 clusters, ghost node ejection is now handled natively by Redpanda's partition balancer rather than the operator. Unavailable nodes are automatically decommissioned after 30 minutes by default when `partition_autobalancing_mode` is set to `continuous`. Set `partition_autobalancing_node_autodecommission_time` to `0` in `config.cluster` to disable this behavior.
+time: 2026-03-24T14:00:01.000000-04:00
