@@ -164,10 +164,11 @@ type PartialStorage struct {
 }
 
 type PartialPostInstallJob struct {
-	Enabled     *bool               "json:\"enabled,omitempty\""
-	Labels      map[string]string   "json:\"labels,omitempty\""
-	Annotations map[string]string   "json:\"annotations,omitempty\""
-	PodTemplate *PartialPodTemplate "json:\"podTemplate,omitempty\""
+	Enabled                    *bool               "json:\"enabled,omitempty\""
+	Labels                     map[string]string   "json:\"labels,omitempty\""
+	Annotations                map[string]string   "json:\"annotations,omitempty\""
+	PodTemplate                *PartialPodTemplate "json:\"podTemplate,omitempty\""
+	ExcludeFromServiceSelector *bool               "json:\"excludeFromServiceSelector,omitempty\""
 }
 
 type PartialStatefulset struct {
