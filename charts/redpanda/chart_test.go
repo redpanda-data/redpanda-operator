@@ -124,7 +124,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("set-datadir-ownership", func(t *testing.T) {
 		env := h.Namespaced(t)
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		// If the install succeeds, then the init container has worked as
 		// expected.
@@ -156,7 +157,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("rbac", func(t *testing.T) {
 		env := h.Namespaced(t)
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		release := env.Install(ctx, redpandaChart, helm.InstallOptions{
 			// Default + RackAwareness
@@ -222,7 +224,8 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("mtls-using-cert-manager", func(t *testing.T) {
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		env := h.Namespaced(t)
 
@@ -250,7 +253,8 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("mtls-using-self-created-certificates", func(t *testing.T) {
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		env := h.Namespaced(t)
 
@@ -317,7 +321,8 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("admin api auth required", func(t *testing.T) {
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		env := h.Namespaced(t)
 
@@ -365,7 +370,8 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("admin api auth required - pre-existing secret", func(t *testing.T) {
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		env := h.Namespaced(t)
 
@@ -421,7 +427,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("sidecar", func(t *testing.T) {
 		env := h.Namespaced(t)
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		release := env.Install(ctx, redpandaChart, helm.InstallOptions{
 			Values: minimalValues(&redpanda.PartialValues{
@@ -463,7 +470,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("console-integration", func(t *testing.T) {
 		env := h.Namespaced(t)
-		ctx := testutil.Context(t)
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		release := env.Install(ctx, redpandaChart, helm.InstallOptions{
 			Values: minimalValues(&redpanda.PartialValues{
