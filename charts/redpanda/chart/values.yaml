@@ -548,6 +548,12 @@ storage:
 
 post_install_job:
   enabled: true
+  # -- When true, sets the job pod's app.kubernetes.io/name label to
+  # "<name>-configuration" so it does not match the Redpanda Service selector.
+  # This prevents completed job pods from appearing as stale Service endpoints.
+  # Set to true if you experience intermittent client connection failures after
+  # install/upgrade due to stale endpoints from the configuration job pod.
+  excludeFromServiceSelector: false
   # Resource requests and limits for the post-install batch job
   # resources:
   #   requests:

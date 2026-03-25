@@ -10814,6 +10814,9 @@
         "enabled": {
           "type": "boolean"
         },
+        "excludeFromServiceSelector": {
+          "type": "boolean"
+        },
         "labels": {
           "additionalProperties": {
             "type": "string"
