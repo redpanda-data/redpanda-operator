@@ -153,10 +153,6 @@ func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1al
 			},
 		},
 		VolumeMounts: volMounts,
-		SecurityContext: &corev1.SecurityContext{
-			RunAsNonRoot:             ptr.To(true),
-			AllowPrivilegeEscalation: ptr.To(false),
-		},
 	}
 }
 

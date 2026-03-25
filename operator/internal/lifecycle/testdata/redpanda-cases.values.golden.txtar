@@ -148,8 +148,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda-unstable
-    tag: v26.1.1-rc1
+    repository: ""
+    tag: ""
   license_key: ""
   listeners:
     admin:
@@ -743,8 +743,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda-unstable
-    tag: v26.1.1-rc1
+    repository: ""
+    tag: ""
   license_key: ""
   listeners:
     admin:
@@ -1114,8 +1114,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda-unstable
-    tag: v26.1.1-rc1
+    repository: ""
+    tag: ""
   license_key: ""
   listeners:
     admin:
@@ -1432,14 +1432,6 @@ pools:
                   app.kubernetes.io/instance: '{{ .Release.Name }}'
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
-        containers:
-        - image: redpandadata/redpanda-unstable:v26.1.1-rc1
-          name: redpanda
-        initContainers:
-        - image: redpandadata/redpanda-unstable:v26.1.1-rc1
-          name: redpanda-configurator
-        - image: redpandadata/redpanda-unstable:v26.1.1-rc1
-          name: tuning
         priorityClassName: ""
         securityContext: {}
         terminationGracePeriodSeconds: 90
@@ -1512,14 +1504,6 @@ pools:
                   app.kubernetes.io/instance: '{{ .Release.Name }}'
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
-        containers:
-        - image: redpandadata/redpanda-unstable:v26.1.1-rc1
-          name: redpanda
-        initContainers:
-        - image: redpandadata/redpanda-unstable:v26.1.1-rc1
-          name: redpanda-configurator
-        - image: redpandadata/redpanda-unstable:v26.1.1-rc1
-          name: tuning
         priorityClassName: ""
         securityContext: {}
         terminationGracePeriodSeconds: 90
@@ -1706,8 +1690,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda-unstable
-    tag: v26.1.1-rc1
+    repository: ""
+    tag: ""
   license_key: ""
   listeners:
     admin:
