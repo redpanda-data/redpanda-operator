@@ -468,6 +468,32 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 	s.deleteAndWait(rp)
 }
 
+func (s *RedpandaControllerSuite) TestAutoDecommissionDefault() {
+	// Verify that Redpanda 26.1+ clusters get partition_autobalancing_node_autodecommission_time
+	// set to 1800 by default via the bootstrap config.
+	rp := s.minimalRP()
+	rp.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
+		Repository: ptr.To("redpandadata/redpanda-unstable"),
+		Tag:        ptr.To("v26.1.1-rc5"),
+	}
+
+	s.applyAndWait(rp)
+
+	adminClient, err := s.clientFactory.RedpandaAdminClient(s.ctx, rp)
+	s.Require().NoError(err)
+	defer adminClient.Close()
+
+	s.EventuallyWithT(func(t *assert.CollectT) {
+		config, err := adminClient.Config(s.ctx, false)
+		if !assert.NoError(t, err) {
+			return
+		}
+		assert.Equal(t, float64(1800), config["partition_autobalancing_node_autodecommission_time"])
+	}, 5*time.Minute, time.Second)
+
+	s.deleteAndWait(rp)
+}
+
 func (s *RedpandaControllerSuite) TestClusterSettingsRegressionSuperusers() {
 	rp := s.minimalRP()
 	rp.Annotations[feature.RestartOnConfigChange.Key] = "true"
@@ -919,6 +945,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 			"coredns/coredns:1.11.1",
 			"redpandadata/redpanda-unstable:v24.3.1-rc8",
 			"redpandadata/redpanda-unstable:v25.3.1-rc2",
+			"redpandadata/redpanda-unstable:v26.1.1-rc5",
 		},
 	})
 
