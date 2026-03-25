@@ -746,6 +746,12 @@ type PostInstallJob struct {
 	Labels      map[string]string `json:"labels"`
 	Annotations map[string]string `json:"annotations"`
 	PodTemplate PodTemplate       `json:"podTemplate"`
+	// ExcludeFromServiceSelector, when true, sets the job pod's
+	// app.kubernetes.io/name label to "<name>-configuration" so it no longer
+	// matches the Redpanda Service selector. This prevents completed job pods
+	// from appearing as stale endpoints. Defaults to false for backward
+	// compatibility.
+	ExcludeFromServiceSelector bool `json:"excludeFromServiceSelector"`
 }
 
 type PodTemplate struct {
