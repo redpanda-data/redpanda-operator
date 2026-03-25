@@ -117,9 +117,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -190,9 +187,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -486,9 +480,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -559,9 +550,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -851,9 +839,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -924,9 +909,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1216,9 +1198,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -1289,9 +1268,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1581,9 +1557,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -1654,9 +1627,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1948,9 +1918,6 @@
             limits:
               cpu: "4"
               memory: 8Gi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -2021,9 +1988,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -2316,9 +2280,6 @@
             requests:
               cpu: "2"
               memory: 4Gi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -2389,9 +2350,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -2681,9 +2639,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -2754,9 +2709,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -3046,9 +2998,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -3117,9 +3066,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -3399,9 +3345,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -3472,9 +3415,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -3764,9 +3704,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -3835,9 +3772,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -4122,9 +4056,6 @@
             limits:
               cpu: "8"
               memory: 16Gi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -4198,9 +4129,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -4536,9 +4464,6 @@
             limits:
               cpu: "8"
               memory: 16Gi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -4612,9 +4537,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -4969,9 +4891,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -5042,9 +4961,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -5373,9 +5289,6 @@
             limits:
               cpu: "2"
               memory: 4Gi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -5446,9 +5359,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -5738,9 +5648,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -5811,9 +5718,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -6103,9 +6007,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -6176,9 +6077,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -6468,9 +6366,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -6541,9 +6436,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -6835,9 +6727,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -6908,9 +6797,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -7201,9 +7087,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -7274,9 +7157,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -7569,9 +7449,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -7645,9 +7522,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -7949,9 +7823,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -8025,9 +7896,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -8329,9 +8197,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -8402,9 +8267,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -8694,9 +8556,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -8767,9 +8626,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -9045,9 +8901,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -9118,9 +8971,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -9411,9 +9261,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -9486,9 +9333,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -9801,9 +9645,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -9876,9 +9717,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -10191,9 +10029,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -10266,9 +10101,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -10593,9 +10425,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -10668,9 +10497,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -10970,9 +10796,6 @@
             limits:
               cpu: "1"
               memory: 2560Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           startupProbe:
             exec:
               command:
@@ -11043,9 +10866,6 @@
             periodSeconds: 10
             successThreshold: 1
           resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
