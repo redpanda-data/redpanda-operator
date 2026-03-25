@@ -469,8 +469,10 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 }
 
 func (s *RedpandaControllerSuite) TestAutoDecommissionDefault() {
-	// Verify that Redpanda 26.1+ clusters get partition_autobalancing_node_autodecommission_time
-	// set to 1800 by default via the bootstrap config.
+	// Verify that Redpanda 26.1+ clusters do NOT set
+	// partition_autobalancing_node_autodecommission_time by default.
+	// Ghost node auto-ejection is opt-in — users must explicitly set
+	// the property (recommended: 86400 seconds / 24 hours).
 	rp := s.minimalRP()
 	rp.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
 		Repository: ptr.To("redpandadata/redpanda-unstable"),
@@ -488,7 +490,9 @@ func (s *RedpandaControllerSuite) TestAutoDecommissionDefault() {
 		if !assert.NoError(t, err) {
 			return
 		}
-		assert.Equal(t, float64(1800), config["partition_autobalancing_node_autodecommission_time"])
+		// The property should not be set by default (Redpanda's own default applies).
+		_, exists := config["partition_autobalancing_node_autodecommission_time"]
+		assert.False(t, exists, "partition_autobalancing_node_autodecommission_time should not be set by default")
 	}, 5*time.Minute, time.Second)
 
 	s.deleteAndWait(rp)

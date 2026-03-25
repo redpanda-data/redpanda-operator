@@ -1,4 +1,4 @@
 project: charts/redpanda
 kind: Added
-body: Enable Redpanda 26.1's built-in ghost node auto-decommissioning by default. When deploying Redpanda >= 26.1.1, the cluster property `partition_autobalancing_node_autodecommission_time` is set to 1800 seconds (30 minutes). This can be overridden or disabled via `config.cluster.partition_autobalancing_node_autodecommission_time` in Helm values.
+body: Support Redpanda 26.1's built-in ghost node auto-decommissioning. For Redpanda >= 26.1.1, users can enable ghost node auto-ejection by setting `config.cluster.partition_autobalancing_node_autodecommission_time` in Helm values. Recommended value is 86400 (24 hours in seconds). This feature is disabled by default.
 time: 2026-03-24T14:00:00.000000-04:00
