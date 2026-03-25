@@ -19,6 +19,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	fuzz "github.com/google/gofuzz"
 	"github.com/redpanda-data/common-go/kube"
@@ -357,7 +358,10 @@ func TestIntegrationChart(t *testing.T) {
 	h := helmtest.Setup(t)
 
 	t.Run("basic test", func(t *testing.T) {
-		ctx := testutil.Context(t)
+		// Use a 10-minute timeout to avoid consuming the entire 60-minute
+		// test budget if the Console pod is slow to start (image pull, etc.).
+		ctx, cancel := context.WithTimeout(testutil.Context(t), 10*time.Minute)
+		defer cancel()
 
 		env := h.Namespaced(t)
 
