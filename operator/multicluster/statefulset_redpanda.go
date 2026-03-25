@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -120,6 +121,10 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Nod
 		},
 		Ports:        ports,
 		VolumeMounts: statefulSetVolumeMounts(state),
+		SecurityContext: &corev1.SecurityContext{
+			RunAsNonRoot:             ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(false),
+		},
 	}
 
 	return container
