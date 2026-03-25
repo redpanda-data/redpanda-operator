@@ -32,6 +32,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
@@ -85,7 +86,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 	}
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true), mcbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 
 	// NB: As of writing, all console types are namespace scoped.
 	for _, t := range console.Types() {
