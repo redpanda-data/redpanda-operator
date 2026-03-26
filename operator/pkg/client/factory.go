@@ -414,7 +414,7 @@ func (c *Factory) SchemaRegistryACLClientForCluster(ctx context.Context, obj red
 }
 
 func isSchemaRegistryNotConfigured(err error) bool {
-	return errors.Is(err, ErrInvalidSchemaRegistryClientObject) || errors.Is(err, ErrEmptyURLList)
+	return errors.Is(err, ErrInvalidSchemaRegistryClientObject) || errors.Is(err, ErrEmptyURLList) || errors.Is(err, NoSchemaRegistryAPI)
 }
 
 func (c *Factory) ACLs(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error) {
