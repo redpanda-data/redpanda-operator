@@ -701,6 +701,15 @@
       },
       "type": "object"
     },
+    "finalizerRemoval": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "fullnameOverride": {
       "type": "string"
     },
