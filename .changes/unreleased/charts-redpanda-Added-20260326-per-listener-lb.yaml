@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Added
+body: Added per-listener LoadBalancer annotations support. When an external listener has `annotations` set, it gets a dedicated LoadBalancer Service per broker instead of sharing the default one. This enables use cases like private and public listeners on separate LBs with different cloud-provider annotations.
+time: 2026-03-26T12:00:00.000000-04:00

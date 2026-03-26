@@ -1674,6 +1674,56 @@ func (l *ListenerConfig[T]) ServicePorts(namePrefix string, external *ExternalCo
 	return ports
 }
 
+// ServicePortsForListener returns the ServicePort for a single named external
+// listener, if it is enabled.
+func (l *ListenerConfig[T]) ServicePortsForListener(namePrefix string, listenerName string, external *ExternalConfig) []corev1.ServicePort {
+	var ports []corev1.ServicePort
+	for name, listener := range helmette.SortedMap(l.External) {
+		if name != listenerName {
+			continue
+		}
+		if !ptr.Deref(listener.Enabled, external.Enabled) {
+			continue
+		}
+
+		fallbackPorts := append(listener.AdvertisedPorts, l.Port)
+
+		ports = append(ports, corev1.ServicePort{
+			Name:        fmt.Sprintf("%s-%s", namePrefix, name),
+			Protocol:    corev1.ProtocolTCP,
+			AppProtocol: l.AppProtocol,
+			TargetPort:  intstr.FromInt32(listener.Port),
+			Port:        ptr.Deref(listener.NodePort, fallbackPorts[0]),
+		})
+	}
+	return ports
+}
+
+// ServicePortsExcludingListeners returns the ServicePorts for all enabled
+// external listeners except those in the exclude set.
+func (l *ListenerConfig[T]) ServicePortsExcludingListeners(namePrefix string, external *ExternalConfig, exclude map[string]bool) []corev1.ServicePort {
+	var ports []corev1.ServicePort
+	for name, listener := range helmette.SortedMap(l.External) {
+		if exclude[name] {
+			continue
+		}
+		if !ptr.Deref(listener.Enabled, external.Enabled) {
+			continue
+		}
+
+		fallbackPorts := append(listener.AdvertisedPorts, l.Port)
+
+		ports = append(ports, corev1.ServicePort{
+			Name:        fmt.Sprintf("%s-%s", namePrefix, name),
+			Protocol:    corev1.ProtocolTCP,
+			AppProtocol: l.AppProtocol,
+			TargetPort:  intstr.FromInt32(listener.Port),
+			Port:        ptr.Deref(listener.NodePort, fallbackPorts[0]),
+		})
+	}
+	return ports
+}
+
 // TrustStores returns a slice of all configured and enabled [TrustStore]s on
 // both internal and external listeners.
 func (l *ListenerConfig[T]) TrustStores(tls *TLS) []*TrustStore {
@@ -1773,6 +1823,18 @@ type ExternalListener[T ~string] struct {
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
+
+	// Annotations, when set, causes this listener to be served by a dedicated
+	// per-broker LoadBalancer Service with these annotations, instead of sharing
+	// the default per-broker LoadBalancer. This enables use cases like having a
+	// private listener on one LB and a public listener on another, each with
+	// different cloud-provider annotations.
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// LoadBalancerSourceRanges, when set, restricts traffic to the dedicated
+	// LoadBalancer for this listener to the specified CIDRs. Only takes effect
+	// when Annotations is also set (i.e., when this listener has a dedicated LB).
+	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
 }
 
 func (l *ExternalListener[T]) AsString() ExternalListener[string] {
@@ -1783,13 +1845,15 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 	}
 
 	return ExternalListener[string]{
-		Enabled:              l.Enabled,
-		AdvertisedPorts:      l.AdvertisedPorts,
-		Port:                 l.Port,
-		NodePort:             l.NodePort,
-		TLS:                  l.TLS,
-		AuthenticationMethod: auth,
-		PrefixTemplate:       l.PrefixTemplate,
+		Enabled:                 l.Enabled,
+		AdvertisedPorts:         l.AdvertisedPorts,
+		Port:                    l.Port,
+		NodePort:                l.NodePort,
+		TLS:                     l.TLS,
+		AuthenticationMethod:    auth,
+		PrefixTemplate:          l.PrefixTemplate,
+		Annotations:             l.Annotations,
+		LoadBalancerSourceRanges: l.LoadBalancerSourceRanges,
 	}
 }
 

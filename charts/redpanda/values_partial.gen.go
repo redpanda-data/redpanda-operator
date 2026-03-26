@@ -404,13 +404,15 @@ type PartialSASLUser struct {
 }
 
 type PartialExternalListener[T ~string] struct {
-	Enabled              *bool               "json:\"enabled,omitempty\""
-	AdvertisedPorts      []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port                 *int32              "json:\"port,omitempty\" jsonschema:\"required\""
-	NodePort             *int32              "json:\"nodePort,omitempty\""
-	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
-	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""
-	PrefixTemplate       *string             "json:\"prefixTemplate,omitempty\""
+	Enabled                  *bool               "json:\"enabled,omitempty\""
+	AdvertisedPorts          []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
+	Port                     *int32              "json:\"port,omitempty\" jsonschema:\"required\""
+	NodePort                 *int32              "json:\"nodePort,omitempty\""
+	TLS                      *PartialExternalTLS "json:\"tls,omitempty\""
+	AuthenticationMethod     *T                  "json:\"authenticationMethod,omitempty\""
+	PrefixTemplate           *string             "json:\"prefixTemplate,omitempty\""
+	Annotations              map[string]string   "json:\"annotations,omitempty\""
+	LoadBalancerSourceRanges []string            "json:\"loadBalancerSourceRanges,omitempty\""
 }
 
 type PartialTrustStore struct {
