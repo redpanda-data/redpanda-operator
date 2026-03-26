@@ -24,6 +24,7 @@ type ShadowLinkTaskStatusApplyConfiguration struct {
 	State              *redpandav1alpha2.TaskState `json:"state,omitempty"`
 	Reason             *string                     `json:"reason,omitempty"`
 	BrokerID           *int32                      `json:"brokerId,omitempty"`
+	Shard              *int32                      `json:"shard,omitempty"`
 }
 
 // ShadowLinkTaskStatusApplyConfiguration constructs a declarative configuration of the ShadowLinkTaskStatus type for use with
@@ -69,5 +70,13 @@ func (b *ShadowLinkTaskStatusApplyConfiguration) WithReason(value string) *Shado
 // If called multiple times, the BrokerID field is set to the value of the last call.
 func (b *ShadowLinkTaskStatusApplyConfiguration) WithBrokerID(value int32) *ShadowLinkTaskStatusApplyConfiguration {
 	b.BrokerID = &value
+	return b
+}
+
+// WithShard sets the Shard field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Shard field is set to the value of the last call.
+func (b *ShadowLinkTaskStatusApplyConfiguration) WithShard(value int32) *ShadowLinkTaskStatusApplyConfiguration {
+	b.Shard = &value
 	return b
 }

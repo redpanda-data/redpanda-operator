@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Added
+body: Added support for enabling TLS on external listeners independently of the internal listener's TLS state. External sub-listener TLS certificates are now correctly mounted even when the internal listener has TLS disabled.
+time: 2026-03-20T16:30:00.000000-07:00
