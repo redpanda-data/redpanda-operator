@@ -973,6 +973,15 @@ type ExternalListener struct {
 	// Specifies the network port that the external Service listens on.
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
 	NodePort        *int32  `json:"nodePort,omitempty"`
+
+	// Annotations, when set, causes this listener to be served by a dedicated
+	// per-broker LoadBalancer Service with these annotations, instead of sharing
+	// the default per-broker LoadBalancer.
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// LoadBalancerSourceRanges restricts traffic to the dedicated LoadBalancer
+	// for this listener. Only takes effect when Annotations is also set.
+	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
 }
 
 // Admin configures settings for the Admin API listeners.
