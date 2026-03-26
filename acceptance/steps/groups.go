@@ -30,6 +30,8 @@ func groupIsSuccessfullySynced(ctx context.Context, t framework.TestingT, group 
 
 	waitForSyncedCondition(ctx, t, &groupObject, func() []metav1.Condition {
 		return groupObject.Status.Conditions
+	}, func() int64 {
+		return groupObject.Status.ObservedGeneration
 	})
 
 	t.Cleanup(func(ctx context.Context) {
