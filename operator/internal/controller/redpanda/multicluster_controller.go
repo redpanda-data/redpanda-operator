@@ -50,6 +50,16 @@ const (
 	bootstrapUserSecretSuffix = "-bootstrap-user"
 	bootstrapUserPasswordKey  = "password"
 	defaultBootstrapUsername  = "kubernetes-controller"
+
+	// ConditionTypeBootstrapUserSynced is a standalone condition (not part of the
+	// generated Quiesced/Stable rollup) that tracks the state of bootstrap user
+	// secret distribution across k8s clusters.
+	ConditionTypeBootstrapUserSynced = "BootstrapUserSynced"
+
+	// Reasons for ConditionTypeBootstrapUserSynced.
+	ConditionReasonSynced          = "Synced"
+	ConditionReasonExistingReused  = "ExistingReused"
+	ConditionReasonPasswordMismatch = "PasswordMismatch"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch;update;patch
@@ -372,9 +382,10 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 	sc := state.cluster.StretchCluster
 	clusterNames := r.Manager.GetClusterNames()
 
-	// Phase 1: scan all clusters for an existing bootstrap user secret to
-	// discover the canonical password.
+	// Phase 1: scan all clusters for existing bootstrap user secrets.
+	// If multiple secrets exist, verify they all have the same password.
 	var canonicalPassword string
+	var canonicalCluster string
 	for _, clusterName := range clusterNames {
 		cl, err := r.Manager.GetCluster(ctx, clusterName)
 		if err != nil {
@@ -388,15 +399,34 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			Name:      secretName,
 		}, &existing); err == nil {
 			if pw, ok := existing.Data[bootstrapUserPasswordKey]; ok && len(pw) > 0 {
-				canonicalPassword = string(pw)
-				logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
-				break
+				password := string(pw)
+				if canonicalPassword == "" {
+					canonicalPassword = password
+					canonicalCluster = clusterName
+					logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
+				} else if canonicalPassword != password {
+					msg := fmt.Sprintf(
+						"bootstrap user password mismatch: secret %q in cluster %q differs from secret %q in cluster %q; "+
+							"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
+						bootstrapSecretName(sc, canonicalCluster), canonicalCluster,
+						secretName, clusterName,
+					)
+					apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
+						Type:               ConditionTypeBootstrapUserSynced,
+						Status:             metav1.ConditionFalse,
+						ObservedGeneration: sc.Generation,
+						Reason:             ConditionReasonPasswordMismatch,
+						Message:            msg,
+					})
+					return ctrl.Result{}, errors.New(msg)
+				}
 			}
 		}
 	}
 
 	// Phase 2: if no secret exists anywhere, generate a new password.
-	if canonicalPassword == "" {
+	generated := canonicalPassword == ""
+	if generated {
 		canonicalPassword = helmette.RandAlphaNum(32)
 		logger.V(log.DebugLevel).Info("generated new bootstrap user password")
 	}
@@ -436,6 +466,25 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			return ctrl.Result{}, errors.Wrapf(err, "creating bootstrap user secret in cluster %s", clusterName)
 		}
 		logger.Info("created bootstrap user secret", "cluster", clusterName, "secret", secretName)
+	}
+
+	// Phase 4: set status condition.
+	if generated {
+		apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
+			Type:               ConditionTypeBootstrapUserSynced,
+			Status:             metav1.ConditionTrue,
+			ObservedGeneration: sc.Generation,
+			Reason:             ConditionReasonSynced,
+			Message:            fmt.Sprintf("Bootstrap user secret created and synced across %d cluster(s)", len(clusterNames)),
+		})
+	} else {
+		apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
+			Type:               ConditionTypeBootstrapUserSynced,
+			Status:             metav1.ConditionTrue,
+			ObservedGeneration: sc.Generation,
+			Reason:             ConditionReasonExistingReused,
+			Message:            fmt.Sprintf("Using existing bootstrap user secret from cluster %q", canonicalCluster),
+		})
 	}
 
 	state.bootstrapUser = defaultBootstrapUsername

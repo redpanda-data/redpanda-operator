@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -128,6 +129,13 @@ func TestSyncBootstrapUser_NoExistingSecrets(t *testing.T) {
 		require.NotNil(t, secret.Immutable)
 		require.True(t, *secret.Immutable)
 	}
+
+	// Verify condition was set: Synced (newly generated).
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	require.NotNil(t, cond)
+	require.Equal(t, metav1.ConditionTrue, cond.Status)
+	require.Equal(t, ConditionReasonSynced, cond.Reason)
+	require.Contains(t, cond.Message, "3 cluster(s)")
 }
 
 func TestSyncBootstrapUser_ExistingSecretInOneCluster(t *testing.T) {
@@ -172,6 +180,13 @@ func TestSyncBootstrapUser_ExistingSecretInOneCluster(t *testing.T) {
 	}, &secret)
 	require.NoError(t, err)
 	require.Equal(t, existingPassword, string(secret.Data[bootstrapUserPasswordKey]))
+
+	// Verify condition was set: ExistingReused.
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	require.NotNil(t, cond)
+	require.Equal(t, metav1.ConditionTrue, cond.Status)
+	require.Equal(t, ConditionReasonExistingReused, cond.Reason)
+	require.Contains(t, cond.Message, "cluster-a")
 }
 
 func TestSyncBootstrapUser_AllSecretsExist(t *testing.T) {
@@ -204,6 +219,58 @@ func TestSyncBootstrapUser_AllSecretsExist(t *testing.T) {
 
 	// Verify the existing password was used.
 	require.Equal(t, password, state.bootstrapPassword)
+
+	// Verify condition: ExistingReused (all existed already).
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	require.NotNil(t, cond)
+	require.Equal(t, metav1.ConditionTrue, cond.Status)
+	require.Equal(t, ConditionReasonExistingReused, cond.Reason)
+}
+
+func TestSyncBootstrapUser_PasswordMismatchAcrossClusters(t *testing.T) {
+	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
+
+	clusterNames := []string{"cluster-a", "cluster-b"}
+	sc := testStretchCluster()
+
+	clients := map[string]client.Client{
+		"cluster-a": newFakeClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapSecretName(sc, "cluster-a"),
+				Namespace: sc.Namespace,
+			},
+			Data: map[string][]byte{
+				bootstrapUserPasswordKey: []byte("password-one-aaaaaaaaaaaaaaaaaaa"),
+			},
+			Type: corev1.SecretTypeOpaque,
+		}),
+		"cluster-b": newFakeClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bootstrapSecretName(sc, "cluster-b"),
+				Namespace: sc.Namespace,
+			},
+			Data: map[string][]byte{
+				bootstrapUserPasswordKey: []byte("password-two-bbbbbbbbbbbbbbbbbbb"),
+			},
+			Type: corev1.SecretTypeOpaque,
+		}),
+	}
+	mgr := newMockManager(clusterNames, clients)
+	state := newTestState(sc, clusterNames)
+
+	r := &MulticlusterReconciler{Manager: mgr}
+	_, err := r.syncBootstrapUser(ctx, state, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "password mismatch")
+	require.Contains(t, err.Error(), "cluster-a")
+	require.Contains(t, err.Error(), "cluster-b")
+
+	// Verify condition was set: PasswordMismatch with False status.
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	require.NotNil(t, cond)
+	require.Equal(t, metav1.ConditionFalse, cond.Status)
+	require.Equal(t, ConditionReasonPasswordMismatch, cond.Reason)
+	require.Contains(t, cond.Message, "manual intervention")
 }
 
 func TestSyncBootstrapUser_ClusterUnreachable(t *testing.T) {
