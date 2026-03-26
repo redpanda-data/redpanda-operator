@@ -974,13 +974,17 @@ type ExternalListener struct {
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
 	NodePort        *int32  `json:"nodePort,omitempty"`
 
-	// Annotations, when set, causes this listener to be served by a dedicated
-	// per-broker LoadBalancer Service with these annotations, instead of sharing
-	// the default per-broker LoadBalancer.
+	// Type, when set, causes this listener to be served by a dedicated
+	// per-broker Service of the specified type (e.g., LoadBalancer, NodePort)
+	// instead of sharing the default per-broker Service.
+	Type *corev1.ServiceType `json:"type,omitempty"`
+
+	// Annotations sets annotations on the dedicated Service for this listener.
+	// Only takes effect when Type is set.
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// LoadBalancerSourceRanges restricts traffic to the dedicated LoadBalancer
-	// for this listener. Only takes effect when Annotations is also set.
+	// for this listener. Only takes effect when Type is set to LoadBalancer.
 	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
 }
 

@@ -411,6 +411,7 @@ type PartialExternalListener[T ~string] struct {
 	TLS                      *PartialExternalTLS "json:\"tls,omitempty\""
 	AuthenticationMethod     *T                  "json:\"authenticationMethod,omitempty\""
 	PrefixTemplate           *string             "json:\"prefixTemplate,omitempty\""
+	Type                     *corev1.ServiceType "json:\"type,omitempty\" jsonschema:\"pattern=^(LoadBalancer|NodePort)$\""
 	Annotations              map[string]string   "json:\"annotations,omitempty\""
 	LoadBalancerSourceRanges []string            "json:\"loadBalancerSourceRanges,omitempty\""
 }

@@ -1824,17 +1824,28 @@ type ExternalListener[T ~string] struct {
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
 
-	// Annotations, when set, causes this listener to be served by a dedicated
-	// per-broker LoadBalancer Service with these annotations, instead of sharing
-	// the default per-broker LoadBalancer. This enables use cases like having a
-	// private listener on one LB and a public listener on another, each with
-	// different cloud-provider annotations.
+	// Type, when set, causes this listener to be served by a dedicated
+	// per-broker Service of the specified type (e.g., LoadBalancer, NodePort)
+	// instead of sharing the default per-broker Service. This enables use
+	// cases like having a private listener on an internal LB and a public
+	// listener on an internet-facing LB. When not set, the listener shares
+	// the default per-broker Service created from the global external config.
+	Type *corev1.ServiceType `json:"type,omitempty" jsonschema:"pattern=^(LoadBalancer|NodePort)$"`
+
+	// Annotations sets annotations on the dedicated Service for this listener.
+	// Only takes effect when Type is set.
 	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// LoadBalancerSourceRanges, when set, restricts traffic to the dedicated
-	// LoadBalancer for this listener to the specified CIDRs. Only takes effect
-	// when Annotations is also set (i.e., when this listener has a dedicated LB).
+	// LoadBalancerSourceRanges restricts traffic to the dedicated LoadBalancer
+	// for this listener to the specified CIDRs. Only takes effect when Type is
+	// set to LoadBalancer.
 	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
+}
+
+// HasDedicatedService returns true if this listener should get its own
+// dedicated per-broker Service instead of sharing the default one.
+func (l *ExternalListener[T]) HasDedicatedService() bool {
+	return l.Type != nil
 }
 
 func (l *ExternalListener[T]) AsString() ExternalListener[string] {
@@ -1852,6 +1863,7 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		TLS:                     l.TLS,
 		AuthenticationMethod:    auth,
 		PrefixTemplate:          l.PrefixTemplate,
+		Type:                    l.Type,
 		Annotations:             l.Annotations,
 		LoadBalancerSourceRanges: l.LoadBalancerSourceRanges,
 	}

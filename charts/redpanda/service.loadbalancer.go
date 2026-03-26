@@ -21,28 +21,27 @@ import (
 )
 
 // dedicatedListenerNames returns the set of external listener names that have
-// per-listener annotations configured on any protocol. These listeners will get
-// their own dedicated LoadBalancer Service per broker instead of sharing the
-// default one.
+// a per-listener Type configured on any protocol. These listeners will get
+// their own dedicated Service per broker instead of sharing the default one.
 func dedicatedListenerNames(listeners *Listeners) map[string]bool {
 	dedicated := map[string]bool{}
 	for name, l := range helmette.SortedMap(listeners.Admin.External) {
-		if len(l.Annotations) > 0 {
+		if l.HasDedicatedService() {
 			dedicated[name] = true
 		}
 	}
 	for name, l := range helmette.SortedMap(listeners.Kafka.External) {
-		if len(l.Annotations) > 0 {
+		if l.HasDedicatedService() {
 			dedicated[name] = true
 		}
 	}
 	for name, l := range helmette.SortedMap(listeners.HTTP.External) {
-		if len(l.Annotations) > 0 {
+		if l.HasDedicatedService() {
 			dedicated[name] = true
 		}
 	}
 	for name, l := range helmette.SortedMap(listeners.SchemaRegistry.External) {
-		if len(l.Annotations) > 0 {
+		if l.HasDedicatedService() {
 			dedicated[name] = true
 		}
 	}
@@ -111,6 +110,33 @@ func dedicatedListenerSourceRanges(listeners *Listeners, listenerName string) []
 	return nil
 }
 
+// dedicatedListenerServiceType returns the Service type for a named listener.
+// Uses the first non-nil Type found across protocols.
+func dedicatedListenerServiceType(listeners *Listeners, listenerName string) corev1.ServiceType {
+	for name, l := range helmette.SortedMap(listeners.Kafka.External) {
+		if name == listenerName && l.Type != nil {
+			return *l.Type
+		}
+	}
+	for name, l := range helmette.SortedMap(listeners.Admin.External) {
+		if name == listenerName && l.Type != nil {
+			return *l.Type
+		}
+	}
+	for name, l := range helmette.SortedMap(listeners.HTTP.External) {
+		if name == listenerName && l.Type != nil {
+			return *l.Type
+		}
+	}
+	for name, l := range helmette.SortedMap(listeners.SchemaRegistry.External) {
+		if name == listenerName && l.Type != nil {
+			return *l.Type
+		}
+	}
+	// Fallback to LoadBalancer if somehow we get here.
+	return corev1.ServiceTypeLoadBalancer
+}
+
 func LoadBalancerServices(state *RenderState) []*corev1.Service {
 	// This is technically a divergence from previous behavior but this matches
 	// the NodePort's check and is more reasonable.
@@ -138,7 +164,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 		pods = append(pods, PodNames(state, set)...)
 	}
 
-	// Identify listeners that should get their own dedicated LB Service.
+	// Identify listeners that should get their own dedicated Service.
 	dedicated := dedicatedListenerNames(&state.Values.Listeners)
 
 	for i, podname := range pods {
@@ -175,7 +201,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 
 		podSelector["statefulset.kubernetes.io/pod-name"] = podname
 
-		// Default shared LB: includes all listeners that do NOT have dedicated annotations.
+		// Default shared LB: includes all listeners that do NOT have a dedicated Service type.
 		var ports []corev1.ServicePort
 		ports = append(ports, state.Values.Listeners.Admin.ServicePortsExcludingListeners("admin", &state.Values.External, dedicated)...)
 		ports = append(ports, state.Values.Listeners.Kafka.ServicePortsExcludingListeners("kafka", &state.Values.External, dedicated)...)
@@ -209,7 +235,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 			services = append(services, svc)
 		}
 
-		// Dedicated LBs: one per listener name that has annotations.
+		// Dedicated Services: one per listener name that has a Type set.
 		for listenerName := range helmette.SortedMap(dedicated) {
 			var dedicatedPorts []corev1.ServicePort
 			dedicatedPorts = append(dedicatedPorts, state.Values.Listeners.Admin.ServicePortsForListener("admin", listenerName, &state.Values.External)...)
@@ -226,6 +252,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 				dedicatedAnnotations[k] = v
 			}
 
+			svcType := dedicatedListenerServiceType(&state.Values.Listeners, listenerName)
 			sourceRanges := dedicatedListenerSourceRanges(&state.Values.Listeners, listenerName)
 
 			svc := &corev1.Service{
@@ -246,7 +273,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 					PublishNotReadyAddresses: true,
 					Selector:                 podSelector,
 					SessionAffinity:          corev1.ServiceAffinityNone,
-					Type:                     corev1.ServiceTypeLoadBalancer,
+					Type:                     svcType,
 				},
 			}
 

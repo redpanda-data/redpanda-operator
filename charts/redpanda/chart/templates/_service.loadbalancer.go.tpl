@@ -7,7 +7,7 @@
 {{- $_is_returning := false -}}
 {{- $dedicated := (dict) -}}
 {{- range $name, $l := $listeners.admin.external -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $l.annotations)))) "r") | int) (0 | int)) -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.HasDedicatedService" (dict "a" (list $l)))) "r") -}}
 {{- $_ := (set $dedicated $name true) -}}
 {{- end -}}
 {{- end -}}
@@ -15,7 +15,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $l := $listeners.kafka.external -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $l.annotations)))) "r") | int) (0 | int)) -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.HasDedicatedService" (dict "a" (list $l)))) "r") -}}
 {{- $_ := (set $dedicated $name true) -}}
 {{- end -}}
 {{- end -}}
@@ -23,7 +23,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $l := $listeners.http.external -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $l.annotations)))) "r") | int) (0 | int)) -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.HasDedicatedService" (dict "a" (list $l)))) "r") -}}
 {{- $_ := (set $dedicated $name true) -}}
 {{- end -}}
 {{- end -}}
@@ -31,7 +31,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $l := $listeners.schemaRegistry.external -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $l.annotations)))) "r") | int) (0 | int)) -}}
+{{- if (get (fromJson (include "redpanda.ExternalListener.HasDedicatedService" (dict "a" (list $l)))) "r") -}}
 {{- $_ := (set $dedicated $name true) -}}
 {{- end -}}
 {{- end -}}
@@ -159,6 +159,57 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "redpanda.dedicatedListenerServiceType" -}}
+{{- $listeners := (index .a 0) -}}
+{{- $listenerName := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- range $name, $l := $listeners.kafka.external -}}
+{{- if (and (eq $name $listenerName) (ne (toJson $l.type) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $l.type) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $name, $l := $listeners.admin.external -}}
+{{- if (and (eq $name $listenerName) (ne (toJson $l.type) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $l.type) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $name, $l := $listeners.http.external -}}
+{{- if (and (eq $name $listenerName) (ne (toJson $l.type) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $l.type) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $name, $l := $listeners.schemaRegistry.external -}}
+{{- if (and (eq $name $listenerName) (ne (toJson $l.type) "null")) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $l.type) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" "LoadBalancer") | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "redpanda.LoadBalancerServices" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -239,8 +290,9 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+{{- $svcType := (get (fromJson (include "redpanda.dedicatedListenerServiceType" (dict "a" (list $state.Values.listeners $listenerName)))) "r") -}}
 {{- $sourceRanges := (get (fromJson (include "redpanda.dedicatedListenerSourceRanges" (dict "a" (list $state.Values.listeners $listenerName)))) "r") -}}
-{{- $svc := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "lb-%s-%s" $listenerName $podname) "namespace" $state.Release.Namespace "labels" $labels "annotations" $dedicatedAnnotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "loadBalancerSourceRanges" $sourceRanges "ports" $dedicatedPorts "publishNotReadyAddresses" true "selector" $podSelector "sessionAffinity" "None" "type" "LoadBalancer")))) -}}
+{{- $svc := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "lb-%s-%s" $listenerName $podname) "namespace" $state.Release.Namespace "labels" $labels "annotations" $dedicatedAnnotations)) "spec" (mustMergeOverwrite (dict) (dict "externalTrafficPolicy" "Local" "loadBalancerSourceRanges" $sourceRanges "ports" $dedicatedPorts "publishNotReadyAddresses" true "selector" $podSelector "sessionAffinity" "None" "type" $svcType)))) -}}
 {{- $services = (concat (default (list) $services) (list $svc)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
