@@ -893,8 +893,12 @@ func (s *RedpandaControllerSuite) TestNodePoolsBlueGreen() {
 
 func (s *RedpandaControllerSuite) SetupTest() {
 	prev := s.ctx
-	s.ctx = trace.Test(s.T())
+	// Use a per-test timeout to prevent a single test from consuming the
+	// entire 60m budget and causing cascading context cancellations.
+	ctx, cancel := context.WithTimeout(trace.Test(s.T()), 15*time.Minute)
+	s.ctx = ctx
 	s.T().Cleanup(func() {
+		cancel()
 		s.ctx = prev
 	})
 }
@@ -903,23 +907,32 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 	t := s.T()
 	s.ctx = trace.Test(t)
 
+	// Pre-pull the main Redpanda test image into k3d to avoid slow pulls
+	// during test runs that can cause timeouts.
+	importImages := []string{
+		"localhost/redpanda-operator:dev",
+		"ghcr.io/loft-sh/vcluster-pro:0.28.0",
+		"registry.k8s.io/kube-controller-manager:v1.29.6",
+		"registry.k8s.io/kube-apiserver:v1.29.6",
+		"quay.io/jetstack/cert-manager-controller:v1.8.0",
+		"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
+		"quay.io/jetstack/cert-manager-webhook:v1.8.0",
+		"coredns/coredns:1.11.1",
+		"redpandadata/redpanda-unstable:v24.3.1-rc8",
+		"redpandadata/redpanda-unstable:v25.3.1-rc2",
+	}
+	if repo := os.Getenv("TEST_REDPANDA_REPO"); repo != "" {
+		if version := os.Getenv("TEST_REDPANDA_VERSION"); version != "" {
+			importImages = append(importImages, fmt.Sprintf("%s:%s", repo, version))
+		}
+	}
+
 	s.env = testenv.New(t, testenv.Options{
 		Scheme:       controller.V2Scheme,
 		CRDs:         crds.All(),
 		Logger:       log.FromContext(s.ctx),
 		SkipVCluster: true,
-		ImportImages: []string{
-			"localhost/redpanda-operator:dev",
-			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
-			"registry.k8s.io/kube-controller-manager:v1.29.6",
-			"registry.k8s.io/kube-apiserver:v1.29.6",
-			"quay.io/jetstack/cert-manager-controller:v1.8.0",
-			"quay.io/jetstack/cert-manager-cainjector:v1.8.0",
-			"quay.io/jetstack/cert-manager-webhook:v1.8.0",
-			"coredns/coredns:1.11.1",
-			"redpandadata/redpanda-unstable:v24.3.1-rc8",
-			"redpandadata/redpanda-unstable:v25.3.1-rc2",
-		},
+		ImportImages: importImages,
 	})
 
 	s.client = s.env.Client()
@@ -1141,7 +1154,7 @@ func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Ob
 	lastLog := time.Now()
 	logEvery := 10 * time.Second
 
-	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+	err := wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 10*time.Minute, false, func(ctx context.Context) (done bool, err error) {
 		err = s.client.Get(ctx, client.ObjectKeyFromObject(obj), obj)
 
 		done, err = cond(obj, err)
@@ -1155,7 +1168,18 @@ func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Ob
 		}
 
 		return false, nil
-	}))
+	})
+	if err != nil {
+		// Log diagnostic information on timeout to help debug flaky tests.
+		if rp, ok := obj.(*redpandav1alpha2.Redpanda); ok {
+			s.T().Logf("waitFor timed out after %s for Redpanda %q (generation=%d)", time.Since(start), rp.Name, rp.Generation)
+			for _, c := range rp.Status.Conditions {
+				s.T().Logf("  condition %s: status=%s reason=%s observedGeneration=%d message=%s",
+					c.Type, c.Status, c.Reason, c.ObservedGeneration, c.Message)
+			}
+		}
+		s.NoError(err)
+	}
 }
 
 func TestPostInstallUpgradeJobIndex(t *testing.T) {
