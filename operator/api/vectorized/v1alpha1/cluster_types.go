@@ -1335,11 +1335,17 @@ func (r *Cluster) SchemaRegistryInternalListener() *SchemaRegistryAPI {
 	if r == nil {
 		return nil
 	}
+	// SchemaRegistryAPI is the newer replacement for SchemaRegistry; check it first.
 	for i := range r.Spec.Configuration.SchemaRegistryAPI {
 		el := &r.Spec.Configuration.SchemaRegistryAPI[i]
 		if el.External == nil || !el.External.Enabled {
 			return el
 		}
+	}
+	// Fall back to the legacy single-field SchemaRegistry.
+	sr := r.Spec.Configuration.SchemaRegistry
+	if sr != nil && (sr.External == nil || !sr.External.Enabled) {
+		return sr
 	}
 	return nil
 }

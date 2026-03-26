@@ -217,3 +217,124 @@ func TestConditions(t *testing.T) {
 		assert.Equal(t, condTime, cond2.LastTransitionTime)
 	})
 }
+
+func TestSchemaRegistryInternalListener(t *testing.T) {
+	t.Parallel()
+
+	internalPort := int32(8081)
+	externalPort := int32(18081)
+
+	internalListener := &vectorizedv1alpha1.SchemaRegistryAPI{Port: int(internalPort)}
+	externalListener := &vectorizedv1alpha1.SchemaRegistryAPI{
+		Port: int(externalPort),
+		External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{
+			ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
+		},
+	}
+
+	tests := []struct {
+		name     string
+		cluster  *vectorizedv1alpha1.Cluster
+		wantPort int
+	}{
+		{
+			name:     "nil cluster returns nil",
+			cluster:  nil,
+			wantPort: 0,
+		},
+		{
+			name:     "no SR configured returns nil",
+			cluster:  &vectorizedv1alpha1.Cluster{},
+			wantPort: 0,
+		},
+		{
+			name: "single-field internal listener is returned",
+			cluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: internalListener,
+					},
+				},
+			},
+			wantPort: int(internalPort),
+		},
+		{
+			name: "single-field external-only returns nil",
+			cluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: externalListener,
+					},
+				},
+			},
+			wantPort: 0,
+		},
+		{
+			name: "slice internal listener is returned",
+			cluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{
+							{Port: int(internalPort)},
+						},
+					},
+				},
+			},
+			wantPort: int(internalPort),
+		},
+		{
+			name: "slice external-only returns nil",
+			cluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{
+							*externalListener,
+						},
+					},
+				},
+			},
+			wantPort: 0,
+		},
+		{
+			name: "slice mixed returns internal",
+			cluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{
+							*externalListener,
+							{Port: int(internalPort)},
+						},
+					},
+				},
+			},
+			wantPort: int(internalPort),
+		},
+		{
+			name: "slice takes priority over single field",
+			cluster: &vectorizedv1alpha1.Cluster{
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{Port: 9999},
+						SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{
+							{Port: int(internalPort)},
+						},
+					},
+				},
+			},
+			wantPort: int(internalPort),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := tc.cluster.SchemaRegistryInternalListener()
+			if tc.wantPort == 0 {
+				assert.Nil(t, got)
+			} else {
+				require.NotNil(t, got)
+				assert.Equal(t, tc.wantPort, got.Port)
+			}
+		})
+	}
+}
