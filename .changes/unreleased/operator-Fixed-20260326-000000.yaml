@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Orphaned CRs with finalizers could block namespace deletion when the operator was uninstalled while CRs still existed. An opt-in pre-delete helm hook (`finalizerRemoval.enabled=true`) now strips operator finalizers from all managed CRs on uninstall. Additionally, the reconciler no longer adds finalizers to CRs in a terminating namespace, preventing the controller from re-blocking deletion in that window.
+time: 2026-03-26T00:00:00.000000-05:00
