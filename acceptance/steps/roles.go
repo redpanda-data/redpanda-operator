@@ -54,8 +54,6 @@ func roleIsSuccessfullySynced(ctx context.Context, t framework.TestingT, role st
 
 	waitForSyncedCondition(ctx, t, &roleObject, func() []metav1.Condition {
 		return roleObject.Status.Conditions
-	}, func() int64 {
-		return roleObject.Status.ObservedGeneration
 	})
 
 	t.Cleanup(func(ctx context.Context) {

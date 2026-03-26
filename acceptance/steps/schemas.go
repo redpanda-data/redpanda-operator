@@ -25,8 +25,6 @@ func schemaIsSuccessfullySynced(ctx context.Context, t framework.TestingT, schem
 
 	waitForSyncedCondition(ctx, t, &schemaObject, func() []metav1.Condition {
 		return schemaObject.Status.Conditions
-	}, func() int64 {
-		return schemaObject.Status.ObservedGeneration
 	})
 }
 

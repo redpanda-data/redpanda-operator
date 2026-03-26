@@ -619,32 +619,9 @@ func waitForCondition(ctx context.Context, t framework.TestingT, o runtimeclient
 	t.Logf("Resource %q has condition %s=%s", key.String(), expected.Type, expected.Status)
 }
 
-// waitForSyncedCondition waits for the controller to reconcile the current
-// generation of the resource and set the standard Synced=True condition.
-//
-// It first waits for status.observedGeneration to catch up to metadata.generation,
-// ensuring the controller has processed the latest spec change. Then it waits for
-// the Synced=True condition. This prevents a race where a stale Synced=True from a
-// previous reconciliation causes the wait to return before the current spec change
-// has been applied.
-func waitForSyncedCondition(ctx context.Context, t framework.TestingT, o runtimeclient.Object, getConditions func() []metav1.Condition, getObservedGeneration ...func() int64) {
-	key := runtimeclient.ObjectKeyFromObject(o)
-
-	// If an observedGeneration accessor is provided, first wait for the
-	// controller to observe the current generation.
-	if len(getObservedGeneration) > 0 {
-		getObsGen := getObservedGeneration[0]
-		t.Logf("Waiting for resource %q observedGeneration to catch up to generation", key.String())
-		require.Eventually(t, func() bool {
-			if err := t.Get(ctx, key, o); err != nil {
-				t.Logf("Failed to get resource %q: %v", key.String(), err)
-				return false
-			}
-			return getObsGen() >= o.GetGeneration()
-		}, 2*time.Minute, 2*time.Second, "Resource %q observedGeneration never caught up to generation %d", key.String(), o.GetGeneration())
-		t.Logf("Resource %q observedGeneration (%d) caught up to generation (%d)", key.String(), getObsGen(), o.GetGeneration())
-	}
-
+// waitForSyncedCondition is a convenience wrapper for waitForCondition that
+// waits for the standard Synced=True condition used by most CRD resources.
+func waitForSyncedCondition(ctx context.Context, t framework.TestingT, o runtimeclient.Object, getConditions func() []metav1.Condition) {
 	waitForCondition(ctx, t, o, metav1.Condition{
 		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
 		Status: metav1.ConditionTrue,

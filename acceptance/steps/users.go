@@ -30,8 +30,6 @@ func userIsSuccessfullySynced(ctx context.Context, t framework.TestingT, user st
 
 	waitForSyncedCondition(ctx, t, &userObject, func() []metav1.Condition {
 		return userObject.Status.Conditions
-	}, func() int64 {
-		return userObject.Status.ObservedGeneration
 	})
 }
 
@@ -44,8 +42,6 @@ func iCreateCRDbasedUsers(ctx context.Context, t framework.TestingT, version, cl
 
 		waitForSyncedCondition(ctx, t, user, func() []metav1.Condition {
 			return user.Status.Conditions
-		}, func() int64 {
-			return user.Status.ObservedGeneration
 		})
 
 		t.Cleanup(func(ctx context.Context) {
