@@ -3391,65 +3391,6 @@
         "fullnameOverride": {
           "type": "string"
         },
-        "gateway": {
-          "additionalProperties": false,
-          "properties": {
-            "annotations": {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            "enabled": {
-              "type": "boolean"
-            },
-            "hostnames": {
-              "oneOf": [
-                {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "parentRefs": {
-              "oneOf": [
-                {
-                  "items": {
-                    "additionalProperties": false,
-                    "properties": {
-                      "name": {
-                        "type": "string"
-                      },
-                      "namespace": {
-                        "type": "string"
-                      },
-                      "sectionName": {
-                        "type": "string"
-                      }
-                    },
-                    "type": "object"
-                  },
-                  "type": "array"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "path": {
-              "type": "string"
-            },
-            "pathType": {
-              "type": "string"
-            }
-          },
-          "type": "object"
-        },
         "global": {
           "type": "object"
         },
@@ -4690,6 +4631,12 @@
                       "minItems": 1,
                       "type": "array"
                     },
+                    "annotations": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
                     "authenticationMethod": {
                       "oneOf": [
                         {
@@ -4702,6 +4649,12 @@
                     },
                     "enabled": {
                       "type": "boolean"
+                    },
+                    "loadBalancerSourceRanges": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
                     },
                     "nodePort": {
                       "type": "integer"
@@ -4764,6 +4717,10 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "pattern": "^(LoadBalancer|NodePort)$",
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -4877,6 +4834,12 @@
                       "minItems": 1,
                       "type": "array"
                     },
+                    "annotations": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
                     "authenticationMethod": {
                       "oneOf": [
                         {
@@ -4893,6 +4856,12 @@
                     },
                     "enabled": {
                       "type": "boolean"
+                    },
+                    "loadBalancerSourceRanges": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
                     },
                     "nodePort": {
                       "type": "integer"
@@ -4955,6 +4924,10 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "pattern": "^(LoadBalancer|NodePort)$",
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -5069,6 +5042,12 @@
                       "minItems": 1,
                       "type": "array"
                     },
+                    "annotations": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
                     "authenticationMethod": {
                       "oneOf": [
                         {
@@ -5086,6 +5065,12 @@
                     },
                     "enabled": {
                       "type": "boolean"
+                    },
+                    "loadBalancerSourceRanges": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
                     },
                     "nodePort": {
                       "type": "integer"
@@ -5148,6 +5133,10 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "pattern": "^(LoadBalancer|NodePort)$",
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -5327,6 +5316,12 @@
                       "minItems": 1,
                       "type": "array"
                     },
+                    "annotations": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
                     "authenticationMethod": {
                       "oneOf": [
                         {
@@ -5339,6 +5334,12 @@
                     },
                     "enabled": {
                       "type": "boolean"
+                    },
+                    "loadBalancerSourceRanges": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
                     },
                     "nodePort": {
                       "type": "integer"
@@ -5401,6 +5402,10 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "pattern": "^(LoadBalancer|NodePort)$",
+                      "type": "string"
                     }
                   },
                   "required": [
