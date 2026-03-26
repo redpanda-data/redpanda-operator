@@ -38,11 +38,18 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+)
+
+const (
+	bootstrapUserSecretSuffix = "-bootstrap-user"
+	bootstrapUserPasswordKey  = "password"
+	defaultBootstrapUsername  = "kubernetes-controller"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch;update;patch
@@ -62,6 +69,8 @@ type stretchClusterReconciliationState struct {
 	status                *lifecycle.ClusterStatus
 	restartOnConfigChange bool
 	admin                 *rpadmin.AdminAPI
+	bootstrapUser         string
+	bootstrapPassword     string
 }
 
 func (s *stretchClusterReconciliationState) cleanup() {
@@ -169,6 +178,21 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
 	}
 
+	// Phase 1: cross-cluster syncers — ensure shared resources exist in all k8s clusters
+	// before any per-cluster reconciliation begins.
+	syncers := []stretchClusterReconciliationFn{
+		r.syncBootstrapUser,
+	}
+
+	for _, syncer := range syncers {
+		result, err := syncer(ctx, state, cluster)
+		if err != nil || result.RequeueAfter > 0 {
+			l.V(log.TraceLevel).Info("aborting reconciliation early during sync phase", "error", err, "requeueAfter", result.RequeueAfter)
+			return r.syncStatus(ctx, cluster, state, result, err)
+		}
+	}
+
+	// Phase 2: per-cluster reconciliation — only runs after all syncers succeed.
 	reconcilers := []stretchClusterReconciliationFn{
 		// we sync all our non pool resources first so that they're in-place
 		// prior to us scaling up our node pools
@@ -327,6 +351,99 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	}, nil
 }
 
+// bootstrapSecretName returns the name of the bootstrap user secret for a given
+// stretch cluster and k8s cluster name, matching the convention used by the chart
+// rendering pipeline: <stretchcluster-name>-<clusterName>-bootstrap-user.
+func bootstrapSecretName(sc *redpandav1alpha2.StretchCluster, clusterName string) string {
+	return fmt.Sprintf("%s-%s%s", sc.Name, clusterName, bootstrapUserSecretSuffix)
+}
+
+func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (_ ctrl.Result, err error) {
+	ctx, span := trace.Start(ctx, "syncBootstrapUser")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error syncing bootstrap user")
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	sc := state.cluster.StretchCluster
+	clusterNames := r.Manager.GetClusterNames()
+
+	// Phase 1: scan all clusters for an existing bootstrap user secret to
+	// discover the canonical password.
+	var canonicalPassword string
+	for _, clusterName := range clusterNames {
+		cl, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+		}
+
+		secretName := bootstrapSecretName(sc, clusterName)
+		var existing corev1.Secret
+		if err := cl.GetClient().Get(ctx, client.ObjectKey{
+			Namespace: sc.Namespace,
+			Name:      secretName,
+		}, &existing); err == nil {
+			if pw, ok := existing.Data[bootstrapUserPasswordKey]; ok && len(pw) > 0 {
+				canonicalPassword = string(pw)
+				logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
+				break
+			}
+		}
+	}
+
+	// Phase 2: if no secret exists anywhere, generate a new password.
+	if canonicalPassword == "" {
+		canonicalPassword = helmette.RandAlphaNum(32)
+		logger.V(log.DebugLevel).Info("generated new bootstrap user password")
+	}
+
+	// Phase 3: ensure the secret exists in every cluster.
+	for _, clusterName := range clusterNames {
+		cl, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+		}
+
+		secretName := bootstrapSecretName(sc, clusterName)
+		k8sClient := cl.GetClient()
+
+		var existing corev1.Secret
+		if err := k8sClient.Get(ctx, client.ObjectKey{
+			Namespace: sc.Namespace,
+			Name:      secretName,
+		}, &existing); err == nil {
+			// Secret already exists — nothing to do for this cluster.
+			continue
+		}
+
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: sc.Namespace,
+			},
+			Immutable: ptr.To(true),
+			Type:      corev1.SecretTypeOpaque,
+			Data: map[string][]byte{
+				bootstrapUserPasswordKey: []byte(canonicalPassword),
+			},
+		}
+
+		if err := k8sClient.Create(ctx, secret); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "creating bootstrap user secret in cluster %s", clusterName)
+		}
+		logger.Info("created bootstrap user secret", "cluster", clusterName, "secret", secretName)
+	}
+
+	state.bootstrapUser = defaultBootstrapUsername
+	state.bootstrapPassword = canonicalPassword
+
+	return ctrl.Result{}, nil
+}
+
 func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
 	ctx, span := trace.Start(ctx, "reconcileResources")
 	logger := log.FromContext(ctx)
@@ -423,7 +540,7 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 		return ctrl.Result{}, fmt.Errorf("no admin API endpoints found for cluster %s", state.cluster.Name)
 	}
 
-	admin, err := r.ClientFactory.RedpandaAdminClientForMulticluster(adminAPIEndpoints)
+	admin, err := r.ClientFactory.RedpandaAdminClientForMulticluster(adminAPIEndpoints, state.bootstrapUser, state.bootstrapPassword)
 	if err != nil {
 		logger.Error(err, "error fetching redpanda admin client")
 		return ctrl.Result{}, err
