@@ -88,7 +88,6 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 					})
 				}
 				return requests
-
 			})
 		}).
 		Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {

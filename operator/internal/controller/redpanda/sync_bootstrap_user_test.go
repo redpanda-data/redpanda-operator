@@ -55,7 +55,7 @@ func (m *mockManager) GetCluster(_ context.Context, name string) (cluster.Cluste
 	}
 	return cl, nil
 }
-func (m *mockManager) GetLeader() string          { return m.names[0] }
+func (m *mockManager) GetLeader() string           { return m.names[0] }
 func (m *mockManager) GetLocalClusterName() string { return m.names[0] }
 func (m *mockManager) AddOrReplaceCluster(_ context.Context, _ string, _ cluster.Cluster) error {
 	return nil
@@ -65,7 +65,7 @@ func (m *mockManager) Health(_ *http.Request) error { return nil }
 func newFakeClient(objs ...client.Object) client.Client {
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
-	_ = redpandav1alpha2.AddToScheme(scheme)
+	_ = redpandav1alpha2.Install(scheme)
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
 }
 

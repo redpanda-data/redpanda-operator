@@ -37,8 +37,8 @@ import (
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -57,8 +57,8 @@ const (
 	ConditionTypeBootstrapUserSynced = "BootstrapUserSynced"
 
 	// Reasons for ConditionTypeBootstrapUserSynced.
-	ConditionReasonSynced          = "Synced"
-	ConditionReasonExistingReused  = "ExistingReused"
+	ConditionReasonSynced           = "Synced"
+	ConditionReasonExistingReused   = "ExistingReused"
 	ConditionReasonPasswordMismatch = "PasswordMismatch"
 )
 
@@ -402,7 +402,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 				password := string(pw)
 				if canonicalPassword == "" {
 					canonicalPassword = password
-					canonicalCluster = clusterName
+					canonicalCluster = lifecycle.CanonicalClusterName(clusterName, r.Manager)
 					logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
 				} else if canonicalPassword != password {
 					msg := fmt.Sprintf(
