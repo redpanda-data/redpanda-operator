@@ -92,6 +92,20 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 		RuleFiles: bundles[0].RuleFiles,
 	})
 
+	// the finalizer removal job needs the same general RBAC policy as the operator itself
+	// (v2-manager.ClusterRole.yaml already covers list+patch on all CR finalizers)
+	bundles = append(bundles, RBACBundle{
+		Name:    PreDeleteFinalizerRemovalJobServiceAccountName(dot),
+		Enabled: values.FinalizerRemoval.Enabled,
+		Subject: PreDeleteFinalizerRemovalJobServiceAccountName(dot),
+		Annotations: map[string]string{
+			"helm.sh/hook":               "pre-delete",
+			"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
+			"helm.sh/hook-weight":        "-10",
+		},
+		RuleFiles: bundles[0].RuleFiles,
+	})
+
 	return bundles
 }
 

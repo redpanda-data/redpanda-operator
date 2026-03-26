@@ -63,6 +63,8 @@ func render(dot *helmette.Dot) []kube.Object {
 		CRDJobServiceAccount(dot),
 		PostUpgradeMigrationJob(dot),
 		MigrationJobServiceAccount(dot),
+		PreDeleteFinalizerRemovalJob(dot),
+		PreDeleteFinalizerRemovalJobServiceAccount(dot),
 	}
 
 	for _, svc := range StretchClusterService(dot) {
