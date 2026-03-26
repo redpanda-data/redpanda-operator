@@ -603,6 +603,10 @@ func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container 
 			},
 		}),
 		VolumeMounts: volMounts,
+		SecurityContext: &corev1.SecurityContext{
+			RunAsNonRoot:             ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(false),
+		},
 	}
 }
 
@@ -702,6 +706,10 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 		},
 		VolumeMounts: StatefulSetVolumeMounts(state),
 		Resources:    state.Values.Resources.GetResourceRequirements(),
+		SecurityContext: &corev1.SecurityContext{
+			RunAsNonRoot:             ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(false),
+		},
 	}
 
 	// admin http kafka schemaRegistry rpc
@@ -867,6 +875,10 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 		Args:         append([]string{`supervisor`, `--`}, args...),
 		Env:          append(rpkEnvVars(state, nil), statefulSetRedpandaEnv()...),
 		VolumeMounts: volumeMounts,
+		SecurityContext: &corev1.SecurityContext{
+			RunAsNonRoot:             ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(false),
+		},
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{

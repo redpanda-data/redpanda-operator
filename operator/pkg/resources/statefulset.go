@@ -557,8 +557,10 @@ func (r *StatefulSetResource) obj(
 								},
 							}, append(r.pandaproxyEnvVars(), r.AdditionalListenersEnvVars()...)...),
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  ptr.To(int64(userID)),
-								RunAsGroup: ptr.To(int64(groupID)),
+								RunAsUser:                ptr.To(int64(userID)),
+								RunAsGroup:               ptr.To(int64(groupID)),
+								RunAsNonRoot:             ptr.To(true),
+								AllowPrivilegeEscalation: ptr.To(false),
 							},
 							Resources: rpResources,
 							VolumeMounts: []corev1.VolumeMount{
@@ -639,8 +641,10 @@ func (r *StatefulSetResource) obj(
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser:  ptr.To(int64(userID)),
-								RunAsGroup: ptr.To(int64(groupID)),
+								RunAsUser:                ptr.To(int64(userID)),
+								RunAsGroup:               ptr.To(int64(groupID)),
+								RunAsNonRoot:             ptr.To(true),
+								AllowPrivilegeEscalation: ptr.To(false),
 							},
 							Resources: rpResources,
 							VolumeMounts: append([]corev1.VolumeMount{
