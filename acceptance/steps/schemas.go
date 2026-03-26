@@ -23,15 +23,9 @@ func schemaIsSuccessfullySynced(ctx context.Context, t framework.TestingT, schem
 	var schemaObject redpandav1alpha2.Schema
 	require.NoError(t, t.Get(ctx, t.ResourceKey(schema), &schemaObject))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &schemaObject)
-
-	// make sure it's synchronized
-	t.RequireCondition(metav1.Condition{
-		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
-		Status: metav1.ConditionTrue,
-		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
-	}, schemaObject.Status.Conditions)
+	waitForSyncedCondition(ctx, t, &schemaObject, func() []metav1.Condition {
+		return schemaObject.Status.Conditions
+	})
 }
 
 func thereIsNoSchema(ctx context.Context, schema, version, cluster string) {

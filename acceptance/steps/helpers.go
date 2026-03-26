@@ -600,6 +600,35 @@ func checkStableResource(ctx context.Context, t framework.TestingT, o runtimecli
 	t.Logf("Resource %q has been stable for 5 seconds", key.String())
 }
 
+// waitForCondition polls the resource until the expected condition is found.
+// getConditions extracts the conditions slice from the resource after each fetch.
+// This replaces the previous pattern of checkStableResource + RequireCondition,
+// which had a race condition: the resource could be "stable" (resourceVersion
+// unchanged) but the controller hadn't set the condition yet.
+func waitForCondition(ctx context.Context, t framework.TestingT, o runtimeclient.Object, expected metav1.Condition, getConditions func() []metav1.Condition) {
+	key := runtimeclient.ObjectKeyFromObject(o)
+
+	t.Logf("Waiting for resource %q condition %s=%s", key.String(), expected.Type, expected.Status)
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, key, o); err != nil {
+			t.Logf("Failed to get resource %q: %v", key.String(), err)
+			return false
+		}
+		return t.HasCondition(expected, getConditions())
+	}, 2*time.Minute, 2*time.Second, "Resource %q never reached condition %s=%s", key.String(), expected.Type, expected.Status)
+	t.Logf("Resource %q has condition %s=%s", key.String(), expected.Type, expected.Status)
+}
+
+// waitForSyncedCondition is a convenience wrapper for waitForCondition that
+// waits for the standard Synced=True condition used by most CRD resources.
+func waitForSyncedCondition(ctx context.Context, t framework.TestingT, o runtimeclient.Object, getConditions func() []metav1.Condition) {
+	waitForCondition(ctx, t, o, metav1.Condition{
+		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
+		Status: metav1.ConditionTrue,
+		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
+	}, getConditions)
+}
+
 type operatorClients struct {
 	client             http.Client
 	operatorPodName    string

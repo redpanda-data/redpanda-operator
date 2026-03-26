@@ -24,15 +24,13 @@ func topicIsSuccessfullySynced(ctx context.Context, t framework.TestingT, topic 
 	var topicObject redpandav1alpha2.Topic
 	require.NoError(t, t.Get(ctx, t.ResourceKey(topic), &topicObject))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &topicObject)
-
-	// make sure it's synchronized
-	t.RequireCondition(metav1.Condition{
+	waitForCondition(ctx, t, &topicObject, metav1.Condition{
 		Type:   redpandav1alpha2.ReadyCondition,
 		Status: metav1.ConditionTrue,
 		Reason: redpandav1alpha2.SucceededReason,
-	}, topicObject.Status.Conditions)
+	}, func() []metav1.Condition {
+		return topicObject.Status.Conditions
+	})
 }
 
 func thereIsNoTopic(ctx context.Context, topic, version, cluster string) {

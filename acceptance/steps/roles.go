@@ -52,15 +52,9 @@ func roleIsSuccessfullySynced(ctx context.Context, t framework.TestingT, role st
 	var roleObject redpandav1alpha2.RedpandaRole
 	require.NoError(t, t.Get(ctx, t.ResourceKey(role), &roleObject))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &roleObject)
-
-	// make sure it's synchronized
-	t.RequireCondition(metav1.Condition{
-		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
-		Status: metav1.ConditionTrue,
-		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
-	}, roleObject.Status.Conditions)
+	waitForSyncedCondition(ctx, t, &roleObject, func() []metav1.Condition {
+		return roleObject.Status.Conditions
+	})
 
 	t.Cleanup(func(ctx context.Context) {
 		t.Logf("Deleting role %q", role)
