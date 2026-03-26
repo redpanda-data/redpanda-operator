@@ -502,6 +502,42 @@ func expectStatefulsetsReady(ctx context.Context, t framework.TestingT, stsCount
 	}, 10*time.Minute, 10*time.Second, "expected %d ready statefulsets across %d clusters", stsCount, clusterCount)
 }
 
+func expectNodePoolsBoundAndDeployed(ctx context.Context, t framework.TestingT, expectedCount int32, clusterName string) {
+	nodes := getNodes(ctx, clusterName)
+
+	require.Eventually(t, func() bool {
+		boundAndDeployed := int32(0)
+		for _, node := range nodes {
+			var pools redpandav1alpha2.NodePoolList
+			if err := node.List(ctx, &pools, client.InNamespace("default")); err != nil {
+				t.Logf("error listing NodePools in %s: %v", node.Name(), err)
+				return false
+			}
+			for _, pool := range pools.Items {
+				bound := apimeta.FindStatusCondition(pool.Status.Conditions, "Bound")
+				deployed := apimeta.FindStatusCondition(pool.Status.Conditions, "Deployed")
+				if bound != nil && bound.Status == metav1.ConditionTrue &&
+					deployed != nil && deployed.Status == metav1.ConditionTrue {
+					boundAndDeployed++
+				} else {
+					t.Logf("NodePool %s in %s: Bound=%v Deployed=%v",
+						pool.Name, node.Name(),
+						conditionStatus(bound), conditionStatus(deployed))
+				}
+			}
+		}
+		t.Logf("bound and deployed NodePools: %d/%d", boundAndDeployed, expectedCount)
+		return boundAndDeployed >= expectedCount
+	}, 5*time.Minute, 5*time.Second, "expected %d NodePools to be bound and deployed", expectedCount)
+}
+
+func conditionStatus(cond *metav1.Condition) string {
+	if cond == nil {
+		return "Unknown"
+	}
+	return string(cond.Status)
+}
+
 func executeCommandInStatefulsetContainers(ctx context.Context, t framework.TestingT, command string) context.Context {
 	nodes := getLastMulticlusterNodes(ctx)
 

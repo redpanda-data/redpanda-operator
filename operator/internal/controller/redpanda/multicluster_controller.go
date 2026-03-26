@@ -823,11 +823,12 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 	}).For(
 		&redpandav1alpha2.StretchCluster{},
 		mcbuilder.WithEngageWithLocalCluster(true),
-		mcbuilder.WithEngageWithProviderClusters(true)).Complete(
-		&MulticlusterReconciler{
-			Manager:         mgr,
-			LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
-			ClientFactory:   factory,
-		},
-	)
+		mcbuilder.WithEngageWithProviderClusters(true)).
+		Complete(
+			&MulticlusterReconciler{
+				Manager:         mgr,
+				LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+				ClientFactory:   factory,
+			},
+		)
 }
