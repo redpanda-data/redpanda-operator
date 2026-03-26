@@ -21,6 +21,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/action"
@@ -174,9 +175,18 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	// The vcluster kubeconfig secret may not be available immediately after
+	// helm install --wait completes. Poll until it appears.
+	secretKey := client.ObjectKey{Namespace: rel.Namespace, Name: "vc-" + rel.Name}
 	var kubeConfig corev1.Secret
-	if err := c.Get(ctx, client.ObjectKey{Namespace: rel.Namespace, Name: "vc-" + rel.Name}, &kubeConfig); err != nil {
-		return nil, errors.WithStack(err)
+	pollErr := wait.PollUntilContextTimeout(ctx, 2*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
+		if err := c.Get(ctx, secretKey, &kubeConfig); err != nil {
+			return false, nil //nolint:nilerr // keep polling
+		}
+		return true, nil
+	})
+	if pollErr != nil {
+		return nil, errors.Wrapf(pollErr, "waiting for vcluster kubeconfig secret %q", secretKey)
 	}
 
 	apiConfig, err := clientcmd.Load(kubeConfig.Data["config"])
