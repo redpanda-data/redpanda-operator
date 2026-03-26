@@ -20,6 +20,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/crd"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/finalizerremoval"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/migration"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
@@ -57,6 +58,7 @@ func init() {
 		syncclusterconfig.Command(),
 		version.Command(),
 		migration.Command(),
+		finalizerremoval.Command(),
 	)
 
 	logOptions.BindFlags(rootCmd.PersistentFlags())

@@ -16,17 +16,25 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 )
 
 const finalizerKey = "operator.redpanda.com/finalizer"
+
+// operatorGroups are the API groups whose resources we manage and may have finalizers.
+var operatorGroups = []string{
+	"cluster.redpanda.com",
+	"redpanda.vectorized.io",
+}
 
 func Command() *cobra.Command {
 	return &cobra.Command{
@@ -46,64 +54,26 @@ func run(ctx context.Context) {
 		log.Fatalf("%s", fmt.Errorf("unable to create client: %w", err))
 	}
 
-	var errs []error
+	// Discover all non-list GVKs registered in our scheme for the operator groups.
+	// This automatically picks up any new types added in future without requiring
+	// changes to this command.
+	var gvks []schema.GroupVersionKind
+	for gvk := range controller.UnifiedScheme.AllKnownTypes() {
+		if strings.HasSuffix(gvk.Kind, "List") {
+			continue
+		}
+		for _, g := range operatorGroups {
+			if gvk.Group == g {
+				gvks = append(gvks, gvk)
+				break
+			}
+		}
+	}
 
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.RedpandaRoleList{}, func(l *redpandav1alpha2.RedpandaRoleList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.UserList{}, func(l *redpandav1alpha2.UserList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.GroupList{}, func(l *redpandav1alpha2.GroupList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.TopicList{}, func(l *redpandav1alpha2.TopicList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.SchemaList{}, func(l *redpandav1alpha2.SchemaList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.ShadowLinkList{}, func(l *redpandav1alpha2.ShadowLinkList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.RedpandaList{}, func(l *redpandav1alpha2.RedpandaList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
-	errs = append(errs, removeFinalizersForType(ctx, k8sClient, &redpandav1alpha2.NodePoolList{}, func(l *redpandav1alpha2.NodePoolList) []client.Object {
-		out := make([]client.Object, len(l.Items))
-		for i := range l.Items {
-			out[i] = &l.Items[i]
-		}
-		return out
-	}))
+	var errs []error
+	for _, gvk := range gvks {
+		errs = append(errs, removeFinalizersForGVK(ctx, k8sClient, gvk))
+	}
 
 	if err := errors.Join(errs...); err != nil {
 		log.Fatalf("%s", fmt.Errorf("errors while removing finalizers: %w", err))
@@ -112,25 +82,33 @@ func run(ctx context.Context) {
 	log.Printf("Finalizer removal complete")
 }
 
-func removeFinalizersForType[L client.ObjectList](ctx context.Context, k8sClient client.Client, list L, items func(L) []client.Object) error {
+func removeFinalizersForGVK(ctx context.Context, k8sClient client.Client, gvk schema.GroupVersionKind) error {
+	list := &unstructured.UnstructuredList{}
+	list.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   gvk.Group,
+		Version: gvk.Version,
+		Kind:    gvk.Kind + "List",
+	})
+
 	if err := k8sClient.List(ctx, list); err != nil {
-		// If the CRD isn't installed the API server returns a "no kind registered" or
-		// "resource not found" error. Log it and move on rather than failing the whole job.
-		log.Printf("skipping %T: %v", list, err)
+		// If the CRD isn't installed, the API server returns a "no kind is registered"
+		// or "resource not found" error. Log it and continue rather than failing.
+		log.Printf("skipping %v: %v", gvk, err)
 		return nil
 	}
 
 	var errs []error
-	for _, obj := range items(list) {
+	for i := range list.Items {
+		obj := &list.Items[i]
 		if !controllerutil.ContainsFinalizer(obj, finalizerKey) {
 			continue
 		}
-		patch := client.MergeFrom(obj.DeepCopyObject().(client.Object))
+		patch := client.MergeFrom(obj.DeepCopy())
 		controllerutil.RemoveFinalizer(obj, finalizerKey)
 		if err := k8sClient.Patch(ctx, obj, patch); err != nil {
-			errs = append(errs, fmt.Errorf("patch %T %s/%s: %w", obj, obj.GetNamespace(), obj.GetName(), err))
+			errs = append(errs, fmt.Errorf("patch %v %s/%s: %w", gvk, obj.GetNamespace(), obj.GetName(), err))
 		} else {
-			log.Printf("removed finalizer from %T %s/%s", obj, obj.GetNamespace(), obj.GetName())
+			log.Printf("removed finalizer from %v %s/%s", gvk, obj.GetNamespace(), obj.GetName())
 		}
 	}
 	return errors.Join(errs...)
