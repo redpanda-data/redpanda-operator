@@ -607,6 +607,51 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 
 	require.Equal(t, int32(size/2), reconciler.deletes.Load())
 	require.Equal(t, int32(size), reconciler.syncs.Load())
+
+	// Test that the finalizer is not added when the namespace is terminating.
+	//
+	// envtest does not run the namespace controller, so deleting a namespace sets
+	// its DeletionTimestamp without cascading to objects inside it. This lets us
+	// exercise the exact window the check guards: namespace is terminating but the
+	// object has not yet been marked for deletion.
+	t.Run("does not add finalizer when namespace is terminating", func(t *testing.T) {
+		// The namespace needs its own finalizer so it stays around (with
+		// DeletionTimestamp set) after we call Delete on it.
+		ns := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       "test-terminating",
+				Finalizers: []string{"test/protect"},
+			},
+		}
+		require.NoError(t, k8sClient.Create(ctx, ns))
+		t.Cleanup(func() {
+			patch := client.MergeFrom(ns.DeepCopy())
+			ns.Finalizers = nil
+			_ = k8sClient.Patch(ctx, ns, patch)
+		})
+
+		obj := &testObject{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "no-finalizer-in-terminating-ns",
+				Namespace: ns.Name,
+			},
+		}
+		require.NoError(t, k8sClient.Create(ctx, obj))
+
+		// Delete the namespace — sets DeletionTimestamp but, because envtest has no
+		// namespace controller, the object inside is not touched.
+		require.NoError(t, k8sClient.Delete(ctx, ns))
+		require.NoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(ns), ns))
+		require.False(t, ns.GetDeletionTimestamp().IsZero(), "namespace should be terminating")
+
+		key := client.ObjectKeyFromObject(obj)
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+		_, err = environment.Reconciler.Reconcile(ctx, req)
+		require.NoError(t, err)
+
+		require.NoError(t, k8sClient.Get(ctx, key, obj))
+		require.NotContains(t, obj.Finalizers, FinalizerKey, "finalizer must not be added when namespace is terminating")
+	})
 }
 
 func TestIsNetworkDialError(t *testing.T) {
