@@ -203,3 +203,9 @@ multicluster:
   #    address: ip/dns of operator host
   peers: []
   servicePerOperatorDeployment: false
+
+# -- Opt-in pre-delete job that removes finalizers from all operator-managed
+# CRs before uninstall, preventing orphaned resources from blocking namespace deletion.
+finalizerRemoval:
+  # -- Enables the pre-delete finalizer removal job.
+  enabled: false

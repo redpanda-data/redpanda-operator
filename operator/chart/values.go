@@ -75,6 +75,7 @@ type Values struct {
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
 	Multicluster          Multicluster                  `json:"multicluster"`
+	FinalizerRemoval      FinalizerRemoval              `json:"finalizerRemoval"`
 }
 
 type VectorizedControllers struct {
@@ -84,6 +85,10 @@ type VectorizedControllers struct {
 type CRDs struct {
 	Enabled      bool `json:"enabled"`
 	Experimental bool `json:"experimental"`
+}
+
+type FinalizerRemoval struct {
+	Enabled bool `json:"enabled"`
 }
 
 type PodTemplateSpec struct {
