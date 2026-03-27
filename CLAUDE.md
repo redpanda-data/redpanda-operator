@@ -19,9 +19,7 @@ This is a Go monorepo using `go.work` with multiple modules:
 - **Task runner**: [go-task](https://taskfile.dev/) via `Taskfile.yml` with includes from `taskfiles/`
 - **CI**: Buildkite (`.buildkite/pipeline.yml` → `.buildkite/testsuite.yml`)
 - **Nix**: `flake.nix` provides the dev environment. CI runs all commands inside a nix container via `ci/scripts/run-in-nix-docker.sh`
-- **Chart generation**: Go source → `gotohelm` → `.tpl` templates. Run `gotohelm --write ./templates .` from chart directory
-- **Schema generation**: `gen schema <chart-name>` generates `values.schema.json`
-- **Partial generation**: `gen partial` generates `*_partial.gen.go` files
+- **Code generation**: `nix develop -c task generate` regenerates all generated files (chart templates, schemas, partials, CRDs, RBAC, licenses, etc.). This is the same command CI runs and is the preferred way to regenerate.
 
 ## CI Lint Flow
 
