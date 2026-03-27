@@ -127,6 +127,10 @@ const internalListenerName = "internal"
 // Field owner for server-side apply.
 var defaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
 
+// defaultBootstrapUsername is the default SCRAM username created by
+// RP_BOOTSTRAP_USER and added to the superusers list.
+const defaultBootstrapUsername = "kubernetes-controller"
+
 // Supported SASL mechanisms.
 var supportedSASLMechanisms = []string{
 	"SCRAM-SHA-256", "SCRAM-SHA-512",

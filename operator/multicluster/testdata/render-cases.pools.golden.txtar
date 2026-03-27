@@ -4157,6 +4157,17 @@
             value: v99.9.9
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          - name: RPK_USER
+            value: kubernetes-controller
+          - name: RPK_PASS
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: full-featured-bootstrap-user
+          - name: RPK_SASL_MECHANISM
+            value: SCRAM-SHA-512
+          - name: RP_BOOTSTRAP_USER
+            value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           lifecycle:
             postStart:
@@ -4578,6 +4589,17 @@
             value: v99.9.9
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          - name: RPK_USER
+            value: kubernetes-controller
+          - name: RPK_PASS
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: full-featured-bootstrap-user
+          - name: RPK_SASL_MECHANISM
+            value: SCRAM-SHA-512
+          - name: RP_BOOTSTRAP_USER
+            value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           lifecycle:
             postStart:
@@ -7667,6 +7689,17 @@
             value: v99.9.9
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          - name: RPK_USER
+            value: kubernetes-controller
+          - name: RPK_PASS
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: sasl-scram256-bootstrap-user
+          - name: RPK_SASL_MECHANISM
+            value: SCRAM-SHA-256
+          - name: RP_BOOTSTRAP_USER
+            value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           lifecycle:
             postStart:
@@ -8054,6 +8087,17 @@
             value: v99.9.9
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          - name: RPK_USER
+            value: kubernetes-controller
+          - name: RPK_PASS
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: sasl-scram512-with-tls-bootstrap-user
+          - name: RPK_SASL_MECHANISM
+            value: SCRAM-SHA-512
+          - name: RP_BOOTSTRAP_USER
+            value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           lifecycle:
             postStart:

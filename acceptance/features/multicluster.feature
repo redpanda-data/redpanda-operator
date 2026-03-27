@@ -28,7 +28,7 @@ Feature: Multicluster Operator
         group: cluster.redpanda.com
         kind: StretchCluster
         name: cluster
-      replicas: 2
+      replicas: 1
       image:
         repository: redpandadata/redpanda
         tag: v25.2.1

@@ -308,7 +308,6 @@ func configuratorSh(p ScriptParams) string {
 	return strings.Join(lines, "\n")
 }
 
-
 // fsValidatorSh is the static filesystem validation script.
 const fsValidatorSh = `set -e
 EXPECTED_FS_TYPE=$1

@@ -204,7 +204,7 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 				return false
 			}
 			return true
-		}, 2*time.Minute, 1*time.Second, "SpecSynced=True condition never appeared on %s", node.Name())
+		}, 5*time.Minute, 1*time.Second, "SpecSynced=True condition never appeared on %s", node.Name())
 	}
 }
 

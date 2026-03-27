@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
@@ -89,6 +90,13 @@ func testStretchCluster() *redpandav1alpha2.StretchCluster {
 			Name:      "stretch",
 			Namespace: "default",
 		},
+		Spec: redpandav1alpha2.StretchClusterSpec{
+			Auth: &redpandav1alpha2.Auth{
+				SASL: &redpandav1alpha2.SASL{
+					Enabled: ptr.To(true),
+				},
+			},
+		},
 	}
 }
 
@@ -118,7 +126,7 @@ func TestSyncBootstrapUser_NoExistingSecrets(t *testing.T) {
 	// Verify secret was created in all clusters with the same password.
 	for _, clusterName := range clusterNames {
 		var secret corev1.Secret
-		secretName := bootstrapSecretName(sc, clusterName)
+		secretName := bootstrapSecretName(sc)
 		err := clients[clusterName].Get(ctx, types.NamespacedName{
 			Namespace: sc.Namespace,
 			Name:      secretName,
@@ -148,7 +156,7 @@ func TestSyncBootstrapUser_ExistingSecretInOneCluster(t *testing.T) {
 	// cluster-a already has the secret.
 	existingSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      bootstrapSecretName(sc, "cluster-a"),
+			Name:      bootstrapSecretName(sc),
 			Namespace: sc.Namespace,
 		},
 		Data: map[string][]byte{
@@ -176,7 +184,7 @@ func TestSyncBootstrapUser_ExistingSecretInOneCluster(t *testing.T) {
 	var secret corev1.Secret
 	err = clients["cluster-b"].Get(ctx, types.NamespacedName{
 		Namespace: sc.Namespace,
-		Name:      bootstrapSecretName(sc, "cluster-b"),
+		Name:      bootstrapSecretName(sc),
 	}, &secret)
 	require.NoError(t, err)
 	require.Equal(t, existingPassword, string(secret.Data[bootstrapUserPasswordKey]))
@@ -200,7 +208,7 @@ func TestSyncBootstrapUser_AllSecretsExist(t *testing.T) {
 	for _, clusterName := range clusterNames {
 		clients[clusterName] = newFakeClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapSecretName(sc, clusterName),
+				Name:      bootstrapSecretName(sc),
 				Namespace: sc.Namespace,
 			},
 			Data: map[string][]byte{
@@ -236,7 +244,7 @@ func TestSyncBootstrapUser_PasswordMismatchAcrossClusters(t *testing.T) {
 	clients := map[string]client.Client{
 		"cluster-a": newFakeClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapSecretName(sc, "cluster-a"),
+				Name:      bootstrapSecretName(sc),
 				Namespace: sc.Namespace,
 			},
 			Data: map[string][]byte{
@@ -246,7 +254,7 @@ func TestSyncBootstrapUser_PasswordMismatchAcrossClusters(t *testing.T) {
 		}),
 		"cluster-b": newFakeClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      bootstrapSecretName(sc, "cluster-b"),
+				Name:      bootstrapSecretName(sc),
 				Namespace: sc.Namespace,
 			},
 			Data: map[string][]byte{

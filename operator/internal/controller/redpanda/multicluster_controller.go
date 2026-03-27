@@ -362,10 +362,12 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 }
 
 // bootstrapSecretName returns the name of the bootstrap user secret for a given
-// stretch cluster and k8s cluster name, matching the convention used by the chart
-// rendering pipeline: <stretchcluster-name>-<clusterName>-bootstrap-user.
-func bootstrapSecretName(sc *redpandav1alpha2.StretchCluster, clusterName string) string {
-	return fmt.Sprintf("%s-%s%s", sc.Name, clusterName, bootstrapUserSecretSuffix)
+// stretch cluster, matching the convention used by the render path:
+// <stretchcluster-name>-bootstrap-user. The same name is used in every k8s
+// cluster so the StatefulSet env var can reference it without knowing the
+// cluster name.
+func bootstrapSecretName(sc *redpandav1alpha2.StretchCluster) string {
+	return fmt.Sprintf("%s%s", sc.Name, bootstrapUserSecretSuffix)
 }
 
 func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (_ ctrl.Result, err error) {
@@ -380,6 +382,11 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 	}()
 
 	sc := state.cluster.StretchCluster
+
+	if !sc.Spec.Auth.IsSASLEnabled() {
+		logger.V(log.TraceLevel).Info("SASL is not enabled, skipping bootstrap user sync")
+		return ctrl.Result{}, nil
+	}
 	clusterNames := r.Manager.GetClusterNames()
 
 	// Phase 1: scan all clusters for existing bootstrap user secrets.
@@ -392,7 +399,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
 		}
 
-		secretName := bootstrapSecretName(sc, clusterName)
+		secretName := bootstrapSecretName(sc)
 		var existing corev1.Secret
 		if err := cl.GetClient().Get(ctx, client.ObjectKey{
 			Namespace: sc.Namespace,
@@ -402,14 +409,13 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 				password := string(pw)
 				if canonicalPassword == "" {
 					canonicalPassword = password
-					canonicalCluster = lifecycle.CanonicalClusterName(clusterName, r.Manager)
+					canonicalCluster = clusterName
 					logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
 				} else if canonicalPassword != password {
 					msg := fmt.Sprintf(
-						"bootstrap user password mismatch: secret %q in cluster %q differs from secret %q in cluster %q; "+
+						"bootstrap user password mismatch: secret %q in cluster %q differs from cluster %q; "+
 							"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
-						bootstrapSecretName(sc, canonicalCluster), canonicalCluster,
-						secretName, clusterName,
+						secretName, clusterName, canonicalCluster,
 					)
 					apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
 						Type:               ConditionTypeBootstrapUserSynced,
@@ -438,7 +444,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
 		}
 
-		secretName := bootstrapSecretName(sc, clusterName)
+		secretName := bootstrapSecretName(sc)
 		k8sClient := cl.GetClient()
 
 		var existing corev1.Secret
