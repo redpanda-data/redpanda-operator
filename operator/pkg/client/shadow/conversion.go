@@ -283,7 +283,7 @@ func convertCRDToAPIShadowLinkSecuritySyncOptions(options *redpandav1alpha2.Shad
 func convertAPIToCRDStatus(status *adminv2api.ShadowLinkStatus) redpandav1alpha2.ShadowLinkStatus {
 	return redpandav1alpha2.ShadowLinkStatus{
 		State:               convertAPIToCRDState(status.State),
-		TaskStatuses:        functional.MapFn(convertAPIToCRDTaskStatus, sortByName(status.TaskStatuses)),
+		TaskStatuses:        functional.MapFn(convertAPIToCRDTaskStatus, sortTaskStatuses(status.TaskStatuses)),
 		ShadowTopicStatuses: functional.MapFn(convertAPIToCRDTopicStatus, sortByName(status.ShadowTopics)),
 	}
 }
@@ -300,6 +300,7 @@ func convertAPIToCRDTaskStatus(status *adminv2api.ShadowLinkTaskStatus) redpanda
 		Name:     status.Name,
 		Reason:   status.Reason,
 		BrokerID: status.BrokerId,
+		Shard:    status.Shard,
 		State:    convertAPIToCRDTaskStatusState(status.State),
 	}
 }
@@ -336,6 +337,19 @@ func convertAPIToCRDTopicStatusState(state adminv2api.ShadowTopicState) redpanda
 
 type named interface {
 	GetName() string
+}
+
+func sortTaskStatuses(v []*adminv2api.ShadowLinkTaskStatus) []*adminv2api.ShadowLinkTaskStatus {
+	sort.SliceStable(v, func(i, j int) bool {
+		if v[i].GetName() != v[j].GetName() {
+			return v[i].GetName() < v[j].GetName()
+		}
+		if v[i].GetBrokerId() != v[j].GetBrokerId() {
+			return v[i].GetBrokerId() < v[j].GetBrokerId()
+		}
+		return v[i].GetShard() < v[j].GetShard()
+	})
+	return v
 }
 
 func sortByName[T named](v []T) []T {
