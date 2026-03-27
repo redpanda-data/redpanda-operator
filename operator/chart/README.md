@@ -160,6 +160,18 @@ Secret name and key where the license key is stored.
 
 **Default:** `{"key":""}`
 
+### [finalizerRemoval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=finalizerRemoval)
+
+Opt-in pre-delete job that removes finalizers from all operator-managed CRs before uninstall, preventing orphaned resources from blocking namespace deletion.
+
+**Default:** `{"enabled":false}`
+
+### [finalizerRemoval.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=finalizerRemoval.enabled)
+
+Enables the pre-delete finalizer removal job.
+
+**Default:** `false`
+
 ### [fullnameOverride](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=fullnameOverride)
 
 Overrides the `redpanda-operator.fullname` template.
