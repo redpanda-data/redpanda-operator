@@ -1856,15 +1856,15 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 	}
 
 	return ExternalListener[string]{
-		Enabled:                 l.Enabled,
-		AdvertisedPorts:         l.AdvertisedPorts,
-		Port:                    l.Port,
-		NodePort:                l.NodePort,
-		TLS:                     l.TLS,
-		AuthenticationMethod:    auth,
-		PrefixTemplate:          l.PrefixTemplate,
-		Type:                    l.Type,
-		Annotations:             l.Annotations,
+		Enabled:                  l.Enabled,
+		AdvertisedPorts:          l.AdvertisedPorts,
+		Port:                     l.Port,
+		NodePort:                 l.NodePort,
+		TLS:                      l.TLS,
+		AuthenticationMethod:     auth,
+		PrefixTemplate:           l.PrefixTemplate,
+		Type:                     l.Type,
+		Annotations:              l.Annotations,
 		LoadBalancerSourceRanges: l.LoadBalancerSourceRanges,
 	}
 }
