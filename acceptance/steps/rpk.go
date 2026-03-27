@@ -110,26 +110,27 @@ func checkRPKCommands(ctx context.Context, t framework.TestingT, clusterName str
 		t.Logf("Checking rpk commands on pod %q", p.Name)
 		var stdout bytes.Buffer
 		var stderr bytes.Buffer
-		// rpk.yaml is not available in operator v2. The v1 (Cluster custom resource) needs to
-		// create rpk profile file to overcome the problem with flux dependency (kubernetes version
-		// mismatch between rpk and flux fork).
-		//require.NoErrorf(t, ctl.Exec(ctx, &p, kube.ExecOptions{
-		//	Container: "redpanda",
-		//	Command:   []string{"rpk", "profile", "print"},
-		//	Stdin:     nil,
-		//	Stdout:    &stdout,
-		//	Stderr:    &stderr,
-		//}), "\nStdout: %s\nStderr: %s\n", stdout.String(), stderr.String())
-		//require.Len(t, stderr.Bytes(), 0)
 
-		require.NoErrorf(t, ctl.Exec(ctx, &p, kube.ExecOptions{
-			Container: "redpanda",
-			Command:   []string{"rpk", "redpanda", "admin", "brokers", "list"},
-			Stdin:     nil,
-			Stdout:    &stdout,
-			Stderr:    &stderr,
-		}), "\nStdout: %s\nStderr: %s\n", stdout.String(), stderr.String())
-		require.Len(t, stderr.Bytes(), 0)
+		// Wait for the redpanda container to be ready before exec'ing.
+		// After config changes (e.g., admin port update), the pod restarts
+		// and the container may not be available immediately even though
+		// the cluster reports as "stable".
+		require.Eventually(t, func() bool {
+			stdout.Reset()
+			stderr.Reset()
+			err := ctl.Exec(ctx, &p, kube.ExecOptions{
+				Container: "redpanda",
+				Command:   []string{"rpk", "redpanda", "admin", "brokers", "list"},
+				Stdin:     nil,
+				Stdout:    &stdout,
+				Stderr:    &stderr,
+			})
+			if err != nil {
+				t.Logf("rpk brokers list on pod %q failed (will retry): %v", p.Name, err)
+				return false
+			}
+			return len(stderr.Bytes()) == 0
+		}, 2*time.Minute, 2*time.Second, "rpk brokers list never succeeded on pod %q\nStdout: %s\nStderr: %s", p.Name, stdout.String(), stderr.String())
 		stdout.Reset()
 
 		require.Eventually(t, func() bool {

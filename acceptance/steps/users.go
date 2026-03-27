@@ -28,15 +28,11 @@ func userIsSuccessfullySynced(ctx context.Context, t framework.TestingT, user st
 	var userObject redpandav1alpha2.User
 	require.NoError(t, t.Get(ctx, t.ResourceKey(user), &userObject))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &userObject)
-
-	// make sure it's synchronized
-	t.RequireCondition(metav1.Condition{
-		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
-		Status: metav1.ConditionTrue,
-		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
-	}, userObject.Status.Conditions)
+	waitForSyncedCondition(ctx, t, &userObject, func() []metav1.Condition {
+		return userObject.Status.Conditions
+	}, func() int64 {
+		return userObject.Status.ObservedGeneration
+	})
 }
 
 func iCreateCRDbasedUsers(ctx context.Context, t framework.TestingT, version, cluster string, users *godog.Table) {
@@ -46,15 +42,11 @@ func iCreateCRDbasedUsers(ctx context.Context, t framework.TestingT, version, cl
 		t.Logf("Creating user %q", user.Name)
 		require.NoError(t, t.Create(ctx, user))
 
-		// make sure the resource is stable
-		checkStableResource(ctx, t, user)
-
-		// make sure it's synchronized
-		t.RequireCondition(metav1.Condition{
-			Type:   redpandav1alpha2.ResourceConditionTypeSynced,
-			Status: metav1.ConditionTrue,
-			Reason: redpandav1alpha2.ResourceConditionReasonSynced,
-		}, user.Status.Conditions)
+		waitForSyncedCondition(ctx, t, user, func() []metav1.Condition {
+			return user.Status.Conditions
+		}, func() int64 {
+			return user.Status.ObservedGeneration
+		})
 
 		t.Cleanup(func(ctx context.Context) {
 			t.Logf("Deleting user %q", user.Name)

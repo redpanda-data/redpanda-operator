@@ -52,15 +52,11 @@ func roleIsSuccessfullySynced(ctx context.Context, t framework.TestingT, role st
 	var roleObject redpandav1alpha2.RedpandaRole
 	require.NoError(t, t.Get(ctx, t.ResourceKey(role), &roleObject))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &roleObject)
-
-	// make sure it's synchronized
-	t.RequireCondition(metav1.Condition{
-		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
-		Status: metav1.ConditionTrue,
-		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
-	}, roleObject.Status.Conditions)
+	waitForSyncedCondition(ctx, t, &roleObject, func() []metav1.Condition {
+		return roleObject.Status.Conditions
+	}, func() int64 {
+		return roleObject.Status.ObservedGeneration
+	})
 
 	t.Cleanup(func(ctx context.Context) {
 		t.Logf("Deleting role %q", role)
@@ -141,25 +137,35 @@ func roleShouldHaveMembersAndInCluster(ctx context.Context, t framework.TestingT
 
 	expectedMembers := parseMembersList(members)
 
-	// Get role members from Redpanda using the effective role name
-	membersResp, err := adminClient.RoleMembers(ctx, effectiveRoleName)
-	if err != nil {
-		t.Fatalf("Failed to get members for role %q (effective name %q): %v", role, effectiveRoleName, err)
-	}
+	// Poll for role members — after the controller sets Synced=True, Redpanda's
+	// internal state may take a moment to propagate the membership changes.
+	var actualMembers map[string]bool
+	require.Eventually(t, func() bool {
+		membersResp, err := adminClient.RoleMembers(ctx, effectiveRoleName)
+		if err != nil {
+			t.Logf("Failed to get members for role %q (will retry): %v", role, err)
+			return false
+		}
 
-	// Check that expected members are present
-	actualMembers := make(map[string]bool)
-	for _, member := range membersResp.Members {
-		actualMembers[member.Name] = true
-	}
+		actualMembers = make(map[string]bool)
+		for _, member := range membersResp.Members {
+			actualMembers[member.Name] = true
+		}
 
-	// Verify all expected members are present
+		for _, expectedMember := range expectedMembers {
+			if !actualMembers[expectedMember] {
+				return false
+			}
+		}
+		return len(actualMembers) == len(expectedMembers)
+	}, 1*time.Minute, 2*time.Second, "Role %q members never converged to expected: %v", role, expectedMembers)
+
+	// Final assertions for clear error messages
 	for _, expectedMember := range expectedMembers {
 		require.True(t, actualMembers[expectedMember],
 			"Expected member %q not found in role %q (effective name %q)", expectedMember, role, effectiveRoleName)
 	}
 
-	// Verify we have exactly the expected number of members
 	require.Equal(t, len(expectedMembers), len(actualMembers),
 		"Role %q (effective name %q) should have exactly %d members, got %d", role, effectiveRoleName, len(expectedMembers), len(actualMembers))
 }
@@ -171,17 +177,21 @@ func roleShouldNotHaveMemberInCluster(ctx context.Context, t framework.TestingT,
 	adminClient := clients.RedpandaAdmin(ctx)
 	defer adminClient.Close()
 
-	// Get role members from Redpanda using the effective role name
-	membersResp, err := adminClient.RoleMembers(ctx, effectiveRoleName)
-	if err != nil {
-		t.Fatalf("Failed to get members for role %q (effective name %q): %v", role, effectiveRoleName, err)
-	}
-
-	// Check that the member is not present
-	for _, m := range membersResp.Members {
-		require.NotEqual(t, member, m.Name,
-			"Member %q should not be in role %q (effective name %q)", member, role, effectiveRoleName)
-	}
+	// Poll until the member is removed — Redpanda's state may lag behind
+	// the controller's Synced condition.
+	require.Eventually(t, func() bool {
+		membersResp, err := adminClient.RoleMembers(ctx, effectiveRoleName)
+		if err != nil {
+			t.Logf("Failed to get members for role %q (will retry): %v", role, err)
+			return false
+		}
+		for _, m := range membersResp.Members {
+			if m.Name == member {
+				return false
+			}
+		}
+		return true
+	}, 1*time.Minute, 2*time.Second, "Member %q still present in role %q", member, role)
 }
 
 func roleShouldHaveACLsForTopicPatternInCluster(ctx context.Context, t framework.TestingT, role, pattern, version, cluster string) {
@@ -327,14 +337,16 @@ func roleShouldHaveNoMembersInCluster(ctx context.Context, t framework.TestingT,
 	adminClient := clients.RedpandaAdmin(ctx)
 	defer adminClient.Close()
 
-	// Get role members from Redpanda using the effective role name
-	membersResp, err := adminClient.RoleMembers(ctx, effectiveRoleName)
-	if err != nil {
-		t.Fatalf("Failed to get members for role %q (effective name %q): %v", role, effectiveRoleName, err)
-	}
-
-	// Check that there are no members
-	require.Empty(t, membersResp.Members, "Role %q (effective name %q) should have no members", role, effectiveRoleName)
+	// Poll until members list is empty — Redpanda's state may lag behind
+	// the controller's Synced condition after principal removal.
+	require.Eventually(t, func() bool {
+		membersResp, err := adminClient.RoleMembers(ctx, effectiveRoleName)
+		if err != nil {
+			t.Logf("Failed to get members for role %q (will retry): %v", role, err)
+			return false
+		}
+		return len(membersResp.Members) == 0
+	}, 1*time.Minute, 2*time.Second, "Role %q (effective name %q) still has members", role, effectiveRoleName)
 }
 
 func redpandaRoleShouldHaveStatusFieldSetTo(ctx context.Context, t framework.TestingT, roleName, field, value string) {

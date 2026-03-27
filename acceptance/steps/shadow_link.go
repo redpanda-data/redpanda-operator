@@ -23,13 +23,7 @@ func shadowLinkIsSuccessfullySynced(ctx context.Context, t framework.TestingT, l
 	var shadowLinkObject redpandav1alpha2.ShadowLink
 	require.NoError(t, t.Get(ctx, t.ResourceKey(link), &shadowLinkObject))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &shadowLinkObject)
-
-	// make sure it's synchronized
-	t.RequireCondition(metav1.Condition{
-		Type:   redpandav1alpha2.ResourceConditionTypeSynced,
-		Status: metav1.ConditionTrue,
-		Reason: redpandav1alpha2.ResourceConditionReasonSynced,
-	}, shadowLinkObject.Status.Conditions)
+	waitForSyncedCondition(ctx, t, &shadowLinkObject, func() []metav1.Condition {
+		return shadowLinkObject.Status.Conditions
+	})
 }
