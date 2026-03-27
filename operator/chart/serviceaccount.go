@@ -32,7 +32,7 @@ func MigrationJobServiceAccountName(dot *helmette.Dot) string {
 	return ServiceAccountName(dot) + "-migration-job"
 }
 
-func PreDeleteFinalizerRemovalJobServiceAccountName(dot *helmette.Dot) string {
+func PostDeleteFinalizerRemovalJobServiceAccountName(dot *helmette.Dot) string {
 	return ServiceAccountName(dot) + "-finalizer-removal-job"
 }
 
@@ -92,9 +92,9 @@ func CRDJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 	}
 }
 
-// PreDeleteFinalizerRemovalJobServiceAccount returns a ServiceAccount used by
-// [PreDeleteFinalizerRemovalJob]. Helm will delete it after the job completes.
-func PreDeleteFinalizerRemovalJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
+// PostDeleteFinalizerRemovalJobServiceAccount returns a ServiceAccount used by
+// [PostDeleteFinalizerRemovalJob]. Helm will delete it after the job completes.
+func PostDeleteFinalizerRemovalJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.FinalizerRemoval.Enabled {
@@ -107,7 +107,7 @@ func PreDeleteFinalizerRemovalJobServiceAccount(dot *helmette.Dot) *corev1.Servi
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      PreDeleteFinalizerRemovalJobServiceAccountName(dot),
+			Name:      PostDeleteFinalizerRemovalJobServiceAccountName(dot),
 			Labels:    Labels(dot),
 			Namespace: dot.Release.Namespace,
 			Annotations: helmette.Merge(
@@ -116,7 +116,7 @@ func PreDeleteFinalizerRemovalJobServiceAccount(dot *helmette.Dot) *corev1.Servi
 					values.ServiceAccount.Annotations,
 				),
 				map[string]string{
-					"helm.sh/hook":               "pre-delete",
+					"helm.sh/hook":               "post-delete",
 					"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 					"helm.sh/hook-weight":        "-10",
 				},

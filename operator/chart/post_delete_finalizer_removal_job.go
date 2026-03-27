@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// +gotohelm:filename=_pre-delete-finalizer-removal-job.go.tpl
+// +gotohelm:filename=_post-delete-finalizer-removal-job.go.tpl
 package operator
 
 import (
@@ -21,11 +21,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-// PreDeleteFinalizerRemovalJob is a pre-delete hook job that removes finalizers
-// from all operator-managed CRs before uninstall. This prevents orphaned
-// resources from blocking namespace deletion when the operator is removed while
-// CRs still exist.
-func PreDeleteFinalizerRemovalJob(dot *helmette.Dot) *batchv1.Job {
+// PostDeleteFinalizerRemovalJob is a post-delete hook job that removes
+// finalizers from all operator-managed CRs after uninstall. Running
+// post-delete ensures the operator is already gone before finalizers are
+// stripped, eliminating any race where the controller could re-add them.
+func PostDeleteFinalizerRemovalJob(dot *helmette.Dot) *batchv1.Job {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.FinalizerRemoval.Enabled {
@@ -42,7 +42,7 @@ func PreDeleteFinalizerRemovalJob(dot *helmette.Dot) *batchv1.Job {
 			Namespace: dot.Release.Namespace,
 			Labels:    helmette.Merge(Labels(dot)),
 			Annotations: map[string]string{
-				"helm.sh/hook":               "pre-delete",
+				"helm.sh/hook":               "post-delete",
 				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 				"helm.sh/hook-weight":        "-5",
 			},
@@ -58,7 +58,7 @@ func PreDeleteFinalizerRemovalJob(dot *helmette.Dot) *batchv1.Job {
 					AutomountServiceAccountToken:  ptr.To(false),
 					TerminationGracePeriodSeconds: ptr.To(int64(10)),
 					ImagePullSecrets:              values.ImagePullSecrets,
-					ServiceAccountName:            PreDeleteFinalizerRemovalJobServiceAccountName(dot),
+					ServiceAccountName:            PostDeleteFinalizerRemovalJobServiceAccountName(dot),
 					NodeSelector:                  values.NodeSelector,
 					Tolerations:                   values.Tolerations,
 					Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},

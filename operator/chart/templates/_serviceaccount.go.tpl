@@ -32,7 +32,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "operator.PreDeleteFinalizerRemovalJobServiceAccountName" -}}
+{{- define "operator.PostDeleteFinalizerRemovalJobServiceAccountName" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -74,7 +74,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "operator.PreDeleteFinalizerRemovalJobServiceAccount" -}}
+{{- define "operator.PostDeleteFinalizerRemovalJobServiceAccount" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -85,7 +85,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "kind" "ServiceAccount" "apiVersion" "v1")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.PreDeleteFinalizerRemovalJobServiceAccountName" (dict "a" (list $dot)))) "r") "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "namespace" $dot.Release.Namespace "annotations" (merge (dict) (default (dict) $values.serviceAccount.annotations) (dict "helm.sh/hook" "pre-delete" "helm.sh/hook-delete-policy" "before-hook-creation,hook-succeeded,hook-failed" "helm.sh/hook-weight" "-10")))) "automountServiceAccountToken" false))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "kind" "ServiceAccount" "apiVersion" "v1")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.PostDeleteFinalizerRemovalJobServiceAccountName" (dict "a" (list $dot)))) "r") "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "namespace" $dot.Release.Namespace "annotations" (merge (dict) (default (dict) $values.serviceAccount.annotations) (dict "helm.sh/hook" "post-delete" "helm.sh/hook-delete-policy" "before-hook-creation,hook-succeeded,hook-failed" "helm.sh/hook-weight" "-10")))) "automountServiceAccountToken" false))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
