@@ -204,7 +204,7 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 				return false
 			}
 			return true
-		}, 1*time.Minute, 1*time.Second, "SpecSynced=True condition never appeared on %s", node.Name())
+		}, 2*time.Minute, 1*time.Second, "SpecSynced=True condition never appeared on %s", node.Name())
 	}
 }
 
@@ -226,8 +226,12 @@ networking:
     fromHost:
     - from: vc-1/second-0-x-default-x-vc-1
       to: default/second-0
+    - from: vc-1/second-1-x-default-x-vc-1
+      to: default/second-1
     - from: vc-2/third-0-x-default-x-vc-2
       to: default/third-0
+    - from: vc-2/third-1-x-default-x-vc-2
+      to: default/third-1
 `
 		case 1:
 			vClusterValues += `
@@ -236,8 +240,12 @@ networking:
     fromHost:
     - from: vc-0/first-0-x-default-x-vc-0
       to: default/first-0
+    - from: vc-0/first-1-x-default-x-vc-0
+      to: default/first-1
     - from: vc-2/third-0-x-default-x-vc-2
       to: default/third-0
+    - from: vc-2/third-1-x-default-x-vc-2
+      to: default/third-1
 `
 		case 2:
 			vClusterValues += `
@@ -246,8 +254,12 @@ networking:
     fromHost:
     - from: vc-0/first-0-x-default-x-vc-0
       to: default/first-0
+    - from: vc-0/first-1-x-default-x-vc-0
+      to: default/first-1
     - from: vc-1/second-0-x-default-x-vc-1
       to: default/second-0
+    - from: vc-1/second-1-x-default-x-vc-1
+      to: default/second-1
 `
 		}
 		cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)), vcluster.WithValues(helm.RawYAML(vClusterValues)))

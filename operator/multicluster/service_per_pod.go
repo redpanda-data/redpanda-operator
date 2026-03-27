@@ -11,6 +11,7 @@ package multicluster
 
 import (
 	"fmt"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,16 +25,15 @@ import (
 func perPodServices(state *RenderState) []*corev1.Service {
 	var services []*corev1.Service
 	for _, pool := range state.pools {
-		selector := statefulSetPodLabelsSelector(state, pool)
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			svc := perPodService(state, pool, selector, i)
+			svc := perPodService(state, pool, i)
 			services = append(services, svc)
 		}
 	}
 	return services
 }
 
-func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, selector map[string]string, ordinal int32) *corev1.Service {
+func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32) *corev1.Service {
 	spec := state.Spec()
 
 	labels := state.commonLabels()
@@ -42,6 +42,13 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, selector
 	ports := perPodServicePorts(spec)
 
 	name := PerPodServiceName(pool, ordinal)
+	annotations := make(map[string]string)
+	if spec.Service != nil && spec.Service.Internal != nil {
+		// TODO: consider a special field for per pod service annotation, either in nodepool or stretchcluster spec.
+		annotations = spec.Service.Internal.Annotations
+	}
+	// make sure this service only selects one pod
+	selector := perPodServiceSelector(state, pool, ordinal)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -49,9 +56,10 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, selector
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: state.namespace,
-			Labels:    labels,
+			Name:        name,
+			Namespace:   state.namespace,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,
@@ -115,4 +123,11 @@ func perPodServicePorts(spec *redpandav1alpha2.StretchClusterSpec) []corev1.Serv
 	}
 
 	return ports
+}
+
+func perPodServiceSelector(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32) map[string]string {
+	selector := statefulSetPodLabelsSelector(state, pool)
+	// make sure this service only selects one pod
+	selector["apps.kubernetes.io/pod-index"] = strconv.Itoa(int(ordinal))
+	return selector
 }

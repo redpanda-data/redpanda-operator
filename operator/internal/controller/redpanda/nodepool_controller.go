@@ -25,9 +25,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
@@ -62,72 +60,72 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 			mcbuilder.WithEngageWithLocalCluster(true),
 			mcbuilder.WithEngageWithProviderClusters(true),
 		).
-		Watches(&appsv1.StatefulSet{}, func(_ string, _ cluster.Cluster) handler.TypedEventHandler[client.Object, mcreconcile.Request] {
-			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
-				var requests []mcreconcile.Request
-				for _, clusterName := range mgr.GetClusterNames() {
-					labels := object.GetLabels()
-					if labels == nil {
-						return nil
-					}
-
-					namespace := labels[lifecycle.DefaultNamespaceLabel]
-					name := labels[redpanda.NodePoolLabelName]
-
-					if namespace == "" || name == "" {
-						return nil
-					}
-					requests = append(requests, mcreconcile.Request{
-						Request: reconcile.Request{
-							NamespacedName: types.NamespacedName{
-								Namespace: namespace,
-								Name:      name,
-							},
-						},
-						ClusterName: clusterName,
-					})
-				}
-				return requests
-			})
-		}).
-		Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {
-			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
-				l := log.FromContext(ctx).WithName("NodePoolReconciler.StretchClusterWatch").V(log.TraceLevel)
-				l.Info("StretchCluster event received", "stretchCluster", client.ObjectKeyFromObject(object).String(), "knownClusters", mgr.GetClusterNames())
-				var reqs []mcreconcile.Request
-				for _, clusterName := range mgr.GetClusterNames() {
-					k8sCluster, err := mgr.GetCluster(ctx, clusterName)
-					if err != nil {
-						l.Error(err, "cannot get cluster", "cluster", clusterName)
-						continue
-					}
-					k8sClient := k8sCluster.GetClient()
-					var nodePools redpandav1alpha2.NodePoolList
-					err = k8sClient.List(ctx, &nodePools, client.InNamespace(object.GetNamespace()))
-					if err != nil {
-						l.Error(err, "cannot list NodePools", "cluster", clusterName)
-						continue
-					}
-					l.Info("listed NodePools", "cluster", clusterName, "count", len(nodePools.Items))
-					for _, pool := range nodePools.Items {
-						l.Info("checking NodePool", "cluster", clusterName, "nodePool", pool.Name, "clusterRefName", pool.Spec.ClusterRef.Name, "isStretchCluster", pool.Spec.ClusterRef.IsStretchCluster())
-						if pool.Spec.ClusterRef.IsStretchCluster() && pool.Spec.ClusterRef.Name == object.GetName() {
-							reqs = append(reqs, mcreconcile.Request{
-								Request: reconcile.Request{
-									NamespacedName: types.NamespacedName{
-										Namespace: pool.Namespace,
-										Name:      pool.Name,
-									},
-								},
-								ClusterName: clusterName,
-							})
-						}
-					}
-				}
-				l.Info("enqueuing NodePool reconcile requests", "requests", reqs)
-				return reqs
-			})
-		}).
+		//Watches(&appsv1.StatefulSet{}, func(_ string, _ cluster.Cluster) handler.TypedEventHandler[client.Object, mcreconcile.Request] {
+		//	return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
+		//		var requests []mcreconcile.Request
+		//		for _, clusterName := range mgr.GetClusterNames() {
+		//			labels := object.GetLabels()
+		//			if labels == nil {
+		//				return nil
+		//			}
+		//
+		//			namespace := labels[lifecycle.DefaultNamespaceLabel]
+		//			name := labels[redpanda.NodePoolLabelName]
+		//
+		//			if namespace == "" || name == "" {
+		//				return nil
+		//			}
+		//			requests = append(requests, mcreconcile.Request{
+		//				Request: reconcile.Request{
+		//					NamespacedName: types.NamespacedName{
+		//						Namespace: namespace,
+		//						Name:      name,
+		//					},
+		//				},
+		//				ClusterName: clusterName,
+		//			})
+		//		}
+		//		return requests
+		//	})
+		//}).
+		//Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {
+		//	return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
+		//		l := log.FromContext(ctx).WithName("NodePoolReconciler.StretchClusterWatch").V(log.TraceLevel)
+		//		l.Info("StretchCluster event received", "stretchCluster", client.ObjectKeyFromObject(object).String(), "knownClusters", mgr.GetClusterNames())
+		//		var reqs []mcreconcile.Request
+		//		for _, clusterName := range mgr.GetClusterNames() {
+		//			k8sCluster, err := mgr.GetCluster(ctx, clusterName)
+		//			if err != nil {
+		//				l.Error(err, "cannot get cluster", "cluster", clusterName)
+		//				continue
+		//			}
+		//			k8sClient := k8sCluster.GetClient()
+		//			var nodePools redpandav1alpha2.NodePoolList
+		//			err = k8sClient.List(ctx, &nodePools, client.InNamespace(object.GetNamespace()))
+		//			if err != nil {
+		//				l.Error(err, "cannot list NodePools", "cluster", clusterName)
+		//				continue
+		//			}
+		//			l.Info("listed NodePools", "cluster", clusterName, "count", len(nodePools.Items))
+		//			for _, pool := range nodePools.Items {
+		//				l.Info("checking NodePool", "cluster", clusterName, "nodePool", pool.Name, "clusterRefName", pool.Spec.ClusterRef.Name, "isStretchCluster", pool.Spec.ClusterRef.IsStretchCluster())
+		//				if pool.Spec.ClusterRef.IsStretchCluster() && pool.Spec.ClusterRef.Name == object.GetName() {
+		//					reqs = append(reqs, mcreconcile.Request{
+		//						Request: reconcile.Request{
+		//							NamespacedName: types.NamespacedName{
+		//								Namespace: pool.Namespace,
+		//								Name:      pool.Name,
+		//							},
+		//						},
+		//						ClusterName: clusterName,
+		//					})
+		//				}
+		//			}
+		//		}
+		//		l.Info("enqueuing NodePool reconcile requests", "requests", reqs)
+		//		return reqs
+		//	})
+		//}).
 		Complete(
 			&NodePoolReconciler{
 				Manager: mgr,

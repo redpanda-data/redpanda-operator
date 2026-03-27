@@ -15,6 +15,10 @@ Feature: Multicluster Operator
     spec:
       rbac:
         enabled: true
+      service:
+        internal:
+          annotations:
+            "cilium-global-svc-annotation": "enabled"
     """
     Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
     And I apply a NodePool Kubernetes manifest to "multicluster":
@@ -24,7 +28,7 @@ Feature: Multicluster Operator
         group: cluster.redpanda.com
         kind: StretchCluster
         name: cluster
-      replicas: 1
+      replicas: 2
       image:
         repository: redpandadata/redpanda
         tag: v25.2.1
