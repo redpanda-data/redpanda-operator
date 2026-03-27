@@ -1229,14 +1229,14 @@ For historical backwards compatibility, this field is present on both +
 internal and external listeners. However, it is ignored when specified +
 on internal listeners. + |  | 
 | *`advertisedPorts`* __integer array__ | Specifies the network port that the external Service listens on. + |  | 
-| *`nodePort`* __integer__ |  |  |
+| *`nodePort`* __integer__ |  |  | 
 | *`type`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#servicetype-v1-core[$$ServiceType$$]__ | Type, when set, causes this listener to be served by a dedicated +
 per-broker Service of the specified type (e.g., LoadBalancer, NodePort) +
-instead of sharing the default per-broker Service. + |  |
+instead of sharing the default per-broker Service. + |  | 
 | *`annotations`* __object (keys:string, values:string)__ | Annotations sets annotations on the dedicated Service for this listener. +
-Only takes effect when Type is set. + |  |
+Only takes effect when Type is set. + |  | 
 | *`loadBalancerSourceRanges`* __string array__ | LoadBalancerSourceRanges restricts traffic to the dedicated LoadBalancer +
-for this listener. Only takes effect when Type is set to LoadBalancer. + |  |
+for this listener. Only takes effect when Type is set to LoadBalancer. + |  | 
 |===
 
 
