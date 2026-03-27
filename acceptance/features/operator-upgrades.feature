@@ -25,9 +25,7 @@ Feature: Upgrading the operator
               tag: dev
               repository: localhost/redpanda-operator
     """
-    # use just a Ready status check here since that's all the
-    # old operator supports
-    And cluster "operator-upgrade" is available
+    And cluster "operator-upgrade" should be stable with 1 nodes
     Then I can helm upgrade "redpanda-operator" "../operator/chart" with values:
     """
     image:
@@ -36,5 +34,4 @@ Feature: Upgrading the operator
     crds:
       experimental: true
     """
-    # use the new status as this will eventually get set
     And cluster "operator-upgrade" should be stable with 1 nodes
