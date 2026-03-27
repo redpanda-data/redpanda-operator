@@ -224,7 +224,6 @@ func configuratorSh(p ScriptParams) string {
 		`SERVICE_NAME=$1`,
 		`KUBERNETES_NODE_NAME=$2`,
 		`POD_ORDINAL=${SERVICE_NAME##*-}`,
-		"BROKER_INDEX=`expr $POD_ORDINAL + 1`",
 		``,
 		`CONFIG=/etc/redpanda/redpanda.yaml`,
 		``,
@@ -257,10 +256,14 @@ func configuratorSh(p ScriptParams) string {
 
 	// External Kafka advertised listeners
 	for i, ext := range p.ExternalKafkaListeners {
-		lines = append(lines, ``)
-		lines = configuratorExternalAdvertisedAddresses(lines, "ADVERTISED_KAFKA_ADDRESSES", ext)
 		lines = append(lines,
-			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[%d] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"`, i+1),
+			``,
+			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+				"address": "${SERVICE_NAME}",
+				"name":    ext.Name,
+				"port":    ext.Port,
+			}))),
+			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[%d] "$LISTENER"`, i+1),
 		)
 	}
 
@@ -277,10 +280,14 @@ func configuratorSh(p ScriptParams) string {
 
 	// External HTTP advertised listeners
 	for i, ext := range p.ExternalHTTPListeners {
-		lines = append(lines, ``)
-		lines = configuratorExternalAdvertisedAddresses(lines, "ADVERTISED_HTTP_ADDRESSES", ext)
 		lines = append(lines,
-			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[%d] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"`, i+1),
+			``,
+			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+				"address": "${SERVICE_NAME}",
+				"name":    ext.Name,
+				"port":    ext.Port,
+			}))),
+			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[%d] "$LISTENER"`, i+1),
 		)
 	}
 
@@ -301,25 +308,6 @@ func configuratorSh(p ScriptParams) string {
 	return strings.Join(lines, "\n")
 }
 
-// configuratorExternalAdvertisedAddresses appends shell script lines that build
-// an array of external advertised addresses for a single external listener.
-// When no explicit addresses are configured, it uses ${SERVICE_NAME} as the address.
-func configuratorExternalAdvertisedAddresses(lines []string, arrayName string, ext ExternalAdvertisedListener) []string {
-	lines = append(lines,
-		fmt.Sprintf(`%s=()`, arrayName),
-		``,
-		`PREFIX_TEMPLATE=""`,
-		fmt.Sprintf(`%s+=(%s)`,
-			arrayName,
-			tplutil.Quote(tplutil.ToJSON(map[string]any{
-				"address": "${SERVICE_NAME}",
-				"name":    ext.Name,
-				"port":    ext.Port,
-			})),
-		),
-	)
-	return lines
-}
 
 // fsValidatorSh is the static filesystem validation script.
 const fsValidatorSh = `set -e
