@@ -137,9 +137,9 @@ CI suppresses this via `flake.nix`:
 { name = "GOLANG_PROTOBUF_REGISTRATION_CONFLICT"; eval = "ignore"; }
 ```
 
-When running tests locally, prefix commands with:
+When running tests locally, use the nix devshell which sets this automatically:
 ```bash
-GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore go test ./operator/...
+nix develop -c go test ./operator/...
 ```
 
 ## Cutting a Release
