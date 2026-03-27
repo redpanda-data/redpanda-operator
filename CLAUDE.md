@@ -44,6 +44,8 @@ Multiple test suites use golden file comparison. To regenerate expected output i
 nix develop -c go test ./path/to/... -update-golden
 ```
 
+Note: Chart template tests (`TestTemplate`) use `-update` instead of `-update-golden`.
+
 ### Lifecycle golden tests
 
 Tests in `operator/internal/lifecycle/` use env vars for image values:
@@ -220,29 +222,6 @@ For a **charts/redpanda** release (e.g. `v25.1.4`):
 - [ ] `charts/redpanda/README.md` — version badge updated
 - [ ] `charts/redpanda/testdata/template-cases.golden.txtar` — regenerated
 
-### Post-Merge: Tagging and Publishing
-
-After the release PR is merged into the release branch, tags must be cut and pushed **in order**:
-
-1. **Tag the operator release first:**
-   ```bash
-   git tag operator/v<version> <commit-sha>
-   git push origin operator/v<version>
-   ```
-   Wait for the [Release Workflow](/.github/workflows/release.yml) to complete. Verify the operator Docker image is built and pushed with the correct tag to Docker Hub.
-
-2. **Tag the Redpanda chart release:**
-   ```bash
-   git tag charts/redpanda/v<version> <commit-sha>
-   git push origin charts/redpanda/v<version>
-   ```
-
-3. **Publish to helm-charts repo.** Manually trigger the `release_from_operator` workflow in the [redpanda-data/helm-charts](https://github.com/redpanda-data/helm-charts) repo. This workflow syncs the released chart from the operator repo to the public helm-charts repository:
-   - Go to Actions → "Release from Operator" → "Run workflow"
-   - Provide the chart version that was just tagged
-
-   Workflow source: https://github.com/redpanda-data/helm-charts/blob/main/.github/workflows/release_from_operator.yaml
-
 ## Common Commands
 
 All commands should be run inside the nix devshell to ensure correct tool versions and environment variables. Prefix commands with `nix develop -c` or enter the shell with `nix develop`.
@@ -258,20 +237,22 @@ nix develop -c go build ./operator/...
 nix develop -c bash -c 'go build ./operator/... && go build ./charts/console/... && go build ./charts/redpanda/...'
 
 # Run unit tests (envtest is configured by the devshell)
-nix develop -c go test ./operator/...
+nix develop -c task test:unit
 
 # Run chart template tests
 nix develop -c bash -c 'helm dep build charts/redpanda/chart && go test ./charts/redpanda/... -run TestTemplate'
 
+# Regenerate ALL generated files (preferred — matches CI)
+nix develop -c task generate
+
 # Regenerate gotohelm templates (from chart dir)
 nix develop -c gotohelm --write ./templates . --bundle <bundle-packages>
 
-# Regenerate CRDs and RBAC (from operator dir)
-nix develop -c controller-gen object:headerFile="../licenses/boilerplate.go.txt" paths='./...' crd webhook rbac:roleName=manager-role output:crd:artifacts:config=config/crd/bases output:rbac:artifacts:config=config/rbac/bases/operator
+# Regenerate CRDs and RBAC
+nix develop -c task k8s:generate
 
 # Run golangci-lint (v2 format)
-nix develop -c bash -c 'golangci-lint run --timeout 10m $(go work edit -json | jq -r '"'"'.Use.[].DiskPath + "/... "'"'"' | tr -d '"'"'\n'"'"')'
-nix develop -c golangci-lint fmt <packages>
+nix develop -c task lint
 
 # Update golden files (prefer -update-golden)
 nix develop -c go test ./path/to/... -update-golden
