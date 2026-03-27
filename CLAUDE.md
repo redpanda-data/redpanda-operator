@@ -29,7 +29,7 @@ The CI lint step (`taskfiles/ci.yml`) runs:
 3. `git diff --exit-code` — fails if any generated file doesn't match what's committed
 
 **Key implication**: Any code change that affects generated output requires regenerating those files before committing. Common sources of lint failure:
-- Modifying Go chart source without regenerating `.tpl` templates via `gotohelm`
+- Modifying Go chart source without regenerating `.tpl` templates via `task generate`
 - Adding dependencies without updating `licenses/third_party.md`
 - Changing kubebuilder RBAC markers without running `controller-gen`
 - Import ordering violations caught by `gci` formatter
@@ -242,12 +242,6 @@ nix develop -c bash -c 'helm dep build charts/redpanda/chart && go test ./charts
 
 # Regenerate ALL generated files (preferred — matches CI)
 nix develop -c task generate
-
-# Regenerate gotohelm templates (from chart dir)
-nix develop -c gotohelm --write ./templates . --bundle <bundle-packages>
-
-# Regenerate CRDs and RBAC
-nix develop -c task k8s:generate
 
 # Run golangci-lint (v2 format)
 nix develop -c task lint
