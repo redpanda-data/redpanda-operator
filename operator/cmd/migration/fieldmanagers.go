@@ -28,6 +28,7 @@ import (
 
 var undesiredFieldManagers = []string{
 	"*kube.Ctl",
+	"helm-controller",
 }
 
 // this is a potentially heavy operation
