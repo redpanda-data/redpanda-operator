@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	LicenseEnvVar = "REDPANDA_SAMPLE_LICENSE"
+	LicenseEnvVar = "REDPANDA_SAMPLE_LICENSE_V1"
 )
 
 type vclusterNodes []*vclusterNode
