@@ -38,7 +38,7 @@ v5.8.1
 
 -- kuttl --
 # kuttl version | cut -d ' ' -f 1-7
-KUTTL Version: version.Info{GitVersion:"0.19.0", GitCommit:"733ad16", BuildDate:"2024-09-02T08:15:28Z", GoVersion:"go1.22.1", Compiler:"gc",
+KUTTL Version: version.Info{GitVersion:"0.25.0", GitCommit:"ca80cff", BuildDate:"2026-02-18T07:45:17Z", GoVersion:"go1.25.0", Compiler:"gc",
 
 -- task --
 # task --version

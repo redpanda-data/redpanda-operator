@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
@@ -46,8 +47,8 @@ const (
 	// vClusterChartVersion is the pinned version of the vCluster helm chart. It's
 	// pinned to avoid sudden failures if there are backwards incompatible changes
 	// added.
-	vClusterChartVersion    = "v0.28.0"
-	certManagerChartversion = "v1.8.0"
+	vClusterChartVersion    = "v0.31.2"
+	certManagerChartversion = "v1.17.2"
 )
 
 type Cluster struct {
@@ -174,9 +175,18 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	// The vcluster kubeconfig secret may not be available immediately after
+	// helm install --wait completes. Poll until it appears.
+	secretKey := client.ObjectKey{Namespace: rel.Namespace, Name: "vc-" + rel.Name}
 	var kubeConfig corev1.Secret
-	if err := c.Get(ctx, client.ObjectKey{Namespace: rel.Namespace, Name: "vc-" + rel.Name}, &kubeConfig); err != nil {
-		return nil, errors.WithStack(err)
+	pollErr := wait.PollUntilContextTimeout(ctx, 2*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
+		if err := c.Get(ctx, secretKey, &kubeConfig); err != nil {
+			return false, nil //nolint:nilerr // keep polling
+		}
+		return true, nil
+	})
+	if pollErr != nil {
+		return nil, errors.Wrapf(pollErr, "waiting for vcluster kubeconfig secret %q", secretKey)
 	}
 
 	apiConfig, err := clientcmd.Load(kubeConfig.Data["config"])

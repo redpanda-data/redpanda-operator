@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Support for Kubernetes versions 1.32.x through 1.35.x. Per-PR tests validate against the minimum supported version (1.32.x) and nightly tests validate against the maximum supported version (1.35.x).
+time: 2026-03-21T05:04:09.000000+00:00

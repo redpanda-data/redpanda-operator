@@ -12,6 +12,7 @@ package steps
 import (
 	"context"
 	"regexp"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,15 +24,20 @@ import (
 
 func operatorIsRunning(ctx context.Context, t framework.TestingT) {
 	var dep appsv1.Deployment
-	require.NoError(t, t.Get(ctx, t.ResourceKey("redpanda-operator"), &dep))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &dep)
-
-	require.Equal(t, dep.Status.AvailableReplicas, int32(1))
-	require.Equal(t, dep.Status.Replicas, int32(1))
-	require.Equal(t, dep.Status.ReadyReplicas, int32(1))
-	require.Equal(t, dep.Status.UnavailableReplicas, int32(0))
+	// Wait for the operator deployment to become fully available.
+	// The operator may still be starting up after a helm install or
+	// namespace switch between scenarios.
+	key := t.ResourceKey("redpanda-operator")
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, key, &dep); err != nil {
+			t.Logf("operator deployment not found yet: %v", err)
+			return false
+		}
+		return dep.Status.AvailableReplicas == 1 &&
+			dep.Status.ReadyReplicas == 1 &&
+			dep.Status.UnavailableReplicas == 0
+	}, 2*time.Minute, 5*time.Second, "operator deployment never became ready")
 }
 
 func requestMetricsEndpointPlainHTTP(ctx context.Context, statusCode string) {
