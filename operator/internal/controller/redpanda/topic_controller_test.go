@@ -11,10 +11,13 @@ package redpanda
 
 import (
 	"context"
+	"io"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
@@ -31,6 +34,7 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	"github.com/redpanda-data/common-go/otelutil/log"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
@@ -915,4 +919,161 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err = c.Get(ctx, key, &topic)
 		assert.True(t, apierrors.IsNotFound(err), "topic should be deleted after finalizer removal")
 	})
+}
+
+func TestUnsetStorageMode(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+
+	ctx = log.IntoContext(ctx, testr.New(t))
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
+	require.NoError(t, err)
+
+	mgr := SetupTestManager(t, ctx, cfg, c)
+	factory := internalclient.NewFactory(mgr, nil)
+
+	defer os.Unsetenv("TESTCONTAINERS_RYUK_DISABLED")
+	if os.Getenv("CI") == "true" {
+		require.NoError(t, os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true"))
+	}
+
+	// Use the nightly build that surfaces the redpanda.storage.mode regression.
+	// The cluster default for redpanda.storage.mode is "unset". We'll explicitly
+	// set a topic to "local" via IncrementalAlterConfigs, making Redpanda track
+	// it as DYNAMIC_TOPIC_CONFIG (non-default source).
+	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		// Dump container logs for debugging
+		logCtx, logCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer logCancel()
+		if reader, err := container.Logs(logCtx); err == nil {
+			defer reader.Close()
+			if logs, err := io.ReadAll(reader); err == nil {
+				t.Logf("=== redpanda container logs ===\n%s\n=== end redpanda logs ===", string(logs))
+			}
+		}
+
+		ctxCleanup, cancelCleanup := context.WithTimeout(context.Background(), time.Minute*2)
+		defer cancelCleanup()
+		if err := container.Terminate(ctxCleanup); err != nil {
+			t.Fatalf("failed to terminate container: %s", err)
+		}
+	})
+
+	seedBroker, err := container.KafkaSeedBroker(ctx)
+	require.NoError(t, err)
+
+	kafkaCl, err := kgo.NewClient(kgo.SeedBrokers(seedBroker))
+	require.NoError(t, err)
+	defer kafkaCl.Close()
+
+	tr := TopicReconciler{
+		Manager: mgr,
+		Factory: factory,
+	}
+
+	topicName := "unset-storage-mode-test"
+	testNamespace := "default"
+
+	// Create the topic CR with redpanda.storage.mode explicitly set to "local".
+	// The operator will set this via IncrementalAlterConfigs, making Redpanda
+	// track it as DYNAMIC_TOPIC_CONFIG (non-default, since cluster default is "unset").
+	topic := redpandav1alpha2.Topic{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      topicName,
+			Namespace: testNamespace,
+		},
+		Spec: redpandav1alpha2.TopicSpec{
+			Partitions:        ptr.To(1),
+			ReplicationFactor: ptr.To(1),
+			AdditionalConfig: map[string]*string{
+				"redpanda.storage.mode": ptr.To("local"),
+			},
+			KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+				Brokers: []string{seedBroker},
+			},
+		},
+	}
+
+	require.NoError(t, c.Create(ctx, &topic))
+
+	key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	// First reconcile: creates the topic with storage mode in AdditionalConfig
+	// (returns early after creation, before alter config path)
+	result, err := tr.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.NotZero(t, result.RequeueAfter)
+
+	require.NoError(t, c.Get(ctx, key, &topic))
+	require.NotEmpty(t, topic.Status.Conditions)
+	cond := topic.Status.Conditions[0]
+	assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+	assert.NotEmpty(t, topic.Status.TopicConfiguration)
+
+	// Second reconcile: topic exists, goes through describe → generateConf → alter.
+	// storage mode is still in the spec, so it gets set via alter config making it
+	// DYNAMIC_TOPIC_CONFIG.
+	result, err = tr.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.NotZero(t, result.RequeueAfter)
+
+	require.NoError(t, c.Get(ctx, key, &topic))
+	require.NotEmpty(t, topic.Status.Conditions)
+	cond = topic.Status.Conditions[0]
+	assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+	assert.NotEmpty(t, topic.Status.TopicConfiguration)
+
+	// Now remove redpanda.storage.mode from the spec. On the next reconcile,
+	// describe will report it as DYNAMIC_TOPIC_CONFIG (non-default source).
+	// Without the undeletableConfigs guard, generateConf would add it to the
+	// delete set, causing Redpanda to warn:
+	// "Cannot remove property redpanda.storage.mode - it can only be set explicitly"
+	require.NoError(t, c.Get(ctx, key, &topic))
+	topic.Spec.AdditionalConfig = nil
+	require.NoError(t, c.Update(ctx, &topic))
+
+	// Third reconcile: storage mode removed from spec, operator must not try to delete it
+	result, err = tr.Reconcile(ctx, req)
+	require.NoError(t, err)
+	assert.NotZero(t, result.RequeueAfter)
+
+	require.NoError(t, c.Get(ctx, key, &topic))
+	require.NotEmpty(t, topic.Status.Conditions)
+	cond = topic.Status.Conditions[0]
+	assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+	assert.Equal(t, metav1.ConditionTrue, cond.Status)
+	assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+	assert.NotEmpty(t, topic.Status.TopicConfiguration)
+
+	// Verify the operator never attempted to remove redpanda.storage.mode.
+	// Redpanda silently ignores removal attempts (returns success) but logs a
+	// warning asynchronously, so we poll the container logs over a 5 second
+	// window to give the warning time to appear if a removal was attempted.
+	storageWarning := "Cannot remove property redpanda.storage.mode"
+	require.Never(t, func() bool {
+		logReader, err := container.Logs(ctx)
+		if err != nil {
+			return false
+		}
+		defer logReader.Close()
+
+		logs, err := io.ReadAll(logReader)
+		if err != nil {
+			return false
+		}
+		return strings.Contains(string(logs), storageWarning)
+	}, 5*time.Second, 500*time.Millisecond, "operator should not attempt to remove redpanda.storage.mode; Redpanda logged a warning indicating a removal was attempted")
 }
