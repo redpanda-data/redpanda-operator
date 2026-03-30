@@ -168,12 +168,13 @@ func TestStretchClusterResourceClient(t *testing.T) {
 			cl, err := manager.GetCluster(ctx, "")
 			require.NoError(t, err)
 
-			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetNodePoolsForCluster(""), []string{}, "")
+			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetNodePoolsForCluster(""), cluster.GetAllNodePools(), "")
 			require.NoError(t, err)
 
 			yamlBytes, err := yaml.Marshal(map[string]any{
-				"spec":  state.Spec(),
-				"pools": state.Pools(),
+				"spec":           state.Spec(),
+				"pools":          state.Pools(),
+				"inClusterPools": state.InClusterPools(),
 			})
 			require.NoError(t, err)
 			goldenValues.AssertGolden(t, testutil.YAML, file.Name, yamlBytes)

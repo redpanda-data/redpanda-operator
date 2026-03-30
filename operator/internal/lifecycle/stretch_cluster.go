@@ -48,6 +48,14 @@ func (s *StretchClusterWithPools) GetNodePoolsForCluster(clusterName string) []*
 	return result
 }
 
+func (s *StretchClusterWithPools) GetAllNodePools() []*redpandav1alpha2.NodePool {
+	var result []*redpandav1alpha2.NodePool
+	for _, nodePool := range s.NodePools {
+		result = append(result, nodePool.nodePool)
+	}
+	return result
+}
+
 // V2ResourceManagers is a factory function for tying together all of our v2 interfaces.
 func StretchClusterResourceManagers(redpandaImage, sidecarImage Image, cloudSecrets CloudSecretsFlags) func(mgr multicluster.Manager) (
 	OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools],

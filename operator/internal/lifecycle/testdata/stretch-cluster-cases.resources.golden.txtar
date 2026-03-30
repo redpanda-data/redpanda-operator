@@ -946,10 +946,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-b-0.
+            address: basic-a-0.
             port: "33145"
         - host:
-            address: basic-a-0.
+            address: basic-b-0.
             port: "33145"
       rpk:
         additional_start_flags:
@@ -1112,10 +1112,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-b-0.
+            address: basic-a-0.
             port: "33145"
         - host:
-            address: basic-a-0.
+            address: basic-b-0.
             port: "33145"
       rpk:
         additional_start_flags:
@@ -1951,10 +1951,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-b-0.
+            address: basic-a-0.
             port: "33145"
         - host:
-            address: basic-a-0.
+            address: basic-b-0.
             port: "33145"
       rpk:
         additional_start_flags:
@@ -2117,10 +2117,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-b-0.
+            address: basic-a-0.
             port: "33145"
         - host:
-            address: basic-a-0.
+            address: basic-b-0.
             port: "33145"
       rpk:
         additional_start_flags:

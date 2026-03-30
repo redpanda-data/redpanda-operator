@@ -16,7 +16,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -50,7 +49,7 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		cl.GetConfig(),
 		cluster.StretchCluster,
 		cluster.GetNodePoolsForCluster(canonicalName),
-		SeedServersFromNodePools(cluster.StretchCluster, cluster.NodePools),
+		cluster.GetAllNodePools(),
 		canonicalName,
 	)
 	if err != nil {
@@ -61,8 +60,6 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	// TODO: re-implement per-pool service generation using new RenderState types
 
 	return resources, nil
 }
@@ -82,15 +79,4 @@ func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *Str
 		}
 	}
 	return adminAPIEndpoints
-}
-
-func SeedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*NodePoolInCluster) []string {
-	var seedServers []string
-	for _, pool := range pools {
-		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
-			name := multiclusterRenderer.PerPodServiceName(pool.nodePool, i)
-			seedServers = append(seedServers, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), cluster.Spec.RPCPort()))
-		}
-	}
-	return seedServers
 }

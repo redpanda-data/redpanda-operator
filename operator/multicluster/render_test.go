@@ -86,7 +86,7 @@ func TestRender(t *testing.T) {
 			cluster.Namespace = file.Name
 
 			// Construct RenderState with nil config (no K8s client).
-			state, err := NewRenderState(nil, cluster, pools, []string{}, "test")
+			state, err := NewRenderState(nil, cluster, pools, pools, "test")
 			require.NoError(t, err)
 
 			// If SASL is enabled, set a deterministic bootstrap user secret
