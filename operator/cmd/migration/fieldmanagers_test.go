@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -309,6 +310,165 @@ func TestFieldManagers(t *testing.T) {
 		require.Equal(t, "other", ports[0].Name)
 		require.Equal(t, int32(18080), ports[0].ContainerPort)
 	}
+}
+
+func TestFieldManagersRegression(t *testing.T) {
+	scheme := controller.UnifiedScheme
+	config := kubetest.NewEnv(t).RestConfig()
+
+	helmctl, err := kube.FromRESTConfig(config, kube.Options{
+		Options: client.Options{
+			Scheme: scheme,
+		},
+		FieldManager: "helm-controller",
+	})
+	require.NoError(t, err)
+
+	operatorctl, err := kube.FromRESTConfig(config, kube.Options{
+		Options: client.Options{
+			Scheme: scheme,
+		},
+		FieldManager: "new",
+	})
+	require.NoError(t, err)
+
+	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
+	require.NoError(t, err)
+
+	// install our CRDs
+	require.NoError(t, kube.ApplyAll(t.Context(), helmctl, crds.All()...))
+	for _, crd := range crds.All() {
+		require.NoError(t, kube.WaitFor(t.Context(), helmctl, crd.DeepCopy(), func(ext *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
+			for _, cond := range ext.Status.Conditions {
+				if cond.Type == apiextensionsv1.Established && cond.Status == apiextensionsv1.ConditionTrue {
+					return true, nil
+				}
+			}
+			return false, nil
+		}))
+	}
+
+	// Create a Redpanda cluster for ownership
+	cluster := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "regression-test",
+			Namespace: "default",
+		},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Statefulset: &redpandav1alpha2.Statefulset{
+					Replicas: ptr.To(1),
+				},
+			},
+		},
+	}
+	require.NoError(t, k8sClient.Create(t.Context(), cluster))
+	require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(cluster), cluster))
+
+	// Create a StatefulSet with an exec liveness probe using the helm-controller field manager,
+	// simulating a Redpanda instance deployed via embedded Flux.
+	set := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "regression-test",
+			Namespace: "default",
+			Labels:    lifecycle.NewV2OwnershipResolver().GetOwnerLabels(&lifecycle.ClusterWithPools{Redpanda: cluster}),
+			OwnerReferences: []metav1.OwnerReference{{
+				APIVersion: redpandav1alpha2.GroupVersion.String(),
+				Kind:       "Redpanda",
+				Name:       cluster.Name,
+				UID:        cluster.UID,
+			}},
+		},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: ptr.To[int32](1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "regression-test",
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "regression-test",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "redpanda",
+							Image: "redpanda:latest",
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"/bin/sh", "-c", "echo healthy"},
+									},
+								},
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       10,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	require.NoError(t, helmctl.Apply(t.Context(), set))
+
+	// Verify initial state: helm-controller owns the fields, exec probe is set
+	require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
+	managers := getFieldManagers(set)
+	t.Logf("Initial field managers: %+v", managers)
+	require.True(t, slices.Contains(managers, "helm-controller"))
+	require.NotNil(t, set.Spec.Template.Spec.Containers[0].LivenessProbe.Exec)
+	require.Nil(t, set.Spec.Template.Spec.Containers[0].LivenessProbe.TCPSocket)
+
+	// Now the new operator applies the same StatefulSet but with a TCP liveness probe
+	// instead of exec. Due to the conflicting field manager, SSA will merge both probes.
+	newSet := set.DeepCopy()
+	newSet.Spec.Template.Spec.Containers[0].LivenessProbe = &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			TCPSocket: &corev1.TCPSocketAction{
+				Port: intstr.FromInt32(9644),
+			},
+		},
+		InitialDelaySeconds: 10,
+		PeriodSeconds:       10,
+	}
+	finalSet := newSet.DeepCopy()
+
+	require.NoError(t, operatorctl.Apply(t.Context(), newSet))
+	require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
+
+	managers = getFieldManagers(set)
+	t.Logf("After new operator apply, field managers: %+v", managers)
+	require.True(t, slices.Contains(managers, "helm-controller"))
+	require.True(t, slices.Contains(managers, "new"))
+
+	// This is the regression: both exec AND tcpSocket are present on the probe
+	// because helm-controller still owns the exec field and it gets merged.
+	probe := set.Spec.Template.Spec.Containers[0].LivenessProbe
+	require.NotNil(t, probe.Exec, "exec probe should still be present due to field manager conflict")
+	require.NotNil(t, probe.TCPSocket, "tcp probe should also be present due to merge")
+
+	// Run the field manager migration
+	require.NoError(t, migrateFieldManagers(t.Context(), operatorctl, k8sClient))
+
+	// Verify helm-controller field manager is removed
+	require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
+	managers = getFieldManagers(set)
+	t.Logf("After migration, field managers: %+v", managers)
+	require.False(t, slices.Contains(managers, "helm-controller"))
+	require.True(t, slices.Contains(managers, "new"))
+
+	// Re-apply with the new operator to reconcile — now with only one field manager,
+	// the exec probe should be properly removed.
+	require.NoError(t, operatorctl.Apply(t.Context(), finalSet))
+	require.NoError(t, k8sClient.Get(t.Context(), client.ObjectKeyFromObject(set), set))
+
+	probe = set.Spec.Template.Spec.Containers[0].LivenessProbe
+	require.Nil(t, probe.Exec, "exec probe should be gone after migration + re-apply")
+	require.NotNil(t, probe.TCPSocket, "tcp probe should be the only one remaining")
+	require.Equal(t, intstr.FromInt32(9644), probe.TCPSocket.Port)
 }
 
 func getFieldManagers(o client.Object) []string {
