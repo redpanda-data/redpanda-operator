@@ -28,7 +28,7 @@ import (
 // statefulSets returns all StatefulSets for the given RenderState.
 func statefulSets(state *RenderState) ([]*appsv1.StatefulSet, error) {
 	var sets []*appsv1.StatefulSet
-	for _, pool := range state.pools {
+	for _, pool := range state.inClusterPools {
 		ss, err := statefulSet(state, pool)
 		if err != nil {
 			return nil, err

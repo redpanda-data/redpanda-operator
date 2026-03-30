@@ -19,7 +19,7 @@ import (
 // configMaps returns all ConfigMaps for the given RenderState.
 func configMaps(state *RenderState) []*corev1.ConfigMap {
 	var cms []*corev1.ConfigMap
-	for _, pool := range state.pools {
+	for _, pool := range state.inClusterPools {
 		cms = append(cms, redpandaConfigMap(state, pool))
 	}
 	if cm := rpkProfileConfigMap(state); cm != nil {

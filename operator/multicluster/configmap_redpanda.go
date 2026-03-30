@@ -30,30 +30,15 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 
 	if includeSeedServers {
 		var servers []map[string]any
-		if len(state.seedServers) > 0 {
-			for _, server := range state.seedServers {
-				address, port, _ := strings.Cut(server, ":")
-				servers = append(servers, map[string]any{
-					"host": map[string]any{
-						"address": address,
-						"port":    port,
-					},
-				})
-			}
-		} else {
-			for _, p := range state.pools {
-				for i := int32(0); i < p.GetReplicas(); i++ {
-					servers = append(servers, map[string]any{
-						"host": map[string]any{
-							"address": fmt.Sprintf("%s%s-%d.%s",
-								state.fullname(), p.Suffix(), i, state.Spec().InternalDomain(state.fullname(), state.namespace)),
-							"port": state.Spec().RPCPort(),
-						},
-					})
-				}
-			}
+		for _, server := range state.seedServers {
+			address, port, _ := strings.Cut(server, ":")
+			servers = append(servers, map[string]any{
+				"host": map[string]any{
+					"address": address,
+					"port":    port,
+				},
+			})
 		}
-
 		redpanda["seed_servers"] = servers
 	}
 
