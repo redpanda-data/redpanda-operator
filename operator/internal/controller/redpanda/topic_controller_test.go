@@ -12,6 +12,10 @@ package redpanda
 import (
 	"context"
 	"io"
+<<<<<<< HEAD
+=======
+	"os"
+>>>>>>> 615ae456 (Remove ability to unset redpanda.storage.mode from topics once explicitly set to avoid warn-level informational log spam in core (#1357))
 	"strings"
 	"testing"
 	"time"
@@ -931,11 +935,23 @@ func TestUnsetStorageMode(t *testing.T) {
 	mgr := SetupTestManager(t, ctx, cfg, c)
 	factory := internalclient.NewFactory(mgr, nil)
 
+<<<<<<< HEAD
+=======
+	defer os.Unsetenv("TESTCONTAINERS_RYUK_DISABLED")
+	if os.Getenv("CI") == "true" {
+		require.NoError(t, os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true"))
+	}
+
+>>>>>>> 615ae456 (Remove ability to unset redpanda.storage.mode from topics once explicitly set to avoid warn-level informational log spam in core (#1357))
 	// Use the nightly build that surfaces the redpanda.storage.mode regression.
 	// The cluster default for redpanda.storage.mode is "unset". We'll explicitly
 	// set a topic to "local" via IncrementalAlterConfigs, making Redpanda track
 	// it as DYNAMIC_TOPIC_CONFIG (non-default source).
+<<<<<<< HEAD
 	container, err := redpanda.Run(ctx, "redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b")
+=======
+	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b")
+>>>>>>> 615ae456 (Remove ability to unset redpanda.storage.mode from topics once explicitly set to avoid warn-level informational log spam in core (#1357))
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		// Dump container logs for debugging
