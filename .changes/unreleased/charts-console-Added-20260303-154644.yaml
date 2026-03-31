@@ -1,4 +1,0 @@
-project: charts/console
-kind: Added
-body: Added monitoring field that enables ServiceMonitor creation for Console.
-time: 2026-03-03T15:46:44.509011+01:00
