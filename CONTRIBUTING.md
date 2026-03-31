@@ -104,6 +104,7 @@ To release any project in this repository:
 6. Push the tags.
 7. Verify that the [Release Workflow](./.github/workflows/release.yml) ran successfully.
 8. If applicable, mark the newly minted release as the "latest".
+9. Manually trigger syncing helm charts from this repo in the [helm-charts](https://github.com/redpanda-data/helm-charts/actions/workflows/release_from_operator.yaml) repo.
 
 ## Nightly build
 
