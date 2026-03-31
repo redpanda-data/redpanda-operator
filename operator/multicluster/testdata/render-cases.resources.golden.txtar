@@ -214,14 +214,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: audit-logging-pool-a-0.audit-logging.audit-logging.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: audit-logging-pool-a-1.audit-logging.audit-logging.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: audit-logging-pool-a-2.audit-logging.audit-logging.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1037,14 +1037,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: common-labels-pool-a-0.common-labels.common-labels.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: common-labels-pool-a-1.common-labels.common-labels.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: common-labels-pool-a-2.common-labels.common-labels.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1886,14 +1886,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: custom-cluster-domain-pool-a-0.custom-cluster-domain.custom-cluster-domain.svc.custom.local
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: custom-cluster-domain-pool-a-1.custom-cluster-domain.custom-cluster-domain.svc.custom.local
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: custom-cluster-domain-pool-a-2.custom-cluster-domain.custom-cluster-domain.svc.custom.local
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -2702,14 +2702,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: custom-config-pool-a-0.custom-config.custom-config.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: custom-config-pool-a-1.custom-config.custom-config.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: custom-config-pool-a-2.custom-config.custom-config.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -3517,14 +3517,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: custom-image-pool-a-0.custom-image.custom-image.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: custom-image-pool-a-1.custom-image.custom-image.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: custom-image-pool-a-2.custom-image.custom-image.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -4332,14 +4332,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: custom-resources-pool-a-0.custom-resources.custom-resources.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: custom-resources-pool-a-1.custom-resources.custom-resources.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: custom-resources-pool-a-2.custom-resources.custom-resources.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -5147,14 +5147,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: custom-resources-explicit-pool-a-0.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: custom-resources-explicit-pool-a-1.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: custom-resources-explicit-pool-a-2.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -5962,14 +5962,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: enterprise-pool-a-0.enterprise.enterprise.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: enterprise-pool-a-1.enterprise.enterprise.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: enterprise-pool-a-2.enterprise.enterprise.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -6716,14 +6716,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: external-loadbalancer-pool-a-0.external-loadbalancer.external-loadbalancer.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: external-loadbalancer-pool-a-1.external-loadbalancer.external-loadbalancer.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: external-loadbalancer-pool-a-2.external-loadbalancer.external-loadbalancer.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -7550,14 +7550,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: external-nodeport-pool-a-0.external-nodeport.external-nodeport.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: external-nodeport-pool-a-1.external-nodeport.external-nodeport.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: external-nodeport-pool-a-2.external-nodeport.external-nodeport.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -8326,14 +8326,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: external-tls-pool-a-0.external-tls.external-tls.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: external-tls-pool-a-1.external-tls.external-tls.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: external-tls-pool-a-2.external-tls.external-tls.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -9189,20 +9189,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-cold-0.
+            port: "33145"
         - host:
-            address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-cold-1.
+            port: "33145"
         - host:
-            address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-hot-0.
+            port: "33145"
         - host:
-            address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-hot-1.
+            port: "33145"
         - host:
-            address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-hot-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -9404,20 +9404,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-cold-0.
+            port: "33145"
         - host:
-            address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-cold-1.
+            port: "33145"
         - host:
-            address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-hot-0.
+            port: "33145"
         - host:
-            address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-hot-1.
+            port: "33145"
         - host:
-            address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
-            port: 33145
+            address: pool-hot-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -10624,14 +10624,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: init-containers-pool-a-0.init-containers.init-containers.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: init-containers-pool-a-1.init-containers.init-containers.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: init-containers-pool-a-2.init-containers.init-containers.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -11491,14 +11491,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: memory-locking-pool-a-0.memory-locking.memory-locking.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: memory-locking-pool-a-1.memory-locking.memory-locking.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: memory-locking-pool-a-2.memory-locking.memory-locking.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -12306,14 +12306,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: minimal-pool-a-0.minimal.minimal.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: minimal-pool-a-1.minimal.minimal.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: minimal-pool-a-2.minimal.minimal.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -13147,14 +13147,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: monitoring-pool-a-0.monitoring.monitoring.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: monitoring-pool-a-1.monitoring.monitoring.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: monitoring-pool-a-2.monitoring.monitoring.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -13966,20 +13966,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
         - host:
-            address: multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-b-0.
+            port: "33145"
         - host:
-            address: multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-b-1.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -14160,20 +14160,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
         - host:
-            address: multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-b-0.
+            port: "33145"
         - host:
-            address: multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.
-            port: 33145
+            address: pool-b-1.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -15117,14 +15117,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: rack-awareness-pool-a-0.rack-awareness.rack-awareness.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: rack-awareness-pool-a-1.rack-awareness.rack-awareness.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: rack-awareness-pool-a-2.rack-awareness.rack-awareness.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -15979,14 +15979,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: sasl-scram256-pool-a-0.sasl-scram256.sasl-scram256.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: sasl-scram256-pool-a-1.sasl-scram256.sasl-scram256.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: sasl-scram256-pool-a-2.sasl-scram256.sasl-scram256.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -16813,14 +16813,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -17639,8 +17639,8 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: single-replica-pool-a-0.single-replica.single-replica.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -18351,14 +18351,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: storage-hostpath-pool-a-0.storage-hostpath.storage-hostpath.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: storage-hostpath-pool-a-1.storage-hostpath.storage-hostpath.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: storage-hostpath-pool-a-2.storage-hostpath.storage-hostpath.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -19166,14 +19166,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: storage-pv-custom-pool-a-0.storage-pv-custom.storage-pv-custom.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: storage-pv-custom-pool-a-1.storage-pv-custom.storage-pv-custom.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: storage-pv-custom-pool-a-2.storage-pv-custom.storage-pv-custom.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -19981,14 +19981,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -20796,14 +20796,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -21611,14 +21611,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: tiered-storage-pv-pool-a-0.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: tiered-storage-pv-pool-a-1.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: tiered-storage-pv-pool-a-2.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -22428,14 +22428,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: tls-mtls-pool-a-0.tls-mtls.tls-mtls.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: tls-mtls-pool-a-1.tls-mtls.tls-mtls.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: tls-mtls-pool-a-2.tls-mtls.tls-mtls.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -23274,14 +23274,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: tls-self-signed-pool-a-0.tls-self-signed.tls-self-signed.svc.cluster.local.
-            port: 33145
+            address: pool-a-0.
+            port: "33145"
         - host:
-            address: tls-self-signed-pool-a-1.tls-self-signed.tls-self-signed.svc.cluster.local.
-            port: 33145
+            address: pool-a-1.
+            port: "33145"
         - host:
-            address: tls-self-signed-pool-a-2.tls-self-signed.tls-self-signed.svc.cluster.local.
-            port: 33145
+            address: pool-a-2.
+            port: "33145"
       rpk:
         additional_start_flags:
         - --default-log-level=info
