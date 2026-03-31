@@ -57,6 +57,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -74,6 +75,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -85,6 +87,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-b
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -134,6 +137,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -180,6 +184,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -203,6 +208,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -252,6 +258,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -301,6 +308,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -336,6 +344,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -410,6 +419,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -431,6 +441,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -451,6 +462,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -471,6 +483,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -493,6 +506,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -516,6 +530,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -543,6 +558,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -572,6 +588,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -599,6 +616,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -626,6 +644,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -651,6 +670,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -678,6 +698,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -695,6 +716,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -724,6 +746,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -749,6 +772,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -770,6 +794,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -796,6 +821,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -813,6 +839,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -835,6 +862,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-a
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -953,6 +981,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-hot
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
@@ -971,6 +1000,7 @@ apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: pool-cold
+  namespace: default
 spec:
   clusterRef:
     group: cluster.redpanda.com/v1alpha2
