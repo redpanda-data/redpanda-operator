@@ -47,8 +47,8 @@
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
-              { name = "TEST_REDPANDA_REPO"; eval = "redpandadata/redpanda-unstable"; }
-              { name = "TEST_REDPANDA_VERSION"; eval = "v26.1.1-rc1"; }
+              { name = "TEST_REDPANDA_REPO"; eval = "redpandadata/redpanda"; }
+              { name = "TEST_REDPANDA_VERSION"; eval = "v26.1.1"; }
               { name = "CGO_ENABLED"; eval = "0"; }
               # K3S_IMAGE controls the Kubernetes version used by k3d-based tests.
               # Do NOT set K3S_IMAGE here — per-PR tests must use the Go default

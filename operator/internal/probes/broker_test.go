@@ -169,6 +169,8 @@ func (s *ProberSuite) SetupSuite() {
 			"coredns/coredns:1.11.1",
 			"redpandadata/redpanda-unstable:v24.3.1-rc8",
 			"redpandadata/redpanda-unstable:v25.3.1-rc2",
+			"redpandadata/redpanda-unstable:v25.3.1-rc2",
+			"redpandadata/redpanda:v26.1.1",
 		},
 	})
 
