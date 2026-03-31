@@ -180,7 +180,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
           name: sidecar
           readinessProbe:
             failureThreshold: 3
@@ -266,7 +266,7 @@
           - /tmp/base-config
           - --out-dir
           - /tmp/config
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
           name: bootstrap-yaml-envsubst
           resources:
             limits:
@@ -901,7 +901,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
           name: sidecar
           readinessProbe:
             failureThreshold: 3
@@ -987,7 +987,7 @@
           - /tmp/base-config
           - --out-dir
           - /tmp/config
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
           name: bootstrap-yaml-envsubst
           resources:
             limits:

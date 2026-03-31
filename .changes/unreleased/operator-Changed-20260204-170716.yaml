@@ -1,4 +1,0 @@
-project: operator
-kind: Changed
-body: Modified our statefulset liveness probes to just do a TCP check on the admin port. Previously it did an actual curl request that went through our internal service. This could potentially have some DNS-related issues and isn't really required to tell "hey is the admin API up".
-time: 2026-02-04T17:07:16.376582-05:00
