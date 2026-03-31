@@ -38,7 +38,7 @@ var defaultValuesYAML []byte
 var Scheme = runtime.NewScheme()
 
 const (
-	AppVersion           = "v3.3.2"
+	AppVersion           = "v3.7.0"
 	ChartName            = "console"
 	ConsoleContainerName = "console"
 )

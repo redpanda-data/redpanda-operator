@@ -13,7 +13,7 @@ run `task generate:third-party-licenses-list`
 | software     | license        |
 | :----------: | :------------: |
 | cel.dev/expr | [Apache-2.0](https://github.com/google/cel-spec/blob/v0.25.1/LICENSE) |
-| cloud.google.com/go/auth | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/auth/v0.16.5/auth/LICENSE) |
+| cloud.google.com/go/auth | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/auth/v0.18.1/auth/LICENSE) |
 | cloud.google.com/go/auth/oauth2adapt | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/auth/oauth2adapt/v0.2.8/auth/oauth2adapt/LICENSE) |
 | cloud.google.com/go/compute/metadata | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/compute/metadata/v0.9.0/compute/metadata/LICENSE) |
 | cloud.google.com/go/iam | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/iam/v1.5.3/iam/LICENSE) |
@@ -72,8 +72,8 @@ run `task generate:third-party-licenses-list`
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
 | github.com/coreos/go-semver/semver | [Apache-2.0](https://github.com/coreos/go-semver/blob/v0.3.1/LICENSE) |
 | github.com/coreos/go-systemd/v22 | [Apache-2.0](https://github.com/coreos/go-systemd/blob/v22.7.0/LICENSE) |
-| github.com/cyphar/filepath-securejoin | [MPL-2.0](https://github.com/cyphar/filepath-securejoin/blob/v0.5.1/COPYING.md) |
-| github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.5.1/COPYING.md) |
+| github.com/cyphar/filepath-securejoin | [MPL-2.0](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/COPYING.md) |
+| github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/COPYING.md) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
 | github.com/emicklei/go-restful/v3 | [MIT](https://github.com/emicklei/go-restful/blob/v3.13.0/LICENSE) |
 | github.com/evanphx/json-patch | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.9.11/LICENSE) |
@@ -105,10 +105,10 @@ run `task generate:third-party-licenses-list`
 | github.com/go-openapi/swag/stringutils | [Apache-2.0](https://github.com/go-openapi/swag/blob/stringutils/v0.25.4/stringutils/LICENSE) |
 | github.com/go-openapi/swag/typeutils | [Apache-2.0](https://github.com/go-openapi/swag/blob/typeutils/v0.25.4/typeutils/LICENSE) |
 | github.com/go-openapi/swag/yamlutils | [Apache-2.0](https://github.com/go-openapi/swag/blob/yamlutils/v0.25.4/yamlutils/LICENSE) |
-| github.com/go-viper/mapstructure/v2 | [MIT](https://github.com/go-viper/mapstructure/blob/v2.4.0/LICENSE) |
+| github.com/go-viper/mapstructure/v2 | [MIT](https://github.com/go-viper/mapstructure/blob/v2.5.0/LICENSE) |
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
 | github.com/gogo/protobuf | [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE) |
-| github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.3.0/LICENSE) |
+| github.com/golang-jwt/jwt/v5 | [MIT](https://github.com/golang-jwt/jwt/blob/v5.3.1/LICENSE) |
 | github.com/golang/protobuf/proto | [BSD-3-Clause](https://github.com/golang/protobuf/blob/v1.5.4/LICENSE) |
 | github.com/gonvenience/bunt | [MIT](https://github.com/gonvenience/bunt/blob/v1.3.5/LICENSE) |
 | github.com/gonvenience/neat | [MIT](https://github.com/gonvenience/neat/blob/v1.3.13/LICENSE) |
@@ -123,8 +123,8 @@ run `task generate:third-party-licenses-list`
 | github.com/google/go-cmp/cmp | [BSD-3-Clause](https://github.com/google/go-cmp/blob/v0.7.0/LICENSE) |
 | github.com/google/s2a-go | [Apache-2.0](https://github.com/google/s2a-go/blob/v0.1.9/LICENSE.md) |
 | github.com/google/uuid | [BSD-3-Clause](https://github.com/google/uuid/blob/v1.6.0/LICENSE) |
-| github.com/googleapis/enterprise-certificate-proxy/client | [Apache-2.0](https://github.com/googleapis/enterprise-certificate-proxy/blob/v0.3.6/LICENSE) |
-| github.com/googleapis/gax-go/v2 | [BSD-3-Clause](https://github.com/googleapis/gax-go/blob/v2.15.0/v2/LICENSE) |
+| github.com/googleapis/enterprise-certificate-proxy/client | [Apache-2.0](https://github.com/googleapis/enterprise-certificate-proxy/blob/v0.3.11/LICENSE) |
+| github.com/googleapis/gax-go/v2 | [BSD-3-Clause](https://github.com/googleapis/gax-go/blob/v2.17.0/v2/LICENSE) |
 | github.com/gorilla/websocket | [BSD-2-Clause](https://github.com/gorilla/websocket/blob/e064f32e3674/LICENSE) |
 | github.com/gosuri/uitable | [MIT](https://github.com/gosuri/uitable/blob/v0.0.4/LICENSE) |
 | github.com/gosuri/uitable/util/wordwrap | [MIT](https://github.com/gosuri/uitable/blob/v0.0.4/util/wordwrap/LICENSE.md) |
@@ -195,7 +195,7 @@ run `task generate:third-party-licenses-list`
 | github.com/opencontainers/go-digest | [Apache-2.0](https://github.com/opencontainers/go-digest/blob/d50d2fec9c98/LICENSE) |
 | github.com/opencontainers/image-spec/specs-go | [Apache-2.0](https://github.com/opencontainers/image-spec/blob/v1.1.1/LICENSE) |
 | github.com/peterbourgon/diskv | [MIT](https://github.com/peterbourgon/diskv/blob/v2.0.1/LICENSE) |
-| github.com/pierrec/lz4/v4 | [BSD-3-Clause](https://github.com/pierrec/lz4/blob/v4.1.22/LICENSE) |
+| github.com/pierrec/lz4/v4 | [BSD-3-Clause](https://github.com/pierrec/lz4/blob/v4.1.25/LICENSE) |
 | github.com/pkg/browser | [BSD-2-Clause](https://github.com/pkg/browser/blob/5ac0b6a4141c/LICENSE) |
 | github.com/pkg/errors | [BSD-2-Clause](https://github.com/pkg/errors/blob/v0.9.1/LICENSE) |
 | github.com/pmezard/go-difflib/difflib | [BSD-3-Clause](https://github.com/pmezard/go-difflib/blob/5d4384ee4fb2/LICENSE) |
@@ -227,8 +227,8 @@ run `task generate:third-party-licenses-list`
 | github.com/tidwall/gjson | [MIT](https://github.com/tidwall/gjson/blob/v1.18.0/LICENSE) |
 | github.com/tidwall/match | [MIT](https://github.com/tidwall/match/blob/v1.1.1/LICENSE) |
 | github.com/tidwall/pretty | [MIT](https://github.com/tidwall/pretty/blob/v1.2.1/LICENSE) |
-| github.com/twmb/franz-go/pkg | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/v1.20.4/LICENSE) |
-| github.com/twmb/franz-go/pkg/kadm | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/kadm/v1.17.1/pkg/kadm/LICENSE) |
+| github.com/twmb/franz-go/pkg | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/v1.20.6/LICENSE) |
+| github.com/twmb/franz-go/pkg/kadm | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/kadm/v1.17.2/pkg/kadm/LICENSE) |
 | github.com/twmb/franz-go/pkg/kmsg | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/kmsg/v1.12.0/pkg/kmsg/LICENSE) |
 | github.com/twmb/franz-go/pkg/sasl/kerberos | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/sasl/kerberos/v1.1.0/pkg/sasl/kerberos/LICENSE) |
 | github.com/twmb/franz-go/pkg/sr | [BSD-3-Clause](https://github.com/twmb/franz-go/blob/pkg/sr/v1.7.0/pkg/sr/LICENSE) |
@@ -279,9 +279,9 @@ run `task generate:third-party-licenses-list`
 | golang.org/x/time/rate | [BSD-3-Clause](https://cs.opensource.google/go/x/time/+/v0.14.0:LICENSE) |
 | golang.org/x/tools | [BSD-3-Clause](https://cs.opensource.google/go/x/tools/+/v0.42.0:LICENSE) |
 | gomodules.xyz/jsonpatch/v2 | [Apache-2.0](https://github.com/gomodules/jsonpatch/blob/v2.5.0/v2/LICENSE) |
-| google.golang.org/api | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.251.0/LICENSE) |
-| google.golang.org/api/internal/third_party/uritemplates | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.251.0/internal/third_party/uritemplates/LICENSE) |
-| google.golang.org/genproto/googleapis | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/95abcf5c77ba/LICENSE) |
+| google.golang.org/api | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.265.0/LICENSE) |
+| google.golang.org/api/internal/third_party/uritemplates | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.265.0/internal/third_party/uritemplates/LICENSE) |
+| google.golang.org/genproto/googleapis | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/42d3e9bedb6d/LICENSE) |
 | google.golang.org/genproto/googleapis/api | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/42d3e9bedb6d/googleapis/api/LICENSE) |
 | google.golang.org/genproto/googleapis/rpc | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/42d3e9bedb6d/googleapis/rpc/LICENSE) |
 | google.golang.org/grpc | [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.79.3/LICENSE) |

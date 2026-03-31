@@ -136,11 +136,12 @@ type PartialServiceStartupAttemptsOptions struct {
 }
 
 type PartialProto struct {
-	Enabled     *bool                      "yaml:\"enabled\" json:\"enabled,omitempty\""
-	Git         *PartialGit                "yaml:\"git\" json:\"git,omitempty\""
-	FileSystem  *PartialFilesystem         "yaml:\"fileSystem\" json:\"fileSystem,omitempty\""
-	Mappings    []PartialProtoTopicMapping "yaml:\"mappings\" json:\"mappings,omitempty\""
-	ImportPaths []string                   "yaml:\"importPaths\" json:\"importPaths,omitempty\""
+	Enabled           *bool                      "yaml:\"enabled\" json:\"enabled,omitempty\""
+	Git               *PartialGit                "yaml:\"git\" json:\"git,omitempty\""
+	FileSystem        *PartialFilesystem         "yaml:\"fileSystem\" json:\"fileSystem,omitempty\""
+	Mappings          []PartialProtoTopicMapping "yaml:\"mappings\" json:\"mappings,omitempty\""
+	ImportPaths       []string                   "yaml:\"importPaths\" json:\"importPaths,omitempty\""
+	BufSchemaRegistry *PartialBSR                "yaml:\"bufSchemaRegistry\" json:\"bufSchemaRegistry,omitempty\""
 }
 
 type PartialMsgpack struct {
@@ -218,6 +219,12 @@ type PartialFilesystem struct {
 	RefreshInterval       *time.Duration "yaml:\"refreshInterval\" json:\"refreshInterval,omitempty\""
 	Paths                 []string       "yaml:\"paths\" json:\"paths,omitempty\""
 	SkipHiddenFiles       *bool          "yaml:\"skipHiddenFiles\" json:\"skipHiddenFiles,omitempty\""
+}
+
+type PartialBSR struct {
+	Enabled *bool   "yaml:\"enabled\" json:\"enabled,omitempty\""
+	URL     *string "yaml:\"url\" json:\"url,omitempty\""
+	Token   *string "yaml:\"token\" json:\"token,omitempty\""
 }
 
 type PartialRegexpOrLiteral struct {

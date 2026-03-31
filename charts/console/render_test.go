@@ -26,7 +26,7 @@ import (
 // stable but that assertion is much harder to write.
 func TestAppVersion(t *testing.T) {
 	const (
-		gitCmd = "git ls-remote https://github.com/redpanda-data/console.git %s | cut -c 1-12"
+		gitCmd = "git ls-remote https://github.com/redpanda-data/console.git tags/%s | cut -c 1-12"
 		goCmd  = "go list -m -json github.com/redpanda-data/console/backend | jq -r .Version | cut -d - -f 3"
 	)
 
