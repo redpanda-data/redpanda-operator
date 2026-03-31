@@ -90,8 +90,8 @@ func TestStretchClusterResourceClient(t *testing.T) {
 	// so tests can control them. Save and restore to avoid affecting other tests.
 	origRedpandaTag := redpandav1alpha2.DefaultRedpandaImageTag
 	origOperatorTag := redpandav1alpha2.DefaultOperatorImageTag
-	redpandav1alpha2.DefaultRedpandaImageTag = "v25.3.1"
-	redpandav1alpha2.DefaultOperatorImageTag = "v25.3.1"
+	redpandav1alpha2.DefaultRedpandaImageTag = "v26.1.1"
+	redpandav1alpha2.DefaultOperatorImageTag = "v26.1.1"
 	t.Cleanup(func() {
 		redpandav1alpha2.DefaultRedpandaImageTag = origRedpandaTag
 		redpandav1alpha2.DefaultOperatorImageTag = origOperatorTag
