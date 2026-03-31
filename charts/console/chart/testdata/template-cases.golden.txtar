@@ -10,8 +10,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -23,8 +23,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -60,8 +60,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -74,8 +74,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -98,8 +98,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -132,7 +132,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -200,8 +200,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -236,8 +236,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -249,8 +249,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -286,8 +286,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -300,8 +300,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -324,8 +324,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -358,7 +358,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -426,8 +426,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -456,8 +456,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -469,8 +469,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -506,8 +506,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -520,8 +520,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -544,8 +544,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -578,7 +578,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -646,8 +646,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -677,8 +677,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: HRoLg
   namespace: test-namespace
 ---
@@ -691,8 +691,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: hvGoJL
   namespace: test-namespace
 stringData:
@@ -729,8 +729,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: hvGoJL
   namespace: test-namespace
 ---
@@ -744,8 +744,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: hvGoJL
   namespace: test-namespace
 spec:
@@ -770,8 +770,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: "n"
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: hvGoJL
   namespace: test-namespace
 spec:
@@ -810,7 +810,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -886,8 +886,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: T50cZi
   namespace: test-namespace
 ---
@@ -899,8 +899,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: T50cZi
   namespace: test-namespace
 stringData:
@@ -936,8 +936,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: T50cZi
   namespace: test-namespace
 ---
@@ -950,8 +950,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: T50cZi
   namespace: test-namespace
 spec:
@@ -974,8 +974,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Sh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: T50cZi
   namespace: test-namespace
 spec:
@@ -1025,7 +1025,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -1128,8 +1128,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: R1Yar8
   namespace: test-namespace
 ---
@@ -1141,8 +1141,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: xZty
   namespace: test-namespace
 stringData:
@@ -1178,8 +1178,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: xZty
   namespace: test-namespace
 ---
@@ -1192,8 +1192,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: xZty
   namespace: test-namespace
 spec:
@@ -1216,8 +1216,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vN4yH7I
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: xZty
   namespace: test-namespace
 spec:
@@ -1253,7 +1253,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -1352,8 +1352,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 8nE
   namespace: test-namespace
 ---
@@ -1365,8 +1365,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 8nE
   namespace: test-namespace
 stringData:
@@ -1399,8 +1399,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 8nE
   namespace: test-namespace
 spec:
@@ -1423,8 +1423,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: w6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 8nE
   namespace: test-namespace
 spec:
@@ -1462,8 +1462,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console-YMl
   namespace: test-namespace
 ---
@@ -1476,8 +1476,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console-YMl
   namespace: test-namespace
 stringData:
@@ -1514,8 +1514,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console-YMl
   namespace: test-namespace
 ---
@@ -1529,8 +1529,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console-YMl
   namespace: test-namespace
 spec:
@@ -1554,8 +1554,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: YMl
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console-YMl
   namespace: test-namespace
 spec:
@@ -1599,7 +1599,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -1677,8 +1677,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: pN
   namespace: test-namespace
 ---
@@ -1690,8 +1690,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: pN
   namespace: test-namespace
 stringData:
@@ -1724,8 +1724,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: pN
   namespace: test-namespace
 spec:
@@ -1748,8 +1748,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: MW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: pN
   namespace: test-namespace
 spec:
@@ -1782,7 +1782,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: RnJFs0:OQDirE
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -1863,8 +1863,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: nd7TSb2mNTS
   namespace: test-namespace
 ---
@@ -1876,8 +1876,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: rzd
   namespace: test-namespace
 stringData:
@@ -1913,8 +1913,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: rzd
   namespace: test-namespace
 ---
@@ -1927,8 +1927,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: rzd
   namespace: test-namespace
 spec:
@@ -1951,8 +1951,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: gCH15URsJZr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: rzd
   namespace: test-namespace
 spec:
@@ -2005,7 +2005,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: V:iSGm6MT1
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -2090,10 +2090,10 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: RFjc7
   namespace: test-namespace
 ---
@@ -2105,10 +2105,10 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: "y"
   namespace: test-namespace
 stringData:
@@ -2144,10 +2144,10 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: "y"
   namespace: test-namespace
 ---
@@ -2160,10 +2160,10 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: "y"
   namespace: test-namespace
 spec:
@@ -2186,10 +2186,10 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: HWL
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cV05TKdtF: 55lItpeJD
     h: 1Y7dqm4wZL
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: "y"
   namespace: test-namespace
 spec:
@@ -2237,7 +2237,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -2329,8 +2329,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: YcV5zP8
   namespace: test-namespace
 ---
@@ -2346,8 +2346,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GbgHqD
   namespace: test-namespace
 ---
@@ -2360,8 +2360,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GbgHqD
   namespace: test-namespace
 spec:
@@ -2385,8 +2385,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GbgHqD
   namespace: test-namespace
 spec:
@@ -2418,7 +2418,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -2515,8 +2515,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: l1Bnpx
   namespace: test-namespace
 ---
@@ -2528,8 +2528,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: l1Bnpx
   namespace: test-namespace
 stringData:
@@ -2563,8 +2563,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: l1Bnpx
   namespace: test-namespace
 spec:
@@ -2587,8 +2587,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: BKV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: l1Bnpx
   namespace: test-namespace
 spec:
@@ -2624,7 +2624,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -2731,8 +2731,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: JFcK
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: kIzbDF
   namespace: test-namespace
 ---
@@ -2745,8 +2745,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: JFcK
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: ivK
   namespace: test-namespace
 spec:
@@ -2769,8 +2769,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: JFcK
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: ivK
   namespace: test-namespace
 spec:
@@ -2830,7 +2830,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 0YeLdES:1a4iH
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -3012,8 +3012,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     v7E: 1g6JB
   name: hbe
   namespace: test-namespace
@@ -3027,8 +3027,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     v7E: 1g6JB
   name: hbe
   namespace: test-namespace
@@ -3066,8 +3066,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     v7E: 1g6JB
   name: hbe
   namespace: test-namespace
@@ -3085,8 +3085,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     v7E: 1g6JB
   name: hbe
   namespace: test-namespace
@@ -3112,8 +3112,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Cy9eHCiP
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     v7E: 1g6JB
   name: hbe
   namespace: test-namespace
@@ -3224,7 +3224,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: U:Tl0EP
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -3336,8 +3336,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: tmn2Kt
   namespace: test-namespace
 ---
@@ -3349,8 +3349,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: tmn2Kt
   namespace: test-namespace
 stringData:
@@ -3386,8 +3386,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: tmn2Kt
   namespace: test-namespace
 ---
@@ -3400,8 +3400,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: tmn2Kt
   namespace: test-namespace
 spec:
@@ -3425,8 +3425,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Qr03ts
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: tmn2Kt
   namespace: test-namespace
 spec:
@@ -3464,7 +3464,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -3680,8 +3680,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: RttlJN
   namespace: test-namespace
 ---
@@ -3693,8 +3693,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: RttlJN
   namespace: test-namespace
 stringData:
@@ -3730,8 +3730,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: RttlJN
   namespace: test-namespace
 ---
@@ -3744,8 +3744,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: RttlJN
   namespace: test-namespace
 spec:
@@ -3768,8 +3768,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: dDkIKgMwXv
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: RttlJN
   namespace: test-namespace
 spec:
@@ -3802,7 +3802,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -3960,8 +3960,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: h6eHrUr
   namespace: test-namespace
 ---
@@ -3973,8 +3973,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: htymHJ
   namespace: test-namespace
 stringData:
@@ -4010,8 +4010,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: htymHJ
   namespace: test-namespace
 ---
@@ -4024,8 +4024,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Vi2vH
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: htymHJ
   namespace: test-namespace
 spec:
@@ -4056,8 +4056,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: zmr
   namespace: test-namespace
 ---
@@ -4072,8 +4072,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9RweMGWqBs
   namespace: test-namespace
 stringData:
@@ -4112,8 +4112,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9RweMGWqBs
   namespace: test-namespace
 ---
@@ -4129,8 +4129,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9RweMGWqBs
   namespace: test-namespace
 spec:
@@ -4158,8 +4158,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9RweMGWqBs
   namespace: test-namespace
 spec:
@@ -4271,7 +4271,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: b4CZb:OoX
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -4411,8 +4411,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: KD8DmV
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9RweMGWqBs
   namespace: test-namespace
 spec:
@@ -4448,8 +4448,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: DdF7ALq
   namespace: test-namespace
 ---
@@ -4461,8 +4461,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 6maz
   namespace: test-namespace
 stringData:
@@ -4498,8 +4498,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 6maz
   namespace: test-namespace
 ---
@@ -4512,8 +4512,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 6maz
   namespace: test-namespace
 spec:
@@ -4536,8 +4536,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: SC
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 6maz
   namespace: test-namespace
 spec:
@@ -4672,7 +4672,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: HV3:cI8TzaYkws
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -4828,8 +4828,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9XG3SZW
   namespace: test-namespace
 ---
@@ -4841,8 +4841,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9XG3SZW
   namespace: test-namespace
 stringData:
@@ -4878,8 +4878,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9XG3SZW
   namespace: test-namespace
 ---
@@ -4892,8 +4892,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9XG3SZW
   namespace: test-namespace
 spec:
@@ -4919,8 +4919,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tPiY
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9XG3SZW
   namespace: test-namespace
 spec:
@@ -4978,7 +4978,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: kPWhaC:BcBi
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -5346,8 +5346,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: uAvlOXf
   namespace: test-namespace
 ---
@@ -5359,8 +5359,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: ExFU3
   namespace: test-namespace
 stringData:
@@ -5393,8 +5393,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: ExFU3
   namespace: test-namespace
 spec:
@@ -5418,8 +5418,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 1qyLP36T
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: ExFU3
   namespace: test-namespace
 spec:
@@ -5545,7 +5545,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 6V6:6uR
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -5708,8 +5708,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: NZ7h9
   namespace: test-namespace
 ---
@@ -5721,8 +5721,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: NZ7h9
   namespace: test-namespace
 stringData:
@@ -5758,8 +5758,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: NZ7h9
   namespace: test-namespace
 ---
@@ -5772,8 +5772,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: NZ7h9
   namespace: test-namespace
 spec:
@@ -5798,8 +5798,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8MIg
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: NZ7h9
   namespace: test-namespace
 spec:
@@ -5859,7 +5859,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: W3:2vPed
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -5952,8 +5952,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: HMpc
   namespace: test-namespace
 ---
@@ -5965,8 +5965,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Om7
   namespace: test-namespace
 stringData:
@@ -6002,8 +6002,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Om7
   namespace: test-namespace
 ---
@@ -6016,8 +6016,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Om7
   namespace: test-namespace
 spec:
@@ -6043,8 +6043,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zzmAR9
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Om7
   namespace: test-namespace
 spec:
@@ -6206,7 +6206,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 0x6:PXKnRw
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -6425,8 +6425,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: tW
   namespace: test-namespace
 ---
@@ -6440,8 +6440,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: PhRk
   namespace: test-namespace
 stringData:
@@ -6479,8 +6479,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: PhRk
   namespace: test-namespace
 ---
@@ -6498,8 +6498,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: PhRk
   namespace: test-namespace
 spec:
@@ -6523,8 +6523,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Rys
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: PhRk
   namespace: test-namespace
 spec:
@@ -6559,8 +6559,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GVjeLRc
   namespace: test-namespace
 ---
@@ -6572,8 +6572,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GVjeLRc
   namespace: test-namespace
 stringData:
@@ -6609,8 +6609,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GVjeLRc
   namespace: test-namespace
 ---
@@ -6623,8 +6623,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GVjeLRc
   namespace: test-namespace
 spec:
@@ -6648,8 +6648,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xNnu
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: GVjeLRc
   namespace: test-namespace
 spec:
@@ -6826,7 +6826,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: Gaz:ahb
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -7165,8 +7165,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Pga
   namespace: test-namespace
 ---
@@ -7178,8 +7178,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: fXCb
   namespace: test-namespace
 stringData:
@@ -7215,8 +7215,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: fXCb
   namespace: test-namespace
 spec:
@@ -7239,8 +7239,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: fXCb
   namespace: test-namespace
 spec:
@@ -7326,7 +7326,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -7521,8 +7521,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: s3YOF
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: fXCb
   namespace: test-namespace
 spec:
@@ -7551,8 +7551,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: aD
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Wpq
   namespace: test-namespace
 ---
@@ -7568,8 +7568,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: aD
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Wpq
   namespace: test-namespace
 ---
@@ -7582,8 +7582,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: aD
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Wpq
   namespace: test-namespace
 spec:
@@ -7608,8 +7608,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Mh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: H5TDAALUdD
   namespace: test-namespace
 ---
@@ -7622,8 +7622,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Mh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Uo
   namespace: test-namespace
 spec:
@@ -7648,8 +7648,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: Mh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Uo
   namespace: test-namespace
 spec:
@@ -7748,7 +7748,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: tdq9GJrg:J
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -8172,8 +8172,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     kuKPk7: ""
   name: Utu8ZHG2
   namespace: test-namespace
@@ -8188,8 +8188,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     kuKPk7: ""
   name: qhaD
   namespace: test-namespace
@@ -8214,8 +8214,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     kuKPk7: ""
   name: qhaD
   namespace: test-namespace
@@ -8309,7 +8309,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -8428,8 +8428,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: vLjrafvp
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     kuKPk7: ""
   name: qhaD
   namespace: test-namespace
@@ -8492,8 +8492,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: h9P
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 55C9f3
   namespace: test-namespace
 ---
@@ -8511,8 +8511,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: h9P
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 61hunk
   namespace: test-namespace
 spec:
@@ -8539,8 +8539,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: h9P
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 61hunk
   namespace: test-namespace
 spec:
@@ -8572,8 +8572,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: odFI2M4
   namespace: test-namespace
 stringData:
@@ -8610,8 +8610,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: odFI2M4
   namespace: test-namespace
 ---
@@ -8625,8 +8625,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: odFI2M4
   namespace: test-namespace
 spec:
@@ -8651,8 +8651,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 5XQu4RW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: odFI2M4
   namespace: test-namespace
 spec:
@@ -8787,7 +8787,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: ARBa:BetSp
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -8912,8 +8912,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     xi7L: ibI45
   name: HK
   namespace: test-namespace
@@ -8951,8 +8951,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     xi7L: ibI45
   name: HK
   namespace: test-namespace
@@ -8968,8 +8968,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     xi7L: ibI45
   name: HK
   namespace: test-namespace
@@ -8997,8 +8997,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 3Wh
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     xi7L: ibI45
   name: HK
   namespace: test-namespace
@@ -9203,7 +9203,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 5q2qCT:z10JAfCu
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -9511,8 +9511,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: J
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     jwrBMvwfg: K6I5HsI5
     nk8eJc: nS
   name: G9
@@ -9548,8 +9548,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: J
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     jwrBMvwfg: K6I5HsI5
     nk8eJc: nS
   name: G9
@@ -9574,8 +9574,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: J
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     jwrBMvwfg: K6I5HsI5
     nk8eJc: nS
   name: G9
@@ -9614,8 +9614,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
   name: 59cQ0qKLI
@@ -9630,8 +9630,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
   name: 59cQ0qKLI
@@ -9655,8 +9655,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
   name: 59cQ0qKLI
@@ -9694,8 +9694,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: xknw
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     q4ZdG9q: IJWaYu9mhun
     sFTTcyl: qVyaa0ULC
   name: 59cQ0qKLI
@@ -9754,9 +9754,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     e3Cx: MIAO
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: llK4G
   namespace: test-namespace
 ---
@@ -9771,9 +9771,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     e3Cx: MIAO
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: llK4G
   namespace: test-namespace
 spec:
@@ -9799,9 +9799,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     e3Cx: MIAO
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: llK4G
   namespace: test-namespace
 spec:
@@ -10034,7 +10034,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: xY76Tj:AgKh6S1
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -10440,9 +10440,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     e3Cx: MIAO
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: llK4G
   namespace: test-namespace
 spec:
@@ -10479,9 +10479,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: wB
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     e3Cx: MIAO
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: llK4G
   namespace: test-namespace
 spec:
@@ -10522,9 +10522,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bCPeYVWao
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     gZ85uw3T: e
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
     qO: F4dqLo67vKYZ
   name: foGC
   namespace: test-namespace
@@ -10539,9 +10539,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bCPeYVWao
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     gZ85uw3T: e
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
     qO: F4dqLo67vKYZ
   name: foGC
   namespace: test-namespace
@@ -10565,9 +10565,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: bCPeYVWao
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     gZ85uw3T: e
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
     qO: F4dqLo67vKYZ
   name: foGC
   namespace: test-namespace
@@ -10831,7 +10831,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: JAUpWzFL:3WF1aV
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -11568,9 +11568,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zE
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     blGSa: Hnim0SflkfpF
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: QxrM
   namespace: test-namespace
 ---
@@ -11587,9 +11587,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zE
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     blGSa: Hnim0SflkfpF
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: l
   namespace: test-namespace
 ---
@@ -11605,9 +11605,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: zE
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     blGSa: Hnim0SflkfpF
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: l
   namespace: test-namespace
 spec:
@@ -11638,8 +11638,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: HMyYp
   namespace: test-namespace
 ---
@@ -11658,8 +11658,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Bv0I
   namespace: test-namespace
 ---
@@ -11676,8 +11676,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Bv0I
   namespace: test-namespace
 spec:
@@ -11703,8 +11703,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Bv0I
   namespace: test-namespace
 spec:
@@ -12117,7 +12117,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: EwU0pzhz:SmZAnO7
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -12628,8 +12628,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Bv0I
   namespace: test-namespace
 spec:
@@ -12702,8 +12702,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 9mG8n4Wu4
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: AumW
   namespace: test-namespace
 stringData:
@@ -12739,8 +12739,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 9mG8n4Wu4
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: AumW
   namespace: test-namespace
 spec:
@@ -12769,8 +12769,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 9mG8n4Wu4
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: AumW
   namespace: test-namespace
 spec:
@@ -13149,7 +13149,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: f54I:iO
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -13650,8 +13650,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     uEVMkDkYRvnn: zvptNai
   name: ItYso
   namespace: test-namespace
@@ -13670,8 +13670,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     uEVMkDkYRvnn: zvptNai
   name: ADIhC
   namespace: test-namespace
@@ -13687,8 +13687,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     uEVMkDkYRvnn: zvptNai
   name: ADIhC
   namespace: test-namespace
@@ -13715,8 +13715,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: u2r6
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     uEVMkDkYRvnn: zvptNai
   name: ADIhC
   namespace: test-namespace
@@ -13780,8 +13780,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ld
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: fP77cJ3T
   namespace: test-namespace
 ---
@@ -13797,8 +13797,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ld
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: j1dUk8TGy8Np
   namespace: test-namespace
 ---
@@ -13811,8 +13811,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ld
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: j1dUk8TGy8Np
   namespace: test-namespace
 spec:
@@ -13838,8 +13838,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 8s2qVhKEW
   namespace: test-namespace
 ---
@@ -13855,8 +13855,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: bbshm
   namespace: test-namespace
 ---
@@ -13872,8 +13872,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: bbshm
   namespace: test-namespace
 spec:
@@ -13896,8 +13896,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: o2F37Lr
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: bbshm
   namespace: test-namespace
 spec:
@@ -13934,8 +13934,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 6sW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: KchYZFsbB3
   namespace: test-namespace
 ---
@@ -13950,8 +13950,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 6sW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: KchYZFsbB3
   namespace: test-namespace
 spec:
@@ -13976,8 +13976,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 6sW
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: KchYZFsbB3
   namespace: test-namespace
 spec:
@@ -14319,7 +14319,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: qYQHJ:RIG
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -15025,9 +15025,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cxAL7zvwvb: tmEjSXwTK6
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: 0Z71mJNQUx
   namespace: test-namespace
 ---
@@ -15040,9 +15040,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cxAL7zvwvb: tmEjSXwTK6
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: Wq
   namespace: test-namespace
 stringData:
@@ -15079,9 +15079,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cxAL7zvwvb: tmEjSXwTK6
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: Wq
   namespace: test-namespace
 ---
@@ -15096,9 +15096,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cxAL7zvwvb: tmEjSXwTK6
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: Wq
   namespace: test-namespace
 spec:
@@ -15123,9 +15123,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cxAL7zvwvb: tmEjSXwTK6
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: Wq
   namespace: test-namespace
 spec:
@@ -15346,7 +15346,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 46zHVEaIk:W
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -15666,9 +15666,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cxAL7zvwvb: tmEjSXwTK6
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: Wq
   namespace: test-namespace
 spec:
@@ -15704,9 +15704,9 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: x
-    app.kubernetes.io/version: v3.3.2
+    app.kubernetes.io/version: v3.7.0
     cxAL7zvwvb: tmEjSXwTK6
-    helm.sh/chart: console-3.3.0
+    helm.sh/chart: console-3.7.0
   name: Wq
   namespace: test-namespace
 spec:
@@ -15739,8 +15739,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: eHZ
   namespace: test-namespace
 ---
@@ -15755,8 +15755,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: eHZ
   namespace: test-namespace
 spec:
@@ -15784,8 +15784,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: eHZ
   namespace: test-namespace
 spec:
@@ -16081,7 +16081,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 5OO0wF5p:i
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -16719,8 +16719,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 84QIe
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: eHZ
   namespace: test-namespace
 spec:
@@ -16755,8 +16755,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: Gma
   namespace: test-namespace
 ---
@@ -16769,8 +16769,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: y0pa6pm83
   namespace: test-namespace
 spec:
@@ -16796,8 +16796,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: y0pa6pm83
   namespace: test-namespace
 spec:
@@ -16839,8 +16839,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: W9k
   namespace: test-namespace
 ---
@@ -16857,8 +16857,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: resP
   namespace: test-namespace
 ---
@@ -16873,8 +16873,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: resP
   namespace: test-namespace
 spec:
@@ -16901,8 +16901,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tvDI
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: resP
   namespace: test-namespace
 spec:
@@ -17124,7 +17124,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: TZqk:0fpMB
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -17564,8 +17564,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: nX5G
   namespace: test-namespace
 ---
@@ -17578,8 +17578,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9gCm5xz
   namespace: test-namespace
 stringData:
@@ -17613,8 +17613,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9gCm5xz
   namespace: test-namespace
 spec:
@@ -17637,8 +17637,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9gCm5xz
   namespace: test-namespace
 spec:
@@ -17672,8 +17672,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: tOoxEiwdVpT
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 9gCm5xz
   namespace: test-namespace
 spec:
@@ -17718,8 +17718,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     rHtDM6k: ZY6Kw
   name: fB6TF
   namespace: test-namespace
@@ -17755,8 +17755,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     rHtDM6k: ZY6Kw
   name: fB6TF
   namespace: test-namespace
@@ -17784,8 +17784,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     rHtDM6k: ZY6Kw
   name: fB6TF
   namespace: test-namespace
@@ -17826,8 +17826,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: DSw7
   namespace: test-namespace
 ---
@@ -17843,8 +17843,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: YUi5JpG
   namespace: test-namespace
 spec:
@@ -17869,8 +17869,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: YUi5JpG
   namespace: test-namespace
 spec:
@@ -18189,7 +18189,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: lQjo:p
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -18503,8 +18503,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: nEojiMtRc
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: YUi5JpG
   namespace: test-namespace
 spec:
@@ -18542,8 +18542,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: sKa
   namespace: test-namespace
 ---
@@ -18562,8 +18562,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 3um
   namespace: test-namespace
 ---
@@ -18581,8 +18581,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 3um
   namespace: test-namespace
 spec:
@@ -18609,8 +18609,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 3um
   namespace: test-namespace
 spec:
@@ -18970,7 +18970,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 9Gz:Tg
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -19435,8 +19435,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: W7q3X
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: 3um
   namespace: test-namespace
 spec:
@@ -19476,8 +19476,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     ztm: qegfb80
   name: z12W
   namespace: test-namespace
@@ -19492,8 +19492,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     ztm: qegfb80
   name: 0BIfuN
   namespace: test-namespace
@@ -19532,8 +19532,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     ztm: qegfb80
   name: 0BIfuN
   namespace: test-namespace
@@ -19560,8 +19560,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     ztm: qegfb80
   name: 0BIfuN
   namespace: test-namespace
@@ -19832,7 +19832,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: 8ZLfmymq:4BSL9iL
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -20324,8 +20324,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: 8dJzE
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
     ztm: qegfb80
   name: 0BIfuN
   namespace: test-namespace
@@ -20361,8 +20361,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -20374,8 +20374,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -20412,8 +20412,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -20426,8 +20426,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -20450,8 +20450,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -20484,7 +20484,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -20555,8 +20555,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -20568,8 +20568,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -20606,8 +20606,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -20620,8 +20620,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -20644,8 +20644,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -20678,7 +20678,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -20749,8 +20749,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -20762,8 +20762,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -20809,8 +20809,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -20823,8 +20823,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -20847,8 +20847,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -20881,7 +20881,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -20960,8 +20960,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -20973,8 +20973,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -21019,8 +21019,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -21033,8 +21033,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -21057,8 +21057,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -21091,7 +21091,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -21629,8 +21629,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -21642,8 +21642,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -21679,8 +21679,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -21693,8 +21693,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -21717,8 +21717,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -21751,7 +21751,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:my-custom-tag
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -21822,8 +21822,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -21835,8 +21835,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -21872,8 +21872,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -21886,8 +21886,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -21910,8 +21910,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -21944,7 +21944,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -22015,8 +22015,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22028,8 +22028,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -22065,8 +22065,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22079,8 +22079,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22103,8 +22103,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22137,7 +22137,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -22217,8 +22217,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22230,8 +22230,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -22267,8 +22267,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22281,8 +22281,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22305,8 +22305,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22339,7 +22339,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -22409,8 +22409,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22442,8 +22442,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22455,8 +22455,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -22492,8 +22492,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22506,8 +22506,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22530,8 +22530,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22564,7 +22564,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -22635,8 +22635,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22648,8 +22648,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -22685,8 +22685,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -22699,8 +22699,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22723,8 +22723,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -22757,7 +22757,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -23064,8 +23064,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -23077,8 +23077,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -23114,8 +23114,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -23128,8 +23128,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -23152,8 +23152,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -23186,7 +23186,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -23277,8 +23277,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -23290,8 +23290,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -23327,8 +23327,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -23341,8 +23341,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -23365,8 +23365,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -23399,7 +23399,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -23470,8 +23470,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -23483,8 +23483,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 stringData:
@@ -23520,8 +23520,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 ---
@@ -23535,8 +23535,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -23560,8 +23560,8 @@ metadata:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.3.2
-    helm.sh/chart: console-3.3.0
+    app.kubernetes.io/version: v3.7.0
+    helm.sh/chart: console-3.7.0
   name: console
   namespace: test-namespace
 spec:
@@ -23594,7 +23594,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.3.0
+          value: 3.7.0
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: redpandadata/console:v3.3.2
         - name: REDPANDA_METRICS_K8S_VERSION
