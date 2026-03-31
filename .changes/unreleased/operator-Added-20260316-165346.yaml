@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: Added Schema Registry ACL awareness to all CRDs which support setting ACLs.
-time: 2026-03-16T16:53:46.506931-04:00

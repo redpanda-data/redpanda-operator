@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: Fixed issue with elevated reconciliation rates for ShadowLinks in large cluster deployments.
-time: 2026-03-20T15:57:23.36011-04:00
