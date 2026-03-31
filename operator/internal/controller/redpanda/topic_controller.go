@@ -13,6 +13,7 @@ package redpanda
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -547,6 +548,15 @@ func (r *TopicReconciler) patchTopicStatus(ctx context.Context, k8sClient client
 	return k8sClient.Status().Patch(ctx, topic, patch)
 }
 
+// even though redpanda.remote.read/write need some special-casing
+// too, they're handled independently for now
+var undeletableConfigs = []string{
+	"cleanup.policy",
+	// while redpanda.storage.mode is ignored in incremental update paths in core
+	// it generates a bunch of log spam, so drop it from ever being deleted.
+	"redpanda.storage.mode",
+}
+
 func generateConf(
 	describedConfig []kmsg.DescribeConfigsResponseResourceConfig,
 	topicSpecSingleValue map[string]*string,
@@ -558,7 +568,7 @@ func generateConf(
 	specialSetConf = make(map[string]string)
 
 	for _, conf := range describedConfig {
-		if conf.Source != kmsg.ConfigSourceDefaultConfig && conf.Value != nil && conf.Name != "cleanup.policy" {
+		if conf.Source != kmsg.ConfigSourceDefaultConfig && conf.Value != nil && !slices.Contains(undeletableConfigs, conf.Name) {
 			deleteConf[conf.Name] = nil
 		}
 	}
