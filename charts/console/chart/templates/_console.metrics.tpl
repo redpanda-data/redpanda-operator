@@ -37,7 +37,7 @@
 {{- $_is_returning := false -}}
 {{- $tag := $state.Values.image.tag -}}
 {{- if (eq $tag "") -}}
-{{- $tag = "v3.3.2" -}}
+{{- $tag = "v3.7.0" -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $tag) | toJson -}}

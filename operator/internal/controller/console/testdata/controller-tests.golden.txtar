@@ -81,10 +81,10 @@
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-            value: redpandadata/console:v3.3.2
+            value: redpandadata/console:v3.7.0
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: docker.redpanda.com/redpandadata/console:v3.3.2
+          image: docker.redpanda.com/redpandadata/console:v3.7.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -286,10 +286,10 @@
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-            value: redpandadata/console:v3.3.2
+            value: redpandadata/console:v3.7.0
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: docker.redpanda.com/redpandadata/console:v3.3.2
+          image: docker.redpanda.com/redpandadata/console:v3.7.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -471,10 +471,10 @@
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-            value: redpandadata/console:v3.3.2
+            value: redpandadata/console:v3.7.0
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: docker.redpanda.com/redpandadata/console:v3.3.2
+          image: docker.redpanda.com/redpandadata/console:v3.7.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -681,10 +681,10 @@
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
           - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-            value: redpandadata/console:v3.3.2
+            value: redpandadata/console:v3.7.0
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: docker.redpanda.com/redpandadata/console:v3.3.2
+          image: docker.redpanda.com/redpandadata/console:v3.7.0
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
