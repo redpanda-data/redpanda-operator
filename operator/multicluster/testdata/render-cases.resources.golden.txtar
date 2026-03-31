@@ -214,14 +214,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1040,14 +1040,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1892,14 +1892,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -2711,14 +2711,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -3529,14 +3529,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -4347,14 +4347,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -5165,14 +5165,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -5983,14 +5983,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -6740,14 +6740,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -7577,14 +7577,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -8356,14 +8356,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -9222,20 +9222,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-cold-0.
-            port: "33145"
+            address: pool-cold-0.default
+            port: 33145
         - host:
-            address: pool-cold-1.
-            port: "33145"
+            address: pool-cold-1.default
+            port: 33145
         - host:
-            address: pool-hot-0.
-            port: "33145"
+            address: pool-hot-0.default
+            port: 33145
         - host:
-            address: pool-hot-1.
-            port: "33145"
+            address: pool-hot-1.default
+            port: 33145
         - host:
-            address: pool-hot-2.
-            port: "33145"
+            address: pool-hot-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -9437,20 +9437,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-cold-0.
-            port: "33145"
+            address: pool-cold-0.default
+            port: 33145
         - host:
-            address: pool-cold-1.
-            port: "33145"
+            address: pool-cold-1.default
+            port: 33145
         - host:
-            address: pool-hot-0.
-            port: "33145"
+            address: pool-hot-0.default
+            port: 33145
         - host:
-            address: pool-hot-1.
-            port: "33145"
+            address: pool-hot-1.default
+            port: 33145
         - host:
-            address: pool-hot-2.
-            port: "33145"
+            address: pool-hot-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -10662,14 +10662,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -11532,14 +11532,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -12350,14 +12350,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -13194,14 +13194,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -14016,20 +14016,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
         - host:
-            address: pool-b-0.
-            port: "33145"
+            address: pool-b-0.default
+            port: 33145
         - host:
-            address: pool-b-1.
-            port: "33145"
+            address: pool-b-1.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -14210,20 +14210,20 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
         - host:
-            address: pool-b-0.
-            port: "33145"
+            address: pool-b-0.default
+            port: 33145
         - host:
-            address: pool-b-1.
-            port: "33145"
+            address: pool-b-1.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -15169,7 +15169,7 @@
         seed_servers:
         - host:
             address: pool-a-0.
-            port: "33145"
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -15881,7 +15881,7 @@
         seed_servers:
         - host:
             address: pool-a-0.
-            port: "33145"
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -16593,14 +16593,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -17458,14 +17458,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -18295,14 +18295,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -19124,8 +19124,8 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -19837,14 +19837,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -20655,14 +20655,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -21473,14 +21473,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -22291,14 +22291,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -23109,14 +23109,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -23929,14 +23929,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -24778,14 +24778,14 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
-            port: "33145"
+            address: pool-a-0.default
+            port: 33145
         - host:
-            address: pool-a-1.
-            port: "33145"
+            address: pool-a-1.default
+            port: 33145
         - host:
-            address: pool-a-2.
-            port: "33145"
+            address: pool-a-2.default
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
