@@ -576,30 +576,6 @@ func userFromRow(t framework.TestingT, version, cluster, name, password, mechani
 	return user
 }
 
-func checkStableResource(ctx context.Context, t framework.TestingT, o runtimeclient.Object) {
-	var previousResourceVersion string
-	var equalityChecks int
-
-	key := runtimeclient.ObjectKeyFromObject(o)
-
-	t.Logf("Ensuring that resource %q is stable", key.String())
-	require.Eventually(t, func() bool {
-		require.NoError(t, t.Get(ctx, key, o))
-		if previousResourceVersion == o.GetResourceVersion() {
-			equalityChecks++
-		} else {
-			equalityChecks = 0
-		}
-		// ensure we're stable for a 5 second window
-		if equalityChecks == 5 {
-			return true
-		}
-		previousResourceVersion = o.GetResourceVersion()
-		return false
-	}, 30*time.Second, 1*time.Second, "Resource never stabilized")
-	t.Logf("Resource %q has been stable for 5 seconds", key.String())
-}
-
 // waitForCondition polls the resource until the expected condition is found.
 // getConditions extracts the conditions slice from the resource after each fetch.
 // This replaces the previous pattern of checkStableResource + RequireCondition,
