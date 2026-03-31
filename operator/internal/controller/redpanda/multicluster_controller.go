@@ -148,12 +148,6 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		return ctrl.Result{}, nil
 	}
 
-	// Check that .spec is consistent across all clusters before proceeding.
-	// If there's drift, block reconciliation until the user fixes it.
-	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, cluster, stretchCluster); drifted || driftErr != nil {
-		return driftResult, driftErr
-	}
-
 	state, err := r.fetchInitialState(ctx, stretchCluster)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -175,6 +169,12 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	// Check that .spec is consistent across all clusters before proceeding.
+	// If there's drift, block reconciliation until the user fixes it.
+	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, cluster, stretchCluster); drifted || driftErr != nil {
+		return driftResult, driftErr
 	}
 
 	// Update our StretchCluster with our finalizer and any default Annotation FFs.
