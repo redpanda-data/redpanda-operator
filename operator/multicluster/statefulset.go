@@ -28,7 +28,7 @@ import (
 // statefulSets returns all StatefulSets for the given RenderState.
 func statefulSets(state *RenderState) ([]*appsv1.StatefulSet, error) {
 	var sets []*appsv1.StatefulSet
-	for _, pool := range state.pools {
+	for _, pool := range state.inClusterPools {
 		ss, err := statefulSet(state, pool)
 		if err != nil {
 			return nil, err
@@ -54,11 +54,16 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.S
 
 	selectorLabels := statefulSetPodLabelsSelector(state, pool)
 
+	checksum, err := statefulSetChecksumAnnotation(state, pool)
+	if err != nil {
+		return nil, err
+	}
+
 	podTemplate := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: statefulSetPodLabels(state, pool),
 			Annotations: map[string]string{
-				"config.redpanda.com/checksum": statefulSetChecksumAnnotation(state, pool),
+				"config.redpanda.com/checksum": checksum,
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -218,11 +223,15 @@ func statefulSetContainers(state *RenderState, pool *redpandav1alpha2.NodePool) 
 
 // statefulSetChecksumAnnotation computes a SHA256 checksum of the rendered config
 // to trigger rolling restarts when the configuration changes.
-func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.NodePool) string {
+func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.NodePool) (string, error) {
 	var dependencies []any
 	// NB: Seed servers are excluded to avoid a rolling restart when only
 	// replicas are changed.
-	dependencies = append(dependencies, redpandaConfigFile(state, false, pool))
+	redpanda, err := redpandaConfigFile(state, false, pool)
+	if err != nil {
+		return "", err
+	}
+	dependencies = append(dependencies, redpanda)
 	if state.Spec().External.IsEnabled() {
 		dependencies = append(dependencies, ptr.Deref(state.Spec().External.Domain, ""))
 		if state.Spec().External.Addresses == nil || len(state.Spec().External.Addresses) == 0 {
@@ -233,5 +242,5 @@ func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.No
 	}
 	data, _ := json.Marshal(dependencies)
 	sum := sha256.Sum256(data)
-	return fmt.Sprintf("%x", sum)
+	return fmt.Sprintf("%x", sum), nil
 }
