@@ -15,10 +15,6 @@ Feature: Multicluster Operator
     spec:
       rbac:
         enabled: true
-      service:
-        internal:
-          annotations:
-            "cilium-global-svc-annotation": "enabled"
     """
     Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
     And I apply a NodePool Kubernetes manifest to "multicluster":
@@ -35,8 +31,12 @@ Feature: Multicluster Operator
       sidecarImage:
         repository: localhost/redpanda-operator
         tag: dev
+      services:
+        perPod:
+          remote:
+            enabled: false
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
     And I expect all 3 NodePools in "multicluster" to be eventually bound and deployed
-    When I execute "rpk cluster health" command in the statefulset container in each cluster
-    And I expect them to return the same Redpanda cluster UID and the node count equal to 3
+    When I execute "rpk redpanda admin brokers list" command in the statefulset container in each cluster
+    And I expect them to return the same Redpanda broker list

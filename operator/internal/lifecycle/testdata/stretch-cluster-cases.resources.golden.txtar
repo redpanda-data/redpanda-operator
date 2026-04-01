@@ -1652,6 +1652,7 @@
     name: basic-a-0
     namespace: compat-test
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -1698,6 +1699,7 @@
     name: basic-b-0
     namespace: compat-test
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -2657,6 +2659,7 @@
     name: basic-a-0
     namespace: nodepool-basic-test
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -2703,6 +2706,7 @@
     name: basic-b-0
     namespace: nodepool-basic-test
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644

@@ -694,6 +694,7 @@
     name: pool-a-0
     namespace: audit-logging
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -738,6 +739,7 @@
     name: pool-a-1
     namespace: audit-logging
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -782,6 +784,7 @@
     name: pool-a-2
     namespace: audit-logging
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -1547,6 +1550,7 @@
     name: pool-a-0
     namespace: common-labels
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -1593,6 +1597,7 @@
     name: pool-a-1
     namespace: common-labels
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -1639,6 +1644,7 @@
     name: pool-a-2
     namespace: common-labels
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -2366,6 +2372,7 @@
     name: pool-a-0
     namespace: custom-cluster-domain
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -2410,6 +2417,7 @@
     name: pool-a-1
     namespace: custom-cluster-domain
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -2454,6 +2462,7 @@
     name: pool-a-2
     namespace: custom-cluster-domain
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -3182,6 +3191,7 @@
     name: pool-a-0
     namespace: custom-config
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -3226,6 +3236,7 @@
     name: pool-a-1
     namespace: custom-config
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -3270,6 +3281,7 @@
     name: pool-a-2
     namespace: custom-config
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -3997,6 +4009,7 @@
     name: pool-a-0
     namespace: custom-image
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -4041,6 +4054,7 @@
     name: pool-a-1
     namespace: custom-image
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -4085,6 +4099,7 @@
     name: pool-a-2
     namespace: custom-image
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -4812,6 +4827,7 @@
     name: pool-a-0
     namespace: custom-resources
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -4856,6 +4872,7 @@
     name: pool-a-1
     namespace: custom-resources
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -4900,6 +4917,7 @@
     name: pool-a-2
     namespace: custom-resources
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -5627,6 +5645,7 @@
     name: pool-a-0
     namespace: custom-resources-explicit
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -5671,6 +5690,7 @@
     name: pool-a-1
     namespace: custom-resources-explicit
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -5715,6 +5735,7 @@
     name: pool-a-2
     namespace: custom-resources-explicit
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -6442,6 +6463,7 @@
     name: pool-a-0
     namespace: enterprise
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -6486,6 +6508,7 @@
     name: pool-a-1
     namespace: enterprise
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -6530,6 +6553,7 @@
     name: pool-a-2
     namespace: enterprise
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -7227,6 +7251,7 @@
     name: pool-a-0
     namespace: external-loadbalancer
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -7271,6 +7296,7 @@
     name: pool-a-1
     namespace: external-loadbalancer
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -7315,6 +7341,7 @@
     name: pool-a-2
     namespace: external-loadbalancer
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -8034,6 +8061,7 @@
     name: pool-a-0
     namespace: external-nodeport
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -8078,6 +8106,7 @@
     name: pool-a-1
     namespace: external-nodeport
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -8122,6 +8151,7 @@
     name: pool-a-2
     namespace: external-nodeport
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -8843,6 +8873,7 @@
     name: pool-a-0
     namespace: external-tls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -8887,6 +8918,7 @@
     name: pool-a-1
     namespace: external-tls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -8931,6 +8963,7 @@
     name: pool-a-2
     namespace: external-tls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -10192,6 +10225,7 @@
     name: pool-cold-0
     namespace: full-featured
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -10238,6 +10272,7 @@
     name: pool-cold-1
     namespace: full-featured
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -10284,6 +10319,7 @@
     name: pool-hot-0
     namespace: full-featured
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -10330,6 +10366,7 @@
     name: pool-hot-1
     namespace: full-featured
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -10376,6 +10413,7 @@
     name: pool-hot-2
     namespace: full-featured
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -11156,6 +11194,7 @@
     name: pool-a-0
     namespace: init-containers
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -11200,6 +11239,7 @@
     name: pool-a-1
     namespace: init-containers
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -11244,6 +11284,7 @@
     name: pool-a-2
     namespace: init-containers
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -11971,6 +12012,7 @@
     name: pool-a-0
     namespace: memory-locking
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -12015,6 +12057,7 @@
     name: pool-a-1
     namespace: memory-locking
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -12059,6 +12102,7 @@
     name: pool-a-2
     namespace: memory-locking
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -12786,6 +12830,7 @@
     name: pool-a-0
     namespace: minimal
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -12830,6 +12875,7 @@
     name: pool-a-1
     namespace: minimal
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -12874,6 +12920,7 @@
     name: pool-a-2
     namespace: minimal
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -13627,6 +13674,7 @@
     name: pool-a-0
     namespace: monitoring
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -13671,6 +13719,7 @@
     name: pool-a-1
     namespace: monitoring
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -13715,6 +13764,7 @@
     name: pool-a-2
     namespace: monitoring
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -14692,6 +14742,7 @@
     name: pool-a-0
     namespace: multi-pool
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -14736,6 +14787,7 @@
     name: pool-a-1
     namespace: multi-pool
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -14780,6 +14832,7 @@
     name: pool-a-2
     namespace: multi-pool
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -14824,6 +14877,7 @@
     name: pool-b-0
     namespace: multi-pool
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -14869,6 +14923,7 @@
     name: pool-b-1
     namespace: multi-pool
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -14898,6 +14953,1427 @@
       app.kubernetes.io/name: redpanda
       apps.kubernetes.io/pod-index: "1"
       pool-type: hot-storage
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+-- per-pod-service-overrides --
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-external
+    namespace: per-pod-service-overrides
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: policy/v1
+  kind: PodDisruptionBudget
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides
+    namespace: per-pod-service-overrides
+  spec:
+    maxUnavailable: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/cluster-name: test
+        app.kubernetes.io/instance: per-pod-service-overrides
+        app.kubernetes.io/name: redpanda
+        redpanda.com/poddisruptionbudget: per-pod-service-overrides
+  status:
+    currentHealthy: 0
+    desiredHealthy: 0
+    disruptionsAllowed: 0
+    expectedPods: 0
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides
+    namespace: per-pod-service-overrides
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: per-pod-service-overrides
+    namespace: per-pod-service-overrides
+  spec:
+    clusterIP: None
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/name: redpanda
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: pool-a-0.
+            port: "33145"
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-pool-a
+    namespace: per-pod-service-overrides
+- apiVersion: v1
+  data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-rpk
+    namespace: per-pod-service-overrides
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-default-selfsigned-issuer
+    namespace: per-pod-service-overrides
+  spec:
+    selfSigned: {}
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-default-root-issuer
+    namespace: per-pod-service-overrides
+  spec:
+    ca:
+      secretName: per-pod-service-overrides-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-external-selfsigned-issuer
+    namespace: per-pod-service-overrides
+  spec:
+    selfSigned: {}
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-external-root-issuer
+    namespace: per-pod-service-overrides
+  spec:
+    ca:
+      secretName: per-pod-service-overrides-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-default-root-certificate
+    namespace: per-pod-service-overrides
+  spec:
+    commonName: per-pod-service-overrides-default-root-certificate
+    duration: 43800h0m0s
+    isCA: true
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-overrides-default-selfsigned-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-overrides-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-external-root-certificate
+    namespace: per-pod-service-overrides
+  spec:
+    commonName: per-pod-service-overrides-external-root-certificate
+    duration: 43800h0m0s
+    isCA: true
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-overrides-external-selfsigned-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-overrides-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-default-cert
+    namespace: per-pod-service-overrides
+  spec:
+    dnsNames:
+    - per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local
+    - per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc
+    - per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides
+    - '*.per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local'
+    - '*.per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc'
+    - '*.per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides'
+    - per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local
+    - per-pod-service-overrides.per-pod-service-overrides.svc
+    - per-pod-service-overrides.per-pod-service-overrides
+    - '*.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local'
+    - '*.per-pod-service-overrides.per-pod-service-overrides.svc'
+    - '*.per-pod-service-overrides.per-pod-service-overrides'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-overrides-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-overrides-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-external-cert
+    namespace: per-pod-service-overrides
+  spec:
+    dnsNames:
+    - per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local
+    - per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc
+    - per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides
+    - '*.per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local'
+    - '*.per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides.svc'
+    - '*.per-pod-service-overrides-cluster.per-pod-service-overrides.per-pod-service-overrides'
+    - per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local
+    - per-pod-service-overrides.per-pod-service-overrides.svc
+    - per-pod-service-overrides.per-pod-service-overrides
+    - '*.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local'
+    - '*.per-pod-service-overrides.per-pod-service-overrides.svc'
+    - '*.per-pod-service-overrides.per-pod-service-overrides'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-overrides-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-overrides-external-cert
+  status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-sidecar
+    namespace: per-pod-service-overrides
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-sidecar
+    namespace: per-pod-service-overrides
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: per-pod-service-overrides-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: per-pod-service-overrides
+    namespace: per-pod-service-overrides
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-sts-lifecycle
+    namespace: per-pod-service-overrides
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      touch /tmp/preStopHookFinished
+      echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-pool-a-configurator
+    namespace: per-pod-service-overrides
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      local-annotation: local-value
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      local-label: local-value
+      monitoring.redpanda.com/enabled: "false"
+    name: pool-a-0
+    namespace: per-pod-service-overrides
+  spec:
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/name: redpanda
+      apps.kubernetes.io/pod-index: "0"
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+-- per-pod-service-remote-disabled --
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-external
+    namespace: per-pod-service-remote-disabled
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: policy/v1
+  kind: PodDisruptionBudget
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled
+    namespace: per-pod-service-remote-disabled
+  spec:
+    maxUnavailable: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/cluster-name: test
+        app.kubernetes.io/instance: per-pod-service-remote-disabled
+        app.kubernetes.io/name: redpanda
+        redpanda.com/poddisruptionbudget: per-pod-service-remote-disabled
+  status:
+    currentHealthy: 0
+    desiredHealthy: 0
+    disruptionsAllowed: 0
+    expectedPods: 0
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled
+    namespace: per-pod-service-remote-disabled
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: per-pod-service-remote-disabled
+    namespace: per-pod-service-remote-disabled
+  spec:
+    clusterIP: None
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/name: redpanda
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: pool-a-0.
+            port: "33145"
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-pool-a
+    namespace: per-pod-service-remote-disabled
+- apiVersion: v1
+  data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-rpk
+    namespace: per-pod-service-remote-disabled
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-default-selfsigned-issuer
+    namespace: per-pod-service-remote-disabled
+  spec:
+    selfSigned: {}
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-default-root-issuer
+    namespace: per-pod-service-remote-disabled
+  spec:
+    ca:
+      secretName: per-pod-service-remote-disabled-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-external-selfsigned-issuer
+    namespace: per-pod-service-remote-disabled
+  spec:
+    selfSigned: {}
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-external-root-issuer
+    namespace: per-pod-service-remote-disabled
+  spec:
+    ca:
+      secretName: per-pod-service-remote-disabled-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-default-root-certificate
+    namespace: per-pod-service-remote-disabled
+  spec:
+    commonName: per-pod-service-remote-disabled-default-root-certificate
+    duration: 43800h0m0s
+    isCA: true
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-remote-disabled-default-selfsigned-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-remote-disabled-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-external-root-certificate
+    namespace: per-pod-service-remote-disabled
+  spec:
+    commonName: per-pod-service-remote-disabled-external-root-certificate
+    duration: 43800h0m0s
+    isCA: true
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-remote-disabled-external-selfsigned-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-remote-disabled-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-default-cert
+    namespace: per-pod-service-remote-disabled
+  spec:
+    dnsNames:
+    - per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local
+    - per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc
+    - per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled
+    - '*.per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local'
+    - '*.per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc'
+    - '*.per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled'
+    - per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local
+    - per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc
+    - per-pod-service-remote-disabled.per-pod-service-remote-disabled
+    - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local'
+    - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc'
+    - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-remote-disabled-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-remote-disabled-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-external-cert
+    namespace: per-pod-service-remote-disabled
+  spec:
+    dnsNames:
+    - per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local
+    - per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc
+    - per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled
+    - '*.per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local'
+    - '*.per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc'
+    - '*.per-pod-service-remote-disabled-cluster.per-pod-service-remote-disabled.per-pod-service-remote-disabled'
+    - per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local
+    - per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc
+    - per-pod-service-remote-disabled.per-pod-service-remote-disabled
+    - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local'
+    - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc'
+    - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pod-service-remote-disabled-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pod-service-remote-disabled-external-cert
+  status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-sidecar
+    namespace: per-pod-service-remote-disabled
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-sidecar
+    namespace: per-pod-service-remote-disabled
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: per-pod-service-remote-disabled-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: per-pod-service-remote-disabled
+    namespace: per-pod-service-remote-disabled
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-sts-lifecycle
+    namespace: per-pod-service-remote-disabled
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      touch /tmp/preStopHookFinished
+      echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-pool-a-configurator
+    namespace: per-pod-service-remote-disabled
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: pool-a-0
+    namespace: per-pod-service-remote-disabled
+  spec:
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/name: redpanda
+      apps.kubernetes.io/pod-index: "0"
     type: ClusterIP
   status:
     loadBalancer: {}
@@ -15640,6 +17116,7 @@
     name: pool-a-0
     namespace: rack-awareness
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -15684,6 +17161,7 @@
     name: pool-a-1
     namespace: rack-awareness
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -15728,6 +17206,7 @@
     name: pool-a-2
     namespace: rack-awareness
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -16474,6 +17953,7 @@
     name: pool-a-0
     namespace: sasl-scram256
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -16518,6 +17998,7 @@
     name: pool-a-1
     namespace: sasl-scram256
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -16562,6 +18043,7 @@
     name: pool-a-2
     namespace: sasl-scram256
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -17308,6 +18790,7 @@
     name: pool-a-0
     namespace: sasl-scram512-with-tls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -17352,6 +18835,7 @@
     name: pool-a-1
     namespace: sasl-scram512-with-tls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -17396,6 +18880,7 @@
     name: pool-a-2
     namespace: sasl-scram512-with-tls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -18104,6 +19589,7 @@
     name: pool-a-0
     namespace: single-replica
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -18831,6 +20317,7 @@
     name: pool-a-0
     namespace: storage-hostpath
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -18875,6 +20362,7 @@
     name: pool-a-1
     namespace: storage-hostpath
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -18919,6 +20407,7 @@
     name: pool-a-2
     namespace: storage-hostpath
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -19646,6 +21135,7 @@
     name: pool-a-0
     namespace: storage-pv-custom
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -19690,6 +21180,7 @@
     name: pool-a-1
     namespace: storage-pv-custom
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -19734,6 +21225,7 @@
     name: pool-a-2
     namespace: storage-pv-custom
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -20461,6 +21953,7 @@
     name: pool-a-0
     namespace: tiered-storage-emptydir
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -20505,6 +21998,7 @@
     name: pool-a-1
     namespace: tiered-storage-emptydir
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -20549,6 +22043,7 @@
     name: pool-a-2
     namespace: tiered-storage-emptydir
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -21276,6 +22771,7 @@
     name: pool-a-0
     namespace: tiered-storage-hostpath
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -21320,6 +22816,7 @@
     name: pool-a-1
     namespace: tiered-storage-hostpath
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -21364,6 +22861,7 @@
     name: pool-a-2
     namespace: tiered-storage-hostpath
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -22091,6 +23589,7 @@
     name: pool-a-0
     namespace: tiered-storage-pv
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -22135,6 +23634,7 @@
     name: pool-a-1
     namespace: tiered-storage-pv
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -22179,6 +23679,7 @@
     name: pool-a-2
     namespace: tiered-storage-pv
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -22939,6 +24440,7 @@
     name: pool-a-0
     namespace: tls-mtls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -22983,6 +24485,7 @@
     name: pool-a-1
     namespace: tls-mtls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -23027,6 +24530,7 @@
     name: pool-a-2
     namespace: tls-mtls
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -23754,6 +25258,7 @@
     name: pool-a-0
     namespace: tls-self-signed
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -23798,6 +25303,7 @@
     name: pool-a-1
     namespace: tls-self-signed
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644
@@ -23842,6 +25348,7 @@
     name: pool-a-2
     namespace: tls-self-signed
   spec:
+    ipFamilyPolicy: SingleStack
     ports:
     - name: admin
       port: 9644

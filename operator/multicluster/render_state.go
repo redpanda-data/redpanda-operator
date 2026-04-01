@@ -157,6 +157,16 @@ func (r *RenderState) InClusterPools() []*redpandav1alpha2.NodePool {
 	return r.inClusterPools
 }
 
+// isLocalPool returns true if the given pool is in the local cluster.
+func (r *RenderState) isLocalPool(pool *redpandav1alpha2.NodePool) bool {
+	for _, p := range r.inClusterPools {
+		if p.Name == pool.Name {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *RenderState) fullname() string {
 	return tplutil.CleanForK8s(r.releaseName)
 }

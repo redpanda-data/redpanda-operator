@@ -1,3 +1,51 @@
+-- per-pod-service-remote-disabled --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  services:
+    perPod:
+      remote:
+        enabled: false
+-- per-pod-service-overrides --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  services:
+    perPod:
+      local:
+        annotations:
+          local-annotation: "local-value"
+        labels:
+          local-label: "local-value"
+      remote:
+        annotations:
+          remote-annotation: "remote-value"
 -- minimal --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster

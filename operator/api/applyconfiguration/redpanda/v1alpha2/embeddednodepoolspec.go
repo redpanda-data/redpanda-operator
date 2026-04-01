@@ -18,6 +18,7 @@ type EmbeddedNodePoolSpecApplyConfiguration struct {
 	Replicas                   *int32                                `json:"replicas,omitempty"`
 	AdditionalRedpandaCmdFlags []string                              `json:"additionalRedpandaCmdFlags,omitempty"`
 	PodTemplate                *PodTemplateApplyConfiguration        `json:"podTemplate,omitempty"`
+	Services                   *NodePoolServicesApplyConfiguration   `json:"services,omitempty"`
 	InitContainers             *PoolInitContainersApplyConfiguration `json:"initContainers,omitempty"`
 	Image                      *RedpandaImageApplyConfiguration      `json:"image,omitempty"`
 	SidecarImage               *RedpandaImageApplyConfiguration      `json:"sidecarImage,omitempty"`
@@ -67,6 +68,14 @@ func (b *EmbeddedNodePoolSpecApplyConfiguration) WithAdditionalRedpandaCmdFlags(
 // If called multiple times, the PodTemplate field is set to the value of the last call.
 func (b *EmbeddedNodePoolSpecApplyConfiguration) WithPodTemplate(value *PodTemplateApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
 	b.PodTemplate = value
+	return b
+}
+
+// WithServices sets the Services field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Services field is set to the value of the last call.
+func (b *EmbeddedNodePoolSpecApplyConfiguration) WithServices(value *NodePoolServicesApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
+	b.Services = value
 	return b
 }
 

@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
@@ -40,6 +41,7 @@ func TestRender(t *testing.T) {
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, redpandav1alpha2.Install(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
 	decoder := serializer.NewCodecFactory(scheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
 
 	decode := func(t *testing.T, data []byte) (*redpandav1alpha2.StretchCluster, []*redpandav1alpha2.NodePool) {
@@ -129,5 +131,154 @@ func TestRender(t *testing.T) {
 			require.NoError(t, err)
 			goldenResources.AssertGolden(t, testutil.YAML, file.Name, resourceBytes)
 		})
+	}
+}
+
+func TestPerPodServiceOverrides_LocalVsRemote(t *testing.T) {
+	localPool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: "local-pool"},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+				Replicas: ptr.To(int32(1)),
+				Services: &redpandav1alpha2.NodePoolServices{
+					PerPod: &redpandav1alpha2.PerPodServices{
+						Local: &redpandav1alpha2.PerPodServiceOverride{
+							Annotations: map[string]string{"scope": "local"},
+						},
+						Remote: &redpandav1alpha2.PerPodServiceOverride{
+							Annotations: map[string]string{"scope": "remote"},
+							Spec:        selectorNilOverride(),
+						},
+					},
+				},
+			},
+		},
+	}
+	remotePool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: "remote-pool"},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+				Replicas: ptr.To(int32(1)),
+				Services: &redpandav1alpha2.NodePoolServices{
+					PerPod: &redpandav1alpha2.PerPodServices{
+						Local: &redpandav1alpha2.PerPodServiceOverride{
+							Annotations: map[string]string{"scope": "local"},
+						},
+						Remote: &redpandav1alpha2.PerPodServiceOverride{
+							Annotations: map[string]string{"scope": "remote"},
+							Spec:        selectorNilOverride(),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cluster := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+	}
+
+	// localPool is in-cluster, remotePool is not.
+	inClusterPools := []*redpandav1alpha2.NodePool{localPool}
+	allPools := []*redpandav1alpha2.NodePool{localPool, remotePool}
+
+	state, err := NewRenderState(nil, cluster, inClusterPools, allPools, "test-cluster")
+	require.NoError(t, err)
+
+	resources, err := RenderResources(state)
+	require.NoError(t, err)
+
+	var localSvc, remoteSvc *corev1.Service
+	for _, obj := range resources {
+		svc, ok := obj.(*corev1.Service)
+		if !ok {
+			continue
+		}
+		switch svc.Name {
+		case "local-pool-0":
+			localSvc = svc
+		case "remote-pool-0":
+			remoteSvc = svc
+		}
+	}
+
+	require.NotNil(t, localSvc, "local-pool-0 service not found")
+	require.NotNil(t, remoteSvc, "remote-pool-0 service not found")
+
+	// Local service should have "local" annotation and a selector.
+	require.Equal(t, "local", localSvc.Annotations["scope"])
+	require.NotEmpty(t, localSvc.Spec.Selector, "local service should have a selector")
+
+	// Remote service should have "remote" annotation and NO selector.
+	require.Equal(t, "remote", remoteSvc.Annotations["scope"])
+	require.Empty(t, remoteSvc.Spec.Selector, "remote service should have nil selector")
+}
+
+func TestPerPodServiceOverrides_RemoteDisabled(t *testing.T) {
+	localPool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: "local-pool"},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+				Replicas: ptr.To(int32(1)),
+				Services: &redpandav1alpha2.NodePoolServices{
+					PerPod: &redpandav1alpha2.PerPodServices{
+						Remote: &redpandav1alpha2.PerPodServiceOverride{
+							Enabled: ptr.To(false),
+						},
+					},
+				},
+			},
+		},
+	}
+	remotePool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: "remote-pool"},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+				Replicas: ptr.To(int32(1)),
+				Services: &redpandav1alpha2.NodePoolServices{
+					PerPod: &redpandav1alpha2.PerPodServices{
+						Remote: &redpandav1alpha2.PerPodServiceOverride{
+							Enabled: ptr.To(false),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cluster := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+	}
+
+	inClusterPools := []*redpandav1alpha2.NodePool{localPool}
+	allPools := []*redpandav1alpha2.NodePool{localPool, remotePool}
+
+	state, err := NewRenderState(nil, cluster, inClusterPools, allPools, "test-cluster")
+	require.NoError(t, err)
+
+	resources, err := RenderResources(state)
+	require.NoError(t, err)
+
+	var serviceNames []string
+	for _, obj := range resources {
+		svc, ok := obj.(*corev1.Service)
+		if !ok {
+			continue
+		}
+		serviceNames = append(serviceNames, svc.Name)
+	}
+
+	// local-pool-0 should exist (local service, remote disabled doesn't affect local).
+	require.Contains(t, serviceNames, "local-pool-0", "local per-pod service should be created")
+	// remote-pool-0 should NOT exist (remote is disabled).
+	require.NotContains(t, serviceNames, "remote-pool-0", "remote per-pod service should not be created when disabled")
+}
+
+func selectorNilOverride() *applycorev1.ServiceSpecApplyConfiguration {
+	// Setting Selector to an empty map in apply-configuration signals
+	// "I want to own this field" — when merged with MergeTo, the override
+	// (empty map) takes precedence, clearing the original selector.
+	return &applycorev1.ServiceSpecApplyConfiguration{
+		Selector: map[string]string{},
 	}
 }

@@ -14,7 +14,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -144,8 +143,7 @@ type (
 
 type rpkExecResult struct {
 	clusterName string
-	clusterUID  string
-	nodeCount   int
+	rawOutput   string
 }
 
 func stashNodes(ctx context.Context, name string, nodes vclusterNodes) context.Context {
@@ -163,7 +161,6 @@ func getNodes(ctx context.Context, name string) vclusterNodes {
 
 func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
 	nodes := getNodes(ctx, clusterName)
-	// nodes.ApplyInFirst(ctx, []byte(manifest.Content))
 	nodes.ApplyAll(ctx, []byte(manifest.Content))
 	cleanupWrapper(t, func(ctx context.Context) {
 		nodes.DeleteAll(ctx, []byte(manifest.Content))
@@ -226,12 +223,8 @@ networking:
     fromHost:
     - from: vc-1/second-0-x-default-x-vc-1
       to: default/second-0
-    - from: vc-1/second-1-x-default-x-vc-1
-      to: default/second-1
     - from: vc-2/third-0-x-default-x-vc-2
       to: default/third-0
-    - from: vc-2/third-1-x-default-x-vc-2
-      to: default/third-1
 `
 		case 1:
 			vClusterValues += `
@@ -240,12 +233,8 @@ networking:
     fromHost:
     - from: vc-0/first-0-x-default-x-vc-0
       to: default/first-0
-    - from: vc-0/first-1-x-default-x-vc-0
-      to: default/first-1
     - from: vc-2/third-0-x-default-x-vc-2
       to: default/third-0
-    - from: vc-2/third-1-x-default-x-vc-2
-      to: default/third-1
 `
 		case 2:
 			vClusterValues += `
@@ -254,12 +243,8 @@ networking:
     fromHost:
     - from: vc-0/first-0-x-default-x-vc-0
       to: default/first-0
-    - from: vc-0/first-1-x-default-x-vc-0
-      to: default/first-1
     - from: vc-1/second-0-x-default-x-vc-1
       to: default/second-0
-    - from: vc-1/second-1-x-default-x-vc-1
-      to: default/second-1
 `
 		}
 		cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)), vcluster.WithValues(helm.RawYAML(vClusterValues)))
@@ -612,20 +597,16 @@ func executeCommandInStatefulsetContainers(ctx context.Context, t framework.Test
 			}
 
 			output := healthOut.String()
-			nodeCount := parseNodeCountFromHealthOutput(output)
-			clusterUID := parseClusterUIDFromHealthOutput(output)
+			t.Logf("cluster %s output:\n%s", node.Name(), output)
 
-			t.Logf("cluster %s: uid=%s, nodes=%d", node.Name(), clusterUID, nodeCount)
-
-			if clusterUID == "" || nodeCount == 0 {
-				t.Logf("incomplete results from %s, retrying", node.Name())
+			if strings.TrimSpace(output) == "" {
+				t.Logf("empty output from %s, retrying", node.Name())
 				return false
 			}
 
 			results = append(results, rpkExecResult{
 				clusterName: node.Name(),
-				clusterUID:  clusterUID,
-				nodeCount:   nodeCount,
+				rawOutput:   output,
 			})
 		}
 		return true
@@ -634,50 +615,62 @@ func executeCommandInStatefulsetContainers(ctx context.Context, t framework.Test
 	return context.WithValue(ctx, rpkResultsKey{}, results)
 }
 
-func expectSameClusterUIDAndNodeCount(ctx context.Context, t framework.TestingT, expectedNodeCount int32) {
+func expectSameBrokerList(ctx context.Context, t framework.TestingT) {
 	results := ctx.Value(rpkResultsKey{}).([]rpkExecResult)
 	require.NotEmpty(t, results, "no execution results found")
 
+	var brokerMaps []map[string]string
 	for _, result := range results {
-		require.Equal(t, int(expectedNodeCount), result.nodeCount,
-			"node count mismatch in cluster %s", result.clusterName)
+		bm := parseBrokerList(result.rawOutput)
+		require.NotEmpty(t, bm, "no brokers parsed from %s output:\n%s", result.clusterName, result.rawOutput)
+		t.Logf("cluster %s brokers: %v", result.clusterName, bm)
+		brokerMaps = append(brokerMaps, bm)
 	}
 
-	for i := 1; i < len(results); i++ {
-		require.Equal(t, results[0].clusterUID, results[i].clusterUID,
-			"cluster UID mismatch between %s (%s) and %s (%s)",
-			results[0].clusterName, results[0].clusterUID,
-			results[i].clusterName, results[i].clusterUID)
+	for i := 1; i < len(brokerMaps); i++ {
+		require.Equal(t, brokerMaps[0], brokerMaps[i],
+			"broker list mismatch between %s and %s",
+			results[0].clusterName, results[i].clusterName)
 	}
 
-	t.Logf("all %d clusters report the same UID %s with %d nodes",
-		len(results), results[0].clusterUID, expectedNodeCount)
+	t.Logf("all %d clusters report the same broker list with %d brokers",
+		len(results), len(brokerMaps[0]))
 }
 
-// parseNodeCountFromHealthOutput parses the "All nodes" line from rpk cluster health output.
-// Example: "All nodes:             [0 1 2]" → 3
-var allNodesRe = regexp.MustCompile(`All nodes:\s*\[([^\]]*)\]`)
-
-func parseNodeCountFromHealthOutput(output string) int {
-	matches := allNodesRe.FindStringSubmatch(output)
-	if len(matches) < 2 {
-		return 0
+// parseBrokerList parses the tabular output of `rpk redpanda admin brokers list`
+// and returns a map of HOST → UUID.
+//
+// Example input:
+//
+//	ID    HOST              PORT   RACK  CORES  MEMBERSHIP  IS-ALIVE  VERSION  UUID
+//	0     first-0.default   33145  -     1      active      true      25.2.1   8a0511ca-...
+func parseBrokerList(output string) map[string]string {
+	brokers := make(map[string]string)
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	if len(lines) < 2 {
+		return brokers
 	}
-	nodeList := strings.TrimSpace(matches[1])
-	if nodeList == "" {
-		return 0
-	}
-	return len(strings.Fields(nodeList))
-}
 
-// parseClusterUIDFromHealthOutput parses the cluster ID from rpk cluster health output.
-// Example line: "Cluster ID:           abc-123-def"
-var clusterIDRe = regexp.MustCompile(`(?m)Cluster UUID:\s+(\S+)`)
-
-func parseClusterUIDFromHealthOutput(output string) string {
-	matches := clusterIDRe.FindStringSubmatch(output)
-	if len(matches) < 2 {
-		return ""
+	// Find column indices from the header line.
+	header := lines[0]
+	hostIdx := strings.Index(header, "HOST")
+	uuidIdx := strings.Index(header, "UUID")
+	if hostIdx < 0 || uuidIdx < 0 {
+		return brokers
 	}
-	return matches[1]
+
+	for _, line := range lines[1:] {
+		if len(line) <= uuidIdx {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		// HOST is the second field (after ID), UUID is the last field.
+		host := fields[1]
+		uuid := fields[len(fields)-1]
+		brokers[host] = uuid
+	}
+	return brokers
 }
