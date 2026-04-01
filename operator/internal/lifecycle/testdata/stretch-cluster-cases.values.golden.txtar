@@ -354,6 +354,32 @@ values:
   tuning:
     tune_aio_events: true
 -- compat-test --
+inClusterPools:
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: basic-a
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    replicas: 1
+  status: {}
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: basic-b
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    replicas: 1
+    sidecarImage:
+      repository: localhost/test
+      tag: dev
+  status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: NodePool
@@ -466,6 +492,32 @@ spec:
   tuning:
     tune_aio_events: true
 -- nodepool-basic-test --
+inClusterPools:
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: basic-a
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    replicas: 1
+  status: {}
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: basic-b
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    replicas: 1
+    sidecarImage:
+      repository: localhost/test
+      tag: dev
+  status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: NodePool

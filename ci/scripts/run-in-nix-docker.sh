@@ -63,6 +63,7 @@ docker run --rm -it \
 	-e AWS_ACCESS_KEY_ID \
 	-e AWS_SECRET_ACCESS_KEY \
 	-e TESTCONTAINERS_RYUK_DISABLED \
+	-e REDPANDA_SAMPLE_LICENSE \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \
