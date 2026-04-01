@@ -12,6 +12,12 @@
 # `--tags` is required to match tags with `/`'s in them which we have due to go modules' tagging conventions.
 # `--match` is used to target tags that apply to a specific module.
 # `--always` is a fallback to print out the commit if no tag is found.
+#
+# If a NEXT_VERSION file exists in the module directory (e.g. operator/NEXT_VERSION),
+# its contents are used as the version prefix for non-tagged builds instead of the
+# version from the nearest ancestor tag. This is useful when release tags live on
+# release branches and the nearest ancestor tag on main is outdated.
+# The file should contain a single line with the version (e.g. "v25.4.0").
 
 MODULE=""
 
@@ -47,6 +53,8 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
 # Build a pattern to match git tags against. e.g. charts/redpanda/v*
 PATTERN="$MODULE"'/v*'
 DESC="$(git describe --tags --match "$PATTERN" "$COMMITISH" 2>/dev/null)"
@@ -59,4 +67,18 @@ if [ $RES -ne 0 ]; then
 fi
 
 # Trim the full description to just the version. charts/redpanda/v1.2.3 -> v1.2.3
-echo "${DESC#"$MODULE"/}"
+VERSION="${DESC#"$MODULE"/}"
+
+# If HEAD is not exactly on a tag (cases 3 and 4) and a NEXT_VERSION file exists,
+# replace the version prefix from git describe with the contents of NEXT_VERSION.
+# This handles the case where release tags live on release branches and the nearest
+# ancestor tag on main is outdated.
+NEXT_VERSION_FILE="${REPO_ROOT}/${MODULE}/NEXT_VERSION"
+if [[ "$VERSION" =~ -[0-9]+-g[0-9a-f]+(-dirty)?$ ]] && [ -f "$NEXT_VERSION_FILE" ]; then
+	NEXT_VERSION="$(cat "$NEXT_VERSION_FILE" | tr -d '[:space:]')"
+	# Extract the describe suffix (-N-gCOMMIT and optionally -dirty)
+	DESCRIBE_SUFFIX="$(echo "$VERSION" | sed -E 's/^.*(-[0-9]+-g[0-9a-f]+(-dirty)?)$/\1/')"
+	VERSION="${NEXT_VERSION}${DESCRIBE_SUFFIX}"
+fi
+
+echo "$VERSION"

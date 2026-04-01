@@ -105,6 +105,7 @@ To release any project in this repository:
 7. Verify that the [Release Workflow](./.github/workflows/release.yml) ran successfully.
 8. If applicable, mark the newly minted release as the "latest".
 9. Manually trigger syncing helm charts from this repo in the [helm-charts](https://github.com/redpanda-data/helm-charts/actions/workflows/release_from_operator.yaml) repo.
+10. If the released project has a `NEXT_VERSION` file (e.g. `operator/NEXT_VERSION`), update it on `main` to the next expected version so nightly builds are versioned correctly. For example, after releasing `v26.1.1`, update it to `v26.2.1`.
 
 ## Nightly build
 
