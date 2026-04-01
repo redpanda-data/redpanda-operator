@@ -14,7 +14,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -25,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -142,8 +143,7 @@ type (
 
 type rpkExecResult struct {
 	clusterName string
-	clusterUID  string
-	nodeCount   int
+	rawOutput   string
 }
 
 func stashNodes(ctx context.Context, name string, nodes vclusterNodes) context.Context {
@@ -161,7 +161,6 @@ func getNodes(ctx context.Context, name string) vclusterNodes {
 
 func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
 	nodes := getNodes(ctx, clusterName)
-	// nodes.ApplyInFirst(ctx, []byte(manifest.Content))
 	nodes.ApplyAll(ctx, []byte(manifest.Content))
 	cleanupWrapper(t, func(ctx context.Context) {
 		nodes.DeleteAll(ctx, []byte(manifest.Content))
@@ -177,9 +176,33 @@ func applyNodePoolWithStretchCluster(ctx context.Context, t framework.TestingT, 
 }
 
 func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clusterName, name, namespace, groupVersionKind, finalizer string) {
-	getNodes(ctx, clusterName).CheckAll(ctx, types.NamespacedName{Namespace: namespace, Name: name}, groupVersionKind, func(o client.Object) bool {
+	nn := types.NamespacedName{Namespace: namespace, Name: name}
+
+	getNodes(ctx, clusterName).CheckAll(ctx, nn, groupVersionKind, func(o client.Object) bool {
 		return slices.Contains(o.GetFinalizers(), finalizer)
 	})
+
+	// After the finalizer is set, the reconciler should have also set SpecSynced=True.
+	nodes := getNodes(ctx, clusterName)
+	for _, node := range nodes {
+		require.Eventually(t, func() bool {
+			var sc redpandav1alpha2.StretchCluster
+			if err := node.Get(ctx, nn, &sc); err != nil {
+				t.Logf("error fetching StretchCluster from %s: %v", node.Name(), err)
+				return false
+			}
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			if cond == nil {
+				t.Logf("SpecSynced condition not yet present on %s", node.Name())
+				return false
+			}
+			if cond.Status != metav1.ConditionTrue {
+				t.Logf("SpecSynced=%s on %s: %s", cond.Status, node.Name(), cond.Message)
+				return false
+			}
+			return true
+		}, 5*time.Minute, 1*time.Second, "SpecSynced=True condition never appeared on %s", node.Name())
+	}
 }
 
 func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {
@@ -476,6 +499,42 @@ func expectStatefulsetsReady(ctx context.Context, t framework.TestingT, stsCount
 	}, 10*time.Minute, 10*time.Second, "expected %d ready statefulsets across %d clusters", stsCount, clusterCount)
 }
 
+func expectNodePoolsBoundAndDeployed(ctx context.Context, t framework.TestingT, expectedCount int32, clusterName string) {
+	nodes := getNodes(ctx, clusterName)
+
+	require.Eventually(t, func() bool {
+		boundAndDeployed := int32(0)
+		for _, node := range nodes {
+			var pools redpandav1alpha2.NodePoolList
+			if err := node.List(ctx, &pools, client.InNamespace("default")); err != nil {
+				t.Logf("error listing NodePools in %s: %v", node.Name(), err)
+				return false
+			}
+			for _, pool := range pools.Items {
+				bound := apimeta.FindStatusCondition(pool.Status.Conditions, "Bound")
+				deployed := apimeta.FindStatusCondition(pool.Status.Conditions, "Deployed")
+				if bound != nil && bound.Status == metav1.ConditionTrue &&
+					deployed != nil && deployed.Status == metav1.ConditionTrue {
+					boundAndDeployed++
+				} else {
+					t.Logf("NodePool %s in %s: Bound=%v Deployed=%v",
+						pool.Name, node.Name(),
+						conditionStatus(bound), conditionStatus(deployed))
+				}
+			}
+		}
+		t.Logf("bound and deployed NodePools: %d/%d", boundAndDeployed, expectedCount)
+		return boundAndDeployed >= expectedCount
+	}, 5*time.Minute, 5*time.Second, "expected %d NodePools to be bound and deployed", expectedCount)
+}
+
+func conditionStatus(cond *metav1.Condition) string {
+	if cond == nil {
+		return "Unknown"
+	}
+	return string(cond.Status)
+}
+
 func executeCommandInStatefulsetContainers(ctx context.Context, t framework.TestingT, command string) context.Context {
 	nodes := getLastMulticlusterNodes(ctx)
 
@@ -538,20 +597,16 @@ func executeCommandInStatefulsetContainers(ctx context.Context, t framework.Test
 			}
 
 			output := healthOut.String()
-			nodeCount := parseNodeCountFromHealthOutput(output)
-			clusterUID := parseClusterUIDFromHealthOutput(output)
+			t.Logf("cluster %s output:\n%s", node.Name(), output)
 
-			t.Logf("cluster %s: uid=%s, nodes=%d", node.Name(), clusterUID, nodeCount)
-
-			if clusterUID == "" || nodeCount == 0 {
-				t.Logf("incomplete results from %s, retrying", node.Name())
+			if strings.TrimSpace(output) == "" {
+				t.Logf("empty output from %s, retrying", node.Name())
 				return false
 			}
 
 			results = append(results, rpkExecResult{
 				clusterName: node.Name(),
-				clusterUID:  clusterUID,
-				nodeCount:   nodeCount,
+				rawOutput:   output,
 			})
 		}
 		return true
@@ -560,50 +615,62 @@ func executeCommandInStatefulsetContainers(ctx context.Context, t framework.Test
 	return context.WithValue(ctx, rpkResultsKey{}, results)
 }
 
-func expectSameClusterUIDAndNodeCount(ctx context.Context, t framework.TestingT, expectedNodeCount int32) {
+func expectSameBrokerList(ctx context.Context, t framework.TestingT) {
 	results := ctx.Value(rpkResultsKey{}).([]rpkExecResult)
 	require.NotEmpty(t, results, "no execution results found")
 
+	var brokerMaps []map[string]string
 	for _, result := range results {
-		require.Equal(t, int(expectedNodeCount), result.nodeCount,
-			"node count mismatch in cluster %s", result.clusterName)
+		bm := parseBrokerList(result.rawOutput)
+		require.NotEmpty(t, bm, "no brokers parsed from %s output:\n%s", result.clusterName, result.rawOutput)
+		t.Logf("cluster %s brokers: %v", result.clusterName, bm)
+		brokerMaps = append(brokerMaps, bm)
 	}
 
-	for i := 1; i < len(results); i++ {
-		require.Equal(t, results[0].clusterUID, results[i].clusterUID,
-			"cluster UID mismatch between %s (%s) and %s (%s)",
-			results[0].clusterName, results[0].clusterUID,
-			results[i].clusterName, results[i].clusterUID)
+	for i := 1; i < len(brokerMaps); i++ {
+		require.Equal(t, brokerMaps[0], brokerMaps[i],
+			"broker list mismatch between %s and %s",
+			results[0].clusterName, results[i].clusterName)
 	}
 
-	t.Logf("all %d clusters report the same UID %s with %d nodes",
-		len(results), results[0].clusterUID, expectedNodeCount)
+	t.Logf("all %d clusters report the same broker list with %d brokers",
+		len(results), len(brokerMaps[0]))
 }
 
-// parseNodeCountFromHealthOutput parses the "All nodes" line from rpk cluster health output.
-// Example: "All nodes:             [0 1 2]" → 3
-var allNodesRe = regexp.MustCompile(`All nodes:\s*\[([^\]]*)\]`)
-
-func parseNodeCountFromHealthOutput(output string) int {
-	matches := allNodesRe.FindStringSubmatch(output)
-	if len(matches) < 2 {
-		return 0
+// parseBrokerList parses the tabular output of `rpk redpanda admin brokers list`
+// and returns a map of HOST → UUID.
+//
+// Example input:
+//
+//	ID    HOST              PORT   RACK  CORES  MEMBERSHIP  IS-ALIVE  VERSION  UUID
+//	0     first-0.default   33145  -     1      active      true      25.2.1   8a0511ca-...
+func parseBrokerList(output string) map[string]string {
+	brokers := make(map[string]string)
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	if len(lines) < 2 {
+		return brokers
 	}
-	nodeList := strings.TrimSpace(matches[1])
-	if nodeList == "" {
-		return 0
-	}
-	return len(strings.Fields(nodeList))
-}
 
-// parseClusterUIDFromHealthOutput parses the cluster ID from rpk cluster health output.
-// Example line: "Cluster ID:           abc-123-def"
-var clusterIDRe = regexp.MustCompile(`(?m)Cluster UUID:\s+(\S+)`)
-
-func parseClusterUIDFromHealthOutput(output string) string {
-	matches := clusterIDRe.FindStringSubmatch(output)
-	if len(matches) < 2 {
-		return ""
+	// Find column indices from the header line.
+	header := lines[0]
+	hostIdx := strings.Index(header, "HOST")
+	uuidIdx := strings.Index(header, "UUID")
+	if hostIdx < 0 || uuidIdx < 0 {
+		return brokers
 	}
-	return matches[1]
+
+	for _, line := range lines[1:] {
+		if len(line) <= uuidIdx {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		// HOST is the second field (after ID), UUID is the last field.
+		host := fields[1]
+		uuid := fields[len(fields)-1]
+		brokers[host] = uuid
+	}
+	return brokers
 }

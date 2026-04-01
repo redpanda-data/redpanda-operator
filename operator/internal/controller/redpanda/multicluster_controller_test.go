@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -256,4 +257,100 @@ func (s *MulticlusterControllerSuite) setupMulticlusterRBAC(env *testenv.Env) st
 	)
 
 	return name
+}
+
+func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
+	nn := types.NamespacedName{Name: "spec-drift", Namespace: "multicluster"}
+
+	// Apply identical StretchCluster to all clusters.
+	s.ApplyAll(&redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nn.Name,
+			Namespace: nn.Namespace,
+		},
+		Spec: redpandav1alpha2.StretchClusterSpec{
+			CommonLabels: map[string]string{"env": "prod"},
+		},
+	})
+
+	// Wait for the reconciler to pick it up (finalizer added = reconciler ran).
+	for _, env := range s.envs {
+		cl := env.Client()
+		s.Require().Eventually(func() bool {
+			var sc redpandav1alpha2.StretchCluster
+			s.Require().NoError(cl.Get(s.ctx, nn, &sc))
+			return slices.Contains(sc.Finalizers, redpanda.FinalizerKey)
+		}, 1*time.Minute, 1*time.Second, fmt.Sprintf("cluster in %s never got finalizer", env.Name))
+	}
+
+	// With identical specs, SpecSynced should be True.
+	s.Require().Eventually(func() bool {
+		for _, env := range s.envs {
+			var sc redpandav1alpha2.StretchCluster
+			if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
+				return false
+			}
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			if cond == nil || cond.Status != metav1.ConditionTrue {
+				return false
+			}
+		}
+		return true
+	}, 1*time.Minute, 1*time.Second, "SpecSynced=True condition never appeared")
+
+	// Introduce drift: patch the spec on one cluster only.
+	driftedEnv := s.envs[0]
+	var sc redpandav1alpha2.StretchCluster
+	s.Require().NoError(driftedEnv.Client().Get(s.ctx, nn, &sc))
+	sc.Spec.CommonLabels = map[string]string{"env": "staging"}
+	s.Require().NoError(driftedEnv.Client().Update(s.ctx, &sc))
+
+	// The reconciler should detect drift and set the condition.
+	s.Require().Eventually(func() bool {
+		for _, env := range s.envs {
+			var sc redpandav1alpha2.StretchCluster
+			if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
+				return false
+			}
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			if cond != nil && cond.Status == metav1.ConditionFalse && cond.Reason == "DriftDetected" {
+				return true
+			}
+		}
+		return false
+	}, 1*time.Minute, 1*time.Second, "SpecSynced=False condition never appeared after drift")
+
+	// Verify the condition message mentions the differing field.
+	for _, env := range s.envs {
+		var sc redpandav1alpha2.StretchCluster
+		if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
+			continue
+		}
+		cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+		if cond != nil && cond.Status == metav1.ConditionFalse {
+			s.Contains(cond.Message, "commonLabels", "condition message should mention the drifting field")
+		}
+	}
+
+	// Fix the drift: align the spec back.
+	s.Require().NoError(driftedEnv.Client().Get(s.ctx, nn, &sc))
+	sc.Spec.CommonLabels = map[string]string{"env": "prod"}
+	s.Require().NoError(driftedEnv.Client().Update(s.ctx, &sc))
+
+	// The condition should go back to True.
+	s.Require().Eventually(func() bool {
+		for _, env := range s.envs {
+			var sc redpandav1alpha2.StretchCluster
+			if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
+				return false
+			}
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			if cond == nil || cond.Status != metav1.ConditionTrue {
+				return false
+			}
+		}
+		return true
+	}, 1*time.Minute, 1*time.Second, "SpecSynced condition never went back to True after fixing drift")
+
+	s.DeleteAll(&redpandav1alpha2.StretchCluster{})
 }

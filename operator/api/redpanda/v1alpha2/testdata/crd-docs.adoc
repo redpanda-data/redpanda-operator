@@ -2214,6 +2214,34 @@ PatternType specifies the type of pattern applied for ACL resource matching.
 
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-perpodserviceoverride"]
+==== PerPodServiceOverride
+
+
+
+PerPodServiceOverride defines overrides for a per-pod Service using
+apply-configuration types. Only fields that are set will be merged
+into the generated Service.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-perpodservices[$$PerPodServices$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enabled controls whether this per-pod Service is created. Defaults to true. + |  | 
+| *`labels`* __object (keys:string, values:string)__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`spec`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-servicespecapplyconfiguration[$$ServiceSpecApplyConfiguration$$]__ |  |  | 
+|===
+
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-persistentvolume"]
 ==== PersistentVolume
 

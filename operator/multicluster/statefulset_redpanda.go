@@ -72,6 +72,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Nod
 
 	env := statefulSetRedpandaEnv()
 	env = append(env, metricsEnvironmentVariables(state, pool)...)
+	env = append(env, bootstrapUserEnvVars(state)...)
 
 	container := corev1.Container{
 		Name:      redpandaContainerName,
@@ -131,6 +132,44 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Nod
 	}
 
 	return container
+}
+
+// bootstrapUserEnvVars returns the env vars needed to create the bootstrap SCRAM
+// user at first boot via RP_BOOTSTRAP_USER, and to authenticate rpk commands
+// via RPK_USER/RPK_PASS. Only emitted when SASL is enabled.
+func bootstrapUserEnvVars(state *RenderState) []corev1.EnvVar {
+	if !state.Spec().Auth.IsSASLEnabled() {
+		return nil
+	}
+
+	mechanism := state.Spec().Auth.SASL.GetMechanism()
+	secretName := fmt.Sprintf("%s-bootstrap-user", state.fullname())
+
+	return []corev1.EnvVar{
+		{
+			Name:  "RPK_USER",
+			Value: defaultBootstrapUsername,
+		},
+		{
+			Name: "RPK_PASS",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "password",
+				},
+			},
+		},
+		{
+			Name:  "RPK_SASL_MECHANISM",
+			Value: mechanism,
+		},
+		{
+			Name:  "RP_BOOTSTRAP_USER",
+			Value: "$(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)",
+		},
+	}
 }
 
 // redpandaContainerPorts returns the container ports for the Redpanda container,

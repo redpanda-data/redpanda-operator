@@ -385,5 +385,10 @@ func Run(
 		}
 	}
 
+	if err := redpandacontrollers.SetupWithMultiClusterManager(manager); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+		return err
+	}
+
 	return manager.Start(ctrl.SetupSignalHandler())
 }
