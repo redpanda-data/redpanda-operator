@@ -947,10 +947,10 @@
         seed_servers:
         - host:
             address: basic-a-0.
-            port: "33145"
+            port: 33145
         - host:
             address: basic-b-0.
-            port: "33145"
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1113,10 +1113,10 @@
         seed_servers:
         - host:
             address: basic-a-0.
-            port: "33145"
+            port: 33145
         - host:
             address: basic-b-0.
-            port: "33145"
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -1954,10 +1954,10 @@
         seed_servers:
         - host:
             address: basic-a-0.
-            port: "33145"
+            port: 33145
         - host:
             address: basic-b-0.
-            port: "33145"
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
@@ -2120,10 +2120,10 @@
         seed_servers:
         - host:
             address: basic-a-0.
-            port: "33145"
+            port: 33145
         - host:
             address: basic-b-0.
-            port: "33145"
+            port: 33145
       rpk:
         additional_start_flags:
         - --default-log-level=info
