@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
@@ -62,34 +61,6 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 			mcbuilder.WithEngageWithLocalCluster(true),
 			mcbuilder.WithEngageWithProviderClusters(true),
 		).
-		Watches(&appsv1.StatefulSet{}, func(_ string, _ cluster.Cluster) handler.TypedEventHandler[client.Object, mcreconcile.Request] {
-			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
-				var requests []mcreconcile.Request
-				for _, clusterName := range mgr.GetClusterNames() {
-					labels := object.GetLabels()
-					if labels == nil {
-						return nil
-					}
-
-					namespace := labels[lifecycle.DefaultNamespaceLabel]
-					name := labels[redpanda.NodePoolLabelName]
-
-					if namespace == "" || name == "" {
-						return nil
-					}
-					requests = append(requests, mcreconcile.Request{
-						Request: reconcile.Request{
-							NamespacedName: types.NamespacedName{
-								Namespace: namespace,
-								Name:      name,
-							},
-						},
-						ClusterName: clusterName,
-					})
-				}
-				return requests
-			})
-		}).
 		Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {
 			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
 				l := log.FromContext(ctx).WithName("NodePoolReconciler.StretchClusterWatch").V(log.TraceLevel)
