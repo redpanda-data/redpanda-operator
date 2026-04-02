@@ -260,22 +260,28 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	// NB: toRemove MUST default to an empty array. Otherwise redpanda will reject our request.
 	toRemove := []string{}
 
-	// We need to explicitly mark unknown or invalid properties to remove, because
+	// We need to explicitly mark invalid properties to remove, because
 	// they will otherwise linger, since AdminAPI.Config does not return those entries.
 	// We always send requests for config status to the leader to avoid inconsistencies
 	// due to config propagation delays.
 	// This list is generally expected to be empty.
+	//
+	// NB: Unknown properties are intentionally skipped here. The broker rejects
+	// PUT /v1/cluster_config with 400 Bad Request for any property it doesn't
+	// recognise, even when that property appears only in the remove list. Unknown
+	// properties linger in the raft snapshot but cannot be cleared via the Admin
+	// API on the version that dropped them.
 	for i := range status {
 		for _, invalid := range status[i].Invalid {
 			if _, ok := normalized[invalid]; !ok {
 				toRemove = append(toRemove, invalid)
 			}
 		}
-		for _, unknown := range status[i].Unknown {
-			if _, ok := normalized[unknown]; !ok {
-				toRemove = append(toRemove, unknown)
-			}
-		}
+		// for _, unknown := range status[i].Unknown {
+		// 	if _, ok := normalized[unknown]; !ok {
+		// 		toRemove = append(toRemove, unknown)
+		// 	}
+		// }
 	}
 
 	// If we're operating in declarative mode, we'll remove the any keys that

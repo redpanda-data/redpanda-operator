@@ -101,7 +101,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	// Synchronized status with cluster, including triggering a restart if needed
-	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResources, adminAPI, log)
+	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResources, adminAPI, config, log)
 	if err != nil {
 		return 0, err
 	}
@@ -245,6 +245,7 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	statefulsets []*resources.StatefulSetResource,
 	adminAPI adminutils.AdminAPIClient,
+	desiredConfig map[string]any,
 	l logr.Logger,
 ) (*vectorizedv1alpha1.ClusterCondition, error) {
 	log := l.WithName("synchronizeStatusWithCluster")
@@ -254,6 +255,25 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 	if err != nil {
 		return nil, errorWithContext(err, "could not get config status from admin API")
 	}
+
+	// Filter out unknown properties that are not in the desired config.
+	// These linger in the raft snapshot after a version upgrade removes a
+	// property, and the Admin API rejects any attempt to clear them, so
+	// reporting them as errors would leave the cluster in a permanently
+	// degraded state. Unknown properties that ARE in the desired config
+	// are kept so that mapStatusToCondition still reports them as user
+	// errors (the user is actively requesting a property the broker
+	// doesn't recognise).
+	for i := range status {
+		filtered := status[i].Unknown[:0]
+		for _, u := range status[i].Unknown {
+			if _, ok := desiredConfig[u]; ok {
+				filtered = append(filtered, u)
+			}
+		}
+		status[i].Unknown = filtered
+	}
+
 	conditionData := mapStatusToCondition(status)
 	conditionChanged := redpandaCluster.Status.SetCondition(conditionData.Type, conditionData.Status, conditionData.Reason, conditionData.Message)
 	clusterNeedsRestart := needsRestart(status, log)
