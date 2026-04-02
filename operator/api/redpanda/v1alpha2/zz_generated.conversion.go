@@ -4,15 +4,16 @@
 package v1alpha2
 
 import (
-	v15 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	v16 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	v3 "github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	ir "github.com/redpanda-data/redpanda-operator/pkg/ir"
 	v12 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	v14 "k8s.io/api/networking/v1"
+	v15 "k8s.io/api/networking/v1"
 	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	v11 "k8s.io/client-go/applyconfigurations/core/v1"
+	v14 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func init() {
@@ -80,6 +81,7 @@ func init() {
 			consolePartialRenderValues.SecurityContext = pV1SecurityContextToPV1SecurityContextApplyConfiguration((*source).SecurityContext)
 			consolePartialRenderValues.Service = pV1alpha2ServiceConfigToPConsolePartialServiceConfig((*source).Service)
 			consolePartialRenderValues.Ingress = pV1alpha2IngressConfigToPConsolePartialIngressConfig((*source).Ingress)
+			consolePartialRenderValues.Gateway = pV1alpha2GatewayConfigToPConsolePartialGatewayConfig((*source).Gateway)
 			consolePartialRenderValues.Resources = pV1ResourceRequirementsToPV1ResourceRequirements((*source).Resources)
 			consolePartialRenderValues.Autoscaling = pV1alpha2AutoScalingToPConsolePartialAutoScaling((*source).Autoscaling)
 			if (*source).NodeSelector != nil {
@@ -307,6 +309,11 @@ func init() {
 				return nil, err
 			}
 			v1alpha2ConsoleValues.Ingress = pV1alpha2IngressConfig
+			pV1alpha2GatewayConfig, err := conv_runtime_RawExtension_To_Gateway((*source).Gateway)
+			if err != nil {
+				return nil, err
+			}
+			v1alpha2ConsoleValues.Gateway = pV1alpha2GatewayConfig
 			pV1ResourceRequirements, err := conv_runtime_RawExtension_To_corev1_Resources((*source).Resources)
 			if err != nil {
 				return nil, err
@@ -1154,6 +1161,44 @@ func pV1alpha2ExternalSecretKeySelectorToPIrExternalSecretKeySelector(source *Ex
 	}
 	return pIrExternalSecretKeySelector
 }
+func pV1alpha2GatewayConfigToPConsolePartialGatewayConfig(source *GatewayConfig) *v3.PartialGatewayConfig {
+	var pConsolePartialGatewayConfig *v3.PartialGatewayConfig
+	if source != nil {
+		var consolePartialGatewayConfig v3.PartialGatewayConfig
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			consolePartialGatewayConfig.Enabled = &xbool
+		}
+		if (*source).Annotations != nil {
+			consolePartialGatewayConfig.Annotations = make(map[string]string, len((*source).Annotations))
+			for key, value := range (*source).Annotations {
+				consolePartialGatewayConfig.Annotations[key] = value
+			}
+		}
+		if (*source).ParentRefs != nil {
+			consolePartialGatewayConfig.ParentRefs = make([]v3.PartialGatewayParentReference, len((*source).ParentRefs))
+			for i := 0; i < len((*source).ParentRefs); i++ {
+				consolePartialGatewayConfig.ParentRefs[i] = v1alpha2GatewayParentReferenceToConsolePartialGatewayParentReference((*source).ParentRefs[i])
+			}
+		}
+		if (*source).Hostnames != nil {
+			consolePartialGatewayConfig.Hostnames = make([]string, len((*source).Hostnames))
+			for j := 0; j < len((*source).Hostnames); j++ {
+				consolePartialGatewayConfig.Hostnames[j] = (*source).Hostnames[j]
+			}
+		}
+		if (*source).Path != nil {
+			xstring := *(*source).Path
+			consolePartialGatewayConfig.Path = &xstring
+		}
+		if (*source).PathType != nil {
+			v1PathMatchType := v14.PathMatchType(*(*source).PathType)
+			consolePartialGatewayConfig.PathType = &v1PathMatchType
+		}
+		pConsolePartialGatewayConfig = &consolePartialGatewayConfig
+	}
+	return pConsolePartialGatewayConfig
+}
 func pV1alpha2ImageToPConsolePartialImage(source *Image) *v3.PartialImage {
 	var pConsolePartialImage *v3.PartialImage
 	if source != nil {
@@ -1203,7 +1248,7 @@ func pV1alpha2IngressConfigToPConsolePartialIngressConfig(source *IngressConfig)
 			}
 		}
 		if (*source).TLS != nil {
-			consolePartialIngressConfig.TLS = make([]v14.IngressTLS, len((*source).TLS))
+			consolePartialIngressConfig.TLS = make([]v15.IngressTLS, len((*source).TLS))
 			for j := 0; j < len((*source).TLS); j++ {
 				consolePartialIngressConfig.TLS[j] = v1IngressTLSToV1IngressTLS((*source).TLS[j])
 			}
@@ -1253,7 +1298,7 @@ func pV1alpha2MonitoringConfigToPConsolePartialMonitoringConfig(source *Monitori
 			consolePartialMonitoringConfig.Enabled = &xbool
 		}
 		if (*source).ScrapeInterval != nil {
-			v1Duration := v15.Duration(*(*source).ScrapeInterval)
+			v1Duration := v16.Duration(*(*source).ScrapeInterval)
 			consolePartialMonitoringConfig.ScrapeInterval = &v1Duration
 		}
 		if (*source).Labels != nil {
@@ -1520,8 +1565,8 @@ func v1HTTPHeaderToV1HTTPHeader(source v1.HTTPHeader) v1.HTTPHeader {
 	v1HTTPHeader.Value = source.Value
 	return v1HTTPHeader
 }
-func v1IngressTLSToV1IngressTLS(source v14.IngressTLS) v14.IngressTLS {
-	var v1IngressTLS v14.IngressTLS
+func v1IngressTLSToV1IngressTLS(source v15.IngressTLS) v15.IngressTLS {
+	var v1IngressTLS v15.IngressTLS
 	if source.Hosts != nil {
 		v1IngressTLS.Hosts = make([]string, len(source.Hosts))
 		for i := 0; i < len(source.Hosts); i++ {
@@ -1696,6 +1741,20 @@ func v1WeightedPodAffinityTermToV1WeightedPodAffinityTerm(source v1.WeightedPodA
 	v1WeightedPodAffinityTerm.PodAffinityTerm = v1PodAffinityTermToV1PodAffinityTerm(source.PodAffinityTerm)
 	return v1WeightedPodAffinityTerm
 }
+func v1alpha2GatewayParentReferenceToConsolePartialGatewayParentReference(source GatewayParentReference) v3.PartialGatewayParentReference {
+	var consolePartialGatewayParentReference v3.PartialGatewayParentReference
+	pString := source.Name
+	consolePartialGatewayParentReference.Name = &pString
+	if source.Namespace != nil {
+		xstring := *source.Namespace
+		consolePartialGatewayParentReference.Namespace = &xstring
+	}
+	if source.SectionName != nil {
+		v1SectionName := v14.SectionName(*source.SectionName)
+		consolePartialGatewayParentReference.SectionName = &v1SectionName
+	}
+	return consolePartialGatewayParentReference
+}
 func v1alpha2IngressHostToConsolePartialIngressHost(source IngressHost) v3.PartialIngressHost {
 	var consolePartialIngressHost v3.PartialIngressHost
 	pString := source.Host
@@ -1713,7 +1772,7 @@ func v1alpha2IngressPathToConsolePartialIngressPath(source IngressPath) v3.Parti
 	pString := source.Path
 	consolePartialIngressPath.Path = &pString
 	if source.PathType != nil {
-		v1PathType := v14.PathType(*source.PathType)
+		v1PathType := v15.PathType(*source.PathType)
 		consolePartialIngressPath.PathType = &v1PathType
 	}
 	return consolePartialIngressPath

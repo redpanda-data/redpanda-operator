@@ -967,6 +967,7 @@ ConsoleCreateObj represents configuration options for creating Kubernetes object
 | *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#securitycontext-v1-core[$$SecurityContext$$]__ |  |  | 
 | *`service`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceconfig[$$ServiceConfig$$]__ |  |  | 
 | *`ingress`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-ingressconfig[$$IngressConfig$$]__ |  |  | 
+| *`gateway`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayconfig[$$GatewayConfig$$]__ |  |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ |  |  | 
 | *`autoscaling`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-autoscaling[$$AutoScaling$$]__ |  |  | 
 | *`nodeSelector`* __object (keys:string, values:string)__ |  |  | 
@@ -1313,6 +1314,55 @@ FilterType specifies the type, either include or exclude of a consumer group fil
 | *`expectedFS`* __string__ |  |  | 
 | *`extraVolumeMounts`* __string__ | Adds extra volume mounts. + |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies the resource requirements. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayconfig"]
+==== GatewayConfig
+
+
+
+GatewayConfig configures a Gateway API HTTPRoute for Console.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`parentRefs`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayparentreference[$$GatewayParentReference$$] array__ |  |  | 
+| *`hostnames`* __string array__ |  |  | 
+| *`path`* __string__ |  |  | 
+| *`pathType`* __xref:{anchor_prefix}-sigs-k8s-io-gateway-api-apis-v1-pathmatchtype[$$PathMatchType$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayparentreference"]
+==== GatewayParentReference
+
+
+
+GatewayParentReference identifies a parent Gateway for the HTTPRoute.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayconfig[$$GatewayConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ |  |  | 
+| *`namespace`* __string__ |  |  | 
+| *`sectionName`* __xref:{anchor_prefix}-sigs-k8s-io-gateway-api-apis-v1-sectionname[$$SectionName$$]__ |  |  | 
 |===
 
 
@@ -2749,6 +2799,7 @@ see the Helm values for the Redpanda Console chart: https://artifacthub.io/packa
 | *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Sets the security context for the Pods that run Redpanda Console. + |  | 
 | *`service`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures the Kubernetes Service for Redpanda Console. + |  | 
 | *`ingress`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures the Kubernetes Ingress resource for Redpanda Console. + |  | 
+| *`gateway`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures a Gateway API HTTPRoute for Redpanda Console. + |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures resource requests and limits for the Pods that run Redpanda Console. + |  | 
 | *`autoscaling`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Configures Horizontal Pod Autoscaling (HPA) for Redpanda Console. + |  | 
 | *`nodeSelector`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#rawextension-runtime-pkg[$$RawExtension$$]__ | Specifies Node labels for Pod assignment. + |  | 

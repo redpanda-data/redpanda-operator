@@ -10,9 +10,13 @@
 package console
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -104,6 +108,53 @@ func TestController(t *testing.T) {
 			},
 		},
 		{
+			name: "gateway-enabled",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-gateway",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ConsoleValues: redpandav1alpha2.ConsoleValues{
+						Gateway: &redpandav1alpha2.GatewayConfig{
+							Enabled:   ptr.To(true),
+							Hostnames: []string{"console.example.com"},
+							Path:      ptr.To("/"),
+							Annotations: map[string]string{
+								"example.com/team": "platform",
+							},
+							ParentRefs: []redpandav1alpha2.GatewayParentReference{
+								{
+									Name:      "my-gateway",
+									Namespace: ptr.To("gateway-system"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "gateway-custom-path",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-gw-path",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ConsoleValues: redpandav1alpha2.ConsoleValues{
+						Gateway: &redpandav1alpha2.GatewayConfig{
+							Enabled:   ptr.To(true),
+							Hostnames: []string{"console.example.com", "console.internal"},
+							Path:      ptr.To("/console"),
+							ParentRefs: []redpandav1alpha2.GatewayParentReference{
+								{Name: "gw-a"},
+								{Name: "gw-b", Namespace: ptr.To("other-ns")},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "jwt-set",
 			console: &redpandav1alpha2.Console{
 				ObjectMeta: metav1.ObjectMeta{
@@ -128,6 +179,9 @@ func TestController(t *testing.T) {
 		},
 	})
 
+	allCRDs := crds.All()
+	allCRDs = append(allCRDs, loadGatewayAPICRDs(t)...)
+
 	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
 		if err != nil {
 			return false, err
@@ -140,7 +194,7 @@ func TestController(t *testing.T) {
 		}
 
 		return false, nil
-	}, crds.All()...))
+	}, allCRDs...))
 
 	// Create namespace
 	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
@@ -272,6 +326,53 @@ func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, console *redpandav1alp
 	})
 
 	return objects
+}
+
+// loadGatewayAPICRDs loads Gateway API CRDs from the sigs.k8s.io/gateway-api
+// module in the Go module cache. This is needed for envtest to support
+// HTTPRoute resources.
+func loadGatewayAPICRDs(t *testing.T) []*apiextensionsv1.CustomResourceDefinition {
+	t.Helper()
+
+	// Resolve the gateway-api module directory from the module cache.
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", "sigs.k8s.io/gateway-api")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	require.NoError(t, cmd.Run(), "failed to resolve gateway-api module directory")
+
+	crdDir := filepath.Join(strings.TrimSpace(out.String()), "config", "crd", "standard")
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+
+	entries, err := os.ReadDir(crdDir)
+	require.NoError(t, err)
+
+	var result []*apiextensionsv1.CustomResourceDefinition
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+			continue
+		}
+
+		data, err := os.ReadFile(filepath.Join(crdDir, entry.Name()))
+		require.NoError(t, err)
+
+		objs, err := kube.DecodeYAML(data, scheme)
+		if err != nil {
+			// Skip non-CRD YAML files (e.g. ValidatingAdmissionPolicy).
+			continue
+		}
+
+		for _, obj := range objs {
+			if crd, ok := obj.(*apiextensionsv1.CustomResourceDefinition); ok {
+				result = append(result, crd)
+			}
+		}
+	}
+
+	require.NotEmpty(t, result, "no Gateway API CRDs found in %s", crdDir)
+	return result
 }
 
 // cleanObjectForGolden removes dynamic fields that change between test runs
