@@ -484,6 +484,72 @@ func (s *stubNode) ReportUnreachable(uint64)                                    
 func (s *stubNode) ReportSnapshot(uint64, raft.SnapshotStatus)                  {}
 func (s *stubNode) Stop()                                                       {}
 
+// TestFreshLeaderSnapshotSend validates the initial snapshot seed added to
+// runRaft. Without it, a fresh node that wins leadership before its first
+// compaction cycle (10 s) panics with "need non-empty snapshot" when it tries
+// to send a snapshot to a peer whose log is behind.
+//
+// Scenario:
+//  1. Start a 3-node cluster and wait for leader election.
+//  2. Stop the leader and one follower — only one node remains.
+//  3. Wait for a compaction cycle so the surviving node's log is compacted.
+//  4. Restart both stopped nodes. They start with fresh MemoryStorage.
+//  5. The surviving node loses quorum, so one of the fresh nodes wins the
+//     new election. As leader it must send a snapshot to a peer — without
+//     the initial snapshot seed this panics.
+func TestFreshLeaderSnapshotSend(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
+
+	leaders := setupLockTest(t, ctx, 3)
+
+	defer func() {
+		cancel()
+		for _, l := range leaders {
+			l.WaitForStopped(t, 10*time.Second)
+		}
+	}()
+
+	// Wait for initial leader election.
+	leader, followers := waitForAnyLeader(t, 30*time.Second, leaders...)
+	t.Logf("initial leader: %d", leader.config.ID)
+
+	// Stop the leader and one follower, leaving a single node running.
+	leader.Stop()
+	leader.WaitForStopped(t, 5*time.Second)
+	followers[0].Stop()
+	followers[0].WaitForStopped(t, 5*time.Second)
+	t.Logf("stopped leader %d and follower %d", leader.config.ID, followers[0].config.ID)
+
+	// Wait for a compaction cycle so the surviving node has compacted its log.
+	t.Log("waiting for compaction on surviving node (~12 s)...")
+	select {
+	case <-time.After(12 * time.Second):
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for compaction")
+	}
+
+	// Drain stale follower signals.
+	for _, l := range []*testLeader{leader, followers[0]} {
+		select {
+		case <-l.follower:
+		default:
+		}
+	}
+
+	// Restart both nodes. They have fresh MemoryStorage (no snapshot).
+	// One of them will likely win the next election before its compaction
+	// timer fires. Without the initial snapshot seed, the new leader panics
+	// when it tries to send a snapshot to bring a peer up to date.
+	t.Log("restarting both nodes...")
+	leader.Start(t, ctx)
+	followers[0].Start(t, ctx)
+
+	// Wait for a new leader to emerge — if we get here without a panic the
+	// initial snapshot seed is working.
+	newLeader, _ := waitForAnyLeader(t, 30*time.Second, leaders...)
+	t.Logf("new leader %d elected without panic", newLeader.config.ID)
+}
+
 func TestLocker(t *testing.T) {
 	for name, tt := range map[string]struct {
 		nodes int

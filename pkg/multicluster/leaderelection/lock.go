@@ -347,6 +347,14 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 	}
 	confState := raftpb.ConfState{Voters: voters}
 
+	// Seed an initial snapshot at index 0 so that maybeSendSnapshot never
+	// panics with "need non-empty snapshot". Without this, a fresh node that
+	// wins leadership before its first compaction cycle (10 s) will panic
+	// when it tries to send a snapshot to a peer whose log is behind.
+	if _, err := storage.CreateSnapshot(0, &confState, nil); err != nil {
+		config.Logger.Warningf("failed to seed initial snapshot: %v", err)
+	}
+
 	go func() {
 		compactions := 1000 // every 10 seconds
 		for {
