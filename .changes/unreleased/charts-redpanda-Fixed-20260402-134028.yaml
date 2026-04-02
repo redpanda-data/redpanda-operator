@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Make configuration job pods have labels that don't overlap with StatefulSet pods so that they don't match selectors we use elsewhere.
+time: 2026-04-02T13:40:28.751133-04:00

@@ -23,12 +23,8 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $nameLabel := (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") -}}
-{{- if $state.Values.post_install_job.excludeFromServiceSelector -}}
-{{- $nameLabel = (printf "%s-configuration" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r")) -}}
-{{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "app.kubernetes.io/name" $nameLabel "app.kubernetes.io/instance" $state.Release.Name "app.kubernetes.io/component" (printf "%.50s-post-install" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r")))) | toJson -}}
+{{- (dict "r" (dict "app.kubernetes.io/name" (printf "%s-configuration" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r")) "app.kubernetes.io/instance" $state.Release.Name "app.kubernetes.io/component" (printf "%.50s-post-install" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

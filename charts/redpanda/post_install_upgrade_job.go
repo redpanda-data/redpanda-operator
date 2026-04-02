@@ -72,16 +72,12 @@ func bootstrapYamlTemplater(state *RenderState, sts Statefulset) corev1.Containe
 }
 
 // postInstallJobPodLabels returns the labels for the post-install job's pod
-// template. When ExcludeFromServiceSelector is true, the app.kubernetes.io/name
-// label is set to "<name>-configuration" so the pod does not match the Redpanda
-// Service selector, preventing stale endpoints from completed job pods.
+// template. The app.kubernetes.io/name label is set to "<name>-configuration"
+// so the pod does not match the Redpanda Service selector, preventing stale
+// endpoints from completed job pods.
 func postInstallJobPodLabels(state *RenderState) map[string]string {
-	nameLabel := Name(state)
-	if state.Values.PostInstallJob.ExcludeFromServiceSelector {
-		nameLabel = fmt.Sprintf("%s-configuration", Name(state))
-	}
 	return map[string]string{
-		"app.kubernetes.io/name":      nameLabel,
+		"app.kubernetes.io/name":      fmt.Sprintf("%s-configuration", Name(state)),
 		"app.kubernetes.io/instance":  state.Release.Name,
 		"app.kubernetes.io/component": fmt.Sprintf("%.50s-post-install", Name(state)),
 	}
