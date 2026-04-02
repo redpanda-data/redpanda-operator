@@ -302,37 +302,18 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 			return &transportv1.SendResponse{Applied: false}, nil
 		}
 
-		// Guard against panics and deadlocks when a follower restarts with
-		// fresh MemoryStorage whose lastIndex is behind the leader's log.
-		//
-		// raft.StartNode populates the log with N ConfChange entries
-		// (N = number of peers), so a fresh follower has lastIndex = N.
-		//
-		// MsgHeartbeat guard: the leader's Commit may already exceed N.
-		// handleHeartbeat calls commitTo(Commit), which panics when
-		// Commit > lastIndex. We clamp Commit to lastIndex so the
-		// heartbeat is still processed by the raft node, which generates
-		// a proper MsgHeartbeatResp. This keeps the peer active in the
-		// leader's progress tracker — rejecting the heartbeat entirely
-		// would cause the leader to mark the peer inactive, preventing
-		// snapshot delivery after log compaction.
-		//
-		// MsgApp guard: when the leader's log is compacted exactly at the
-		// follower's stale Match index, the leader sends MsgApp with
-		// prevLogIndex = Match. The follower rejects (term mismatch), but
-		// the leader's MaybeDecrTo cannot decrease Next below Match+1,
-		// creating an infinite rejection loop. Rejecting the MsgApp
-		// before stepping avoids flooding. The leader-side handler for
-		// Applied=false proposes a no-op to advance lastIndex past the
-		// stale Match, enabling sendAppend to trigger the snapshot path
-		// after compaction.
-		if s := t.getStorage(); s != nil {
-			if lastIdx, err := s.LastIndex(); err == nil {
-				if msg.Type == raftpb.MsgHeartbeat && msg.Commit > lastIdx {
+		// Clamp MsgHeartbeat.Commit to our lastIndex. A fresh follower has
+		// lastIndex = N (N ConfChange entries from StartNode) while the
+		// leader's Commit may be much higher. Without clamping,
+		// handleHeartbeat calls commitTo(Commit) which panics when
+		// Commit > lastIndex. Clamping lets the heartbeat succeed so the
+		// raft node generates a proper MsgHeartbeatResp, keeping this
+		// peer active in the leader's progress tracker while normal
+		// MsgApp catch-up proceeds.
+		if msg.Type == raftpb.MsgHeartbeat {
+			if s := t.getStorage(); s != nil {
+				if lastIdx, err := s.LastIndex(); err == nil && msg.Commit > lastIdx {
 					msg.Commit = lastIdx
-				}
-				if msg.Type == raftpb.MsgApp && msg.Index > lastIdx {
-					return &transportv1.SendResponse{Applied: false}, nil
 				}
 			}
 		}
