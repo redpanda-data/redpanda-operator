@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"go.etcd.io/raft/v3"
-	"go.etcd.io/raft/v3/raftpb"
 
 	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
@@ -142,11 +141,19 @@ func asPeers(nodes []LockerNode) []raft.Peer {
 // Run starts the raft node and gRPC transport, blocking until ctx is cancelled
 // or an unrecoverable error occurs. Leadership transitions are reported via callbacks.
 //
+// # Leader Election Only
+//
+// This raft implementation is used solely for leader election. No application
+// data is stored in the log — only the initial ConfChange entries from
+// bootstrap and occasional leader no-ops. Because the log stays small,
+// compaction and snapshots are unnecessary. The leader always retains all
+// log entries and catches up lagging followers via normal MsgApp replication.
+//
 // # Recovery Semantics
 //
 // This raft implementation uses in-memory storage (no WAL). When a node
-// restarts it has an empty log and must catch up from the leader via snapshot.
-// Three mechanisms cooperate to ensure recovery succeeds:
+// restarts it has an empty log and must catch up from the leader via log
+// entries. Two mechanisms cooperate to ensure recovery succeeds:
 //
 // 1. PreVote prevents term inflation. Without PreVote, a restarting node
 // runs elections that fail (its log is behind), but each attempt increments
@@ -163,16 +170,12 @@ func asPeers(nodes []LockerNode) []raft.Peer {
 // and, if this node is the leader, steps a synthetic MsgHeartbeatResp to
 // mark the peer active again.
 //
-// 3. ReportUnreachable on rejected heartbeats transitions the progress
-// tracker from StateReplicate to StateProbe. When a peer restarts fresh,
-// the leader may still have it tracked in StateReplicate with Match equal
-// to the old lastIndex. Heartbeats to the new peer are rejected by the
-// commit guard (Commit > lastIndex), returning Applied=false. Without
-// ReportUnreachable, the progress stays in StateReplicate, which prevents
-// sendAppend from being called (IsPaused returns true when the inflight
-// buffer is full). Calling ReportUnreachable transitions to StateProbe,
-// where sendAppend always fires, allowing the leader to discover the peer
-// is behind and send a snapshot.
+// Additionally, the transport clamps MsgHeartbeat.Commit to the local
+// lastIndex. A fresh follower has lastIndex=N (from N ConfChange entries)
+// while the leader's Commit may be much higher. Without clamping, the raft
+// library panics in commitTo. Clamping keeps the heartbeat processable so
+// the follower generates a proper MsgHeartbeatResp, staying active in the
+// leader's progress tracker while normal MsgApp catch-up proceeds.
 //
 // # Recovery Timeline
 //
@@ -189,23 +192,19 @@ func asPeers(nodes []LockerNode) []raft.Peer {
 //     MsgHeartbeatResp, reactivating the peer's progress tracker. This
 //     happens on the first message exchange after reconnection.
 //
-//   - Progress tracker repair: The leader sends a heartbeat to the newly
-//     active peer. The commit guard rejects it (Applied=false) because the
-//     peer's log only has N ConfChange entries. ReportUnreachable transitions
-//     the progress from StateReplicate to StateProbe.
+//   - Log catch-up: The leader sends MsgApp entries to the new peer. The
+//     peer's log starts at N ConfChange entries; the leader backs off
+//     prevLogIndex via the normal rejection mechanism until it finds the
+//     matching point, then sends all subsequent entries.
 //
-//   - Snapshot delivery: In StateProbe, the leader calls sendAppend, which
-//     discovers the peer is far behind and sends a MsgSnap. The peer applies
-//     the snapshot, advancing its lastIndex to match the leader's.
-//
-//   - Steady state: Subsequent heartbeats pass the commit guard. The peer
-//     responds normally and transitions to StateReplicate.
+//   - Steady state: Once the peer's log matches, heartbeats pass normally
+//     and the peer transitions to StateReplicate.
 //
 // Total recovery time is approximately:
 //
 //	GRPCMaxBackoff                           // reconnection (default 5s)
 //	+ ElectionTimeout                        // peer runs a PreVote round
-//	+ 2-3 × HeartbeatInterval               // reactivation + probe + snapshot
+//	+ 2-3 × HeartbeatInterval               // reactivation + log catch-up
 //
 // With defaults (ElectionTimeout=10s, HeartbeatInterval=1s, GRPCMaxBackoff=5s):
 // worst case is ~18s.
@@ -307,9 +306,10 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 
 	storage := raft.NewMemoryStorage()
 
-	// Expose storage to the transport so its Send handler can guard against
-	// MsgHeartbeat messages whose Commit index exceeds our current lastIndex
-	// (which would otherwise panic inside the raft library via commitTo).
+	// Expose storage to the transport so its Send handler can clamp
+	// MsgHeartbeat.Commit to the local lastIndex, preventing the raft
+	// library from panicking in commitTo when a fresh follower's lastIndex
+	// is behind the leader's Commit.
 	transport.setStorage(storage)
 
 	if config.ElectionTimeout == 0 {
@@ -337,40 +337,13 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 
 	transport.setNode(node)
 
-	// confState captures the static cluster membership and is embedded in every
-	// snapshot. CreateSnapshot must be called before Compact so the storage
-	// always has a non-empty snapshot to send to lagging peers; without it,
-	// maybeSendSnapshot panics with "need non-empty snapshot".
-	voters := make([]uint64, 0, len(config.Peers))
-	for _, p := range config.Peers {
-		voters = append(voters, p.ID)
-	}
-	confState := raftpb.ConfState{Voters: voters}
-
 	go func() {
-		compactions := 1000 // every 10 seconds
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(10 * time.Millisecond):
 				node.Tick()
-				if compactions == 0 {
-					applied := node.Status().Applied
-					// Guard against a race: node.Status().Applied can reflect entries
-					// that the raft node has accepted into its unstable log but that our
-					// Ready loop has not yet written to MemoryStorage via storage.Append.
-					// CreateSnapshot panics if the requested index exceeds lastindex, so
-					// skip this compaction cycle and retry in the next one.
-					lastStored, err := storage.LastIndex()
-					if err == nil && applied > 0 && applied <= lastStored {
-						if _, err := storage.CreateSnapshot(applied, &confState, nil); err == nil {
-							_ = storage.Compact(applied)
-						}
-					}
-					compactions = 1000
-				}
-				compactions--
 			}
 		}
 	}()
@@ -429,18 +402,6 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 				}
 			}
 
-			// Apply snapshot before appending entries. When a fresh follower
-			// receives a MsgSnap from the leader, the raft node surfaces
-			// the snapshot in Ready. MemoryStorage must learn about it
-			// first; otherwise Append panics with "missing log entry"
-			// because there is a gap between MemoryStorage's last index
-			// and the first entry that follows the snapshot.
-			if !raft.IsEmptySnap(rd.Snapshot) {
-				if err := storage.ApplySnapshot(rd.Snapshot); err != nil && err != raft.ErrSnapOutOfDate {
-					config.Logger.Errorf("applying snapshot: %v", err)
-				}
-			}
-
 			_ = storage.Append(rd.Entries)
 			for _, msg := range rd.Messages {
 				if msg.To == config.ID {
@@ -449,48 +410,12 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 					}
 					continue
 				}
-				for {
-					applied, err := transport.DoSend(ctx, msg)
+				applied, err := transport.DoSend(ctx, msg)
+				if err != nil || !applied {
 					if err != nil {
 						config.Logger.Infof("unreachable %d: %v", msg.To, err)
-						node.ReportUnreachable(msg.To)
-						break
 					}
-					if !applied {
-						// The remote peer returned Applied=false, meaning it could
-						// not process the message (e.g. a fresh follower whose
-						// lastIndex is behind the leader's log).
-						//
-						// Report the peer as unreachable so the progress tracker
-						// transitions from StateReplicate to StateProbe. Without
-						// this, a replaced follower (fresh MemoryStorage) that
-						// rejects messages via the transport guards leaves the
-						// leader's progress stuck, preventing snapshot catch-up.
-						node.ReportUnreachable(msg.To)
-
-						// Propose a no-op to advance the log past stale Match
-						// values. When a peer restarts with fresh MemoryStorage,
-						// the leader retains match=M from the dead peer, but
-						// lastIndex may equal M. The MsgHeartbeatResp handler
-						// only calls sendAppend when match < lastIndex, so
-						// without advancing the log, the leader never discovers
-						// it needs to send a snapshot. The no-op advances
-						// lastIndex to M+1, unblocking the sendAppend path.
-						// After compaction removes old entries, sendAppend
-						// enters the snapshot path and delivers the snapshot.
-						//
-						// Only propose when this node is the leader. Only
-						// the leader has stale Match values that need
-						// advancing, and non-leader proposals queue up
-						// without being committed, flooding the raft group
-						// during mass restarts (e.g. 13-node quorum test).
-						if transport.isLeader.Load() {
-							_ = node.Propose(ctx, nil)
-						}
-						break
-					} else {
-						break
-					}
+					node.ReportUnreachable(msg.To)
 				}
 			}
 
