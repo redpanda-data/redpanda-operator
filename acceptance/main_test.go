@@ -14,11 +14,11 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"time"
 	"path/filepath"
 	"slices"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
