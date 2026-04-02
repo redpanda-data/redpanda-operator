@@ -13,10 +13,10 @@ spec:
       resources:
         requests:
           cpu: "100m"
-          memory: 256Mi
+          memory: 512Mi
         limits:
           cpu: "100m"
-          memory: 256Mi
+          memory: 512Mi
     - name: second
       replicas: 3
       storage: {}
@@ -24,10 +24,10 @@ spec:
       resources:
         requests:
           cpu: "101m"
-          memory: 257Mi
+          memory: 513Mi
         limits:
           cpu: "101m"
-          memory: 257Mi
+          memory: 513Mi
   configuration:
     rpcServer:
       port: 33145

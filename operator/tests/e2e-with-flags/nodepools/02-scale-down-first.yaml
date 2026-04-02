@@ -13,10 +13,10 @@ spec:
       resources:
         requests:
           cpu: "100m"
-          memory: 256Mi
+          memory: 512Mi
         limits:
           cpu: "100m"
-          memory: 256Mi
+          memory: 512Mi
     - name: nodepool2
       replicas: 3
       storage: {}
@@ -24,10 +24,10 @@ spec:
       resources:
         requests:
           cpu: "100m"
-          memory: 256Mi
+          memory: 512Mi
         limits:
           cpu: "100m"
-          memory: 256Mi
+          memory: 512Mi
   configuration:
     rpcServer:
       port: 33145
