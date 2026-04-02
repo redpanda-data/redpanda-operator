@@ -47,10 +47,6 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-<<<<<<< HEAD
-=======
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-
 # If BUILDKITE_TAG is set and matches our module prefix, use it directly.
 # This avoids issues where the CI checkout doesn't have the tag visible to
 # git describe (e.g. shallow clones or detached HEAD checkouts).
@@ -59,7 +55,6 @@ if [ -n "${BUILDKITE_TAG:-}" ] && [[ "$BUILDKITE_TAG" == "$MODULE"/v* ]]; then
 	exit 0
 fi
 
->>>>>>> d959d30a (Add helm field manager removal for migrating from helm to operator (#1372))
 # Build a pattern to match git tags against. e.g. charts/redpanda/v*
 PATTERN="$MODULE"'/v*'
 DESC="$(git describe --tags --match "$PATTERN" "$COMMITISH" 2>/dev/null)"
