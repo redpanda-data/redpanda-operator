@@ -27,18 +27,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-// TestLaggingPeerCatchesUpViaSnapshot reproduces the "need non-empty snapshot"
-// panic that occurred when a follower's log index fell below the leader's
-// compacted index. The fix calls storage.CreateSnapshot before storage.Compact
-// so the leader always has a valid snapshot to send to lagging peers.
-//
-// Scenario:
-//  1. Start a 3-node cluster and wait for initial leader election.
-//  2. Stop one follower to simulate a network partition.
-//  3. Wait for at least one full compaction cycle (~10 s) on the running nodes.
-//  4. Restart the follower; its fresh in-memory log is behind the compacted index.
-//  5. The leader must catch it up via snapshot — without this fix it panicked.
-func TestLaggingPeerCatchesUpViaSnapshot(t *testing.T) {
+// TestFollowerRejoinsAfterRestart validates that a follower that restarts
+// with fresh MemoryStorage can rejoin the cluster via normal log catch-up.
+// The leader retains all log entries (no compaction) and catches the
+// follower up via MsgApp.
+func TestFollowerRejoinsAfterRestart(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 
 	leaders := setupLockTest(t, ctx, 3)
@@ -50,124 +43,26 @@ func TestLaggingPeerCatchesUpViaSnapshot(t *testing.T) {
 		}
 	}()
 
-	// Wait for the cluster to elect its first leader.
 	_, followers := waitForAnyLeader(t, 30*time.Second, leaders...)
 
-	// Isolate one follower. The two remaining nodes retain quorum.
+	// Stop one follower to simulate a pod restart.
 	laggingNode := followers[0]
 	laggingNode.Stop()
 	laggingNode.WaitForStopped(t, 5*time.Second)
-	t.Logf("isolated follower %d", laggingNode.config.ID)
+	t.Logf("stopped follower %d", laggingNode.config.ID)
 
-	// Wait for at least one full compaction cycle (compaction runs every ~10 s).
-	// After this point the leader's MemoryStorage no longer holds the entries
-	// the lagging node needs, so only a snapshot can bring it up to date.
-	t.Log("waiting for log compaction to occur on running nodes (~10 s)...")
-	select {
-	case <-time.After(12 * time.Second):
-	case <-ctx.Done():
-		t.Fatal("timed out while waiting for compaction")
-	}
-
-	// Drain the stale follower signal that was written when the node first
-	// initialised as a follower, so WaitForFollower below only sees the
-	// signal from the post-restart catch-up.
+	// Drain the stale follower signal from initial startup.
 	select {
 	case <-laggingNode.follower:
 	default:
 	}
 
-	// Restart the lagging node. Its fresh MemoryStorage starts at index 0,
-	// which is below the leader's compacted index. The leader must send a
-	// snapshot. Before the fix this triggered: panic("need non-empty snapshot").
-	t.Logf("restarting follower %d", laggingNode.config.ID)
-	laggingNode.Start(t, ctx)
-
-	// The node must settle as a follower, proving snapshot-based catch-up works.
-	laggingNode.WaitForFollower(t, 30*time.Second)
-	t.Logf("follower %d successfully caught up via snapshot", laggingNode.config.ID)
-}
-
-// TestCompactionRaceWithCatchUp validates the guard "applied <= lastStored"
-// added to the compaction goroutine in runRaft.
-//
-// Background: node.Status().Applied can return an index that the raft node has
-// accepted into its unstable log but that the Ready loop has not yet persisted
-// to MemoryStorage via storage.Append. Without the guard, calling
-// storage.CreateSnapshot(applied, ...) when applied > storage.LastIndex()
-// panics with "snapshot X is out of bound lastindex(Y)".
-//
-// The scenario that reliably triggers the race:
-//  1. Isolate a follower so the two remaining nodes continue committing entries.
-//  2. Wait for at least one compaction cycle so the leader's log is compacted.
-//  3. Restart the follower: the leader sends a snapshot, the follower applies
-//     it, and Applied jumps forward — potentially ahead of what the local
-//     Ready loop has yet written to storage.
-//  4. Allow the cluster to run for two more compaction cycles (~22 s). Without
-//     the guard the compaction goroutine would panic during this window.
-func TestCompactionRaceWithCatchUp(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Minute)
-
-	leaders := setupLockTest(t, ctx, 3)
-
-	defer func() {
-		cancel()
-		for _, l := range leaders {
-			l.WaitForStopped(t, 10*time.Second)
-		}
-	}()
-
-	// Wait for the cluster to elect its first leader.
-	_, followers := waitForAnyLeader(t, 30*time.Second, leaders...)
-
-	// Isolate one follower. The two remaining nodes retain quorum and keep
-	// committing heartbeat entries.
-	laggingNode := followers[0]
-	laggingNode.Stop()
-	laggingNode.WaitForStopped(t, 5*time.Second)
-	t.Logf("isolated follower %d", laggingNode.config.ID)
-
-	// Wait for at least one full compaction cycle on the running nodes.
-	t.Log("waiting for first compaction cycle on running nodes (~10 s)...")
-	select {
-	case <-time.After(12 * time.Second):
-	case <-ctx.Done():
-		t.Fatal("timed out waiting for first compaction")
-	}
-
-	// Drain any stale follower signal from initial startup so
-	// WaitForFollower below only observes the post-restart signal.
-	select {
-	case <-laggingNode.follower:
-	default:
-	}
-
-	// Restart the follower. The leader will send a snapshot to bring it
-	// up to date. After applying the snapshot, Applied jumps forward while
-	// the local Ready loop may not yet have persisted those entries — this
-	// is the exact window the guard protects against.
+	// Restart. The fresh node has lastIndex=N (ConfChange entries) while
+	// the leader's log has progressed. The leader catches it up via MsgApp.
 	t.Logf("restarting follower %d", laggingNode.config.ID)
 	laggingNode.Start(t, ctx)
 	laggingNode.WaitForFollower(t, 30*time.Second)
-	t.Logf("follower %d rejoined the cluster", laggingNode.config.ID)
-
-	// Allow two more compaction cycles (~22 s) to fire while the follower
-	// is actively catching up. Without the guard, the compaction goroutine
-	// panics during this window. A panic crashes the test binary immediately.
-	t.Log("checking cluster stability across two more compaction cycles (~22 s)...")
-	select {
-	case <-time.After(22 * time.Second):
-		// No panic — the guard worked correctly.
-	case err := <-laggingNode.err:
-		t.Fatalf("follower failed after rejoining: %v", err)
-	case <-ctx.Done():
-		t.Fatal("context cancelled during stability check")
-	}
-
-	if laggingNode.IsStopped() {
-		t.Fatal("follower stopped unexpectedly during compaction cycles")
-	}
-	t.Logf("follower %d remained stable across multiple compaction cycles", laggingNode.config.ID)
+	t.Logf("follower %d successfully rejoined the cluster", laggingNode.config.ID)
 }
 
 // TestFreshNodeJoinsRunningCluster validates the MsgHeartbeat guard added to
@@ -230,98 +125,11 @@ func TestFreshNodeJoinsRunningCluster(t *testing.T) {
 	t.Logf("follower %d rejoined running cluster without panic", laggingNode.config.ID)
 }
 
-// TestSnapshotAppliedBeforeAppend verifies that the Ready loop in runRaft
-// applies a snapshot to MemoryStorage before appending entries.
-//
-// This is a direct unit test for the fix: without storage.ApplySnapshot,
-// storage.Append panics with "missing log entry [last: N, append at: M]"
-// when there is a gap between MemoryStorage's last index and the first
-// entry in rd.Entries (which follows a snapshot the leader sent).
-//
-// The test simulates a fresh follower's MemoryStorage state:
-//   - 3 initial ConfChange entries (lastIndex=3), simulating raft.StartNode
-//     with 3 peers.
-//   - A snapshot at index 5 with term 2, simulating what the leader sends
-//     via MsgSnap after the cluster has progressed.
-//   - Entries starting at index 6, which follow the snapshot.
-//
-// Without applying the snapshot first, Append sees last=3 and first
-// entry at index 6 — a gap — and panics. With ApplySnapshot, storage
-// advances to index 5, and the Append at index 6 succeeds.
-func TestSnapshotAppliedBeforeAppend(t *testing.T) {
-	storage := raft.NewMemoryStorage()
-
-	// Simulate a fresh follower: 3 ConfChange entries from StartNode.
-	initialEntries := []raftpb.Entry{
-		{Index: 1, Term: 1},
-		{Index: 2, Term: 1},
-		{Index: 3, Term: 1},
-	}
-	require.NoError(t, storage.Append(initialEntries))
-
-	lastIdx, err := storage.LastIndex()
-	require.NoError(t, err)
-	require.Equal(t, uint64(3), lastIdx)
-
-	// Simulate a snapshot from the leader at index 5.
-	snap := raftpb.Snapshot{
-		Metadata: raftpb.SnapshotMetadata{
-			Index: 5,
-			Term:  2,
-			ConfState: raftpb.ConfState{
-				Voters: []uint64{1, 2, 3},
-			},
-		},
-	}
-
-	// Entries that follow the snapshot.
-	postSnapEntries := []raftpb.Entry{
-		{Index: 6, Term: 2},
-		{Index: 7, Term: 2},
-	}
-
-	// Without applying the snapshot, Append must panic.
-	require.Panics(t, func() {
-		_ = storage.Append(postSnapEntries)
-	}, "Append should panic when there is a gap between lastIndex and first entry")
-
-	// Re-create storage to get a clean state (the panic may have left it inconsistent).
-	storage = raft.NewMemoryStorage()
-	require.NoError(t, storage.Append(initialEntries))
-
-	// Now apply the snapshot first — this is the fix under test.
-	require.False(t, raft.IsEmptySnap(snap))
-	err = storage.ApplySnapshot(snap)
-	require.NoError(t, err)
-
-	// Verify storage advanced to the snapshot index.
-	lastIdx, err = storage.LastIndex()
-	require.NoError(t, err)
-	require.Equal(t, uint64(5), lastIdx)
-
-	// Append entries after the snapshot — this must not panic.
-	require.NotPanics(t, func() {
-		err = storage.Append(postSnapEntries)
-	})
-	require.NoError(t, err)
-
-	// Verify final state.
-	lastIdx, err = storage.LastIndex()
-	require.NoError(t, err)
-	require.Equal(t, uint64(7), lastIdx)
-}
-
-// TestMsgAppGuardRejectsStaleFollower verifies the MsgApp guard in
-// grpcTransport.Send: when a follower has fresh MemoryStorage with
-// lastIndex=3 (3 ConfChange entries from StartNode) and the leader sends
-// MsgApp with prevLogIndex=4 (msg.Index=4), the guard returns
-// Applied=false without stepping the message.
-//
-// This prevents the infinite rejection loop that occurs when the leader's
-// progress tracker has a stale Match=4 from before the follower restarted,
-// and the leader's log is compacted at the same boundary — making
-// MaybeDecrTo unable to decrease Next below Match+1.
-func TestMsgAppGuardRejectsStaleFollower(t *testing.T) {
+// TestHeartbeatCommitClamping verifies that the MsgHeartbeat guard in
+// grpcTransport.Send clamps Commit to lastIndex, preventing the raft
+// library from panicking in commitTo when a fresh follower's lastIndex
+// is behind the leader's Commit.
+func TestHeartbeatCommitClamping(t *testing.T) {
 	storage := raft.NewMemoryStorage()
 
 	// Simulate a fresh follower: 3 ConfChange entries from StartNode.
@@ -342,37 +150,6 @@ func TestMsgAppGuardRejectsStaleFollower(t *testing.T) {
 
 	ctx := context.Background()
 
-	// MsgApp with msg.Index > lastIndex must be rejected.
-	msgApp := raftpb.Message{
-		Type:    raftpb.MsgApp,
-		From:    2,
-		To:      1,
-		Index:   4, // prevLogIndex — beyond our lastIndex(3)
-		LogTerm: 8,
-		Entries: []raftpb.Entry{{Index: 5, Term: 8}},
-	}
-	data, err := msgApp.Marshal()
-	require.NoError(t, err)
-
-	resp, err := transport.Send(ctx, &transportv1.SendRequest{Payload: data})
-	require.NoError(t, err)
-	require.False(t, resp.Applied, "MsgApp with Index > lastIndex should be rejected")
-
-	// MsgApp with msg.Index <= lastIndex should be accepted (stepped).
-	msgAppOK := raftpb.Message{
-		Type:    raftpb.MsgApp,
-		From:    2,
-		To:      1,
-		Index:   3, // prevLogIndex — within our log
-		LogTerm: 1,
-	}
-	data, err = msgAppOK.Marshal()
-	require.NoError(t, err)
-
-	resp, err = transport.Send(ctx, &transportv1.SendRequest{Payload: data})
-	require.NoError(t, err)
-	require.True(t, resp.Applied, "MsgApp with Index <= lastIndex should be accepted")
-
 	// MsgHeartbeat with Commit > lastIndex is clamped (not rejected) so the
 	// raft node can generate a proper MsgHeartbeatResp, keeping the peer
 	// active in the leader's progress tracker.
@@ -382,14 +159,14 @@ func TestMsgAppGuardRejectsStaleFollower(t *testing.T) {
 		To:     1,
 		Commit: 5, // beyond our lastIndex(3), will be clamped to 3
 	}
-	data, err = msgHB.Marshal()
+	data, err := msgHB.Marshal()
 	require.NoError(t, err)
 
-	resp, err = transport.Send(ctx, &transportv1.SendRequest{Payload: data})
+	resp, err := transport.Send(ctx, &transportv1.SendRequest{Payload: data})
 	require.NoError(t, err)
 	require.True(t, resp.Applied, "MsgHeartbeat with Commit > lastIndex should be clamped and accepted")
 
-	// MsgHeartbeat with Commit <= lastIndex should be accepted.
+	// MsgHeartbeat with Commit <= lastIndex should be accepted unchanged.
 	msgHBOK := raftpb.Message{
 		Type:   raftpb.MsgHeartbeat,
 		From:   2,
@@ -402,64 +179,6 @@ func TestMsgAppGuardRejectsStaleFollower(t *testing.T) {
 	resp, err = transport.Send(ctx, &transportv1.SendRequest{Payload: data})
 	require.NoError(t, err)
 	require.True(t, resp.Applied, "MsgHeartbeat with Commit <= lastIndex should be accepted")
-}
-
-// TestFollowerCatchesUpAfterCompaction reproduces the MsgApp rejection
-// deadlock that occurs when the leader's log is compacted exactly at the
-// follower's stale Match index.
-//
-// Scenario:
-//  1. Start a 3-node cluster, wait for leader election.
-//  2. Stop one follower and wait for compaction on the remaining nodes.
-//     At this point the leader's first available log index is beyond
-//     what the stopped follower has.
-//  3. Restart the follower. The leader's progress tracker still has the
-//     stale Match from before the restart, and its log is compacted at
-//     that boundary. Without the MsgApp guard + ReportUnreachable fix,
-//     the leader sends MsgApp that the follower rejects, but
-//     MaybeDecrTo can't decrease Next below Match+1 — deadlock.
-//  4. With the fix, the follower rejects the MsgApp via the transport
-//     guard, the leader marks it unreachable, and eventually sends a
-//     snapshot to catch it up.
-func TestFollowerCatchesUpAfterCompaction(t *testing.T) {
-	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
-
-	leaders := setupLockTest(t, ctx, 3)
-
-	defer func() {
-		cancel()
-		for _, l := range leaders {
-			l.WaitForStopped(t, 10*time.Second)
-		}
-	}()
-
-	_, followers := waitForAnyLeader(t, 30*time.Second, leaders...)
-
-	// Stop a follower and wait for compaction so the leader's log no
-	// longer contains the entries the follower needs.
-	laggingNode := followers[0]
-	laggingNode.Stop()
-	laggingNode.WaitForStopped(t, 5*time.Second)
-	t.Logf("stopped follower %d, waiting for compaction", laggingNode.config.ID)
-
-	select {
-	case <-time.After(12 * time.Second):
-	case <-ctx.Done():
-		t.Fatal("timed out waiting for compaction")
-	}
-
-	// Drain the stale follower signal from initial startup.
-	select {
-	case <-laggingNode.follower:
-	default:
-	}
-
-	// Restart. Without the fix, this would deadlock in an infinite
-	// MsgApp rejection loop and never become a follower.
-	t.Logf("restarting follower %d after compaction", laggingNode.config.ID)
-	laggingNode.Start(t, ctx)
-	laggingNode.WaitForFollower(t, 30*time.Second)
-	t.Logf("follower %d caught up after compaction — no deadlock", laggingNode.config.ID)
 }
 
 // stubNode is a minimal raft.Node implementation used by unit tests that
