@@ -14,13 +14,16 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"time"
 	"path/filepath"
 	"slices"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/acceptance/steps"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -85,6 +88,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				},
 			},
 		}).
+		AfterSetup(waitForCertManagerWebhook).
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
 			namespace := t.IsolateNamespace(ctx)
@@ -216,4 +220,12 @@ func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) cont
 
 func shouldSkipOperatorInstall(tag framework.ParsedTag) bool {
 	return tag.Name == "operator"
+}
+
+func waitForCertManagerWebhook(ctx context.Context, restConfig *rest.Config) error {
+	c, err := client.New(restConfig, client.Options{})
+	if err != nil {
+		return err
+	}
+	return testutil.WaitForCertManagerWebhook(ctx, c, 2*time.Minute)
 }

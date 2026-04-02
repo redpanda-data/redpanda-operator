@@ -210,6 +210,18 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		return dialer.DialContext(ctx, network, fmt.Sprintf("%s-0.%s:%s", rel.Name, rel.Namespace, address[idx+1:]))
 	}
 
+	// Wait for the cert-manager webhook to have ready endpoints inside the
+	// vcluster before returning. Without this, helm installs that create
+	// Certificate resources can fail with "no endpoints available for service
+	// cert-manager-webhook".
+	vcClient, err := client.New(cfg, client.Options{})
+	if err != nil {
+		return nil, errors.Wrap(err, "creating vcluster client for webhook readiness check")
+	}
+	if err := testutil.WaitForCertManagerWebhook(ctx, vcClient, 2*time.Minute); err != nil {
+		return nil, errors.Wrap(err, "waiting for cert-manager webhook readiness in vcluster")
+	}
+
 	return &Cluster{
 		config:     cfg,
 		helm:       hc,

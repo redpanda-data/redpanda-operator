@@ -25,6 +25,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 	"github.com/redpanda-data/redpanda-operator/harpoon/internal/tracking"
@@ -57,6 +58,7 @@ type SuiteBuilder struct {
 	helmCharts            []helmChart
 	onFeatures            []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
 	onScenarios           []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
+	afterSetup            []func(ctx context.Context, restConfig *rest.Config) error
 	exitOnCleanupFailures bool
 }
 
@@ -169,6 +171,14 @@ func (b *SuiteBuilder) OnScenario(fn func(context.Context, TestingT, ...ParsedTa
 		// wrap since we move into the internal implementation of the interface
 		fn(ctx, tt, parsed...)
 	})
+	return b
+}
+
+// AfterSetup registers a callback that runs after helm charts are installed
+// but before tests start. This is useful for readiness checks that require the
+// cluster to be fully operational (e.g. waiting for webhooks).
+func (b *SuiteBuilder) AfterSetup(fn func(ctx context.Context, restConfig *rest.Config) error) *SuiteBuilder {
+	b.afterSetup = append(b.afterSetup, fn)
 	return b
 }
 
@@ -317,6 +327,12 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 						setupErrorCheck(ctx, err, cleanup)
 
 						_, err := helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
+						setupErrorCheck(ctx, err, cleanup)
+					}
+
+					// run any post-setup hooks (e.g. webhook readiness checks)
+					for _, fn := range b.afterSetup {
+						err = fn(ctx, restConfig)
 						setupErrorCheck(ctx, err, cleanup)
 					}
 
