@@ -16,4 +16,3 @@
 | [`release/v26.1.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v26.1.x) |    v26.1.x     |                                              Apr 1, 2027 (est)                                              |
 | [`release/v25.3.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v25.3.x) |    v25.3.x     |                                             Nov 19, 2026 (est)                                              |
 | [`release/v25.2.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v25.2.x) |    v25.2.x     |                                             Jul 31, 2026 (est)                                              |
-| [`release/v25.1.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v25.1.x) |    v25.1.x     |                                             Mar 25, 2026 (est)                                              |
