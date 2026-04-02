@@ -354,6 +354,100 @@ func TestSyncUpgradeRegressions(t *testing.T) {
 	}
 }
 
+// TestSyncUnknownPropertyRegression is a regression test for
+// https://github.com/redpanda-data/redpanda-operator/issues/1375.
+//
+// When a cluster config property is removed between Redpanda versions it
+// persists in the raft snapshot on disk. The newer broker lists it under
+// "unknown" in /v1/cluster_config/status but rejects any PUT request
+// that includes it — even in the remove list — with 400 Bad Request.
+// The syncer must therefore skip unknown properties entirely rather than
+// trying to remove them.
+func TestSyncUnknownPropertyRegression(t *testing.T) {
+	ctx := context.Background()
+	logger := testr.New(t)
+	ctx = log.IntoContext(ctx, logger)
+
+	// Use a named Docker volume so both containers share the same data
+	// directory and the raft snapshot carrying coproc_max_batch_size is
+	// visible to the upgraded broker.
+	volumeName := "rp-regression-unknown-prop"
+
+	// ── Old broker: set coproc_max_batch_size (valid in v25.x) ──────────────
+	oldContainer, err := redpanda.Run(
+		ctx,
+		"docker.redpanda.com/redpandadata/redpanda:v25.3.10",
+		testcontainers.WithMounts(
+			testcontainers.VolumeMount(volumeName, "/var/lib/redpanda/data"),
+		),
+	)
+	require.NoError(t, err)
+
+	oldAddr, err := oldContainer.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	oldClient, err := rpadmin.NewAdminAPI([]string{oldAddr}, &rpadmin.NopAuth{}, nil)
+	require.NoError(t, err)
+
+	_, err = oldClient.PatchClusterConfig(ctx, map[string]any{
+		"coproc_max_batch_size": 67108864,
+	}, []string{})
+	require.NoError(t, err)
+	oldClient.Close()
+
+	require.NoError(t, oldContainer.Terminate(ctx))
+
+	// ── New broker: coproc_max_batch_size is unknown ─────────────────────────
+	newContainer, err := redpanda.Run(
+		ctx,
+		"docker.redpanda.com/redpandadata/redpanda:v26.1.1",
+		testcontainers.WithMounts(
+			testcontainers.VolumeMount(volumeName, "/var/lib/redpanda/data"),
+		),
+	)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = newContainer.Terminate(ctx) })
+
+	newAddr, err := newContainer.AdminAPIAddress(ctx)
+	require.NoError(t, err)
+
+	newClient, err := rpadmin.NewAdminAPI([]string{newAddr}, &rpadmin.NopAuth{}, nil)
+	require.NoError(t, err)
+	defer newClient.Close()
+
+	// Confirm the precondition: property must be listed as unknown.
+	status, err := newClient.ClusterConfigStatus(ctx, false)
+	require.NoError(t, err)
+	hasUnknown := false
+	for _, s := range status {
+		for _, u := range s.Unknown {
+			if u == "coproc_max_batch_size" {
+				hasUnknown = true
+			}
+		}
+	}
+	require.True(t, hasUnknown, "precondition: coproc_max_batch_size must appear as unknown on the upgraded broker")
+
+	// ── Run the syncer: must not fail ────────────────────────────────────────
+	rpkConfigBytes, err := yaml.Marshal(map[string]any{
+		"rpk": map[string]any{
+			"admin_api": map[string]any{
+				"addresses": []string{newAddr},
+				"tls":       nil,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	cmd := Command()
+	cmd.SetArgs([]string{
+		"--users-directory", t.TempDir(),
+		"--redpanda-yaml", testutils.WriteFile(t, "redpanda-*.yaml", rpkConfigBytes),
+		"--bootstrap-yaml", testutils.WriteFile(t, "bootstrap-*.yaml", []byte("{}")),
+	})
+	require.NoError(t, cmd.ExecuteContext(ctx))
+}
+
 func requireJSONEq[T any](t *testing.T, expected, actual T) {
 	expectedBytes, err := json.Marshal(expected)
 	require.NoError(t, err)
