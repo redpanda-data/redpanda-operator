@@ -13,7 +13,8 @@ import (
 	"context"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -24,16 +25,20 @@ import (
 // webhook is ready to serve validation requests.
 func WaitForCertManagerWebhook(ctx context.Context, c client.Client, timeout time.Duration) error {
 	return wait.PollUntilContextTimeout(ctx, 2*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
-		var ep corev1.Endpoints
-		if err := c.Get(ctx, client.ObjectKey{
-			Name:      "cert-manager-webhook",
-			Namespace: "cert-manager",
-		}, &ep); err != nil {
+		var slices discoveryv1.EndpointSliceList
+		if err := c.List(ctx, &slices,
+			client.InNamespace("cert-manager"),
+			client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(labels.Set{
+				discoveryv1.LabelServiceName: "cert-manager-webhook",
+			})},
+		); err != nil {
 			return false, nil //nolint:nilerr // keep polling
 		}
-		for _, subset := range ep.Subsets {
-			if len(subset.Addresses) > 0 {
-				return true, nil
+		for _, slice := range slices.Items {
+			for _, ep := range slice.Endpoints {
+				if ep.Conditions.Ready != nil && *ep.Conditions.Ready {
+					return true, nil
+				}
 			}
 		}
 		return false, nil
