@@ -333,6 +333,10 @@ func (r *MockSimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return r.watchedResources
 }
 
+func (r *MockSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *MockCluster) []string {
+	return nil
+}
+
 type MockNodePoolRenderer struct {
 	poolMappings  map[types.NamespacedName][]*MulticlusterStatefulSet
 	errorMappings map[types.NamespacedName]error

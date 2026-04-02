@@ -50,6 +50,53 @@ const (
 	certManagerChartversion = "v1.8.0"
 )
 
+var DefaultValues = `
+sync:
+  fromHost:
+    nodes:
+      enabled: true
+      selector:
+        all: true
+controlPlane:
+  distro:
+    k8s:
+      image:
+        tag: "v1.33.4"
+      imagePullPolicy: IfNotPresent
+experimental:
+  deploy:
+    vcluster:
+      helm: 
+      - chart:
+          name: cert-manager
+          repo: https://charts.jetstack.io
+          version: v1.8.0
+        values: |
+          installCRDs: true
+          global:
+            leaderElection:
+              renewDeadline: 10s
+              retryPeriod: 5s
+        release:
+          name: cert-manager
+          namespace: cert-manager
+rbac:
+  role:
+    extraRules:
+       - apiGroups:
+           - ""
+         resources:
+           - services/status
+         verbs:
+           - create
+           - delete
+           - patch
+           - update
+           - get
+           - list
+           - watch
+`
+
 type Cluster struct {
 	config     *kube.RESTConfig
 	hostConfig *kube.RESTConfig
@@ -57,6 +104,43 @@ type Cluster struct {
 	release    helm.Release
 	namespace  *corev1.Namespace
 	scheme     *runtime.Scheme
+}
+
+type VclusterOptions struct {
+	name   string
+	values helm.RawYAML
+}
+
+type Option interface {
+	Apply(opts *VclusterOptions)
+}
+
+type nameOption struct {
+	name string
+}
+
+func (o *nameOption) Apply(opts *VclusterOptions) {
+	opts.name = o.name
+}
+
+func WithName(name string) Option {
+	return &nameOption{name: name}
+}
+
+type valuesOption struct {
+	values []byte
+}
+
+func (o *valuesOption) Apply(opts *VclusterOptions) {
+	opts.values = o.values
+}
+
+func WithValues(values helm.RawYAML) Option {
+	return &valuesOption{values: values}
+}
+
+func WithDefaultValues() Option {
+	return WithValues(helm.RawYAML(DefaultValues))
 }
 
 func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {
@@ -99,8 +183,8 @@ func NewInShared(ctx context.Context) (*Cluster, error) {
 	return cl, nil
 }
 
-func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
-	ctx, cancel := context.WithTimeoutCause(ctx, 3*time.Minute, errors.New("vCluster creation timed out"))
+func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster, error) {
+	ctx, cancel := context.WithTimeoutCause(ctx, 5*time.Minute, errors.New("vCluster creation timed out"))
 	defer cancel()
 
 	c, err := client.New(config, client.Options{})
@@ -108,11 +192,29 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	vClusterOptions := VclusterOptions{}
+	for _, opt := range opts {
+		opt.Apply(&vClusterOptions)
+	}
+
+	if vClusterOptions.values == nil {
+		WithDefaultValues().Apply(&vClusterOptions)
+	}
+
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "vcluster-",
 		},
 	}
+
+	if vClusterOptions.name != "" {
+		namespace = &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: vClusterOptions.name,
+			},
+		}
+	}
+
 	if err := c.Create(ctx, namespace); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -128,47 +230,13 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	fmt.Printf("values: \n%s\n", vClusterOptions.values)
+
 	rel, err := hc.Install(ctx, "loft/vcluster", helm.InstallOptions{
 		Name:      namespace.Name,
 		Namespace: namespace.Name,
 		Version:   vClusterChartVersion,
-		Values: map[string]any{
-			"sync": map[string]any{
-				"fromHost": map[string]any{
-					"nodes": map[string]any{
-						"enabled": true,
-						"selector": map[string]any{
-							"all": true,
-						},
-					},
-				},
-			},
-			// TODO we can select other k8s distros. By default full k8s is
-			// run. Swapping to k3s might result in some speed ups but initial
-			// tests indicated that something wasn't working.
-			"experimental": map[string]any{
-				"deploy": map[string]any{
-					"vcluster": map[string]any{
-						// Being able to vendor the chart would save us a bit of time and flakiness.
-						// There's support for a "bundle" containing a targz.
-						"helm": []map[string]any{
-							{
-								"chart": map[string]any{
-									"name":    "cert-manager",
-									"repo":    "https://charts.jetstack.io",
-									"version": certManagerChartversion,
-								},
-								"values": "\ninstallCRDs: true\n",
-								"release": map[string]any{
-									"name":      "cert-manager",
-									"namespace": "cert-manager",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		Values:    vClusterOptions.values,
 	})
 	if err != nil {
 		return nil, errors.WithStack(err)

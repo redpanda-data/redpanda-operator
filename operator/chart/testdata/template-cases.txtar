@@ -120,3 +120,19 @@ enterprise:
   licenseSecretRef:
     name: my-secret
     key: my-redpanda-license
+
+-- multicluster with license --
+crds:
+  enabled: true
+multicluster:
+  enabled: true
+  name: blue
+  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
+  peers:
+    - name: west
+      address: some.dns.label
+    - name: east
+      address: some.other.dns.label
+enterprise:
+  licenseSecretRef:
+    name: my-secret

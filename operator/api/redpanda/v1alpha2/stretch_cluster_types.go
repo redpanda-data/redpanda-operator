@@ -93,6 +93,13 @@ type StretchClusterSpec struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
+const (
+	// ConditionTypeSpecSynced is the condition type indicating whether the
+	// StretchCluster .spec is consistent across all Kubernetes clusters.
+	// True means specs are in sync; False means drift was detected.
+	ConditionTypeSpecSynced = "SpecSynced"
+)
+
 type StretchClusterStatus struct {
 	// Conditions holds the conditions for the StretchCluster.
 	// +optional

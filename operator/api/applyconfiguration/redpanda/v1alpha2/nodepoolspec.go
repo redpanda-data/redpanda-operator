@@ -64,6 +64,14 @@ func (b *NodePoolSpecApplyConfiguration) WithPodTemplate(value *PodTemplateApply
 	return b
 }
 
+// WithServices sets the Services field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Services field is set to the value of the last call.
+func (b *NodePoolSpecApplyConfiguration) WithServices(value *NodePoolServicesApplyConfiguration) *NodePoolSpecApplyConfiguration {
+	b.EmbeddedNodePoolSpecApplyConfiguration.Services = value
+	return b
+}
+
 // WithInitContainers sets the InitContainers field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the InitContainers field is set to the value of the last call.

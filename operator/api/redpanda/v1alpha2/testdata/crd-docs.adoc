@@ -1348,9 +1348,9 @@ may reject unrecognized values. +
 More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
 
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
- |  |
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]__ | Defines the desired state of the Redpanda group. + |  |
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupstatus[$$GroupStatus$$]__ | Represents the current status of the Redpanda group. + | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:Pending status:Unknown type:Synced]] } |
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]__ | Defines the desired state of the Redpanda group. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupstatus[$$GroupStatus$$]__ | Represents the current status of the Redpanda group. + | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:Pending status:Unknown type:Synced]] } | 
 |===
 
 
@@ -1398,7 +1398,7 @@ It is used in constructing the client created to configure a cluster. + |  | Req
 
 | *`authorization`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupauthorizationspec[$$GroupAuthorizationSpec$$]__ | Authorization rules defined for this group. The operator always manages ACLs +
 for the group principal. When omitted or empty, any existing ACLs for this +
-group are removed. + |  |
+group are removed. + |  | 
 |===
 
 
@@ -1419,8 +1419,8 @@ GroupStatus defines the observed state of a Redpanda group.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  |
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda group. + |  |
+| *`observedGeneration`* __integer__ | Specifies the last observed generation. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda group. + |  | 
 |===
 
 
@@ -2211,6 +2211,34 @@ PatternType specifies the type of pattern applied for ACL resource matching.
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-aclresourcespec[$$ACLResourceSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter[$$NameFilter$$]
 ****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-perpodserviceoverride"]
+==== PerPodServiceOverride
+
+
+
+PerPodServiceOverride defines overrides for a per-pod Service using
+apply-configuration types. Only fields that are set will be merged
+into the generated Service.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-perpodservices[$$PerPodServices$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enabled controls whether this per-pod Service is created. Defaults to true. + |  | 
+| *`labels`* __object (keys:string, values:string)__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`spec`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-servicespecapplyconfiguration[$$ServiceSpecApplyConfiguration$$]__ |  |  | 
+|===
+
 
 
 

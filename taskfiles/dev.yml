@@ -60,3 +60,9 @@ tasks:
   update-licenses:
     cmds:
       - licenseupdater ./... -config .licenseupdater.yaml
+
+  setup-multicluster-dev-env:
+    - 'echo "--- Setting up multicluster dev env using k3s and vCluster(s)"'
+    - task: :test:acceptance
+      vars:
+        CLI_ARGS: '{{.CLI_ARGS}} -v -count=1 -multi-cluster-setup-only'

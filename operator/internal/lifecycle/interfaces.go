@@ -107,6 +107,8 @@ type SimpleResourceRenderer[T any, U Cluster[T]] interface {
 	// WatchedResourceTypes returns a list of all resources that
 	// our controller should watch for changes to trigger reconciliation.
 	WatchedResourceTypes() []client.Object
+	// RenderPoolsServices returns services created for NodePools which are exposing admin API ports (among other ports)
+	GetAdminAPIEndpoints(cluster U) []string
 }
 
 // MigratingRenderer allows an implementation to render resources that they

@@ -152,7 +152,14 @@ func TestStretchClusterResourceClient(t *testing.T) {
 			// override name and namespace to make it unique
 			stretchCluster.Name = file.Name
 			stretchCluster.Namespace = file.Name
-			cluster := NewStretchClusterWithPools(stretchCluster, []string{""}, pools...)
+			wrapped := make([]*NodePoolInCluster, len(pools))
+			for i, pool := range pools {
+				wrapped[i] = &NodePoolInCluster{
+					cluster:  "",
+					nodePool: pool,
+				}
+			}
+			cluster := NewStretchClusterWithPools(stretchCluster, []string{""}, wrapped...)
 
 			ownerLabels := resourceClient.ownershipResolver.GetOwnerLabels(cluster)
 
@@ -161,12 +168,13 @@ func TestStretchClusterResourceClient(t *testing.T) {
 			cl, err := manager.GetCluster(ctx, "")
 			require.NoError(t, err)
 
-			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.NodePools, "")
+			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetNodePoolsForCluster(""), cluster.GetAllNodePools(), "")
 			require.NoError(t, err)
 
 			yamlBytes, err := yaml.Marshal(map[string]any{
-				"spec":  state.Spec(),
-				"pools": state.Pools(),
+				"spec":           state.Spec(),
+				"pools":          state.Pools(),
+				"inClusterPools": state.InClusterPools(),
 			})
 			require.NoError(t, err)
 			goldenValues.AssertGolden(t, testutil.YAML, file.Name, yamlBytes)

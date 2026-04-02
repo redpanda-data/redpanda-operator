@@ -49,6 +49,9 @@ func bootstrapContents(state *RenderState) bootstrapResult {
 
 	bootstrap["kafka_enable_authorization"] = state.Spec().Auth.IsSASLEnabled()
 	bootstrap["enable_sasl"] = state.Spec().Auth.IsSASLEnabled()
+	if state.Spec().Auth.IsSASLEnabled() {
+		bootstrap["superusers"] = []string{defaultBootstrapUsername}
+	}
 	bootstrap["enable_rack_awareness"] = state.Spec().RackAwareness.IsEnabled()
 	bootstrap["audit_enabled"] = state.Spec().IsAuditLoggingEnabled()
 

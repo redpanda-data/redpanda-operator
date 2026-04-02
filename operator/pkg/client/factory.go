@@ -86,6 +86,9 @@ type ClientFactory interface {
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
 	// RedpandaAdminClientForCluster is the same as RedpandaAdminClient but it takes a kubernetes cluster name.
 	RedpandaAdminClientForCluster(ctx context.Context, object any, clusterName string) (*rpadmin.AdminAPI, error)
+	// RedpandaAdminClientForMulticluster initialized a rpadmin.AdminAPI client based on the passed list of admin endpoints.
+	// endpoint has to be in format address:port (without scheme)
+	RedpandaAdminClientForMulticluster(adminAPIEndpoints []string, username, password string) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
@@ -299,6 +302,10 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 	}
 
 	return nil, ErrInvalidRedpandaClientObject
+}
+
+func (c *Factory) RedpandaAdminClientForMulticluster(adminAPIEndpoints []string, username, password string) (*rpadmin.AdminAPI, error) {
+	return c.redpandaAdminForStretchCluster(adminAPIEndpoints, username, password)
 }
 
 func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.AdminAPI, error) {
@@ -687,4 +694,12 @@ func (c *Factory) kafkaUserAuth() (kgo.Opt, error) {
 	}
 
 	return nil, nil
+}
+
+func (c *Factory) redpandaAdminForStretchCluster(hosts []string, username, password string) (*rpadmin.AdminAPI, error) {
+	adminClient, err := redpanda.AdminClientForStretch(c.dialer, hosts, username, password)
+	if err != nil {
+		return nil, err
+	}
+	return adminClient, nil
 }
