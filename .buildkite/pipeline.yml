@@ -5,9 +5,6 @@ env:
   PULL_REQUEST_BASE_BRANCH_NAME: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
   PIPELINE_NAME: $BUILDKITE_PIPELINE_NAME
   REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
-  # CI run podman instead of linux. testcontainer's ryuk is reported to not
-  # work well with podman.
-  TESTCONTAINERS_RYUK_DISABLED: "true"
 # pipeline.yml is the "entrypoint" for all BuildKite pipelines in the operator
 # repo. As such, it is executed for ANY trigger (e.g. PR update/created, Tag
 # updated/created, Schedule run). Use `if`s to delegate to specific pipeline
