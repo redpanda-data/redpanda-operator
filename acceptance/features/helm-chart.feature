@@ -1,4 +1,4 @@
-@operator:none
+@serial @operator:none
 Feature: Redpanda Helm Chart
 
   Scenario: Tolerating Node Failure

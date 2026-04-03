@@ -39,7 +39,7 @@ type TerminationError struct {
 
 var (
 	testingContextKey = testingContext{}
-	TerminationChan   = make(chan TerminationError)
+	TerminationChan   = make(chan TerminationError, 100)
 )
 
 type ExitBehavior string

@@ -18,12 +18,14 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
+	messages "github.com/cucumber/messages/go/v21"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 
@@ -215,10 +217,15 @@ func setupErrorCheck(ctx context.Context, err error, cleanupFn func(ctx context.
 	}
 }
 
-func (b *SuiteBuilder) Build() (*Suite, error) {
-	tracker := tracking.NewFeatureHookTracker(b.registry, b.testingOpts, b.onFeatures, b.onScenarios)
-	opts := tracker.RegisterFormatter(b.opts)
+// featureContent holds the resolved content for a single feature, including
+// whether it should be run serially (due to having the @serial tag).
+type featureContent struct {
+	name     string
+	contents []byte
+	serial   bool
+}
 
+func (b *SuiteBuilder) Build() (*Suite, error) {
 	providerName := b.testingOpts.Provider
 	if providerName == "" {
 		b.testingOpts.Provider = b.defaultProvider
@@ -236,171 +243,244 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 	ctx := provider.GetBaseContext()
 	ctx = internaltesting.ProviderIntoContext(ctx, provider)
 
-	opts.DefaultContext = ctx
-	opts.Tags = fmt.Sprintf("~@skip:%s", providerName)
+	// Use a temporary tracker + suite just to discover and parse features.
+	tmpTracker := tracking.NewFeatureHookTracker(b.registry, b.testingOpts, b.onFeatures, b.onScenarios)
+	discoveryOpts := tmpTracker.RegisterFormatter(b.opts)
+	discoveryOpts.DefaultContext = ctx
+	discoveryOpts.Tags = fmt.Sprintf("~@skip:%s", providerName)
 
 	parsingSuite := &godog.TestSuite{
 		Name:    "acceptance",
-		Options: &opts,
+		Options: &discoveryOpts,
 	}
 	features, err := parsingSuite.RetrieveFeatures()
 	if err != nil {
 		return nil, err
 	}
 
+	// Resolve all feature contents, including generated variants.
+	var resolved []featureContent
 	for _, feature := range features {
+		serial := isSerialFeature(feature.Feature.Tags)
+		resolved = append(resolved, featureContent{
+			name:     feature.Uri,
+			contents: feature.Content,
+			serial:   serial,
+		})
+
 		if variantTag := featureVariant(feature.Feature.Tags); variantTag != "" {
 			content := bytes.ReplaceAll(feature.Content, []byte("Feature: "), []byte(fmt.Sprintf("Feature: %s - ", variantTag)))
 			content = bytes.ReplaceAll(content, []byte("Scenario: "), []byte(fmt.Sprintf("Scenario: %s - ", variantTag)))
 			content = bytes.ReplaceAll(content, []byte("Scenario Outline: "), []byte(fmt.Sprintf("Scenario Outline: %s - ", variantTag)))
 			content = bytes.ReplaceAll(content, []byte(fmt.Sprintf("@variant:%s", variantTag)), []byte(fmt.Sprintf("@injectVariant:%s", variantTag)))
-			opts.FeatureContents = append(opts.FeatureContents, godog.Feature{
-				Name:     path.Join(variantTag, feature.Uri),
-				Contents: content,
+			resolved = append(resolved, featureContent{
+				name:     path.Join(variantTag, feature.Uri),
+				contents: content,
+				serial:   serial,
 			})
 		}
 	}
 
-	var kubeOptions *internaltesting.KubectlOptions
-	var helmClient *helm.Client
 	return &Suite{
-		output: b.output,
-		suite: &godog.TestSuite{
-			Name: "acceptance",
-			TestSuiteInitializer: func(suiteContext *godog.TestSuiteContext) {
-				cleanup := func(ctx context.Context) {
-					if kubeOptions != nil {
-						// teardown in reverse order from setup
-						for _, directory := range b.crdDirectories {
-							_, err := internaltesting.KubectlDelete(ctx, directory, kubeOptions)
-							if err != nil {
-								fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
-							}
-						}
-					}
-
-					if helmClient != nil {
-						for _, chart := range b.helmCharts {
-							if err := helmClient.Uninstall(ctx, helm.Release{
-								Namespace: chart.options.Namespace,
-								Name:      chart.options.Name,
-							}); err != nil {
-								fmt.Printf("WARNING: error uninstalling helm chart: %v\n", err)
-							}
-						}
-					}
-
-					if err := provider.Teardown(ctx); err != nil {
-						fmt.Printf("WARNING: error running provider teardown: %v\n", err)
-					}
-				}
-
-				suiteContext.BeforeSuite(func() {
-					err := provider.Setup(ctx)
-					setupErrorCheck(ctx, err, cleanup)
-
-					if provisioned, ok := provider.(internaltesting.ProvisionedProvider); ok {
-						fmt.Printf("Using Kubernetes configuration at: %v\n", provisioned.ConfigPath())
-						b.testingOpts.KubectlOptions = internaltesting.NewKubectlOptions(provisioned.ConfigPath())
-					}
-					kubeOptions = b.testingOpts.KubectlOptions
-
-					restConfig, err := b.testingOpts.KubectlOptions.RestConfig()
-					setupErrorCheck(ctx, err, cleanup)
-
-					helmClient, err = helm.New(helm.Options{
-						KubeConfig: restConfig,
-					})
-					setupErrorCheck(ctx, err, cleanup)
-
-					err = pullImages(b.images)
-					setupErrorCheck(ctx, err, cleanup)
-
-					err = provider.LoadImages(ctx, b.images)
-					setupErrorCheck(ctx, err, cleanup)
-
-					b.testingOpts.Images = b.images
-
-					// now add helm charts
-					for _, chart := range b.helmCharts {
-						err = helmClient.RepoAdd(ctx, chart.repo, chart.url)
-						setupErrorCheck(ctx, err, cleanup)
-
-						_, err := helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
-						setupErrorCheck(ctx, err, cleanup)
-					}
-
-					// run any post-setup hooks (e.g. webhook readiness checks)
-					for _, fn := range b.afterSetup {
-						err = fn(ctx, restConfig)
-						setupErrorCheck(ctx, err, cleanup)
-					}
-
-					// and finally any crds
-					for _, directory := range b.crdDirectories {
-						_, err := internaltesting.KubectlApply(ctx, directory, b.testingOpts.KubectlOptions)
-						setupErrorCheck(ctx, err, cleanup)
-					}
-				})
-				suiteContext.AfterSuite(func() {
-					cancel := func() {}
-					cleanupTimeout := b.testingOpts.CleanupTimeout
-					if cleanupTimeout != 0 {
-						ctx, cancel = context.WithTimeout(ctx, cleanupTimeout)
-					}
-					defer cancel()
-
-					if tracker.SuiteFailed() && b.testingOpts.RetainOnFailure {
-						fmt.Println("skipping cleanup due to test failure and retain flag being set")
-						return
-					}
-					cleanup(ctx)
-				})
-			},
-			ScenarioInitializer: func(ctx *godog.ScenarioContext) {
-				ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
-					ctx, err := tracker.Scenario(ctx, sc)
-					if err != nil {
-						return nil, err
-					}
-					for _, fn := range b.injectors {
-						ctx = fn(ctx)
-					}
-					return ctx, nil
-				})
-				ctx.After(func(ctx context.Context, sc *godog.Scenario, _ error) (context.Context, error) {
-					tracker.ScenarioFinished(ctx, sc)
-					return ctx, nil
-				})
-
-				getSteps(ctx)
-			},
-			Options: &opts,
-		},
-		options:               b.testingOpts,
+		output:                b.output,
+		baseOpts:              b.opts,
+		testingOpts:           b.testingOpts,
+		registry:              b.registry,
+		provider:              provider,
+		providerName:          providerName,
+		ctx:                   ctx,
+		features:              resolved,
+		injectors:             b.injectors,
+		onFeatures:            b.onFeatures,
+		onScenarios:           b.onScenarios,
+		crdDirectories:        b.crdDirectories,
+		helmCharts:            b.helmCharts,
+		afterSetup:            b.afterSetup,
+		images:                b.images,
 		exitOnCleanupFailures: b.exitOnCleanupFailures,
 	}, nil
 }
 
 type Suite struct {
 	output                string
-	suite                 *godog.TestSuite
-	options               *internaltesting.TestingOptions
+	baseOpts              godog.Options
+	testingOpts           *internaltesting.TestingOptions
+	registry              *internaltesting.TagRegistry
+	provider              FullProvider
+	providerName          string
+	ctx                   context.Context
+	features              []featureContent
+	injectors             []func(context.Context) context.Context
+	onFeatures            []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
+	onScenarios           []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
+	crdDirectories        []string
+	helmCharts            []helmChart
+	afterSetup            []func(ctx context.Context, restConfig *rest.Config) error
+	images                []string
 	exitOnCleanupFailures bool
+}
+
+// makeGodogSuite creates a godog.TestSuite for the given feature contents.
+// If suiteInit is non-nil, it is used as the TestSuiteInitializer (for setup/teardown);
+// otherwise no suite-level hooks are registered.
+func (s *Suite) makeGodogSuite(
+	name string,
+	tracker *tracking.FeatureHookTracker,
+	features []godog.Feature,
+	suiteInit func(*godog.TestSuiteContext),
+) *godog.TestSuite {
+	opts := tracker.RegisterFormatter(s.baseOpts)
+	opts.DefaultContext = s.ctx
+	opts.Tags = fmt.Sprintf("~@skip:%s", s.providerName)
+	// Only use in-memory feature contents; don't discover from disk.
+	opts.Paths = []string{}
+	opts.FeatureContents = features
+
+	return &godog.TestSuite{
+		Name:                 name,
+		TestSuiteInitializer: suiteInit,
+		ScenarioInitializer: func(ctx *godog.ScenarioContext) {
+			ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
+				ctx, err := tracker.Scenario(ctx, sc)
+				if err != nil {
+					return nil, err
+				}
+				for _, fn := range s.injectors {
+					ctx = fn(ctx)
+				}
+				return ctx, nil
+			})
+			ctx.After(func(ctx context.Context, sc *godog.Scenario, _ error) (context.Context, error) {
+				tracker.ScenarioFinished(ctx, sc)
+				return ctx, nil
+			})
+
+			getSteps(ctx)
+		},
+		Options: &opts,
+	}
+}
+
+// suiteSetupTeardown returns the BeforeSuite/AfterSuite initializer that
+// should be registered exactly once across all godog suite runs.
+func (s *Suite) suiteSetupTeardown(tracker *tracking.FeatureHookTracker) func(*godog.TestSuiteContext) {
+	var kubeOptions *internaltesting.KubectlOptions
+	var helmClient *helm.Client
+	ctx := s.ctx
+	provider := s.provider
+
+	return func(suiteContext *godog.TestSuiteContext) {
+		cleanup := func(ctx context.Context) {
+			if kubeOptions != nil {
+				for _, directory := range s.crdDirectories {
+					_, err := internaltesting.KubectlDelete(ctx, directory, kubeOptions)
+					if err != nil {
+						fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
+					}
+				}
+			}
+
+			if helmClient != nil {
+				for _, chart := range s.helmCharts {
+					if err := helmClient.Uninstall(ctx, helm.Release{
+						Namespace: chart.options.Namespace,
+						Name:      chart.options.Name,
+					}); err != nil {
+						fmt.Printf("WARNING: error uninstalling helm chart: %v\n", err)
+					}
+				}
+			}
+
+			if err := provider.Teardown(ctx); err != nil {
+				fmt.Printf("WARNING: error running provider teardown: %v\n", err)
+			}
+		}
+
+		suiteContext.BeforeSuite(func() {
+			err := provider.Setup(ctx)
+			setupErrorCheck(ctx, err, cleanup)
+
+			if provisioned, ok := provider.(internaltesting.ProvisionedProvider); ok {
+				fmt.Printf("Using Kubernetes configuration at: %v\n", provisioned.ConfigPath())
+				s.testingOpts.KubectlOptions = internaltesting.NewKubectlOptions(provisioned.ConfigPath())
+			}
+			kubeOptions = s.testingOpts.KubectlOptions
+
+			restConfig, err := s.testingOpts.KubectlOptions.RestConfig()
+			setupErrorCheck(ctx, err, cleanup)
+
+			helmClient, err = helm.New(helm.Options{
+				KubeConfig: restConfig,
+			})
+			setupErrorCheck(ctx, err, cleanup)
+
+			err = pullImages(s.images)
+			setupErrorCheck(ctx, err, cleanup)
+
+			err = provider.LoadImages(ctx, s.images)
+			setupErrorCheck(ctx, err, cleanup)
+
+			s.testingOpts.Images = s.images
+
+			for _, chart := range s.helmCharts {
+				err = helmClient.RepoAdd(ctx, chart.repo, chart.url)
+				setupErrorCheck(ctx, err, cleanup)
+
+				_, err := helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
+				setupErrorCheck(ctx, err, cleanup)
+			}
+
+			for _, fn := range s.afterSetup {
+				err = fn(ctx, restConfig)
+				setupErrorCheck(ctx, err, cleanup)
+			}
+
+			for _, directory := range s.crdDirectories {
+				_, err := internaltesting.KubectlApply(ctx, directory, s.testingOpts.KubectlOptions)
+				setupErrorCheck(ctx, err, cleanup)
+			}
+		})
+		suiteContext.AfterSuite(func() {
+			cancel := func() {}
+			cleanupTimeout := s.testingOpts.CleanupTimeout
+			if cleanupTimeout != 0 {
+				ctx, cancel = context.WithTimeout(ctx, cleanupTimeout)
+			}
+			defer cancel()
+
+			if tracker.SuiteFailed() && s.testingOpts.RetainOnFailure {
+				fmt.Println("skipping cleanup due to test failure and retain flag being set")
+				return
+			}
+			cleanup(ctx)
+		})
+	}
 }
 
 func (s *Suite) RunM(m *testing.M) {
 	var testLog bytes.Buffer
 	if s.output != "" {
-		s.suite.Options.Output = &testLog
-		s.suite.Options.NoColors = true
+		s.baseOpts.Output = &testLog
+		s.baseOpts.NoColors = true
 	}
 
 	if s.exitOnCleanupFailures {
-		s.options.ExitBehavior = internaltesting.ExitBehaviorTerminateProgram
+		s.testingOpts.ExitBehavior = internaltesting.ExitBehaviorTerminateProgram
 	}
 
-	status := s.suite.Run()
+	// For RunM, run everything sequentially as a single suite (legacy behavior).
+	tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
+
+	var allFeatures []godog.Feature
+	for _, f := range s.features {
+		allFeatures = append(allFeatures, godog.Feature{
+			Name:     f.name,
+			Contents: f.contents,
+		})
+	}
+
+	suite := s.makeGodogSuite("acceptance", tracker, allFeatures, s.suiteSetupTeardown(tracker))
+	status := suite.Run()
 
 	if st := m.Run(); st > status {
 		status = st
@@ -419,29 +499,82 @@ func (s *Suite) RunT(t *testing.T) {
 
 	var testLog bytes.Buffer
 	if s.output != "" {
-		s.suite.Options.Output = &testLog
-		s.suite.Options.NoColors = true
+		s.baseOpts.Output = &testLog
+		s.baseOpts.NoColors = true
 	}
 
-	var errMessage internaltesting.TerminationError
-	done := make(chan struct{})
 	if s.exitOnCleanupFailures {
-		s.options.ExitBehavior = internaltesting.ExitBehaviorTestFail
-		go func() {
-			defer close(done)
+		s.testingOpts.ExitBehavior = internaltesting.ExitBehaviorTestFail
+	}
+
+	// Partition features into parallel and serial groups.
+	var parallelFeatures, serialFeatures []featureContent
+	for _, f := range s.features {
+		if f.serial {
+			serialFeatures = append(serialFeatures, f)
+		} else {
+			parallelFeatures = append(parallelFeatures, f)
+		}
+	}
+
+	// We use a single shared tracker for setup/teardown lifecycle, plus
+	// individual trackers per godog suite for feature/scenario tracking.
+
+	// Phase 1: Run setup via a dedicated suite with no features.
+	setupTracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
+	setupSuite := s.makeGodogSuite("setup", setupTracker, nil, s.suiteSetupTeardown(setupTracker))
+	setupSuite.Options.TestingT = t
+	setupSuite.Run()
+
+	// Collect termination errors from any concurrent feature suite.
+	var terminationErrors []internaltesting.TerminationError
+	var termMu sync.Mutex
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
 			select {
 			case <-ctx.Done():
 				return
-			case errMessage = <-internaltesting.TerminationChan:
+			case err, ok := <-internaltesting.TerminationChan:
+				if !ok {
+					return
+				}
+				termMu.Lock()
+				terminationErrors = append(terminationErrors, err)
+				termMu.Unlock()
 			}
-		}()
-	} else {
-		close(done)
+		}
+	}()
+
+	// Phase 2: Run parallel features concurrently.
+	var wg sync.WaitGroup
+	for _, f := range parallelFeatures {
+		wg.Add(1)
+		go func(fc featureContent) {
+			defer wg.Done()
+
+			tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
+			gf := []godog.Feature{{Name: fc.name, Contents: fc.contents}}
+			suite := s.makeGodogSuite(fc.name, tracker, gf, nil)
+			suite.Options.TestingT = t
+			suite.Run()
+		}(f)
+	}
+	wg.Wait()
+
+	// Phase 3: Run serial features sequentially.
+	if len(serialFeatures) > 0 {
+		tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
+		var gf []godog.Feature
+		for _, f := range serialFeatures {
+			gf = append(gf, godog.Feature{Name: f.name, Contents: f.contents})
+		}
+		suite := s.makeGodogSuite("serial", tracker, gf, nil)
+		suite.Options.TestingT = t
+		suite.Run()
 	}
 
-	s.suite.Options.TestingT = t
-
-	s.suite.Run()
 	cancel()
 	<-done
 
@@ -449,11 +582,15 @@ func (s *Suite) RunT(t *testing.T) {
 		writeTestLog(testLog, s.output)
 	}
 
-	if errMessage.Message != "" {
-		if errMessage.NeedsLog {
-			fmt.Print(errMessage.Message)
+	termMu.Lock()
+	defer termMu.Unlock()
+	for _, errMessage := range terminationErrors {
+		if errMessage.Message != "" {
+			if errMessage.NeedsLog {
+				fmt.Print(errMessage.Message)
+			}
+			t.Fail()
 		}
-		t.Fail()
 	}
 }
 
@@ -474,4 +611,13 @@ func pullImages(images []string) error {
 		}
 	}
 	return nil
+}
+
+func isSerialFeature(tags []*messages.Tag) bool {
+	for _, tag := range tags {
+		if strings.TrimPrefix(tag.Name, "@") == "serial" {
+			return true
+		}
+	}
+	return false
 }

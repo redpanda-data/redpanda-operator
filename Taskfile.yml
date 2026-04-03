@@ -284,7 +284,7 @@ tasks:
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
-        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run {{.RUN}} -timeout 60m -tags integration'
+        CLI_ARGS: '{{.CLI_ARGS}} -p=8 -run {{.RUN}} -timeout 60m -tags integration'
 
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
