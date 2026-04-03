@@ -39,11 +39,6 @@ func (t *tagset) add(value string) {
 	t.tags[value] = v
 }
 
-func (t *tagset) has(value string) bool {
-	_, found := t.tags[value]
-	return found
-}
-
 func (t *tagset) flatten() []string {
 	flattened := []string{}
 	for tag := range t.tags {

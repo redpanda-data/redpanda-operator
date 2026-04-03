@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/formatters"
@@ -21,6 +22,8 @@ import (
 
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 )
+
+var formatterCounter atomic.Int64
 
 type feature struct {
 	*internaltesting.Cleaner
@@ -159,10 +162,11 @@ func (f *FeatureHookTracker) Feature(doc *messages.GherkinDocument, uri string, 
 }
 
 func (f *FeatureHookTracker) RegisterFormatter(opts godog.Options) godog.Options {
-	formatters.Format("custom", "", func(suite string, out io.Writer) formatters.Formatter {
+	name := fmt.Sprintf("custom-%d", formatterCounter.Add(1))
+	formatters.Format(name, "", func(suite string, out io.Writer) formatters.Formatter {
 		return f
 	})
-	opts.Format += ",custom"
+	opts.Format += "," + name
 	return opts
 }
 
