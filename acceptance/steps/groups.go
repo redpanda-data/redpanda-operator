@@ -43,7 +43,10 @@ func groupIsSuccessfullySynced(ctx context.Context, t framework.TestingT, group 
 			}
 			t.Fatalf("Error deleting group %q: %v", group, err)
 		}
-		require.NoError(t, t.Delete(ctx, &groupObject))
+		err = t.Delete(ctx, &groupObject)
+		if err != nil && !apierrors.IsNotFound(err) {
+			require.NoError(t, err)
+		}
 	})
 }
 

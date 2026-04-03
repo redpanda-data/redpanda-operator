@@ -67,7 +67,10 @@ func roleIsSuccessfullySynced(ctx context.Context, t framework.TestingT, role st
 			}
 			t.Fatalf("Error deleting role %q: %v", role, err)
 		}
-		require.NoError(t, t.Delete(ctx, &roleObject))
+		err = t.Delete(ctx, &roleObject)
+		if err != nil && !apierrors.IsNotFound(err) {
+			require.NoError(t, err)
+		}
 	})
 }
 
