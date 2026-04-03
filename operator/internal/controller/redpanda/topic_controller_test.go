@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 			err := os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 			require.NoError(t, err)
 		}
-		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8")
+		container, err := redpanda.Run(ctx, "redpandadata/redpanda:v23.2.8")
 		require.NoError(t, err)
 
 		t.Cleanup(func() {
@@ -947,7 +947,7 @@ func TestUnsetStorageMode(t *testing.T) {
 	// The cluster default for redpanda.storage.mode is "unset". We'll explicitly
 	// set a topic to "local" via IncrementalAlterConfigs, making Redpanda track
 	// it as DYNAMIC_TOPIC_CONFIG (non-default source).
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b")
+	container, err := redpanda.Run(ctx, "redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		// Dump container logs for debugging

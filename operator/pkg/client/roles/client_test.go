@@ -177,7 +177,7 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("v24.1.1 release", func(t *testing.T) {
-		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v24.1.1",
+		container, err := redpanda.Run(ctx, "redpandadata/redpanda:v24.1.1",
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
 			redpanda.WithSuperusers("admin"),
@@ -193,7 +193,7 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("v25.2.1 latest release", func(t *testing.T) {
-		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v25.2.1",
+		container, err := redpanda.Run(ctx, "redpandadata/redpanda:v25.2.1",
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
 			redpanda.WithSuperusers("admin"),

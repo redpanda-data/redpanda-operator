@@ -285,7 +285,7 @@ func TestSyncUpgradeRegressions(t *testing.T) {
 	// No auth is easy, only test on a cluster with auth on admin API.
 	container, err := redpanda.Run(
 		ctx,
-		"docker.redpanda.com/redpandadata/redpanda:v24.2.4",
+		"redpandadata/redpanda:v24.2.4",
 	)
 	require.NoError(t, err)
 
@@ -376,7 +376,7 @@ func TestSyncUnknownPropertyRegression(t *testing.T) {
 	// ── Old broker: set coproc_max_batch_size (valid in v25.x) ──────────────
 	oldContainer, err := redpanda.Run(
 		ctx,
-		"docker.redpanda.com/redpandadata/redpanda:v25.3.10",
+		"redpandadata/redpanda:v25.3.10",
 		testcontainers.WithMounts(
 			testcontainers.VolumeMount(volumeName, "/var/lib/redpanda/data"),
 		),
@@ -400,7 +400,7 @@ func TestSyncUnknownPropertyRegression(t *testing.T) {
 	// ── New broker: coproc_max_batch_size is unknown ─────────────────────────
 	newContainer, err := redpanda.Run(
 		ctx,
-		"docker.redpanda.com/redpandadata/redpanda:v26.1.1",
+		"redpandadata/redpanda:v26.1.1",
 		testcontainers.WithMounts(
 			testcontainers.VolumeMount(volumeName, "/var/lib/redpanda/data"),
 		),
