@@ -11,10 +11,10 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -43,12 +43,15 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 
 	// Use the canonical cluster name so that labels are identical regardless
 	// of which operator instance (local vs remote) performs the reconciliation.
-	canonicalName := clusterName
-	if canonicalName == mcmanager.LocalCluster {
-		canonicalName = m.mgr.GetLocalClusterName()
-	}
+	canonicalName := CanonicalClusterName(clusterName, m.mgr)
 
-	state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.NodePools, canonicalName)
+	state, err := multiclusterRenderer.NewRenderState(
+		cl.GetConfig(),
+		cluster.StretchCluster,
+		cluster.GetNodePoolsForCluster(canonicalName),
+		cluster.GetAllNodePools(),
+		canonicalName,
+	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -58,8 +61,6 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		return nil, errors.WithStack(err)
 	}
 
-	// TODO: re-implement per-pool service generation using new RenderState types
-
 	return resources, nil
 }
 
@@ -67,4 +68,15 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 // controller needs to watch.
 func (m *StretchClusterSimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return multiclusterRenderer.Types()
+}
+
+func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *StretchClusterWithPools) []string {
+	var adminAPIEndpoints []string
+	for _, pool := range cluster.NodePools {
+		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
+			name := multiclusterRenderer.PerPodServiceName(pool.nodePool, i)
+			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), cluster.Spec.AdminPort()))
+		}
+	}
+	return adminAPIEndpoints
 }

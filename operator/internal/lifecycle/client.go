@@ -35,6 +35,7 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -135,6 +136,10 @@ func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, se
 	if set.GetLabels() == nil {
 		set.SetLabels(map[string]string{})
 	}
+	owner, err = r.ownershipResolver.ResolveOwnerReference(ctx, owner, set.clusterName, ctl)
+	if err != nil {
+		return err
+	}
 	maps.Copy(set.GetLabels(), r.ownershipResolver.AddLabels(owner))
 	set.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
 
@@ -144,6 +149,10 @@ func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, se
 // SetClusterStatus sets the status of the given cluster.
 func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus) bool {
 	return r.statusUpdater.Update(cluster, status)
+}
+
+func (r *ResourceClient[T, U]) GetAdminAPIEndpoints(cluster U) []string {
+	return r.simpleResourceRenderer.GetAdminAPIEndpoints(cluster)
 }
 
 type renderer[T any, U Cluster[T]] struct {
@@ -260,10 +269,14 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 				set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
 			}
 		}
+		log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in cluster %s", len(existingPools), clusterName))
+		log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in cluster %s", len(wrapped), clusterName))
 
 		pools.addExisting(existingPools...)
 		pools.addDesired(wrapped...)
 	}
+	log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in all clusters", len(pools.existingPools)))
+	log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in all clusters", len(pools.desiredPools)))
 
 	return pools, nil
 }
@@ -455,6 +468,12 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing StatefulSets")
 	}
+	expectedOwner, err := r.ownershipResolver.ResolveOwnerReference(ctx, cluster, clusterName, ctl)
+	if err != nil {
+		return nil, errors.Wrapf(err, "resolving owner reference")
+	}
+	// swap cluster to correct one
+	cluster = expectedOwner
 
 	i := 0
 	for _, set := range sets.Items {
@@ -523,6 +542,31 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	}
 
 	return existing, nil
+}
+
+func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context.Context, cluster U) ([]*NodePoolInCluster, error) {
+	var nodePools []*NodePoolInCluster
+	for _, clusterName := range r.clusterList(cluster) {
+		ctl, err := r.ctl(ctx, clusterName)
+		if err != nil {
+			return nil, err
+		}
+		allNodePools, err := kube.List[redpandav1alpha2.NodePoolList](ctx, ctl, cluster.GetNamespace())
+		if err != nil {
+			r.logger.Error(err, "listing NodePools")
+			return nil, err
+		}
+		for _, pool := range allNodePools.Items {
+			clusterRef := pool.Spec.ClusterRef
+			if clusterRef.IsStretchCluster() && clusterRef.Name == cluster.GetName() {
+				nodePools = append(nodePools, &NodePoolInCluster{
+					cluster:  CanonicalClusterName(clusterName, r.manager),
+					nodePool: pool.DeepCopy(),
+				})
+			}
+		}
+	}
+	return nodePools, nil
 }
 
 func setConfigVersionLabels(labels map[string]string, configVersion string) map[string]string {

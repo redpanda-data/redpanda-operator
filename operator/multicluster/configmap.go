@@ -17,20 +17,29 @@ import (
 )
 
 // configMaps returns all ConfigMaps for the given RenderState.
-func configMaps(state *RenderState) []*corev1.ConfigMap {
+func configMaps(state *RenderState) ([]*corev1.ConfigMap, error) {
 	var cms []*corev1.ConfigMap
-	for _, pool := range state.pools {
-		cms = append(cms, redpandaConfigMap(state, pool))
+	for _, pool := range state.inClusterPools {
+		cm, err := redpandaConfigMap(state, pool)
+		if err != nil {
+			return nil, err
+		}
+		cms = append(cms, cm)
 	}
 	if cm := rpkProfileConfigMap(state); cm != nil {
 		cms = append(cms, cm)
 	}
-	return cms
+	return cms, nil
 }
 
 // redpandaConfigMap returns the ConfigMap for a specific pool.
-func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.ConfigMap {
+func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.NodePool) (*corev1.ConfigMap, error) {
 	bootstrap := bootstrapContents(state)
+	redpanda, err := redpandaConfigFile(state, true, pool)
+	if err != nil {
+		return nil, err
+	}
+
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -44,7 +53,7 @@ func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.NodePool) *cor
 		Data: map[string]string{
 			".bootstrap.json.in":    bootstrap.template,
 			"bootstrap.yaml.fixups": bootstrap.fixups,
-			"redpanda.yaml":         redpandaConfigFile(state, true, pool),
+			"redpanda.yaml":         redpanda,
 		},
-	}
+	}, nil
 }

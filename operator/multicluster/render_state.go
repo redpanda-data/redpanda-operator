@@ -28,17 +28,30 @@ import (
 // stretch cluster resources. Exported methods are limited to those useful for
 // establishing client connections to the cluster.
 type RenderState struct {
-	cluster     *redpandav1alpha2.StretchCluster
-	pools       []*redpandav1alpha2.NodePool
-	clusterName string
-	releaseName string
-	namespace   string
+	cluster        *redpandav1alpha2.StretchCluster
+	inClusterPools []*redpandav1alpha2.NodePool
+	pools          []*redpandav1alpha2.NodePool
+	clusterName    string
+	releaseName    string
+	namespace      string
 
 	client *kube.Ctl
 
+	seedServers          []string
 	bootstrapUserSecret  *corev1.Secret
 	statefulSetPodLabels map[string]string
 	statefulSetSelector  map[string]string
+}
+
+func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.NodePool) []string {
+	var seedServers []string
+	for _, pool := range pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			name := PerPodServiceName(pool, i)
+			seedServers = append(seedServers, fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), cluster.Spec.RPCPort()))
+		}
+	}
+	return seedServers
 }
 
 // NewRenderState constructs a RenderState from a StretchCluster, its NodePools,
@@ -48,16 +61,27 @@ type RenderState struct {
 func NewRenderState(
 	config *kube.RESTConfig,
 	cluster *redpandav1alpha2.StretchCluster,
+	// inClusterPool is a list of NodePools in given cluster
+	inClusterPool []*redpandav1alpha2.NodePool,
+	// pools is a list of NodePools in all K8S clusters
 	pools []*redpandav1alpha2.NodePool,
 	clusterName string,
 ) (*RenderState, error) {
 	// Deep-copy to avoid mutating the caller's CRD objects.
 	cluster = cluster.DeepCopy()
+	copiedInClusterPools := make([]*redpandav1alpha2.NodePool, len(inClusterPool))
+	for i, p := range inClusterPool {
+		copiedInClusterPools[i] = p.DeepCopy()
+	}
 	copiedPools := make([]*redpandav1alpha2.NodePool, len(pools))
 	for i, p := range pools {
 		copiedPools[i] = p.DeepCopy()
 	}
 
+	// Sort pools by name for deterministic rendering order.
+	sort.Slice(copiedInClusterPools, func(i, j int) bool {
+		return copiedInClusterPools[i].Name < copiedInClusterPools[j].Name
+	})
 	// Sort pools by name for deterministic rendering order.
 	sort.Slice(copiedPools, func(i, j int) bool {
 		return copiedPools[i].Name < copiedPools[j].Name
@@ -80,12 +104,14 @@ func NewRenderState(
 	}
 
 	state := &RenderState{
-		cluster:     cluster,
-		pools:       copiedPools,
-		clusterName: clusterName,
-		releaseName: releaseName,
-		namespace:   cluster.Namespace,
-		client:      ctl,
+		cluster:        cluster,
+		pools:          copiedPools,
+		inClusterPools: copiedInClusterPools,
+		clusterName:    clusterName,
+		releaseName:    releaseName,
+		namespace:      cluster.Namespace,
+		client:         ctl,
+		seedServers:    seedServersFromNodePools(cluster, copiedPools),
 	}
 
 	if err := state.fetchBootstrapUser(); err != nil {
@@ -121,9 +147,24 @@ func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
 	return &r.cluster.Spec
 }
 
-// Pools returns the list of NodePools. Exported for test/debugging access.
+// Pools returns the list of NodePools across K8S clusters. Exported for test/debugging access.
 func (r *RenderState) Pools() []*redpandav1alpha2.NodePool {
 	return r.pools
+}
+
+// InClusterPools returns the list of NodePools from single K8S cluster. Exported for test/debugging access.
+func (r *RenderState) InClusterPools() []*redpandav1alpha2.NodePool {
+	return r.inClusterPools
+}
+
+// isLocalPool returns true if the given pool is in the local cluster.
+func (r *RenderState) isLocalPool(pool *redpandav1alpha2.NodePool) bool {
+	for _, p := range r.inClusterPools {
+		if p.Name == pool.Name {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *RenderState) fullname() string {
@@ -178,7 +219,7 @@ func (r *RenderState) BrokerList(port int32) []string {
 
 func (r *RenderState) allPodNames() []string {
 	var names []string
-	for _, pool := range r.pools {
+	for _, pool := range r.inClusterPools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
 			names = append(names, fmt.Sprintf("%s-%d", r.poolFullname(pool), i))
 		}

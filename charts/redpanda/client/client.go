@@ -67,6 +67,36 @@ func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rp
 	return client, nil
 }
 
+func AdminClientForStretch(dialer DialContextFunc, hosts []string, username, password string) (*rpadmin.AdminAPI, error) {
+	var auth rpadmin.Auth
+	if username != "" {
+		auth = &rpadmin.BasicAuth{
+			Username: username,
+			Password: password,
+		}
+	} else {
+		auth = &rpadmin.NopAuth{}
+	}
+
+	params := &AdminConnectionParams{
+		Hosts: hosts, AdminAuthParams: AdminAuthParams{
+			Username: username,
+			Password: password,
+		},
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true, //nolint:gosec
+		},
+	}
+
+	// NB: rpadmin automatically infers http or https, if not provided, based on the tlsConfig.
+	client, err := rpadmin.NewAdminAPIWithDialer(params.Hosts, auth, params.TLSConfig, dialer)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return client, nil
+}
+
 type AdminAuthParams struct {
 	Username string
 	Password string

@@ -43,6 +43,10 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $vol := (list (get (fromJson (include "operator.serviceAccountTokenVolume" (dict "a" (list)))) "r") (get (fromJson (include "operator.multiclusterTLSVolume" (dict "a" (list $dot)))) "r")) -}}
+{{- $licenseVol := (get (fromJson (include "operator.licenseVolume" (dict "a" (list $values)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $licenseVol)))) "r") | int) (0 | int)) -}}
+{{- $vol = (concat (default (list) $vol) (default (list) $licenseVol)) -}}
+{{- end -}}
 {{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $vol) | toJson -}}
@@ -61,6 +65,10 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $volMount := (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r") (get (fromJson (include "operator.multiclusterTLSVolumeMount" (dict "a" (list $dot)))) "r")) -}}
+{{- $licenseVolMount := (get (fromJson (include "operator.licenseVolumeMount" (dict "a" (list $values)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $licenseVolMount)))) "r") | int) (0 | int)) -}}
+{{- $volMount = (concat (default (list) $volMount) (default (list) $licenseVolMount)) -}}
+{{- end -}}
 {{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $volMount) | toJson -}}
@@ -83,6 +91,7 @@
 {{- $_ := (set $defaults "--webhook-cert-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.crt")) -}}
 {{- $_ := (set $defaults "--webhook-key-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.key")) -}}
 {{- end -}}
+{{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
 {{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
 {{- $flags := (list "multicluster") -}}
 {{- range $key, $value := (merge (dict) $defaults $userProvided) -}}

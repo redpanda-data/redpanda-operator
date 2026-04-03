@@ -132,3 +132,8 @@ func (m *V2SimpleResourceRenderer) MigratingResources() []client.Object {
 		},
 	}
 }
+
+func (m *V2SimpleResourceRenderer) GetAdminAPIEndpoints(cluster *ClusterWithPools) []string {
+	// no-op
+	return nil
+}

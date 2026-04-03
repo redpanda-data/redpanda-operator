@@ -225,18 +225,9 @@ func operatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 	vol := []corev1.Volume{
 		serviceAccountTokenVolume(),
 	}
-
-	if values.Enterprise.LicenseSecretRef != nil &&
-		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
-		vol = append(vol, corev1.Volume{
-			Name: "license",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					DefaultMode: ptr.To(int32(420)),
-					SecretName:  values.Enterprise.LicenseSecretRef.Name,
-				},
-			},
-		})
+	licenseVol := licenseVolume(values)
+	if len(licenseVol) > 0 {
+		vol = append(vol, licenseVol...)
 	}
 
 	if !values.Webhook.Enabled {
@@ -318,14 +309,9 @@ func operatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMount {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	volMount := []corev1.VolumeMount{serviceAccountTokenVolumeMount()}
-
-	if values.Enterprise.LicenseSecretRef != nil &&
-		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
-		volMount = append(volMount, corev1.VolumeMount{
-			Name:      "license",
-			MountPath: licenseFilePath,
-			ReadOnly:  true,
-		})
+	liceVolMount := licenseVolumeMount(values)
+	if len(liceVolMount) > 0 {
+		volMount = append(volMount, liceVolMount...)
 	}
 
 	if !values.Webhook.Enabled {
@@ -361,14 +347,7 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
 	}
 
-	if values.Enterprise.LicenseSecretRef != nil &&
-		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
-		if values.Enterprise.LicenseSecretRef.Key != "" {
-			defaults["--license-file-path"] = fmt.Sprintf("%s/%s", licenseFilePath, values.Enterprise.LicenseSecretRef.Key)
-		} else {
-			defaults["--license-file-path"] = fmt.Sprintf("%s/%s", licenseFilePath, values.Enterprise.LicenseSecretRef.Name)
-		}
-	}
+	addLicenseFilePathArg(defaults, values)
 
 	if values.Webhook.Enabled {
 		defaults["--webhook-cert-path"] = webhookCertificatePath
@@ -386,4 +365,43 @@ func operatorArguments(dot *helmette.Dot) []string {
 	}
 
 	return flags
+}
+
+func addLicenseFilePathArg(defaults map[string]string, values Values) {
+	if values.Enterprise.LicenseSecretRef != nil &&
+		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
+		if values.Enterprise.LicenseSecretRef.Key != "" {
+			defaults["--license-file-path"] = fmt.Sprintf("%s/%s", licenseFilePath, values.Enterprise.LicenseSecretRef.Key)
+		} else {
+			defaults["--license-file-path"] = fmt.Sprintf("%s/%s", licenseFilePath, values.Enterprise.LicenseSecretRef.Name)
+		}
+	}
+}
+
+func licenseVolume(values Values) []corev1.Volume {
+	if values.Enterprise.LicenseSecretRef != nil &&
+		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
+		return []corev1.Volume{{
+			Name: "license",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: ptr.To(int32(420)),
+					SecretName:  values.Enterprise.LicenseSecretRef.Name,
+				},
+			},
+		}}
+	}
+	return []corev1.Volume{}
+}
+
+func licenseVolumeMount(values Values) []corev1.VolumeMount {
+	if values.Enterprise.LicenseSecretRef != nil &&
+		!helmette.Empty(values.Enterprise.LicenseSecretRef.Name) {
+		return []corev1.VolumeMount{{
+			Name:      "license",
+			MountPath: licenseFilePath,
+			ReadOnly:  true,
+		}}
+	}
+	return []corev1.VolumeMount{}
 }

@@ -1,5 +1,5 @@
 apiVersion: v2
-name: redpanda-operator-nightly # TODO Rollback this change
+name: operator
 description: Redpanda operator helm chart
 type: application
 

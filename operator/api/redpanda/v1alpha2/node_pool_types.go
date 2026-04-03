@@ -10,7 +10,11 @@
 package v1alpha2
 
 import (
+	"encoding/json"
+	"maps"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -157,7 +161,9 @@ type EmbeddedNodePoolSpec struct {
 	//             "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
 	//             "app.kubernetes.io/instance":  '{{ .Release.Name }}'
 	//             "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
-	PodTemplate    *PodTemplate        `json:"podTemplate,omitempty"`
+	PodTemplate *PodTemplate `json:"podTemplate,omitempty"`
+	// Services configures overrides for Services created by the operator.
+	Services       *NodePoolServices   `json:"services,omitempty"`
 	InitContainers *PoolInitContainers `json:"initContainers,omitempty"`
 	// Default:
 	//     repository: docker.redpanda.com/redpandadata/redpanda
@@ -171,6 +177,92 @@ type EmbeddedNodePoolSpec struct {
 	//     repository: busybox
 	//     tag: latest
 	InitContainerImage *InitContainerImage `json:"initContainerImage,omitempty"`
+}
+
+// NodePoolServices configures overrides for Services created by the operator
+// for this NodePool.
+type NodePoolServices struct {
+	// PerPod configures overrides for per-pod ClusterIP Services.
+	PerPod *PerPodServices `json:"perPod,omitempty"`
+}
+
+// PerPodServices configures overrides for per-pod ClusterIP Services.
+// Local overrides apply to Services for pods in the same K8s cluster as the
+// NodePool; Remote overrides apply to Services created for pods in other clusters.
+type PerPodServices struct {
+	// Local overrides are applied to per-pod Services for pods in the local cluster.
+	Local *PerPodServiceOverride `json:"local,omitempty"`
+	// Remote overrides are applied to per-pod Services for pods in remote clusters.
+	Remote *PerPodServiceOverride `json:"remote,omitempty"`
+}
+
+// PerPodServiceOverride defines overrides for a per-pod Service using
+// apply-configuration types. Only fields that are set will be merged
+// into the generated Service.
+type PerPodServiceOverride struct {
+	// Enabled controls whether this per-pod Service is created. Defaults to true.
+	Enabled     *bool                                      `json:"enabled,omitempty"`
+	Labels      map[string]string                          `json:"labels,omitempty"`
+	Annotations map[string]string                          `json:"annotations,omitempty"`
+	Spec        *applycorev1.ServiceSpecApplyConfiguration `json:"spec,omitempty"`
+}
+
+// IsEnabled returns whether this override allows the Service to be created.
+// Defaults to true when Enabled is nil.
+func (in *PerPodServiceOverride) IsEnabled() bool {
+	if in == nil || in.Enabled == nil {
+		return true
+	}
+	return *in.Enabled
+}
+
+func (in *PerPodServiceOverride) DeepCopy() *PerPodServiceOverride {
+	if in == nil {
+		return nil
+	}
+	out := new(PerPodServiceOverride)
+	if in.Enabled != nil {
+		out.Enabled = ptr.To(*in.Enabled)
+	}
+	if in.Labels != nil {
+		out.Labels = make(map[string]string, len(in.Labels))
+		maps.Copy(out.Labels, in.Labels)
+	}
+	if in.Annotations != nil {
+		out.Annotations = make(map[string]string, len(in.Annotations))
+		maps.Copy(out.Annotations, in.Annotations)
+	}
+	if in.Spec != nil {
+		// JSON round-trip deep copy for apply-configuration types.
+		data, _ := json.Marshal(in.Spec)
+		out.Spec = &applycorev1.ServiceSpecApplyConfiguration{}
+		_ = json.Unmarshal(data, out.Spec)
+		// Preserve empty Selector map (signals "clear selector") which
+		// json.Marshal drops due to omitempty.
+		if in.Spec.Selector != nil && out.Spec.Selector == nil {
+			out.Spec.Selector = make(map[string]string)
+		}
+	}
+	return out
+}
+
+func (in *NodePoolServices) DeepCopy() *NodePoolServices {
+	if in == nil {
+		return nil
+	}
+	return &NodePoolServices{
+		PerPod: in.PerPod.DeepCopy(),
+	}
+}
+
+func (in *PerPodServices) DeepCopy() *PerPodServices {
+	if in == nil {
+		return nil
+	}
+	return &PerPodServices{
+		Local:  in.Local.DeepCopy(),
+		Remote: in.Remote.DeepCopy(),
+	}
 }
 
 func MinimalNodePoolSpec(cluster *Redpanda) NodePoolSpec {
