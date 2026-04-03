@@ -623,8 +623,8 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 }
 
 func (s *RedpandaControllerSuite) TestLicense() {
-	t, ctx, cancel, c := s.setup()
-	defer cancel()
+	t := s.T()
+	t.Parallel()
 
 	type image struct {
 		repository string
@@ -691,78 +691,88 @@ func (s *RedpandaControllerSuite) TestLicense() {
 	}}
 
 	for _, tc := range cases {
-		rp := s.minimalRP()
-		rp.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
-			Repository: ptr.To(tc.image.repository),
-			Tag:        ptr.To(tc.image.tag),
-		}
-		if !tc.license {
-			rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
-				Spec: &applycorev1.PodSpecApplyConfiguration{
-					Containers: []applycorev1.ContainerApplyConfiguration{{
-						Name: ptr.To("redpanda"),
-						Env: []applycorev1.EnvVarApplyConfiguration{
-							*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
-						},
-					}},
-				},
-			}
-		}
-
-		var condition metav1.Condition
-		var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
-		s.applyAndWaitFor(t, ctx, c, func(o client.Object, err error) (bool, error) {
-			if err != nil {
-				return false, err
-			}
-			rp := o.(*redpandav1alpha2.Redpanda)
-
-			for _, cond := range rp.Status.Conditions {
-				if cond.Type == statuses.ClusterLicenseValid {
-					// grab the first non-unknown status
-					if cond.Status != metav1.ConditionUnknown {
-						condition = cond
-						licenseStatus = rp.Status.LicenseStatus
-						return true, nil
-					}
-					return false, nil
-				}
-			}
-			return false, nil
-		}, rp)
-
 		name := fmt.Sprintf("%s/%s (license: %t)", tc.image.repository, tc.image.tag, tc.license)
-		message := fmt.Sprintf("%s - %s != %s", name, tc.expected, condition.Message)
-		require.Equal(t, tc.expected, condition.Message, message)
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 
-		if tc.expectedLicenseStatus == nil && licenseStatus != nil {
-			t.Fatalf("%s does not have a nil license %s", name, licenseStatus.String())
-		}
+			ctx, cancel := context.WithTimeout(trace.Test(t), 15*time.Minute)
+			defer cancel()
 
-		if tc.expectedLicenseStatus != nil {
-			require.NotNil(t, licenseStatus, "%s does has a nil license", name)
-			require.Equal(t, licenseStatus.Expired, tc.expectedLicenseStatus.Expired, "%s license expired field does not match", name)
-			require.EqualValues(t, licenseStatus.InUseFeatures, tc.expectedLicenseStatus.InUseFeatures, "%s license valid features do not match", name)
-			require.Equal(t, licenseStatus.Organization, tc.expectedLicenseStatus.Organization, "%s license organization field does not match", name)
-			require.Equal(t, licenseStatus.Type, tc.expectedLicenseStatus.Type, "%s license type field does not match", name)
-			require.Equal(t, licenseStatus.Violation, tc.expectedLicenseStatus.Violation, "%s license violation field does not match", name)
+			ns := s.env.CreateTestNamespace(t)
+			c := ns.Client
 
-			// only do the expiration check if the license isn't already expired
-			if licenseStatus.Expired != nil && !*licenseStatus.Expired {
-				expectedExpiration := tc.expectedLicenseStatus.Expiration.UTC()
-				actualExpiration := licenseStatus.Expiration.UTC()
-
-				rangeFactor := 5 * time.Minute
-				// add some fudge factor so that we don't fail with flakiness due to tests being run at
-				// the change of a couple of minutes that causes the date to be rolled over by some factor
-				if !(expectedExpiration.Add(rangeFactor).After(actualExpiration) &&
-					expectedExpiration.Add(-rangeFactor).Before(actualExpiration)) {
-					t.Fatalf("%s does not match expected expiration: %s != %s", name, actualExpiration, expectedExpiration)
+			rp := s.minimalRP()
+			rp.Spec.ClusterSpec.Image = &redpandav1alpha2.RedpandaImage{
+				Repository: ptr.To(tc.image.repository),
+				Tag:        ptr.To(tc.image.tag),
+			}
+			if !tc.license {
+				rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
+					Spec: &applycorev1.PodSpecApplyConfiguration{
+						Containers: []applycorev1.ContainerApplyConfiguration{{
+							Name: ptr.To("redpanda"),
+							Env: []applycorev1.EnvVarApplyConfiguration{
+								*applycorev1.EnvVar().WithName("__REDPANDA_DISABLE_BUILTIN_TRIAL_LICENSE").WithValue("true"),
+							},
+						}},
+					},
 				}
 			}
-		}
 
-		s.deleteAndWait(t, ctx, c, rp)
+			var condition metav1.Condition
+			var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
+			s.applyAndWaitFor(t, ctx, c, func(o client.Object, err error) (bool, error) {
+				if err != nil {
+					return false, err
+				}
+				rp := o.(*redpandav1alpha2.Redpanda)
+
+				for _, cond := range rp.Status.Conditions {
+					if cond.Type == statuses.ClusterLicenseValid {
+						// grab the first non-unknown status
+						if cond.Status != metav1.ConditionUnknown {
+							condition = cond
+							licenseStatus = rp.Status.LicenseStatus
+							return true, nil
+						}
+						return false, nil
+					}
+				}
+				return false, nil
+			}, rp)
+
+			message := fmt.Sprintf("%s - %s != %s", name, tc.expected, condition.Message)
+			require.Equal(t, tc.expected, condition.Message, message)
+
+			if tc.expectedLicenseStatus == nil && licenseStatus != nil {
+				t.Fatalf("%s does not have a nil license %s", name, licenseStatus.String())
+			}
+
+			if tc.expectedLicenseStatus != nil {
+				require.NotNil(t, licenseStatus, "%s does has a nil license", name)
+				require.Equal(t, licenseStatus.Expired, tc.expectedLicenseStatus.Expired, "%s license expired field does not match", name)
+				require.EqualValues(t, licenseStatus.InUseFeatures, tc.expectedLicenseStatus.InUseFeatures, "%s license valid features do not match", name)
+				require.Equal(t, licenseStatus.Organization, tc.expectedLicenseStatus.Organization, "%s license organization field does not match", name)
+				require.Equal(t, licenseStatus.Type, tc.expectedLicenseStatus.Type, "%s license type field does not match", name)
+				require.Equal(t, licenseStatus.Violation, tc.expectedLicenseStatus.Violation, "%s license violation field does not match", name)
+
+				// only do the expiration check if the license isn't already expired
+				if licenseStatus.Expired != nil && !*licenseStatus.Expired {
+					expectedExpiration := tc.expectedLicenseStatus.Expiration.UTC()
+					actualExpiration := licenseStatus.Expiration.UTC()
+
+					rangeFactor := 5 * time.Minute
+					// add some fudge factor so that we don't fail with flakiness due to tests being run at
+					// the change of a couple of minutes that causes the date to be rolled over by some factor
+					if !(expectedExpiration.Add(rangeFactor).After(actualExpiration) &&
+						expectedExpiration.Add(-rangeFactor).Before(actualExpiration)) {
+						t.Fatalf("%s does not match expected expiration: %s != %s", name, actualExpiration, expectedExpiration)
+					}
+				}
+			}
+
+			s.deleteAndWait(t, ctx, c, rp)
+		})
 	}
 }
 
