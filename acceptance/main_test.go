@@ -65,6 +65,9 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"redpandadata/redpanda-operator:v2.4.5",
 			"redpandadata/redpanda:v25.1.1",
 			"redpandadata/redpanda:v25.2.1",
+			// Images used by upgrade and upgrade-regressions features.
+			"redpandadata/redpanda:v25.2.11",
+			"redpandadata/redpanda-unstable:v25.3.1-rc4",
 			"quay.io/jetstack/cert-manager-controller:v1.14.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
 			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",

@@ -345,9 +345,19 @@ tasks:
       - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
       - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
       - coredns/coredns:{{.TEST_COREDNS_VERSION}}
+      - redpandadata/redpanda-unstable:v24.3.1-rc4
       - redpandadata/redpanda-unstable:v24.3.1-rc8
+      - redpandadata/redpanda-unstable:v25.2.1-rc7
       - redpandadata/redpanda-unstable:v25.3.1-rc2
+      - redpandadata/redpanda-unstable:v25.3.1-rc4
       - redpandadata/redpanda-unstable:v26.1.1-rc5
+      - redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b
+      - redpandadata/redpanda-operator-nightly:v0.0.0-20250129gita89e202
+      - redpandadata/redpanda:v23.2.8
+      - redpandadata/redpanda:v24.2.9
+      - redpandadata/redpanda:v25.1.1
+      - redpandadata/redpanda:v25.2.1
+      - redpandadata/redpanda:v25.2.11
       - redpandadata/redpanda:v26.1.1
 
     cmds:

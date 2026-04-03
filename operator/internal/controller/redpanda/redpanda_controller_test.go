@@ -954,9 +954,10 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 		"quay.io/jetstack/cert-manager-cainjector:v1.17.2",
 		"quay.io/jetstack/cert-manager-webhook:v1.17.2",
 		"coredns/coredns:1.11.1",
+		// Images used by TestLicense cases.
+		"redpandadata/redpanda-unstable:v24.3.1-rc4",
 		"redpandadata/redpanda-unstable:v24.3.1-rc8",
-		"redpandadata/redpanda-unstable:v25.3.1-rc2",
-		"redpandadata/redpanda:v26.1.1",
+		"redpandadata/redpanda:v24.2.9",
 	}
 	if repo := os.Getenv("TEST_REDPANDA_REPO"); repo != "" {
 		if version := os.Getenv("TEST_REDPANDA_VERSION"); version != "" {
