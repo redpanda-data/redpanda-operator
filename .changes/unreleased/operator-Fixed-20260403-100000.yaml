@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fixed unnecessary license reloading on every reconcile by comparing the SHA256 checksum of the desired license against the already loaded license before calling SetLicense.
+time: 2026-04-03T10:00:00.000000-04:00
