@@ -98,7 +98,7 @@ func defaultClusterConfig() *clusterConfig {
 
 	return &clusterConfig{
 		agents:  3,
-		timeout: 3 * time.Minute,
+		timeout: 5 * time.Minute,
 		image:   image,
 	}
 }

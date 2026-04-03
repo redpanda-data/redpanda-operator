@@ -1182,6 +1182,7 @@ func (s *RedpandaControllerSuite) applyAndWaitFor(t testing.TB, ctx context.Cont
 }
 
 func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c client.Client, obj client.Object, cond func(client.Object, error) (bool, error)) {
+	prefix := t.Name()
 	start := time.Now()
 	lastLog := time.Now()
 	logEvery := 10 * time.Second
@@ -1196,7 +1197,7 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 
 		if time.Since(lastLog) > logEvery {
 			lastLog = time.Now()
-			t.Logf("waited %s for %T %q", time.Since(start), obj, obj.GetName())
+			t.Logf("[%s] waited %s for %T %q", prefix, time.Since(start), obj, obj.GetName())
 		}
 
 		return false, nil
@@ -1204,10 +1205,10 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 	if err != nil {
 		// Log diagnostic information on timeout to help debug flaky tests.
 		if rp, ok := obj.(*redpandav1alpha2.Redpanda); ok {
-			t.Logf("waitFor timed out after %s for Redpanda %q (generation=%d)", time.Since(start), rp.Name, rp.Generation)
+			t.Logf("[%s] waitFor timed out after %s for Redpanda %q (generation=%d)", prefix, time.Since(start), rp.Name, rp.Generation)
 			for _, cond := range rp.Status.Conditions {
-				t.Logf("  condition %s: status=%s reason=%s observedGeneration=%d message=%s",
-					cond.Type, cond.Status, cond.Reason, cond.ObservedGeneration, cond.Message)
+				t.Logf("[%s]   condition %s: status=%s reason=%s observedGeneration=%d message=%s",
+					prefix, cond.Type, cond.Status, cond.Reason, cond.ObservedGeneration, cond.Message)
 			}
 		}
 		require.NoError(t, err)

@@ -136,10 +136,17 @@ func New(t *testing.T, options Options) *Env {
 
 	if len(options.CRDs) > 0 {
 		crds, err := envtest.InstallCRDs(config, envtest.CRDInstallOptions{
-			CRDs: dupCRDs(options.CRDs),
+			CRDs:               dupCRDs(options.CRDs),
+			ErrorIfPathMissing: false,
 		})
-		require.NoError(t, err)
-		require.Equal(t, len(options.CRDs), len(crds))
+		// Tolerate "already exists" errors when running with -p=N, since
+		// multiple test packages may install CRDs into the same shared cluster.
+		if err != nil && !k8sapierrors.IsAlreadyExists(err) && !strings.Contains(err.Error(), "already exists") {
+			require.NoError(t, err)
+		}
+		if err == nil {
+			require.Equal(t, len(options.CRDs), len(crds))
+		}
 	}
 
 	c, err := client.New(config, client.Options{Scheme: options.Scheme})

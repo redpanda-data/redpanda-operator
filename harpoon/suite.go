@@ -581,24 +581,15 @@ func (s *Suite) RunT(t *testing.T) {
 	var suiteFailed bool
 
 	// Phase 2: Run parallel features concurrently.
-	// Each parallel suite gets its own output buffer to avoid data races.
-	var featureLogs []bytes.Buffer
-	if s.output != "" {
-		featureLogs = make([]bytes.Buffer, len(parallelFeatures))
-	}
-	var wg sync.WaitGroup
-	for i, f := range parallelFeatures {
-		wg.Add(1)
-		go func(idx int, fc featureContent) {
-			defer wg.Done()
+	// Each feature runs as a parallel subtest so that Go's testing framework
+	// doesn't serialize the godog t.Run calls across features.
+	for _, f := range parallelFeatures {
+		t.Run(f.name, func(t *testing.T) {
+			t.Parallel()
 
 			tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
-			gf := []godog.Feature{{Name: fc.name, Contents: fc.contents}}
-			var out io.Writer
-			if s.output != "" {
-				out = &featureLogs[idx]
-			}
-			suite := s.makeGodogSuite(fc.name, tracker, gf, nil, out)
+			gf := []godog.Feature{{Name: f.name, Contents: f.contents}}
+			suite := s.makeGodogSuite(f.name, tracker, gf, nil)
 			suite.Options.TestingT = t
 			suite.Run()
 			if tracker.SuiteFailed() {
@@ -606,13 +597,7 @@ func (s *Suite) RunT(t *testing.T) {
 				suiteFailed = true
 				termMu.Unlock()
 			}
-		}(i, f)
-	}
-	wg.Wait()
-
-	// Merge parallel feature logs into the main test log.
-	for i := range featureLogs {
-		testLog.Write(featureLogs[i].Bytes())
+		})
 	}
 
 	// Phase 3: Run serial features sequentially.
