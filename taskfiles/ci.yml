@@ -34,7 +34,7 @@ tasks:
       - 'echo "--- Running integration tests"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --format testname --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --format standard-verbose --'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:acceptance:
@@ -46,7 +46,7 @@ tasks:
       - 'echo "--- Running acceptance tests"'
       - task: :test:acceptance
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-tests.xml --format testname --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-tests.xml --format standard-verbose --'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:kuttl-v1:

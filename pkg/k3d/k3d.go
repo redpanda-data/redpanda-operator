@@ -180,7 +180,7 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 	// Use a file-based lock to coordinate cluster creation across parallel
 	// test processes (go test -p=N). The in-process sync.Mutex on Cluster
 	// only protects goroutines within a single process.
-	unlock, err := lockFile(name)
+	unlock, err := lockFile(name + "-create")
 	if err != nil {
 		return nil, errors.Wrap(err, "acquiring cluster lock")
 	}
@@ -194,11 +194,28 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 		return nil, err
 	}
 
-	if err := cluster.ImportImage("localhost/redpanda-operator:dev"); err != nil {
+	if err := cluster.importImages("localhost/redpanda-operator:dev"); err != nil {
 		return nil, err
 	}
 
 	return cluster, nil
+}
+
+// imageMarkerPath returns a file path used to track whether an image has
+// already been imported into a given k3d cluster.
+func imageMarkerPath(clusterName, image string) string {
+	// Sanitize image name for use as a filename.
+	safe := strings.NewReplacer("/", "_", ":", "_", ".", "_").Replace(image)
+	return filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s-img-%s", clusterName, safe))
+}
+
+func imageAlreadyImported(clusterName, image string) bool {
+	_, err := os.Stat(imageMarkerPath(clusterName, image))
+	return err == nil
+}
+
+func markImageImported(clusterName, image string) {
+	os.WriteFile(imageMarkerPath(clusterName, image), nil, 0o600) //nolint:errcheck
 }
 
 // lockFile acquires an exclusive file lock for the given cluster name.
@@ -341,20 +358,38 @@ func (c *Cluster) ImportImage(images ...string) error {
 	// test processes. k3d creates a temporary container named
 	// "k3d-<cluster>-tools" for imports which will conflict if multiple
 	// processes import concurrently.
-	unlock, err := lockFile(c.Name)
+	unlock, err := lockFile(c.Name + "-import")
 	if err != nil {
 		return errors.Wrap(err, "acquiring cluster lock for image import")
 	}
 	defer unlock()
 
-	if out, err := exec.Command(
-		"k3d",
-		"image",
-		"import",
-		fmt.Sprintf("--cluster=%s", c.Name),
-		strings.Join(images, " "),
-	).CombinedOutput(); err != nil {
+	return c.importImages(images...)
+}
+
+// importImages is the lock-free implementation of ImportImage, for use by
+// callers that already hold a lock (e.g. GetOrCreate).
+func (c *Cluster) importImages(images ...string) error {
+	// Filter out images that have already been imported into this cluster
+	// (by a previous test process). Uses marker files in /tmp to track.
+	var needed []string
+	for _, img := range images {
+		if !imageAlreadyImported(c.Name, img) {
+			needed = append(needed, img)
+		}
+	}
+	if len(needed) == 0 {
+		return nil
+	}
+
+	args := append([]string{"image", "import", fmt.Sprintf("--cluster=%s", c.Name)}, needed...)
+	if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
+	}
+
+	// Mark all images as imported.
+	for _, img := range needed {
+		markImageImported(c.Name, img)
 	}
 	return nil
 }
