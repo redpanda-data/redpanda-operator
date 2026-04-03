@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -46,6 +47,35 @@ func stringToHash(s string) uint64 {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(s))
 	return h.Sum64()
+}
+
+// restartBroadcaster provides a broadcast notification mechanism.
+// Calling notify() wakes ALL goroutines waiting on channel(), unlike a
+// regular channel send which wakes only one receiver.
+type restartBroadcaster struct {
+	mu sync.Mutex
+	ch chan struct{}
+}
+
+func newRestartBroadcaster() *restartBroadcaster {
+	return &restartBroadcaster{ch: make(chan struct{})}
+}
+
+// notify wakes all goroutines currently blocked on channel().
+func (b *restartBroadcaster) notify() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	close(b.ch)
+	b.ch = make(chan struct{})
+}
+
+// channel returns the current broadcast channel. Callers should select on
+// it; when it closes (via notify), they must call channel() again to get
+// the fresh replacement.
+func (b *restartBroadcaster) channel() <-chan struct{} {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.ch
 }
 
 // RaftCluster describes a single cluster participating in raft-based
@@ -344,7 +374,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		currentLeader.Store(leader)
 	})
 
-	restart := make(chan struct{}, 1)
+	broadcaster := newRestartBroadcaster()
 
 	if config.Bootstrap {
 		for i, peer := range config.Peers {
@@ -385,10 +415,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 						config.Logger.Error(err, "adding cluster for peer", "peer", peer.Name)
 						return err
 					}
-					select {
-					case restart <- struct{}{}:
-					default:
-					}
+					broadcaster.notify()
 
 					<-ctx.Done()
 					return nil
@@ -397,7 +424,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		}
 	}
 
-	manager, err := newManager(config.Name, config.LocalLeaderElection != nil, config.Logger, restConfig, clusterProvider, restart, func() string {
+	manager, err := newManager(config.Name, config.LocalLeaderElection != nil, config.Logger, restConfig, clusterProvider, broadcaster, func() string {
 		return idsToNames[currentLeader.Load()]
 	}, func() map[string]cluster.Cluster {
 		clusters := map[string]cluster.Cluster{}
@@ -411,10 +438,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		if err := clusterProvider.AddOrReplace(ctx, clusterName, cl, nil); err != nil {
 			return err
 		}
-		select {
-		case restart <- struct{}{}:
-		default:
-		}
+		broadcaster.notify()
 		return nil
 	}, lockManager, opts)
 	if err != nil {
@@ -467,7 +491,7 @@ func (m *raftManager) Health(req *http.Request) error {
 	return m.manager.Health(req)
 }
 
-func newManager(localClusterName string, localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, restart chan struct{}, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
+func newManager(localClusterName string, localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, broadcaster *restartBroadcaster, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
 	mgr, err := mcmanager.New(config, provider, opts)
 	if err != nil {
 		return nil, err
@@ -480,7 +504,7 @@ func newManager(localClusterName string, localLeaderElection bool, logger logr.L
 		return nil
 	})
 
-	runnable := &leaderRunnable{manager: manager, logger: logger, restart: restart, getClusters: getClusters, needsLocalLeaderElection: localLeaderElection}
+	runnable := &leaderRunnable{manager: manager, logger: logger, broadcaster: broadcaster, getClusters: getClusters, needsLocalLeaderElection: localLeaderElection}
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
@@ -511,7 +535,7 @@ type leaderRunnable struct {
 	runnables                []mcmanager.Runnable
 	manager                  *leaderelection.LeaderManager
 	logger                   logr.Logger
-	restart                  chan struct{}
+	broadcaster              *restartBroadcaster
 	getClusters              func() map[string]cluster.Cluster
 	needsLocalLeaderElection bool
 }
@@ -521,13 +545,20 @@ func (l *leaderRunnable) NeedLeaderElection() bool {
 }
 
 func (l *leaderRunnable) Add(r mcmanager.Runnable) {
-	doEngage := func() {
+	doEngage := func(ctx context.Context) {
 		for name, cluster := range l.getClusters() {
 			l.logger.Info("engaging cluster", "cluster", name)
 
-			// engage any static clusters
-			if err := r.Engage(context.Background(), name, cluster); err != nil {
+			if err := r.Engage(ctx, name, cluster); err != nil {
 				l.logger.Error(err, "error engaging cluster", "cluster", name)
+				// Schedule a retry so transient failures are recovered.
+				go func() {
+					select {
+					case <-ctx.Done():
+					case <-time.After(10 * time.Second):
+						l.broadcaster.notify()
+					}
+				}()
 			}
 		}
 	}
@@ -554,21 +585,21 @@ func (l *leaderRunnable) Start(ctx context.Context) error {
 	return l.manager.Run(ctx)
 }
 
-func (l *leaderRunnable) wrapStart(doEngage func(), fn func(context.Context) error) func(context.Context) error {
+func (l *leaderRunnable) wrapStart(doEngage func(context.Context), fn func(context.Context) error) func(context.Context) error {
 	return func(ctx context.Context) error {
 		cancelCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		doEngage()
+		doEngage(cancelCtx)
 
 		go func() {
 			for {
+				ch := l.broadcaster.channel()
 				select {
 				case <-cancelCtx.Done():
 					return
-				case <-l.restart:
-					// re-engage
-					doEngage()
+				case <-ch:
+					doEngage(cancelCtx)
 				}
 			}
 		}()
