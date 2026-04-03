@@ -57,7 +57,10 @@ func iCreateCRDbasedUsers(ctx context.Context, t framework.TestingT, version, cl
 				}
 				t.Fatalf("Error deleting user %q: %v", user.Name, err)
 			}
-			require.NoError(t, t.Delete(ctx, user))
+			err = t.Delete(ctx, user)
+			if err != nil && !apierrors.IsNotFound(err) {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
