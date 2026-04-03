@@ -71,6 +71,18 @@ func bootstrapYamlTemplater(state *RenderState, sts Statefulset) corev1.Containe
 	}
 }
 
+// postInstallJobPodLabels returns the labels for the post-install job's pod
+// template. The app.kubernetes.io/name label is set to "<name>-configuration"
+// so the pod does not match the Redpanda Service selector, preventing stale
+// endpoints from completed job pods.
+func postInstallJobPodLabels(state *RenderState) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/name":      fmt.Sprintf("%s-configuration", Name(state)),
+		"app.kubernetes.io/instance":  state.Release.Name,
+		"app.kubernetes.io/component": fmt.Sprintf("%.50s-post-install", Name(state)),
+	}
+}
+
 func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 	if !state.Values.PostInstallJob.Enabled {
 		return nil
@@ -115,11 +127,7 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 						ObjectMeta: metav1.ObjectMeta{
 							GenerateName: fmt.Sprintf("%s-post-", state.Release.Name),
 							Labels: helmette.Merge(
-								map[string]string{
-									"app.kubernetes.io/name":      Name(state),
-									"app.kubernetes.io/instance":  state.Release.Name,
-									"app.kubernetes.io/component": fmt.Sprintf("%.50s-post-install", Name(state)),
-								},
+								postInstallJobPodLabels(state),
 								helmette.Default(map[string]string{}, state.Values.CommonLabels),
 							),
 						},
