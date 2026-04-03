@@ -13,6 +13,8 @@ package redpanda
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -580,10 +582,10 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 		return nil
 	}
 
+	var licenseBytes []byte
+
 	if literalLicense := ptr.Deref(rp.Spec.ClusterSpec.Enterprise.License, ""); literalLicense != "" {
-		if err := adminClient.SetLicense(ctx, strings.NewReader(literalLicense)); err != nil {
-			return errors.WithStack(err)
-		}
+		licenseBytes = []byte(literalLicense)
 	}
 
 	if secretReference := rp.Spec.ClusterSpec.Enterprise.LicenseSecretRef; secretReference != nil {
@@ -599,10 +601,29 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 			return errors.WithStack(err)
 		}
 
-		literalLicense := licenseSecret.Data[key]
-		if err := adminClient.SetLicense(ctx, bytes.NewReader(literalLicense)); err != nil {
-			return errors.WithStack(err)
+		licenseBytes = licenseSecret.Data[key]
+	}
+
+	if len(licenseBytes) == 0 {
+		return nil
+	}
+
+	// Check if the license already loaded on the cluster matches what we want
+	// to set. This avoids unnecessary SetLicense calls on every reconcile.
+	info, err := adminClient.GetLicenseInfo(ctx)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if info.Loaded {
+		h := sha256.Sum256(licenseBytes)
+		if info.Properties.Checksum == hex.EncodeToString(h[:]) {
+			return nil
 		}
+	}
+
+	if err := adminClient.SetLicense(ctx, bytes.NewReader(licenseBytes)); err != nil {
+		return errors.WithStack(err)
 	}
 
 	return nil
