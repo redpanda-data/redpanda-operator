@@ -20,7 +20,6 @@
   # appliesTo allows us to generate struct and field kubebuilder annotations to default our conditions in our API structs
   appliesTo:
     - redpanda/v1alpha2/Redpanda
-    - redpanda/v1alpha2/StretchCluster
   # description is the description to add for this struct as a doc comment
   description:
     Defines the observed status conditions of a cluster.
@@ -195,6 +194,209 @@
       # Rolled-up conditions are calculated at the very end of our Conditions() call and shouldn't
       # ever reference other rolled-up conditions. Like final conditions, they must have two reason
       # one when the upstream conditions all evaluate to true, one for when they don't.
+      rollup: [ Quiesced, Ready, ResourcesSynced, ConfigurationApplied ]
+      description: >
+        This condition is used as a roll-up status for any sort of automation such as
+        terraform.
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Stable
+          message: Cluster Stable
+          description: >
+            This reason is used with the "Stable" condition when it evaluates to True because
+            all dependent conditions also evaluate to True.
+        - name: Unstable
+          message: Cluster Unstable
+          description: >
+            This reason is used with the "Stable" condition when it evaluates to True because
+            at least one dependent condition evaluates to False.
+- kind: StretchCluster
+  appliesTo:
+    - redpanda/v1alpha2/StretchCluster
+  description:
+    Defines the observed status conditions of a stretch cluster.
+  errors:
+    - name: Error
+      transient: true
+      description: >
+        This reason is used when a stretch cluster has only been partially reconciled and we have early returned
+        due to a retryable error occurring prior to applying the desired cluster state. If it is set on
+        any non-final condition, then the condition "Quiesced" will be False with a reason of "StillReconciling".
+    - name: TerminalError
+      description: >
+        This reason is used when a stretch cluster has only been partially reconciled and we have early returned
+        due to a known terminal error occurring prior to applying the desired cluster state. Because the cluster
+        should no longer be reconciled when a terminal error occurs, the "Quiesced" status should be set to True.
+  conditions:
+    - name: Ready
+      printerColumns:
+        - name: Ready
+        - name: Status
+          message: true
+      description: >
+        This condition indicates whether a stretch cluster is ready to serve any
+        traffic.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Ready
+          message: Cluster ready to service requests
+          description: >
+            This reason is used with the "Ready" condition when it evaluates to True because
+            a cluster can service traffic.
+        - name: NotReady
+          description: >
+            This reason is used with the "Ready" condition when it evaluates to False because
+            a cluster is not ready to service traffic.
+    - name: Healthy
+      description: >
+        This condition indicates whether a stretch cluster is healthy as defined by the Redpanda Admin
+        API's cluster health endpoint.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Healthy
+          message: Cluster is healthy
+          description: >
+            This reason is used with the "Healthy" condition when it evaluates to True because
+            a cluster's health endpoint says the cluster is healthy.
+        - name: NotHealthy
+          description: >
+            This reason is used with the "Healthy" condition when it evaluates to False because
+            a cluster's health endpoint says the cluster is not healthy.
+    - name: LicenseValid
+      rateLimit: time.Minute
+      printerColumns:
+        - name: License
+          message: true
+      description: >
+        This condition indicates whether a stretch cluster has a valid license.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Valid
+          message: Cluster has a valid license
+          description: >
+            This reason is used with the "LicenseValid" condition when it evaluates to True because
+            a cluster has a valid license.
+        - name: Expired
+          message: Cluster license has expired
+          description: >
+            This reason is used with the "LicenseValid" condition when it evaluates to False because
+            a cluster has an expired license.
+        - name: NotPresent
+          message: No cluster license is present
+          description: >
+            This reason is used with the "LicenseValid" condition when it evaluates to False because
+            a cluster has no license.
+    - name: ResourcesSynced
+      description: >
+        This condition indicates whether the Kubernetes resources for a stretch cluster
+        have been synchronized.
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Synced
+          message: Cluster resources successfully synced
+          description: >
+            This reason is used with the "ResourcesSynced" condition when it evaluates to True because
+            a cluster has had all of its Kubernetes resources synced.
+    - name: ConfigurationApplied
+      description: >
+        This condition indicates whether cluster configuration parameters
+        have currently been applied to a stretch cluster for the given generation.
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      rateLimit: time.Minute
+      reasons:
+        - name: Applied
+          message: Cluster configuration successfully applied
+          description: >
+            This reason is used with the "ConfigurationApplied" condition when it evaluates to True because
+            a cluster has had its cluster configuration parameters applied.
+        - name: NotApplied
+          message: Cluster configuration not applied
+          description: >
+            This reason is used with the "ConfigurationApplied" condition when it evaluates to False due to
+            some implementation-specific condition, such as when no brokers have been created and thus we can't
+            attempt a configuration.
+    - name: SpecSynced
+      description: >
+        This condition indicates whether the StretchCluster spec is consistent
+        across all participating Kubernetes clusters.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Synced
+          message: Spec is consistent across all clusters
+          description: >
+            This reason is used with the "SpecSynced" condition when it evaluates to True because
+            the StretchCluster spec is identical in every cluster.
+        - name: DriftDetected
+          description: >
+            This reason is used with the "SpecSynced" condition when it evaluates to False because
+            the StretchCluster spec differs between clusters. Reconciliation is blocked until specs
+            are aligned.
+    - name: BootstrapUserSynced
+      description: >
+        This condition indicates whether the bootstrap superuser secret has been
+        distributed to all participating Kubernetes clusters.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Synced
+          message: Bootstrap user secret synced across all clusters
+          description: >
+            This reason is used with the "BootstrapUserSynced" condition when it evaluates to True
+            because a new bootstrap user secret was generated and distributed to all clusters.
+        - name: ExistingReused
+          message: Existing bootstrap user secret reused
+          description: >
+            This reason is used with the "BootstrapUserSynced" condition when it evaluates to True
+            because an existing bootstrap user secret was found and reused.
+        - name: PasswordMismatch
+          description: >
+            This reason is used with the "BootstrapUserSynced" condition when it evaluates to False
+            because bootstrap user secrets in different clusters have mismatched passwords.
+            Manual intervention is required.
+    - name: Quiesced
+      final: true
+      description: >
+        This condition is used to indicate that the stretch cluster is no longer reconciling
+        due to it being in a finalized state for the current generation.
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        cluster.
+      reasons:
+        - name: Quiesced
+          message: Cluster reconciliation finished
+          description: >
+            This reason is used with the "Quiesced" condition when it evaluates to True because
+            the operator has finished reconciling the cluster at its current generation.
+        - name: StillReconciling
+          message: Cluster still reconciling
+          description: >
+            This reason is used with the "Quiesced" condition when it evaluates to False because
+            the operator has not finished reconciling the cluster at its current generation.
+    - name: Stable
       rollup: [ Quiesced, Ready, ResourcesSynced, ConfigurationApplied ]
       description: >
         This condition is used as a roll-up status for any sort of automation such as

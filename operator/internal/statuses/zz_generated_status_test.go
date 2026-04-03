@@ -420,6 +420,626 @@ func TestCluster(t *testing.T) {
 	}
 }
 
+type setStretchClusterFunc func(status *StretchClusterStatus)
+
+func TestStretchCluster(t *testing.T) {
+	// regular condition tests
+	for name, tt := range map[string]struct {
+		condition string
+		reason    string
+		expected  metav1.ConditionStatus
+		setFn     setStretchClusterFunc
+	}{
+		"Ready/Ready": {
+			condition: StretchClusterReady,
+			reason:    string(StretchClusterReadyReasonReady),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+		},
+		"Ready/NotReady": {
+			condition: StretchClusterReady,
+			reason:    string(StretchClusterReadyReasonNotReady),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonNotReady, "reason") },
+		},
+		"Ready/Error": {
+			condition: StretchClusterReady,
+			reason:    string(StretchClusterReadyReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonError, "reason") },
+		},
+		"Ready/TerminalError": {
+			condition: StretchClusterReady,
+			reason:    string(StretchClusterReadyReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonTerminalError, "reason") },
+		},
+		"Healthy/Healthy": {
+			condition: StretchClusterHealthy,
+			reason:    string(StretchClusterHealthyReasonHealthy),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+		},
+		"Healthy/NotHealthy": {
+			condition: StretchClusterHealthy,
+			reason:    string(StretchClusterHealthyReasonNotHealthy),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonNotHealthy, "reason") },
+		},
+		"Healthy/Error": {
+			condition: StretchClusterHealthy,
+			reason:    string(StretchClusterHealthyReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonError, "reason") },
+		},
+		"Healthy/TerminalError": {
+			condition: StretchClusterHealthy,
+			reason:    string(StretchClusterHealthyReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetHealthy(StretchClusterHealthyReasonTerminalError, "reason")
+			},
+		},
+		"LicenseValid/Valid": {
+			condition: StretchClusterLicenseValid,
+			reason:    string(StretchClusterLicenseValidReasonValid),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+			},
+		},
+		"LicenseValid/Expired": {
+			condition: StretchClusterLicenseValid,
+			reason:    string(StretchClusterLicenseValidReasonExpired),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetLicenseValid(StretchClusterLicenseValidReasonExpired, "reason")
+			},
+		},
+		"LicenseValid/NotPresent": {
+			condition: StretchClusterLicenseValid,
+			reason:    string(StretchClusterLicenseValidReasonNotPresent),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetLicenseValid(StretchClusterLicenseValidReasonNotPresent, "reason")
+			},
+		},
+		"LicenseValid/Error": {
+			condition: StretchClusterLicenseValid,
+			reason:    string(StretchClusterLicenseValidReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetLicenseValid(StretchClusterLicenseValidReasonError, "reason")
+			},
+		},
+		"LicenseValid/TerminalError": {
+			condition: StretchClusterLicenseValid,
+			reason:    string(StretchClusterLicenseValidReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetLicenseValid(StretchClusterLicenseValidReasonTerminalError, "reason")
+			},
+		},
+		"ResourcesSynced/Synced": {
+			condition: StretchClusterResourcesSynced,
+			reason:    string(StretchClusterResourcesSyncedReasonSynced),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+			},
+		},
+		"ResourcesSynced/Error": {
+			condition: StretchClusterResourcesSynced,
+			reason:    string(StretchClusterResourcesSyncedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetResourcesSynced(StretchClusterResourcesSyncedReasonError, "reason")
+			},
+		},
+		"ResourcesSynced/TerminalError": {
+			condition: StretchClusterResourcesSynced,
+			reason:    string(StretchClusterResourcesSyncedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetResourcesSynced(StretchClusterResourcesSyncedReasonTerminalError, "reason")
+			},
+		},
+		"ConfigurationApplied/Applied": {
+			condition: StretchClusterConfigurationApplied,
+			reason:    string(StretchClusterConfigurationAppliedReasonApplied),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+			},
+		},
+		"ConfigurationApplied/NotApplied": {
+			condition: StretchClusterConfigurationApplied,
+			reason:    string(StretchClusterConfigurationAppliedReasonNotApplied),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonNotApplied, "reason")
+			},
+		},
+		"ConfigurationApplied/Error": {
+			condition: StretchClusterConfigurationApplied,
+			reason:    string(StretchClusterConfigurationAppliedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonError, "reason")
+			},
+		},
+		"ConfigurationApplied/TerminalError": {
+			condition: StretchClusterConfigurationApplied,
+			reason:    string(StretchClusterConfigurationAppliedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonTerminalError, "reason")
+			},
+		},
+		"SpecSynced/Synced": {
+			condition: StretchClusterSpecSynced,
+			reason:    string(StretchClusterSpecSyncedReasonSynced),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+			},
+		},
+		"SpecSynced/DriftDetected": {
+			condition: StretchClusterSpecSynced,
+			reason:    string(StretchClusterSpecSyncedReasonDriftDetected),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetSpecSynced(StretchClusterSpecSyncedReasonDriftDetected, "reason")
+			},
+		},
+		"SpecSynced/Error": {
+			condition: StretchClusterSpecSynced,
+			reason:    string(StretchClusterSpecSyncedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetSpecSynced(StretchClusterSpecSyncedReasonError, "reason")
+			},
+		},
+		"SpecSynced/TerminalError": {
+			condition: StretchClusterSpecSynced,
+			reason:    string(StretchClusterSpecSyncedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetSpecSynced(StretchClusterSpecSyncedReasonTerminalError, "reason")
+			},
+		},
+		"BootstrapUserSynced/Synced": {
+			condition: StretchClusterBootstrapUserSynced,
+			reason:    string(StretchClusterBootstrapUserSyncedReasonSynced),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+			},
+		},
+		"BootstrapUserSynced/ExistingReused": {
+			condition: StretchClusterBootstrapUserSynced,
+			reason:    string(StretchClusterBootstrapUserSyncedReasonExistingReused),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonExistingReused, "reason")
+			},
+		},
+		"BootstrapUserSynced/PasswordMismatch": {
+			condition: StretchClusterBootstrapUserSynced,
+			reason:    string(StretchClusterBootstrapUserSyncedReasonPasswordMismatch),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonPasswordMismatch, "reason")
+			},
+		},
+		"BootstrapUserSynced/Error": {
+			condition: StretchClusterBootstrapUserSynced,
+			reason:    string(StretchClusterBootstrapUserSyncedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonError, "reason")
+			},
+		},
+		"BootstrapUserSynced/TerminalError": {
+			condition: StretchClusterBootstrapUserSynced,
+			reason:    string(StretchClusterBootstrapUserSyncedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonTerminalError, "reason")
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewStretchCluster()
+
+			assertNoCondition(t, tt.condition, status.getConditions(0))
+			tt.setFn(status)
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.getConditions(0))
+		})
+	}
+
+	// final conditions tests
+	for name, conditionReason := range map[string]struct {
+		condition   string
+		trueReason  string
+		falseReason string
+	}{
+		"Quiesced": {
+			condition:   StretchClusterQuiesced,
+			trueReason:  string(StretchClusterQuiescedReasonQuiesced),
+			falseReason: string(StretchClusterQuiescedReasonStillReconciling),
+		},
+	} {
+		conditionReason := conditionReason
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewStretchCluster()
+
+			// attempt to set all conditions one by one until they are all set
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetReady(StretchClusterReadyReasonReady, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
+		})
+	}
+
+	// transient error tests
+	for name, tt := range map[string]struct {
+		setTransientErrFn   setStretchClusterFunc
+		setConditionReasons []setStretchClusterFunc
+	}{
+		"Transient Error: Error, Condition: Ready": {
+			setTransientErrFn: func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonError, "reason") },
+			setConditionReasons: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: Healthy": {
+			setTransientErrFn: func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonError, "reason") },
+			setConditionReasons: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: LicenseValid": {
+			setTransientErrFn: func(status *StretchClusterStatus) {
+				status.SetLicenseValid(StretchClusterLicenseValidReasonError, "reason")
+			},
+			setConditionReasons: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: ResourcesSynced": {
+			setTransientErrFn: func(status *StretchClusterStatus) {
+				status.SetResourcesSynced(StretchClusterResourcesSyncedReasonError, "reason")
+			},
+			setConditionReasons: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: ConfigurationApplied": {
+			setTransientErrFn: func(status *StretchClusterStatus) {
+				status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonError, "reason")
+			},
+			setConditionReasons: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: SpecSynced": {
+			setTransientErrFn: func(status *StretchClusterStatus) {
+				status.SetSpecSynced(StretchClusterSpecSyncedReasonError, "reason")
+			},
+			setConditionReasons: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: BootstrapUserSynced": {
+			setTransientErrFn: func(status *StretchClusterStatus) {
+				status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonError, "reason")
+			},
+			setConditionReasons: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewStretchCluster()
+
+			assertConditionStatusReason(t, StretchClusterQuiesced, metav1.ConditionFalse, string(StretchClusterQuiescedReasonStillReconciling), status.getConditions(0))
+
+			tt.setTransientErrFn(status)
+			for _, setFn := range tt.setConditionReasons {
+				setFn(status)
+			}
+
+			assertConditionStatusReason(t, StretchClusterQuiesced, metav1.ConditionFalse, string(StretchClusterQuiescedReasonStillReconciling), status.getConditions(0))
+		})
+	}
+
+	// terminal error tests
+	for name, setFn := range map[string]setStretchClusterFunc{
+		"Terminal Error: TerminalError, Condition: Ready": func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: Healthy": func(status *StretchClusterStatus) {
+			status.SetHealthy(StretchClusterHealthyReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: LicenseValid": func(status *StretchClusterStatus) {
+			status.SetLicenseValid(StretchClusterLicenseValidReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: ResourcesSynced": func(status *StretchClusterStatus) {
+			status.SetResourcesSynced(StretchClusterResourcesSyncedReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: ConfigurationApplied": func(status *StretchClusterStatus) {
+			status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: SpecSynced": func(status *StretchClusterStatus) {
+			status.SetSpecSynced(StretchClusterSpecSyncedReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: BootstrapUserSynced": func(status *StretchClusterStatus) {
+			status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonTerminalError, "reason")
+		},
+	} {
+		setFn := setFn
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewStretchCluster()
+
+			assertConditionStatusReason(t, StretchClusterQuiesced, metav1.ConditionFalse, string(StretchClusterQuiescedReasonStillReconciling), status.getConditions(0))
+
+			setFn(status)
+
+			assertConditionStatusReason(t, StretchClusterQuiesced, metav1.ConditionTrue, string(StretchClusterQuiescedReasonQuiesced), status.getConditions(0))
+		})
+	}
+
+	// rollup conditions tests
+	for name, tt := range map[string]struct {
+		condition      string
+		trueReason     string
+		falseReason    string
+		falseCondition setStretchClusterFunc
+		trueConditions []setStretchClusterFunc
+	}{
+		"Rollup Conditions: Stable, All True": {
+			condition:   StretchClusterStable,
+			trueReason:  string(StretchClusterStableReasonStable),
+			falseReason: string(StretchClusterStableReasonUnstable),
+			trueConditions: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: Ready": {
+			condition:      StretchClusterStable,
+			trueReason:     string(StretchClusterStableReasonStable),
+			falseReason:    string(StretchClusterStableReasonUnstable),
+			falseCondition: func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonTerminalError, "reason") },
+			trueConditions: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: ResourcesSynced": {
+			condition:   StretchClusterStable,
+			trueReason:  string(StretchClusterStableReasonStable),
+			falseReason: string(StretchClusterStableReasonUnstable),
+			falseCondition: func(status *StretchClusterStatus) {
+				status.SetResourcesSynced(StretchClusterResourcesSyncedReasonTerminalError, "reason")
+			},
+			trueConditions: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: ConfigurationApplied": {
+			condition:   StretchClusterStable,
+			trueReason:  string(StretchClusterStableReasonStable),
+			falseReason: string(StretchClusterStableReasonUnstable),
+			falseCondition: func(status *StretchClusterStatus) {
+				status.SetConfigurationApplied(StretchClusterConfigurationAppliedReasonTerminalError, "reason")
+			},
+			trueConditions: []setStretchClusterFunc{
+				func(status *StretchClusterStatus) { status.SetReady(StretchClusterReadyReasonReady, "reason") },
+				func(status *StretchClusterStatus) { status.SetHealthy(StretchClusterHealthyReasonHealthy, "reason") },
+				func(status *StretchClusterStatus) {
+					status.SetLicenseValid(StretchClusterLicenseValidReasonValid, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetResourcesSynced(StretchClusterResourcesSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetSpecSynced(StretchClusterSpecSyncedReasonSynced, "reason")
+				},
+				func(status *StretchClusterStatus) {
+					status.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedReasonSynced, "reason")
+				},
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewStretchCluster()
+
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+
+			if tt.falseCondition != nil {
+				tt.falseCondition(status)
+			}
+			for _, setFn := range tt.trueConditions {
+				setFn(status)
+			}
+
+			if tt.falseCondition != nil {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+			} else {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.getConditions(0))
+			}
+		})
+	}
+}
+
 type setNodePoolFunc func(status *NodePoolStatus)
 
 func TestNodePool(t *testing.T) {
