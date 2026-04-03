@@ -12,7 +12,6 @@ package redpanda
 import (
 	"context"
 	"io"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -62,15 +61,9 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	var kafkaCl *kgo.Client
 	var seedBroker string
 
-	defer os.Unsetenv("TESTCONTAINERS_RYUK_DISABLED")
-
 	testNamespace := "default"
 	{
-		if os.Getenv("CI") == "true" {
-			err := os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-			require.NoError(t, err)
-		}
-		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8")
+		container, err := redpanda.Run(ctx, "redpandadata/redpanda:v23.2.8")
 		require.NoError(t, err)
 
 		t.Cleanup(func() {
@@ -938,16 +931,11 @@ func TestUnsetStorageMode(t *testing.T) {
 	mgr := SetupTestManager(t, ctx, cfg, c)
 	factory := internalclient.NewFactory(mgr, nil)
 
-	defer os.Unsetenv("TESTCONTAINERS_RYUK_DISABLED")
-	if os.Getenv("CI") == "true" {
-		require.NoError(t, os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true"))
-	}
-
 	// Use the nightly build that surfaces the redpanda.storage.mode regression.
 	// The cluster default for redpanda.storage.mode is "unset". We'll explicitly
 	// set a topic to "local" via IncrementalAlterConfigs, making Redpanda track
 	// it as DYNAMIC_TOPIC_CONFIG (non-default source).
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b")
+	container, err := redpanda.Run(ctx, "redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b")
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		// Dump container logs for debugging
