@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redpanda-data/common-go/rp-controller-utils/status"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/rp-controller-utils/status"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -73,6 +73,74 @@ type ClusterQuiescedCondition string
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a cluster.
 type ClusterStableCondition string
+
+// StretchClusterReadyCondition - This condition indicates whether a stretch
+// cluster is ready to serve any traffic.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterReadyCondition string
+
+// StretchClusterHealthyCondition - This condition indicates whether a stretch
+// cluster is healthy as defined by the Redpanda Admin API's cluster health
+// endpoint.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterHealthyCondition string
+
+// StretchClusterLicenseValidCondition - This condition indicates whether a
+// stretch cluster has a valid license.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterLicenseValidCondition string
+
+// StretchClusterResourcesSyncedCondition - This condition indicates whether the
+// Kubernetes resources for a stretch cluster have been synchronized.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterResourcesSyncedCondition string
+
+// StretchClusterConfigurationAppliedCondition - This condition indicates
+// whether cluster configuration parameters have currently been applied to a
+// stretch cluster for the given generation.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterConfigurationAppliedCondition string
+
+// StretchClusterSpecSyncedCondition - This condition indicates whether the
+// StretchCluster spec is consistent across all participating Kubernetes
+// clusters.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterSpecSyncedCondition string
+
+// StretchClusterBootstrapUserSyncedCondition - This condition indicates whether
+// the bootstrap superuser secret has been distributed to all participating
+// Kubernetes clusters.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterBootstrapUserSyncedCondition string
+
+// StretchClusterQuiescedCondition - This condition is used to indicate that the
+// stretch cluster is no longer reconciling due to it being in a finalized state
+// for the current generation.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterQuiescedCondition string
+
+// StretchClusterStableCondition - This condition is used as a roll-up status
+// for any sort of automation such as terraform.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a cluster.
+type StretchClusterStableCondition string
 
 // NodePoolBoundCondition - This condition indicates whether a node pool is
 // bound to a known Redpanda cluster.
@@ -271,6 +339,234 @@ const (
 	// when it evaluates to True because at least one dependent condition evaluates
 	// to False.
 	ClusterStableReasonUnstable ClusterStableCondition = "Unstable"
+	// StretchClusterReady - This condition indicates whether a stretch cluster is
+	// ready to serve any traffic.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterReady = "Ready"
+	// StretchClusterReadyReasonReady - This reason is used with the "Ready"
+	// condition when it evaluates to True because a cluster can service traffic.
+	StretchClusterReadyReasonReady StretchClusterReadyCondition = "Ready"
+	// StretchClusterReadyReasonNotReady - This reason is used with the "Ready"
+	// condition when it evaluates to False because a cluster is not ready to
+	// service traffic.
+	StretchClusterReadyReasonNotReady StretchClusterReadyCondition = "NotReady"
+	// StretchClusterReadyReasonError - This reason is used when a stretch cluster
+	// has only been partially reconciled and we have early returned due to a
+	// retryable error occurring prior to applying the desired cluster state. If it
+	// is set on any non-final condition, then the condition "Quiesced" will be
+	// False with a reason of "StillReconciling".
+	StretchClusterReadyReasonError StretchClusterReadyCondition = "Error"
+	// StretchClusterReadyReasonTerminalError - This reason is used when a stretch
+	// cluster has only been partially reconciled and we have early returned due to
+	// a known terminal error occurring prior to applying the desired cluster state.
+	// Because the cluster should no longer be reconciled when a terminal error
+	// occurs, the "Quiesced" status should be set to True.
+	StretchClusterReadyReasonTerminalError StretchClusterReadyCondition = "TerminalError"
+
+	// StretchClusterHealthy - This condition indicates whether a stretch cluster is
+	// healthy as defined by the Redpanda Admin API's cluster health endpoint.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterHealthy = "Healthy"
+	// StretchClusterHealthyReasonHealthy - This reason is used with the "Healthy"
+	// condition when it evaluates to True because a cluster's health endpoint says
+	// the cluster is healthy.
+	StretchClusterHealthyReasonHealthy StretchClusterHealthyCondition = "Healthy"
+	// StretchClusterHealthyReasonNotHealthy - This reason is used with the
+	// "Healthy" condition when it evaluates to False because a cluster's health
+	// endpoint says the cluster is not healthy.
+	StretchClusterHealthyReasonNotHealthy StretchClusterHealthyCondition = "NotHealthy"
+	// StretchClusterHealthyReasonError - This reason is used when a stretch cluster
+	// has only been partially reconciled and we have early returned due to a
+	// retryable error occurring prior to applying the desired cluster state. If it
+	// is set on any non-final condition, then the condition "Quiesced" will be
+	// False with a reason of "StillReconciling".
+	StretchClusterHealthyReasonError StretchClusterHealthyCondition = "Error"
+	// StretchClusterHealthyReasonTerminalError - This reason is used when a stretch
+	// cluster has only been partially reconciled and we have early returned due to
+	// a known terminal error occurring prior to applying the desired cluster state.
+	// Because the cluster should no longer be reconciled when a terminal error
+	// occurs, the "Quiesced" status should be set to True.
+	StretchClusterHealthyReasonTerminalError StretchClusterHealthyCondition = "TerminalError"
+
+	// StretchClusterLicenseValid - This condition indicates whether a stretch
+	// cluster has a valid license.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterLicenseValid = "LicenseValid"
+	// StretchClusterLicenseValidReasonValid - This reason is used with the
+	// "LicenseValid" condition when it evaluates to True because a cluster has a
+	// valid license.
+	StretchClusterLicenseValidReasonValid StretchClusterLicenseValidCondition = "Valid"
+	// StretchClusterLicenseValidReasonExpired - This reason is used with the
+	// "LicenseValid" condition when it evaluates to False because a cluster has an
+	// expired license.
+	StretchClusterLicenseValidReasonExpired StretchClusterLicenseValidCondition = "Expired"
+	// StretchClusterLicenseValidReasonNotPresent - This reason is used with the
+	// "LicenseValid" condition when it evaluates to False because a cluster has no
+	// license.
+	StretchClusterLicenseValidReasonNotPresent StretchClusterLicenseValidCondition = "NotPresent"
+	// StretchClusterLicenseValidReasonError - This reason is used when a stretch
+	// cluster has only been partially reconciled and we have early returned due to
+	// a retryable error occurring prior to applying the desired cluster state. If
+	// it is set on any non-final condition, then the condition "Quiesced" will be
+	// False with a reason of "StillReconciling".
+	StretchClusterLicenseValidReasonError StretchClusterLicenseValidCondition = "Error"
+	// StretchClusterLicenseValidReasonTerminalError - This reason is used when a
+	// stretch cluster has only been partially reconciled and we have early returned
+	// due to a known terminal error occurring prior to applying the desired cluster
+	// state. Because the cluster should no longer be reconciled when a terminal
+	// error occurs, the "Quiesced" status should be set to True.
+	StretchClusterLicenseValidReasonTerminalError StretchClusterLicenseValidCondition = "TerminalError"
+
+	// StretchClusterResourcesSynced - This condition indicates whether the
+	// Kubernetes resources for a stretch cluster have been synchronized.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterResourcesSynced = "ResourcesSynced"
+	// StretchClusterResourcesSyncedReasonSynced - This reason is used with the
+	// "ResourcesSynced" condition when it evaluates to True because a cluster has
+	// had all of its Kubernetes resources synced.
+	StretchClusterResourcesSyncedReasonSynced StretchClusterResourcesSyncedCondition = "Synced"
+	// StretchClusterResourcesSyncedReasonError - This reason is used when a stretch
+	// cluster has only been partially reconciled and we have early returned due to
+	// a retryable error occurring prior to applying the desired cluster state. If
+	// it is set on any non-final condition, then the condition "Quiesced" will be
+	// False with a reason of "StillReconciling".
+	StretchClusterResourcesSyncedReasonError StretchClusterResourcesSyncedCondition = "Error"
+	// StretchClusterResourcesSyncedReasonTerminalError - This reason is used when a
+	// stretch cluster has only been partially reconciled and we have early returned
+	// due to a known terminal error occurring prior to applying the desired cluster
+	// state. Because the cluster should no longer be reconciled when a terminal
+	// error occurs, the "Quiesced" status should be set to True.
+	StretchClusterResourcesSyncedReasonTerminalError StretchClusterResourcesSyncedCondition = "TerminalError"
+
+	// StretchClusterConfigurationApplied - This condition indicates whether cluster
+	// configuration parameters have currently been applied to a stretch cluster for
+	// the given generation.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterConfigurationApplied = "ConfigurationApplied"
+	// StretchClusterConfigurationAppliedReasonApplied - This reason is used with
+	// the "ConfigurationApplied" condition when it evaluates to True because a
+	// cluster has had its cluster configuration parameters applied.
+	StretchClusterConfigurationAppliedReasonApplied StretchClusterConfigurationAppliedCondition = "Applied"
+	// StretchClusterConfigurationAppliedReasonNotApplied - This reason is used with
+	// the "ConfigurationApplied" condition when it evaluates to False due to some
+	// implementation-specific condition, such as when no brokers have been created
+	// and thus we can't attempt a configuration.
+	StretchClusterConfigurationAppliedReasonNotApplied StretchClusterConfigurationAppliedCondition = "NotApplied"
+	// StretchClusterConfigurationAppliedReasonError - This reason is used when a
+	// stretch cluster has only been partially reconciled and we have early returned
+	// due to a retryable error occurring prior to applying the desired cluster
+	// state. If it is set on any non-final condition, then the condition "Quiesced"
+	// will be False with a reason of "StillReconciling".
+	StretchClusterConfigurationAppliedReasonError StretchClusterConfigurationAppliedCondition = "Error"
+	// StretchClusterConfigurationAppliedReasonTerminalError - This reason is used
+	// when a stretch cluster has only been partially reconciled and we have early
+	// returned due to a known terminal error occurring prior to applying the
+	// desired cluster state. Because the cluster should no longer be reconciled
+	// when a terminal error occurs, the "Quiesced" status should be set to True.
+	StretchClusterConfigurationAppliedReasonTerminalError StretchClusterConfigurationAppliedCondition = "TerminalError"
+
+	// StretchClusterSpecSynced - This condition indicates whether the
+	// StretchCluster spec is consistent across all participating Kubernetes
+	// clusters.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterSpecSynced = "SpecSynced"
+	// StretchClusterSpecSyncedReasonSynced - This reason is used with the
+	// "SpecSynced" condition when it evaluates to True because the StretchCluster
+	// spec is identical in every cluster.
+	StretchClusterSpecSyncedReasonSynced StretchClusterSpecSyncedCondition = "Synced"
+	// StretchClusterSpecSyncedReasonDriftDetected - This reason is used with the
+	// "SpecSynced" condition when it evaluates to False because the StretchCluster
+	// spec differs between clusters. Reconciliation is blocked until specs are
+	// aligned.
+	StretchClusterSpecSyncedReasonDriftDetected StretchClusterSpecSyncedCondition = "DriftDetected"
+	// StretchClusterSpecSyncedReasonError - This reason is used when a stretch
+	// cluster has only been partially reconciled and we have early returned due to
+	// a retryable error occurring prior to applying the desired cluster state. If
+	// it is set on any non-final condition, then the condition "Quiesced" will be
+	// False with a reason of "StillReconciling".
+	StretchClusterSpecSyncedReasonError StretchClusterSpecSyncedCondition = "Error"
+	// StretchClusterSpecSyncedReasonTerminalError - This reason is used when a
+	// stretch cluster has only been partially reconciled and we have early returned
+	// due to a known terminal error occurring prior to applying the desired cluster
+	// state. Because the cluster should no longer be reconciled when a terminal
+	// error occurs, the "Quiesced" status should be set to True.
+	StretchClusterSpecSyncedReasonTerminalError StretchClusterSpecSyncedCondition = "TerminalError"
+
+	// StretchClusterBootstrapUserSynced - This condition indicates whether the
+	// bootstrap superuser secret has been distributed to all participating
+	// Kubernetes clusters.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterBootstrapUserSynced = "BootstrapUserSynced"
+	// StretchClusterBootstrapUserSyncedReasonSynced - This reason is used with the
+	// "BootstrapUserSynced" condition when it evaluates to True because a new
+	// bootstrap user secret was generated and distributed to all clusters.
+	StretchClusterBootstrapUserSyncedReasonSynced StretchClusterBootstrapUserSyncedCondition = "Synced"
+	// StretchClusterBootstrapUserSyncedReasonExistingReused - This reason is used
+	// with the "BootstrapUserSynced" condition when it evaluates to True because an
+	// existing bootstrap user secret was found and reused.
+	StretchClusterBootstrapUserSyncedReasonExistingReused StretchClusterBootstrapUserSyncedCondition = "ExistingReused"
+	// StretchClusterBootstrapUserSyncedReasonPasswordMismatch - This reason is used
+	// with the "BootstrapUserSynced" condition when it evaluates to False because
+	// bootstrap user secrets in different clusters have mismatched passwords.
+	// Manual intervention is required.
+	StretchClusterBootstrapUserSyncedReasonPasswordMismatch StretchClusterBootstrapUserSyncedCondition = "PasswordMismatch"
+	// StretchClusterBootstrapUserSyncedReasonError - This reason is used when a
+	// stretch cluster has only been partially reconciled and we have early returned
+	// due to a retryable error occurring prior to applying the desired cluster
+	// state. If it is set on any non-final condition, then the condition "Quiesced"
+	// will be False with a reason of "StillReconciling".
+	StretchClusterBootstrapUserSyncedReasonError StretchClusterBootstrapUserSyncedCondition = "Error"
+	// StretchClusterBootstrapUserSyncedReasonTerminalError - This reason is used
+	// when a stretch cluster has only been partially reconciled and we have early
+	// returned due to a known terminal error occurring prior to applying the
+	// desired cluster state. Because the cluster should no longer be reconciled
+	// when a terminal error occurs, the "Quiesced" status should be set to True.
+	StretchClusterBootstrapUserSyncedReasonTerminalError StretchClusterBootstrapUserSyncedCondition = "TerminalError"
+
+	// StretchClusterQuiesced - This condition is used to indicate that the stretch
+	// cluster is no longer reconciling due to it being in a finalized state for the
+	// current generation.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterQuiesced = "Quiesced"
+	// StretchClusterQuiescedReasonQuiesced - This reason is used with the
+	// "Quiesced" condition when it evaluates to True because the operator has
+	// finished reconciling the cluster at its current generation.
+	StretchClusterQuiescedReasonQuiesced StretchClusterQuiescedCondition = "Quiesced"
+	// StretchClusterQuiescedReasonStillReconciling - This reason is used with the
+	// "Quiesced" condition when it evaluates to False because the operator has not
+	// finished reconciling the cluster at its current generation.
+	StretchClusterQuiescedReasonStillReconciling StretchClusterQuiescedCondition = "StillReconciling"
+
+	// StretchClusterStable - This condition is used as a roll-up status for any
+	// sort of automation such as terraform.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a cluster.
+	StretchClusterStable = "Stable"
+	// StretchClusterStableReasonStable - This reason is used with the "Stable"
+	// condition when it evaluates to True because all dependent conditions also
+	// evaluate to True.
+	StretchClusterStableReasonStable StretchClusterStableCondition = "Stable"
+	// StretchClusterStableReasonUnstable - This reason is used with the "Stable"
+	// condition when it evaluates to True because at least one dependent condition
+	// evaluates to False.
+	StretchClusterStableReasonUnstable StretchClusterStableCondition = "Unstable"
 	// NodePoolBound - This condition indicates whether a node pool is bound to a
 	// known Redpanda cluster.
 	//
@@ -378,8 +674,6 @@ func (s *ClusterStatus) UpdateConditions(o client.Object) bool {
 	switch kind := o.(type) {
 	case *redpandav1alpha2.Redpanda:
 		conditions = &kind.Status.Conditions
-	case *redpandav1alpha2.StretchCluster:
-		conditions = &kind.Status.Conditions
 	default:
 		panic("unsupported kind")
 	}
@@ -399,8 +693,6 @@ func (s *ClusterStatus) StatusConditionConfigs(o client.Object) []*applymetav1.C
 	var conditions []metav1.Condition
 	switch kind := o.(type) {
 	case *redpandav1alpha2.Redpanda:
-		conditions = kind.Status.Conditions
-	case *redpandav1alpha2.StretchCluster:
 		conditions = kind.Status.Conditions
 	default:
 		panic("unsupported kind")
@@ -762,6 +1054,529 @@ func (s *ClusterStatus) getStable(conditions []metav1.Condition) metav1.Conditio
 		Type:    ClusterStable,
 		Status:  metav1.ConditionFalse,
 		Reason:  string(ClusterStableReasonUnstable),
+		Message: "Cluster Unstable",
+	}
+}
+
+// StretchClusterStatus - Defines the observed status conditions of a stretch
+// cluster.
+type StretchClusterStatus struct {
+	conditions                           []metav1.Condition
+	hasTerminalError                     bool
+	isReadySet                           bool
+	isReadyTransientError                bool
+	isHealthySet                         bool
+	isHealthyTransientError              bool
+	isLicenseValidSet                    bool
+	isLicenseValidTransientError         bool
+	isResourcesSyncedSet                 bool
+	isResourcesSyncedTransientError      bool
+	isConfigurationAppliedSet            bool
+	isConfigurationAppliedTransientError bool
+	isSpecSyncedSet                      bool
+	isSpecSyncedTransientError           bool
+	isBootstrapUserSyncedSet             bool
+	isBootstrapUserSyncedTransientError  bool
+}
+
+// NewStretchCluster() returns a new StretchClusterStatus
+func NewStretchCluster() *StretchClusterStatus {
+	return &StretchClusterStatus{}
+}
+
+// UpdateConditions updates any conditions for the passed in object that need to be updated.
+func (s *StretchClusterStatus) UpdateConditions(o client.Object) bool {
+	var conditions *[]metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.StretchCluster:
+		conditions = &kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	updated := false
+	for _, condition := range s.getRateLimitedConditions(o.GetGeneration()) {
+		if setStatusCondition(conditions, condition) {
+			updated = true
+		}
+	}
+
+	return updated
+}
+
+// StatusConditionConfigs returns a set of configurations that can be used with Server Side Apply.
+func (s *StretchClusterStatus) StatusConditionConfigs(o client.Object) []*applymetav1.ConditionApplyConfiguration {
+	var conditions []metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.StretchCluster:
+		conditions = kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	return status.ConditionApplyConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+}
+
+// getRateLimit returns the rate limiting configuration for a given condition
+func (s *StretchClusterStatus) getRateLimit(conditionType string) time.Duration {
+	switch conditionType {
+	case StretchClusterLicenseValid:
+		return time.Minute
+	case StretchClusterConfigurationApplied:
+		return time.Minute
+	}
+	return 0
+}
+
+// getRateLimitedConditions returns the rate limited aggregated status conditions of the StretchClusterStatus.
+func (s *StretchClusterStatus) getRateLimitedConditions(generation int64) []ratelimitedCondition {
+	conditions := []ratelimitedCondition{}
+
+	for _, condition := range s.getConditions(generation) {
+		conditions = append(conditions, ratelimitedCondition{
+			condition: condition,
+			rate:      s.getRateLimit(condition.Type),
+		})
+	}
+
+	return conditions
+}
+
+// conditions returns the aggregated status conditions of the StretchClusterStatus.
+func (s *StretchClusterStatus) getConditions(generation int64) []metav1.Condition {
+	conditions := append([]metav1.Condition{}, s.conditions...)
+	conditions = append(conditions, s.getQuiesced())
+	conditions = append(conditions, s.getStable(conditions))
+
+	for i, condition := range conditions {
+		condition.ObservedGeneration = generation
+		conditions[i] = condition
+	}
+
+	return conditions
+}
+
+// SetReadyFromCurrent sets the underlying condition based on an existing object.
+func (s *StretchClusterStatus) SetReadyFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), StretchClusterReady)
+	if condition == nil {
+		return
+	}
+
+	s.SetReady(StretchClusterReadyCondition(condition.Reason), condition.Message)
+}
+
+// SetReady sets the underlying condition to the given reason.
+func (s *StretchClusterStatus) SetReady(reason StretchClusterReadyCondition, messages ...string) {
+	if s.isReadySet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isReadySet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case StretchClusterReadyReasonReady:
+		if message == "" {
+			message = "Cluster ready to service requests"
+		}
+		status = metav1.ConditionTrue
+	case StretchClusterReadyReasonNotReady:
+		status = metav1.ConditionFalse
+	case StretchClusterReadyReasonError:
+		s.isReadyTransientError = true
+		status = metav1.ConditionFalse
+	case StretchClusterReadyReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    StretchClusterReady,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetHealthyFromCurrent sets the underlying condition based on an existing object.
+func (s *StretchClusterStatus) SetHealthyFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), StretchClusterHealthy)
+	if condition == nil {
+		return
+	}
+
+	s.SetHealthy(StretchClusterHealthyCondition(condition.Reason), condition.Message)
+}
+
+// SetHealthy sets the underlying condition to the given reason.
+func (s *StretchClusterStatus) SetHealthy(reason StretchClusterHealthyCondition, messages ...string) {
+	if s.isHealthySet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isHealthySet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case StretchClusterHealthyReasonHealthy:
+		if message == "" {
+			message = "Cluster is healthy"
+		}
+		status = metav1.ConditionTrue
+	case StretchClusterHealthyReasonNotHealthy:
+		status = metav1.ConditionFalse
+	case StretchClusterHealthyReasonError:
+		s.isHealthyTransientError = true
+		status = metav1.ConditionFalse
+	case StretchClusterHealthyReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    StretchClusterHealthy,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetLicenseValidFromCurrent sets the underlying condition based on an existing object.
+func (s *StretchClusterStatus) SetLicenseValidFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), StretchClusterLicenseValid)
+	if condition == nil {
+		return
+	}
+
+	s.SetLicenseValid(StretchClusterLicenseValidCondition(condition.Reason), condition.Message)
+}
+
+// SetLicenseValid sets the underlying condition to the given reason.
+func (s *StretchClusterStatus) SetLicenseValid(reason StretchClusterLicenseValidCondition, messages ...string) {
+	if s.isLicenseValidSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isLicenseValidSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case StretchClusterLicenseValidReasonValid:
+		if message == "" {
+			message = "Cluster has a valid license"
+		}
+		status = metav1.ConditionTrue
+	case StretchClusterLicenseValidReasonExpired:
+		if message == "" {
+			message = "Cluster license has expired"
+		}
+		status = metav1.ConditionFalse
+	case StretchClusterLicenseValidReasonNotPresent:
+		if message == "" {
+			message = "No cluster license is present"
+		}
+		status = metav1.ConditionFalse
+	case StretchClusterLicenseValidReasonError:
+		s.isLicenseValidTransientError = true
+		status = metav1.ConditionFalse
+	case StretchClusterLicenseValidReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    StretchClusterLicenseValid,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetResourcesSyncedFromCurrent sets the underlying condition based on an existing object.
+func (s *StretchClusterStatus) SetResourcesSyncedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), StretchClusterResourcesSynced)
+	if condition == nil {
+		return
+	}
+
+	s.SetResourcesSynced(StretchClusterResourcesSyncedCondition(condition.Reason), condition.Message)
+}
+
+// SetResourcesSynced sets the underlying condition to the given reason.
+func (s *StretchClusterStatus) SetResourcesSynced(reason StretchClusterResourcesSyncedCondition, messages ...string) {
+	if s.isResourcesSyncedSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isResourcesSyncedSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case StretchClusterResourcesSyncedReasonSynced:
+		if message == "" {
+			message = "Cluster resources successfully synced"
+		}
+		status = metav1.ConditionTrue
+	case StretchClusterResourcesSyncedReasonError:
+		s.isResourcesSyncedTransientError = true
+		status = metav1.ConditionFalse
+	case StretchClusterResourcesSyncedReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    StretchClusterResourcesSynced,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetConfigurationAppliedFromCurrent sets the underlying condition based on an existing object.
+func (s *StretchClusterStatus) SetConfigurationAppliedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), StretchClusterConfigurationApplied)
+	if condition == nil {
+		return
+	}
+
+	s.SetConfigurationApplied(StretchClusterConfigurationAppliedCondition(condition.Reason), condition.Message)
+}
+
+// SetConfigurationApplied sets the underlying condition to the given reason.
+func (s *StretchClusterStatus) SetConfigurationApplied(reason StretchClusterConfigurationAppliedCondition, messages ...string) {
+	if s.isConfigurationAppliedSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isConfigurationAppliedSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case StretchClusterConfigurationAppliedReasonApplied:
+		if message == "" {
+			message = "Cluster configuration successfully applied"
+		}
+		status = metav1.ConditionTrue
+	case StretchClusterConfigurationAppliedReasonNotApplied:
+		if message == "" {
+			message = "Cluster configuration not applied"
+		}
+		status = metav1.ConditionFalse
+	case StretchClusterConfigurationAppliedReasonError:
+		s.isConfigurationAppliedTransientError = true
+		status = metav1.ConditionFalse
+	case StretchClusterConfigurationAppliedReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    StretchClusterConfigurationApplied,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetSpecSyncedFromCurrent sets the underlying condition based on an existing object.
+func (s *StretchClusterStatus) SetSpecSyncedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), StretchClusterSpecSynced)
+	if condition == nil {
+		return
+	}
+
+	s.SetSpecSynced(StretchClusterSpecSyncedCondition(condition.Reason), condition.Message)
+}
+
+// SetSpecSynced sets the underlying condition to the given reason.
+func (s *StretchClusterStatus) SetSpecSynced(reason StretchClusterSpecSyncedCondition, messages ...string) {
+	if s.isSpecSyncedSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isSpecSyncedSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case StretchClusterSpecSyncedReasonSynced:
+		if message == "" {
+			message = "Spec is consistent across all clusters"
+		}
+		status = metav1.ConditionTrue
+	case StretchClusterSpecSyncedReasonDriftDetected:
+		status = metav1.ConditionFalse
+	case StretchClusterSpecSyncedReasonError:
+		s.isSpecSyncedTransientError = true
+		status = metav1.ConditionFalse
+	case StretchClusterSpecSyncedReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    StretchClusterSpecSynced,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetBootstrapUserSyncedFromCurrent sets the underlying condition based on an existing object.
+func (s *StretchClusterStatus) SetBootstrapUserSyncedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), StretchClusterBootstrapUserSynced)
+	if condition == nil {
+		return
+	}
+
+	s.SetBootstrapUserSynced(StretchClusterBootstrapUserSyncedCondition(condition.Reason), condition.Message)
+}
+
+// SetBootstrapUserSynced sets the underlying condition to the given reason.
+func (s *StretchClusterStatus) SetBootstrapUserSynced(reason StretchClusterBootstrapUserSyncedCondition, messages ...string) {
+	if s.isBootstrapUserSyncedSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isBootstrapUserSyncedSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case StretchClusterBootstrapUserSyncedReasonSynced:
+		if message == "" {
+			message = "Bootstrap user secret synced across all clusters"
+		}
+		status = metav1.ConditionTrue
+	case StretchClusterBootstrapUserSyncedReasonExistingReused:
+		if message == "" {
+			message = "Existing bootstrap user secret reused"
+		}
+		status = metav1.ConditionFalse
+	case StretchClusterBootstrapUserSyncedReasonPasswordMismatch:
+		status = metav1.ConditionFalse
+	case StretchClusterBootstrapUserSyncedReasonError:
+		s.isBootstrapUserSyncedTransientError = true
+		status = metav1.ConditionFalse
+	case StretchClusterBootstrapUserSyncedReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    StretchClusterBootstrapUserSynced,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+func (s *StretchClusterStatus) getQuiesced() metav1.Condition {
+	transientErrorConditionsSet := s.isReadyTransientError || s.isHealthyTransientError || s.isLicenseValidTransientError || s.isResourcesSyncedTransientError || s.isConfigurationAppliedTransientError || s.isSpecSyncedTransientError || s.isBootstrapUserSyncedTransientError
+	allConditionsSet := s.isReadySet && s.isHealthySet && s.isLicenseValidSet && s.isResourcesSyncedSet && s.isConfigurationAppliedSet && s.isSpecSyncedSet && s.isBootstrapUserSyncedSet
+
+	if (allConditionsSet || s.hasTerminalError) && !transientErrorConditionsSet {
+		return metav1.Condition{
+			Type:    StretchClusterQuiesced,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(StretchClusterQuiescedReasonQuiesced),
+			Message: "Cluster reconciliation finished",
+		}
+	}
+
+	return metav1.Condition{
+		Type:    StretchClusterQuiesced,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(StretchClusterQuiescedReasonStillReconciling),
+		Message: "Cluster still reconciling",
+	}
+}
+
+func (s *StretchClusterStatus) getStable(conditions []metav1.Condition) metav1.Condition {
+	allConditionsFoundAndTrue := true
+	for _, condition := range []string{StretchClusterQuiesced, StretchClusterReady, StretchClusterResourcesSynced, StretchClusterConfigurationApplied} {
+		conditionFoundAndTrue := false
+		for _, setCondition := range conditions {
+			if setCondition.Type == condition {
+				conditionFoundAndTrue = setCondition.Status == metav1.ConditionTrue
+				break
+			}
+		}
+		if !conditionFoundAndTrue {
+			allConditionsFoundAndTrue = false
+			break
+		}
+	}
+
+	if allConditionsFoundAndTrue {
+		return metav1.Condition{
+			Type:    StretchClusterStable,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(StretchClusterStableReasonStable),
+			Message: "Cluster Stable",
+		}
+	}
+
+	return metav1.Condition{
+		Type:    StretchClusterStable,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(StretchClusterStableReasonUnstable),
 		Message: "Cluster Unstable",
 	}
 }

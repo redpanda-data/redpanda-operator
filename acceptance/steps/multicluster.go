@@ -191,7 +191,7 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 				t.Logf("error fetching StretchCluster from %s: %v", node.Name(), err)
 				return false
 			}
-			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, "SpecSynced")
 			if cond == nil {
 				t.Logf("SpecSynced condition not yet present on %s", node.Name())
 				return false

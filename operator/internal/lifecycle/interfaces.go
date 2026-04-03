@@ -28,8 +28,10 @@ import (
 type ClusterStatus struct {
 	// Pools contains the status for each of our pools
 	Pools []PoolStatus
-	// Status is a generated status conditions container for clusters
+	// Status is a generated status conditions container for single-cluster Redpanda
 	Status *statuses.ClusterStatus
+	// StretchClusterStatus is a generated status conditions container for stretch clusters
+	StretchClusterStatus *statuses.StretchClusterStatus
 	// ConfigVersion is the configuration version from the cluster if one
 	// has been determined this reconciliation loop
 	ConfigVersion *string
@@ -69,6 +71,13 @@ type PoolStatus struct {
 func NewClusterStatus() *ClusterStatus {
 	return &ClusterStatus{
 		Status: statuses.NewCluster(),
+	}
+}
+
+// NewStretchClusterStatus creates a stretch cluster status object to be used in reconciliation
+func NewStretchClusterStatus() *ClusterStatus {
+	return &ClusterStatus{
+		StretchClusterStatus: statuses.NewStretchCluster(),
 	}
 }
 

@@ -21,7 +21,7 @@ func NewStretchClusterStatusUpdater() *StretchClusterStatusUpdater {
 
 // Update updates the given Redpanda v2 cluster with the given cluster status.
 func (m *StretchClusterStatusUpdater) Update(cluster *StretchClusterWithPools, status *ClusterStatus) bool {
-	dirty := status.Status.UpdateConditions(cluster.StretchCluster)
+	dirty := status.StretchClusterStatus.UpdateConditions(cluster.StretchCluster)
 
 	for _, pool := range status.Pools {
 		if setAndDirtyCheckPools(&cluster.Status.NodePools, pool) {
