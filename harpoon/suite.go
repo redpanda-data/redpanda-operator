@@ -14,6 +14,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -323,11 +324,13 @@ type Suite struct {
 // makeGodogSuite creates a godog.TestSuite for the given feature contents.
 // If suiteInit is non-nil, it is used as the TestSuiteInitializer (for setup/teardown);
 // otherwise no suite-level hooks are registered.
+// An optional output writer can be provided; if nil, the suite's base output is used.
 func (s *Suite) makeGodogSuite(
 	name string,
 	tracker *tracking.FeatureHookTracker,
 	features []godog.Feature,
 	suiteInit func(*godog.TestSuiteContext),
+	output ...io.Writer,
 ) *godog.TestSuite {
 	opts := tracker.RegisterFormatter(s.baseOpts)
 	opts.DefaultContext = s.ctx
@@ -335,6 +338,9 @@ func (s *Suite) makeGodogSuite(
 	// Only use in-memory feature contents; don't discover from disk.
 	opts.Paths = []string{}
 	opts.FeatureContents = features
+	if len(output) > 0 && output[0] != nil {
+		opts.Output = output[0]
+	}
 
 	return &godog.TestSuite{
 		Name:                 name,
@@ -575,15 +581,24 @@ func (s *Suite) RunT(t *testing.T) {
 	var suiteFailed bool
 
 	// Phase 2: Run parallel features concurrently.
+	// Each parallel suite gets its own output buffer to avoid data races.
+	var featureLogs []bytes.Buffer
+	if s.output != "" {
+		featureLogs = make([]bytes.Buffer, len(parallelFeatures))
+	}
 	var wg sync.WaitGroup
-	for _, f := range parallelFeatures {
+	for i, f := range parallelFeatures {
 		wg.Add(1)
-		go func(fc featureContent) {
+		go func(idx int, fc featureContent) {
 			defer wg.Done()
 
 			tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
 			gf := []godog.Feature{{Name: fc.name, Contents: fc.contents}}
-			suite := s.makeGodogSuite(fc.name, tracker, gf, nil)
+			var out io.Writer
+			if s.output != "" {
+				out = &featureLogs[idx]
+			}
+			suite := s.makeGodogSuite(fc.name, tracker, gf, nil, out)
 			suite.Options.TestingT = t
 			suite.Run()
 			if tracker.SuiteFailed() {
@@ -591,9 +606,14 @@ func (s *Suite) RunT(t *testing.T) {
 				suiteFailed = true
 				termMu.Unlock()
 			}
-		}(f)
+		}(i, f)
 	}
 	wg.Wait()
+
+	// Merge parallel feature logs into the main test log.
+	for i := range featureLogs {
+		testLog.Write(featureLogs[i].Bytes())
+	}
 
 	// Phase 3: Run serial features sequentially.
 	if len(serialFeatures) > 0 {

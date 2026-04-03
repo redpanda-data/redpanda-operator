@@ -38,9 +38,11 @@ tasks:
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:acceptance:
+    env:
+      ACCEPTANCE_ARTIFACTS_DIR: '{{.SRC_DIR}}/artifacts/acceptance-diagnostics'
     cmds:
       - defer: 'kind delete clusters --all'
-      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/**/*"'
       - 'echo "--- Running acceptance tests"'
       - task: :test:acceptance
         vars:

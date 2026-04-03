@@ -13,7 +13,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/cucumber/godog"
@@ -107,6 +110,7 @@ type TestingT struct {
 	options       *TestingOptions
 	failure       bool
 	messagePrefix string
+	featureName   string
 }
 
 func NewTesting(ctx context.Context, options *TestingOptions, cleaner *Cleaner) *TestingT {
@@ -319,9 +323,29 @@ func (t *TestingT) SetNamespace(namespace string) {
 	t.options.KubectlOptions.Namespace = namespace
 }
 
+// SetFeatureName sets the feature name for this test context.
+func (t *TestingT) SetFeatureName(name string) {
+	t.featureName = name
+}
+
+// FeatureName returns the feature name for this test context.
+func (t *TestingT) FeatureName() string {
+	return t.featureName
+}
+
 // IsolateNamespace creates a temporary namespace for the tests in this scope to run.
+// If a feature name has been set, it is included in the namespace name for easier debugging.
 func (t *TestingT) IsolateNamespace(ctx context.Context) string {
-	namespace := AddRandomSuffixTo("testing")
+	prefix := "testing"
+	if t.featureName != "" {
+		prefix = "test-" + sanitizeForK8s(t.featureName)
+	}
+	namespace := AddRandomSuffixTo(prefix)
+
+	// Kubernetes namespace names must be at most 63 characters.
+	if len(namespace) > 63 {
+		namespace = namespace[:63]
+	}
 
 	require.NoError(t, createNamespace(ctx, t.options.SchemeRegisterers, namespace, t.options.KubectlOptions))
 
@@ -336,6 +360,16 @@ func (t *TestingT) IsolateNamespace(ctx context.Context) string {
 	})
 
 	return namespace
+}
+
+var nonAlphanumeric = regexp.MustCompile(`[^a-z0-9]+`)
+
+// sanitizeForK8s converts a string to a Kubernetes-safe name component.
+func sanitizeForK8s(s string) string {
+	s = strings.ToLower(s)
+	s = nonAlphanumeric.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	return s
 }
 
 // MarkVariant marks the test with a variant tag that can be fetched later on.
@@ -404,6 +438,96 @@ func (t *TestingT) VCluster(ctx context.Context) string {
 func (t *TestingT) RequireCondition(expected metav1.Condition, conditions []metav1.Condition) {
 	if !t.HasCondition(expected, conditions) {
 		t.Fatalf("condition: %+v not found in conditions: %+v", expected, conditions)
+	}
+}
+
+// DumpDiagnostics collects Kubernetes diagnostic information for the current
+// namespace. If the ACCEPTANCE_ARTIFACTS_DIR environment variable is set,
+// diagnostics are written to files under that directory; otherwise they are
+// logged via t.Log.
+func (t *TestingT) DumpDiagnostics(ctx context.Context) {
+	namespace := t.Namespace()
+	featureName := sanitizeForK8s(t.featureName)
+	if featureName == "" {
+		featureName = "unknown"
+	}
+
+	kubectlOpts := t.options.KubectlOptions
+
+	type diagnostic struct {
+		name string
+		args []string
+	}
+
+	diagnostics := []diagnostic{
+		{"pods", []string{"get", "pods", "-o", "wide"}},
+		{"events", []string{"get", "events", "--sort-by=.lastTimestamp"}},
+		{"all-resources", []string{"get", "all", "-o", "wide"}},
+		{"pod-descriptions", []string{"describe", "pods"}},
+		{"conditions", []string{"get", "redpanda", "-o", "yaml"}},
+	}
+
+	artifactsDir := os.Getenv("ACCEPTANCE_ARTIFACTS_DIR")
+	if artifactsDir != "" {
+		dir := filepath.Join(artifactsDir, featureName)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Logf("WARNING: failed to create diagnostics directory %s: %v", dir, err)
+			artifactsDir = "" // fall back to logging
+		} else {
+			artifactsDir = dir
+		}
+	}
+
+	for _, d := range diagnostics {
+		args := kubectlOpts.args(d.args)
+		//nolint:gosec // test code
+		cmd := exec.CommandContext(ctx, "kubectl", args...)
+		cmd.Env = kubectlOpts.environment()
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Logf("[diagnostics/%s] error: %v\n%s", d.name, err, string(output))
+			continue
+		}
+
+		if artifactsDir != "" {
+			filePath := filepath.Join(artifactsDir, d.name+".txt")
+			header := fmt.Sprintf("# namespace: %s\n# feature: %s\n\n", namespace, t.featureName)
+			if writeErr := os.WriteFile(filePath, append([]byte(header), output...), 0o644); writeErr != nil {
+				t.Logf("WARNING: failed to write diagnostics to %s: %v", filePath, writeErr)
+			}
+		} else {
+			t.Logf("[diagnostics/%s] namespace=%s\n%s", d.name, namespace, string(output))
+		}
+	}
+
+	// Dump logs from pods in the namespace.
+	var podList corev1.PodList
+	if err := t.List(ctx, &podList, client.InNamespace(namespace)); err != nil {
+		t.Logf("[diagnostics/pod-logs] error listing pods: %v", err)
+		return
+	}
+
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			args := kubectlOpts.args([]string{"logs", pod.Name, "-c", container.Name, "--tail=200"})
+			//nolint:gosec // test code
+			cmd := exec.CommandContext(ctx, "kubectl", args...)
+			cmd.Env = kubectlOpts.environment()
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				continue
+			}
+
+			logName := fmt.Sprintf("pod-%s-%s", pod.Name, container.Name)
+			if artifactsDir != "" {
+				filePath := filepath.Join(artifactsDir, logName+".log")
+				if writeErr := os.WriteFile(filePath, output, 0o644); writeErr != nil {
+					t.Logf("WARNING: failed to write pod log to %s: %v", filePath, writeErr)
+				}
+			} else {
+				t.Logf("[diagnostics/%s] namespace=%s\n%s", logName, namespace, string(output))
+			}
+		}
 	}
 }
 

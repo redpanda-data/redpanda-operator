@@ -28,10 +28,9 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
+	"golang.org/x/sys/unix"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -338,8 +337,16 @@ func (c *Cluster) RESTConfig() *kube.RESTConfig {
 }
 
 func (c *Cluster) ImportImage(images ...string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	// Use a file-based lock to coordinate image imports across parallel
+	// test processes. k3d creates a temporary container named
+	// "k3d-<cluster>-tools" for imports which will conflict if multiple
+	// processes import concurrently.
+	unlock, err := lockFile(c.Name)
+	if err != nil {
+		return errors.Wrap(err, "acquiring cluster lock for image import")
+	}
+	defer unlock()
+
 	if out, err := exec.Command(
 		"k3d",
 		"image",

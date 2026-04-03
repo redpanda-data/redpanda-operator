@@ -15,6 +15,7 @@ import (
 	"io"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/formatters"
@@ -35,6 +36,7 @@ type feature struct {
 	isRunning      bool
 	hasStepFailure bool
 	tags           *tagset
+	startTime      time.Time
 }
 
 func (f *feature) options() *internaltesting.TestingOptions {
@@ -81,11 +83,15 @@ func (f *FeatureHookTracker) Scenario(ctx context.Context, scenario *godog.Scena
 
 		cleaner := internaltesting.NewCleaner(godog.T(ctx), opts)
 		t := internaltesting.NewTesting(ctx, opts, cleaner)
+		t.SetFeatureName(features.name)
 
 		features.isRunning = true
+		features.startTime = time.Now()
 		features.opts = opts
 		features.Cleaner = cleaner
 		features.t = t
+
+		t.Logf("=== FEATURE START: %s ===", features.name)
 
 		tags := f.registry.Handlers(features.tags.flatten())
 
@@ -122,6 +128,16 @@ func (f *FeatureHookTracker) ScenarioFinished(ctx context.Context, scenario *god
 	features.t.Logf("finished feature scenario, %d scenarios left", features.scenariosToRun)
 	if features.scenariosToRun <= 0 {
 		delete(f.features, scenario.Uri)
+
+		elapsed := time.Since(features.startTime).Round(time.Second)
+
+		// Dump diagnostics before cleanup when the feature has failures.
+		if features.hasStepFailure {
+			features.t.Logf("=== FEATURE FAILED: %s (namespace=%s, %s) — collecting diagnostics ===", features.name, features.t.Namespace(), elapsed)
+			features.t.DumpDiagnostics(ctx)
+		} else {
+			features.t.Logf("=== FEATURE END: %s (namespace=%s, %s) ===", features.name, features.t.Namespace(), elapsed)
+		}
 
 		features.t.SetMessagePrefix(fmt.Sprintf("Feature (%s) Cleanup Failure: ", features.name))
 		features.t.Log("running cleanup handlers")
