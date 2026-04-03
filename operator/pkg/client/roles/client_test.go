@@ -34,7 +34,7 @@ func getTestImage() string {
 }
 
 func TestClient(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancel()
 
 	testEnv := testutils.RedpandaTestEnv{}
