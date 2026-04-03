@@ -22,11 +22,11 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 )
 
-// TestLicenseChecksumMatch verifies that our local SHA256 checksum
-// calculation matches the checksum Redpanda reports via GetLicenseInfo
-// after a license is set. This is the check used by setupLicense to
-// skip redundant SetLicense calls.
-func TestLicenseChecksumMatch(t *testing.T) {
+// TestLicenseChecksum verifies that our local SHA256 checksum calculation
+// matches the checksum Redpanda reports via GetLicenseInfo after a license
+// is set. This is the check used by setupLicense to skip redundant
+// SetLicense calls.
+func TestLicenseChecksum(t *testing.T) {
 	const envVar = "REDPANDA_SAMPLE_LICENSE"
 
 	license := os.Getenv(envVar)
@@ -64,8 +64,39 @@ func TestLicenseChecksumMatch(t *testing.T) {
 	require.Equal(t, localChecksum, info.Properties.Checksum,
 		"local SHA256 checksum should match Redpanda's reported checksum")
 
-	// Verify that a second SetLicense would be correctly skipped by our logic:
-	// the checksum comparison should indicate the license is already loaded.
-	require.Equal(t, localChecksum, info.Properties.Checksum,
-		"checksum should be stable across reads")
+	t.Run("changed license triggers new SetLicense", func(t *testing.T) {
+		const secondEnvVar = "REDPANDA_SECOND_SAMPLE_LICENSE"
+
+		secondLicense := os.Getenv(secondEnvVar)
+		if secondLicense == "" {
+			t.Skipf("%s is not set, skipping license change test", secondEnvVar)
+		}
+
+		// The second license must produce a different checksum.
+		h2 := sha256.Sum256([]byte(secondLicense))
+		secondChecksum := hex.EncodeToString(h2[:])
+		require.NotEqual(t, localChecksum, secondChecksum,
+			"second license should have a different checksum than the first")
+
+		// Simulate what setupLicense does: the loaded checksum no longer
+		// matches the desired license, so SetLicense should be called.
+		require.NotEqual(t, info.Properties.Checksum, secondChecksum,
+			"loaded checksum should not match the new license, triggering SetLicense")
+
+		// Actually set the new license.
+		err := adminClient.SetLicense(ctx, strings.NewReader(secondLicense))
+		require.NoError(t, err)
+
+		// Verify the cluster now reports the new license's checksum.
+		newInfo, err := adminClient.GetLicenseInfo(ctx)
+		require.NoError(t, err)
+		require.True(t, newInfo.Loaded, "new license should be loaded")
+		require.Equal(t, secondChecksum, newInfo.Properties.Checksum,
+			"cluster checksum should match the second license after SetLicense")
+
+		// Verify the old checksum no longer matches — setupLicense would
+		// have correctly detected the change.
+		require.NotEqual(t, localChecksum, newInfo.Properties.Checksum,
+			"old license checksum should no longer match")
+	})
 }
