@@ -11,5 +11,5 @@ package steps
 
 var (
 	DefaultRedpandaRepo = "redpandadata/redpanda-unstable"
-	DefaultRedpandaTag  = "v26.1.1-rc5"
+	DefaultRedpandaTag  = "v26.1.1"
 )

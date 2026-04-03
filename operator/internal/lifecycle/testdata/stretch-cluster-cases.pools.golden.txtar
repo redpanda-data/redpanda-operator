@@ -68,9 +68,9 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.1
+            value: v26.1.2
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.2
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
           lifecycle:
             postStart:
@@ -180,7 +180,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.2
           name: sidecar
           readinessProbe:
             failureThreshold: 3
@@ -266,7 +266,7 @@
           - /tmp/base-config
           - --out-dir
           - /tmp/config
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.2
           name: bootstrap-yaml-envsubst
           resources:
             limits:
@@ -428,7 +428,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.1
+            value: v26.1.2
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -789,9 +789,9 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.1
+            value: v26.1.2
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.2
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
           lifecycle:
             postStart:
@@ -901,7 +901,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.2
           name: sidecar
           readinessProbe:
             failureThreshold: 3
@@ -987,7 +987,7 @@
           - /tmp/base-config
           - --out-dir
           - /tmp/config
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.2
           name: bootstrap-yaml-envsubst
           resources:
             limits:
@@ -1149,7 +1149,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.1
+            value: v26.1.2
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.1

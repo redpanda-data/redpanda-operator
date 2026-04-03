@@ -91,7 +91,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 	origRedpandaTag := redpandav1alpha2.DefaultRedpandaImageTag
 	origOperatorTag := redpandav1alpha2.DefaultOperatorImageTag
 	redpandav1alpha2.DefaultRedpandaImageTag = "v26.1.1"
-	redpandav1alpha2.DefaultOperatorImageTag = "v26.1.1"
+	redpandav1alpha2.DefaultOperatorImageTag = "v26.1.2"
 	t.Cleanup(func() {
 		redpandav1alpha2.DefaultRedpandaImageTag = origRedpandaTag
 		redpandav1alpha2.DefaultOperatorImageTag = origOperatorTag
