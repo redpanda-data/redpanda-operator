@@ -14,7 +14,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -324,23 +323,21 @@ type Suite struct {
 // makeGodogSuite creates a godog.TestSuite for the given feature contents.
 // If suiteInit is non-nil, it is used as the TestSuiteInitializer (for setup/teardown);
 // otherwise no suite-level hooks are registered.
-// An optional output writer can be provided; if nil, the suite's base output is used.
 func (s *Suite) makeGodogSuite(
 	name string,
 	tracker *tracking.FeatureHookTracker,
 	features []godog.Feature,
 	suiteInit func(*godog.TestSuiteContext),
-	output ...io.Writer,
 ) *godog.TestSuite {
 	opts := tracker.RegisterFormatter(s.baseOpts)
 	opts.DefaultContext = s.ctx
 	opts.Tags = fmt.Sprintf("~@skip:%s", s.providerName)
 	// Only use in-memory feature contents; don't discover from disk.
-	opts.Paths = []string{}
+	// Point Paths to a directory with no .feature files to prevent godog
+	// from falling back to the default "features" directory when
+	// FeatureContents is empty (godog checks len(Paths)==0 && len(FeatureContents)==0).
+	opts.Paths = []string{os.TempDir()}
 	opts.FeatureContents = features
-	if len(output) > 0 && output[0] != nil {
-		opts.Output = output[0]
-	}
 
 	return &godog.TestSuite{
 		Name:                 name,
@@ -552,7 +549,7 @@ func (s *Suite) RunT(t *testing.T) {
 	// Setup and teardown are separated so teardown runs after all features complete.
 	sc := &suiteCleanup{}
 	setupTracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
-	setupSuite := s.makeGodogSuite("setup", setupTracker, nil, s.suiteSetup(sc))
+	setupSuite := s.makeGodogSuite("setup", setupTracker, []godog.Feature{}, s.suiteSetup(sc))
 	setupSuite.Options.TestingT = t
 	setupSuite.Run()
 
@@ -584,7 +581,7 @@ func (s *Suite) RunT(t *testing.T) {
 	// Each feature runs as a parallel subtest so that Go's testing framework
 	// doesn't serialize the godog t.Run calls across features.
 	for _, f := range parallelFeatures {
-		t.Run(f.name, func(t *testing.T) {
+		t.Run(strings.ReplaceAll(f.name, "/", "_"), func(t *testing.T) {
 			t.Parallel()
 
 			tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)

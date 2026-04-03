@@ -410,7 +410,7 @@ func (e *Env) dumpDiagnostics() {
 	}
 
 	dir := filepath.Join(artifactsDir, sanitizeTestName(testName))
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		e.t.Logf("[diagnostics] failed to create artifacts directory: %v", err)
 		return
 	}
@@ -423,14 +423,14 @@ func (e *Env) dumpDiagnostics() {
 			podDescs = append(podDescs, []byte(fmt.Sprintf("  container %s: ready=%v restarts=%d\n", cs.Name, cs.Ready, cs.RestartCount))...)
 		}
 	}
-	os.WriteFile(filepath.Join(dir, "pods.txt"), podDescs, 0o644) //nolint:errcheck
+	_ = os.WriteFile(filepath.Join(dir, "pods.txt"), podDescs, 0o600)
 
 	// Dump events.
 	var eventDescs []byte
 	for _, event := range eventList.Items {
 		eventDescs = append(eventDescs, []byte(fmt.Sprintf("%s %s/%s: %s (count=%d)\n", event.Type, event.InvolvedObject.Kind, event.InvolvedObject.Name, event.Message, event.Count))...)
 	}
-	os.WriteFile(filepath.Join(dir, "events.txt"), eventDescs, 0o644) //nolint:errcheck
+	_ = os.WriteFile(filepath.Join(dir, "events.txt"), eventDescs, 0o600)
 }
 
 func sanitizeTestName(name string) string {

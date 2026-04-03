@@ -211,10 +211,12 @@ func (s *RedpandaControllerSuite) TestObjectsGCed() {
 }
 
 func (s *RedpandaControllerSuite) TestTPLValues() {
-	t, ctx, cancel, c := s.setup()
+	t, ctx, cancel, c := s.setup() //nolint:staticcheck // ctx and c used after skip is removed
 	defer cancel()
 
 	t.Skip("invalid / broken due to changes in chart v25.1.1 (podTemplate)")
+	_ = ctx
+	_ = c
 
 	rp := s.minimalRP()
 

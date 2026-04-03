@@ -470,7 +470,7 @@ func (t *TestingT) DumpDiagnostics(ctx context.Context) {
 	artifactsDir := os.Getenv("ACCEPTANCE_ARTIFACTS_DIR")
 	if artifactsDir != "" {
 		dir := filepath.Join(artifactsDir, featureName)
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			t.Logf("WARNING: failed to create diagnostics directory %s: %v", dir, err)
 			artifactsDir = "" // fall back to logging
 		} else {
