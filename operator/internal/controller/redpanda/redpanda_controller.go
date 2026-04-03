@@ -577,7 +577,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	return ctrl.Result{}, nil
 }
 
-func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda, adminClient *rpadmin.AdminAPI, cluster cluster.Cluster) error {
+func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alpha2.Redpanda, adminClient *rpadmin.AdminAPI, cluster cluster.Cluster, loadedLicense rpadmin.License) error {
 	if rp.Spec.ClusterSpec.Enterprise == nil {
 		return nil
 	}
@@ -608,16 +608,10 @@ func (r *RedpandaReconciler) setupLicense(ctx context.Context, rp *redpandav1alp
 		return nil
 	}
 
-	// Check if the license already loaded on the cluster matches what we want
-	// to set. This avoids unnecessary SetLicense calls on every reconcile.
-	info, err := adminClient.GetLicenseInfo(ctx)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	if info.Loaded {
+	// Skip SetLicense if the cluster already has the same license loaded.
+	if loadedLicense.Loaded {
 		h := sha256.Sum256(licenseBytes)
-		if info.Properties.Checksum == hex.EncodeToString(h[:]) {
+		if loadedLicense.Properties.Checksum == hex.EncodeToString(h[:]) {
 			return nil
 		}
 	}
@@ -660,7 +654,13 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.setupLicense(ctx, state.cluster.Redpanda, state.admin, cluster); err != nil {
+	licenseInfo, err := state.admin.GetLicenseInfo(ctx)
+	if err != nil {
+		logger.Error(err, "error getting license info")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	if err := r.setupLicense(ctx, state.cluster.Redpanda, state.admin, cluster, licenseInfo); err != nil {
 		logger.Error(err, "error setting up license")
 		return ctrl.Result{}, errors.WithStack(err)
 	}
@@ -668,12 +668,6 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 	features, err := state.admin.GetEnterpriseFeatures(ctx)
 	if err != nil {
 		logger.Error(err, "error getting enterprise features")
-		return ctrl.Result{}, errors.WithStack(err)
-	}
-
-	licenseInfo, err := state.admin.GetLicenseInfo(ctx)
-	if err != nil {
-		logger.Error(err, "error getting license info")
 		return ctrl.Result{}, errors.WithStack(err)
 	}
 
