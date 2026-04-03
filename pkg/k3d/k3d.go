@@ -21,11 +21,14 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
@@ -175,6 +178,15 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 		opt.apply(config)
 	}
 
+	// Use a file-based lock to coordinate cluster creation across parallel
+	// test processes (go test -p=N). The in-process sync.Mutex on Cluster
+	// only protects goroutines within a single process.
+	unlock, err := lockFile(name)
+	if err != nil {
+		return nil, errors.Wrap(err, "acquiring cluster lock")
+	}
+	defer unlock()
+
 	cluster, err := NewCluster(name, opts...)
 	if err != nil {
 		if errors.Is(err, ErrExists) {
@@ -188,6 +200,26 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 	}
 
 	return cluster, nil
+}
+
+// lockFile acquires an exclusive file lock for the given cluster name.
+// It returns an unlock function that must be called when the critical section is done.
+func lockFile(name string) (func(), error) {
+	lockPath := filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s.lock", name))
+	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := unix.Flock(int(f.Fd()), unix.LOCK_EX); err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	return func() {
+		unix.Flock(int(f.Fd()), unix.LOCK_UN) //nolint:errcheck
+		f.Close()
+	}, nil
 }
 
 func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {

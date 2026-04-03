@@ -361,15 +361,23 @@ func (s *Suite) makeGodogSuite(
 	}
 }
 
-// suiteSetupTeardown returns the BeforeSuite/AfterSuite initializer that
-// should be registered exactly once across all godog suite runs.
-func (s *Suite) suiteSetupTeardown(tracker *tracking.FeatureHookTracker) func(*godog.TestSuiteContext) {
-	var kubeOptions *internaltesting.KubectlOptions
-	var helmClient *helm.Client
+// suiteCleanup holds the cleanup function created during suite setup so it
+// can be called later during teardown.
+type suiteCleanup struct {
+	fn func(ctx context.Context)
+}
+
+// suiteSetup returns a TestSuiteInitializer that runs BeforeSuite only (no
+// AfterSuite). The cleanup function is stored in the provided suiteCleanup
+// so that teardown can be run separately after all features complete.
+func (s *Suite) suiteSetup(sc *suiteCleanup) func(*godog.TestSuiteContext) {
 	ctx := s.ctx
 	provider := s.provider
 
 	return func(suiteContext *godog.TestSuiteContext) {
+		var kubeOptions *internaltesting.KubectlOptions
+		var helmClient *helm.Client
+
 		cleanup := func(ctx context.Context) {
 			if kubeOptions != nil {
 				for _, directory := range s.crdDirectories {
@@ -439,7 +447,22 @@ func (s *Suite) suiteSetupTeardown(tracker *tracking.FeatureHookTracker) func(*g
 				_, err := internaltesting.KubectlApply(ctx, directory, s.testingOpts.KubectlOptions)
 				setupErrorCheck(ctx, err, cleanup)
 			}
+
+			// Store the cleanup function for later teardown.
+			sc.fn = cleanup
 		})
+	}
+}
+
+// suiteSetupTeardown returns a TestSuiteInitializer with both BeforeSuite and
+// AfterSuite. Used by RunM which runs everything in a single godog suite.
+func (s *Suite) suiteSetupTeardown(tracker *tracking.FeatureHookTracker) func(*godog.TestSuiteContext) {
+	ctx := s.ctx
+	sc := &suiteCleanup{}
+	setupInit := s.suiteSetup(sc)
+
+	return func(suiteContext *godog.TestSuiteContext) {
+		setupInit(suiteContext)
 		suiteContext.AfterSuite(func() {
 			cancel := func() {}
 			cleanupTimeout := s.testingOpts.CleanupTimeout
@@ -452,7 +475,9 @@ func (s *Suite) suiteSetupTeardown(tracker *tracking.FeatureHookTracker) func(*g
 				fmt.Println("skipping cleanup due to test failure and retain flag being set")
 				return
 			}
-			cleanup(ctx)
+			if sc.fn != nil {
+				sc.fn(ctx)
+			}
 		})
 	}
 }
@@ -517,12 +542,11 @@ func (s *Suite) RunT(t *testing.T) {
 		}
 	}
 
-	// We use a single shared tracker for setup/teardown lifecycle, plus
-	// individual trackers per godog suite for feature/scenario tracking.
-
 	// Phase 1: Run setup via a dedicated suite with no features.
+	// Setup and teardown are separated so teardown runs after all features complete.
+	sc := &suiteCleanup{}
 	setupTracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
-	setupSuite := s.makeGodogSuite("setup", setupTracker, nil, s.suiteSetupTeardown(setupTracker))
+	setupSuite := s.makeGodogSuite("setup", setupTracker, nil, s.suiteSetup(sc))
 	setupSuite.Options.TestingT = t
 	setupSuite.Run()
 
@@ -547,6 +571,9 @@ func (s *Suite) RunT(t *testing.T) {
 		}
 	}()
 
+	// Track whether any feature suite reported a failure.
+	var suiteFailed bool
+
 	// Phase 2: Run parallel features concurrently.
 	var wg sync.WaitGroup
 	for _, f := range parallelFeatures {
@@ -559,6 +586,11 @@ func (s *Suite) RunT(t *testing.T) {
 			suite := s.makeGodogSuite(fc.name, tracker, gf, nil)
 			suite.Options.TestingT = t
 			suite.Run()
+			if tracker.SuiteFailed() {
+				termMu.Lock()
+				suiteFailed = true
+				termMu.Unlock()
+			}
 		}(f)
 	}
 	wg.Wait()
@@ -573,6 +605,25 @@ func (s *Suite) RunT(t *testing.T) {
 		suite := s.makeGodogSuite("serial", tracker, gf, nil)
 		suite.Options.TestingT = t
 		suite.Run()
+		if tracker.SuiteFailed() {
+			suiteFailed = true
+		}
+	}
+
+	// Phase 4: Teardown.
+	if sc.fn != nil {
+		teardownCtx := s.ctx
+		teardownCancel := func() {}
+		if s.testingOpts.CleanupTimeout != 0 {
+			teardownCtx, teardownCancel = context.WithTimeout(teardownCtx, s.testingOpts.CleanupTimeout)
+		}
+		defer teardownCancel()
+
+		if suiteFailed && s.testingOpts.RetainOnFailure {
+			fmt.Println("skipping cleanup due to test failure and retain flag being set")
+		} else {
+			sc.fn(teardownCtx)
+		}
 	}
 
 	cancel()
