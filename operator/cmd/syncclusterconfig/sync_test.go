@@ -15,8 +15,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -371,7 +373,7 @@ func TestSyncUnknownPropertyRegression(t *testing.T) {
 	// Use a named Docker volume so both containers share the same data
 	// directory and the raft snapshot carrying coproc_max_batch_size is
 	// visible to the upgraded broker.
-	volumeName := "rp-regression-unknown-prop"
+	volumeName := "rp-regression-unknown-prop-" + strconv.Itoa(int(time.Now().UnixNano()))
 
 	// ── Old broker: set coproc_max_batch_size (valid in v25.x) ──────────────
 	oldContainer, err := redpanda.Run(
