@@ -61,9 +61,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
 			imageRepo + ":" + imageTag,
+<<<<<<< HEAD
 			"docker.redpanda.com/redpandadata/redpanda-operator:v2.4.5",
 			"docker.redpanda.com/redpandadata/redpanda:v25.1.1",
 			"docker.redpanda.com/redpandadata/redpanda:v25.2.1",
+=======
+			steps.DefaultRedpandaRepo + ":" + steps.DefaultRedpandaTag,
+			"redpandadata/redpanda-operator:v2.4.5",
+			"redpandadata/redpanda:v25.1.1",
+			"redpandadata/redpanda:v25.2.1",
+>>>>>>> 4a7d7eea (Use docker hub instead of docker.redpanda.com for tests (#1393))
 			"quay.io/jetstack/cert-manager-controller:v1.14.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
 			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",

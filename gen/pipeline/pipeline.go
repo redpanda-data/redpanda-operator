@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/buildkite/go-pipeline"
-	"github.com/buildkite/go-pipeline/ordered"
 	"github.com/spf13/cobra"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
@@ -102,11 +101,6 @@ func Cmd() *cobra.Command {
 
 func testSuitePipeline() *pipeline.Pipeline {
 	p := &pipeline.Pipeline{
-		Env: ordered.MapFromItems(
-			// CI runs podman instead of docker. testcontainer's ryuk is reported to not
-			// work well with podman so we disable it in CI.
-			ordered.Tuple[string, string]{Key: "TESTCONTAINERS_RYUK_DISABLED", Value: "true"},
-		),
 		RemainingFields: map[string]any{
 			// NB: This notify configuration serves as the aggregate state of this
 			// entire pipeline. The string in context is what github is configured to

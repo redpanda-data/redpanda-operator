@@ -28,7 +28,12 @@ func TestSyncer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
+<<<<<<< HEAD
 	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8",
+=======
+	container, err := redpanda.Run(ctx, "redpandadata/redpanda:v25.2.1",
+		redpanda.WithEnableSchemaRegistryHTTPBasicAuth(),
+>>>>>>> 4a7d7eea (Use docker hub instead of docker.redpanda.com for tests (#1393))
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),
 		redpanda.WithSuperusers("user"),
