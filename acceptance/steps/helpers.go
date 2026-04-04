@@ -722,7 +722,7 @@ func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName
 		expectedStatusCode: statusCode,
 		token:              token,
 		schema:             schema,
-		namespace:          t.Namespace(),
+		namespace:          OperatorNamespace,
 		operatorPodName:    podList.Items[0].Name,
 		client: http.Client{Transport: &http.Transport{
 			TLSClientConfig: &tlsCfg,

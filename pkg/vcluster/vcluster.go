@@ -101,7 +101,7 @@ func NewInShared(ctx context.Context) (*Cluster, error) {
 }
 
 func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
-	ctx, cancel := context.WithTimeoutCause(ctx, 3*time.Minute, errors.New("vCluster creation timed out"))
+	ctx, cancel := context.WithTimeoutCause(ctx, 5*time.Minute, errors.New("vCluster creation timed out"))
 	defer cancel()
 
 	c, err := client.New(config, client.Options{})
