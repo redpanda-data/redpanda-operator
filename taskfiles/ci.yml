@@ -24,7 +24,7 @@ tasks:
       - 'echo "--- Running unit tests"'
       - task: :test:unit
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --format testname --rerun-fails --'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:integration:
