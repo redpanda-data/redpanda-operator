@@ -365,8 +365,13 @@ tasks:
       - redpandadata/redpanda:v26.1.1
 
     cmds:
-      - for: {var: IMAGES}
-        cmd: docker inspect {{.ITEM}} > /dev/null 2>&1 || docker pull {{.ITEM}}
+      - |
+        pids=""
+        {{range .IMAGES}}
+        (docker inspect "{{.}}" > /dev/null 2>&1 || docker pull -q "{{.}}") &
+        pids="$pids $!"
+        {{end}}
+        for pid in $pids; do wait "$pid" || true; done
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"
