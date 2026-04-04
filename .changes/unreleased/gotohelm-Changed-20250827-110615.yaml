@@ -1,0 +1,4 @@
+project: gotohelm
+kind: Changed
+body: Updated the default file header to specify the full import path of files and to loudly declare that the file is generated.
+time: 2025-08-27T11:06:15.906569-04:00

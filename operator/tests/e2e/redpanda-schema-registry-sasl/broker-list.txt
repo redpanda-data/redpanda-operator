@@ -1,0 +1,2 @@
+ID HOST
+0 schema-registry-sasl-0.schema-registry-sasl.redpanda-system.svc.cluster.local.

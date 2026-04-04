@@ -1,0 +1,396 @@
+-- 01-auth-jwt-and-secure-cookies --
+output:
+  authentication:
+    jwtSigningKey: secret123
+    useSecureCookies: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 02-plain-auth-enabled --
+output:
+  authentication:
+    basic:
+      enabled: true
+    oidc:
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 03-oidc-provider --
+output:
+  authentication:
+    oidc:
+      clientId: client123
+      clientSecret: secret456
+      enabled: true
+      issuerUrl: https://issuer.example.com
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 04-google-oauth --
+output:
+  authentication:
+    oidc:
+      clientId: google-client
+      clientSecret: google-secret
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 05-oidc-with-realm --
+output:
+  authentication:
+    oidc:
+      clientId: client123
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings:
+- Removed 'realm' from 'oidc'. OIDC groups are not supported in v3. Create Roles in
+  Redpanda instead.
+- Removed 'directory' from 'oidc'. OIDC groups are not supported in v3. Create Roles
+  in Redpanda instead.
+
+-- 06-kafka-schema-registry-basic-auth --
+output:
+  kafka:
+    brokers:
+    - localhost:9092
+    sasl:
+      enabled: true
+      impersonateUser: true
+  schemaRegistry:
+    authentication:
+      basic:
+        password: srpass
+        username: sruser
+      impersonateUser: false
+    enabled: true
+    urls:
+    - http://localhost:8081
+warnings: null
+
+-- 07-kafka-schema-registry-bearer-token --
+output:
+  kafka:
+    brokers:
+    - localhost:9092
+    sasl:
+      enabled: true
+      impersonateUser: true
+  schemaRegistry:
+    authentication:
+      bearerToken: token123
+      impersonateUser: true
+    enabled: true
+    urls:
+    - http://localhost:8081
+warnings: null
+
+-- 08-kafka-serde-settings --
+output:
+  kafka:
+    brokers:
+    - localhost:9092
+    sasl:
+      enabled: true
+      impersonateUser: true
+  serde:
+    cbor:
+      enabled: true
+    messagePack:
+      enabled: true
+    protobuf:
+      enabled: true
+warnings: null
+
+-- 09-connect-to-kafka-connect --
+output:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+  kafkaConnect:
+    clusters:
+    - name: local
+      url: http://localhost:8083
+    enabled: true
+warnings: null
+
+-- 10-console-max-payload --
+output:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+  serde:
+    maxDeserializationPayloadSize: 1048576
+warnings: null
+
+-- 11-rolebindings-users --
+output:
+  authorization:
+    roleBindings:
+    - roleName: admin
+      users:
+      - loginType: basic
+        name: alice
+      - loginType: oidc
+        name: bob
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 12-rolebindings-with-groups --
+output:
+  authorization:
+    roleBindings:
+    - roleName: viewer
+      users:
+      - loginType: basic
+        name: alice
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings:
+- Removed group subject from role binding 'viewer'. Groups are not supported in v3.
+
+-- 13-redpanda-adminapi-with-creds --
+output:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+  redpanda:
+    adminApi:
+      authentication:
+        basic:
+          password: adminpass
+          username: admin
+        impersonateUser: false
+      enabled: true
+      urls:
+      - http://localhost:9644
+warnings: null
+
+-- 14-redpanda-adminapi-no-creds --
+output:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+  redpanda:
+    adminApi:
+      authentication:
+        impersonateUser: true
+      enabled: true
+      urls:
+      - http://localhost:9644
+warnings: null
+
+-- 15-complex-config --
+output:
+  authentication:
+    jwtSigningKey: jwt-secret
+    oidc:
+      clientId: client
+      clientSecret: secret
+      enabled: true
+    useSecureCookies: true
+  authorization:
+    roleBindings:
+    - roleName: admin
+      users:
+      - loginType: oidc
+        name: admin@example.com
+  kafka:
+    brokers:
+    - localhost:9092
+    sasl:
+      enabled: true
+      impersonateUser: true
+  kafkaConnect:
+    enabled: true
+  redpanda:
+    adminApi:
+      authentication:
+        basic:
+          password: rppass
+          username: rpuser
+        impersonateUser: false
+      enabled: true
+      urls:
+      - http://localhost:9644
+  schemaRegistry:
+    authentication:
+      basic:
+        password: srpass
+        username: sruser
+      impersonateUser: false
+    enabled: true
+    urls:
+    - http://localhost:8081
+  serde:
+    maxDeserializationPayloadSize: 2097152
+    protobuf:
+      enabled: true
+warnings: null
+
+-- 16-fallback-authentication --
+output:
+  authentication:
+    jwtSigningKey: existing-key
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 17-remaining-fields --
+output:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+  logger:
+    level: info
+  server:
+    listenPort: 8080
+warnings: null
+
+-- 18-okta-provider --
+output:
+  authentication:
+    oidc:
+      clientId: okta-client
+      clientSecret: okta-secret
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings:
+- Removed 'directory' from 'okta'. OIDC groups are not supported in v3. Create Roles
+  in Redpanda instead.
+
+-- 19-azuread-provider --
+output:
+  authentication:
+    oidc:
+      clientId: azure-client
+      clientSecret: azure-secret
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 20-github-provider --
+output:
+  authentication:
+    oidc:
+      clientId: github-client
+      clientSecret: github-secret
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 21-keycloak-provider --
+output:
+  authentication:
+    oidc:
+      clientId: keycloak-client
+      clientSecret: keycloak-secret
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings:
+- Removed 'realm' from 'keycloak'. OIDC groups are not supported in v3. Create Roles
+  in Redpanda instead.
+
+-- 22-empty-config --
+output:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings: null
+
+-- 23-kafka-with-tls --
+output:
+  kafka:
+    brokers:
+    - localhost:9093
+    sasl:
+      enabled: true
+      impersonateUser: true
+    tls:
+      caFilepath: /etc/certs/ca.crt
+      enabled: true
+warnings: null
+
+-- 24-redpanda-with-extra-fields --
+output:
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+  redpanda:
+    adminApi:
+      authentication:
+        basic:
+          password: adminpass
+          username: admin
+        impersonateUser: false
+      enabled: true
+      urls:
+      - http://localhost:9644
+    extraField: extraValue
+    nested:
+      field: value
+warnings: null
+
+-- 25-multiple-login-providers --
+output:
+  authentication:
+    oidc:
+      enabled: true
+  kafka:
+    sasl:
+      enabled: true
+      impersonateUser: true
+warnings:
+- Elected 'github' as OIDC provider out of ["github","google","keycloak","oidc"].
+  Only one provider is supported in v3.
+- Removed 'realm' from 'keycloak'. OIDC groups are not supported in v3. Create Roles
+  in Redpanda instead.
+- Removed 'realm' from 'oidc'. OIDC groups are not supported in v3. Create Roles in
+  Redpanda instead.
+- Removed 'directory' from 'github'. OIDC groups are not supported in v3. Create Roles
+  in Redpanda instead.
+- Removed 'directory' from 'keycloak'. OIDC groups are not supported in v3. Create
+  Roles in Redpanda instead.
+

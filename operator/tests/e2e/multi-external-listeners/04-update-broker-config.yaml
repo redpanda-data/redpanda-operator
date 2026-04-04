@@ -1,0 +1,69 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: multi-external-listeners
+spec:
+  configuration:
+    kafkaApi:
+    - authenticationMethod: sasl
+      port: 9092
+    - authenticationMethod: mtls_identity
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+      port: 30092
+      tls:
+        clientCACertRef:
+          apiGroup: ""
+          kind: Secret
+          name: ml-ca-cert
+        enabled: true
+        requireClientAuth: true
+    - authenticationMethod: sasl
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+      name: kafka-sasl
+      port: 30094
+      tls:
+        enabled: true
+    pandaproxyApi:
+    - external: {}
+      port: 8082
+      tls: {}
+    - authenticationMethod: http_basic
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+        excludeFromService: true
+      name: proxy-sasl-npe
+      port: 30084
+      tls:
+        enabled: true
+    - authenticationMethod: http_basic
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+      name: proxy-sasl
+      port: 30086
+      tls:
+        enabled: true
+    - authenticationMethod: http_basic
+      external:
+        enabled: true
+        endpointTemplate: 'test-{{ .Index }}'
+        subdomain: redpanda.com
+      name: proxy-mtls
+      port: 30082
+      tls:
+        clientCACertRef:
+          apiGroup: ""
+          kind: Secret
+          name: ml-ca-cert
+        enabled: true
+        requireClientAuth: true
+

@@ -1,0 +1,51 @@
+# Executables
+*.exe
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+*.app
+/*build*
+!.buildkite
+/dbuild
+bin
+artifacts/
+_e2e_artifacts/
+_e2e_with_flags_artifacts/
+_e2e_unstable_artifacts/
+_helm_e2e_artifacts/
+alias/dog
+operator/testbin/*
+operator/cm-verifier
+operator/*.tar.gz
+operator/*-exit-code
+operator/kubeconfig
+operator/tests/_e2e_artifacts_v2/
+operator/test-generator-chart/files/
+operator/tests/_e2e_helm_artifacts_v2/
+operator/tests/e2e-v2-helm/
+*.idea
+
+.DS_Store
+
+# vim
+.*.sw?
+
+# direnv files
+.direnv/
+
+# task cache directory
+.task/
+
+# Go releaser artifacts
+dist/
+
+# Ignore depedencies
+charts/*/charts/*.tgz
+charts/*/*/charts/*.tgz
+
+# Ignore gotestsum junit reports
+charts/charts.xml
+genpartial/genpartial.xml
+genschema/genschema.xml
+gotohelm/gotohelm.xml
+pkg/pkg.xml
+/result

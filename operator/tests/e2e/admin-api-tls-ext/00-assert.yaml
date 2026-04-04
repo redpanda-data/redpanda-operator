@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aa-client-cert
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aa-ca-cert
+  annotations:
+    operator.redpanda.com/external-ca: 'true'
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/name: "redpanda"
+    app.kubernetes.io/instance: cluster-admin

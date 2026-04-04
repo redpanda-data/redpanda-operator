@@ -1,0 +1,173 @@
+{{- /* GENERATED FILE DO NOT EDIT */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/operator/chart/deployment.go" */ -}}
+
+{{- define "operator.Deployment" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $dep := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "strategy" (dict)) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "apps/v1" "kind" "Deployment")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "namespace" $dot.Release.Namespace "annotations" $values.annotations)) "spec" (mustMergeOverwrite (dict "selector" (coalesce nil) "template" (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) "strategy" (dict)) (dict "replicas" ($values.replicaCount | int) "selector" (mustMergeOverwrite (dict) (dict "matchLabels" (get (fromJson (include "operator.SelectorLabels" (dict "a" (list $dot)))) "r"))) "strategy" $values.strategy "template" (get (fromJson (include "operator.StrategicMergePatch" (dict "a" (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) (dict "metadata" (mustMergeOverwrite (dict) (dict "labels" $values.podTemplate.metadata.labels "annotations" $values.podTemplate.metadata.annotations)) "spec" $values.podTemplate.spec)) (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "containers" (coalesce nil))) (dict "metadata" (mustMergeOverwrite (dict) (dict "annotations" $values.podAnnotations "labels" (merge (dict) (get (fromJson (include "operator.SelectorLabels" (dict "a" (list $dot)))) "r") $values.podLabels))) "spec" (mustMergeOverwrite (dict "containers" (coalesce nil)) (dict "automountServiceAccountToken" false "terminationGracePeriodSeconds" ((10 | int64) | int64) "imagePullSecrets" $values.imagePullSecrets "serviceAccountName" (get (fromJson (include "operator.ServiceAccountName" (dict "a" (list $dot)))) "r") "nodeSelector" $values.nodeSelector "tolerations" $values.tolerations "volumes" (get (fromJson (include "operator.operatorPodVolumes" (dict "a" (list $dot)))) "r") "containers" (get (fromJson (include "operator.operatorContainers" (dict "a" (list $dot (coalesce nil))))) "r"))))))))) "r"))))) -}}
+{{- if (not (empty $values.affinity)) -}}
+{{- $_ := (set $dep.spec.template.spec "affinity" $values.affinity) -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $dep) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.operatorContainers" -}}
+{{- $dot := (index .a 0) -}}
+{{- $podTerminationGracePeriodSeconds := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "manager" "image" (get (fromJson (include "operator.containerImage" (dict "a" (list $dot)))) "r") "imagePullPolicy" $values.image.pullPolicy "command" (list "/manager") "args" (get (fromJson (include "operator.operatorArguments" (dict "a" (list $dot)))) "r") "securityContext" (mustMergeOverwrite (dict) (dict "allowPrivilegeEscalation" false)) "ports" (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "webhook-server" "containerPort" (9443 | int) "protocol" "TCP")) (mustMergeOverwrite (dict "containerPort" 0) (dict "name" "https" "containerPort" (8443 | int) "protocol" "TCP"))) "volumeMounts" (get (fromJson (include "operator.operatorPodVolumesMounts" (dict "a" (list $dot)))) "r") "livenessProbe" (get (fromJson (include "operator.livenessProbe" (dict "a" (list $dot $podTerminationGracePeriodSeconds)))) "r") "readinessProbe" (get (fromJson (include "operator.readinessProbe" (dict "a" (list $dot $podTerminationGracePeriodSeconds)))) "r") "resources" $values.resources)))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.livenessProbe" -}}
+{{- $dot := (index .a 0) -}}
+{{- $podTerminationGracePeriodSeconds := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- if (ne (toJson $values.livenessProbe) "null") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "httpGet" (mustMergeOverwrite (dict "port" 0) (dict "path" "/healthz/" "port" (8081 | int))))) (dict "initialDelaySeconds" (default (15 | int) ($values.livenessProbe.initialDelaySeconds | int)) "periodSeconds" (default (20 | int) ($values.livenessProbe.periodSeconds | int)) "timeoutSeconds" ($values.livenessProbe.timeoutSeconds | int) "successThreshold" ($values.livenessProbe.successThreshold | int) "failureThreshold" ($values.livenessProbe.failureThreshold | int) "terminationGracePeriodSeconds" (default $podTerminationGracePeriodSeconds $values.livenessProbe.terminationGracePeriodSeconds)))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "httpGet" (mustMergeOverwrite (dict "port" 0) (dict "path" "/healthz/" "port" (8081 | int))))) (dict "initialDelaySeconds" (15 | int) "periodSeconds" (20 | int)))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.readinessProbe" -}}
+{{- $dot := (index .a 0) -}}
+{{- $podTerminationGracePeriodSeconds := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- if (ne (toJson $values.livenessProbe) "null") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "httpGet" (mustMergeOverwrite (dict "port" 0) (dict "path" "/readyz" "port" (8081 | int))))) (dict "initialDelaySeconds" (default (5 | int) ($values.readinessProbe.initialDelaySeconds | int)) "periodSeconds" (default (10 | int) ($values.readinessProbe.periodSeconds | int)) "timeoutSeconds" ($values.readinessProbe.timeoutSeconds | int) "successThreshold" ($values.readinessProbe.successThreshold | int) "failureThreshold" ($values.readinessProbe.failureThreshold | int) "terminationGracePeriodSeconds" (default $podTerminationGracePeriodSeconds $values.readinessProbe.terminationGracePeriodSeconds)))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "httpGet" (mustMergeOverwrite (dict "port" 0) (dict "path" "/readyz" "port" (8081 | int))))) (dict "initialDelaySeconds" (5 | int) "periodSeconds" (10 | int)))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.containerTag" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- if (not (empty $values.image.tag)) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $values.image.tag) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $dot.Chart.AppVersion) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.containerImage" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $tag := (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf "%s:%s" $values.image.repository $tag)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.operatorPodVolumes" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $vol := (list (get (fromJson (include "operator.serviceAccountTokenVolume" (dict "a" (list)))) "r")) -}}
+{{- if (not $values.webhook.enabled) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $vol) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $vol = (concat (default (list) $vol) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "defaultMode" ((420 | int) | int) "secretName" $values.webhookSecretName)))) (dict "name" "cert")))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $vol) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.serviceAccountTokenVolume" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "projected" (mustMergeOverwrite (dict "sources" (coalesce nil)) (dict "defaultMode" (420 | int) "sources" (list (mustMergeOverwrite (dict) (dict "serviceAccountToken" (mustMergeOverwrite (dict "path" "") (dict "path" "token" "expirationSeconds" ((3607 | int) | int64))))) (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" "kube-root-ca.crt")) (dict "items" (list (mustMergeOverwrite (dict "key" "" "path" "") (dict "key" "ca.crt" "path" "ca.crt"))))))) (mustMergeOverwrite (dict) (dict "downwardAPI" (mustMergeOverwrite (dict) (dict "items" (list (mustMergeOverwrite (dict "path" "") (dict "path" "namespace" "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "apiVersion" "v1" "fieldPath" "metadata.namespace")))))))))))))) (dict "name" "kube-api-access"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.serviceAccountTokenVolumeMount" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "kube-api-access" "readOnly" true "mountPath" "/var/run/secrets/kubernetes.io/serviceaccount"))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.operatorPodVolumesMounts" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $volMount := (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r")) -}}
+{{- if (not $values.webhook.enabled) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $volMount) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $volMount = (concat (default (list) $volMount) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "cert" "mountPath" "/tmp/k8s-webhook-server/serving-certs" "readOnly" true)))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $volMount) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.operatorArguments" -}}
+{{- $dot := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $values := $dot.Values.AsMap -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
+{{- if $values.webhook.enabled -}}
+{{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
+{{- end -}}
+{{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
+{{- $flags := (coalesce nil) -}}
+{{- range $key, $value := (merge (dict) $defaults $userProvided) -}}
+{{- if (eq $value "") -}}
+{{- $flags = (concat (default (list) $flags) (list $key)) -}}
+{{- else -}}
+{{- $flags = (concat (default (list) $flags) (list (printf "%s=%s" $key $value))) -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $flags) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+

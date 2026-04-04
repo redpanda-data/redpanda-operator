@@ -1,0 +1,46 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+  - apiVersion: redpanda.vectorized.io/v1alpha1
+    kind: Cluster
+    name: multi-external-listeners
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-multi-external-listeners-0
+    namespace: redpanda-system
+  - apiVersion: batch/v1
+    kind: Job
+    name: ml-create-schema
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: Pod
+    labels:
+      job-name: ml-create-schema
+    namespace: redpanda-system
+  - apiVersion: batch/v1
+    kind: Job
+    name: ml-retrieve-schema
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: Pod
+    labels:
+      job-name: ml-retrieve-schema
+    namespace: redpanda-system
+  - apiVersion: batch/v1
+    kind: Job
+    name: ml-create-schema-without-cert
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: Pod
+    labels:
+      job-name: ml-create-schema-without-cert
+    namespace: redpanda-system
+  - apiVersion: v1
+    kind: Secret
+    namespace: redpanda-system
+    name: ml-client-cert-key
+  - apiVersion: v1
+    kind: Secret
+    namespace: redpanda-system
+    name: ml-ca-cert

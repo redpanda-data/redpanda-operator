@@ -1,0 +1,1230 @@
+-- trust-stores-ca-enabled --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-TRUST-STORES ["admin",           {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/tls/certs/default/ca.crt"}]
+# ASSERT-TRUST-STORES ["http",            {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/tls/certs/default/ca.crt"}]
+# ASSERT-TRUST-STORES ["kafka",           {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/tls/certs/default/ca.crt"}]
+# ASSERT-TRUST-STORES ["schema_registry", {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/tls/certs/default/ca.crt"}]
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# Base case for TrustStores.
+tls:
+  certs:
+    default:
+      caEnabled: true
+    external:
+      caEnabled: true
+
+-- internal-trust-stores --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-TRUST-STORES ["admin",           {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/truststores/configmaps/admin-cm-other.crt", "my-admin": "/etc/truststores/configmaps/admin-cm-my-admin.crt"}]
+# ASSERT-TRUST-STORES ["http",            {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/truststores/configmaps/http-cm-ca.crt", "my-http": "/etc/truststores/configmaps/http-cm-my-http.crt"}]
+# ASSERT-TRUST-STORES ["kafka",           {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/truststores/configmaps/my-ca-bundle-ca.crt", "my-kafka": "/etc/truststores/secrets/kafka-secret-my-kafka.crt"}]
+# ASSERT-TRUST-STORES ["schema_registry", {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/truststores/secrets/sr-secret-ca.crt", "my-sr": "/etc/truststores/secrets/sr-secret-my-sr.crt"}]
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+listeners:
+  admin:
+    external:
+      my-admin:
+        port: 1234
+        tls:
+          cert: default
+          trustStore:
+            configMapKeyRef:
+              key: my-admin.crt
+              name: admin-cm
+    tls:
+      trustStore:
+        configMapKeyRef:
+          key: other.crt
+          name: admin-cm
+  http:
+    external:
+      my-http:
+        port: 1234
+        tls:
+          cert: default
+          trustStore:
+            configMapKeyRef:
+              key: my-http.crt
+              name: http-cm
+    tls:
+      trustStore:
+        configMapKeyRef:
+          key: ca.crt
+          name: http-cm
+  kafka:
+    external:
+      my-kafka:
+        port: 1234
+        tls:
+          cert: default
+          trustStore:
+            secretKeyRef:
+              key: my-kafka.crt
+              name: kafka-secret
+    tls:
+      trustStore:
+        configMapKeyRef:
+          key: ca.crt
+          name: my-ca-bundle
+  rpc: {}
+  schemaRegistry:
+    external:
+      my-sr:
+        port: 1234
+        tls:
+          cert: default
+          trustStore:
+            secretKeyRef:
+              key: my-sr.crt
+              name: sr-secret
+    tls:
+      trustStore:
+        secretKeyRef:
+          key: ca.crt
+          name: sr-secret
+tls:
+  certs:
+    default:
+      caEnabled: true
+    external:
+      caEnabled: true
+
+-- disable-cert-manager-overriding-defaults --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-NO-GVK ["cert-manager.io/v1", "Certificate"]
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+tls:
+  certs:
+    default:
+      secretRef:
+        name: some-secret
+    external:
+      secretRef:
+        name: some-other-secret
+
+-- disable-cert-manger-fully-specified --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-NO-GVK ["cert-manager.io/v1", "Certificate"]
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+listeners:
+  admin:
+    external:
+      default:
+        tls:
+          cert: for-external
+          requireClientAuth: false
+    tls:
+      cert: for-internal
+  http:
+    external:
+      default:
+        tls:
+          cert: for-external
+          requireClientAuth: false
+    tls:
+      cert: for-internal
+  kafka:
+    external:
+      default:
+        tls:
+          cert: for-external
+          requireClientAuth: false
+    tls:
+      cert: for-internal
+  rpc:
+    tls:
+      cert: for-internal
+  schemaRegistry:
+    external:
+      default:
+        tls:
+          cert: for-external
+          requireClientAuth: false
+    tls:
+      cert: for-internal
+tls:
+  certs:
+    default:
+      enabled: false
+    external:
+      enabled: false
+    for-external:
+      secretRef:
+        name: some-other-secret
+    for-internal:
+      secretRef:
+        name: some-secret
+
+-- node-config-boolean-type-regression --
+# RPK can not
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-VALID-RPK-CONFIGURATION
+config:
+  node:
+    developer_mode: true
+
+-- mtls-client-regression --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+listeners:
+  kafka:
+    authenticationMethod: none
+    external: {}
+    tls:
+      cert: kafka-internal-0
+      enabled: true
+      requireClientAuth: true
+tls:
+  certs:
+    kafka-internal-0:
+      caEnabled: true
+
+-- default-sasl-mechanism-regression --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-SUPER-USERS-ARE-VALID
+auth:
+  sasl:
+    enabled: true
+    users:
+    - name: empty-mechanism
+      password: valid
+    - name: mechanism-256
+      password: valid
+      mechanism: SCRAM-SHA-256
+    - name: mechanism-512
+      password: valid
+      mechanism: SCRAM-SHA-512
+
+-- pod-template-overrides --
+# ASSERT-NO-ERROR
+#
+# Showcase that most fields of the Statefulset's PodSpec may be overridden.
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.securityContext.fsGroup}", 7878]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.securityContext.runAsGroup}", 8989]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.securityContext.runAsUser}", 9090]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.securityContext.runAsNonRoot}", true]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.priority}", 9001]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.priorityClassName}", "over-9-thousand"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation}", false]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.privileged}", false]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.runAsGroup}", 6767]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].securityContext.runAsUser}", 5656]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[0].securityContext.runAsNonRoot}", false]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.metadata.labels.label}", "rp-sts"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.metadata.annotations.anno}", "rp-sts"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].env[?(@.name==\"HELLO\")].value}", "WORLD"]
+statefulset:
+  podTemplate:
+    labels:
+      label: rp-sts
+    annotations:
+      anno: rp-sts
+    spec:
+      priority: 9001
+      priorityClassName: "over-9-thousand"
+      preemptionPolicy: Never # You probably don't want to set this
+      securityContext:
+        fsGroup: 7878
+        runAsGroup: 8989
+        runAsNonRoot: true
+        runAsUser: 9090
+      containers:
+      - name: redpanda
+        env:
+        - name: "HELLO"
+          value: "WORLD"
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          runAsGroup: 6767
+          runAsUser: 5656
+
+# Showcase that most fields of the post_install_job's PodSpec may be overridden.
+# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.securityContext.fsGroup}", 1234]
+# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.containers[0].securityContext.privileged}", true]
+# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.metadata.labels.label}", "post-install"]
+# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.metadata.annotations.anno}", "post-install"]
+# ASSERT-FIELD-EQUALS ["batch/v1/Job", "default/redpanda-configuration", "{.spec.template.spec.containers[0].env[?(@.name==\"HELLO\")].value}", "WORLD"]
+post_install_job:
+  podTemplate:
+    labels:
+      label: post-install
+    annotations:
+      anno: post-install
+    spec:
+      securityContext:
+        fsGroup: 1234
+      containers:
+      - name: post-install
+        env:
+        - name: "HELLO"
+          value: "WORLD"
+        securityContext:
+          privileged: true
+
+-- app-protocol-regression --
+# Regression test for admin.appProtocol
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/redpanda", "{.spec.ports[0].appProtocol}", "http"]
+listeners:
+  admin:
+    appProtocol: http
+
+-- trust-stores-only-one --
+# Showcase that trustStore may not have more than 1 property.
+# ASSERT-ERROR-CONTAINS ["maxProperties: got 2, want 1"]
+listeners:
+  admin:
+    tls:
+      trustStore:
+        configMapKeyRef:
+          key: redpanda-truststore.pem
+          name: redpanda-truststore.crt
+        secretKeyRef:
+          key: redpanda-truststore.pem
+          name: redpanda-truststore.crt
+
+-- service-monitor-without-tls-in-admin-api --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+# ASSERT-VALID-RPK-CONFIGURATION
+# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "http"]
+monitoring:
+  enabled: true
+
+listeners:
+  admin:
+    tls:
+      enabled: false
+
+-- service-monitor-with-tls-in-admin-api --
+# By default Admin API listeners has enabled TLS but this explicitly enable this
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+# ASSERT-VALID-RPK-CONFIGURATION
+# ASSERT-FIELD-EQUALS ["monitoring.coreos.com/v1/ServiceMonitor", "default/redpanda", "{.spec.endpoints[0].scheme}", "https"]
+monitoring:
+  enabled: true
+
+listeners:
+  admin:
+    tls:
+      enabled: true
+
+-- explicit-default-topic-replications --
+# Regression test for #1501. Respect default_topic_replicas if it's explicitly set.
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "{.default_topic_replications}", "25"]
+
+statefulset:
+  replicas: 1
+
+config:
+  cluster:
+    default_topic_replications: 25
+
+-- implicit-default-topic-replications --
+# Regression test for #1501.
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "{.default_topic_replications}", "3"]
+
+statefulset:
+  replicas: 10
+
+-- implicit-single-broker-default-topic-replications --
+# Regression test for #1501. When replicas < 3 no default value is injected.
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.\\.bootstrap\\.json\\.in}", "\"default_topic_replications\""]
+
+statefulset:
+  replicas: 1
+
+-- service-account-token-automount-false --
+# Assert that all instances of .automountServiceAccountToken are false by default.
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["v1/ServiceAccount", "default/redpanda-console", "{.automountServiceAccountToken}", false]
+# ASSERT-FIELD-EQUALS ["v1/ServiceAccount", "default/redpanda", "{.automountServiceAccountToken}", false]
+# ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.automountServiceAccountToken}", false]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.automountServiceAccountToken}", false]
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+
+-- console-with-extra-volumes --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.volumes[2].name}", "role-bindings-volume"]
+# ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.volumes[2].configMap.name}", "role-bindings-configmap"]
+console:
+  extraVolumes:
+    - name: role-bindings-volume
+      configMap:
+        name: role-bindings-configmap
+  extraVolumeMounts:
+    - name: role-bindings-volume
+      mountPath: /tmp/role-bindings.yml
+      subPath: role-bindings.yml
+      readOnly: true
+
+-- all-possible-objects --
+# Enable's all features across redpanda and its subcharts to ensure that every
+# object type possible is present in this test's output for the purpose of
+# keeping redpanda.Types() up to date.
+#
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+console:
+  enabled: true
+  autoscaling:
+    enabled: true
+  ingress:
+    enabled: true
+
+-- fix-tpl-generation --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/lb-redpanda-0", "{.metadata.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname}", "$PREFIX_TEMPLATE.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/lb-redpanda-1", "{.metadata.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname}", "$PREFIX_TEMPLATE.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/lb-redpanda-2", "{.metadata.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname}", "$PREFIX_TEMPLATE.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-default-cert", "{.spec.dnsNames[12]}", "REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-default-cert", "{.spec.dnsNames[13]}", "*.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-external-cert", "{.spec.dnsNames[12]}", "REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-external-cert", "{.spec.dnsNames[13]}", "*.REDPANDAREDPANDAREDPANDA-testing"]
+external:
+  domain: "{{ (get (fromJson (include \"redpanda.Name\" (dict \"a\" (list $) ))) \"r\") | upper | repeat 3 }}-testing"
+  type: LoadBalancer
+  addresses:
+    - $PREFIX_TEMPLATE
+  prefixTemplate: $POD_ORDINAL-XYZ-$(echo -n $HOST_IP_ADDRESS | sha256sum
+    | head -c 7)
+  externalDns:
+    enabled: true
+
+-- fix-tpl-generation-multiple-addresses --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/lb-redpanda-0", "{.metadata.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname}", "rp0.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/lb-redpanda-1", "{.metadata.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname}", "rp1.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["v1/Service", "default/lb-redpanda-2", "{.metadata.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname}", "rp2.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-default-cert", "{.spec.dnsNames[12]}", "REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-default-cert", "{.spec.dnsNames[13]}", "*.REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-external-cert", "{.spec.dnsNames[12]}", "REDPANDAREDPANDAREDPANDA-testing"]
+# ASSERT-FIELD-EQUALS ["cert-manager.io/v1/Certificate", "default/redpanda-external-cert", "{.spec.dnsNames[13]}", "*.REDPANDAREDPANDAREDPANDA-testing"]
+external:
+  domain: "{{ (get (fromJson (include \"redpanda.Name\" (dict \"a\" (list $) ))) \"r\") | upper | repeat 3 }}-testing"
+  type: LoadBalancer
+  addresses:
+    - rp0
+    - rp1
+    - rp2
+  prefixTemplate: $POD_ORDINAL-XYZ-$(echo -n $HOST_IP_ADDRESS | sha256sum
+    | head -c 7)
+  externalDns:
+    enabled: true
+
+-- extra-volumes-and-volumesmounts --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[9].name}", "test-extra-volume"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name==\"redpanda\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/lifecycle"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name==\"sidecar\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/config-watcher"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"tuning\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/tuning"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"set-datadir-ownership\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/setDataDirOwnership"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"fs-validator\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/fsValidator"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"redpanda-configurator\")].volumeMounts[?(@.name==\"test-extra-volume\")].mountPath}", "/fake/configurator"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name==\"test-init-container\")].image}", "mintel/docker-alpine-bash-curl-jq:latest"]
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+statefulset:
+  initContainers:
+    fsValidator:
+      enabled: true
+    setDataDirOwnership:
+      enabled: true
+  podTemplate:
+    spec:
+      initContainers:
+      - name: "tuning"
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/tuning
+      - name: "redpanda-configurator"
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/configurator
+      - name: "set-datadir-ownership"
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/setDataDirOwnership
+      - name: "fs-validator"
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/fsValidator
+      - name: "test-init-container"
+        image: "mintel/docker-alpine-bash-curl-jq:latest"
+        command: [ "/bin/bash", "-c" ]
+        args:
+          - |
+            set -xe
+            echo "Hello World!"
+      containers:
+      - name: redpanda
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/lifecycle
+      - name: sidecar
+        volumeMounts:
+        - name: test-extra-volume
+          mountPath: /fake/config-watcher
+      volumes:
+      - name: test-extra-volume
+        secret:
+          secretName: '{{ (include "redpanda.fullname" . | trunc 50 ) }}-sts-lifecycle'
+          defaultMode: 0774
+
+-- template-console-examples --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.initContainers[?(@.name==\"test-init-container\")].image}", "mintel/docker-alpine-bash-curl-jq:latest"]
+# ASSERT-FIELD-EQUALS ["apps/v1/Deployment", "default/redpanda-console", "{.spec.template.spec.initContainers[?(@.name==\"test-init-container\")].args[0]}", "echo \"Hello World! Hello World! \""]
+# The namespace is not set in Ingress and ConfigMap resource
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.rules[0].host}", "redpanda-console-first-rule-host"]
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.rules[1].host}", "redpanda-console-second-rule-host"]
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.tls[0].hosts[0]}", "redpanda-console-tls-first-host"]
+# ASSERT-FIELD-EQUALS ["networking.k8s.io/v1/Ingress", "default/redpanda-console", "{.spec.tls[0].hosts[1]}", "redpanda-console-tls-second-host"]
+console:
+  initContainers:
+    extraInitContainers: |-
+      - name: "test-init-container"
+        image: "mintel/docker-alpine-bash-curl-jq:latest"
+        command: [ "/bin/bash", "-c" ]
+        args:
+          - echo "{{ print "Hello World! " | repeat 2 }}"
+  ingress:
+    enabled: true
+    tls:
+      - hosts:
+        - "{{ (get (fromJson (include \"console.Fullname\" (dict \"a\" (list $) ))) \"r\") | trunc 50 }}-tls-first-host"
+        - "{{ (get (fromJson (include \"console.Fullname\" (dict \"a\" (list $) ))) \"r\") | trunc 50 }}-tls-second-host"
+        secretName: test
+    hosts:
+    - host: "{{ (get (fromJson (include \"console.Fullname\" (dict \"a\" (list $) ))) \"r\") | trunc 50 }}-first-rule-host"
+    - host: "{{ (get (fromJson (include \"console.Fullname\" (dict \"a\" (list $) ))) \"r\") | trunc 50 }}-second-rule-host"
+
+-- azure-values --
+# Example redacted values directly from cloud.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+auditLogging:
+  enabled: true
+auth:
+  sasl:
+    enabled: true
+    mechanism: SCRAM-SHA-512
+    secretRef: redpanda-superusers
+    users: []
+clusterDomain: cluster.local
+config:
+  cluster:
+    cloud_storage_azure_container: somecontainer
+    cloud_storage_azure_hierarchical_namespace_enabled: "true"
+    cloud_storage_azure_storage_account: someaccount
+    cloud_storage_credentials_source: azure_aks_oidc_federation
+    cloud_storage_enabled: "true"
+    default_topic_replications: "3"
+  node:
+    crash_loop_limit: 9999
+  tunable:
+    aggregate_metrics: "true"
+    cloud_storage_cache_size_percent: "15"
+    cloud_storage_enable_remote_read: "true"
+    cloud_storage_enable_remote_write: "true"
+    cloud_storage_manifest_cache_size: "16777216"
+    cloud_storage_max_throughput_per_shard: "40000000"
+    cloud_storage_segment_max_upload_interval_sec: "3600"
+    cloud_storage_spillover_manifest_size: "65536"
+    compacted_log_segment_size: "14680064"
+    core_balancing_continuous: "true"
+    disk_reservation_percent: "0"
+    enable_controller_log_rate_limiting: "true"
+    enable_usage: "true"
+    fetch_reads_debounce_timeout: "5"
+    group_topic_partitions: "6"
+    initial_retention_local_target_ms_default: "3600000"
+    kafka_batch_max_bytes: "1048576"
+    kafka_connection_rate_limit: "1000"
+    kafka_connections_max: "3700"
+    kafka_enable_partition_reassignment: "false"
+    kafka_rpc_server_tcp_recv_buf: null
+    kafka_rpc_server_tcp_send_buf: null
+    kafka_throughput_limit_node_in_bps: "13333334"
+    kafka_throughput_limit_node_out_bps: "40000000"
+    log_segment_ms_min: "300000"
+    log_segment_size: "29360128"
+    log_segment_size_max: "29360128"
+    log_segment_size_min: "16777216"
+    max_compacted_log_segment_size: "58720256"
+    max_concurrent_producer_ids: "3700"
+    minimum_topic_replications: "3"
+    partition_autobalancing_mode: continuous
+    raft_learner_recovery_rate: "104857600"
+    retention_local_strict: "false"
+    retention_local_strict_override: "false"
+    retention_local_target_capacity_percent: "70"
+    retention_local_target_ms_default: "21600000"
+    rpc_client_connections_per_peer: "80"
+    rpc_server_listen_backlog: "1000"
+    rps_limit_acls_and_users_operations: "100"
+    rps_limit_configuration_operations: "10"
+    rps_limit_move_operations: "1000"
+    rps_limit_node_management_operations: "10"
+    rps_limit_topic_operations: "100"
+    space_management_enable: "true"
+    space_management_enable_override: "true"
+    topic_memory_per_partition: "3145728"
+    topic_partitions_per_shard: "1066"
+    transaction_coordinator_partitions: "6"
+    use_fetch_scheduler_group: "true"
+console:
+  enabled: false
+enterprise:
+  licenseSecretRef:
+    key: license
+    name: redpanda-license
+external:
+  addresses:
+    - $PREFIX_TEMPLATE
+  domain: some.local.dev.domain
+  enabled: false
+  externalDns:
+    enabled: true
+  prefixTemplate: ${POD_ORDINAL}-uniquevalue-$(echo -n $HOST_IP_ADDRESS | sha256sum | head -c 7)
+  service:
+    enabled: false
+  type: NodePort
+image:
+  repository: docker.io/redpandadata/redpanda
+  tag: v24.2.12
+listeners:
+  admin:
+    external:
+      admin-api:
+        advertisedPorts:
+          - 30644
+        authenticationMethod: http_basic
+        enabled: false
+        port: 30644
+        tls:
+          cert: letsencrypt
+          enabled: true
+    port: 9644
+    tls:
+      cert: selfsigned
+      enabled: true
+  http:
+    authenticationMethod: http_basic
+    external:
+      http-proxy:
+        advertisedPorts:
+          - 30082
+        authenticationMethod: http_basic
+        enabled: true
+        port: 30082
+        tls:
+          cert: letsencrypt
+          enabled: true
+    port: 8082
+    tls:
+      cert: selfsigned
+      enabled: true
+  kafka:
+    authenticationMethod: sasl
+    external:
+      kafka-api-0:
+        advertisedPorts:
+          - 30092
+        authenticationMethod: sasl
+        enabled: true
+        port: 30092
+        tls:
+          cert: letsencrypt
+    port: 9092
+    tls:
+      cert: selfsigned
+  rpc:
+    port: 33145
+    tls:
+      cert: selfsigned
+  schemaRegistry:
+    authenticationMethod: http_basic
+    external:
+      schema-registry:
+        advertisedPorts:
+          - 30081
+        authenticationMethod: http_basic
+        enabled: true
+        port: 30081
+        tls:
+          cert: letsencrypt
+    port: 8081
+    tls:
+      cert: selfsigned
+logging:
+  logLevel: info
+  usageStats:
+    clusterId: someclusterid
+    enabled: true
+monitoring:
+  enabled: true
+  scrapeInterval: 30s
+post_install_job:
+  podTemplate:
+    spec:
+      containers:
+        - name: post-install
+          resources:
+            requests:
+              memory: 16Mi
+      initContainers:
+        - name: bootstrap-yaml-envsubst
+          resources:
+            requests:
+              memory: 16Mi
+rackAwareness:
+  enabled: false
+  nodeAnnotation: topology.kubernetes.io/zone
+rbac:
+  enabled: true
+resources:
+  cpu:
+    cores: 1
+  memory:
+    container:
+      max: 6554Mi
+      min: 6554Mi
+    enable_memory_locking: true
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: someclientid
+  create: true
+  name: someaccountname
+statefulset:
+  additionalRedpandaCmdFlags:
+    - --memory=5G
+    - --reserve-memory=1G
+    - --abort-on-seastar-bad-alloc
+    - --dump-memory-diagnostics-on-alloc-failure-kind=all
+  budget:
+    maxUnavailable: 1
+  initContainers:
+    fsValidator:
+      enabled: true
+    setDataDirOwnership:
+      enabled: false
+  podTemplate:
+    labels:
+      azure.workload.identity/use: "true"
+      cloud.redpanda.com/network-loadbalancer-access: "true"
+    spec:
+      nodeSelector:
+        cloud.redpanda.com/role: redpanda
+      terminationGracePeriodSeconds: 120
+      priorityClassName: system-node-critical
+      tolerations:
+        - effect: NoSchedule
+          key: cloud.redpanda.com/role
+          operator: Equal
+          value: redpanda
+      initContainers:
+      - name: redpanda-configurator
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      - name: fs-validator
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      containers:
+      - name: redpanda
+        volumeMounts:
+        - mountPath: /etc/ssl/certs/redpanda-truststore.crt
+          name: redpanda-truststore
+          subPath: redpanda-truststore.crt
+          readOnly: true
+      volumes:
+      - name: redpanda-truststore
+        configMap:
+          name: redpanda-truststore.crt
+          defaultMode: 0644
+          optional: false
+          items:
+          - key: redpanda-truststore.pem
+            path: redpanda-truststore.crt
+  replicas: 3
+storage:
+  persistentVolume:
+    enabled: true
+    size: 4096Gi
+    storageClass: local-path
+  tiered:
+    mountType: persistentVolume
+    persistentVolume:
+      storageClass: local-path
+tls:
+  certs:
+    letsencrypt:
+      caEnabled: false
+      secretRef:
+        name: letsencrypt-cert
+    selfsigned:
+      caEnabled: true
+      secretRef:
+        name: selfsigned-cert
+  enabled: true
+tuning:
+  tune_aio_events: false
+
+-- some-company-1 --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+auth:
+  sasl:
+    enabled: true
+    mechanism: SCRAM-SHA-512
+    secretRef: kafka-credentials
+config:
+  cluster:
+    election_timeout_ms: 5000
+    enable_leader_balancer: true
+    partition_autobalancing_mode: continuous
+    raft_heartbeat_interval_ms: 500
+console:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: redpanda-statefulset
+            app.kubernetes.io/instance: redpanda
+            app.kubernetes.io/name: redpanda
+        topologyKey: kubernetes.io/hostname
+  config:
+    connect:
+      connectTimeout: 15s
+      readTimeout: 60s
+      requestTimeout: 6s
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+      nginx.ingress.kubernetes.io/auth-realm: '"Authentication required"'
+      nginx.ingress.kubernetes.io/auth-secret: ingress-basic-auth-credentials
+      nginx.ingress.kubernetes.io/auth-type: basic
+    className: nginx
+    enabled: true
+    hosts:
+    - host: console.redpanda.dev.somecustomer.net
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+    tls:
+    - hosts:
+      - console.redpanda.dev.somecustomer.net
+      secretName: redpanda-console-production-tls
+  tests:
+    enabled: true
+enterprise:
+  licenseSecretRef:
+    key: license
+    name: redpanda-enterprise-license
+external:
+  domain: redpanda.dev.somecustomer.net
+  enabled: true
+  externalDns:
+    enabled: true
+  type: LoadBalancer
+listeners:
+  admin:
+    external:
+      default:
+        enabled: false
+  http:
+    external:
+      default:
+        enabled: false
+  kafka:
+    external:
+      default:
+        enabled: true
+  rpc:
+    tls:
+      enabled: false
+  schemaRegistry:
+    external:
+      default:
+        enabled: false
+monitoring:
+  enabled: true
+resources:
+  cpu:
+    cores: "7"
+  memory:
+    container:
+      max: 25Gi
+      min: 20Gi
+    enable_memory_locking: true
+statefulset:
+  initContainers:
+    setDataDirOwnership:
+      enabled: true
+  replicas: 3
+storage:
+  hostPath: /redpanda-data
+  persistentVolume:
+    enabled: true
+    size: 500Gi
+    storageClass: ""
+tests:
+  enabled: true
+tls:
+  certs:
+    external:
+      caEnabled: false
+      issuerRef:
+        kind: ClusterIssuer
+        name: letsencrypt-production
+  enabled: true
+
+-- direct-resources-examples --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.limits}", {"memory": "10Gi"}]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.requests}", {"cpu": "5500m"}]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--smp=5"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--memory=9216M"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--reserve-memory=0M"]
+resources:
+  limits:
+    memory: 10Gi
+  requests:
+    cpu: 5500m
+
+-- direct-resources-none-provided --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.limits}", {}]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[0].resources.requests}", {}]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--smp"]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--memory"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--reserve-memory=0M"]
+resources:
+  limits: {}
+  requests: {}
+
+-- flag-overrides --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--smp=67"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "enable_memory_locking: false"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "overprovisioned: true"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "--default-log-level=warn"]
+statefulset:
+  additionalRedpandaCmdFlags:
+  - --smp=67
+  - --lock-memory=false
+  - --overprovisioned
+  - --default-log-level warn
+
+-- name-overrides --
+# Assert that no empty container is generated when using nameOverride or fullnameOverride.
+# It's (likely) acceptable for the container names themselves to change. This
+# assertion prevents any rogue containers from the default podTemplate from
+# slipping in.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/also-not-redpanda", "{.spec.template.spec.containers[*].name}", ["redpanda", "sidecar"]]
+nameOverride: "not-redpanda"
+fullnameOverride: "also-not-redpanda"
+
+-- trust-store-reference --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# The trust store test defined in any listener (internal or external) should allow referencing external certificate authority (trust store)
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.pandaproxy.pandaproxy_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.pandaproxy.pandaproxy_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.pandaproxy_client.broker_tls.truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.admin_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.admin_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.kafka_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.kafka_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.rpc_server_tls.truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.admin_api.tls.ca_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.kafka_api.tls.ca_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.schema_registry.tls.ca_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.schema_registry_client.broker_tls.truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.schema_registry.schema_registry_api_tls[0].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.schema_registry.schema_registry_api_tls[1].truststore_file}", "/etc/truststores/configmaps/redpanda-company-cacrt-ca.crt"]
+auth:
+  sasl:
+    enabled: false
+
+external:
+  enabled: true
+  type: LoadBalancer
+  domain: <our domain>
+  addresses:
+    - redpanda-0
+    - redpanda-1
+    - redpanda-2
+  externalDns:
+    enabled: true
+  service:
+    enabled: true
+
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+      secretRef:
+        name: redpanda-tls-cert
+      clientSecretRef:
+        name: redpanda-admin-cert
+
+listeners:
+  admin:
+    port: 9643
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 9644
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 9644
+  kafka:
+    port: 9093
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 9094
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 9094
+  http:
+    enabled: true
+    port: 8082
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 8083
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 8083
+  rpc:
+    port: 33145
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+  schemaRegistry:
+    enabled: true
+    port: 8081
+    tls:
+      enabled: true
+      cert: default
+      requireClientAuth: true
+      trustStore:
+        configMapKeyRef:
+          name: redpanda-company-cacrt
+          key: ca.crt
+    external:
+      default:
+        port: 8084
+        tls:
+          enabled: true
+          cert: default
+          requireClientAuth: true
+          trustStore:
+            configMapKeyRef:
+              name: redpanda-company-cacrt
+              key: ca.crt
+        advertisedPorts:
+          - 8084
+-- extra-cluster-configuration --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+statefulset:
+  initContainers:
+    configurator:
+      additionalCLIArgs: ["arg1", "arg2"]
+config:
+  extraClusterConfiguration:
+    r:
+      repr: '"hello world"'
+    cm_k8s:
+      configMapKeyRef:
+        name: my-config-map
+        key: my-key
+    cm_k8s_raw:
+      configMapKeyRef:
+        name: my-config-map
+        key: my-key
+      useRawValue: true
+    sec_k8s:
+      secretKeyRef:
+        name: my-secret
+        key: my-key
+    sec_k8s_raw:
+      secretKeyRef:
+        name: my-secret
+        key: my-key
+      useRawValue: true
+    external:
+      externalSecretRefSelector:
+        name: my-external-secret
+    external_raw:
+      externalSecretRefSelector:
+        name: my-external-secret
+      # Example: if the external value is already in a serialised form
+      useRawValue: true
+    external_opt:
+      externalSecretRefSelector:
+        name: my-external-secret
+        optional: true
+    external_opt_raw:
+      externalSecretRefSelector:
+        name: my-external-secret
+        optional: true
+      useRawValue: true
+
+-- umbrella-disableable-clusterroles --
+# ASSERT-NO-ERROR
+# ASSERT-NO-GVK ["rbac.authorization.k8s.io/v1", "ClusterRole"]
+statefulset:
+  sideCars:
+    controllers:
+      enabled: false
+
+-- itemized-disableable-clusterroles --
+# ASSERT-NO-ERROR
+# ASSERT-NO-GVK ["rbac.authorization.k8s.io/v1", "ClusterRole"]
+statefulset:
+  sideCars:
+    brokerDecommissioner:
+      enabled: false
+    pvcUnbinder:
+      enabled: false
+
+-- jit-certificates --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[?(@.name == \"redpanda-external-cert\")]}", {"name": "redpanda-external-cert", "emptyDir": {}}]
+# This case demonstrates how to provide "Just In Time" certificates via an
+# initContainer by using podTemplate to overwrite the auto generated volume.
+tls:
+  certs:
+    external:
+      # Uncomment this block to disable the generation of cert-manager Certificates.
+      # secretRef:
+      #   name: "set-to-disable-cert-manager"
+
+      # Controls whether or not the chart expects a ca.crt key to
+      # exist in the volume we create with the below init
+      # container. If set to false, the trustStore feature can
+      # continue to be used as is with the strategy.
+      caEnabled: true
+
+statefulset:
+  podTemplate:
+    spec:
+      initContainers:
+        - name: cert-minter
+          image: debian:latest
+          command:
+          - bash
+          - -c
+          - 'cp -L -r /original/.'
+          # Provide the rest of your initContainer implementation here.
+          # This runs with the redpanda ServiceAccount.
+          volumeMounts:
+          # autoMountServiceAccountToken is set to false but we do mount it. To
+          # mount it to your init container, specify this volume:
+          - name: "kube-api-access"
+            readOnly: true
+            mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+          # Mount the empty dir volume that will be used to pass certs through to redpanda.
+          - name: "redpanda-external-cert"
+            mountPath: "/certs"
+          # Unique to this example, we're just stealing the certs from the original.
+          - name: "3rd-party-certs"
+            mountPath: "/original"
+
+      volumes:
+      # Here's where the "magic" is. We're going to use podTemplate
+      # to override the standard certificate mount that the chart
+      # generates with an emptyDir. The initContainer will then
+      # populate it with a tls.crt, tls.key, and (optionally) ca.crt
+      # which makes it look like a standard TLS Secret mount.
+      - name: "redpanda-external-cert" # "{{ nameOverride }}-{{ cert }}-cert"
+        emptyDir: {}
+      # Unique to this example, we're just stealing the certs from the original.
+      - name: "3rd-party-certs"
+        secret:
+          secretName: "redpanda-external-cert"

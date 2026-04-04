@@ -1,0 +1,961 @@
+// Copyright 2026 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package redpanda
+
+import (
+	"context"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go/modules/redpanda"
+	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/kmsg"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+)
+
+func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	factory := internalclient.NewFactory(cfg, c, nil)
+
+	var kafkaAdmCl *kadm.Client
+	var kafkaCl *kgo.Client
+	var seedBroker string
+
+	defer os.Unsetenv("TESTCONTAINERS_RYUK_DISABLED")
+
+	testNamespace := "default"
+	{
+		if os.Getenv("CI") == "true" {
+			err := os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+			require.NoError(t, err)
+		}
+		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v23.2.8")
+		require.NoError(t, err)
+
+		t.Cleanup(func() {
+			ctxCleanup, cancelCleanup := context.WithTimeout(context.Background(), time.Minute*2)
+			defer cancelCleanup()
+			if err = container.Terminate(ctxCleanup); err != nil {
+				t.Fatalf("failed to terminate container: %s", err)
+			}
+		})
+
+		seedBroker, err = container.KafkaSeedBroker(ctx)
+		require.NoError(t, err)
+
+		kafkaCl, err = kgo.NewClient(
+			kgo.SeedBrokers(seedBroker),
+		)
+		require.NoError(t, err)
+		defer kafkaCl.Close()
+
+		kafkaAdmCl = kadm.NewClient(kafkaCl)
+	}
+
+	tr := TopicReconciler{
+		Client:  c,
+		Factory: factory,
+		Scheme:  controller.UnifiedScheme,
+	}
+
+	t.Run("create_topic", func(t *testing.T) {
+		topicName := "create-test-topic"
+
+		createTopic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(3),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig:  nil,
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+				SynchronizationInterval: &metav1.Duration{Duration: time.Second * 5},
+			},
+		}
+
+		err := c.Create(ctx, &createTopic)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, time.Second*5, result.RequeueAfter)
+
+		var mrt kmsg.MetadataResponseTopic
+		{
+			metaReq := kmsg.NewPtrMetadataRequest()
+			reqTopic := kmsg.NewMetadataRequestTopic()
+			reqTopic.Topic = kmsg.StringPtr(topicName)
+			metaReq.Topics = append(metaReq.Topics, reqTopic)
+			resp, errMetadata := metaReq.RequestWith(context.Background(), kafkaCl)
+			require.NoError(t, errMetadata)
+
+			mrt = resp.Topics[0]
+		}
+
+		assert.Equal(t, *createTopic.Spec.ReplicationFactor, len(mrt.Partitions[0].Replicas))
+		assert.Equal(t, *createTopic.Spec.Partitions, len(mrt.Partitions))
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &createTopic)
+		require.NoError(t, err)
+
+		assert.Equal(t, "operator.redpanda.com/finalizer", createTopic.ObjectMeta.Finalizers[0])
+		assert.NotEmpty(t, createTopic.Status.Conditions)
+		cond := createTopic.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.NotEqual(t, 0, len(createTopic.Status.TopicConfiguration))
+	})
+	t.Run("overwrite_topic", func(t *testing.T) {
+		topicName := "overwrite-topic"
+		differentName := "different_name_with_underscore"
+
+		createTopic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				OverwriteTopicName: &differentName,
+				Partitions:         ptr.To(3),
+				ReplicationFactor:  ptr.To(1),
+				AdditionalConfig:   nil,
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+				SynchronizationInterval: &metav1.Duration{Duration: time.Second * 5},
+			},
+		}
+
+		err := c.Create(ctx, &createTopic)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, time.Second*5, result.RequeueAfter)
+
+		var mrt kmsg.MetadataResponseTopic
+		{
+			metaReq := kmsg.NewPtrMetadataRequest()
+			reqTopic := kmsg.NewMetadataRequestTopic()
+			reqTopic.Topic = kmsg.StringPtr(differentName)
+			metaReq.Topics = append(metaReq.Topics, reqTopic)
+			resp, errMetadata := metaReq.RequestWith(context.Background(), kafkaCl)
+			require.NoError(t, errMetadata)
+
+			mrt = resp.Topics[0]
+		}
+
+		assert.Equal(t, *createTopic.Spec.ReplicationFactor, len(mrt.Partitions[0].Replicas))
+		assert.Equal(t, *createTopic.Spec.Partitions, len(mrt.Partitions))
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &createTopic)
+		require.NoError(t, err)
+
+		assert.Equal(t, "operator.redpanda.com/finalizer", createTopic.ObjectMeta.Finalizers[0])
+		assert.NotEmpty(t, createTopic.Status.Conditions)
+		cond := createTopic.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.NotEqual(t, 0, len(createTopic.Status.TopicConfiguration))
+	})
+	t.Run("create_topic_that_already_exist", func(t *testing.T) {
+		topicName := "create-already-existent-test-topic"
+
+		_, err := kafkaAdmCl.CreateTopic(ctx, -1, -1, nil, topicName)
+		require.NoError(t, err)
+
+		createTopic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(1),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig:  nil,
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &createTopic)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, time.Second*3, result.RequeueAfter)
+
+		var mrt kmsg.MetadataResponseTopic
+		{
+			metaReq := kmsg.NewPtrMetadataRequest()
+			reqTopic := kmsg.NewMetadataRequestTopic()
+			reqTopic.Topic = kmsg.StringPtr(topicName)
+			metaReq.Topics = append(metaReq.Topics, reqTopic)
+			resp, errMetadata := metaReq.RequestWith(context.Background(), kafkaCl)
+			require.NoError(t, errMetadata)
+
+			mrt = resp.Topics[0]
+		}
+
+		assert.Equal(t, *createTopic.Spec.ReplicationFactor, len(mrt.Partitions[0].Replicas))
+		assert.Equal(t, *createTopic.Spec.Partitions, len(mrt.Partitions))
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &createTopic)
+		require.NoError(t, err)
+
+		assert.Equal(t, "operator.redpanda.com/finalizer", createTopic.ObjectMeta.Finalizers[0])
+		assert.NotEmpty(t, createTopic.Status.Conditions)
+		cond := createTopic.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.NotEqual(t, 0, len(createTopic.Status.TopicConfiguration))
+	})
+	t.Run("add_partition", func(t *testing.T) {
+		topicName := "partition-count-change"
+
+		// given topic custom resource
+		partitionCountChange := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(3),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig: map[string]*string{
+					"segment.bytes": ptr.To("7654321"),
+				},
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+		err := c.Create(ctx, &partitionCountChange)
+		require.NoError(t, err)
+
+		// when topic custom resource reconciled
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		_, err = tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &partitionCountChange)
+		require.NoError(t, err)
+
+		partitionCountChange.Spec.Partitions = ptr.To(6)
+
+		err = c.Update(ctx, &partitionCountChange)
+		require.NoError(t, err)
+
+		// and reconcile
+		_, err = tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		// then check partition count
+		reqMeta := kmsg.NewPtrMetadataRequest()
+		reqTopic := kmsg.NewMetadataRequestTopic()
+		reqTopic.Topic = kmsg.StringPtr(topicName)
+		reqMeta.Topics = append(reqMeta.Topics, reqTopic)
+
+		resp, err := reqMeta.RequestWith(ctx, kafkaCl)
+		assert.NoError(t, err)
+		assert.Equal(t, *partitionCountChange.Spec.Partitions, len(resp.Topics[0].Partitions))
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &partitionCountChange)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, partitionCountChange.Status.Conditions)
+		cond := partitionCountChange.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.NotEqual(t, 0, len(partitionCountChange.Status.TopicConfiguration))
+	})
+	t.Run("unable_to_remove_partition", func(t *testing.T) {
+		topicName := "scale-down-partition-count"
+
+		// given topic custom resource
+		partitionCountChange := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(6),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig: map[string]*string{
+					"segment.bytes": ptr.To("7654321"),
+				},
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+		err := c.Create(ctx, &partitionCountChange)
+		require.NoError(t, err)
+
+		// when topic custom resource reconciled
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		_, err = tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &partitionCountChange)
+		require.NoError(t, err)
+
+		partitionCountChange.Spec.Partitions = ptr.To(3)
+
+		err = c.Update(ctx, &partitionCountChange)
+		require.NoError(t, err)
+
+		// and reconcile
+		_, err = tr.Reconcile(ctx, req)
+		assert.Error(t, err)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &partitionCountChange)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, partitionCountChange.Status.Conditions)
+		cond := partitionCountChange.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		assert.Equal(t, redpandav1alpha2.FailedReason, cond.Reason)
+		assert.NotEqual(t, 0, len(partitionCountChange.Status.TopicConfiguration))
+	})
+	t.Run("unable_to_increase_replication_factor", func(t *testing.T) {
+		topicName := "change-replication-factor"
+
+		// given topic custom resource
+		replicationFactorChange := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(6),
+				ReplicationFactor: ptr.To(1),
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+		err := c.Create(ctx, &replicationFactorChange)
+		require.NoError(t, err)
+
+		// when topic custom resource reconciled
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		_, err = tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &replicationFactorChange)
+		require.NoError(t, err)
+
+		replicationFactorChange.Spec.ReplicationFactor = ptr.To(3)
+
+		err = c.Update(ctx, &replicationFactorChange)
+		require.NoError(t, err)
+
+		// and reconcile
+		_, err = tr.Reconcile(ctx, req)
+		assert.Error(t, err)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &replicationFactorChange)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, replicationFactorChange.Status.Conditions)
+		cond := replicationFactorChange.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionFalse, cond.Status)
+		assert.Equal(t, redpandav1alpha2.FailedReason, cond.Reason)
+		assert.NotEqual(t, 0, len(replicationFactorChange.Status.TopicConfiguration))
+	})
+	t.Run("delete_a_key`s_config_value", func(t *testing.T) {
+		removeTopicPropertyName := "remote-topic-property"
+		testPropertyKey := "max.message.bytes"
+		testPropertyValue := "87678987"
+
+		// given topic custom resource
+		removeProperty := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      removeTopicPropertyName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(3),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig: map[string]*string{
+					testPropertyKey: ptr.To(testPropertyValue),
+					"segment.bytes": ptr.To("7654321"),
+				},
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+		err := c.Create(ctx, &removeProperty)
+		require.NoError(t, err)
+
+		// when topic custom resource reconciled
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      removeTopicPropertyName,
+				Namespace: testNamespace,
+			},
+		}
+		_, err = tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      removeTopicPropertyName,
+			Namespace: testNamespace,
+		}, &removeProperty)
+		require.NoError(t, err)
+
+		// then remove tiered storage property
+		delete(removeProperty.Spec.AdditionalConfig, testPropertyKey)
+
+		err = c.Update(ctx, &removeProperty)
+		require.NoError(t, err)
+
+		// and reconcile
+		_, err = tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		// then confirm there is no that property
+		rc, err := kafkaAdmCl.DescribeTopicConfigs(ctx, removeTopicPropertyName)
+		require.NoError(t, err)
+
+		config, err := rc.On(removeTopicPropertyName, nil)
+		require.NoError(t, err)
+		for _, conf := range config.Configs {
+			if conf.Key == testPropertyKey {
+				assert.NotEqual(t, testPropertyValue, *conf.Value)
+			}
+			value, exist := removeProperty.Spec.AdditionalConfig[conf.Key]
+			if !exist {
+				continue
+			}
+
+			require.NotNil(t, conf.Value, "topic configuration should not be empty", "key", conf.Key)
+			assert.Equal(t, *value, *conf.Value, "topic configuration mismatch", "key", conf.Key)
+			delete(removeProperty.Spec.AdditionalConfig, conf.Key)
+		}
+		assert.Len(t, removeProperty.Spec.AdditionalConfig, 0)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      removeTopicPropertyName,
+			Namespace: testNamespace,
+		}, &removeProperty)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, removeProperty.Status.Conditions)
+		cond := removeProperty.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.NotEqual(t, 0, len(removeProperty.Status.TopicConfiguration))
+	})
+	t.Run("both_tiered_storage_property", func(t *testing.T) {
+		// Redpanda fails to set both remote.read and write when passed
+		// at the same time, so we issue first the set request for write,
+		// then the rest of the requests.
+		// See https://github.com/redpanda-data/redpanda/issues/9191 and
+		// https://github.com/redpanda-data/redpanda/issues/4499
+		twoTieredStorageConfTopicName := "both-tiered-storage-conf" // nolint:gosec // this is not credentials
+
+		tieredStorageConf := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      twoTieredStorageConfTopicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(3),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig: map[string]*string{
+					"redpanda.remote.read":  ptr.To("true"),
+					"redpanda.remote.write": ptr.To("true"),
+					"segment.bytes":         ptr.To("7654321"),
+				},
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &tieredStorageConf)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      twoTieredStorageConfTopicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 3*time.Second, result.RequeueAfter)
+
+		rc, err := kafkaAdmCl.DescribeTopicConfigs(ctx, twoTieredStorageConfTopicName)
+		require.NoError(t, err)
+
+		config, err := rc.On(twoTieredStorageConfTopicName, nil)
+		require.NoError(t, err)
+		for _, conf := range config.Configs {
+			value, exist := tieredStorageConf.Spec.AdditionalConfig[conf.Key]
+			if !exist {
+				continue
+			}
+			require.NotNil(t, conf.Value, "topic configuration should not be empty", "key", conf.Key)
+			assert.Equal(t, *value, *conf.Value, "topic configuration mismatch", "key", conf.Key)
+			delete(tieredStorageConf.Spec.AdditionalConfig, conf.Key)
+		}
+		assert.Len(t, tieredStorageConf.Spec.AdditionalConfig, 0)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      twoTieredStorageConfTopicName,
+			Namespace: testNamespace,
+		}, &tieredStorageConf)
+		require.NoError(t, err)
+
+		tieredStorageConf.Spec.AdditionalConfig["redpanda.remote.read"] = ptr.To("false")
+		tieredStorageConf.Spec.AdditionalConfig["redpanda.remote.write"] = ptr.To("false")
+
+		err = c.Update(ctx, &tieredStorageConf)
+		require.NoError(t, err)
+
+		result, err = tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 3*time.Second, result.RequeueAfter)
+
+		rc, err = kafkaAdmCl.DescribeTopicConfigs(ctx, twoTieredStorageConfTopicName)
+		require.NoError(t, err)
+
+		config, err = rc.On(twoTieredStorageConfTopicName, nil)
+		require.NoError(t, err)
+		for _, conf := range config.Configs {
+			value, exist := tieredStorageConf.Spec.AdditionalConfig[conf.Key]
+			if !exist {
+				continue
+			}
+			require.NotNil(t, conf.Value, "topic configuration should not be empty", "key", conf.Key)
+			assert.Equal(t, *value, *conf.Value, "topic configuration mismatch", "key", conf.Key)
+			delete(tieredStorageConf.Spec.AdditionalConfig, conf.Key)
+		}
+		assert.Len(t, tieredStorageConf.Spec.AdditionalConfig, 0)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      twoTieredStorageConfTopicName,
+			Namespace: testNamespace,
+		}, &tieredStorageConf)
+		require.NoError(t, err)
+
+		assert.NotEmpty(t, tieredStorageConf.Status.Conditions)
+		cond := tieredStorageConf.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.NotEqual(t, 0, len(tieredStorageConf.Status.TopicConfiguration))
+	})
+	t.Run("check_status_after_reconciliation", func(t *testing.T) {
+		topicName := "topic-cr-status"
+
+		topicStatus := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       topicName,
+				Namespace:  testNamespace,
+				Generation: 1,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(3),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig:  nil,
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &topicStatus)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, time.Second*3, result.RequeueAfter)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      topicName,
+			Namespace: testNamespace,
+		}, &topicStatus)
+		assert.NoError(t, err)
+
+		assert.Equal(t, topicStatus.Generation, topicStatus.Status.ObservedGeneration)
+		cond := topicStatus.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.Equal(t, topicStatus.Generation, cond.ObservedGeneration)
+		assert.NotEqual(t, 0, len(topicStatus.Status.TopicConfiguration))
+	})
+	t.Run("update_topic_configuration", func(t *testing.T) {
+		updateTopicName := "update-topic-config"
+
+		_, err := kafkaAdmCl.CreateTopic(ctx, -1, -1, nil, updateTopicName)
+		require.NoError(t, err)
+
+		updateTopic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      updateTopicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(3),
+				ReplicationFactor: ptr.To(1),
+				AdditionalConfig: map[string]*string{
+					"redpanda.remote.read": ptr.To("true"),
+					"segment.bytes":        ptr.To("7654321"),
+				},
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &updateTopic)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      updateTopicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 3*time.Second, result.RequeueAfter)
+
+		rc, err := kafkaAdmCl.DescribeTopicConfigs(ctx, updateTopicName)
+		require.NoError(t, err)
+
+		topic, err := rc.On(updateTopicName, nil)
+		require.NoError(t, err)
+		for _, conf := range topic.Configs {
+			value, exist := updateTopic.Spec.AdditionalConfig[conf.Key]
+			if !exist {
+				continue
+			}
+			require.NotNil(t, conf.Value, "topic configuration should not be empty", "key", conf.Key)
+			assert.Equal(t, *value, *conf.Value, "topic configuration mismatch", "key", conf.Key)
+			delete(updateTopic.Spec.AdditionalConfig, conf.Key)
+		}
+		assert.Len(t, updateTopic.Spec.AdditionalConfig, 0)
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      updateTopicName,
+			Namespace: testNamespace,
+		}, &updateTopic)
+		assert.NoError(t, err)
+
+		assert.NotEmpty(t, updateTopic.Status.Conditions)
+		cond := updateTopic.Status.Conditions[0]
+		assert.Equal(t, redpandav1alpha2.ReadyCondition, cond.Type)
+		assert.Equal(t, metav1.ConditionTrue, cond.Status)
+		assert.Equal(t, redpandav1alpha2.SucceededReason, cond.Reason)
+		assert.NotEqual(t, 0, len(updateTopic.Status.TopicConfiguration))
+	})
+	t.Run("ignore_not_found", func(t *testing.T) {
+		topicName := "ignore-not-found"
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+	})
+	t.Run("delete_existent_topic_k8s_meta_deletion_timestamp", func(t *testing.T) {
+		deleteTopicName := "delete-test-topic"
+
+		_, err := kafkaAdmCl.CreateTopic(ctx, -1, -1, nil, deleteTopicName)
+		require.NoError(t, err)
+
+		deleteTopic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       deleteTopicName,
+				Namespace:  testNamespace,
+				Finalizers: []string{FinalizerKey},
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+
+		err = c.Create(ctx, &deleteTopic)
+		require.NoError(t, err)
+		err = c.Delete(ctx, &deleteTopic)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      deleteTopicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+
+		td, err := kafkaAdmCl.ListTopics(ctx, deleteTopicName)
+		assert.NoError(t, err)
+
+		assert.False(t, td.Has(deleteTopicName))
+
+		err = c.Get(ctx, types.NamespacedName{
+			Name:      deleteTopicName,
+			Namespace: testNamespace,
+		}, &deleteTopic)
+		assert.True(t, apierrors.IsNotFound(err))
+	})
+	t.Run("delete_none_existent_topic_k8s_meta_deletion_timestamp", func(t *testing.T) {
+		deleteNoneExistentTopicName := "delete-none-existent-test-topic"
+
+		noneExistentTestTopic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       deleteNoneExistentTopicName,
+				Namespace:  testNamespace,
+				Finalizers: []string{FinalizerKey},
+			},
+
+			Spec: redpandav1alpha2.TopicSpec{
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &noneExistentTestTopic)
+		require.NoError(t, err)
+		err = c.Delete(ctx, &noneExistentTestTopic)
+		require.NoError(t, err)
+
+		req := ctrl.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      deleteNoneExistentTopicName,
+				Namespace: testNamespace,
+			},
+		}
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err)
+
+		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+	})
+	t.Run("delete_topic_with_missing_credentials_succeeds", func(t *testing.T) {
+		// Deletion should succeed when credentials Secret is missing.
+		// This prevents namespaces from getting stuck in Terminating state
+		// when secrets are deleted before topics.
+		topicName := "delete-topic-missing-secret"
+
+		topic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       topicName,
+				Namespace:  testNamespace,
+				Finalizers: []string{FinalizerKey},
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(1),
+				ReplicationFactor: ptr.To(1),
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+					SASL: &redpandav1alpha2.KafkaSASL{
+						Username: "testuser",
+						Password: &redpandav1alpha2.ValueSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "non-existent-secret",
+								},
+								Key: "password",
+							},
+						},
+						Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+					},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &topic)
+		require.NoError(t, err)
+
+		err = c.Delete(ctx, &topic)
+		require.NoError(t, err)
+
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := ctrl.Request{NamespacedName: key}
+
+		// Reconcile should succeed (ignoring the not-found error during deletion)
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err, "reconciler should not error when secret is missing during deletion")
+		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+
+		// Topic should be deleted (finalizer removed)
+		err = c.Get(ctx, key, &topic)
+		assert.True(t, apierrors.IsNotFound(err), "topic should be deleted after finalizer removal")
+	})
+	t.Run("delete_topic_with_unreachable_broker_succeeds", func(t *testing.T) {
+		// Deletion should succeed when broker is unreachable (connection refused).
+		// This prevents topics from getting stuck in Terminating state when the
+		// Kafka cluster is gone or unreachable.
+		topicName := "delete-topic-unreachable-broker"
+
+		topic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:       topicName,
+				Namespace:  testNamespace,
+				Finalizers: []string{FinalizerKey},
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(1),
+				ReplicationFactor: ptr.To(1),
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					// Use a localhost address that will definitely fail to connect
+					Brokers: []string{"localhost:19092"},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &topic)
+		require.NoError(t, err)
+
+		err = c.Delete(ctx, &topic)
+		require.NoError(t, err)
+
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := ctrl.Request{NamespacedName: key}
+
+		// Reconcile should succeed (ignoring the dial error during deletion)
+		result, err := tr.Reconcile(ctx, req)
+		assert.NoError(t, err, "reconciler should not error when broker is unreachable during deletion")
+		assert.Equal(t, time.Duration(0), result.RequeueAfter)
+
+		// Topic should be deleted (finalizer removed)
+		err = c.Get(ctx, key, &topic)
+		assert.True(t, apierrors.IsNotFound(err), "topic should be deleted after finalizer removal")
+	})
+}

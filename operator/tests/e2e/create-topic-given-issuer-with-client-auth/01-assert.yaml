@@ -1,0 +1,78 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: create-topic-with-client-auth
+status:
+  readyReplicas: 1
+  replicas: 1
+  upgrading: false
+  restarting: false
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/create-topic-with-client-auth --timeout 300s --namespace $NAMESPACE
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: create-topic-with-client-auth-user-client
+status:
+  conditions:
+    - reason: Ready
+      status: "True"
+      type: Ready
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: create-topic-with-client-auth-operator-client
+status:
+  conditions:
+    - reason: Ready
+      status: "True"
+      type: Ready
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: create-topic-with-client-auth-redpanda
+status:
+  conditions:
+    - reason: Ready
+      status: "True"
+      type: Ready
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: create-topic-with-client-auth-schema-registry-client
+spec:
+  issuerRef:
+    name: create-topic-with-client-auth-schema-registry-root-issuer
+status:
+  conditions:
+    - reason: Ready
+      status: "True"
+      type: Ready
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: create-topic-with-client-auth-schema-registry-node
+spec:
+  issuerRef:
+    kind: ClusterIssuer
+    name: cluster-tls-root-issuer-with-auth
+status:
+  conditions:
+    - reason: Ready
+      status: "True"
+      type: Ready
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh

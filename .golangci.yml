@@ -1,0 +1,122 @@
+version: "2"
+formatters:
+  enable:
+  - gci
+  - gofumpt
+  settings:
+    gci:
+      sections:
+      - standard
+      - default
+      - prefix(github.com/redpanda-data/redpanda-operator)
+
+      custom-order: true
+      no-inline-comments: false
+      no-prefix-comments: false
+  exclusions:
+    generated: strict
+
+linters:
+  default: none
+  enable:
+  - depguard
+#  - errcheck
+  - gosec
+  - govet
+  - importas
+  - ineffassign
+  - misspell
+  - staticcheck
+  - unparam
+  - unused
+  settings:
+
+    depguard:
+      rules:
+        # cockroachdb errors is the most complete error library. It automatically
+        # adds stack traces and has a very pleasant %v formatting.
+        errors:
+          deny:
+          - pkg: "^errors$"
+            desc: 'use "github.com/cockroachdb/errors"'
+          - pkg: "^github.com/pkg/errors"
+            desc: 'use "github.com/cockroachdb/errors"'
+        # the yaml parsing behavior of each of these is slightly different, so standardize
+        # on one
+        yaml:
+          deny:
+          - pkg: "gopkg.in/yaml.v2"
+            desc: 'use "sigs.k8s.io/yaml"'
+          - pkg: "gopkg.in/yaml.v3"
+            desc: 'use "sigs.k8s.io/yaml"'
+        gotohelm:
+          deny:
+          - pkg: "github.com/redpanda-data/redpanda-operator/pkg/gotohelm"
+            desc: 'use "github.com/redpanda-data/redpanda-operator/gotohelm"'
+        chart-versions:
+          deny:
+          - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
+            desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
+          - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda/v5$"
+            desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
+          - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
+            desc: 'import specific charts, the overarching charts module is now deprecated'
+
+    gosec:
+      excludes:
+      - G101 # False positives for secret references (e.g. Buildkite secret IDs, env var names).
+      - G115 # integer overflows aren't super likely to be a problem for us and we're really just at the mercy of the APIs we use.
+      - G117 # Struct fields matching secret patterns (Password, AccessKey, etc.) are unavoidable in Kubernetes API types.
+      - G204 # Subprocess launched with variable is expected for kubectl/helm invocations.
+      - G304 # Potential file inclusion via variable
+      - G703 # Path traversal via taint analysis flags legitimate temp file cleanup.
+      - G704 # SSRF via taint analysis flags legitimate HTTP API calls.
+      - G705 # XSS via taint analysis flags writes to non-HTTP buffers/stdout.
+
+      config:
+        G306: "0644" # Maximum allowed os.WriteFile Permissions
+
+    importas:
+      # Disallow not using aliases for all matches of the below alias list.
+      no-unaliased: true
+      # Enforce standard import aliases for k8s type packages of (group)(version)
+      alias:
+      - pkg: k8s.io/api/(\w+)/(v\d)
+        alias: $1$2
+      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+        alias: metav1
+      - pkg: k8s.io/client-go/applyconfigurations/(\w+)/(v\w+)
+        alias: apply$1$2
+      - pkg: github.com/redpanda-data/redpanda-operator/operator/api/(\w+)/(v\w+)
+        alias: $1$2
+      - pkg: github.com/cert-manager/cert-manager/pkg/apis/meta/v1
+        alias: cmmetav1
+      - pkg: github.com/cert-manager/cert-manager/pkg/apis/certmanager/(v\w+)
+        alias: certmanager$1
+      - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/(v\w+)
+        alias: monitoring$1
+
+    staticcheck:
+      # We should revisit
+      # S1009: should omit nil check; len() for nil slices is defined as zero
+      # QF1008: could remove embedded field "ObjectMeta" from selector
+      # QF1001: could apply De Morgan's law
+      # ST1003: struct field ApiVersion should be APIVersion
+      # ST1019: package "bytes" is being imported more than once
+      # ST1021: comment on exported type Resources should be of the form "Resources ..." (with optional leading article)
+      checks: ["all", "-ST1005", "-ST1000", "-QF1003", "-ST1020", "-S1009", "-QF1008", "-ST1003", "-QF1001", "-ST1019", "-ST1021"]
+
+  exclusions:
+    rules:
+    # unparam will complain about functions that are called with a constant
+    # parameter. In production code, that may be helpful but it harms the
+    # readability of test code to eliminate such cases.
+    - path: '(.+)_test\.go'
+      text: "always receives"
+      linters:
+      - unparam
+    # We're not aiming to be secure in our tests.
+    - linters:
+      - gosec
+      - wrapcheck
+      path: '(.+)_test\.go'

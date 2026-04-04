@@ -1,0 +1,249 @@
+version: '3'
+
+# if a task is referenced multiple times, only run it once
+run: once
+
+# configure bash to recursively expand **
+shopt: [globstar]
+
+vars:
+  SRC_DIR:
+    sh: 'realpath {{default "." .SRC_DIR}}'
+  BUILD_ROOT:
+    sh: 'realpath {{default ".build" .BUILD_ROOT}}'
+  TIMESTAMP: # Timestamp used for any build artifacts.
+    # MacOS' man page isn't helpful. https://man7.org/linux/man-pages/man1/date.1.html
+    # Roughly ISO 8601
+    sh: date -u '+%Y-%m-%dT%T:%SZ'
+  COMMIT: # The commit to bake into any build artifacts.
+    sh: git rev-parse HEAD
+  # Version stamps for baking into build artifacts and use as tags.
+  # `git describe --dirty` can generate 1 of 4 outputs:
+  # 1. v0.0.0 - HEAD is tagged as v0.0.0 and no changes are in the index.
+  # 2. v0.0.0-dirty - HEAD is tagged as v0.0.0 and there are changes in the index.
+  # 3. v0.0.0-<N>-g<commit> - HEAD is at <commit> which is N commits away from v0.0.0; no changes in index.
+  # 4. v0.0.0-<N>-g<commit>-dirty - HEAD is at <commit> which is N commits away from v0.0.0; changes in index.
+  # `--tags` is required to match tags with `/`'s in them which we have due to go modules' tagging conventions.
+  # `--match` is used to target tags that apply to a specific module.
+  # `--always` is a fallback to print out the commit if no tag is found.
+  # `sed` is used to trim off the qualifying parts of the tag so we just get the "version".
+  OPERATOR_VERSION:
+    sh: '{{.SRC_DIR}}/ci/scripts/version.sh operator'
+  CONSOLE_CHART_VERSION:
+    # NB: CONSOLE_CHART_VERSION is currently only used for the console chart's nightly releases.
+    sh: '{{.SRC_DIR}}/ci/scripts/version.sh charts/console'
+
+includes:
+  build: taskfiles/build.yml
+  charts: taskfiles/charts.yml
+  ci: taskfiles/ci.yml
+  dev: taskfiles/dev.yml
+  k8s: taskfiles/k8s.yml
+
+tasks:
+  lint:
+    desc: "Lint all go code and helm charts"
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
+    cmds:
+      - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
+      - task: charts:download-dependencies
+        vars: { CHART: redpanda/chart }
+      - helm lint --strict ./charts/console/chart ./charts/connectors ./charts/redpanda/chart ./operator/chart/
+      - actionlint
+
+  lint-fix:
+    desc: "equivalent to task lint -- --fix"
+    cmds:
+      - task: lint
+        vars:
+          CLI_ARGS: "--fix"
+
+  mod:tidy:
+    desc: "Runs go mod tidy on all go modules in this repo"
+    # This isn't the most accurate check as any new imports in go files may
+    # require go mod tidy to get re-run. Builds will fail and CI will always
+    # re-run this task, so some false negatives are acceptable.
+    sources:
+    - ./**/go.mod
+    - ./**/go.sum
+    vars:
+      MOD:
+        sh: go work edit -json | jq -r '.Use.[].DiskPath'
+    cmds:
+    # go.works make things a bit funky. We have to sync twice to avoid
+    # accidentally upgrading deps everywhere which can be quite disruptive.
+    #
+    # The first sync will ensure that any newly added transient deps get pulled
+    # in at the same version as our other modules, if applicable.
+    # If we have Mod A and B and a 3rd party dep X such that:
+    # A -> B -> X
+    # if A imports X:
+    # `go mod tidy` will pull in the most recent version of X.
+    # `go work sync` will pull in the version that B is using.
+    - go work sync
+    - for:
+        var: MOD
+      cmd: go mod tidy -C {{.ITEM}}
+    # The second go work sync, is the more standard go work sync. Any newly
+    # added deps will get added to the go.work.sum file.
+    - go work sync
+
+  fmt:
+    desc: "gofumpt all go code"
+    cmds:
+      - gofumpt -w ./
+
+  generate:
+    desc: "[re]generate all generated files"
+    cmds:
+      - task: mod:tidy
+      # update-licenses may update licenses/boilerplate.go.txt which is used
+      # for _some_ of k8s:generate. For simplicity, we just run update-licenses
+      # twice.
+      - task: dev:update-licenses
+      - task: k8s:generate
+      - task: dev:update-licenses
+      - task: charts:generate
+      - task: generate:third-party-licenses-list
+      - task: generate:changelog
+      - task: generate:buildkite-pipelines
+      - nix fmt . # Ensure flake.nix has been formatted.
+
+  generate:buildkite-pipelines:
+    deps:
+    - build:gen
+    cmds:
+    - gen pipeline testsuite > .buildkite/testsuite.yml
+
+  generate:third-party-licenses-list:
+    dir: operator
+    method: checksum
+    generates:
+    - ../licenses/third_party.md
+    sources:
+    - ./go.mod
+    - ./go.sum
+    cmds:
+    # Our own packages should not be reported as third party license
+    # The example.com/example depedency is ignored as it's part of the
+    # gotohelm test suite (visit ./pkg/gotohelm/testdata/src/example/go.mod)
+    - |
+      go-licenses report ./... --template ../licenses/third_party.md.tpl \
+      --ignore buf.build/gen/go/redpandadata \
+      --ignore example.com/example \
+      --ignore github.com/redpanda-data/common-go \
+      --ignore github.com/redpanda-data/console/backend \
+      --ignore github.com/redpanda-data/redpanda \
+      --ignore github.com/redpanda-data/redpanda-operator > ../licenses/third_party.md
+
+  generate:changelog:
+    generates:
+    - charts/*/CHANGELOG.md
+    - operator/CHANGELOG.md
+    sources:
+    - ./.changes/**/*.md
+    - ./.changes/**/*.yaml
+    cmds:
+    - changie merge # Ensure CHANGELOG.mds are up to date.
+
+  build:
+    cmds:
+      - task: build:operator
+
+  build:image:
+    aliases:
+    - build:images
+    cmds:
+      - task: build:operator-image
+        vars:
+          CLI_ARGS: '--load {{.CLI_ARGS}}'
+
+  build:charts:
+    desc: "Run helm dep build for all charts"
+    cmds:
+      - helm dep build ./charts/redpanda/chart
+
+  test:unit:
+    desc: "Run all unit tests (~5m)"
+    vars:
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
+    cmds:
+    - '{{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}'
+
+  test:integration:
+    desc: "Run all integration tests (~90m)"
+    deps:
+    # The operator image is required to test the configurator and sidecar.
+    # In integration tests, the operator itself will be run from the go test process.
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
+    vars:
+      RUN: '{{ default `"^TestIntegration"` .RUN }}'
+    cmds:
+    - task: test:unit
+      vars:
+        GO_TEST_RUNNER:
+          ref: .GO_TEST_RUNNER
+        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run {{.RUN}} -timeout 60m -tags integration'
+
+  test:acceptance:
+    desc: "Run all acceptance tests (~90m)"
+    deps:
+    - task: test:pull-images
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
+    vars:
+      RUN: '{{ default `"^TestAcceptance"` .RUN }}'
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+    cmds:
+    - task: test:unit
+      vars:
+        GO_TEST_RUNNER:
+          ref: .GO_TEST_RUNNER
+        # Minor speed up only building the acceptance package, which (surprise
+        # surprise) is the only package with acceptance tests.
+        PKG: ./acceptance/
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 60m -tags acceptance'
+
+  test:pull-images:
+    vars:
+      DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
+      DEFAULT_TEST_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
+      DEFAULT_TEST_REDPANDA_VERSION: v25.3.1
+      DEFAULT_TEST_UPGRADE_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
+      DEFAULT_TEST_UPGRADE_REDPANDA_VERSION: v24.3.11
+      DEFAULT_TEST_UPGRADE_OPERATOR_VERSION: v2.3.9-24.3.11
+      TEST_CERTMANAGER_VERSION: '{{ .TEST_CERTMANAGER_VERSION | default .DEFAULT_TEST_CERTMANAGER_VERSION }}'
+      TEST_REDPANDA_REPO: '{{ .TEST_REDPANDA_REPO | default .DEFAULT_TEST_REDPANDA_REPO }}'
+      TEST_REDPANDA_VERSION: '{{ .TEST_REDPANDA_VERSION | default .DEFAULT_TEST_REDPANDA_VERSION }}'
+      TEST_UPGRADE_REDPANDA_REPO: '{{ .TEST_UPGRADE_REDPANDA_REPO | default .DEFAULT_TEST_UPGRADE_REDPANDA_REPO }}'
+      TEST_UPGRADE_REDPANDA_VERSION: '{{ .TEST_UPGRADE_REDPANDA_VERSION | default .DEFAULT_TEST_UPGRADE_REDPANDA_VERSION }}'
+      TEST_UPGRADE_OPERATOR_VERSION: '{{ .TEST_UPGRADE_OPERATOR_VERSION | default .DEFAULT_TEST_UPGRADE_OPERATOR_VERSION }}'
+      IMAGES:
+      - quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
+      - quay.io/jetstack/cert-manager-webhook:{{.TEST_CERTMANAGER_VERSION}}
+      - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
+      - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
+      - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
+
+    cmds:
+      - for: {var: IMAGES}
+        cmd: docker inspect {{.ITEM}} > /dev/null || docker pull {{.ITEM}}
+
+  pending-prs:
+    desc: "Get all pending PRs for watched branches"
+    silent: true
+    cmds:
+      - ./.github/workflows/scripts/pending-prs terminal redpanda-data/redpanda-operator

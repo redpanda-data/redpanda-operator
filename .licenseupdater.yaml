@@ -1,0 +1,32 @@
+licenses: ["BSL", "RCL"]
+ignore:
+  - extension: .yaml
+    match: /test(s){0,1}/
+  - match: generated
+  # Ignore go files installed in testdata as they're not writable.
+  - directory: gen/partial/testdata
+  - directory: gotohelm/testdata
+  - directory: .build
+  - directory: .buildkite
+  - directory: .github
+  - directory: .task
+  - directory: dist
+  - directory: operator/api/applyconfiguration
+  # Ignore go files from gotohelm's rewrite tests, they'll have the header but
+  # after a build directive.
+  - match: .+\.rewritten\.go$
+  # Ignore go files from genpartial, they utilize a -header flag.
+  - match: .+\.gen\.go$
+files:
+  - name: ../licenses/boilerplate.go.txt
+    type: go
+    license: BSL
+matches:
+  - extension: .yaml
+    directory: operator/helm-chart/charts/redpanda-operator/templates
+    type: helm
+    license: BSL
+  - extension: .go
+    type: go
+    license: BSL
+license_directory: ../licenses

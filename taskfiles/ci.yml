@@ -1,0 +1,225 @@
+version: '3'
+
+tasks:
+
+  configure:
+    desc: "Configure a CI agent"
+    cmds:
+    # operator go test is using at least 2 k3d clusters which might exhaust limits of opened files
+    - task: set-aio-max
+    - task: set-inotify-watches
+    - task: set-inotify-instances
+    - cmd: "mkdir -p {{.SRC_DIR}}/artifacts"
+
+  lint:
+    cmds:
+      - task: :generate
+      - task: :lint
+      # Fail on any generated diffs.
+      - git diff --exit-code
+
+  test:unit:
+    cmds:
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      - 'echo "--- Running unit tests"'
+      - task: :test:unit
+        vars:
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --'
+          CLI_ARGS: '{{.CLI_ARGS}}'
+
+  test:integration:
+    cmds:
+      - defer: 'kind delete clusters --all'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      - 'echo "--- Running integration tests"'
+      - task: :test:integration
+        vars:
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --'
+          CLI_ARGS: '{{.CLI_ARGS}}'
+
+  test:acceptance:
+    cmds:
+      - defer: 'kind delete clusters --all'
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      - 'echo "--- Running acceptance tests"'
+      - task: :test:acceptance
+        vars:
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-tests.xml --'
+          CLI_ARGS: '{{.CLI_ARGS}}'
+
+  test:kuttl-v1:
+    cmds:
+      - 'echo "~~~ Running kuttl V1 tests :k8s:"'
+      - task: run-kuttl-tests
+
+  test:kuttl-v1-nodepools:
+    cmds:
+      - 'echo "~~~ Running kuttl V1 Nodepools tests :k8s:"'
+      - task: run-kuttl-tests
+        vars:
+          KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
+
+  test:kuttl-v2:
+    cmds:
+      - 'echo "~~~ Running kuttl V2 tests :k8s:"'
+      - task: run-kuttl-tests
+        vars:
+          KUTTL_CONFIG_FILE: kuttl-v2-test.yaml
+
+  run-kuttl-tests:
+    cmds:
+      - defer:
+          task: kuttl-artifact-upload
+          vars:
+            KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
+      - task: :k8s:run-kuttl-tests
+        vars:
+          KUTTL_CONFIG_FILE: '{{.KUTTL_CONFIG_FILE}}'
+
+  kuttl-artifact-upload:
+    internal: true
+    desc: uploads artifact when kuttl fails
+    dir: operator
+    summary: |
+      kuttl-artifact-upload should be called in `defer`.
+      https://taskfile.dev/usage/#doing-task-cleanup-with-defer
+
+      As buildkite pipeline step are wrapped with shell script, that executes
+      docker run of a NIX container, where the permission are set to user of
+      ID 0 (root). The buildkite agent executor can not resolve glob due to
+      not sufficient permission. All invocation, within taskfile, of
+      `buildkite-agent artifact upload` will have sufficient permission.
+    vars:
+      KUTTL_CONFIG_FILE: '{{default "kuttl-test.yaml" .KUTTL_CONFIG_FILE}}'
+      KUTTL_ARTIFACTS_DIR:
+        sh: |
+          cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
+    cmds:
+      - tar -czf {{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz {{.KUTTL_ARTIFACTS_DIR}}
+      - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz"
+      - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR}}/kuttl-report.xml"
+
+  publish-operator-image:
+    deps:
+      - :dev:create-buildx-builder
+    cmds:
+      - 'echo "~~~ Logging into Dockerhub :docker:"'
+      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+        silent: true
+      - defer: docker logout
+      - 'echo "~~~ Tagging and uploading images to Dockerhub :docker:"'
+      - task: :build:operator-image
+        vars:
+          TAGS:
+          - docker.io/vectorized/redpanda-operator:{{.OPERATOR_VERSION}}
+          - docker.io/redpandadata/redpanda-operator:{{.OPERATOR_VERSION}}
+          PLATFORMS:
+          - linux/amd64
+          - linux/arm64
+          CLI_ARGS: "--push"
+
+  publish-nightly-artifacts:
+    deps:
+      - :dev:create-buildx-builder
+    cmds:
+      - 'echo "~~~ Logging into Dockerhub :docker:"'
+      - cmd: docker login --username {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+        silent: true
+      - defer: docker logout
+      - cmd: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l9j0i2e0
+        silent: true
+      - defer: docker logout public.ecr.aws
+      - 'echo "~~~ Tagging and uploading images to nightly Dockerhub :docker:"'
+      - task: :build:operator-image
+        vars:
+          TAGS:
+          - docker.io/redpandadata/redpanda-operator-nightly:{{.OPERATOR_VERSION}}
+          - public.ecr.aws/l9j0i2e0/redpanda-operator-nightly:{{.OPERATOR_VERSION}}
+          PLATFORMS:
+          - linux/amd64
+          - linux/arm64
+          CLI_ARGS: "--push"
+      # Package and push Operator helm chart to Dockerhub
+      - task: publish:nightly:helm:chart
+        vars: {REPO: redpanda-operator-nightly, CHART: operator, DIR: "operator/chart", VERSION: "{{ .OPERATOR_VERSION }}"}
+      - task: publish:nightly:helm:chart
+        vars: {REPO: console-unstable, CHART: console, DIR: "charts/console/chart", VERSION: "{{ .CONSOLE_CHART_VERSION }}"}
+
+  publish:nightly:helm:chart:
+    run: 'always'
+    desc: "Packages and pushes a helm chart to redpandadata's dockerhub account as an OCI artifact"
+    label: "publish:helm:chart:{{ .CHART }}"
+    requires:
+      vars: [CHART, VERSION, REPO]
+    vars:
+      TMP_PATH:
+        sh: mktemp --directory --tmpdir "helm-package-XXXXXXXXXX"
+      DIR: '{{ .DIR | default (printf "charts/%s" .CHART) }}'
+    cmds:
+      - 'echo "~~~ :k8s: Building {{ .CHART }} Helm Chart version {{.VERSION}}"'
+      - defer: 'rm -r {{.TMP_PATH}}'
+      # NB: cp -r/-R is dependent on the implementation (macOS vs Linux).
+      # cp -R src/. dest/ <- Same behavior, copy contents of src to dest.
+      # cp -r src/ dest <- Different. macOS == copy contents, linux == copy src folder into dest.
+      - cp -R {{ .DIR }}/. {{.TMP_PATH}}
+      #  `helm push`, to an OCI repo, uses `name` and `version` from Chart.yaml
+      #  to determine where to push the chart to.
+      #  i.e. `helm push chart.tgz oci://registry-1.docker.io/<org>` -> <org>/<chart.name>:<chart.version>
+      # name is set with `yq`
+      # version is set with `helm package`
+      - yq -i '.name = "{{ .REPO }}"' {{.TMP_PATH}}/Chart.yaml
+      # dockerhub has a limitation where oci artifacts may not share tags with images [1].
+      # We suffix versions with `-helm-chart` to work around this.
+      # [1]: https://forums.docker.com/t/tag-overlap-in-oci-artifacts/131453
+      - helm package {{.TMP_PATH}} --version "{{ .VERSION }}-helm-chart" --destination {{.BUILD_ROOT}} --dependency-update
+      - helm registry login registry-1.docker.io -u {{.DOCKERHUB_USER}} --password {{.DOCKERHUB_TOKEN}}
+      - defer: 'helm registry logout registry-1.docker.io'
+      - 'echo "~~~ :k8s: Pushing {{ .CHART }} Helm Chart to Dockerhub redpandadata/{{.REPO}}:{{.VERSION}}-helm-chart"'
+      # For usage of operator artifact please go to specific reference like the one below
+      # https://hub.docker.com/layers/redpandadata/redpanda-operator-nightly/v0.0.0-20250104git4a5a076-helm-chart/images/sha256-ffaea8752b6bd00a26589a168830a87d498106e470f11af0f08267bc13fbd078
+      - helm push '{{.BUILD_ROOT}}/{{ .REPO }}-{{.VERSION}}-helm-chart.tgz' oci://registry-1.docker.io/redpandadata
+
+  set-aio-max:
+    internal: true
+    desc: set minimum required value for fs.aio-max-nr sysctl option
+    vars:
+      MIN_REQUIRED_AIO_MAX: 20971520
+      USE_SUDO: '{{default "false" .USE_SUDO}}'
+    cmds:
+      - 'echo "Setting fs.aio-max-nr sysctl option to {{.MIN_REQUIRED_AIO_MAX}}"'
+      - '{{if eq .USE_SUDO "true"}}echo "Please enter your sudo password: "{{end}}'
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.aio-max-nr={{.MIN_REQUIRED_AIO_MAX}}'
+    status:
+      - test {{.MIN_REQUIRED_AIO_MAX}} -le $(sysctl -nb fs.aio-max-nr)
+    platforms:
+      - linux
+
+  set-inotify-watches:
+    internal: true
+    desc: |
+      set minimum required value for fs.inotify.max_user_watches sysctl option
+      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+    vars:
+      MIN_REQUIRED_USER_WATCHES: 1310720
+      USE_SUDO: '{{default "false" .USE_SUDO}}'
+    cmds:
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_watches={{.MIN_REQUIRED_USER_WATCHES}}'
+    status:
+      - test {{.MIN_REQUIRED_USER_WATCHES}} -le $(sysctl -nb fs.inotify.max_user_watches)
+    platforms:
+      - linux
+
+  set-inotify-instances:
+    internal: true
+    desc: |
+      set minimum required value for fs.inotify.max_user_instances sysctl option
+      REF: https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
+    vars:
+      MIN_REQUIRED_USER_INSTANCES: 2560
+      USE_SUDO: '{{default "false" .USE_SUDO}}'
+    cmds:
+      - '{{if eq .USE_SUDO "true"}}sudo {{end}}sysctl -w fs.inotify.max_user_instances={{.MIN_REQUIRED_USER_INSTANCES}}'
+    status:
+      - test {{.MIN_REQUIRED_USER_INSTANCES}} -le $(sysctl -nb fs.inotify.max_user_instances)
+    platforms:
+      - linux

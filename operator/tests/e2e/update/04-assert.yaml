@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: update-cluster
+spec:
+  clusterIP: None
+  ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+  type: ClusterIP
+---
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: update-cluster
+status:
+  version: "dev"
+  readyReplicas: 3
+  replicas: 3
+  upgrading: false
+  restarting: false
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 300
+  script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/update-cluster --timeout 300s --namespace $NAMESPACE
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh

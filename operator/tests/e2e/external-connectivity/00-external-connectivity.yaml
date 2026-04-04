@@ -1,0 +1,34 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: external-connectivity
+spec:
+  image: "localhost/redpanda"
+  version: "dev"
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: 256Mi
+    limits:
+      cpu: "100m"
+      memory: 256Mi
+  configuration:
+    rpcServer:
+      port: 33145
+    kafkaApi:
+      - port: 9092
+        tls:
+          enabled: false
+      - external:
+          enabled: true
+          subdomain: "test.subdomain.com"
+        port: 30001
+        tls:
+          enabled: true
+    adminApi:
+      - port: 9644
+    developerMode: true
+    additionalCommandlineArguments:
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''

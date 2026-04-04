@@ -1,0 +1,15 @@
+# See also https://github.com/k3s-io/helm-controller/blob/master/pkg/apis/helm.cattle.io/v1/types.go
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: cert-manager
+  namespace: kube-system
+spec:
+  repo: https://charts.jetstack.io
+  chart: cert-manager
+  createNamespace: true
+  targetNamespace: cert-manager
+  version: "v1.16.1"
+  valuesContent: |-
+    crds:
+      enabled: true
