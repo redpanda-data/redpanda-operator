@@ -1,4 +1,4 @@
-@operator:none
+@operator:none @vcluster
 Feature: Upgrading the operator with Console installed
   @skip:gke @skip:aks @skip:eks
   Scenario: Console v2 to v3 no warnings

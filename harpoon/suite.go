@@ -333,10 +333,15 @@ func (s *Suite) makeGodogSuite(
 	opts.DefaultContext = s.ctx
 	opts.Tags = fmt.Sprintf("~@skip:%s", s.providerName)
 	// Only use in-memory feature contents; don't discover from disk.
-	// Point Paths to a directory with no .feature files to prevent godog
-	// from falling back to the default "features" directory when
-	// FeatureContents is empty (godog checks len(Paths)==0 && len(FeatureContents)==0).
-	opts.Paths = []string{os.TempDir()}
+	// Set a non-empty Paths to prevent godog from falling back to the
+	// default "features" directory when FeatureContents is empty
+	// (godog checks len(Paths)==0 && len(FeatureContents)==0).
+	// Use a dedicated empty directory to avoid scanning unrelated files.
+	emptyDir, err := os.MkdirTemp("", "godog-empty-*")
+	if err != nil {
+		panic(fmt.Sprintf("failed to create temporary directory: %v", err))
+	}
+	opts.Paths = []string{emptyDir}
 	opts.FeatureContents = features
 
 	return &godog.TestSuite{
@@ -578,24 +583,26 @@ func (s *Suite) RunT(t *testing.T) {
 	var suiteFailed bool
 
 	// Phase 2: Run parallel features concurrently.
-	// Each feature runs as a parallel subtest so that Go's testing framework
-	// doesn't serialize the godog t.Run calls across features.
-	for _, f := range parallelFeatures {
-		t.Run(strings.ReplaceAll(f.name, "/", "_"), func(t *testing.T) {
-			t.Parallel()
+	// Wrapped in a non-parallel subtest so that Go waits for all parallel
+	// features to complete before Phase 3 (serial features) begins.
+	t.Run("parallel", func(t *testing.T) {
+		for _, f := range parallelFeatures {
+			t.Run(strings.ReplaceAll(f.name, "/", "_"), func(t *testing.T) {
+				t.Parallel()
 
-			tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
-			gf := []godog.Feature{{Name: f.name, Contents: f.contents}}
-			suite := s.makeGodogSuite(f.name, tracker, gf, nil)
-			suite.Options.TestingT = t
-			suite.Run()
-			if tracker.SuiteFailed() {
-				termMu.Lock()
-				suiteFailed = true
-				termMu.Unlock()
-			}
-		})
-	}
+				tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
+				gf := []godog.Feature{{Name: f.name, Contents: f.contents}}
+				suite := s.makeGodogSuite(f.name, tracker, gf, nil)
+				suite.Options.TestingT = t
+				suite.Run()
+				if tracker.SuiteFailed() {
+					termMu.Lock()
+					suiteFailed = true
+					termMu.Unlock()
+				}
+			})
+		}
+	})
 
 	// Phase 3: Run serial features sequentially.
 	if len(serialFeatures) > 0 {

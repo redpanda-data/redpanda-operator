@@ -330,6 +330,10 @@ tasks:
       TEST_KUBE_VERSION: '{{ .TEST_KUBE_VERSION | default .DEFAULT_TEST_KUBE_VERSION }}'
       TEST_COREDNS_VERSION: '{{ .TEST_COREDNS_VERSION | default .DEFAULT_TEST_COREDNS_VERSION }}'
       IMAGES:
+      # k3d infrastructure images — pre-pulling avoids slow pulls during cluster creation.
+      - rancher/k3s:v1.32.13-k3s1
+      - ghcr.io/k3d-io/k3d-tools:5.8.3
+      - ghcr.io/k3d-io/k3d-proxy:5.8.3
       - quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
@@ -362,7 +366,7 @@ tasks:
 
     cmds:
       - for: {var: IMAGES}
-        cmd: docker inspect {{.ITEM}} > /dev/null || docker pull {{.ITEM}}
+        cmd: docker inspect {{.ITEM}} > /dev/null 2>&1 || docker pull {{.ITEM}}
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"

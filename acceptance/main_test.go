@@ -15,7 +15,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -36,6 +35,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/otelutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
+
+const sharedOperatorNamespace = "redpanda-operator"
 
 var (
 	imageRepo = "localhost/redpanda-operator"
@@ -92,52 +93,10 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			},
 		}).
 		AfterSetup(waitForCertManagerWebhook).
+		AfterSetup(installSharedOperator).
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
-			namespace := t.IsolateNamespace(ctx)
-
-			if slices.ContainsFunc(tags, shouldSkipOperatorInstall) {
-				return
-			}
-			t.Log("Installing default Redpanda operator chart")
-			t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
-				Name:      "redpanda-operator",
-				Namespace: namespace,
-				Values: operatorchart.PartialValues{
-					LogLevel: ptr.To("trace"),
-					Image: &operatorchart.PartialImage{
-						Tag:        ptr.To(imageTag),
-						Repository: ptr.To(imageRepo),
-					},
-					CRDs: &operatorchart.PartialCRDs{
-						Enabled:      ptr.To(true),
-						Experimental: ptr.To(true),
-					},
-					VectorizedControllers: &operatorchart.PartialVectorizedControllers{
-						Enabled: ptr.To(true),
-					},
-					AdditionalCmdFlags: []string{
-						// For the v1 controllers since otherwise we'll attempt to always
-						// pull the locally built operator which will result in errors
-						"--configurator-image-pull-policy=IfNotPresent",
-						// These are needed for running decommissioning tests.
-						"--additional-controllers=nodeWatcher,decommission",
-						"--unbind-pvcs-after=5s",
-						// This is set to a lower timeout due to the way that our internal
-						// admin client handles retries to brokers that are gone but still
-						// remain in its internal broker list in-memory. Eventually the client
-						// figures out which brokers are still active, but not until a large
-						// chunk of time has past and a connection a no longer existing broker
-						// times out. This makes the timeout substantially faster so that in
-						// tests where brokers might intentionally go away we aren't sitting
-						// for and additional 30+ seconds every reconciliation before the client's
-						// broker list is pruned.
-						"--cluster-connection-timeout=500ms",
-						"--enable-shadowlinks",
-					},
-				},
-			})
-			t.Log("Successfully installed Redpanda operator chart")
+			t.IsolateNamespace(ctx)
 		}).
 		RegisterTag("operator", 1, OperatorTag).
 		RegisterTag("cluster", 2, ClusterTag).
@@ -221,8 +180,43 @@ func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) cont
 	return ctx
 }
 
-func shouldSkipOperatorInstall(tag framework.ParsedTag) bool {
-	return tag.Name == "operator"
+// installSharedOperator installs a single Redpanda operator instance that is
+// shared by all features that don't use @operator:none. This avoids creating
+// one operator per feature and allows parallel features to share a single
+// controller.
+func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
+	helmClient, err := helm.New(helm.Options{KubeConfig: restConfig})
+	if err != nil {
+		return err
+	}
+
+	_, err = helmClient.Install(ctx, "../operator/chart", helm.InstallOptions{
+		Name:            "redpanda-operator",
+		Namespace:       sharedOperatorNamespace,
+		CreateNamespace: true,
+		Values: operatorchart.PartialValues{
+			LogLevel: ptr.To("trace"),
+			Image: &operatorchart.PartialImage{
+				Tag:        ptr.To(imageTag),
+				Repository: ptr.To(imageRepo),
+			},
+			CRDs: &operatorchart.PartialCRDs{
+				Enabled:      ptr.To(true),
+				Experimental: ptr.To(true),
+			},
+			VectorizedControllers: &operatorchart.PartialVectorizedControllers{
+				Enabled: ptr.To(true),
+			},
+			AdditionalCmdFlags: []string{
+				"--configurator-image-pull-policy=IfNotPresent",
+				"--additional-controllers=nodeWatcher,decommission",
+				"--unbind-pvcs-after=5s",
+				"--cluster-connection-timeout=500ms",
+				"--enable-shadowlinks",
+			},
+		},
+	})
+	return err
 }
 
 func waitForCertManagerWebhook(ctx context.Context, restConfig *rest.Config) error {

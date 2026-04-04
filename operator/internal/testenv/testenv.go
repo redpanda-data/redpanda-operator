@@ -118,9 +118,9 @@ func New(t *testing.T, options Options) *Env {
 	host, err := k3d.GetOrCreate(options.Name, opts...)
 	require.NoError(t, err)
 
-	for _, image := range options.ImportImages {
-		options.Logger.Info("importing image", "image", image)
-		require.NoError(t, host.ImportImage(image))
+	if len(options.ImportImages) > 0 {
+		options.Logger.Info("importing images", "count", len(options.ImportImages))
+		require.NoError(t, host.ImportImage(options.ImportImages...))
 	}
 
 	ctx, cancel := context.WithCancel(context.Background()) //nolint:gosec
