@@ -24,8 +24,8 @@ tasks:
       - 'echo "--- Running unit tests"'
       - task: :test:unit
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --format testname --rerun-fails --'
-          CLI_ARGS: '{{.CLI_ARGS}}'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --format testname --rerun-fails --packages'
+          CLI_ARGS: '-- {{.CLI_ARGS}}'
 
   test:integration:
     env:
@@ -37,8 +37,8 @@ tasks:
       - 'echo "--- Running integration tests"'
       - task: :test:integration
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --format testname --rerun-fails --'
-          CLI_ARGS: '{{.CLI_ARGS}}'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --format testname --rerun-fails --packages'
+          CLI_ARGS: '-- {{.CLI_ARGS}}'
 
   test:acceptance:
     env:
@@ -51,7 +51,8 @@ tasks:
       - 'echo "--- Running acceptance tests"'
       - task: :test:acceptance
         vars:
-          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-tests.xml --format testname --rerun-fails --'
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-tests.xml --format testname --rerun-fails --packages'
+          CLI_ARGS: '-- {{.CLI_ARGS}}'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:kuttl-v1:
