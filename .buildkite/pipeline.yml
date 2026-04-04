@@ -64,7 +64,6 @@ steps:
             - secret-id: sdlc/prod/buildkite/gh_token
             - secret-id: sdlc/prod/buildkite/github_api_token
             - secret-id: sdlc/prod/buildkite/redpanda_sample_license
-            - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
             - secret-id: sdlc/prod/buildkite/slack_vbot_token
       - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
           message: "Nightly releases failed"
@@ -112,7 +111,6 @@ steps:
             - secret-id: sdlc/prod/buildkite/github_api_token
             - secret-id: sdlc/prod/buildkite/grafana_token
             - secret-id: sdlc/prod/buildkite/redpanda_sample_license
-            - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
             - secret-id: sdlc/prod/buildkite/rpk_test_client
             - secret-id: sdlc/prod/buildkite/seceng_audit_aws
             - secret-id: sdlc/prod/buildkite/slack_vbot_token
