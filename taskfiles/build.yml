@@ -38,40 +38,37 @@ tasks:
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.buildDate={{.TIMESTAMP}}"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.commit={{.COMMIT}}"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.OPERATOR_VERSION}}"
+      _GOOS_LIST: '{{.BUILD_GOOS | default "linux darwin"}}'
+      _GOARCH_LIST: '{{.BUILD_GOARCH | default "arm64 amd64"}}'
     cmds:
-    - for:
-        matrix:
-          GOOS: ["linux", "darwin"]
-          GOARCH: ["arm64", "amd64"]
-      # Can't nest tasks in for loops, so pulling these out into vars doesn't work.
-      # Instead >- will join and strip whitespace for us.
-      cmd: >-
-        CGO_ENABLED=0
-        GOOS={{.ITEM.GOOS}}
-        GOARCH={{.ITEM.GOARCH}}
-        go build
-        -C ./operator
-        -o ../.build/redpanda-operator-{{.ITEM.GOOS}}-{{.ITEM.GOARCH}}
-        -ldflags='{{.LD_FLAGS}}'
-        ./cmd/main.go
+    - |
+      for goos in {{._GOOS_LIST}}; do
+        for goarch in {{._GOARCH_LIST}}; do
+          echo "Building operator for $goos/$goarch"
+          CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch \
+            go build -C ./operator \
+            -o ../.build/redpanda-operator-$goos-$goarch \
+            -ldflags='{{.LD_FLAGS}}' \
+            ./cmd/main.go
+        done
+      done
 
   alias:
+    vars:
+      _GOOS_LIST: '{{.BUILD_GOOS | default "linux darwin"}}'
+      _GOARCH_LIST: '{{.BUILD_GOARCH | default "arm64 amd64"}}'
     cmds:
-    - for:
-        matrix:
-          GOOS: ["linux", "darwin"]
-          GOARCH: ["arm64", "amd64"]
-      # Can't nest tasks in for loops, so pulling these out into vars doesn't work.
-      # Instead >- will join and strip whitespace for us.
-      cmd: >-
-        CGO_ENABLED=0
-        GOOS={{.ITEM.GOOS}}
-        GOARCH={{.ITEM.GOARCH}}
-        go build
-        -C ./alias
-        -o ../.build/alias-{{.ITEM.GOOS}}-{{.ITEM.GOARCH}}
-        -ldflags='-X "main.AliasTo=/redpanda-operator run"'
-        .
+    - |
+      for goos in {{._GOOS_LIST}}; do
+        for goarch in {{._GOARCH_LIST}}; do
+          echo "Building alias for $goos/$goarch"
+          CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch \
+            go build -C ./alias \
+            -o ../.build/alias-$goos-$goarch \
+            -ldflags='-X "main.AliasTo=/redpanda-operator run"' \
+            .
+        done
+      done
 
   gen:
     cmds:

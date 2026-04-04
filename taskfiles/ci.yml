@@ -28,6 +28,10 @@ tasks:
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:integration:
+    env:
+      # Only build for the CI host architecture to speed up the build step.
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
@@ -40,6 +44,9 @@ tasks:
   test:acceptance:
     env:
       ACCEPTANCE_ARTIFACTS_DIR: '{{.SRC_DIR}}/artifacts/acceptance-diagnostics'
+      # Only build for the CI host architecture to speed up the build step.
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/**/*"'
