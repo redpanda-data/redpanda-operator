@@ -58,6 +58,8 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "OperatorQuiescent", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
+
+	waitForStatefulSetReady(ctx, t, clusterName)
 	t.Logf("Cluster %q is ready!", clusterName)
 }
 
@@ -100,7 +102,32 @@ func checkV2ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "Ready", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
+
+	waitForStatefulSetReady(ctx, t, clusterName)
 	t.Logf("Cluster %q is ready!", clusterName)
+}
+
+// waitForStatefulSetReady waits until the StatefulSet for the given cluster
+// has all pods running and ready. This guards against the case where the
+// operator marks the cluster as ready/quiescent before pods are fully
+// schedulable and accepting connections.
+func waitForStatefulSetReady(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	t.Logf("Waiting for StatefulSet %q pods to be ready", clusterName)
+	require.Eventually(t, func() bool {
+		var sts appsv1.StatefulSet
+		if err := t.Get(ctx, key, &sts); err != nil {
+			return false
+		}
+		if sts.Spec.Replicas == nil {
+			return false
+		}
+		ready := sts.Status.ReadyReplicas >= *sts.Spec.Replicas
+		if !ready {
+			t.Logf("StatefulSet %q: %d/%d ready", clusterName, sts.Status.ReadyReplicas, *sts.Spec.Replicas)
+		}
+		return ready
+	}, 5*time.Minute, 5*time.Second, "StatefulSet %q pods never became ready", clusterName)
 }
 
 func redpandaClusterIsHealthy(ctx context.Context, t framework.TestingT, cluster string) {

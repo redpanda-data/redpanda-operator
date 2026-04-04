@@ -52,6 +52,7 @@ func getSuite(t *testing.T) *framework.Suite {
 var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 	steps.DefaultRedpandaRepo = os.Getenv("TEST_REDPANDA_REPO")
 	steps.DefaultRedpandaTag = os.Getenv("TEST_REDPANDA_VERSION")
+	steps.OperatorNamespace = sharedOperatorNamespace
 
 	return framework.SuiteBuilderFromFlags().
 		Strict().

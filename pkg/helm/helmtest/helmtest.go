@@ -11,12 +11,15 @@ package helmtest
 
 import (
 	"context"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
@@ -34,6 +37,7 @@ type Env struct {
 }
 
 // Setup creates a new [Env] using whatever cluster is available in KUBECONFIG.
+// It ensures cert-manager is installed and its webhook is ready before returning.
 func Setup(t *testing.T) *Env {
 	cluster, err := k3d.GetOrCreate("testenv", k3d.WithAgents(3))
 	require.NoError(t, err)
@@ -41,7 +45,7 @@ func Setup(t *testing.T) *Env {
 	ctl, err := kube.FromRESTConfig(cluster.RESTConfig())
 	require.NoError(t, err)
 
-	client, err := helm.New(helm.Options{
+	helmClient, err := helm.New(helm.Options{
 		KubeConfig: ctl.RestConfig(),
 		ConfigHome: testutil.TempDir(t),
 	})
@@ -49,7 +53,30 @@ func Setup(t *testing.T) *Env {
 
 	require.NoError(t, cluster.ImportImage("localhost/redpanda-operator:dev"))
 
-	return &Env{ctl: ctl, helm: client}
+	// Ensure cert-manager is installed. With parallel test packages (-p=N),
+	// this package may start before others that install cert-manager.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	require.NoError(t, helmClient.RepoAdd(ctx, "jetstack", "https://charts.jetstack.io"))
+	_, err = helmClient.Install(ctx, "jetstack/cert-manager", helm.InstallOptions{
+		Name:            "cert-manager",
+		Namespace:       "cert-manager",
+		Version:         "v1.17.2",
+		CreateNamespace: true,
+		Values:          map[string]any{"installCRDs": true},
+	})
+	// Ignore "already installed" errors from other parallel test packages.
+	if err != nil && !strings.Contains(err.Error(), "cannot re-use") {
+		require.NoError(t, err)
+	}
+
+	// Wait for the cert-manager webhook to be ready.
+	c, err := client.New(ctl.RestConfig(), client.Options{})
+	require.NoError(t, err)
+	require.NoError(t, testutil.WaitForCertManagerWebhook(ctx, c, 2*time.Minute))
+
+	return &Env{ctl: ctl, helm: helmClient}
 }
 
 func (e *Env) Ctl() *kube.Ctl {

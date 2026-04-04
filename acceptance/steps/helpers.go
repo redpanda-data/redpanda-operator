@@ -36,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
@@ -681,11 +682,14 @@ func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName
 	t := framework.T(ctx)
 
 	var dep appsv1.Deployment
-	require.NoError(t, t.Get(ctx, t.ResourceKey("redpanda-operator"), &dep))
+	// The shared operator is in a dedicated namespace, not the feature's namespace.
+	operatorKey := types.NamespacedName{Name: "redpanda-operator", Namespace: OperatorNamespace}
+	require.NoError(t, t.Get(ctx, operatorKey, &dep))
 
 	var podList corev1.PodList
 
 	require.NoError(t, t.List(ctx, &podList, &runtimeclient.ListOptions{
+		Namespace:     OperatorNamespace,
 		LabelSelector: labels.SelectorFromSet(dep.Spec.Selector.MatchLabels),
 	}))
 
