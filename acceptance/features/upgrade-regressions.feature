@@ -1,4 +1,4 @@
-@operator:none @vcluster
+@vcluster
 # Note: use the same version of RP across upgrades to minimize
 # issues not related to operator upgrade regressions.
 Feature: Operator upgrade regressions

@@ -11,7 +11,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -103,7 +102,6 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			// this actually switches namespaces, run it first
 			t.IsolateNamespace(ctx)
 		}).
-		RegisterTag("operator", 1, OperatorTag).
 		RegisterTag("cluster", 2, ClusterTag).
 		ExitOnCleanupFailures().
 		Build()
@@ -165,24 +163,6 @@ func duplicateManifests(t framework.TestingT, directory string) string {
 	}))
 
 	return filepath.Join(tmp, directory)
-}
-
-func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {
-	require.Greater(t, len(args), 0, "operator tags can only be used with additional arguments")
-	name := args[0]
-	if name == "none" {
-		t.Log("Skipping Redpanda operator installation")
-		return ctx
-	}
-
-	t.Logf("Installing Redpanda operator chart: %q", name)
-	t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
-		Name:       "redpanda-operator",
-		Namespace:  t.Namespace(),
-		ValuesFile: filepath.Join("operator", fmt.Sprintf("%s.yaml", name)),
-	})
-
-	return ctx
 }
 
 // installSharedOperator installs a single Redpanda operator instance that is

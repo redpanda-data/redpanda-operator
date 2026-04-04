@@ -109,6 +109,11 @@ func (suite *TestSuite) ToStep() pipeline.Step {
 					"OTLP_METRIC_INTERVAL": "5s",
 					// log things much more verbosely than the default
 					"LOG_LEVEL": "trace",
+					// Only build binaries for the CI host architecture.
+					// Release/nightly builds set their own PLATFORMS and
+					// don't go through this code path.
+					"BUILD_GOOS":   "linux",
+					"BUILD_GOARCH": "amd64",
 				},
 				Plugins: pipeline.Plugins{
 					secretEnvVars(
