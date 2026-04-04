@@ -33,24 +33,37 @@ func runScriptInClusterCheckOutput(ctx context.Context, t framework.TestingT, co
 
 	require.Eventually(t, func() bool {
 		var redpandas redpandav1alpha2.RedpandaList
-		require.NoError(t, t.List(ctx, &redpandas))
+		if err := t.List(ctx, &redpandas, client.InNamespace(t.Namespace())); err != nil {
+			t.Logf("failed to list redpandas: %v", err)
+			return false
+		}
 
 		if len(redpandas.Items) != 1 {
-			require.FailNow(t, "expected to find 1 %T but found %d", (*redpandav1alpha2.Redpanda)(nil), len(redpandas.Items))
+			t.Logf("expected to find 1 Redpanda in namespace %s but found %d", t.Namespace(), len(redpandas.Items))
+			return false
 		}
 
 		redpanda := redpandas.Items[0]
 
 		var sts appsv1.StatefulSet
-		require.NoError(t, t.Get(ctx, t.ResourceKey(redpanda.Name), &sts))
+		if err := t.Get(ctx, t.ResourceKey(redpanda.Name), &sts); err != nil {
+			t.Logf("failed to get StatefulSet: %v", err)
+			return false
+		}
 
 		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
-		require.NoError(t, err)
+		if err != nil {
+			t.Logf("failed to parse selector: %v", err)
+			return false
+		}
 
 		var pods corev1.PodList
-		require.NoError(t, t.List(ctx, &pods, client.MatchingLabelsSelector{
+		if err := t.List(ctx, &pods, client.MatchingLabelsSelector{
 			Selector: selector,
-		}))
+		}); err != nil {
+			t.Logf("failed to list pods: %v", err)
+			return false
+		}
 
 		if len(pods.Items) < 1 {
 			t.Log("expected to find at least 1 Pod but found none, retrying")
@@ -60,7 +73,10 @@ func runScriptInClusterCheckOutput(ctx context.Context, t framework.TestingT, co
 		pod := pods.Items[0]
 
 		ctl, err := kube.FromRESTConfig(t.RestConfig())
-		require.NoError(t, err)
+		if err != nil {
+			t.Logf("failed to create kube client: %v", err)
+			return false
+		}
 
 		t.Logf("executing %q in Pod %q", command, pod.Name)
 
