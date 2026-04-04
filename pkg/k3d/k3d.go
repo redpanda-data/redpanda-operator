@@ -30,8 +30,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
-
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"golang.org/x/sys/unix"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +38,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 const (
