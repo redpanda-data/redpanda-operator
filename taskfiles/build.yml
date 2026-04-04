@@ -40,8 +40,15 @@ tasks:
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.OPERATOR_VERSION}}"
     cmds:
     - |
-      for goos in ${BUILD_GOOS:-linux darwin}; do
-        for goarch in ${BUILD_GOARCH:-arm64 amd64}; do
+      if [ -n "${CI:-}" ]; then
+        goos_list="linux"
+        goarch_list="amd64"
+      else
+        goos_list="${BUILD_GOOS:-linux darwin}"
+        goarch_list="${BUILD_GOARCH:-arm64 amd64}"
+      fi
+      for goos in $goos_list; do
+        for goarch in $goarch_list; do
           echo "Building operator for $goos/$goarch"
           CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch \
             go build -C ./operator \
@@ -54,8 +61,15 @@ tasks:
   alias:
     cmds:
     - |
-      for goos in ${BUILD_GOOS:-linux darwin}; do
-        for goarch in ${BUILD_GOARCH:-arm64 amd64}; do
+      if [ -n "${CI:-}" ]; then
+        goos_list="linux"
+        goarch_list="amd64"
+      else
+        goos_list="${BUILD_GOOS:-linux darwin}"
+        goarch_list="${BUILD_GOARCH:-arm64 amd64}"
+      fi
+      for goos in $goos_list; do
+        for goarch in $goarch_list; do
           echo "Building alias for $goos/$goarch"
           CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch \
             go build -C ./alias \
