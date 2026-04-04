@@ -14,6 +14,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -201,6 +202,11 @@ func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
 			},
 		},
 	})
+	// Tolerate "already installed" errors from rerun-fails retries where
+	// the operator was installed in the first run.
+	if err != nil && strings.Contains(err.Error(), "cannot re-use") {
+		return nil
+	}
 	return err
 }
 
