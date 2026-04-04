@@ -246,11 +246,21 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, metadata.Brokers.NodeIDs(), 1)
 
-	// check schema registry api
-	srClient, err := clientFactory.SchemaRegistryClient(testutil.Context(t), &cr)
-	require.NoError(t, err)
-	_, err = srClient.SupportedTypes(context.Background())
-	require.NoError(t, err)
+	// check schema registry api — retry as the schema registry may still be
+	// starting up, especially under parallel test load.
+	require.Eventually(t, func() bool {
+		srClient, err := clientFactory.SchemaRegistryClient(testutil.Context(t), &cr)
+		if err != nil {
+			t.Logf("schema registry client creation failed: %v", err)
+			return false
+		}
+		_, err = srClient.SupportedTypes(context.Background())
+		if err != nil {
+			t.Logf("schema registry not ready: %v", err)
+			return false
+		}
+		return true
+	}, 2*time.Minute, 5*time.Second, "schema registry never became ready")
 }
 
 func TestIntegrationClientFactory(t *testing.T) {

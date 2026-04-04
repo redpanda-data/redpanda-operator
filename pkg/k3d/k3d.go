@@ -30,6 +30,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"golang.org/x/sys/unix"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -483,7 +485,7 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 	}
 
 	// Wait for all bootstrapping jobs to finish running.
-	return wait.PollUntilContextTimeout(ctx, time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
 		var jobs batchv1.JobList
 		if err := cl.List(ctx, &jobs, client.InNamespace("kube-system")); err != nil {
 			return false, err
@@ -500,7 +502,17 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		}
 
 		return true, nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	// If manifests were installed, cert-manager was deployed via the k3s
+	// helm controller. Wait for its webhook to be ready before returning,
+	// otherwise helm operations that create Certificate resources will fail.
+	if !c.skipManifests {
+		return testutil.WaitForCertManagerWebhook(ctx, cl, 2*time.Minute)
+	}
+	return nil
 }
 
 // startupManifests parses the embedded FS of Kubernetes manifests as a slice
