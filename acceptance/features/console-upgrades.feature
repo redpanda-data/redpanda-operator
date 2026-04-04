@@ -6,6 +6,8 @@ Feature: Upgrading the operator with Console installed
     """
     image:
       repository: redpandadata/redpanda-operator
+    crds:
+      enabled: true
     """
     And I apply Kubernetes manifest:
     """
@@ -51,6 +53,8 @@ Feature: Upgrading the operator with Console installed
     """
     image:
       repository: redpandadata/redpanda-operator
+    crds:
+      enabled: true
     """
     And I apply Kubernetes manifest:
     """
