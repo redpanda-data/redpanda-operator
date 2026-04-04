@@ -123,6 +123,7 @@ func TestIntegrationChart(t *testing.T) {
 	h := helmtest.Setup(t)
 
 	t.Run("set-datadir-ownership", func(t *testing.T) {
+		t.Parallel()
 		env := h.Namespaced(t)
 		ctx := testutil.Context(t)
 
@@ -155,6 +156,7 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("rbac", func(t *testing.T) {
+		t.Parallel()
 		env := h.Namespaced(t)
 		ctx := testutil.Context(t)
 
@@ -222,6 +224,7 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("mtls-using-cert-manager", func(t *testing.T) {
+		t.Parallel()
 		ctx := testutil.Context(t)
 
 		env := h.Namespaced(t)
@@ -250,6 +253,7 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("mtls-using-self-created-certificates", func(t *testing.T) {
+		t.Parallel()
 		ctx := testutil.Context(t)
 
 		env := h.Namespaced(t)
@@ -317,6 +321,7 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("admin api auth required", func(t *testing.T) {
+		t.Parallel()
 		ctx := testutil.Context(t)
 
 		env := h.Namespaced(t)
@@ -365,6 +370,7 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("admin api auth required - pre-existing secret", func(t *testing.T) {
+		t.Parallel()
 		ctx := testutil.Context(t)
 
 		env := h.Namespaced(t)
@@ -420,6 +426,7 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("sidecar", func(t *testing.T) {
+		t.Parallel()
 		env := h.Namespaced(t)
 		ctx := testutil.Context(t)
 
@@ -462,6 +469,7 @@ func TestIntegrationChart(t *testing.T) {
 	})
 
 	t.Run("console-integration", func(t *testing.T) {
+		t.Parallel()
 		env := h.Namespaced(t)
 		ctx := testutil.Context(t)
 
