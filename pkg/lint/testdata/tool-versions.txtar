@@ -1,0 +1,50 @@
+-- aws --
+# aws --version | cut -d ' ' -f 1-2
+aws-cli/2.33.2 Python/3.13.12
+
+-- changie --
+# changie --version
+changie version v1.24.0
+
+-- go --
+# go version | cut -d ' ' -f 1-3
+go version go1.25.7
+
+-- helm --
+# helm version
+version.BuildInfo{Version:"v3.19.1", GitCommit:"v3.19.1", GitTreeState:"", GoVersion:"go1.25.7"}
+
+-- helm-docs --
+# helm-docs -v
+helm-docs version 1.14.2
+
+-- k3d --
+# k3d version
+k3d version v5.8.3
+k3s version v1.21.7-k3s1 (default)
+
+-- kind --
+# kind version | cut -d ' ' -f 1-3
+kind v0.31.0 go1.25.7
+
+-- kubectl --
+# kubectl version --client=true
+Client Version: v1.35.0
+Kustomize Version: v5.7.1
+
+-- kustomize --
+# kustomize version
+v5.8.1
+
+-- kuttl --
+# kuttl version | cut -d ' ' -f 1-7
+KUTTL Version: version.Info{GitVersion:"0.19.0", GitCommit:"733ad16", BuildDate:"2024-09-02T08:15:28Z", GoVersion:"go1.22.1", Compiler:"gc",
+
+-- task --
+# task --version
+3.48.0
+
+-- yq --
+# yq --version
+yq (https://github.com/mikefarah/yq/) version v4.52.4
+

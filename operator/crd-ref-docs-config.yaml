@@ -1,0 +1,18 @@
+processor:
+  ignoreTypes:
+  - 'List$' # Don't include List types, end users likely don't care about these.
+  - 'Migration$'
+  - 'NodePool.*$'
+  - 'ShadowLink.*$' 
+  - 'Shadow.*'
+  - 'EmbeddedNodePoolSpec$'
+  ignoreFields:
+  - 'migration$'
+  customMarkers:
+  - name: "hidefromdoc"
+    target: field
+  - name: "hidefromdoc"
+    target: type
+
+render:
+  kubernetesVersion: 1.28

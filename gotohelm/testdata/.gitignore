@@ -1,0 +1,4 @@
+pkg/
+
+# After helm dep update/build the work tree will consist of depedent charts.
+*/**/charts/

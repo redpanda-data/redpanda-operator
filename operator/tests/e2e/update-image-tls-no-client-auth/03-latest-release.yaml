@@ -1,0 +1,13 @@
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: up-img-admin-tls
+spec:
+  image: "localhost/redpanda"
+  version: "dev"
+  configuration:
+    additionalCommandlineArguments:
+      default-log-level: trace
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      reserve-memory: 0M
+      logger-log-level=exception=info:io: info

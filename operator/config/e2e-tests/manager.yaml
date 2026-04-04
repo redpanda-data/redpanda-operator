@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        imagePullPolicy: IfNotPresent
+        args:
+        - "--health-probe-bind-address=:8081"
+        - "--metrics-bind-address=:8443"
+        - "--leader-elect"
+        - "--webhook-enabled=true"
+        - "--webhook-cert-path=/tmp/k8s-webhook-server/serving-certs"
+        - "--configurator-base-image=localhost/redpanda-operator"
+        - "--configurator-tag=dev"
+        - "--configurator-image-pull-policy=Never"
+        - "--superusers-prefix=__redpanda_system__"
+        - "--log-level=trace"
+        - "--enable-ghost-broker-decommissioner"
+        - "--unbind-pvcs-after=5s"
+        - "--enable-vectorized-controllers"
+        livenessProbe:
+          timeoutSeconds: 10
+        readinessProbe:
+          timeoutSeconds: 10

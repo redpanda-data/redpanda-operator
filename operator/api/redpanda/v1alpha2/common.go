@@ -1,0 +1,442 @@
+// Copyright 2026 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package v1alpha2
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/console/backend/pkg/config"
+	"github.com/twmb/franz-go/pkg/kadm"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var ErrUnsupportedSASLMechanism = errors.New("unsupported SASL mechanism")
+
+// KafkaAPISpec configures client configuration settings for connecting to Redpanda brokers.
+type KafkaAPISpec struct {
+	// Specifies a list of broker addresses in the format <host>:<port>
+	// +kubebuilder:validation:MinItems=1
+	Brokers []string `json:"brokers"`
+	// Defines TLS configuration settings for Redpanda clusters that have TLS enabled.
+	// +optional
+	TLS *CommonTLS `json:"tls,omitempty"`
+	// Defines authentication configuration settings for Redpanda clusters that have authentication enabled.
+	// +optional
+	SASL *KafkaSASL `json:"sasl,omitempty"`
+}
+
+// KafkaSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+// +kubebuilder:validation:XValidation:message="username and password must be set when mechanism is plain",rule="self.mechanism.lowerAscii() != 'plain' || (self.username != \"\" && (has(self.passwordSecretRef) || has(self.password)))"
+// +kubebuilder:validation:XValidation:message="username and password must be set when mechanism is sha-256",rule="self.mechanism.lowerAscii() != 'scram-sha-256' || (self.username != \"\" && (has(self.passwordSecretRef) || has(self.password)))"
+// +kubebuilder:validation:XValidation:message="username and password must be set when mechanism is sha-512",rule="self.mechanism.lowerAscii() != 'scram-sha-512' || (self.username != \"\" && (has(self.passwordSecretRef) || has(self.password)))"
+// +kubebuilder:validation:XValidation:message="oauth must be set when mechanism is oauth",rule="self.mechanism.lowerAscii() != 'oauthbearer' || has(self.oauth)"
+// +kubebuilder:validation:XValidation:message="gssapi must be set when mechanism is gssapi",rule="self.mechanism.lowerAscii() != 'gssapi' || has(self.gssapi)"
+// +kubebuilder:validation:XValidation:message="awsMskIam must be set when mechanism is aws_msk_iam",rule="self.mechanism.lowerAscii() != 'aws_msk_iam' || has(self.awsMskIam)"
+type KafkaSASL struct {
+	// Specifies the username.
+	// +optional
+	Username string `json:"username,omitempty"`
+	// Specifies the password.
+	// +optional
+	Password *ValueSource `json:"password,omitempty"`
+
+	// Specifies the SASL/SCRAM authentication mechanism.
+	Mechanism SASLMechanism `json:"mechanism"`
+	// +optional
+	OAUth *KafkaSASLOAuthBearer `json:"oauth,omitempty"`
+	// +optional
+	GSSAPIConfig *KafkaSASLGSSAPI `json:"gssapi,omitempty"`
+	// +optional
+	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
+
+	// Deprecated: use `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+}
+
+// SASLMechanism specifies a SASL auth mechanism.
+type SASLMechanism string
+
+const (
+	SASLMechanismPlain                  SASLMechanism = config.SASLMechanismPlain
+	SASLMechanismScramSHA256            SASLMechanism = config.SASLMechanismScramSHA256
+	SASLMechanismScramSHA512            SASLMechanism = config.SASLMechanismScramSHA512
+	SASLMechanismGSSAPI                 SASLMechanism = config.SASLMechanismGSSAPI
+	SASLMechanismOAuthBearer            SASLMechanism = config.SASLMechanismOAuthBearer
+	SASLMechanismAWSManagedStreamingIAM SASLMechanism = config.SASLMechanismAWSManagedStreamingIAM
+)
+
+// Equals determines if the given SASLMechanism is equal to this
+// mechanism, it does so in a case-insensitive way.
+func (s SASLMechanism) Equals(other SASLMechanism) bool {
+	return strings.EqualFold(string(s), string(other))
+}
+
+func (s *SASLMechanism) ScramToKafka() (kadm.ScramMechanism, error) {
+	if s == nil {
+		return 0, ErrUnsupportedSASLMechanism
+	}
+
+	switch {
+	case s.Equals(SASLMechanismScramSHA256):
+		return kadm.ScramSha256, nil
+	case s.Equals(SASLMechanismScramSHA512):
+		return kadm.ScramSha512, nil
+	}
+
+	return 0, ErrUnsupportedSASLMechanism
+}
+
+// KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
+type KafkaSASLOAuthBearer struct {
+	Token *ValueSource `json:"token,omitempty"`
+	// Deprecated: use `token` instead
+	DeprecatedToken *SecretKeyRef `json:"tokenSecretRef,omitempty"`
+}
+
+// KafkaSASLGSSAPI represents the Kafka Kerberos config.
+type KafkaSASLGSSAPI struct {
+	AuthType           string       `json:"authType"`
+	KeyTabPath         string       `json:"keyTabPath"`
+	KerberosConfigPath string       `json:"kerberosConfigPath"`
+	ServiceName        string       `json:"serviceName"`
+	Username           string       `json:"username"`
+	Password           *ValueSource `json:"password,omitempty"`
+	// Deprecated: use `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	Realm              string        `json:"realm"`
+
+	// EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
+	// It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
+	// FAST provides increased resistance to passive password guessing attacks.
+	EnableFast bool `json:"enableFast"`
+}
+
+// KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
+// see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+type KafkaSASLAWSMskIam struct {
+	AccessKey string       `json:"accessKey"`
+	SecretKey *ValueSource `json:"secretKey,omitempty"`
+	// Deprecated: use `secretKey` instead
+	DeprecatedSecretKey *SecretKeyRef `json:"secretKeySecretRef,omitempty"`
+
+	// SessionToken, if non-empty, is a session / security token to use for authentication.
+	// See: https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
+	SessionToken *ValueSource `json:"sessionToken,omitempty"`
+
+	// Deprecated: use `sessionToken` instead
+	DeprecatedSessionToken *SecretKeyRef `json:"sessionTokenSecretRef,omitempty"`
+
+	// UserAgent is the user agent to for the client to use when connecting
+	// to Kafka, overriding the default "franz-go/<runtime.Version()>/<hostname>".
+	//
+	// Setting a UserAgent allows authorizing based on the aws:UserAgent
+	// condition key; see the following link for more details:
+	// https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html#condition-keys-useragent
+	UserAgent string `json:"userAgent"`
+}
+
+// CommonTLS specifies TLS configuration settings for Redpanda clusters that have authentication enabled.
+type CommonTLS struct {
+	// Enabled tells any connections derived from this configuration to leverage TLS even if no
+	// certificate configuration is specified. It *only* is relevant if no other field is specified
+	// in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+	// results in attempting to create a connection using TLS - specifying "false" in such a case does
+	// *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+	// connection is served by publically issued TLS certificates that don't require any additional certificate
+	// specification.
+	Enabled bool `json:"enabled,omitempty"`
+	// CaCert is the reference for certificate authority used to establish TLS connection to Redpanda
+	CaCert *ValueSource `json:"caCert,omitempty"`
+	// Cert is the reference for client public certificate to establish mTLS connection to Redpanda
+	Cert *ValueSource `json:"cert,omitempty"`
+	// Key is the reference for client private certificate to establish mTLS connection to Redpanda
+	Key *ValueSource `json:"key,omitempty"`
+
+	// Deprecated: replaced by "caCert".
+	DeprecatedCaCert *SecretKeyRef `json:"caCertSecretRef,omitempty"`
+	// Deprecated: replaced by "cert".
+	DeprecatedCert *SecretKeyRef `json:"certSecretRef,omitempty"`
+	// Deprecated: replaced by "key".
+	DeprecatedKey *SecretKeyRef `json:"keySecretRef,omitempty"`
+
+	// InsecureSkipTLSVerify can skip verifying Redpanda self-signed certificate when establish TLS connection to Redpanda
+	// +optional
+	InsecureSkipTLSVerify bool `json:"insecureSkipTlsVerify,omitempty"`
+}
+
+// ValueSource represents where a value can be pulled from
+// +structType=atomic
+// +kubebuilder:validation:XValidation:message="one of inline, configMapKeyRef, secretKeyRef, or externalSecretRef must be set",rule="has(self.inline) || has(self.configMapKeyRef) || has(self.secretKeyRef) || has(self.externalSecretRef)"
+// +kubebuilder:validation:XValidation:message="if inline is set no other field can be set",rule="!has(self.inline) || (has(self.inline) && !(has(self.configMapKeyRef) || has(self.secretKeyRef) || has(self.externalSecretRef)))"
+// +kubebuilder:validation:XValidation:message="if configMapKeyRef is set no other field can be set",rule="!has(self.configMapKeyRef) || (has(self.configMapKeyRef) && !(has(self.inline) || has(self.secretKeyRef) || has(self.externalSecretRef)))"
+// +kubebuilder:validation:XValidation:message="if secretKeyRef is set no other field can be set",rule="!has(self.secretKeyRef) || (has(self.secretKeyRef) && !(has(self.configMapKeyRef) || has(self.inline) || has(self.externalSecretRef)))"
+// +kubebuilder:validation:XValidation:message="if externalSecretRef is set no other field can be set",rule="!has(self.externalSecretRef) || (has(self.externalSecretRef) && !(has(self.configMapKeyRef) || has(self.secretKeyRef) || has(self.inline)))"
+type ValueSource struct {
+	// Inline is the raw value specified inline.
+	Inline *string `json:"inline,omitempty"`
+	// If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+	// For target values, the string value fetched from the source will be treated as
+	// a raw string.
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	// Should the value be contained in a k8s secret rather than configmap, we can refer
+	// to it here.
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	// If the value is supplied by an external source, coordinates are embedded here.
+	// Note: we interpret all fetched external secrets as raw string values
+	ExternalSecretRefSelector *ExternalSecretKeySelector `json:"externalSecretRef,omitempty"`
+}
+
+// ExternalSecretKeySelector selects a key of an external Secret.
+// +structType=atomic
+type ExternalSecretKeySelector struct {
+	Name string `json:"name"`
+}
+
+// Deprecated: SecretKeyRef contains enough information to inspect or modify the referred Secret data
+// See https://pkg.go.dev/k8s.io/api/core/v1#ObjectReference.
+type SecretKeyRef struct {
+	// Name of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	Name string `json:"name"`
+
+	// +optional
+	// Key in Secret data to get value from
+	Key string `json:"key,omitempty"`
+}
+
+// GetValue retrieves the value from `corev1.Secret{}`.
+func (s *SecretKeyRef) GetValue(
+	ctx context.Context, cl client.Client, namespace, defaultKey string,
+) ([]byte, error) {
+	secret := &corev1.Secret{}
+	if err := cl.Get(ctx, client.ObjectKey{Namespace: namespace, Name: s.Name}, secret); err != nil {
+		return nil, fmt.Errorf("getting Secret %s/%s: %w", namespace, s.Name, err)
+	}
+
+	b, err := s.getValue(secret, namespace, defaultKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func (s *SecretKeyRef) getValue(
+	secret *corev1.Secret, namespace, defaultKey string,
+) ([]byte, error) {
+	key := s.Key
+	if key == "" {
+		key = defaultKey
+	}
+
+	value, ok := secret.Data[key]
+	if !ok {
+		return nil, fmt.Errorf("getting value from Secret %s/%s: key %s not found", namespace, s.Name, key) //nolint:goerr113 // no need to declare new error type
+	}
+	return value, nil
+}
+
+// AdminAPISpec defines client configuration for connecting to Redpanda's admin API.
+type AdminAPISpec struct {
+	// Specifies a list of broker addresses in the format <host>:<port>
+	URLs []string `json:"urls"`
+	// Defines TLS configuration settings for Redpanda clusters that have TLS enabled.
+	// +optional
+	TLS *CommonTLS `json:"tls,omitempty"`
+	// Defines authentication configuration settings for Redpanda clusters that have authentication enabled.
+	// +optional
+	SASL *AdminSASL `json:"sasl,omitempty"`
+}
+
+// AdminSASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+type AdminSASL struct {
+	// Specifies the username.
+	// +optional
+	Username string `json:"username,omitempty"`
+	// Specifies the SASL/SCRAM authentication mechanism.
+	Mechanism SASLMechanism `json:"mechanism"`
+	// Specifies the password.
+	// +optional
+	Password *ValueSource `json:"password,omitempty"`
+	// Specifies token for token-based authentication (only used if no username/password are provided).
+	// +optional
+	AuthToken *ValueSource `json:"authToken,omitempty"`
+
+	// Deprecated: use `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	// Deprecated: use `authToken` instead
+	DeprecatedAuthToken *SecretKeyRef `json:"token,omitempty"`
+}
+
+// SchemaRegistrySpec defines client configuration for connecting to Redpanda's admin API.
+type SchemaRegistrySpec struct {
+	// Specifies a list of broker addresses in the format <host>:<port>
+	URLs []string `json:"urls"`
+	// Defines TLS configuration settings for Redpanda clusters that have TLS enabled.
+	// +optional
+	TLS *CommonTLS `json:"tls,omitempty"`
+	// Defines authentication configuration settings for Redpanda clusters that have authentication enabled.
+	// +optional
+	SASL *SchemaRegistrySASL `json:"sasl,omitempty"`
+}
+
+// SchemaRegistrySASL configures credentials to connect to Redpanda cluster that has authentication enabled.
+type SchemaRegistrySASL struct {
+	// Specifies the username.
+	// +optional
+	Username string `json:"username,omitempty"`
+	// Specifies the password.
+	// +optional
+	Password *ValueSource `json:"password,omitempty"`
+	// +optional
+	AuthToken *ValueSource `json:"authToken,omitempty"`
+	// Specifies the SASL/SCRAM authentication mechanism.
+	Mechanism SASLMechanism `json:"mechanism"`
+
+	// Deprecated: use `password` instead
+	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
+	// Deprecated: use `authToken` instead
+	DeprecatedAuthToken *SecretKeyRef `json:"token,omitempty"`
+}
+
+// ClusterRef represents a reference to a cluster that is being targeted.
+type ClusterRef struct {
+	// Group is used to override the object group that this reference points to.
+	// If unspecified, defaults to "cluster.redpanda.com".
+	Group *string `json:"group,omitempty"`
+	// Kind is used to override the object kind that this reference points to.
+	// If unspecified, defaults to "Redpanda".
+	Kind *string `json:"kind,omitempty"`
+	// Name specifies the name of the cluster being referenced.
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+}
+
+const (
+	v1ClusterRefGroup = "redpanda.vectorized.io"
+	v1ClusterRefKind  = "Cluster"
+	v2ClusterRefGroup = "cluster.redpanda.com"
+	v2ClusterRefKind  = "Redpanda"
+)
+
+func (c *ClusterRef) GetGroup() string {
+	return ptr.Deref(c.Group, v2ClusterRefGroup)
+}
+
+func (c *ClusterRef) GetKind() string {
+	return ptr.Deref(c.Kind, v2ClusterRefKind)
+}
+
+func (c *ClusterRef) IsV1() bool {
+	return c.GetGroup() == v1ClusterRefGroup && c.GetKind() == v1ClusterRefKind
+}
+
+func (c *ClusterRef) IsV2() bool {
+	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == v2ClusterRefKind
+}
+
+// ResourceTemplate specifies additional configuration for a resource.
+type ResourceTemplate struct {
+	// Metadata specifies additional metadata to associate with a resource.
+	Metadata MetadataTemplate `json:"metadata"`
+}
+
+// MetadataTemplate defines additional metadata to associate with a resource.
+type MetadataTemplate struct {
+	// Labels specifies the Kubernetes labels to apply to a managed resource.
+	Labels map[string]string `json:"labels,omitempty"`
+	// Annotations specifies the Kubernetes annotations to apply to a managed resource.
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+// StaticConfigurationSource configures connections to a Redpanda cluster via hard-coded
+// connection strings and manually configured TLS and authentication parameters.
+type StaticConfigurationSource struct {
+	// Kafka is the configuration information for communicating with the Kafka
+	// API of a Redpanda cluster where the object should be created.
+	Kafka *KafkaAPISpec `json:"kafka,omitempty"`
+	// AdminAPISpec is the configuration information for communicating with the Admin
+	// API of a Redpanda cluster where the object should be created.
+	Admin *AdminAPISpec `json:"admin,omitempty"`
+	// SchemaRegistry is the configuration information for communicating with the Schema Registry
+	// API of a Redpanda cluster where the object should be created.
+	SchemaRegistry *SchemaRegistrySpec `json:"schemaRegistry,omitempty"`
+}
+
+// ClusterSource defines how to connect to a particular Redpanda cluster.
+// +kubebuilder:validation:XValidation:message="either clusterRef or staticConfiguration must be set",rule="has(self.clusterRef) || has(self.staticConfiguration)"
+type ClusterSource struct {
+	// ClusterRef is a reference to the cluster where the object should be created.
+	// It is used in constructing the client created to configure a cluster.
+	// This takes precedence over StaticConfigurationSource.
+	ClusterRef *ClusterRef `json:"clusterRef,omitempty"`
+	// StaticConfiguration holds connection parameters to Kafka and Admin APIs.
+	StaticConfiguration *StaticConfigurationSource `json:"staticConfiguration,omitempty"`
+}
+
+func (c *ClusterSource) GetKafkaAPISpec() *KafkaAPISpec {
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.Kafka
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetAdminAPISpec() *AdminAPISpec {
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.Admin
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetSchemaRegistrySpec() *SchemaRegistrySpec {
+	if c.StaticConfiguration != nil {
+		return c.StaticConfiguration.SchemaRegistry
+	}
+	return nil
+}
+
+func (c *ClusterSource) GetClusterRef() *ClusterRef {
+	return c.ClusterRef
+}
+
+const (
+	ResourceConditionTypeSynced = "Synced"
+
+	ResourceConditionReasonPending              = "Pending"
+	ResourceConditionReasonSynced               = "Synced"
+	ResourceConditionReasonClusterRefInvalid    = "ClusterRefInvalid"
+	ResourceConditionReasonConfigurationInvalid = "ConfigurationInvalid"
+	ResourceConditionReasonTerminalClientError  = "TerminalClientError"
+	ResourceConditionReasonUnexpectedError      = "UnexpectedError"
+)
+
+func ResourceSyncedCondition(name string) metav1.Condition {
+	return metav1.Condition{
+		Type:    ResourceConditionTypeSynced,
+		Status:  metav1.ConditionTrue,
+		Reason:  ResourceConditionReasonSynced,
+		Message: fmt.Sprintf("Successfully synced %q to cluster.", name),
+	}
+}
+
+func ResourceNotSyncedCondition(reason string, err error) metav1.Condition {
+	return metav1.Condition{
+		Type:    ResourceConditionTypeSynced,
+		Status:  metav1.ConditionFalse,
+		Reason:  reason,
+		Message: fmt.Sprintf("Error: %v", err),
+	}
+}

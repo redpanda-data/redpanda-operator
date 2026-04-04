@@ -1,0 +1,28 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    kubectl wait --for=condition=ClusterConfigured=True cluster/nodepool-cluster --timeout 300s --namespace $NAMESPACE
+    kubectl wait --for=condition=OperatorQuiescent=True cluster/nodepool-cluster --timeout 300s --namespace $NAMESPACE
+---
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: nodepools-delete
+status:
+  readyReplicas: 3
+  replicas: 3
+  currentReplicas: 3
+  upgrading: false
+  restarting: false
+  nodePools:
+    first:
+      currentReplicas: 3
+      readyReplicas: 3
+      replicas: 3
+      restarting: false
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+  - command: ../../../hack/get-redpanda-info.sh

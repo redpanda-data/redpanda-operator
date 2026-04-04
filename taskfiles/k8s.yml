@@ -1,0 +1,200 @@
+version: '3'
+
+tasks:
+
+  generate:
+    dir: 'operator'
+    aliases:
+    - generate-controller-code
+    - generate-manifests
+    cmds:
+      # Generates SchemaBuilders and automatically registers CRs with it.
+      - register-gen --go-header-file "../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ./api/redpanda/... ./api/vectorized/...
+
+      # Generate the full RBAC bundle for kustomize and the operator chart, CRD
+      # manifests, and deep copy methods.
+      - |
+        controller-gen \
+          object:headerFile="../licenses/boilerplate.go.txt" \
+          paths='./...' \
+          crd \
+          webhook \
+          rbac:roleName=manager-role \
+          output:crd:artifacts:config=config/crd/bases \
+          output:rbac:artifacts:config=config/rbac/bases/operator
+
+      - task: generate:statuses
+      - task: generate:crd-docs
+
+      # For each controller (or really itemizable RBAC source), generate an
+      # isolated rbac bundle. These are used by the helm charts to check
+      # whether or not permissions are correctly in sync. As we allow VERY
+      # granular toggling at the moment it's critical to upkeep this bookkeeping.
+      - for:
+        - NAME: rpk-debug-bundle
+          PATH: ./internal/controller/rpkdebugbundle
+        - NAME: rack-awareness
+          PATH: ./internal/controller/rackawareness
+        - NAME: node-watcher
+          PATH: ./internal/controller/nodewatcher
+        - NAME: old-decommission
+          PATH: ./internal/controller/olddecommission
+        - NAME: pvcunbinder
+          PATH: ./internal/controller/pvcunbinder
+        - NAME: v2-manager
+          PATH: ./internal/controller/redpanda
+        - NAME: console
+          PATH: ./internal/controller/console
+        - NAME: v1-manager
+          PATH: ./internal/controller/vectorized
+        - NAME: decommission
+          PATH: ./internal/controller/decommissioning
+        - NAME: sidecar
+          PATH: ./cmd/sidecar
+        - NAME: leader-election
+          PATH: ./cmd/run
+        - NAME: crd-installation
+          PATH: ./cmd/crd
+        cmd: |
+          controller-gen \
+            paths={{ .ITEM.PATH }} \
+            rbac:roleName={{ .ITEM.NAME }} \
+            output:rbac:stdout > config/rbac/itemized/{{ .ITEM.NAME }}.yaml
+
+      # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
+      # The chart embeds these permissions so they can't get out of sync with the operator.
+      - rm ../charts/redpanda/chart/files/*.yaml
+      - |
+        yq e \
+          --split-exp '"../charts/redpanda/chart/files/\( .metadata.name ).\( .kind ).yaml"' \
+          '.' \
+          ./config/rbac/itemized/decommission.yaml \
+          ./config/rbac/itemized/pvcunbinder.yaml \
+          ./config/rbac/itemized/sidecar.yaml \
+          ./config/rbac/itemized/rpk-debug-bundle.yaml \
+          ./config/rbac/itemized/rack-awareness.yaml
+
+      # And once more for the Operator's chart.
+      - mkdir -p chart/files/rbac/ && (rm chart/files/rbac/*.yaml || true)
+      - |
+        yq e \
+          --split-exp '"chart/files/rbac/\( .metadata.name ).\( .kind ).yaml"' \
+          '.' \
+          ./config/rbac/itemized/decommission.yaml \
+          ./config/rbac/itemized/leader-election.yaml \
+          ./config/rbac/itemized/node-watcher.yaml \
+          ./config/rbac/itemized/old-decommission.yaml \
+          ./config/rbac/itemized/pvcunbinder.yaml \
+          ./config/rbac/itemized/rack-awareness.yaml \
+          ./config/rbac/itemized/rpk-debug-bundle.yaml \
+          ./config/rbac/itemized/sidecar.yaml \
+          ./config/rbac/itemized/crd-installation.yaml \
+          ./config/rbac/itemized/v1-manager.yaml \
+          ./config/rbac/itemized/v2-manager.yaml \
+          ./config/rbac/itemized/console.yaml
+
+      # Some integration tests use their RBAC declarations but generally
+      # require some additional permissions (e.g. leader election, running
+      # multiple controllers)
+      - |
+        controller-gen \
+          paths=./cmd/run \
+          paths=./internal/controller/decommissioning \
+          rbac:roleName=decommissioning \
+          output:rbac:stdout > ./internal/controller/decommissioning/testdata/role.yaml
+
+      - |
+        controller-gen \
+          paths=./cmd/run \
+          paths=./internal/controller/redpanda \
+          paths=./internal/controller/rackawareness \
+          paths=./internal/controller/rpkdebugbundle \
+          paths=./internal/controller/nodewatcher \
+          paths=./internal/controller/olddecommission \
+          rbac:roleName=manager \
+          output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
+
+      - |
+        applyconfiguration-gen \
+        --go-header-file "../licenses/boilerplate.go.txt" \
+        --output-dir "api/applyconfiguration" \
+        --output-pkg "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration" \
+        ./api/redpanda/v1alpha2
+      - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
+      - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
+
+      # Generate rote conversion functions.
+      # Must run after deepcopy is generated.
+      - goverter gen ./api/redpanda/v1alpha2/
+
+  generate:crd-docs:
+    desc: Generates an example ascii doc from our crd-ref-docs configuration.
+    dir: 'operator'
+    cmds:
+    - |
+      crd-ref-docs \
+      --config crd-ref-docs-config.yaml \
+      --source-path ./api/redpanda/v1alpha2/ \
+      --output-path ./api/redpanda/v1alpha2/testdata/crd-docs.adoc \
+      --templates-dir=./crd-docs-templates/
+
+  generate:statuses:
+    run: when_changed
+    internal: true
+    dir: 'operator'
+    sources:
+    - ./statuses.yaml
+    label: "generate:statuses"
+    desc: "Generate the statuses files used in our controllers."
+    generates:
+    - ./internal/statuses/*.go
+    cmds:
+    - gen status --output-directory ./internal/statuses --statuses-file ./statuses.yaml --rewrite-comments
+    deps:
+    - task: :build:gen
+
+  fetch-latest-redpanda:
+    desc: fetch the latest redpanda release and tag it localhost/redpanda:dev
+    summary: |
+      pulls down the latest redpanda nightly build and tag it localhost/repdanda:dev
+      to allow us to skip building redpanda with every CI run.
+    dir: operator
+    vars:
+      CONSTRAINT: '{{.CONSTRAINT | default ""}}'
+      REPO: '{{.REPO | default "docker.redpanda.com/redpandadata/redpanda"}}'
+    cmds:
+      - |
+        TAG=$(docker-tag-list -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
+        docker pull "{{.REPO}}":"${TAG}"
+        docker tag "{{.REPO}}":"${TAG}" localhost/redpanda:dev
+
+  run-kuttl-tests:
+    desc: run kuttl tests
+    summary: |
+      Executes end-to-end kuttl tests. It expects a KUTTL_CONFIG_FILE variable
+      that points to the config file passed to kuttl. In addition, Task's
+      CLI_ARGS is also passed to `kuttl`, so arbitrary flags can be given too.
+
+      Currently, e2e redpanda operator tests assumes a docker image for redpanda
+      exists locally at the time this task runs (localhost/redpanda:dev image).
+      This image can be downloaded by invoking the fetch-latest-redpanda task.
+
+      This task doesn't fail if kuttl fails. Instead, it writes the exit code of
+      kuttl to the kuttl-exit-code file and expects the caller to check the
+      content of this file in order to determine if kuttl failed.
+
+      When kuttl fails, the artifacts dir specified in the `artifactsDir` kuttl
+      configuration option is compressed. The name of the tarball is the same as
+      basename of the `artifactsDir` variable, with the `.tar.gz` suffix.
+    dir: 'operator'
+    vars:
+      KUTTL_CONFIG_FILE: '{{default "kuttl-test.yaml" .KUTTL_CONFIG_FILE}}'
+      KUTTL_ARTIFACTS_DIR:
+        sh: |
+          cat {{.KUTTL_CONFIG_FILE}} | grep artifactsDir | awk '{print $2}'
+    deps:
+      - task: fetch-latest-redpanda
+      - task: :build:image
+    cmds:
+      - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
+      - kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}}

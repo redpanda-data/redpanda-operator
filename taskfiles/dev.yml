@@ -1,0 +1,55 @@
+version: '3'
+
+tasks:
+  retry-task:
+    vars:
+      TASK_EXEC: '{{default "task" .TASK_EXEC}}'
+      RETRY_COUNT: '{{default 3 .RETRY_COUNT}}'
+      SLEEP_INTERVAL: '{{default 3 .SLEEP_INTERVAL}}'
+    cmds:
+      - echo "will retry task {{.TASK}}"
+      - |
+        retry_times={{.RETRY_COUNT}}
+        retry_index=0
+        while ((retry_index < retry_times)); do
+          set +e
+          {{.TASK_EXEC}} {{.TASK}} {{.PARAMS}}
+          cmd_code="$?"
+          set -e
+          if [[ $cmd_code == "0" ]]; then
+            break
+          fi
+          let retry_index=retry_index+1
+          echo "retrying task {{.TASK}}, attempt $retry_index, after sleep {{.SLEEP_INTERVAL}}"
+          sleep {{.SLEEP_INTERVAL}}
+        done
+        if [[ $cmd_code != "0" ]]; then
+          echo "retried '{{.TASK}}' task {{.RETRY_COUNT}} times and failed"
+          exit $cmd_code
+        fi
+    preconditions:
+      - test -n '{{.TASK}}'
+
+  download-integration-artifacts:
+    silent: true
+    vars:
+      BRANCH: '{{default "" .BRANCH}}'
+    cmds:
+      - ./ci/scripts/download-otel-artifacts.sh "{{.BRANCH}}" integration
+
+  create-buildx-builder:
+    cmds:
+      - task: :dev:retry-task
+        vars:
+          TASK: dev:retry-create-buildx-builder
+    status:
+      - docker buildx ls | grep -q v-builder
+
+  retry-create-buildx-builder:
+    cmds:
+      - docker buildx create --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=-1 --platform linux/amd64,linux/arm64 --name v-builder --use
+      - '{{if eq ARCH "amd64"}} docker run --rm --privileged linuxkit/binfmt:v0.8 {{else}} echo "" {{end}}'
+
+  update-licenses:
+    cmds:
+      - go run ./licenseupdater ./... -config .licenseupdater.yaml

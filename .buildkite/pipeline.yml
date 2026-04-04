@@ -1,0 +1,124 @@
+---
+env:
+  BRANCH_NAME: $BUILDKITE_BRANCH
+  PULL_REQUEST: $BUILDKITE_PULL_REQUEST
+  PULL_REQUEST_BASE_BRANCH_NAME: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
+  PIPELINE_NAME: $BUILDKITE_PIPELINE_NAME
+  REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
+  # CI run podman instead of linux. testcontainer's ryuk is reported to not
+  # work well with podman.
+  TESTCONTAINERS_RYUK_DISABLED: "true"
+# pipeline.yml is the "entrypoint" for all BuildKite pipelines in the operator
+# repo. As such, it is executed for ANY trigger (e.g. PR update/created, Tag
+# updated/created, Schedule run). Use `if`s to delegate to specific pipeline
+# from this file and try to adhere to the below rules.
+#
+# Do:
+# - Use `gen` to generate pipeline files.
+# - Use `if` to gate the execution of pipelines.
+# - Include a human readable explanation of `if` gates.
+# - Separate pipelines into distinct files and use `buildkite-agent pipeline upload`.
+# - Chain together tasks (e.g. `task ci:setup ci:run-test ci:tear-down).
+#
+# Do not:
+# - Use taskfile to gate execution of steps.
+# - Have a pipeline serve multiple purposes.
+steps:
+  # ci-entry-point kicks off the complete operator test suite.
+  # It is responsible for blocking or allowing GitHub PRs to be merged.
+  - key: ci-entry-point
+    label: Operator CI Entrypoint
+    agents:
+      queue: devprod-t4gmicro
+    # Run for:
+    # - all pull requests that aren't from forks
+    # - nightly test schedule or nightly triggered from buildkite ui
+    # - changes to main or release/* branches (webhooks are from github)
+    if: |
+      (build.pull_request.id != null && !build.pull_request.repository.fork) ||
+      ((build.source == "schedule" || build.source == "ui") && build.env("K8S_NIGHTLY") == "1") ||
+      ((build.branch == "main" || build.branch =~ /^release\//) && build.source == "webhook")
+    command: buildkite-agent pipeline upload .buildkite/testsuite.yml
+
+    # NOTE: This build IS NOT dependent on tests passing due to their current flakey state.
+    # It's recommended to check that tests have passed for the given commit before using it.
+  - key: release-nightly
+    label: ":gandalf: Nightly Releases"
+    timeout_in_minutes: 10
+    agents:
+      queue: k8s-m6id12xlarge
+    commands:
+      - |
+        ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-nightly-artifacts
+    # Build nightly releases whenever NIGHTLY_RELEASE is set and it's triggered
+    # from a schedule or the BK UI. Notably, we permit building nightlies from
+    # any branch as the version stamps contain enough information to easily
+    # track down the source.
+    if: build.env("NIGHTLY_RELEASE") == "true" && (build.source == "schedule" || build.source == "ui")
+    plugins:
+      - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
+          json-to-env:
+            - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
+            - secret-id: sdlc/prod/buildkite/buildkite_api_token
+            - secret-id: sdlc/prod/buildkite/dockerhub
+            - secret-id: sdlc/prod/buildkite/gh_token
+            - secret-id: sdlc/prod/buildkite/github_api_token
+            - secret-id: sdlc/prod/buildkite/redpanda_sample_license
+            - secret-id: sdlc/prod/buildkite/slack_vbot_token
+      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+          message: "Nightly releases failed"
+          channel_name: "kubernetes-tests"
+          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+          conditions:
+            failed: true
+
+    # NOTE: This build IS NOT dependent on tests passing due to their current flakey state.
+    # Manually verify that the test suite has successfully run on the RC before tagging.
+  - key: operator-release
+    label: Operator Release
+    timeout_in_minutes: 180
+    if: |
+      // Only run if:
+      // 1. There's a tag in the form 'operator/v*'
+      // 2. NIGHTLY_RELEASE envvar isn't set (paranoid check)
+      // 3. This isn't a pull request (paranoid check)
+      // 4. As buildkite schedule build on tag with the same branch settings as per the following (paranoid check)
+      //
+      // > Due to how tags work in git, a branch is not easily inferred, nor is it required to check out a tag.
+      // > For this reason we’re setting BUILDKITE_BRANCH and BUILDKITE_TAG to the same value. This is the
+      // > intended behaviour. Our docs aren’t really clear on this and we’re updating them now.
+      //
+      // https://forum.buildkite.community/t/branch-names-vs-tag-names/974/2
+      (build.tag =~ /^operator\/v/) &&
+      build.pull_request.id == null &&
+      build.env("NIGHTLY_RELEASE") != "true" &&
+      build.branch == build.tag
+    command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:publish-operator-image
+    agents:
+      queue: k8s-m6id12xlarge
+    plugins:
+      - seek-oss/aws-sm#v2.3.2:
+          json-to-env:
+            - secret-id: sdlc/prod/buildkite/active_directory
+            - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
+            - secret-id: sdlc/prod/buildkite/buildkite_api_token
+            - secret-id: sdlc/prod/buildkite/cdt_gcp
+            - secret-id: sdlc/prod/buildkite/cdt_runner_aws
+            - secret-id: sdlc/prod/buildkite/ci_db
+            - secret-id: sdlc/prod/buildkite/cloudsmith
+            - secret-id: sdlc/prod/buildkite/dockerhub
+            - secret-id: sdlc/prod/buildkite/gh_token
+            - secret-id: sdlc/prod/buildkite/github_api_token
+            - secret-id: sdlc/prod/buildkite/grafana_token
+            - secret-id: sdlc/prod/buildkite/redpanda_sample_license
+            - secret-id: sdlc/prod/buildkite/rpk_test_client
+            - secret-id: sdlc/prod/buildkite/seceng_audit_aws
+            - secret-id: sdlc/prod/buildkite/slack_vbot_token
+            - secret-id: sdlc/prod/buildkite/teleport_bot_token
+            - secret-id: sdlc/prod/buildkite/test_result_dsn
+      - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
+          message: ":cloud: Operator Release Job Failed"
+          channel_name: "kubernetes-tests"
+          slack_token_env_var_name: "SLACK_VBOT_TOKEN"
+          conditions:
+            failed: true

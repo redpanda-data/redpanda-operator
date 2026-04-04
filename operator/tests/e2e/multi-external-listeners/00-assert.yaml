@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ml-client-cert-key
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ml-ca-cert
+  annotations:
+    operator.redpanda.com/external-ca: 'true'
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/name: "redpanda"
+    app.kubernetes.io/instance: ml-client-external-ca-mtls

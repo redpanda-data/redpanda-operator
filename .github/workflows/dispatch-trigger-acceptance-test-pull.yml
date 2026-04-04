@@ -1,0 +1,32 @@
+---
+  # This workflow triggers the action in redpanda-data/docs that
+  # pulls new acceptance tests into the docs and submits the change as a PR.
+
+  name: Trigger acceptance test change in docs
+  on:
+    push:
+      branches: [main]
+      paths:
+        - 'acceptance/features/**'
+  jobs:
+    dispatch:
+      runs-on: ubuntu-latest
+      permissions:
+        id-token: write
+        contents: read
+      steps:
+        - uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-region: ${{ vars.RP_AWS_CRED_REGION }}
+            role-to-assume: arn:aws:iam::${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}:role/${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}${{ github.event.repository.name }}
+        - uses: aws-actions/aws-secretsmanager-get-secrets@v2
+          with:
+            secret-ids: |
+              ,sdlc/prod/github/actions_bot_token
+            parse-json-secrets: true
+        - name: Trigger trigger-acceptance-test-pull event
+          uses: peter-evans/repository-dispatch@v2
+          with:
+            token: ${{ env.ACTIONS_BOT_TOKEN }}
+            repository: redpanda-data/docs
+            event-type: trigger-acceptance-test-pull
