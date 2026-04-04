@@ -62,7 +62,6 @@ docker run --rm -it \
 	-e RPK_TEST_CLIENT_SECRET \
 	-e AWS_ACCESS_KEY_ID \
 	-e AWS_SECRET_ACCESS_KEY \
-	-e TESTCONTAINERS_RYUK_DISABLED \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \
