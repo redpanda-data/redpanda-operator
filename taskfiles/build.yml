@@ -38,12 +38,10 @@ tasks:
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.buildDate={{.TIMESTAMP}}"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.commit={{.COMMIT}}"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.OPERATOR_VERSION}}"
-      _GOOS_LIST: '{{.BUILD_GOOS | default "linux darwin"}}'
-      _GOARCH_LIST: '{{.BUILD_GOARCH | default "arm64 amd64"}}'
     cmds:
     - |
-      for goos in {{._GOOS_LIST}}; do
-        for goarch in {{._GOARCH_LIST}}; do
+      for goos in ${BUILD_GOOS:-linux darwin}; do
+        for goarch in ${BUILD_GOARCH:-arm64 amd64}; do
           echo "Building operator for $goos/$goarch"
           CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch \
             go build -C ./operator \
@@ -54,13 +52,10 @@ tasks:
       done
 
   alias:
-    vars:
-      _GOOS_LIST: '{{.BUILD_GOOS | default "linux darwin"}}'
-      _GOARCH_LIST: '{{.BUILD_GOARCH | default "arm64 amd64"}}'
     cmds:
     - |
-      for goos in {{._GOOS_LIST}}; do
-        for goarch in {{._GOARCH_LIST}}; do
+      for goos in ${BUILD_GOOS:-linux darwin}; do
+        for goarch in ${BUILD_GOARCH:-arm64 amd64}; do
           echo "Building alias for $goos/$goarch"
           CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch \
             go build -C ./alias \
