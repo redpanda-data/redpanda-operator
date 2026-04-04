@@ -111,23 +111,34 @@ func checkV2ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 // has all pods running and ready. This guards against the case where the
 // operator marks the cluster as ready/quiescent before pods are fully
 // schedulable and accepting connections.
+//
+// The StatefulSet name may not match the cluster name (e.g. when
+// fullnameOverride is used), so we look up the StatefulSet by matching
+// the app.kubernetes.io/instance label instead.
 func waitForStatefulSetReady(ctx context.Context, t framework.TestingT, clusterName string) {
-	key := t.ResourceKey(clusterName)
-	t.Logf("Waiting for StatefulSet %q pods to be ready", clusterName)
+	t.Logf("Waiting for StatefulSet pods to be ready for cluster %q", clusterName)
 	require.Eventually(t, func() bool {
-		var sts appsv1.StatefulSet
-		if err := t.Get(ctx, key, &sts); err != nil {
+		var stsList appsv1.StatefulSetList
+		if err := t.List(ctx, &stsList, client.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
 			return false
 		}
-		if sts.Spec.Replicas == nil {
+		if len(stsList.Items) == 0 {
+			t.Logf("No StatefulSet found for cluster %q yet", clusterName)
 			return false
 		}
-		ready := sts.Status.ReadyReplicas >= *sts.Spec.Replicas
-		if !ready {
-			t.Logf("StatefulSet %q: %d/%d ready", clusterName, sts.Status.ReadyReplicas, *sts.Spec.Replicas)
+		for _, sts := range stsList.Items {
+			if sts.Spec.Replicas == nil {
+				return false
+			}
+			if sts.Status.ReadyReplicas < *sts.Spec.Replicas {
+				t.Logf("StatefulSet %q: %d/%d ready", sts.Name, sts.Status.ReadyReplicas, *sts.Spec.Replicas)
+				return false
+			}
 		}
-		return ready
-	}, 5*time.Minute, 5*time.Second, "StatefulSet %q pods never became ready", clusterName)
+		return true
+	}, 5*time.Minute, 5*time.Second, "StatefulSet pods for cluster %q never became ready", clusterName)
 }
 
 func redpandaClusterIsHealthy(ctx context.Context, t framework.TestingT, cluster string) {
