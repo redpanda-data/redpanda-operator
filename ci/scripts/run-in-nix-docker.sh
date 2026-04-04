@@ -62,6 +62,10 @@ docker run --rm -it \
 	-e RPK_TEST_CLIENT_SECRET \
 	-e AWS_ACCESS_KEY_ID \
 	-e AWS_SECRET_ACCESS_KEY \
+	-e BUILD_GOOS \
+	-e BUILD_GOARCH \
+	-e ACCEPTANCE_ARTIFACTS_DIR \
+	-e INTEGRATION_ARTIFACTS_DIR \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \

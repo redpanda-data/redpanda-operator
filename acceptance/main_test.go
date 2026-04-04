@@ -65,6 +65,10 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			imageRepo + ":" + imageTag,
 			steps.DefaultRedpandaRepo + ":" + steps.DefaultRedpandaTag,
 			"redpandadata/redpanda-operator:v2.4.5",
+			// Operator images used by upgrade features (overridden from docker.redpanda.com).
+			"redpandadata/redpanda-operator:v25.1.3",
+			"redpandadata/redpanda-operator:v25.2.2",
+			"redpandadata/redpanda-operator:v25.3.1",
 			"redpandadata/redpanda:v25.1.1",
 			"redpandadata/redpanda:v25.2.1",
 			// Images used by upgrade and upgrade-regressions features.

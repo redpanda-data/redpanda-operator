@@ -6,6 +6,8 @@ Feature: Operator upgrade regressions
   Scenario: Regression - field managers
     Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
     """
+    image:
+      repository: redpandadata/redpanda-operator
     crds:
       enabled: true
     """
@@ -41,6 +43,8 @@ Feature: Operator upgrade regressions
     """
     Then I helm upgrade "redpanda-operator" "redpanda/operator" --version v25.3.1 with values:
     """
+    image:
+      repository: redpandadata/redpanda-operator
     crds:
       enabled: true
     """

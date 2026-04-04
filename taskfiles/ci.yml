@@ -28,6 +28,9 @@ tasks:
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:integration:
+    env:
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
@@ -40,6 +43,8 @@ tasks:
   test:acceptance:
     env:
       ACCEPTANCE_ARTIFACTS_DIR: '{{.SRC_DIR}}/artifacts/acceptance-diagnostics'
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
     cmds:
       - defer: 'kind delete clusters --all'
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/**/*"'
@@ -50,11 +55,17 @@ tasks:
           CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:kuttl-v1:
+    env:
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
     cmds:
       - 'echo "~~~ Running kuttl V1 tests :k8s:"'
       - task: run-kuttl-tests
 
   test:kuttl-v1-nodepools:
+    env:
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
     cmds:
       - 'echo "~~~ Running kuttl V1 Nodepools tests :k8s:"'
       - task: run-kuttl-tests
@@ -62,6 +73,9 @@ tasks:
           KUTTL_CONFIG_FILE: kuttl-test-with-flags.yaml
 
   test:kuttl-v2:
+    env:
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
     cmds:
       - 'echo "~~~ Running kuttl V2 tests :k8s:"'
       - task: run-kuttl-tests

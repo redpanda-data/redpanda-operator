@@ -4,6 +4,8 @@ Feature: Upgrading the operator
   Scenario: Operator upgrade from 25.2.2
     Given I helm install "redpanda-operator" "redpanda/operator" --version v25.2.2 with values:
     """
+    image:
+      repository: redpandadata/redpanda-operator
     crds:
       enabled: true
     """

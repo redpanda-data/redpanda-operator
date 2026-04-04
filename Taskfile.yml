@@ -343,6 +343,8 @@ tasks:
       - quay.io/jetstack/cert-manager-webhook:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
       - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
+      - redpandadata/redpanda-operator:v25.1.3
+      - redpandadata/redpanda-operator:v25.2.2
       - redpandadata/redpanda-operator:v25.3.1
       - redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
       - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}

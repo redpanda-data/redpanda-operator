@@ -4,6 +4,8 @@ Feature: Upgrading the operator with Console installed
   Scenario: Console v2 to v3 no warnings
     Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
     """
+    image:
+      repository: redpandadata/redpanda-operator
     """
     And I apply Kubernetes manifest:
     """
@@ -47,6 +49,8 @@ Feature: Upgrading the operator with Console installed
   Scenario: Console v2 to v3 with warnings
     Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
     """
+    image:
+      repository: redpandadata/redpanda-operator
     """
     And I apply Kubernetes manifest:
     """
