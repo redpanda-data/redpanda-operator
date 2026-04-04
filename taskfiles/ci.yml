@@ -25,7 +25,7 @@ tasks:
       - task: :test:unit
         vars:
           GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/unit-tests.xml --format testname --rerun-fails --packages'
-          CLI_ARGS: '-- {{.CLI_ARGS}}'
+          CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:integration:
     env:
@@ -38,7 +38,7 @@ tasks:
       - task: :test:integration
         vars:
           GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/integration-tests.xml --format testname --rerun-fails --packages'
-          CLI_ARGS: '-- {{.CLI_ARGS}}'
+          CLI_ARGS: '{{.CLI_ARGS}}'
 
   test:acceptance:
     env:

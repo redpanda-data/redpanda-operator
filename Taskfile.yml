@@ -264,8 +264,16 @@ tasks:
       _PKG:
         sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
       PKG: '{{ .PKG | default ._PKG }}'
+      # When using gotestsum with --packages, packages must be a single
+      # quoted arg and -- separates gotestsum flags from go test args.
+      _USE_PACKAGES: '{{if contains "--packages" .GO_TEST_RUNNER}}true{{end}}'
     cmds:
-    - '{{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}'
+    - |
+      {{- if ._USE_PACKAGES}}
+      {{.GO_TEST_RUNNER}} "{{.PKG}}" -- {{.CLI_ARGS}}
+      {{- else}}
+      {{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}
+      {{- end}}
 
   test:integration:
     desc: "Run all integration tests (~90m)"
