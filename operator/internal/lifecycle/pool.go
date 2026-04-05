@@ -10,9 +10,11 @@
 package lifecycle
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
+	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -181,6 +183,12 @@ func (p *PoolTracker) CheckScale() bool {
 		replicas := ptr.Deref(pool.set.Spec.Replicas, 0)
 		if replicas != pool.set.Status.Replicas || int(replicas) != len(pool.pods) {
 			// we're potentially in the middle of a scaling operation
+			log.FromContext(context.Background()).Info(
+				"Checking pool scale returns false",
+				"replicas", replicas,
+				"pool.set.Status.Replicas", pool.set.Status.Replicas,
+				"len(pool.pods)", len(pool.pods),
+			)
 			return false
 		}
 	}

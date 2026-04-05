@@ -127,6 +127,11 @@ func multiclusterOperatorPodVolumes(dot *helmette.Dot) []corev1.Volume {
 		multiclusterTLSVolume(dot),
 	}
 
+	licenseVol := licenseVolume(values)
+	if len(licenseVol) > 0 {
+		vol = append(vol, licenseVol...)
+	}
+
 	if !values.Webhook.Enabled {
 		return vol
 	}
@@ -150,6 +155,10 @@ func multiclusterOperatorPodVolumesMounts(dot *helmette.Dot) []corev1.VolumeMoun
 	volMount := []corev1.VolumeMount{
 		serviceAccountTokenVolumeMount(),
 		multiclusterTLSVolumeMount(dot),
+	}
+	licenseVolMount := licenseVolumeMount(values)
+	if len(licenseVolMount) > 0 {
+		volMount = append(volMount, licenseVolMount...)
 	}
 
 	if !values.Webhook.Enabled {
@@ -189,9 +198,12 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 		defaults["--webhook-key-path"] = webhookCertificatePath + "/tls.key"
 	}
 
+	addLicenseFilePathArg(defaults, values)
+
 	userProvided := chartutil.ParseFlags(values.AdditionalCmdFlags)
 
 	flags := []string{"multicluster"}
+
 	for key, value := range helmette.SortedMap(helmette.Merge(defaults, userProvided)) {
 		if value == "" {
 			flags = append(flags, key)
@@ -209,10 +221,10 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 
 func multiclusterTLSVolume(dot *helmette.Dot) corev1.Volume {
 	return corev1.Volume{
-		Name: fmt.Sprintf("%s-multicluster-certificates", Fullname(dot)),
+		Name: cleanForK8sWithSuffix(Fullname(dot), "multicluster-certificates"),
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: fmt.Sprintf("%s-multicluster-certificates", Fullname(dot)),
+				SecretName: cleanForK8sWithSuffix(Fullname(dot), "multicluster-certificates"),
 				Items: []corev1.KeyToPath{{
 					Key:  "tls.crt",
 					Path: "tls.crt",

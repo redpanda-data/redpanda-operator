@@ -19,16 +19,20 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/license"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap/zapcore"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/watcher"
 )
@@ -93,9 +97,9 @@ func (o *MulticlusterOptions) validate() error {
 	if len(o.CertificateFile) == 0 {
 		return errors.New("certificate must be specified")
 	}
-	if len(o.peersStrings) < 3 {
-		return errors.New("peers must be set and contain 3 or more nodes")
-	}
+	//if len(o.peersStrings) < 3 {
+	//	return errors.New("peers must be set and contain 3 or more nodes")
+	//}
 	if o.BaseImage == "" {
 		return errors.New("base image must be specified")
 	}
@@ -135,6 +139,23 @@ func peerFromFlag(value string) (RaftCluster, error) {
 		Name:    parsed.Scheme,
 		Address: parsed.Host,
 	}, nil
+}
+
+func parseLogLevel(level string) (zapcore.Level, error) {
+	switch level {
+	case "debug":
+		return zapcore.DebugLevel, nil
+	case "info":
+		return zapcore.InfoLevel, nil
+	case "warn", "warning":
+		return zapcore.WarnLevel, nil
+	case "error":
+		return zapcore.ErrorLevel, nil
+	case "fatal":
+		return zapcore.FatalLevel, nil
+	default:
+		return zapcore.InfoLevel, fmt.Errorf("unknown log level: %s, defaulting to info", level)
+	}
 }
 
 func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
@@ -212,12 +233,21 @@ func Run(
 		return err
 	}
 
+	// Parse and configure log level
+	logLevel, err := parseLogLevel(opts.LogLevel)
+	if err != nil {
+		setupLog.Error(err, "failed to parse log level, using default")
+	}
+
+	// Create a logger with the specified log level
+	raftLogger := ctrlzap.New(ctrlzap.Level(logLevel)).WithName("raft")
+
 	config := multicluster.RaftConfiguration{
 		Name:                opts.Name,
 		Address:             opts.Address,
 		ElectionTimeout:     opts.ElectionTimeout,
 		HeartbeatInterval:   opts.HeartbeatInterval,
-		Logger:              ctrl.LoggerFrom(ctx).WithName("raft"),
+		Logger:              raftLogger,
 		RestConfig:          k8sConfig,
 		Meta:                []byte("node-name=" + opts.Name),
 		Scheme:              controller.MulticlusterScheme,
@@ -317,7 +347,23 @@ func Run(
 		return fmt.Errorf("initializing cluster: %w", err)
 	}
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager); err != nil {
+	cloudSecrets := lifecycle.CloudSecretsFlags{
+		CloudSecretsEnabled: false,
+	}
+
+	sidecarImage := lifecycle.Image{
+		Repository: opts.BaseImage,
+		Tag:        opts.BaseTag,
+	}
+
+	redpandaImage := lifecycle.Image{
+		Repository: opts.BaseImage,
+		Tag:        opts.BaseTag,
+	}
+
+	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(10 * time.Second)
+
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}
@@ -337,6 +383,11 @@ func Run(
 		if err := manager.GetLocalManager().AddReadyzCheck("raft", manager.Health); err != nil {
 			return err
 		}
+	}
+
+	if err := redpandacontrollers.SetupWithMultiClusterManager(manager); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+		return err
 	}
 
 	return manager.Start(ctrl.SetupSignalHandler())

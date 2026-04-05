@@ -11,6 +11,8 @@ package multicluster
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
@@ -21,7 +23,7 @@ import (
 // rpk config) is emitted — this is the version baked into the ConfigMap that pods
 // mount. When false, a minimal config without seed servers is generated for the
 // checksum annotation, so that replica count changes don't trigger rolling restarts.
-func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpandav1alpha2.NodePool) string {
+func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpandav1alpha2.NodePool) (string, error) {
 	redpanda := map[string]any{
 		"empty_seed_starts_cluster": false,
 		"crash_loop_limit":          5,
@@ -29,16 +31,18 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 
 	if includeSeedServers {
 		var servers []map[string]any
-		for _, p := range state.pools {
-			for i := int32(0); i < p.GetReplicas(); i++ {
-				servers = append(servers, map[string]any{
-					"host": map[string]any{
-						"address": fmt.Sprintf("%s%s-%d.%s",
-							state.fullname(), p.Suffix(), i, state.Spec().InternalDomain(state.fullname(), state.namespace)),
-						"port": state.Spec().RPCPort(),
-					},
-				})
+		for _, server := range state.seedServers {
+			address, port, _ := strings.Cut(server, ":")
+			portInt, err := strconv.ParseInt(port, 10, 0)
+			if err != nil {
+				return "", err
 			}
+			servers = append(servers, map[string]any{
+				"host": map[string]any{
+					"address": address,
+					"port":    portInt,
+				},
+			})
 		}
 		redpanda["seed_servers"] = servers
 	}
@@ -81,7 +85,7 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 		}
 	}
 
-	return tplutil.ToYaml(redpandaYaml)
+	return tplutil.ToYaml(redpandaYaml), nil
 }
 
 // configureListeners populates the listener entries in the redpanda config section.

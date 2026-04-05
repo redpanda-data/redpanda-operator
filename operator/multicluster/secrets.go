@@ -32,7 +32,7 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 	if saslUsers != nil {
 		secrets = append(secrets, saslUsers)
 	}
-	for _, pool := range state.pools {
+	for _, pool := range state.inClusterPools {
 		secrets = append(secrets, secretConfigurator(state, pool))
 		if fsValidator := secretFSValidator(state, pool); fsValidator != nil {
 			secrets = append(secrets, fsValidator)

@@ -61,6 +61,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
 			imageRepo + ":" + imageTag,
+			"rancher/mirrored-library-busybox:1.36.1",
 			steps.DefaultRedpandaRepo + ":" + steps.DefaultRedpandaTag,
 			"redpandadata/redpanda-operator:v2.4.5",
 			"redpandadata/redpanda:v25.1.1",
@@ -69,6 +70,8 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
 			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
 			"quay.io/jetstack/cert-manager-webhook:v1.14.2",
+			"ghcr.io/loft-sh/kubernetes:v1.33.4",
+			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
 		}...).
 		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install).
 		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
@@ -223,6 +226,10 @@ func shouldSkipOperatorInstall(tag framework.ParsedTag) bool {
 }
 
 func waitForCertManagerWebhook(ctx context.Context, restConfig *rest.Config) error {
+	if testutil.MultiClusterSetupOnly() {
+		return nil
+	}
+
 	c, err := client.New(restConfig, client.Options{})
 	if err != nil {
 		return err

@@ -12,6 +12,7 @@ package lifecycle
 import (
 	"context"
 
+	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -89,6 +90,9 @@ type OwnershipResolver[T any, U Cluster[T]] interface {
 	// particular cluster. If the object does not map
 	// to a cluster, return nil.
 	OwnerForObject(object client.Object) *types.NamespacedName
+
+	// ResolveOwnerReference
+	ResolveOwnerReference(ctx context.Context, owner U, clusterName string, targetCluster *kube.Ctl) (U, error)
 }
 
 // SimpleResourceRenderer handles compilation of all desired
@@ -103,6 +107,8 @@ type SimpleResourceRenderer[T any, U Cluster[T]] interface {
 	// WatchedResourceTypes returns a list of all resources that
 	// our controller should watch for changes to trigger reconciliation.
 	WatchedResourceTypes() []client.Object
+	// RenderPoolsServices returns services created for NodePools which are exposing admin API ports (among other ports)
+	GetAdminAPIEndpoints(cluster U) []string
 }
 
 // MigratingRenderer allows an implementation to render resources that they

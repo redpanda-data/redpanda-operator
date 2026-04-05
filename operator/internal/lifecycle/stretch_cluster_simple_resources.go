@@ -11,6 +11,7 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +41,17 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		return nil, errors.WithStack(err)
 	}
 
-	state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.NodePools, clusterName)
+	// Use the canonical cluster name so that labels are identical regardless
+	// of which operator instance (local vs remote) performs the reconciliation.
+	canonicalName := CanonicalClusterName(clusterName, m.mgr)
+
+	state, err := multiclusterRenderer.NewRenderState(
+		cl.GetConfig(),
+		cluster.StretchCluster,
+		cluster.GetNodePoolsForCluster(canonicalName),
+		cluster.GetAllNodePools(),
+		canonicalName,
+	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -50,8 +61,6 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		return nil, errors.WithStack(err)
 	}
 
-	// TODO: re-implement per-pool service generation using new RenderState types
-
 	return resources, nil
 }
 
@@ -59,4 +68,15 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 // controller needs to watch.
 func (m *StretchClusterSimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return multiclusterRenderer.Types()
+}
+
+func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *StretchClusterWithPools) []string {
+	var adminAPIEndpoints []string
+	for _, pool := range cluster.NodePools {
+		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
+			name := multiclusterRenderer.PerPodServiceName(pool.nodePool, i)
+			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), cluster.Spec.AdminPort()))
+		}
+	}
+	return adminAPIEndpoints
 }

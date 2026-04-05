@@ -80,10 +80,11 @@ const (
 
 // Well-known Kubernetes label keys.
 const (
-	labelNameKey      = "app.kubernetes.io/name"
-	labelInstanceKey  = "app.kubernetes.io/instance"
-	labelComponentKey = "app.kubernetes.io/component"
-	labelManagedByKey = "app.kubernetes.io/managed-by"
+	labelNameKey        = "app.kubernetes.io/name"
+	labelInstanceKey    = "app.kubernetes.io/instance"
+	labelComponentKey   = "app.kubernetes.io/component"
+	labelManagedByKey   = "app.kubernetes.io/managed-by"
+	labelClusterNameKey = "app.kubernetes.io/cluster-name"
 
 	labelPDBKey     = "redpanda.com/poddisruptionbudget"
 	labelBrokerKey  = "cluster.redpanda.com/broker"
@@ -125,6 +126,10 @@ const internalListenerName = "internal"
 
 // Field owner for server-side apply.
 var defaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
+
+// defaultBootstrapUsername is the default SCRAM username created by
+// RP_BOOTSTRAP_USER and added to the superusers list.
+const defaultBootstrapUsername = "kubernetes-controller"
 
 // Supported SASL mechanisms.
 var supportedSASLMechanisms = []string{
