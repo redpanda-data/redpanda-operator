@@ -34,7 +34,7 @@ import (
 func setupTestContainer(t *testing.T, ctx context.Context) (*kgo.Client, rpsr.ACLClient) {
 	t.Helper()
 
-	container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v25.2.1",
+	container, err := redpanda.Run(ctx, "redpandadata/redpanda:v25.2.1",
 		redpanda.WithEnableSchemaRegistryHTTPBasicAuth(),
 		redpanda.WithEnableKafkaAuthorization(),
 		redpanda.WithEnableSASL(),

@@ -116,7 +116,7 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("25.2.1 release candidate", func(t *testing.T) {
-		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda-unstable:v25.2.1-rc7",
+		container, err := redpanda.Run(ctx, "redpandadata/redpanda-unstable:v25.2.1-rc7",
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
 			redpanda.WithSuperusers("user"),

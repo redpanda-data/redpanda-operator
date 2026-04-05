@@ -5,9 +5,6 @@ env:
   PULL_REQUEST_BASE_BRANCH_NAME: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
   PIPELINE_NAME: $BUILDKITE_PIPELINE_NAME
   REDPANDA_GITREF: ${REDPANDA_COMMIT:-}
-  # CI run podman instead of linux. testcontainer's ryuk is reported to not
-  # work well with podman.
-  TESTCONTAINERS_RYUK_DISABLED: "true"
 # pipeline.yml is the "entrypoint" for all BuildKite pipelines in the operator
 # repo. As such, it is executed for ANY trigger (e.g. PR update/created, Tag
 # updated/created, Schedule run). Use `if`s to delegate to specific pipeline
@@ -64,7 +61,6 @@ steps:
             - secret-id: sdlc/prod/buildkite/gh_token
             - secret-id: sdlc/prod/buildkite/github_api_token
             - secret-id: sdlc/prod/buildkite/redpanda_sample_license
-            - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
             - secret-id: sdlc/prod/buildkite/slack_vbot_token
       - https://$GITHUB_API_TOKEN@github.com/redpanda-data/step-slack-notify-buildkite-plugin.git#main:
           message: "Nightly releases failed"
@@ -112,7 +108,6 @@ steps:
             - secret-id: sdlc/prod/buildkite/github_api_token
             - secret-id: sdlc/prod/buildkite/grafana_token
             - secret-id: sdlc/prod/buildkite/redpanda_sample_license
-            - secret-id: sdlc/prod/buildkite/redpanda_second_sample_license
             - secret-id: sdlc/prod/buildkite/rpk_test_client
             - secret-id: sdlc/prod/buildkite/seceng_audit_aws
             - secret-id: sdlc/prod/buildkite/slack_vbot_token

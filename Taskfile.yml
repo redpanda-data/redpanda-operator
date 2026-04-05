@@ -311,9 +311,9 @@ tasks:
     vars:
       DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
       DEFAULT_SECOND_TEST_CERTMANAGER_VERSION: v1.17.2
-      DEFAULT_TEST_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda-unstable
+      DEFAULT_TEST_REDPANDA_REPO: redpandadata/redpanda-unstable
       DEFAULT_TEST_REDPANDA_VERSION: v26.1.1-rc5
-      DEFAULT_TEST_UPGRADE_REDPANDA_REPO: docker.redpanda.com/redpandadata/redpanda
+      DEFAULT_TEST_UPGRADE_REDPANDA_REPO: redpandadata/redpanda
       DEFAULT_TEST_UPGRADE_REDPANDA_VERSION: v24.3.11
       DEFAULT_TEST_UPGRADE_OPERATOR_VERSION: v2.3.9-24.3.11
       DEFAULT_TEST_VCLUSTER_VERSION: 0.31.2
@@ -339,8 +339,8 @@ tasks:
       - quay.io/jetstack/cert-manager-webhook:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
       - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
-      - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
-      - docker.redpanda.com/redpandadata/redpanda-operator:v25.3.1
+      - redpandadata/redpanda-operator:v25.3.1
+      - redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
       - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}
       - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
       - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
