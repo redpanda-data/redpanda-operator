@@ -32,7 +32,6 @@ import (
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 	"github.com/redpanda-data/redpanda-operator/harpoon/internal/tracking"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func setShortTimeout(timeout *time.Duration, short time.Duration) {
@@ -63,6 +62,7 @@ type SuiteBuilder struct {
 	onScenarios           []func(context.Context, *internaltesting.TestingT, []internaltesting.ParsedTag)
 	afterSetup            []func(ctx context.Context, restConfig *rest.Config) error
 	exitOnCleanupFailures bool
+	skipCleanup           bool
 }
 
 func SuiteBuilderFromFlags() *SuiteBuilder {
@@ -186,11 +186,6 @@ func (b *SuiteBuilder) AfterSetup(fn func(ctx context.Context, restConfig *rest.
 }
 
 func (b *SuiteBuilder) WithHelmChart(url, repo, chart string, options helm.InstallOptions) *SuiteBuilder {
-	if chart == "cert-manager" && testutil.MultiClusterSetupOnly() {
-		// skip cert-manager in k3s installation, as each vCluster instance will run its own one
-		return b
-	}
-
 	b.helmCharts = append(b.helmCharts, helmChart{
 		url:     url,
 		repo:    repo,
@@ -202,6 +197,14 @@ func (b *SuiteBuilder) WithHelmChart(url, repo, chart string, options helm.Insta
 
 func (b *SuiteBuilder) ExitOnCleanupFailures() *SuiteBuilder {
 	b.exitOnCleanupFailures = true
+	return b
+}
+
+// SkipCleanup prevents the suite from running any teardown or cleanup logic.
+// This is useful for multicluster setups where the infrastructure is managed
+// externally.
+func (b *SuiteBuilder) SkipCleanup() *SuiteBuilder {
+	b.skipCleanup = true
 	return b
 }
 
@@ -304,6 +307,7 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 		afterSetup:            b.afterSetup,
 		images:                b.images,
 		exitOnCleanupFailures: b.exitOnCleanupFailures,
+		skipCleanup:           b.skipCleanup,
 	}, nil
 }
 
@@ -324,6 +328,7 @@ type Suite struct {
 	afterSetup            []func(ctx context.Context, restConfig *rest.Config) error
 	images                []string
 	exitOnCleanupFailures bool
+	skipCleanup           bool
 }
 
 // makeGodogSuite creates a godog.TestSuite for the given feature contents.
@@ -393,7 +398,7 @@ func (s *Suite) suiteSetup(sc *suiteCleanup) func(*godog.TestSuiteContext) {
 		var helmClient *helm.Client
 
 		cleanup := func(ctx context.Context) {
-			if testutil.MultiClusterSetupOnly() {
+			if s.skipCleanup {
 				return
 			}
 			if kubeOptions != nil {
@@ -492,7 +497,7 @@ func (s *Suite) suiteSetupTeardown(tracker *tracking.FeatureHookTracker) func(*g
 				fmt.Println("skipping cleanup due to test failure and retain flag being set")
 				return
 			}
-			if testutil.MultiClusterSetupOnly() {
+			if s.skipCleanup {
 				return
 			}
 			if sc.fn != nil {
@@ -642,7 +647,7 @@ func (s *Suite) RunT(t *testing.T) {
 
 		if suiteFailed && s.testingOpts.RetainOnFailure {
 			fmt.Println("skipping cleanup due to test failure and retain flag being set")
-		} else if testutil.MultiClusterSetupOnly() {
+		} else if s.skipCleanup {
 			// skip cleanup
 		} else {
 			sc.fn(teardownCtx)

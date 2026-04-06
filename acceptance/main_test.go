@@ -54,7 +54,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 	steps.DefaultRedpandaTag = os.Getenv("TEST_REDPANDA_VERSION")
 	steps.OperatorNamespace = sharedOperatorNamespace
 
-	return framework.SuiteBuilderFromFlags().
+	builder := framework.SuiteBuilderFromFlags().
 		Strict().
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
@@ -82,33 +82,44 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"ghcr.io/loft-sh/kubernetes:v1.33.4",
 			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
 		}...).
-		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install).
-		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
-			Name:            "cert-manager",
-			Namespace:       "cert-manager",
-			Version:         "v1.14.2",
-			CreateNamespace: true,
-			Values: map[string]any{
-				"installCRDs": true,
-				"global": map[string]any{
-					// Make leader election more aggressive as cert-manager appears to
-					// not release it when uninstalled.
-					"leaderElection": map[string]any{
-						"renewDeadline": "10s",
-						"retryPeriod":   "5s",
+		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install)
+
+	// In multicluster setup mode, skip cert-manager and operator installation
+	// as each vCluster instance manages its own.
+	if !testutil.MultiClusterSetupOnly() {
+		builder = builder.
+			WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
+				Name:            "cert-manager",
+				Namespace:       "cert-manager",
+				Version:         "v1.14.2",
+				CreateNamespace: true,
+				Values: map[string]any{
+					"installCRDs": true,
+					"global": map[string]any{
+						"leaderElection": map[string]any{
+							"renewDeadline": "10s",
+							"retryPeriod":   "5s",
+						},
 					},
 				},
-			},
-		}).
-		AfterSetup(waitForCertManagerWebhook).
-		AfterSetup(installSharedOperator).
+			}).
+			AfterSetup(waitForCertManagerWebhook).
+			AfterSetup(installSharedOperator)
+	}
+
+	builder = builder.
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
 			t.IsolateNamespace(ctx)
 		}).
 		RegisterTag("cluster", 2, ClusterTag).
-		ExitOnCleanupFailures().
-		Build()
+		ExitOnCleanupFailures()
+
+	if testutil.MultiClusterSetupOnly() {
+		builder = builder.SkipCleanup()
+	}
+
+	return builder.Build()
 })
 
 func TestMain(m *testing.M) {
