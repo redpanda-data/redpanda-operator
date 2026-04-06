@@ -216,8 +216,33 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 		}
 	}
 
-	if err := c.Create(ctx, namespace); err != nil {
-		return nil, errors.WithStack(err)
+	createErr := c.Create(ctx, namespace)
+	if createErr != nil {
+		if !k8sapierrors.IsAlreadyExists(createErr) {
+			return nil, errors.WithStack(createErr)
+		}
+		// For named vclusters, a stale namespace from a previous failed run
+		// may exist. Delete it and recreate to start clean.
+		if vClusterOptions.name != "" {
+			if err := c.Delete(ctx, namespace); err != nil {
+				return nil, errors.Wrap(err, "deleting stale vcluster namespace")
+			}
+			// Wait for namespace to be fully deleted before recreating.
+			if err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
+				err := c.Get(ctx, client.ObjectKeyFromObject(namespace), namespace)
+				return k8sapierrors.IsNotFound(err), nil
+			}); err != nil {
+				return nil, errors.Wrap(err, "waiting for stale namespace deletion")
+			}
+			namespace = &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: vClusterOptions.name,
+				},
+			}
+			if err := c.Create(ctx, namespace); err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
 	}
 
 	// On failure, dump diagnostics from the host namespace to aid debugging.
