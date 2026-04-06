@@ -500,19 +500,54 @@ func (t *TestingT) DumpDiagnostics(ctx context.Context) {
 		}
 	}
 
-	// Dump logs from pods in the namespace.
+	// Dump logs from pods in the feature namespace.
+	dumpPodLogs(ctx, t, kubectlOpts, namespace, artifactsDir)
+
+	// Dump logs from the shared operator pods (if any) to help debug
+	// cases where the operator isn't reconciling resources.
+	var operatorPods corev1.PodList
+	if err := t.List(ctx, &operatorPods, client.MatchingLabels{
+		"app.kubernetes.io/name": "operator",
+	}); err == nil && len(operatorPods.Items) > 0 {
+		operatorNS := operatorPods.Items[0].Namespace
+		t.Logf("[diagnostics/operator] found operator in namespace %s", operatorNS)
+
+		// Use a non-namespaced kubectl options for the operator namespace.
+		operatorOpts := kubectlOpts.Clone()
+		operatorOpts.Namespace = operatorNS
+
+		// Dump operator pod status.
+		for _, pod := range operatorPods.Items {
+			t.Logf("[diagnostics/operator] pod %s: phase=%s restarts=%d",
+				pod.Name, pod.Status.Phase,
+				func() int32 {
+					var total int32
+					for _, cs := range pod.Status.ContainerStatuses {
+						total += cs.RestartCount
+					}
+					return total
+				}())
+		}
+
+		dumpPodLogs(ctx, t, operatorOpts, operatorNS, artifactsDir)
+	}
+}
+
+func dumpPodLogs(ctx context.Context, t *TestingT, kubectlOpts *KubectlOptions, namespace, artifactsDir string) {
 	var podList corev1.PodList
 	if err := t.List(ctx, &podList, client.InNamespace(namespace)); err != nil {
-		t.Logf("[diagnostics/pod-logs] error listing pods: %v", err)
+		t.Logf("[diagnostics/pod-logs] error listing pods in %s: %v", namespace, err)
 		return
 	}
 
 	for _, pod := range podList.Items {
 		for _, container := range pod.Spec.Containers {
-			args := kubectlOpts.args([]string{"logs", pod.Name, "-c", container.Name, "--tail=200"})
+			opts := kubectlOpts.Clone()
+			opts.Namespace = namespace
+			args := opts.args([]string{"logs", pod.Name, "-c", container.Name, "--tail=200"})
 			//nolint:gosec // test code
 			cmd := exec.CommandContext(ctx, "kubectl", args...)
-			cmd.Env = kubectlOpts.environment()
+			cmd.Env = opts.environment()
 			output, err := cmd.CombinedOutput()
 			if err != nil {
 				continue
