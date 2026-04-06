@@ -11,6 +11,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -20,6 +21,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -111,6 +114,17 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
 			t.IsolateNamespace(ctx)
+		}).
+		OnDiagnostics(func(ctx context.Context, t framework.TestingT) {
+			// Only dump shared operator logs for features that use the
+			// shared operator. Features with @vcluster or @multicluster
+			// run their own operators inside vclusters.
+			for _, tag := range t.FeatureTags() {
+				if tag == "vcluster" || tag == "multicluster" {
+					return
+				}
+			}
+			dumpSharedOperatorLogs(ctx, t)
 		}).
 		RegisterTag("cluster", 2, ClusterTag).
 		ExitOnCleanupFailures()
@@ -222,6 +236,50 @@ func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
 		return nil
 	}
 	return err
+}
+
+// dumpSharedOperatorLogs collects logs from the shared operator pod to help
+// debug cases where the operator isn't reconciling resources.
+func dumpSharedOperatorLogs(ctx context.Context, t framework.TestingT) {
+	var pods corev1.PodList
+	if err := t.List(ctx, &pods, client.InNamespace(sharedOperatorNamespace)); err != nil {
+		t.Logf("[diagnostics/shared-operator] error listing pods: %v", err)
+		return
+	}
+
+	for _, pod := range pods.Items {
+		t.Logf("[diagnostics/shared-operator] pod %s: phase=%s", pod.Name, pod.Status.Phase)
+		for _, cs := range pod.Status.ContainerStatuses {
+			t.Logf("[diagnostics/shared-operator]   container %s: ready=%v restarts=%d", cs.Name, cs.Ready, cs.RestartCount)
+			if cs.State.Waiting != nil {
+				t.Logf("[diagnostics/shared-operator]   waiting: %s", cs.State.Waiting.Reason)
+			}
+			if cs.State.Terminated != nil {
+				t.Logf("[diagnostics/shared-operator]   terminated: exitCode=%d reason=%s", cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
+			}
+		}
+	}
+
+	// Dump the last 500 lines of operator logs.
+	for _, pod := range pods.Items {
+		for _, container := range pod.Spec.Containers {
+			logReq := kubernetes.NewForConfigOrDie(t.RestConfig()).CoreV1().Pods(sharedOperatorNamespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+				Container: container.Name,
+				TailLines: ptr.To(int64(500)),
+			})
+			stream, err := logReq.Stream(ctx)
+			if err != nil {
+				t.Logf("[diagnostics/shared-operator] error streaming logs for %s/%s: %v", pod.Name, container.Name, err)
+				continue
+			}
+			logs, err := io.ReadAll(stream)
+			_ = stream.Close()
+			if err != nil {
+				continue
+			}
+			t.Logf("[diagnostics/shared-operator] logs for %s/%s (last 500 lines):\n%s", pod.Name, container.Name, string(logs))
+		}
+	}
 }
 
 func waitForCertManagerWebhook(ctx context.Context, restConfig *rest.Config) error {

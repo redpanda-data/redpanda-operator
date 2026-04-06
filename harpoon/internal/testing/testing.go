@@ -74,6 +74,9 @@ type TestingOptions struct {
 	ExitBehavior ExitBehavior
 	// Images says the base images to import any time a new node comes up
 	Images []string
+	// DiagnosticHooks are called during DumpDiagnostics to collect
+	// additional diagnostic information beyond the feature namespace.
+	DiagnosticHooks []func(ctx context.Context, t *TestingT)
 
 	variant string
 }
@@ -88,6 +91,7 @@ func (o *TestingOptions) Clone() *TestingOptions {
 		SchemeRegisterers: o.SchemeRegisterers,
 		ExitBehavior:      o.ExitBehavior,
 		Images:            o.Images,
+		DiagnosticHooks:   o.DiagnosticHooks,
 		variant:           o.variant,
 	}
 }
@@ -111,6 +115,7 @@ type TestingT struct {
 	failure       bool
 	messagePrefix string
 	featureName   string
+	featureTags   []string
 }
 
 func NewTesting(ctx context.Context, options *TestingOptions, cleaner *Cleaner) *TestingT {
@@ -333,6 +338,16 @@ func (t *TestingT) FeatureName() string {
 	return t.featureName
 }
 
+// SetFeatureTags sets the feature-level tags for this test context.
+func (t *TestingT) SetFeatureTags(tags []string) {
+	t.featureTags = tags
+}
+
+// FeatureTags returns the feature-level tags for this test context.
+func (t *TestingT) FeatureTags() []string {
+	return t.featureTags
+}
+
 // IsolateNamespace creates a temporary namespace for the tests in this scope to run.
 // If a feature name has been set, it is included in the namespace name for easier debugging.
 func (t *TestingT) IsolateNamespace(ctx context.Context) string {
@@ -503,33 +518,9 @@ func (t *TestingT) DumpDiagnostics(ctx context.Context) {
 	// Dump logs from pods in the feature namespace.
 	dumpPodLogs(ctx, t, kubectlOpts, namespace, artifactsDir)
 
-	// Dump logs from the shared operator pods (if any) to help debug
-	// cases where the operator isn't reconciling resources.
-	var operatorPods corev1.PodList
-	if err := t.List(ctx, &operatorPods, client.MatchingLabels{
-		"app.kubernetes.io/name": "operator",
-	}); err == nil && len(operatorPods.Items) > 0 {
-		operatorNS := operatorPods.Items[0].Namespace
-		t.Logf("[diagnostics/operator] found operator in namespace %s", operatorNS)
-
-		// Use a non-namespaced kubectl options for the operator namespace.
-		operatorOpts := kubectlOpts.Clone()
-		operatorOpts.Namespace = operatorNS
-
-		// Dump operator pod status.
-		for _, pod := range operatorPods.Items {
-			t.Logf("[diagnostics/operator] pod %s: phase=%s restarts=%d",
-				pod.Name, pod.Status.Phase,
-				func() int32 {
-					var total int32
-					for _, cs := range pod.Status.ContainerStatuses {
-						total += cs.RestartCount
-					}
-					return total
-				}())
-		}
-
-		dumpPodLogs(ctx, t, operatorOpts, operatorNS, artifactsDir)
+	// Run any registered diagnostic hooks.
+	for _, hook := range t.options.DiagnosticHooks {
+		hook(ctx, t)
 	}
 }
 

@@ -63,6 +63,7 @@ type TestingT interface {
 
 	Namespace() string
 	FeatureName() string
+	FeatureTags() []string
 	RestConfig() *rest.Config
 
 	DumpDiagnostics(ctx context.Context)

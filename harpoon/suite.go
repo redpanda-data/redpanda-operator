@@ -142,6 +142,16 @@ func (b *SuiteBuilder) WithSchemeFunctions(fns ...func(s *runtime.Scheme) error)
 	return b
 }
 
+// OnDiagnostics registers a hook that runs during diagnostic collection
+// when a feature fails. Use this to collect additional information beyond
+// the feature's namespace (e.g., shared controller logs).
+func (b *SuiteBuilder) OnDiagnostics(fn func(ctx context.Context, t TestingT)) *SuiteBuilder {
+	b.testingOpts.DiagnosticHooks = append(b.testingOpts.DiagnosticHooks, func(ctx context.Context, t *internaltesting.TestingT) {
+		fn(ctx, t)
+	})
+	return b
+}
+
 func (b *SuiteBuilder) WithImportedImages(images ...string) *SuiteBuilder {
 	b.images = images
 	return b

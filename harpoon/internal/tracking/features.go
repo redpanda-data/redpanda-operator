@@ -84,6 +84,7 @@ func (f *FeatureHookTracker) Scenario(ctx context.Context, scenario *godog.Scena
 		cleaner := internaltesting.NewCleaner(godog.T(ctx), opts)
 		t := internaltesting.NewTesting(ctx, opts, cleaner)
 		t.SetFeatureName(features.name)
+		t.SetFeatureTags(features.tags.flatten())
 
 		features.isRunning = true
 		features.startTime = time.Now()
