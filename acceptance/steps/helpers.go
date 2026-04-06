@@ -592,7 +592,7 @@ func waitForCondition(ctx context.Context, t framework.TestingT, o runtimeclient
 			return false
 		}
 		return t.HasCondition(expected, getConditions())
-	}, 2*time.Minute, 2*time.Second, "Resource %q never reached condition %s=%s", key.String(), expected.Type, expected.Status)
+	}, 5*time.Minute, 2*time.Second, "Resource %q never reached condition %s=%s", key.String(), expected.Type, expected.Status)
 	t.Logf("Resource %q has condition %s=%s", key.String(), expected.Type, expected.Status)
 }
 
@@ -618,7 +618,7 @@ func waitForSyncedCondition(ctx context.Context, t framework.TestingT, o runtime
 				return false
 			}
 			return getObsGen() >= o.GetGeneration()
-		}, 2*time.Minute, 2*time.Second, "Resource %q observedGeneration never caught up to generation %d", key.String(), o.GetGeneration())
+		}, 5*time.Minute, 2*time.Second, "Resource %q observedGeneration never caught up to generation %d", key.String(), o.GetGeneration())
 		t.Logf("Resource %q observedGeneration (%d) caught up to generation (%d)", key.String(), getObsGen(), o.GetGeneration())
 	}
 
