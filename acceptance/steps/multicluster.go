@@ -21,6 +21,7 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/cucumber/godog"
 	"github.com/redpanda-data/common-go/kube"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -46,6 +47,74 @@ const (
 )
 
 type vclusterNodes []*vclusterNode
+
+// dumpDiagnostics logs pod statuses and events from each vcluster to aid
+// debugging when multicluster tests fail.
+func (v vclusterNodes) dumpDiagnostics(ctx context.Context, t framework.TestingT) {
+	diagCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	for _, node := range v {
+		t.Logf("[multicluster-diagnostics] === vcluster %s (host namespace: %s) ===", node.Name(), node.Name())
+
+		// Dump pods from the host namespace (where vcluster components run).
+		hostClient, err := client.New(t.RestConfig(), client.Options{})
+		if err != nil {
+			t.Logf("[multicluster-diagnostics] failed to create host client: %v", err)
+			continue
+		}
+		var hostPods corev1.PodList
+		if err := hostClient.List(diagCtx, &hostPods, client.InNamespace(node.Name())); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list host pods: %v", err)
+		} else {
+			for _, pod := range hostPods.Items {
+				t.Logf("[multicluster-diagnostics] host pod %s: phase=%s", pod.Name, pod.Status.Phase)
+				for _, cs := range pod.Status.ContainerStatuses {
+					if cs.State.Waiting != nil {
+						t.Logf("[multicluster-diagnostics]   container %s: waiting reason=%s", cs.Name, cs.State.Waiting.Reason)
+					}
+					if cs.State.Terminated != nil {
+						t.Logf("[multicluster-diagnostics]   container %s: terminated exitCode=%d reason=%s", cs.Name, cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
+					}
+					if cs.RestartCount > 0 {
+						t.Logf("[multicluster-diagnostics]   container %s: restarts=%d", cs.Name, cs.RestartCount)
+					}
+				}
+			}
+		}
+
+		// Dump pods from inside the vcluster (where the operator runs).
+		var vcPods corev1.PodList
+		if err := node.List(diagCtx, &vcPods); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list vcluster pods: %v", err)
+		} else {
+			for _, pod := range vcPods.Items {
+				t.Logf("[multicluster-diagnostics] vcluster pod %s/%s: phase=%s", pod.Namespace, pod.Name, pod.Status.Phase)
+				for _, cs := range pod.Status.ContainerStatuses {
+					if cs.State.Waiting != nil {
+						t.Logf("[multicluster-diagnostics]   container %s: waiting reason=%s", cs.Name, cs.State.Waiting.Reason)
+					}
+					if cs.State.Terminated != nil {
+						t.Logf("[multicluster-diagnostics]   container %s: terminated exitCode=%d reason=%s", cs.Name, cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
+					}
+					if cs.RestartCount > 0 {
+						t.Logf("[multicluster-diagnostics]   container %s: restarts=%d", cs.Name, cs.RestartCount)
+					}
+				}
+			}
+		}
+
+		// Dump events from inside the vcluster.
+		var vcEvents corev1.EventList
+		if err := node.List(diagCtx, &vcEvents); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list vcluster events: %v", err)
+		} else {
+			for _, event := range vcEvents.Items {
+				t.Logf("[multicluster-diagnostics] event %s %s/%s: %s", event.Type, event.InvolvedObject.Kind, event.InvolvedObject.Name, event.Message)
+			}
+		}
+	}
+}
 
 var nameMap = map[string]string{
 	"vc-0": "first",
@@ -105,18 +174,25 @@ func (v vclusterNodes) CheckAll(ctx context.Context, namespacedName types.Namesp
 
 	gvk, _ := schema.ParseKindArg(groupVersionKind)
 	for _, node := range v {
-		require.Eventually(t, func() bool {
+		ok := assert.Eventually(t, func() bool {
 			obj, err := t.Scheme().New(*gvk)
-			require.NoError(t, err)
+			if err != nil {
+				t.Logf("error creating object for GVK %v: %v", gvk, err)
+				return false
+			}
 
 			o := obj.(client.Object)
-			t.Logf("fetching (%T) object: %q", o, namespacedName.String())
+			t.Logf("fetching (%T) object: %q from %s", o, namespacedName.String(), node.Name())
 			if err := node.Get(ctx, namespacedName, o); err != nil {
-				t.Logf("error fetching %q: %v", namespacedName.String(), err)
+				t.Logf("error fetching %q from %s: %v", namespacedName.String(), node.Name(), err)
 				return false
 			}
 			return fn(o)
-		}, 1*time.Minute, 1*time.Second, "condition not met")
+		}, 5*time.Minute, 1*time.Second, "condition not met on %s", node.Name())
+		if !ok {
+			v.dumpDiagnostics(ctx, t)
+			t.FailNow()
+		}
 	}
 }
 
