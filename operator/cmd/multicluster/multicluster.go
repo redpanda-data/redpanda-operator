@@ -209,6 +209,18 @@ func Run(
 ) error {
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
 
+	// Parse and configure log level
+	logLevel, err := parseLogLevel(opts.LogLevel)
+	if err != nil {
+		setupLog.Error(err, "failed to parse log level, using default")
+	}
+
+	rootLogger := ctrlzap.New(ctrlzap.Level(logLevel)).WithName("multicluster")
+	ctrl.SetLogger(rootLogger)
+
+	// Reinitialize logger with correct log level
+	setupLog = ctrl.LoggerFrom(ctx).WithName("setup")
+
 	if err := opts.validate(); err != nil {
 		return err
 	}
@@ -231,12 +243,6 @@ func Run(
 	k8sConfig, err := ctrl.GetConfig()
 	if err != nil {
 		return err
-	}
-
-	// Parse and configure log level
-	logLevel, err := parseLogLevel(opts.LogLevel)
-	if err != nil {
-		setupLog.Error(err, "failed to parse log level, using default")
 	}
 
 	// Create a logger with the specified log level

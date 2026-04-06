@@ -21,7 +21,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
-	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -560,7 +559,7 @@ func Run(
 // runnables for the custom resources in the vectorized group, AKA the V1
 // operator.
 func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory internalclient.ClientFactory, cloudExpander *pkgsecrets.CloudExpander, opts *RunOptions) error {
-	log.Info(ctx, "Starting Vectorized (V1) Controllers")
+	//log.Info(ctx, "Starting Vectorized (V1) Controllers")
 
 	configurator := resources.ConfiguratorSettings{
 		ConfiguratorBaseImage:        opts.configuratorBaseImage,
@@ -589,20 +588,20 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		CloudSecretsExpander:      cloudExpander,
 		Timeout:                   opts.rpClientTimeout,
 	}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
-		log.Error(ctx, err, "Unable to create controller", "controller", "Cluster")
+		//log.Error(ctx, err, "Unable to create controller", "controller", "Cluster")
 		return err
 	}
 
 	if err := vectorizedcontrollers.NewClusterMetricsController(mgr.GetClient()).SetupWithManager(mgr); err != nil {
-		log.Error(ctx, err, "Unable to create controller", "controller", "ClustersMetrics")
+		//log.Error(ctx, err, "Unable to create controller", "controller", "ClustersMetrics")
 		return err
 	}
 
 	// Setup webhooks
 	if opts.webhookEnabled {
-		log.Info(ctx, "Setup webhook")
+		//log.Info(ctx, "Setup webhook")
 		if err := (&vectorizedv1alpha1.Cluster{}).SetupWebhookWithManager(mgr); err != nil {
-			log.Error(ctx, err, "Unable to create webhook", "webhook", "RedpandaCluster")
+			//log.Error(ctx, err, "Unable to create webhook", "webhook", "RedpandaCluster")
 			return err
 		}
 	}
@@ -626,7 +625,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		)
 
 		if err := d.SetupWithManager(mgr); err != nil {
-			log.Error(ctx, err, "unable to create controller", "controller", "StatefulSetDecommissioner")
+			//log.Error(ctx, err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
 		}
 	}

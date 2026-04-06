@@ -63,7 +63,7 @@ config:
 imagePullSecrets: []
 
 # -- Log level
-# Valid values (from least to most verbose) are: `warn`, `info`, `debug`, and `trace`.
+# Valid values (from least to most verbose) are: `warn`, `info`, `debug`.
 logLevel: "info"
 
 # -- Role-based Access Control (RBAC) configuration for the Redpanda Operator.

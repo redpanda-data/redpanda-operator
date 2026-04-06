@@ -212,7 +212,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		// now we memoize the admin client onto the state
 		r.initAdminClient,
 		// now we ensure that we reconcile all of our decommissioning nodes
-		r.reconcileDecommission,
+		r.reconcileNodePoolDecommission,
 		// now reconcile cluster configuration
 		r.reconcileClusterConfig,
 		// finally reconcile all of our license information
@@ -604,10 +604,10 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 	return ctrl.Result{}, nil
 }
 
-func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {
+func (r *MulticlusterReconciler) reconcileNodePoolDecommission(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {
 	var health rpadmin.ClusterHealthOverview
 
-	ctx, span := trace.Start(ctx, "reconcileDecommission")
+	ctx, span := trace.Start(ctx, "reconcileNodePoolDecommission")
 	logger := log.FromContext(ctx)
 
 	defer func() {
@@ -659,7 +659,9 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 	// next scale down any over-provisioned pools, patching them to use the new spec
 	// and decommissioning any nodes as needed
-	for _, set := range state.pools.ToScaleDown() {
+	sets := state.pools.ToScaleDown()
+	logger.V(log.DebugLevel).Info("pool to scale down", "pool", sets)
+	for _, set := range sets {
 		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap)
 		result := ctrl.Result{}
 		if requeue {
@@ -671,8 +673,10 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 	// at this point any set that needs to be deleted should have 0 replicas
 	// so we can attempt to delete them all in one pass
-	for _, set := range state.pools.ToDelete() {
-		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+	toDelete := state.pools.ToDelete()
+	logger.V(log.DebugLevel).Info("pool to delete", "pool", toDelete)
+	for _, set := range toDelete {
+		logger.V(log.DebugLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 		if err := cluster.GetClient().Delete(ctx, set.StatefulSet); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
@@ -680,6 +684,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 	// finally, we make sure we roll every pod that is not in-sync with its statefulset
 	rollSet := state.pools.PodsToRoll()
+	logger.V(log.DebugLevel).Info("pods to rool", "rollSet", rollSet)
 	rolled := false
 	for _, pod := range rollSet {
 		shouldRoll, continueExecution := false, false
@@ -702,7 +707,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 		if shouldRoll {
 			rolled = true
-			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
+			logger.V(log.DebugLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
 
 			if err := cluster.GetClient().Delete(ctx, pod.Pod); err != nil {
 				return ctrl.Result{}, errors.Wrap(err, "deleting pod")
