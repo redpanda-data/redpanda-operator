@@ -16,6 +16,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
@@ -50,7 +51,7 @@ type vclusterNodes []*vclusterNode
 
 // dumpDiagnostics logs pod statuses and events from each vcluster to aid
 // debugging when multicluster tests fail.
-func (v vclusterNodes) dumpDiagnostics(ctx context.Context, t framework.TestingT) {
+func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) {
 	diagCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -285,15 +286,15 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	namespace := metav1.NamespaceDefault
 	redpandaLicense := os.Getenv(LicenseEnvVar)
 	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
-	// create license secret in the k3s cluster
-	vclusters := []*vclusterNode{}
-	t.Logf("creating %d vclusters", clusters)
+
+	// Build per-vcluster values upfront. The networking config references
+	// other vclusters by name so names must be deterministic.
+	vclusterValuesList := make([]string, clusters)
 	for i := range clusters {
-		t.Logf("creating vcluster %d", i+1)
-		vClusterValues := vcluster.DefaultValues
+		vals := vcluster.DefaultValues
 		switch i {
 		case 0:
-			vClusterValues += `
+			vals += `
 networking:
   replicateServices:
     fromHost:
@@ -303,7 +304,7 @@ networking:
       to: default/third-0
 `
 		case 1:
-			vClusterValues += `
+			vals += `
 networking:
   replicateServices:
     fromHost:
@@ -313,7 +314,7 @@ networking:
       to: default/third-0
 `
 		case 2:
-			vClusterValues += `
+			vals += `
 networking:
   replicateServices:
     fromHost:
@@ -323,27 +324,63 @@ networking:
       to: default/second-0
 `
 		}
-		cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)), vcluster.WithValues(helm.RawYAML(vClusterValues)))
-		require.NoError(t, err)
-		scheme := t.Scheme()
-		require.NoError(t, certmanagerv1.AddToScheme(scheme))
-		cluster.SetScheme(scheme)
+		vclusterValuesList[i] = vals
+	}
 
-		t.Logf("finished creating vcluster %d (name: %q)", i+1, cluster.Name())
+	// Create all vclusters in parallel.
+	t.Logf("creating %d vclusters in parallel", clusters)
+	vclusters := make([]*vclusterNode, clusters)
+	var wg sync.WaitGroup
+	errs := make([]error, clusters)
+	for i := range clusters {
+		wg.Add(1)
+		go func(idx int32) {
+			defer wg.Done()
+			t.Logf("creating vcluster %d", idx+1)
 
+			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", idx)), vcluster.WithValues(helm.RawYAML(vclusterValuesList[idx])))
+			if err != nil {
+				errs[idx] = fmt.Errorf("vcluster %d: %w", idx, err)
+				return
+			}
+			scheme := t.Scheme()
+			if err := certmanagerv1.AddToScheme(scheme); err != nil {
+				errs[idx] = fmt.Errorf("vcluster %d scheme: %w", idx, err)
+				return
+			}
+			cluster.SetScheme(scheme)
+
+			t.Logf("finished creating vcluster %d (name: %q)", idx+1, cluster.Name())
+
+			c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
+			if err != nil {
+				errs[idx] = fmt.Errorf("vcluster %d client: %w", idx, err)
+				return
+			}
+
+			var apiServer corev1.Service
+			if err := c.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: metav1.NamespaceDefault}, &apiServer); err != nil {
+				errs[idx] = fmt.Errorf("vcluster %d apiserver: %w", idx, err)
+				return
+			}
+
+			vclusters[idx] = &vclusterNode{
+				Client:    c,
+				Cluster:   cluster,
+				apiServer: fmt.Sprintf("https://%s", apiServer.Spec.ClusterIPs[0]),
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	// Check for errors and register cleanup.
+	for i, err := range errs {
+		require.NoError(t, err, "failed to create vcluster %d", i)
+	}
+	for _, vc := range vclusters {
+		vc := vc // capture for closure
 		cleanupWrapper(t, func(ctx context.Context) {
-			require.NoError(t, cluster.Delete())
-		})
-		c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
-		require.NoError(t, err)
-
-		var apiServer corev1.Service
-		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: metav1.NamespaceDefault}, &apiServer))
-
-		vclusters = append(vclusters, &vclusterNode{
-			Client:    c,
-			Cluster:   cluster,
-			apiServer: fmt.Sprintf("https://%s", apiServer.Spec.ClusterIPs[0]),
+			require.NoError(t, vc.Cluster.Delete())
 		})
 	}
 
@@ -378,7 +415,10 @@ networking:
 
 		require.Eventually(t, func() bool {
 			var operatorService corev1.Service
-			require.NoError(t, cluster.Get(ctx, types.NamespacedName{Name: "multicluster-operator", Namespace: metav1.NamespaceDefault}, &operatorService))
+			if err := cluster.Get(ctx, types.NamespacedName{Name: "multicluster-operator", Namespace: metav1.NamespaceDefault}, &operatorService); err != nil {
+				t.Logf("error fetching operator service from %s: %v", cluster.Name(), err)
+				return false
+			}
 			if len(operatorService.Spec.ClusterIPs) == 0 {
 				return false
 			}
@@ -430,17 +470,21 @@ networking:
 
 		defaultIssuer := newCAIssuer("cluster", "default", namespace)
 		externalIssuer := newCAIssuer("cluster", "external", namespace)
-		require.NoError(t, retry.OnError(wait.Backoff{
+		webhookRetry := wait.Backoff{
 			Steps:    100,
 			Duration: 1 * time.Second,
 			Factor:   1.0,
 			Jitter:   0.1,
-		}, func(err error) bool {
+		}
+		isWebhookErr := func(err error) bool {
 			return err != nil && strings.Contains(err.Error(), "webhook")
-		}, func() error {
+		}
+		require.NoError(t, retry.OnError(webhookRetry, isWebhookErr, func() error {
 			return cluster.Create(ctx, defaultIssuer)
 		}))
-		require.NoError(t, cluster.Create(ctx, externalIssuer))
+		require.NoError(t, retry.OnError(webhookRetry, isWebhookErr, func() error {
+			return cluster.Create(ctx, externalIssuer)
+		}))
 
 		t.Logf("deploying operator in %q", cluster.Name())
 		rel, err := cluster.HelmInstall(ctx, "../operator/chart", helm.InstallOptions{
