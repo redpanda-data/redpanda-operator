@@ -3,6 +3,7 @@ module github.com/redpanda-data/redpanda-operator/acceptance
 go 1.26.1
 
 require (
+	github.com/cert-manager/cert-manager v1.19.3
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.67.5
 	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a
@@ -76,7 +77,6 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
-	github.com/cert-manager/cert-manager v1.19.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cisco-open/k8s-objectmatcher v1.9.0 // indirect

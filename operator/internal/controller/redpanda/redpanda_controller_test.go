@@ -556,6 +556,8 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 	redpandas := map[string]*redpandav1alpha2.Redpanda{}
 
 	rp := s.minimalRP()
+	rp.ObjectMeta.GenerateName = ""
+	rp.SetName("literal-license")
 	rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
 		Spec: &applycorev1.PodSpecApplyConfiguration{
 			Containers: []applycorev1.ContainerApplyConfiguration{{
@@ -577,6 +579,7 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 	redpandas["literal-license"] = rp
 
 	rp = rp.DeepCopy()
+	rp.SetName("license-in-secret")
 	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
 		License: nil,
 		LicenseSecretRef: &redpandav1alpha2.EnterpriseLicenseSecretRef{
@@ -598,7 +601,7 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 				rp := o.(*redpandav1alpha2.Redpanda)
 
 				for _, cond := range rp.Status.Conditions {
-					if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+					if cond.Type == statuses.ClusterLicenseValid {
 						// grab the first non-unknown status
 						if cond.Status != metav1.ConditionUnknown {
 							licenseStatus = rp.Status.LicenseStatus
@@ -609,14 +612,18 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 				}
 				return false, nil
 			}, tc)
+			sort.Strings(licenseStatus.InUseFeatures)
 
 			require.Equal(t, &redpandav1alpha2.RedpandaLicenseStatus{
-				Violation:     false,
-				InUseFeatures: []string{"core_balancing_continuous"},
-				Expired:       ptr.To(false),
-				Type:          ptr.To("enterprise"),
-				Organization:  ptr.To("redpanda-testing"),
-				Expiration:    licenseStatus.Expiration,
+				Violation: false,
+				InUseFeatures: []string{
+					"core_balancing_continuous",
+					"partition_auto_balancing_continuous",
+				},
+				Expired:      ptr.To(false),
+				Type:         ptr.To("enterprise"),
+				Organization: ptr.To("redpanda-testing"),
+				Expiration:   licenseStatus.Expiration,
 			}, licenseStatus)
 
 			s.deleteAndWait(t, ctx, c, tc)

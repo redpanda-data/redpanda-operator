@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -281,6 +282,10 @@ func (r *MockOwnershipResolver) OwnerForObject(object client.Object) *types.Name
 	return nil
 }
 
+func (r *MockOwnershipResolver) ResolveOwnerReference(ctx context.Context, owner *MockCluster, clusterName string, targetCluster *kube.Ctl) (*MockCluster, error) {
+	return owner, nil
+}
+
 type MockSimpleResourceRenderer struct {
 	watchedResources []client.Object
 	resourceMappings map[types.NamespacedName][]client.Object
@@ -326,6 +331,10 @@ func (r *MockSimpleResourceRenderer) Render(ctx context.Context, cluster *MockCl
 
 func (r *MockSimpleResourceRenderer) WatchedResourceTypes() []client.Object {
 	return r.watchedResources
+}
+
+func (r *MockSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *MockCluster) []string {
+	return nil
 }
 
 type MockNodePoolRenderer struct {

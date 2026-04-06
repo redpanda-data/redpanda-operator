@@ -17,11 +17,16 @@ import (
 // StretchClusterWithPools serves as an intermediate structure to merge a Cluster with its NodePools in v2
 type StretchClusterWithPools struct {
 	*redpandav1alpha2.StretchCluster
-	NodePools []*redpandav1alpha2.NodePool
+	NodePools []*NodePoolInCluster
 	clusters  []string
 }
 
-func NewStretchClusterWithPools(cluster *redpandav1alpha2.StretchCluster, clusters []string, pools ...*redpandav1alpha2.NodePool) *StretchClusterWithPools {
+type NodePoolInCluster struct {
+	cluster  string
+	nodePool *redpandav1alpha2.NodePool
+}
+
+func NewStretchClusterWithPools(cluster *redpandav1alpha2.StretchCluster, clusters []string, pools ...*NodePoolInCluster) *StretchClusterWithPools {
 	return &StretchClusterWithPools{
 		StretchCluster: cluster,
 		NodePools:      pools,
@@ -31,6 +36,24 @@ func NewStretchClusterWithPools(cluster *redpandav1alpha2.StretchCluster, cluste
 
 func (s *StretchClusterWithPools) GetClusters() []string {
 	return s.clusters
+}
+
+func (s *StretchClusterWithPools) GetNodePoolsForCluster(clusterName string) []*redpandav1alpha2.NodePool {
+	var result []*redpandav1alpha2.NodePool
+	for _, nodePool := range s.NodePools {
+		if nodePool.cluster == clusterName {
+			result = append(result, nodePool.nodePool)
+		}
+	}
+	return result
+}
+
+func (s *StretchClusterWithPools) GetAllNodePools() []*redpandav1alpha2.NodePool {
+	var result []*redpandav1alpha2.NodePool
+	for _, nodePool := range s.NodePools {
+		result = append(result, nodePool.nodePool)
+	}
+	return result
 }
 
 // V2ResourceManagers is a factory function for tying together all of our v2 interfaces.

@@ -15,6 +15,7 @@ import (
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -47,7 +48,16 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 		return nil, errors.WithStack(err)
 	}
 
-	state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.NodePools, clusterName)
+	// Use the canonical cluster name so that labels are identical regardless
+	// of which operator instance (local vs remote) performs the reconciliation.
+	canonicalName := CanonicalClusterName(clusterName, m.mgr)
+
+	state, err := multiclusterRenderer.NewRenderState(
+		cl.GetConfig(),
+		cluster.StretchCluster,
+		cluster.GetNodePoolsForCluster(canonicalName),
+		cluster.GetAllNodePools(),
+		canonicalName)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -58,4 +68,12 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 // IsNodePool returns whether or not the object passed to it should be considered a node pool.
 func (m *StretchNodePoolRenderer) IsNodePool(object client.Object) bool {
 	return isNodePool(object)
+}
+
+func CanonicalClusterName(clusterName string, mgr multicluster.Manager) string {
+	canonicalName := clusterName
+	if canonicalName == mcmanager.LocalCluster {
+		canonicalName = mgr.GetLocalClusterName()
+	}
+	return canonicalName
 }

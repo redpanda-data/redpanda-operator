@@ -10,6 +10,9 @@
 package lifecycle
 
 import (
+	"context"
+
+	"github.com/redpanda-data/common-go/kube"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -83,4 +86,8 @@ func (m *V2OwnershipResolver) OwnerForObject(object client.Object) *types.Namesp
 		}
 	}
 	return nil
+}
+
+func (m *V2OwnershipResolver) ResolveOwnerReference(_ context.Context, owner *ClusterWithPools, _ string, _ *kube.Ctl) (*ClusterWithPools, error) {
+	return owner, nil
 }

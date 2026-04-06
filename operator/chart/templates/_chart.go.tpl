@@ -24,6 +24,12 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+{{- range $_, $svc := (get (fromJson (include "operator.StretchClusterService" (dict "a" (list $dot)))) "r") -}}
+{{- $manifests = (concat (default (list) $manifests) (list $svc)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $manifests) | toJson -}}
 {{- break -}}
