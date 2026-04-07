@@ -13,19 +13,9 @@ import (
 	"context"
 	"fmt"
 	"slices"
-<<<<<<< HEAD
-=======
-	"strings"
-	"sync"
->>>>>>> ca834466 (Parallelize acceptance and integration tests (#1407))
 	"time"
 
 	"github.com/cucumber/godog"
-<<<<<<< HEAD
-=======
-	"github.com/redpanda-data/common-go/kube"
-	"github.com/stretchr/testify/assert"
->>>>>>> ca834466 (Parallelize acceptance and integration tests (#1407))
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,83 +32,6 @@ import (
 
 type vclusterNodes []*vclusterNode
 
-<<<<<<< HEAD
-=======
-// dumpDiagnostics logs pod statuses and events from each vcluster to aid
-// debugging when multicluster tests fail.
-func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) {
-	diagCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	for _, node := range v {
-		t.Logf("[multicluster-diagnostics] === vcluster %s (host namespace: %s) ===", node.Name(), node.Name())
-
-		// Dump pods from the host namespace (where vcluster components run).
-		hostClient, err := client.New(t.RestConfig(), client.Options{})
-		if err != nil {
-			t.Logf("[multicluster-diagnostics] failed to create host client: %v", err)
-			continue
-		}
-		var hostPods corev1.PodList
-		if err := hostClient.List(diagCtx, &hostPods, client.InNamespace(node.Name())); err != nil {
-			t.Logf("[multicluster-diagnostics] failed to list host pods: %v", err)
-		} else {
-			for _, pod := range hostPods.Items {
-				t.Logf("[multicluster-diagnostics] host pod %s: phase=%s", pod.Name, pod.Status.Phase)
-				for _, cs := range pod.Status.ContainerStatuses {
-					if cs.State.Waiting != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: waiting reason=%s", cs.Name, cs.State.Waiting.Reason)
-					}
-					if cs.State.Terminated != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: terminated exitCode=%d reason=%s", cs.Name, cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
-					}
-					if cs.RestartCount > 0 {
-						t.Logf("[multicluster-diagnostics]   container %s: restarts=%d", cs.Name, cs.RestartCount)
-					}
-				}
-			}
-		}
-
-		// Dump pods from inside the vcluster (where the operator runs).
-		var vcPods corev1.PodList
-		if err := node.List(diagCtx, &vcPods); err != nil {
-			t.Logf("[multicluster-diagnostics] failed to list vcluster pods: %v", err)
-		} else {
-			for _, pod := range vcPods.Items {
-				t.Logf("[multicluster-diagnostics] vcluster pod %s/%s: phase=%s", pod.Namespace, pod.Name, pod.Status.Phase)
-				for _, cs := range pod.Status.ContainerStatuses {
-					if cs.State.Waiting != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: waiting reason=%s", cs.Name, cs.State.Waiting.Reason)
-					}
-					if cs.State.Terminated != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: terminated exitCode=%d reason=%s", cs.Name, cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
-					}
-					if cs.RestartCount > 0 {
-						t.Logf("[multicluster-diagnostics]   container %s: restarts=%d", cs.Name, cs.RestartCount)
-					}
-				}
-			}
-		}
-
-		// Dump events from inside the vcluster.
-		var vcEvents corev1.EventList
-		if err := node.List(diagCtx, &vcEvents); err != nil {
-			t.Logf("[multicluster-diagnostics] failed to list vcluster events: %v", err)
-		} else {
-			for _, event := range vcEvents.Items {
-				t.Logf("[multicluster-diagnostics] event %s %s/%s: %s", event.Type, event.InvolvedObject.Kind, event.InvolvedObject.Name, event.Message)
-			}
-		}
-	}
-}
-
-var nameMap = map[string]string{
-	"vc-0": "first",
-	"vc-1": "second",
-	"vc-2": "third",
-}
-
->>>>>>> ca834466 (Parallelize acceptance and integration tests (#1407))
 func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	t := framework.T(ctx)
 	for _, node := range v {
@@ -139,25 +52,18 @@ func (v vclusterNodes) CheckAll(ctx context.Context, namespacedName types.Namesp
 
 	gvk, _ := schema.ParseKindArg(groupVersionKind)
 	for _, node := range v {
-		ok := assert.Eventually(t, func() bool {
+		require.Eventually(t, func() bool {
 			obj, err := t.Scheme().New(*gvk)
-			if err != nil {
-				t.Logf("error creating object for GVK %v: %v", gvk, err)
-				return false
-			}
+			require.NoError(t, err)
 
 			o := obj.(client.Object)
-			t.Logf("fetching (%T) object: %q from %s", o, namespacedName.String(), node.Name())
+			t.Logf("fetching (%T) object: %q", o, namespacedName.String())
 			if err := node.Get(ctx, namespacedName, o); err != nil {
-				t.Logf("error fetching %q from %s: %v", namespacedName.String(), node.Name(), err)
+				t.Logf("error fetching %q: %v", namespacedName.String(), err)
 				return false
 			}
 			return fn(o)
-		}, 5*time.Minute, 1*time.Second, "condition not met on %s", node.Name())
-		if !ok {
-			v.dumpDiagnostics(ctx, t)
-			t.FailNow()
-		}
+		}, 1*time.Minute, 1*time.Second, "condition not met")
 	}
 }
 
@@ -206,7 +112,6 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 
 func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {
 	namespace := metav1.NamespaceDefault
-<<<<<<< HEAD
 
 	vclusters := []*vclusterNode{}
 	t.Logf("creating %d vclusters", clusters)
@@ -215,63 +120,9 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 		cluster, err := vcluster.New(ctx, t.RestConfig())
 		require.NoError(t, err)
 		cluster.SetScheme(t.Scheme())
-=======
-	redpandaLicense := os.Getenv(LicenseEnvVar)
-	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
 
-	// Build per-vcluster values upfront. The networking config references
-	// other vclusters by name so names must be deterministic.
-	vclusterValuesList := make([]string, clusters)
-	for i := range clusters {
-		vals := vcluster.DefaultValues
-		switch i {
-		case 0:
-			vals += `
-networking:
-  replicateServices:
-    fromHost:
-    - from: vc-1/second-0-x-default-x-vc-1
-      to: default/second-0
-    - from: vc-2/third-0-x-default-x-vc-2
-      to: default/third-0
-`
-		case 1:
-			vals += `
-networking:
-  replicateServices:
-    fromHost:
-    - from: vc-0/first-0-x-default-x-vc-0
-      to: default/first-0
-    - from: vc-2/third-0-x-default-x-vc-2
-      to: default/third-0
-`
-		case 2:
-			vals += `
-networking:
-  replicateServices:
-    fromHost:
-    - from: vc-0/first-0-x-default-x-vc-0
-      to: default/first-0
-    - from: vc-1/second-0-x-default-x-vc-1
-      to: default/second-0
-`
-		}
-		vclusterValuesList[i] = vals
-	}
->>>>>>> ca834466 (Parallelize acceptance and integration tests (#1407))
+		t.Logf("finished creating vcluster %d (name: %q)", i+1, cluster.Name())
 
-	// Create all vclusters in parallel.
-	t.Logf("creating %d vclusters in parallel", clusters)
-	vclusters := make([]*vclusterNode, clusters)
-	var wg sync.WaitGroup
-	errs := make([]error, clusters)
-	for i := range clusters {
-		wg.Add(1)
-		go func(idx int32) {
-			defer wg.Done()
-			t.Logf("creating vcluster %d", idx+1)
-
-<<<<<<< HEAD
 		t.Cleanup(func(ctx context.Context) {
 			require.NoError(t, cluster.Delete())
 		})
@@ -285,51 +136,6 @@ networking:
 			Client:    c,
 			Cluster:   cluster,
 			apiServer: fmt.Sprintf("https://%s", apiServer.Spec.ClusterIPs[0]),
-=======
-			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", idx)), vcluster.WithValues(helm.RawYAML(vclusterValuesList[idx])))
-			if err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d: %w", idx, err)
-				return
-			}
-			scheme := t.Scheme()
-			if err := certmanagerv1.AddToScheme(scheme); err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d scheme: %w", idx, err)
-				return
-			}
-			cluster.SetScheme(scheme)
-
-			t.Logf("finished creating vcluster %d (name: %q)", idx+1, cluster.Name())
-
-			c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
-			if err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d client: %w", idx, err)
-				return
-			}
-
-			var apiServer corev1.Service
-			if err := c.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: metav1.NamespaceDefault}, &apiServer); err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d apiserver: %w", idx, err)
-				return
-			}
-
-			vclusters[idx] = &vclusterNode{
-				Client:    c,
-				Cluster:   cluster,
-				apiServer: fmt.Sprintf("https://%s", apiServer.Spec.ClusterIPs[0]),
-			}
-		}(i)
-	}
-	wg.Wait()
-
-	// Check for errors and register cleanup.
-	for i, err := range errs {
-		require.NoError(t, err, "failed to create vcluster %d", i)
-	}
-	for _, vc := range vclusters {
-		vc := vc // capture for closure
-		cleanupWrapper(t, func(ctx context.Context) {
-			require.NoError(t, vc.Cluster.Delete())
->>>>>>> ca834466 (Parallelize acceptance and integration tests (#1407))
 		})
 	}
 
@@ -364,10 +170,7 @@ networking:
 
 		require.Eventually(t, func() bool {
 			var operatorService corev1.Service
-			if err := cluster.Get(ctx, types.NamespacedName{Name: "multicluster-operator", Namespace: metav1.NamespaceDefault}, &operatorService); err != nil {
-				t.Logf("error fetching operator service from %s: %v", cluster.Name(), err)
-				return false
-			}
+			require.NoError(t, cluster.Get(ctx, types.NamespacedName{Name: "multicluster-operator", Namespace: metav1.NamespaceDefault}, &operatorService))
 			if len(operatorService.Spec.ClusterIPs) == 0 {
 				return false
 			}
@@ -400,41 +203,6 @@ networking:
 
 	// and finally we do the operator installation in each cluster
 	for _, cluster := range vclusters {
-<<<<<<< HEAD
-=======
-		t.Logf("creating license secret in %q", cluster.Name())
-		require.NoError(t, cluster.Create(ctx, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "redpanda-license",
-				Namespace: namespace,
-			},
-			Data: map[string][]byte{
-				"redpanda.license": []byte(redpandaLicense),
-			},
-		}))
-		t.Logf("creating TLS secrets and issuers in %q", cluster.Name())
-		require.NoError(t, cluster.Create(ctx, defaultSecret.DeepCopy()))
-		require.NoError(t, cluster.Create(ctx, externalSecret.DeepCopy()))
-
-		defaultIssuer := newCAIssuer("cluster", "default", namespace)
-		externalIssuer := newCAIssuer("cluster", "external", namespace)
-		webhookRetry := wait.Backoff{
-			Steps:    100,
-			Duration: 1 * time.Second,
-			Factor:   1.0,
-			Jitter:   0.1,
-		}
-		isWebhookErr := func(err error) bool {
-			return err != nil && strings.Contains(err.Error(), "webhook")
-		}
-		require.NoError(t, retry.OnError(webhookRetry, isWebhookErr, func() error {
-			return cluster.Create(ctx, defaultIssuer)
-		}))
-		require.NoError(t, retry.OnError(webhookRetry, isWebhookErr, func() error {
-			return cluster.Create(ctx, externalIssuer)
-		}))
-
->>>>>>> ca834466 (Parallelize acceptance and integration tests (#1407))
 		t.Logf("deploying operator in %q", cluster.Name())
 		rel, err := cluster.HelmInstall(ctx, "../operator/chart", helm.InstallOptions{
 			Name: "redpanda",

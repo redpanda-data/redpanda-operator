@@ -301,122 +301,6 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 	}
 
 	return &Suite{
-<<<<<<< HEAD
-		output: b.output,
-		suite: &godog.TestSuite{
-			Name: "acceptance",
-			TestSuiteInitializer: func(suiteContext *godog.TestSuiteContext) {
-				cleanup := func(ctx context.Context) {
-					if kubeOptions != nil {
-						// teardown in reverse order from setup
-						for _, directory := range b.crdDirectories {
-							_, err := internaltesting.KubectlDelete(ctx, directory, kubeOptions)
-							if err != nil {
-								fmt.Printf("WARNING: error uninstalling crds: %v\n", err)
-							}
-						}
-					}
-
-					if helmClient != nil {
-						for _, chart := range b.helmCharts {
-							if err := helmClient.Uninstall(ctx, helm.Release{
-								Namespace: chart.options.Namespace,
-								Name:      chart.options.Name,
-							}); err != nil {
-								fmt.Printf("WARNING: error uninstalling helm chart: %v\n", err)
-							}
-						}
-					}
-
-					if err := provider.Teardown(ctx); err != nil {
-						fmt.Printf("WARNING: error running provider teardown: %v\n", err)
-					}
-				}
-
-				suiteContext.BeforeSuite(func() {
-					err := provider.Setup(ctx)
-					setupErrorCheck(ctx, err, cleanup)
-
-					if provisioned, ok := provider.(internaltesting.ProvisionedProvider); ok {
-						fmt.Printf("Using Kubernetes configuration at: %v\n", provisioned.ConfigPath())
-						b.testingOpts.KubectlOptions = internaltesting.NewKubectlOptions(provisioned.ConfigPath())
-					}
-					kubeOptions = b.testingOpts.KubectlOptions
-
-					restConfig, err := b.testingOpts.KubectlOptions.RestConfig()
-					setupErrorCheck(ctx, err, cleanup)
-
-					helmClient, err = helm.New(helm.Options{
-						KubeConfig: restConfig,
-					})
-					setupErrorCheck(ctx, err, cleanup)
-
-					err = pullImages(b.images)
-					setupErrorCheck(ctx, err, cleanup)
-
-					err = provider.LoadImages(ctx, b.images)
-					setupErrorCheck(ctx, err, cleanup)
-
-					b.testingOpts.Images = b.images
-
-					// now add helm charts
-					for _, chart := range b.helmCharts {
-						err = helmClient.RepoAdd(ctx, chart.repo, chart.url)
-						setupErrorCheck(ctx, err, cleanup)
-
-						_, err := helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
-						setupErrorCheck(ctx, err, cleanup)
-					}
-
-					// run any post-setup hooks (e.g. webhook readiness checks)
-					for _, fn := range b.afterSetup {
-						err = fn(ctx, restConfig)
-						setupErrorCheck(ctx, err, cleanup)
-					}
-
-					// and finally any crds
-					for _, directory := range b.crdDirectories {
-						_, err := internaltesting.KubectlApply(ctx, directory, b.testingOpts.KubectlOptions)
-						setupErrorCheck(ctx, err, cleanup)
-					}
-				})
-				suiteContext.AfterSuite(func() {
-					cancel := func() {}
-					cleanupTimeout := b.testingOpts.CleanupTimeout
-					if cleanupTimeout != 0 {
-						ctx, cancel = context.WithTimeout(ctx, cleanupTimeout)
-					}
-					defer cancel()
-
-					if tracker.SuiteFailed() && b.testingOpts.RetainOnFailure {
-						fmt.Println("skipping cleanup due to test failure and retain flag being set")
-						return
-					}
-					cleanup(ctx)
-				})
-			},
-			ScenarioInitializer: func(ctx *godog.ScenarioContext) {
-				ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
-					ctx, err := tracker.Scenario(ctx, sc)
-					if err != nil {
-						return nil, err
-					}
-					for _, fn := range b.injectors {
-						ctx = fn(ctx)
-					}
-					return ctx, nil
-				})
-				ctx.After(func(ctx context.Context, sc *godog.Scenario, _ error) (context.Context, error) {
-					tracker.ScenarioFinished(ctx, sc)
-					return ctx, nil
-				})
-
-				getSteps(ctx)
-			},
-			Options: &opts,
-		},
-		options:               b.testingOpts,
-=======
 		output:                b.output,
 		baseOpts:              b.opts,
 		testingOpts:           b.testingOpts,
@@ -432,7 +316,6 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 		helmCharts:            b.helmCharts,
 		afterSetup:            b.afterSetup,
 		images:                b.images,
->>>>>>> ca834466 (Parallelize acceptance and integration tests (#1407))
 		exitOnCleanupFailures: b.exitOnCleanupFailures,
 		skipCleanup:           b.skipCleanup,
 	}, nil
