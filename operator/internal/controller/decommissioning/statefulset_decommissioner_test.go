@@ -13,6 +13,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -145,6 +146,51 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	s.cleanupChart(chart)
 }
 
+// cleanupStaleState removes taints and stale helm releases left behind by a
+// previous failed run. This ensures --rerun-fails retries start with a clean
+// cluster.
+func (s *StatefulSetDecommissionerSuite) cleanupStaleState() {
+	// Remove test taints from all nodes.
+	var nodes corev1.NodeList
+	if err := s.client.List(s.ctx, &nodes); err != nil {
+		s.T().Logf("WARNING: failed to list nodes for cleanup: %v", err)
+		return
+	}
+	for _, node := range nodes.Items {
+		original := len(node.Spec.Taints)
+		node.Spec.Taints = functional.Filter(node.Spec.Taints, func(taint corev1.Taint) bool {
+			return taint.Key != "decommission-test"
+		})
+		if len(node.Spec.Taints) != original {
+			s.T().Logf("removing stale taint from node %s", node.Name)
+			if err := s.client.Update(s.ctx, &node); err != nil {
+				s.T().Logf("WARNING: failed to untaint node %s: %v", node.Name, err)
+			}
+		}
+	}
+
+	// Uninstall any stale helm releases in the test namespace.
+	helmClient, err := helm.New(helm.Options{KubeConfig: s.env.RESTConfig()})
+	if err != nil {
+		s.T().Logf("WARNING: failed to create helm client for cleanup: %v", err)
+		return
+	}
+	releases, err := helmClient.List(s.ctx)
+	if err != nil {
+		s.T().Logf("WARNING: failed to list helm releases for cleanup: %v", err)
+		return
+	}
+	for _, rel := range releases {
+		if rel.Namespace != s.env.Namespace() {
+			continue
+		}
+		s.T().Logf("uninstalling stale helm release %s/%s", rel.Namespace, rel.Name)
+		if err := helmClient.Uninstall(s.ctx, rel); err != nil {
+			s.T().Logf("WARNING: failed to uninstall stale release %s: %v", rel.Name, err)
+		}
+	}
+}
+
 func (s *StatefulSetDecommissionerSuite) taintNode(name string) {
 	var node corev1.Node
 	s.Require().NoError(s.client.Get(s.ctx, types.NamespacedName{Name: name}, &node))
@@ -188,6 +234,11 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	})
 
 	s.client = s.env.Client()
+
+	// Clean up stale state from a previous failed run (e.g., from
+	// --rerun-fails retries). Remove taints from all nodes so that
+	// pods can schedule and cert-manager webhook stays available.
+	s.cleanupStaleState()
 
 	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
 		helmClient, err := helm.New(helm.Options{
@@ -300,10 +351,22 @@ func (s *StatefulSetDecommissionerSuite) adminClientFor(chart *chart) *rpadmin.A
 
 func (s *StatefulSetDecommissionerSuite) upgradeChart(chart *chart, overrides map[string]any) {
 	values := functional.MergeMaps(chart.values, overrides)
-	release, err := s.helm.Upgrade(s.ctx, chart.release.Name, redpandaChartPath, helm.UpgradeOptions{
-		Namespace: s.env.Namespace(),
-		Values:    values,
-	})
+
+	// Retry on transient cert-manager webhook errors. Under parallel test
+	// load, the webhook pod may briefly become unavailable.
+	var release helm.Release
+	var err error
+	for attempt := range 3 {
+		release, err = s.helm.Upgrade(s.ctx, chart.release.Name, redpandaChartPath, helm.UpgradeOptions{
+			Namespace: s.env.Namespace(),
+			Values:    values,
+		})
+		if err == nil || !strings.Contains(err.Error(), "webhook") {
+			break
+		}
+		s.T().Logf("helm upgrade attempt %d failed with webhook error, retrying: %v", attempt+1, err)
+		time.Sleep(10 * time.Second)
+	}
 	s.Require().NoError(err)
 
 	chart.release = release

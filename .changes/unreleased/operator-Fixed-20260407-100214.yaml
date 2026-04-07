@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Removed more historic field managers that have caused problems with changes to StatefulSets.
+time: 2026-04-07T10:02:14.207045-04:00
