@@ -169,6 +169,10 @@ func (e *Env) Namespace() string {
 	return e.namespace.Name
 }
 
+func (e *Env) RESTConfig() *rest.Config {
+	return e.config
+}
+
 func (e *Env) SetupManager(serviceAccount string, fn func(ctrl.Manager) error) {
 	// Bind the managers base config to a ServiceAccount via the "Impersonate"
 	// feature. This ensures that any permissions/RBAC issues get caught by
