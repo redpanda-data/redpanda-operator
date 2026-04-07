@@ -556,6 +556,8 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 	redpandas := map[string]*redpandav1alpha2.Redpanda{}
 
 	rp := s.minimalRP()
+	rp.ObjectMeta.GenerateName = ""
+	rp.SetName("literal-license")
 	rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
 		Spec: &applycorev1.PodSpecApplyConfiguration{
 			Containers: []applycorev1.ContainerApplyConfiguration{{
@@ -577,6 +579,7 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 	redpandas["literal-license"] = rp
 
 	rp = rp.DeepCopy()
+	rp.SetName("license-in-secret")
 	rp.Spec.ClusterSpec.Enterprise = &redpandav1alpha2.Enterprise{
 		License: nil,
 		LicenseSecretRef: &redpandav1alpha2.EnterpriseLicenseSecretRef{
@@ -609,6 +612,8 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 				}
 				return false, nil
 			}, tc)
+
+			sort.Strings(licenseStatus.InUseFeatures)
 
 			require.Equal(t, &redpandav1alpha2.RedpandaLicenseStatus{
 				Violation: false,
