@@ -30,6 +30,10 @@ var undesiredFieldManagers = []string{
 	"*kube.Ctl",
 	"helm-controller",
 	"helm",
+	"redpanda-operator",
+	"redpanda-controller",
+	"redpanda-helmrelease-controller",
+	"application/apply-patch",
 }
 
 // this is a potentially heavy operation
