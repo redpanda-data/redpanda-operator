@@ -36,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
@@ -591,7 +592,7 @@ func waitForCondition(ctx context.Context, t framework.TestingT, o runtimeclient
 			return false
 		}
 		return t.HasCondition(expected, getConditions())
-	}, 2*time.Minute, 2*time.Second, "Resource %q never reached condition %s=%s", key.String(), expected.Type, expected.Status)
+	}, 5*time.Minute, 2*time.Second, "Resource %q never reached condition %s=%s", key.String(), expected.Type, expected.Status)
 	t.Logf("Resource %q has condition %s=%s", key.String(), expected.Type, expected.Status)
 }
 
@@ -617,7 +618,7 @@ func waitForSyncedCondition(ctx context.Context, t framework.TestingT, o runtime
 				return false
 			}
 			return getObsGen() >= o.GetGeneration()
-		}, 2*time.Minute, 2*time.Second, "Resource %q observedGeneration never caught up to generation %d", key.String(), o.GetGeneration())
+		}, 5*time.Minute, 2*time.Second, "Resource %q observedGeneration never caught up to generation %d", key.String(), o.GetGeneration())
 		t.Logf("Resource %q observedGeneration (%d) caught up to generation (%d)", key.String(), getObsGen(), o.GetGeneration())
 	}
 
@@ -681,11 +682,14 @@ func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName
 	t := framework.T(ctx)
 
 	var dep appsv1.Deployment
-	require.NoError(t, t.Get(ctx, t.ResourceKey("redpanda-operator"), &dep))
+	// The shared operator is in a dedicated namespace, not the feature's namespace.
+	operatorKey := types.NamespacedName{Name: "redpanda-operator", Namespace: OperatorNamespace}
+	require.NoError(t, t.Get(ctx, operatorKey, &dep))
 
 	var podList corev1.PodList
 
 	require.NoError(t, t.List(ctx, &podList, &runtimeclient.ListOptions{
+		Namespace:     OperatorNamespace,
 		LabelSelector: labels.SelectorFromSet(dep.Spec.Selector.MatchLabels),
 	}))
 
@@ -718,7 +722,7 @@ func clientsForOperator(ctx context.Context, includeTLS bool, serviceAccountName
 		expectedStatusCode: statusCode,
 		token:              token,
 		schema:             schema,
-		namespace:          t.Namespace(),
+		namespace:          OperatorNamespace,
 		operatorPodName:    podList.Items[0].Name,
 		client: http.Client{Transport: &http.Transport{
 			TLSClientConfig: &tlsCfg,

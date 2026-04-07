@@ -264,10 +264,11 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
 		// My thought is no since we want to be snappy with decommissioning.
 		r.reconcileDecommission,
+		// reconcile license before cluster config so enterprise-gated
+		// properties (e.g. core_balancing_continuous) are accepted.
+		r.reconcileLicense,
 		// now reconcile cluster configuration
 		r.reconcileClusterConfig,
-		// finally reconcile all of our license information
-		r.reconcileLicense,
 	}
 
 	for _, reconciler := range reconcilers {

@@ -58,6 +58,8 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "OperatorQuiescent", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
+
+	waitForStatefulSetReady(ctx, t, clusterName)
 	t.Logf("Cluster %q is ready!", clusterName)
 }
 
@@ -100,7 +102,43 @@ func checkV2ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "Ready", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
+
+	waitForStatefulSetReady(ctx, t, clusterName)
 	t.Logf("Cluster %q is ready!", clusterName)
+}
+
+// waitForStatefulSetReady waits until the StatefulSet for the given cluster
+// has all pods running and ready. This guards against the case where the
+// operator marks the cluster as ready/quiescent before pods are fully
+// schedulable and accepting connections.
+//
+// The StatefulSet name may not match the cluster name (e.g. when
+// fullnameOverride is used), so we look up the StatefulSet by matching
+// the app.kubernetes.io/instance label instead.
+func waitForStatefulSetReady(ctx context.Context, t framework.TestingT, clusterName string) {
+	t.Logf("Waiting for StatefulSet pods to be ready for cluster %q", clusterName)
+	require.Eventually(t, func() bool {
+		var stsList appsv1.StatefulSetList
+		if err := t.List(ctx, &stsList, client.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
+			return false
+		}
+		if len(stsList.Items) == 0 {
+			t.Logf("No StatefulSet found for cluster %q yet", clusterName)
+			return false
+		}
+		for _, sts := range stsList.Items {
+			if sts.Spec.Replicas == nil {
+				return false
+			}
+			if sts.Status.ReadyReplicas < *sts.Spec.Replicas {
+				t.Logf("StatefulSet %q: %d/%d ready", sts.Name, sts.Status.ReadyReplicas, *sts.Spec.Replicas)
+				return false
+			}
+		}
+		return true
+	}, 5*time.Minute, 5*time.Second, "StatefulSet pods for cluster %q never became ready", clusterName)
 }
 
 func redpandaClusterIsHealthy(ctx context.Context, t framework.TestingT, cluster string) {

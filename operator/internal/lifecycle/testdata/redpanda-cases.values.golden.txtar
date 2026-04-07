@@ -149,7 +149,7 @@ values:
   fullnameOverride: ""
   image:
     repository: redpandadata/redpanda
-    tag: v26.1.1
+    tag: v26.1.2
   license_key: ""
   listeners:
     admin:
@@ -744,7 +744,7 @@ values:
   fullnameOverride: ""
   image:
     repository: redpandadata/redpanda
-    tag: v26.1.1
+    tag: v26.1.2
   license_key: ""
   listeners:
     admin:
@@ -1115,7 +1115,7 @@ values:
   fullnameOverride: ""
   image:
     repository: redpandadata/redpanda
-    tag: v26.1.1
+    tag: v26.1.2
   license_key: ""
   listeners:
     admin:
@@ -1433,12 +1433,12 @@ pools:
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
         containers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda:v26.1.2
           name: redpanda
         initContainers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda:v26.1.2
           name: tuning
         priorityClassName: ""
         securityContext: {}
@@ -1513,12 +1513,12 @@ pools:
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
         containers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda:v26.1.2
           name: redpanda
         initContainers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda:v26.1.2
           name: tuning
         priorityClassName: ""
         securityContext: {}
@@ -1707,7 +1707,7 @@ values:
   fullnameOverride: ""
   image:
     repository: redpandadata/redpanda
-    tag: v26.1.1
+    tag: v26.1.2
   license_key: ""
   listeners:
     admin:

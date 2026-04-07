@@ -76,7 +76,7 @@
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           lifecycle:
             postStart:
               exec:
@@ -214,7 +214,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: tuning
           resources: {}
           securityContext:
@@ -255,7 +255,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
           resources: {}
           securityContext:
@@ -452,7 +452,7 @@
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           lifecycle:
             postStart:
               exec:
@@ -610,7 +610,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
           resources: {}
           securityContext:
@@ -995,7 +995,7 @@
             xfs & wait $!
           command:
           - /bin/sh
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: fs-validator
           resources:
             limits:
@@ -1264,7 +1264,7 @@
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           lifecycle:
             postStart:
               exec:
@@ -1402,7 +1402,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: tuning
           resources: {}
           securityContext:
@@ -1443,7 +1443,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
           resources: {}
           securityContext:
@@ -1640,7 +1640,7 @@
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           lifecycle:
             postStart:
               exec:
@@ -1778,7 +1778,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: tuning
           resources: {}
           securityContext:
@@ -1819,7 +1819,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
           resources: {}
           securityContext:
@@ -2017,7 +2017,7 @@
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           lifecycle:
             postStart:
               exec:
@@ -2154,7 +2154,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: tuning
           resources: {}
           securityContext:
@@ -2195,7 +2195,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
           resources: {}
           securityContext:
@@ -2393,7 +2393,7 @@
             value: localhost/test:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
             value: 00000000-0000-0000-0000-000000000000
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           lifecycle:
             postStart:
               exec:
@@ -2530,7 +2530,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: tuning
           resources: {}
           securityContext:
@@ -2571,7 +2571,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.2
           name: redpanda-configurator
           resources: {}
           securityContext:

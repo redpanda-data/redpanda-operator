@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/formatters"
@@ -21,6 +23,8 @@ import (
 
 	internaltesting "github.com/redpanda-data/redpanda-operator/harpoon/internal/testing"
 )
+
+var formatterCounter atomic.Int64
 
 type feature struct {
 	*internaltesting.Cleaner
@@ -32,6 +36,7 @@ type feature struct {
 	isRunning      bool
 	hasStepFailure bool
 	tags           *tagset
+	startTime      time.Time
 }
 
 func (f *feature) options() *internaltesting.TestingOptions {
@@ -78,11 +83,16 @@ func (f *FeatureHookTracker) Scenario(ctx context.Context, scenario *godog.Scena
 
 		cleaner := internaltesting.NewCleaner(godog.T(ctx), opts)
 		t := internaltesting.NewTesting(ctx, opts, cleaner)
+		t.SetFeatureName(features.name)
+		t.SetFeatureTags(features.tags.flatten())
 
 		features.isRunning = true
+		features.startTime = time.Now()
 		features.opts = opts
 		features.Cleaner = cleaner
 		features.t = t
+
+		t.Logf("=== FEATURE START: %s ===", features.name)
 
 		tags := f.registry.Handlers(features.tags.flatten())
 
@@ -119,6 +129,16 @@ func (f *FeatureHookTracker) ScenarioFinished(ctx context.Context, scenario *god
 	features.t.Logf("finished feature scenario, %d scenarios left", features.scenariosToRun)
 	if features.scenariosToRun <= 0 {
 		delete(f.features, scenario.Uri)
+
+		elapsed := time.Since(features.startTime).Round(time.Second)
+
+		// Dump diagnostics before cleanup when the feature has failures.
+		if features.hasStepFailure {
+			features.t.Logf("=== FEATURE FAILED: %s (namespace=%s, %s) — collecting diagnostics ===", features.name, features.t.Namespace(), elapsed)
+			features.t.DumpDiagnostics(ctx)
+		} else {
+			features.t.Logf("=== FEATURE END: %s (namespace=%s, %s) ===", features.name, features.t.Namespace(), elapsed)
+		}
 
 		features.t.SetMessagePrefix(fmt.Sprintf("Feature (%s) Cleanup Failure: ", features.name))
 		features.t.Log("running cleanup handlers")
@@ -159,10 +179,11 @@ func (f *FeatureHookTracker) Feature(doc *messages.GherkinDocument, uri string, 
 }
 
 func (f *FeatureHookTracker) RegisterFormatter(opts godog.Options) godog.Options {
-	formatters.Format("custom", "", func(suite string, out io.Writer) formatters.Formatter {
+	name := fmt.Sprintf("custom-%d", formatterCounter.Add(1))
+	formatters.Format(name, "", func(suite string, out io.Writer) formatters.Formatter {
 		return f
 	})
-	opts.Format += ",custom"
+	opts.Format += "," + name
 	return opts
 }
 

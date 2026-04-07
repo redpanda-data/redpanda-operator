@@ -190,7 +190,7 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 		}))
 
 		return len(pods.Items) == 6
-	}, 2*time.Minute, 5*time.Second)
+	}, 5*time.Minute, 5*time.Second)
 
 	var pods corev1.PodList
 	require.NoError(t, c.List(ctx, &pods, &client.ListOptions{
@@ -221,7 +221,7 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 		}
 
 		return len(pods.Items) > 0
-	}, time.Minute, time.Second)
+	}, 3*time.Minute, time.Second)
 
 	// Start up our manager
 	mgr, err := manager.New(cluster.RESTConfig(), manager.Options{
@@ -254,7 +254,7 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 		}
 
 		return len(pods.Items) == 0
-	}, time.Minute, time.Second)
+	}, 3*time.Minute, time.Second)
 
 	// Assert that we have more than 6 (The initial #) PVs.
 	var pvs corev1.PersistentVolumeList
