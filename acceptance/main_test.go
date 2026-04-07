@@ -84,28 +84,24 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		}...).
 		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install)
 
-	// In multicluster setup mode, skip cert-manager and operator installation
-	// as each vCluster instance manages its own.
-	if !testutil.MultiClusterSetupOnly() {
-		builder = builder.
-			WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
-				Name:            "cert-manager",
-				Namespace:       "cert-manager",
-				Version:         "v1.14.2",
-				CreateNamespace: true,
-				Values: map[string]any{
-					"installCRDs": true,
-					"global": map[string]any{
-						"leaderElection": map[string]any{
-							"renewDeadline": "10s",
-							"retryPeriod":   "5s",
-						},
+	builder = builder.
+		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
+			Name:            "cert-manager",
+			Namespace:       "cert-manager",
+			Version:         "v1.14.2",
+			CreateNamespace: true,
+			Values: map[string]any{
+				"installCRDs": true,
+				"global": map[string]any{
+					"leaderElection": map[string]any{
+						"renewDeadline": "10s",
+						"retryPeriod":   "5s",
 					},
 				},
-			}).
-			AfterSetup(waitForCertManagerWebhook).
-			AfterSetup(installSharedOperator)
-	}
+			},
+		}).
+		AfterSetup(waitForCertManagerWebhook).
+		AfterSetup(installSharedOperator)
 
 	builder = builder.
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
@@ -125,10 +121,6 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		}).
 		RegisterTag("cluster", 2, ClusterTag).
 		ExitOnCleanupFailures()
-
-	if testutil.MultiClusterSetupOnly() {
-		builder = builder.SkipCleanup()
-	}
 
 	return builder.Build()
 })
