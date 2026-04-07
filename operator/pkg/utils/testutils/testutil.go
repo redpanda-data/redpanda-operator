@@ -14,11 +14,48 @@
 package testutils
 
 import (
+	"context"
+	"io"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+// ContainerLogReader is the subset of the testcontainers.Container interface
+// needed to capture logs.
+type ContainerLogReader interface {
+	Logs(ctx context.Context) (io.ReadCloser, error)
+}
+
+// DumpContainerLogsOnFailure registers a cleanup function that captures and logs
+// container output if the test has failed. Call this right after creating a
+// container to ensure logs are captured before the container is terminated.
+func DumpContainerLogsOnFailure(t *testing.T, ctx context.Context, name string, container ContainerLogReader) {
+	t.Helper()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+		logReader, err := container.Logs(ctx)
+		if err != nil {
+			t.Logf("[diagnostics] failed to get logs for container %s: %v", name, err)
+			return
+		}
+		defer logReader.Close()
+
+		logs, err := io.ReadAll(logReader)
+		if err != nil {
+			t.Logf("[diagnostics] failed to read logs for container %s: %v", name, err)
+			return
+		}
+		// Truncate to last 5000 bytes to avoid flooding test output.
+		if len(logs) > 5000 {
+			logs = logs[len(logs)-5000:]
+		}
+		t.Logf("[diagnostics] container %s logs (last %d bytes):\n%s", name, len(logs), string(logs))
+	})
+}
 
 // WriteFile writes data to a temporary file following the semantics of
 // [os.CreateTemp] and returns the full path to the written file.

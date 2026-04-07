@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -28,7 +29,7 @@ func getSuite(t *testing.T) *Suite {
 
 var setupSuite = sync.OnceValues(func() (*Suite, error) {
 	return SuiteBuilderFromFlags().
-		RegisterProvider("stub", NoopProvider).
+		RegisterProvider("stub", providers.NewK3D(1).RetainCluster()).
 		WithDefaultProvider("stub").
 		ExitOnCleanupFailures().
 		Build()

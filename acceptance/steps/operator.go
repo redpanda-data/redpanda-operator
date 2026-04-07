@@ -18,6 +18,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 )
@@ -25,10 +26,9 @@ import (
 func operatorIsRunning(ctx context.Context, t framework.TestingT) {
 	var dep appsv1.Deployment
 
-	// Wait for the operator deployment to become fully available.
-	// The operator may still be starting up after a helm install or
-	// namespace switch between scenarios.
-	key := t.ResourceKey("redpanda-operator")
+	// The shared operator is installed in a dedicated namespace during
+	// BeforeSuite, not in the feature's namespace.
+	key := types.NamespacedName{Name: "redpanda-operator", Namespace: OperatorNamespace}
 	require.Eventually(t, func() bool {
 		if err := t.Get(ctx, key, &dep); err != nil {
 			t.Logf("operator deployment not found yet: %v", err)

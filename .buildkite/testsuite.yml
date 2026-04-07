@@ -28,6 +28,8 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:unit
     env:
+      BUILD_GOARCH: amd64
+      BUILD_GOOS: linux
       LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
       OTLP_METRIC_INTERVAL: 5s
@@ -73,6 +75,8 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:integration
     env:
+      BUILD_GOARCH: amd64
+      BUILD_GOOS: linux
       LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
       OTLP_METRIC_INTERVAL: 5s
@@ -121,6 +125,8 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:acceptance
     env:
+      BUILD_GOARCH: amd64
+      BUILD_GOOS: linux
       LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
       OTLP_METRIC_INTERVAL: 5s
@@ -169,6 +175,8 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1
     env:
+      BUILD_GOARCH: amd64
+      BUILD_GOOS: linux
       LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
       OTLP_METRIC_INTERVAL: 5s
@@ -218,6 +226,8 @@ steps:
       queue: k8s-m6id12xlarge
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:kuttl-v1-nodepools
     env:
+      BUILD_GOARCH: amd64
+      BUILD_GOOS: linux
       LOG_LEVEL: trace
       OTLP_DIR: /work/artifacts
       OTLP_METRIC_INTERVAL: 5s
