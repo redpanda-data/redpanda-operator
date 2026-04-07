@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	clientgo "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -1220,8 +1221,46 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 				t.Logf("[%s]   condition %s: status=%s reason=%s observedGeneration=%d message=%s",
 					prefix, cond.Type, cond.Status, cond.Reason, cond.ObservedGeneration, cond.Message)
 			}
+			// Dump broker pod logs to understand admin API errors.
+			s.dumpRedpandaPodLogs(t, ctx, c, rp)
 		}
 		require.NoError(t, err)
+	}
+}
+
+func (s *RedpandaControllerSuite) dumpRedpandaPodLogs(t testing.TB, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda) {
+	t.Helper()
+
+	var pods corev1.PodList
+	if err := c.List(ctx, &pods, client.InNamespace(rp.Namespace), client.MatchingLabels{
+		"app.kubernetes.io/instance": rp.Name,
+		"app.kubernetes.io/name":     "redpanda",
+	}); err != nil {
+		t.Logf("[%s] failed to list redpanda pods: %v", t.Name(), err)
+		return
+	}
+
+	cfg := s.env.RESTConfig()
+	clientset, err := clientgo.NewForConfig(cfg)
+	if err != nil {
+		t.Logf("[%s] failed to create clientset for pod logs: %v", t.Name(), err)
+		return
+	}
+
+	tailLines := int64(100)
+	for _, pod := range pods.Items {
+		for _, container := range pod.Spec.Containers {
+			req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+				Container: container.Name,
+				TailLines: &tailLines,
+			})
+			logs, err := req.DoRaw(ctx)
+			if err != nil {
+				t.Logf("[%s] failed to get logs for pod %s/%s: %v", t.Name(), pod.Name, container.Name, err)
+				continue
+			}
+			t.Logf("[%s] === Pod %s container %s (last %d lines) ===\n%s", t.Name(), pod.Name, container.Name, tailLines, string(logs))
+		}
 	}
 }
 

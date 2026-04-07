@@ -309,6 +309,7 @@ func (s *Syncer) Sync(ctx context.Context, desired map[string]any, superusers []
 	} else {
 		result, err := s.Client.PatchClusterConfig(ctx, normalized, toRemove)
 		if err != nil {
+			logger.Error(err, "failed to patch cluster config", "normalized", normalized, "toRemove", toRemove)
 			return nil, err
 		}
 
