@@ -110276,10 +110276,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-<<<<<<< HEAD
         image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.3
-=======
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
         name: bootstrap-yaml-envsubst
         resources:
           limits:
