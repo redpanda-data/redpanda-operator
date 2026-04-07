@@ -51,6 +51,43 @@ const (
 	certManagerChartversion = "v1.17.2"
 )
 
+var DefaultValues = `
+sync:
+  fromHost:
+    nodes:
+      enabled: true
+      selector:
+        all: true
+experimental:
+  deploy:
+    vcluster:
+      helm:
+      - chart:
+          name: cert-manager
+          repo: https://charts.jetstack.io
+          version: v1.17.2
+        values: |
+          installCRDs: true
+        release:
+          name: cert-manager
+          namespace: cert-manager
+rbac:
+  role:
+    extraRules:
+       - apiGroups:
+           - ""
+         resources:
+           - services/status
+         verbs:
+           - create
+           - delete
+           - patch
+           - update
+           - get
+           - list
+           - watch
+`
+
 type Cluster struct {
 	config     *kube.RESTConfig
 	hostConfig *kube.RESTConfig
@@ -58,6 +95,43 @@ type Cluster struct {
 	release    helm.Release
 	namespace  *corev1.Namespace
 	scheme     *runtime.Scheme
+}
+
+type VclusterOptions struct {
+	name   string
+	values helm.RawYAML
+}
+
+type Option interface {
+	Apply(opts *VclusterOptions)
+}
+
+type nameOption struct {
+	name string
+}
+
+func (o *nameOption) Apply(opts *VclusterOptions) {
+	opts.name = o.name
+}
+
+func WithName(name string) Option {
+	return &nameOption{name: name}
+}
+
+type valuesOption struct {
+	values []byte
+}
+
+func (o *valuesOption) Apply(opts *VclusterOptions) {
+	opts.values = o.values
+}
+
+func WithValues(values helm.RawYAML) Option {
+	return &valuesOption{values: values}
+}
+
+func WithDefaultValues() Option {
+	return WithValues(helm.RawYAML(DefaultValues))
 }
 
 func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {
@@ -100,8 +174,8 @@ func NewInShared(ctx context.Context) (*Cluster, error) {
 	return cl, nil
 }
 
-func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
-	ctx, cancel := context.WithTimeoutCause(ctx, 3*time.Minute, errors.New("vCluster creation timed out"))
+func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster, error) {
+	ctx, cancel := context.WithTimeoutCause(ctx, 5*time.Minute, errors.New("vCluster creation timed out"))
 	defer cancel()
 
 	c, err := client.New(config, client.Options{})
@@ -109,14 +183,64 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	vClusterOptions := VclusterOptions{}
+	for _, opt := range opts {
+		opt.Apply(&vClusterOptions)
+	}
+
+	if vClusterOptions.values == nil {
+		WithDefaultValues().Apply(&vClusterOptions)
+	}
+
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "vcluster-",
 		},
 	}
-	if err := c.Create(ctx, namespace); err != nil {
-		return nil, errors.WithStack(err)
+
+	if vClusterOptions.name != "" {
+		namespace = &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: vClusterOptions.name,
+			},
+		}
 	}
+
+	createErr := c.Create(ctx, namespace)
+	if createErr != nil {
+		if !k8sapierrors.IsAlreadyExists(createErr) {
+			return nil, errors.WithStack(createErr)
+		}
+		// For named vclusters, a stale namespace from a previous failed run
+		// may exist. Delete it and recreate to start clean.
+		if vClusterOptions.name != "" {
+			if err := c.Delete(ctx, namespace); err != nil {
+				return nil, errors.Wrap(err, "deleting stale vcluster namespace")
+			}
+			// Wait for namespace to be fully deleted before recreating.
+			if err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
+				err := c.Get(ctx, client.ObjectKeyFromObject(namespace), namespace)
+				return k8sapierrors.IsNotFound(err), nil
+			}); err != nil {
+				return nil, errors.Wrap(err, "waiting for stale namespace deletion")
+			}
+			namespace = &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: vClusterOptions.name,
+				},
+			}
+			if err := c.Create(ctx, namespace); err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
+	}
+
+	// On failure, dump diagnostics from the host namespace to aid debugging.
+	defer func() {
+		if err != nil {
+			dumpVClusterDiagnostics(ctx, c, namespace.Name)
+		}
+	}()
 
 	hc, err := helm.New(helm.Options{
 		KubeConfig: config,
@@ -133,43 +257,7 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		Name:      namespace.Name,
 		Namespace: namespace.Name,
 		Version:   vClusterChartVersion,
-		Values: map[string]any{
-			"sync": map[string]any{
-				"fromHost": map[string]any{
-					"nodes": map[string]any{
-						"enabled": true,
-						"selector": map[string]any{
-							"all": true,
-						},
-					},
-				},
-			},
-			// TODO we can select other k8s distros. By default full k8s is
-			// run. Swapping to k3s might result in some speed ups but initial
-			// tests indicated that something wasn't working.
-			"experimental": map[string]any{
-				"deploy": map[string]any{
-					"vcluster": map[string]any{
-						// Being able to vendor the chart would save us a bit of time and flakiness.
-						// There's support for a "bundle" containing a targz.
-						"helm": []map[string]any{
-							{
-								"chart": map[string]any{
-									"name":    "cert-manager",
-									"repo":    "https://charts.jetstack.io",
-									"version": certManagerChartversion,
-								},
-								"values": "\ninstallCRDs: true\n",
-								"release": map[string]any{
-									"name":      "cert-manager",
-									"namespace": "cert-manager",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		Values:    vClusterOptions.values,
 	})
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -229,6 +317,62 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		hostConfig: config,
 		namespace:  namespace,
 	}, nil
+}
+
+// dumpVClusterDiagnostics logs pod state and events from the host namespace
+// when vcluster creation fails.
+func dumpVClusterDiagnostics(ctx context.Context, c client.Client, namespace string) {
+	diagCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	logger := log.FromContext(ctx)
+
+	var podList corev1.PodList
+	if err := c.List(diagCtx, &podList, client.InNamespace(namespace)); err != nil {
+		logger.Error(err, "failed to list pods for vcluster diagnostics")
+		return
+	}
+
+	logger.Info("vcluster creation failed, dumping pod state", "namespace", namespace)
+	for _, pod := range podList.Items {
+		logger.Info("pod status",
+			"pod", pod.Name,
+			"phase", pod.Status.Phase,
+			"reason", pod.Status.Reason,
+		)
+		for _, cs := range pod.Status.ContainerStatuses {
+			if cs.State.Waiting != nil {
+				logger.Info("container waiting",
+					"pod", pod.Name,
+					"container", cs.Name,
+					"reason", cs.State.Waiting.Reason,
+					"message", cs.State.Waiting.Message,
+				)
+			}
+			if cs.State.Terminated != nil {
+				logger.Info("container terminated",
+					"pod", pod.Name,
+					"container", cs.Name,
+					"exitCode", cs.State.Terminated.ExitCode,
+					"reason", cs.State.Terminated.Reason,
+				)
+			}
+		}
+	}
+
+	var eventList corev1.EventList
+	if err := c.List(diagCtx, &eventList, client.InNamespace(namespace)); err != nil {
+		logger.Error(err, "failed to list events for vcluster diagnostics")
+		return
+	}
+	for _, event := range eventList.Items {
+		logger.Info("event",
+			"type", event.Type,
+			"object", fmt.Sprintf("%s/%s", event.InvolvedObject.Kind, event.InvolvedObject.Name),
+			"message", event.Message,
+			"count", event.Count,
+		)
+	}
 }
 
 func (c *Cluster) Name() string {

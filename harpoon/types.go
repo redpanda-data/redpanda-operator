@@ -62,7 +62,11 @@ type TestingT interface {
 	UpgradeHelmChart(ctx context.Context, release, chart string, options helm.UpgradeOptions)
 
 	Namespace() string
+	FeatureName() string
+	FeatureTags() []string
 	RestConfig() *rest.Config
+
+	DumpDiagnostics(ctx context.Context)
 
 	RequireCondition(expected metav1.Condition, conditions []metav1.Condition)
 	HasCondition(expected metav1.Condition, conditions []metav1.Condition) bool

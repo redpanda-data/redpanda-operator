@@ -12,4 +12,8 @@ package steps
 var (
 	DefaultRedpandaRepo = "redpandadata/redpanda-unstable"
 	DefaultRedpandaTag  = "v26.1.1"
+
+	// OperatorNamespace is the namespace where the shared operator is installed.
+	// Set by the test suite setup. Used by metrics tests to find the operator deployment.
+	OperatorNamespace = "default"
 )

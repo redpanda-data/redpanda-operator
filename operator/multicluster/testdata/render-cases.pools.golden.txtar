@@ -220,6 +220,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -583,6 +585,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -942,6 +946,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -1301,6 +1307,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -1662,6 +1670,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -2021,6 +2031,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -2383,6 +2395,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -2742,6 +2756,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -3095,6 +3111,8 @@
             name: redpanda-default-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -3448,6 +3466,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -3801,6 +3821,8 @@
             name: redpanda-default-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -4164,6 +4186,8 @@
             name: redpanda-default-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/sh
           - -c
@@ -4572,6 +4596,8 @@
             name: redpanda-default-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - args:
           - -c
           - trap "exit 0" TERM; exec /etc/secrets/fs-validator/scripts/fsValidator.sh
@@ -4994,6 +5020,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/sh
           - -c
@@ -5392,6 +5420,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -5751,6 +5781,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -6110,6 +6142,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -6469,6 +6503,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -6830,6 +6866,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -7190,6 +7228,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -7561,6 +7601,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -7935,6 +7977,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -8300,6 +8344,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -8659,6 +8705,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -9004,6 +9052,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -9366,6 +9416,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/sh
           - -c
@@ -9750,6 +9802,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/sh
           - -c
@@ -10134,6 +10188,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/sh
           - -c
@@ -10534,6 +10590,8 @@
             name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c
@@ -10899,6 +10957,8 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
         - command:
           - /bin/bash
           - -c

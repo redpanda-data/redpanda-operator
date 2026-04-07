@@ -264,8 +264,16 @@ tasks:
       _PKG:
         sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
       PKG: '{{ .PKG | default ._PKG }}'
+      # When using gotestsum with --packages, packages must be a single
+      # quoted arg and -- separates gotestsum flags from go test args.
+      _USE_PACKAGES: '{{if contains "--packages" .GO_TEST_RUNNER}}true{{end}}'
     cmds:
-    - '{{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}'
+    - |
+      {{- if ._USE_PACKAGES}}
+      {{.GO_TEST_RUNNER}} "{{.PKG}}" -- {{.CLI_ARGS}}
+      {{- else}}
+      {{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}
+      {{- end}}
 
   test:integration:
     desc: "Run all integration tests (~90m)"
@@ -284,7 +292,7 @@ tasks:
       vars:
         GO_TEST_RUNNER:
           ref: .GO_TEST_RUNNER
-        CLI_ARGS: '{{.CLI_ARGS}} -p=1 -run {{.RUN}} -timeout 60m -tags integration'
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 60m -tags integration'
 
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
@@ -330,6 +338,10 @@ tasks:
       TEST_KUBE_VERSION: '{{ .TEST_KUBE_VERSION | default .DEFAULT_TEST_KUBE_VERSION }}'
       TEST_COREDNS_VERSION: '{{ .TEST_COREDNS_VERSION | default .DEFAULT_TEST_COREDNS_VERSION }}'
       IMAGES:
+      # k3d infrastructure images — pre-pulling avoids slow pulls during cluster creation.
+      - rancher/k3s:v1.32.13-k3s1
+      - ghcr.io/k3d-io/k3d-tools:5.8.3
+      - ghcr.io/k3d-io/k3d-proxy:5.8.3
       - quay.io/jetstack/cert-manager-controller:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-cainjector:{{.TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-startupapicheck:{{.TEST_CERTMANAGER_VERSION}}
@@ -339,20 +351,38 @@ tasks:
       - quay.io/jetstack/cert-manager-webhook:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
       - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
+      - redpandadata/redpanda-operator:v25.1.3
+      - redpandadata/redpanda-operator:v25.2.2
       - redpandadata/redpanda-operator:v25.3.1
       - redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
       - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}
       - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
       - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
       - coredns/coredns:{{.TEST_COREDNS_VERSION}}
+      - redpandadata/redpanda-unstable:v24.3.1-rc4
       - redpandadata/redpanda-unstable:v24.3.1-rc8
+      - redpandadata/redpanda-unstable:v25.2.1-rc7
       - redpandadata/redpanda-unstable:v25.3.1-rc2
+      - redpandadata/redpanda-unstable:v25.3.1-rc4
       - redpandadata/redpanda-unstable:v26.1.1-rc5
+      - redpandadata/redpanda-nightly:v0.0.0-20260330git0d4187b
+      - redpandadata/redpanda-operator-nightly:v0.0.0-20250129gita89e202
+      - redpandadata/redpanda:v23.2.8
+      - redpandadata/redpanda:v24.2.9
+      - redpandadata/redpanda:v25.1.1
+      - redpandadata/redpanda:v25.2.1
+      - redpandadata/redpanda:v25.2.11
       - redpandadata/redpanda:v26.1.1
+      - redpandadata/redpanda:v26.1.2
 
     cmds:
-      - for: {var: IMAGES}
-        cmd: docker inspect {{.ITEM}} > /dev/null || docker pull {{.ITEM}}
+      - |
+        pids=""
+        {{range .IMAGES}}
+        (docker inspect "{{.}}" > /dev/null 2>&1 || docker pull -q "{{.}}") &
+        pids="$pids $!"
+        {{end}}
+        for pid in $pids; do wait "$pid" || true; done
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"

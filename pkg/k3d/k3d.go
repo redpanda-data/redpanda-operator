@@ -21,6 +21,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -29,6 +30,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
+	"golang.org/x/sys/unix"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -36,6 +38,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 const (
@@ -96,7 +100,7 @@ func defaultClusterConfig() *clusterConfig {
 
 	return &clusterConfig{
 		agents:  3,
-		timeout: 3 * time.Minute,
+		timeout: 5 * time.Minute,
 		image:   image,
 	}
 }
@@ -175,6 +179,15 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 		opt.apply(config)
 	}
 
+	// Use a file-based lock to coordinate cluster creation across parallel
+	// test processes (go test -p=N). The in-process sync.Mutex on Cluster
+	// only protects goroutines within a single process.
+	unlock, err := lockFile(name + "-create")
+	if err != nil {
+		return nil, errors.Wrap(err, "acquiring cluster lock")
+	}
+	defer unlock()
+
 	cluster, err := NewCluster(name, opts...)
 	if err != nil {
 		if errors.Is(err, ErrExists) {
@@ -183,11 +196,48 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 		return nil, err
 	}
 
-	if err := cluster.ImportImage("localhost/redpanda-operator:dev"); err != nil {
+	if err := cluster.importImages("localhost/redpanda-operator:dev"); err != nil {
 		return nil, err
 	}
 
 	return cluster, nil
+}
+
+// imageMarkerPath returns a file path used to track whether an image has
+// already been imported into a given k3d cluster.
+func imageMarkerPath(clusterName, image string) string {
+	// Sanitize image name for use as a filename.
+	safe := strings.NewReplacer("/", "_", ":", "_", ".", "_").Replace(image)
+	return filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s-img-%s", clusterName, safe))
+}
+
+func imageAlreadyImported(clusterName, image string) bool {
+	_, err := os.Stat(imageMarkerPath(clusterName, image))
+	return err == nil
+}
+
+func markImageImported(clusterName, image string) {
+	os.WriteFile(imageMarkerPath(clusterName, image), nil, 0o600) //nolint:errcheck
+}
+
+// lockFile acquires an exclusive file lock for the given cluster name.
+// It returns an unlock function that must be called when the critical section is done.
+func lockFile(name string) (func(), error) {
+	lockPath := filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s.lock", name))
+	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := unix.Flock(int(f.Fd()), unix.LOCK_EX); err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	return func() {
+		unix.Flock(int(f.Fd()), unix.LOCK_UN) //nolint:errcheck
+		f.Close()
+	}, nil
 }
 
 func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
@@ -221,9 +271,9 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		// Pod eviction happens in a timely fashion.
 		`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
 		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
-		// Disable the traefik Ingress controller. We don't use Ingress for
-		// anything and will install a standalone version if one is required.
+		// Disable bundled k3s components that we don't use in tests.
 		`--k3s-arg`, `--disable=traefik@server:*`,
+		`--k3s-arg`, `--disable=servicelb@server:*`,
 		`--network`, config.network,
 		`--verbose`,
 	}
@@ -306,16 +356,42 @@ func (c *Cluster) RESTConfig() *kube.RESTConfig {
 }
 
 func (c *Cluster) ImportImage(images ...string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if out, err := exec.Command(
-		"k3d",
-		"image",
-		"import",
-		fmt.Sprintf("--cluster=%s", c.Name),
-		strings.Join(images, " "),
-	).CombinedOutput(); err != nil {
+	// Use a file-based lock to coordinate image imports across parallel
+	// test processes. k3d creates a temporary container named
+	// "k3d-<cluster>-tools" for imports which will conflict if multiple
+	// processes import concurrently.
+	unlock, err := lockFile(c.Name + "-import")
+	if err != nil {
+		return errors.Wrap(err, "acquiring cluster lock for image import")
+	}
+	defer unlock()
+
+	return c.importImages(images...)
+}
+
+// importImages is the lock-free implementation of ImportImage, for use by
+// callers that already hold a lock (e.g. GetOrCreate).
+func (c *Cluster) importImages(images ...string) error {
+	// Filter out images that have already been imported into this cluster
+	// (by a previous test process). Uses marker files in /tmp to track.
+	var needed []string
+	for _, img := range images {
+		if !imageAlreadyImported(c.Name, img) {
+			needed = append(needed, img)
+		}
+	}
+	if len(needed) == 0 {
+		return nil
+	}
+
+	args := append([]string{"image", "import", fmt.Sprintf("--cluster=%s", c.Name)}, needed...)
+	if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
+	}
+
+	// Mark all images as imported.
+	for _, img := range needed {
+		markImageImported(c.Name, img)
 	}
 	return nil
 }
@@ -409,7 +485,7 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 	}
 
 	// Wait for all bootstrapping jobs to finish running.
-	return wait.PollUntilContextTimeout(ctx, time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
 		var jobs batchv1.JobList
 		if err := cl.List(ctx, &jobs, client.InNamespace("kube-system")); err != nil {
 			return false, err
@@ -426,7 +502,17 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		}
 
 		return true, nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	// If manifests were installed, cert-manager was deployed via the k3s
+	// helm controller. Wait for its webhook to be ready before returning,
+	// otherwise helm operations that create Certificate resources will fail.
+	if !c.skipManifests {
+		return testutil.WaitForCertManagerWebhook(ctx, cl, 2*time.Minute)
+	}
+	return nil
 }
 
 // startupManifests parses the embedded FS of Kubernetes manifests as a slice

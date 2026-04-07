@@ -1,6 +1,7 @@
+@serial
 Feature: Decommissioning brokers
   # note that this test requires both the decommissioner and pvc unbinder
-  # run in order to pass  
+  # run in order to pass
   @skip:gke @skip:aks @skip:eks
   Scenario: Pruning brokers on failed nodes
     Given I create a basic cluster "decommissioning" with 3 nodes
