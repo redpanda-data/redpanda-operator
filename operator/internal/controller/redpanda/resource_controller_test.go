@@ -607,7 +607,6 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 
 	require.Equal(t, int32(size/2), reconciler.deletes.Load())
 	require.Equal(t, int32(size), reconciler.syncs.Load())
-
 }
 
 func TestIsNetworkDialError(t *testing.T) {

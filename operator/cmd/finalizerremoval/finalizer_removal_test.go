@@ -69,8 +69,8 @@ func TestRemoveFinalizersForGVK(t *testing.T) {
 		obj.SetGroupVersionKind(gvk)
 		obj.SetName(name)
 		obj.SetNamespace(ns)
-		// Set required spec field so the API server accepts the object.
-		_ = unstructured.SetNestedMap(obj.Object, map[string]interface{}{}, "spec")
+		// CRDs require spec.cluster.clusterRef to pass validation.
+		_ = unstructured.SetNestedField(obj.Object, "dummy", "spec", "cluster", "clusterRef", "name")
 		require.NoError(t, k8sClient.Create(ctx, obj))
 		// Add finalizer via patch after creation.
 		patch := client.MergeFrom(obj.DeepCopy())
@@ -116,7 +116,7 @@ func TestRemoveFinalizersForGVK(t *testing.T) {
 		obj.SetGroupVersionKind(gvk)
 		obj.SetName("no-finalizer-topic")
 		obj.SetNamespace("default")
-		_ = unstructured.SetNestedMap(obj.Object, map[string]interface{}{}, "spec")
+		_ = unstructured.SetNestedField(obj.Object, "dummy", "spec", "cluster", "clusterRef", "name")
 		require.NoError(t, k8sClient.Create(ctx, obj))
 
 		require.NoError(t, removeFinalizersForGVK(ctx, k8sClient, gvk))
