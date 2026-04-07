@@ -373,6 +373,7 @@ tasks:
       - redpandadata/redpanda:v25.2.1
       - redpandadata/redpanda:v25.2.11
       - redpandadata/redpanda:v26.1.1
+      - redpandadata/redpanda:v26.1.2
 
     cmds:
       - |
