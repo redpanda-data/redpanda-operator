@@ -13,6 +13,8 @@ Feature: Multicluster Operator
       name: cluster
       namespace: default
     spec:
+      external:
+        enabled: false
       rbac:
         enabled: true
     """

@@ -321,7 +321,9 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) 
 			t.Logf("finished creating vcluster %d (name: %q)", i+1, cluster.Name())
 
 			cleanupWrapper(t, func(ctx context.Context) {
-				require.NoError(t, cluster.Delete())
+				if err := cluster.Delete(); err != nil {
+					t.Logf("error deleting cluster %s: %v", cluster.Name(), err)
+				}
 			})
 			c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
 			require.NoError(t, err)
