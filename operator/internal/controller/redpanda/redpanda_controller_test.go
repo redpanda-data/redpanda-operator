@@ -602,7 +602,7 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 				rp := o.(*redpandav1alpha2.Redpanda)
 
 				for _, cond := range rp.Status.Conditions {
-					if cond.Type == redpandav1alpha2.ClusterLicenseValid {
+					if cond.Type == statuses.ClusterLicenseValid {
 						// grab the first non-unknown status
 						if cond.Status != metav1.ConditionUnknown {
 							licenseStatus = rp.Status.LicenseStatus
