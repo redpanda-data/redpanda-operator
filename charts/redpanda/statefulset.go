@@ -382,6 +382,10 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 				Name:      "base-config",
 				MountPath: "/etc/redpanda",
 			},
+			corev1.VolumeMount{
+				Name:      `datadir`,
+				MountPath: `/var/lib/redpanda/data`,
+			},
 		),
 	}
 }
