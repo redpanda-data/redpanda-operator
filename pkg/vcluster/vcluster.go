@@ -216,9 +216,41 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 		}
 	}
 
-	if err := c.Create(ctx, namespace); err != nil {
-		return nil, errors.WithStack(err)
+	createErr := c.Create(ctx, namespace)
+	if createErr != nil {
+		if !k8sapierrors.IsAlreadyExists(createErr) {
+			return nil, errors.WithStack(createErr)
+		}
+		// For named vclusters, a stale namespace from a previous failed run
+		// may exist. Delete it and recreate to start clean.
+		if vClusterOptions.name != "" {
+			if err := c.Delete(ctx, namespace); err != nil {
+				return nil, errors.Wrap(err, "deleting stale vcluster namespace")
+			}
+			// Wait for namespace to be fully deleted before recreating.
+			if err := wait.PollUntilContextTimeout(ctx, time.Second, time.Minute, true, func(ctx context.Context) (bool, error) {
+				err := c.Get(ctx, client.ObjectKeyFromObject(namespace), namespace)
+				return k8sapierrors.IsNotFound(err), nil
+			}); err != nil {
+				return nil, errors.Wrap(err, "waiting for stale namespace deletion")
+			}
+			namespace = &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: vClusterOptions.name,
+				},
+			}
+			if err := c.Create(ctx, namespace); err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
 	}
+
+	// On failure, dump diagnostics from the host namespace to aid debugging.
+	defer func() {
+		if err != nil {
+			dumpVClusterDiagnostics(ctx, c, namespace.Name)
+		}
+	}()
 
 	hc, err := helm.New(helm.Options{
 		KubeConfig: config,
@@ -297,6 +329,62 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 		hostConfig: config,
 		namespace:  namespace,
 	}, nil
+}
+
+// dumpVClusterDiagnostics logs pod state and events from the host namespace
+// when vcluster creation fails.
+func dumpVClusterDiagnostics(ctx context.Context, c client.Client, namespace string) {
+	diagCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	logger := log.FromContext(ctx)
+
+	var podList corev1.PodList
+	if err := c.List(diagCtx, &podList, client.InNamespace(namespace)); err != nil {
+		logger.Error(err, "failed to list pods for vcluster diagnostics")
+		return
+	}
+
+	logger.Info("vcluster creation failed, dumping pod state", "namespace", namespace)
+	for _, pod := range podList.Items {
+		logger.Info("pod status",
+			"pod", pod.Name,
+			"phase", pod.Status.Phase,
+			"reason", pod.Status.Reason,
+		)
+		for _, cs := range pod.Status.ContainerStatuses {
+			if cs.State.Waiting != nil {
+				logger.Info("container waiting",
+					"pod", pod.Name,
+					"container", cs.Name,
+					"reason", cs.State.Waiting.Reason,
+					"message", cs.State.Waiting.Message,
+				)
+			}
+			if cs.State.Terminated != nil {
+				logger.Info("container terminated",
+					"pod", pod.Name,
+					"container", cs.Name,
+					"exitCode", cs.State.Terminated.ExitCode,
+					"reason", cs.State.Terminated.Reason,
+				)
+			}
+		}
+	}
+
+	var eventList corev1.EventList
+	if err := c.List(diagCtx, &eventList, client.InNamespace(namespace)); err != nil {
+		logger.Error(err, "failed to list events for vcluster diagnostics")
+		return
+	}
+	for _, event := range eventList.Items {
+		logger.Info("event",
+			"type", event.Type,
+			"object", fmt.Sprintf("%s/%s", event.InvolvedObject.Kind, event.InvolvedObject.Name),
+			"message", event.Message,
+			"count", event.Count,
+		)
+	}
 }
 
 func (c *Cluster) Name() string {

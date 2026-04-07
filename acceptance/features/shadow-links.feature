@@ -6,7 +6,7 @@ Feature: ShadowLink CRDs
     And I enable feature "enable_shadow_linking" on cluster "basic"
     And I enable feature "enable_shadow_linking" on cluster "sasl"
     # enable trace logging on the target cluster so we can debug a bit easier
-    And I enable "trace" logging for the "cluster_link" logger on cluster "sasl"
+    And I enable "trace" logging for the "shadow_link_service" logger on cluster "sasl"
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Manage ShadowLink

@@ -11,16 +11,18 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,6 +39,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
+const sharedOperatorNamespace = "redpanda-operator"
+
 var (
 	imageRepo = "localhost/redpanda-operator"
 	imageTag  = "dev"
@@ -51,8 +55,9 @@ func getSuite(t *testing.T) *framework.Suite {
 var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 	steps.DefaultRedpandaRepo = os.Getenv("TEST_REDPANDA_REPO")
 	steps.DefaultRedpandaTag = os.Getenv("TEST_REDPANDA_VERSION")
+	steps.OperatorNamespace = sharedOperatorNamespace
 
-	return framework.SuiteBuilderFromFlags().
+	builder := framework.SuiteBuilderFromFlags().
 		Strict().
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
@@ -64,8 +69,15 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"rancher/mirrored-library-busybox:1.36.1",
 			steps.DefaultRedpandaRepo + ":" + steps.DefaultRedpandaTag,
 			"redpandadata/redpanda-operator:v2.4.5",
+			// Operator images used by upgrade features (overridden from docker.redpanda.com).
+			"redpandadata/redpanda-operator:v25.1.3",
+			"redpandadata/redpanda-operator:v25.2.2",
+			"redpandadata/redpanda-operator:v25.3.1",
 			"redpandadata/redpanda:v25.1.1",
 			"redpandadata/redpanda:v25.2.1",
+			// Images used by upgrade and upgrade-regressions features.
+			"redpandadata/redpanda:v25.2.11",
+			"redpandadata/redpanda-unstable:v25.3.1-rc4",
 			"quay.io/jetstack/cert-manager-controller:v1.14.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
 			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
@@ -73,76 +85,55 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"ghcr.io/loft-sh/kubernetes:v1.33.4",
 			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
 		}...).
-		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install).
-		WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
-			Name:            "cert-manager",
-			Namespace:       "cert-manager",
-			Version:         "v1.14.2",
-			CreateNamespace: true,
-			Values: map[string]any{
-				"installCRDs": true,
-				"global": map[string]any{
-					// Make leader election more aggressive as cert-manager appears to
-					// not release it when uninstalled.
-					"leaderElection": map[string]any{
-						"renewDeadline": "10s",
-						"retryPeriod":   "5s",
+		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install)
+
+	// In multicluster setup mode, skip cert-manager and operator installation
+	// as each vCluster instance manages its own.
+	if !testutil.MultiClusterSetupOnly() {
+		builder = builder.
+			WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
+				Name:            "cert-manager",
+				Namespace:       "cert-manager",
+				Version:         "v1.14.2",
+				CreateNamespace: true,
+				Values: map[string]any{
+					"installCRDs": true,
+					"global": map[string]any{
+						"leaderElection": map[string]any{
+							"renewDeadline": "10s",
+							"retryPeriod":   "5s",
+						},
 					},
 				},
-			},
-		}).
-		AfterSetup(waitForCertManagerWebhook).
+			}).
+			AfterSetup(waitForCertManagerWebhook).
+			AfterSetup(installSharedOperator)
+	}
+
+	builder = builder.
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
 			// this actually switches namespaces, run it first
-			namespace := t.IsolateNamespace(ctx)
-
-			if slices.ContainsFunc(tags, shouldSkipOperatorInstall) {
-				return
-			}
-			t.Log("Installing default Redpanda operator chart")
-			t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
-				Name:      "redpanda-operator",
-				Namespace: namespace,
-				Values: operatorchart.PartialValues{
-					LogLevel: ptr.To("trace"),
-					Image: &operatorchart.PartialImage{
-						Tag:        ptr.To(imageTag),
-						Repository: ptr.To(imageRepo),
-					},
-					CRDs: &operatorchart.PartialCRDs{
-						Enabled:      ptr.To(true),
-						Experimental: ptr.To(true),
-					},
-					VectorizedControllers: &operatorchart.PartialVectorizedControllers{
-						Enabled: ptr.To(true),
-					},
-					AdditionalCmdFlags: []string{
-						// For the v1 controllers since otherwise we'll attempt to always
-						// pull the locally built operator which will result in errors
-						"--configurator-image-pull-policy=IfNotPresent",
-						// These are needed for running decommissioning tests.
-						"--additional-controllers=nodeWatcher,decommission",
-						"--unbind-pvcs-after=5s",
-						// This is set to a lower timeout due to the way that our internal
-						// admin client handles retries to brokers that are gone but still
-						// remain in its internal broker list in-memory. Eventually the client
-						// figures out which brokers are still active, but not until a large
-						// chunk of time has past and a connection a no longer existing broker
-						// times out. This makes the timeout substantially faster so that in
-						// tests where brokers might intentionally go away we aren't sitting
-						// for and additional 30+ seconds every reconciliation before the client's
-						// broker list is pruned.
-						"--cluster-connection-timeout=500ms",
-						"--enable-shadowlinks",
-					},
-				},
-			})
-			t.Log("Successfully installed Redpanda operator chart")
+			t.IsolateNamespace(ctx)
 		}).
-		RegisterTag("operator", 1, OperatorTag).
+		OnDiagnostics(func(ctx context.Context, t framework.TestingT) {
+			// Only dump shared operator logs for features that use the
+			// shared operator. Features with @vcluster or @multicluster
+			// run their own operators inside vclusters.
+			for _, tag := range t.FeatureTags() {
+				if tag == "vcluster" || tag == "multicluster" {
+					return
+				}
+			}
+			dumpSharedOperatorLogs(ctx, t)
+		}).
 		RegisterTag("cluster", 2, ClusterTag).
-		ExitOnCleanupFailures().
-		Build()
+		ExitOnCleanupFailures()
+
+	if testutil.MultiClusterSetupOnly() {
+		builder = builder.SkipCleanup()
+	}
+
+	return builder.Build()
 })
 
 func TestMain(m *testing.M) {
@@ -203,26 +194,92 @@ func duplicateManifests(t framework.TestingT, directory string) string {
 	return filepath.Join(tmp, directory)
 }
 
-func OperatorTag(ctx context.Context, t framework.TestingT, args ...string) context.Context {
-	require.Greater(t, len(args), 0, "operator tags can only be used with additional arguments")
-	name := args[0]
-	if name == "none" {
-		t.Log("Skipping Redpanda operator installation")
-		return ctx
+// installSharedOperator installs a single Redpanda operator instance that is
+// shared by all features that don't use @operator:none. This avoids creating
+// one operator per feature and allows parallel features to share a single
+// controller.
+func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
+	helmClient, err := helm.New(helm.Options{KubeConfig: restConfig})
+	if err != nil {
+		return err
 	}
 
-	t.Logf("Installing Redpanda operator chart: %q", name)
-	t.InstallHelmChart(ctx, "../operator/chart", helm.InstallOptions{
-		Name:       "redpanda-operator",
-		Namespace:  t.Namespace(),
-		ValuesFile: filepath.Join("operator", fmt.Sprintf("%s.yaml", name)),
+	_, err = helmClient.Install(ctx, "../operator/chart", helm.InstallOptions{
+		Name:            "redpanda-operator",
+		Namespace:       sharedOperatorNamespace,
+		CreateNamespace: true,
+		Values: operatorchart.PartialValues{
+			LogLevel: ptr.To("trace"),
+			Image: &operatorchart.PartialImage{
+				Tag:        ptr.To(imageTag),
+				Repository: ptr.To(imageRepo),
+			},
+			CRDs: &operatorchart.PartialCRDs{
+				Enabled:      ptr.To(true),
+				Experimental: ptr.To(true),
+			},
+			VectorizedControllers: &operatorchart.PartialVectorizedControllers{
+				Enabled: ptr.To(true),
+			},
+			AdditionalCmdFlags: []string{
+				"--configurator-image-pull-policy=IfNotPresent",
+				"--additional-controllers=nodeWatcher,decommission",
+				"--unbind-pvcs-after=5s",
+				"--cluster-connection-timeout=500ms",
+				"--enable-shadowlinks",
+			},
+		},
 	})
-
-	return ctx
+	// Tolerate "already installed" errors from rerun-fails retries where
+	// the operator was installed in the first run.
+	if err != nil && strings.Contains(err.Error(), "cannot re-use") {
+		return nil
+	}
+	return err
 }
 
-func shouldSkipOperatorInstall(tag framework.ParsedTag) bool {
-	return tag.Name == "operator"
+// dumpSharedOperatorLogs collects logs from the shared operator pod to help
+// debug cases where the operator isn't reconciling resources.
+func dumpSharedOperatorLogs(ctx context.Context, t framework.TestingT) {
+	var pods corev1.PodList
+	if err := t.List(ctx, &pods, client.InNamespace(sharedOperatorNamespace)); err != nil {
+		t.Logf("[diagnostics/shared-operator] error listing pods: %v", err)
+		return
+	}
+
+	for _, pod := range pods.Items {
+		t.Logf("[diagnostics/shared-operator] pod %s: phase=%s", pod.Name, pod.Status.Phase)
+		for _, cs := range pod.Status.ContainerStatuses {
+			t.Logf("[diagnostics/shared-operator]   container %s: ready=%v restarts=%d", cs.Name, cs.Ready, cs.RestartCount)
+			if cs.State.Waiting != nil {
+				t.Logf("[diagnostics/shared-operator]   waiting: %s", cs.State.Waiting.Reason)
+			}
+			if cs.State.Terminated != nil {
+				t.Logf("[diagnostics/shared-operator]   terminated: exitCode=%d reason=%s", cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
+			}
+		}
+	}
+
+	// Dump the last 500 lines of operator logs.
+	for _, pod := range pods.Items {
+		for _, container := range pod.Spec.Containers {
+			logReq := kubernetes.NewForConfigOrDie(t.RestConfig()).CoreV1().Pods(sharedOperatorNamespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+				Container: container.Name,
+				TailLines: ptr.To(int64(500)),
+			})
+			stream, err := logReq.Stream(ctx)
+			if err != nil {
+				t.Logf("[diagnostics/shared-operator] error streaming logs for %s/%s: %v", pod.Name, container.Name, err)
+				continue
+			}
+			logs, err := io.ReadAll(stream)
+			_ = stream.Close()
+			if err != nil {
+				continue
+			}
+			t.Logf("[diagnostics/shared-operator] logs for %s/%s (last 500 lines):\n%s", pod.Name, container.Name, string(logs))
+		}
+	}
 }
 
 func waitForCertManagerWebhook(ctx context.Context, restConfig *rest.Config) error {

@@ -1,4 +1,4 @@
-@operator:none
+@multicluster
 Feature: Multicluster Operator
 
   @skip:gke @skip:aks @skip:eks
