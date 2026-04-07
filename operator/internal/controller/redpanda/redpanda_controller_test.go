@@ -563,12 +563,7 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 	redpandas["license-in-secret"] = rp
 
 	for testCaseName, tc := range redpandas {
-<<<<<<< HEAD
 		s.T().Run(testCaseName, func(t *testing.T) {
-=======
-		tc := tc
-		t.Run(testCaseName, func(t *testing.T) {
->>>>>>> 51f5a3e3 (Add additional field manager removal (#1417))
 			var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
 			s.applyAndWaitFor(func(o client.Object, err error) (bool, error) {
 				if err != nil {

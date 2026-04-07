@@ -235,17 +235,12 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 
 	s.client = s.env.Client()
 
-<<<<<<< HEAD
-	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
-=======
 	// Clean up stale state from a previous failed run (e.g., from
 	// --rerun-fails retries). Remove taints from all nodes so that
 	// pods can schedule and cert-manager webhook stays available.
 	s.cleanupStaleState()
 
-	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
-		mgr := mcmgr.GetLocalManager()
->>>>>>> 51f5a3e3 (Add additional field manager removal (#1417))
+	s.env.SetupManager(s.setupRBAC(), func(mgr ctrl.Manager) error {
 		helmClient, err := helm.New(helm.Options{
 			KubeConfig: mgr.GetConfig(),
 		})
