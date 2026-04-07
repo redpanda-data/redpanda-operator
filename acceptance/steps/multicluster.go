@@ -45,6 +45,13 @@ import (
 
 const (
 	LicenseEnvVar = "REDPANDA_SAMPLE_LICENSE"
+
+	operatorServiceName = "multicluster-operator"
+	operatorGRPCPort    = 9443
+	licenseSecretName   = "redpanda-license"
+	redpandaLabel       = "app.kubernetes.io/name"
+	redpandaLabelValue  = "redpanda"
+	caLifetime          = 48 * time.Hour
 )
 
 type vclusterNodes []*vclusterNode
@@ -131,35 +138,31 @@ func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	}
 }
 
-func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
-	t := framework.T(ctx)
-	for _, node := range v {
-		nodepoolName := nameMap[node.Name()]
-		fullManifest := fmt.Sprintf(`
+func nodepoolManifest(nodeName string, manifest *godog.DocString) []byte {
+	return []byte(fmt.Sprintf(`
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: %s
   namespace: default
-`, nodepoolName) + manifest.Content
+`, nodeName) + manifest.Content)
+}
+
+func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
+	t := framework.T(ctx)
+	for _, node := range v {
+		fullManifest := nodepoolManifest(nameMap[node.Name()], manifest)
 		t.Logf("applying manifest to %q", node.Name())
-		require.NoError(t, node.KubectlApply(ctx, []byte(fullManifest)))
+		require.NoError(t, node.KubectlApply(ctx, fullManifest))
 	}
 }
 
 func (v vclusterNodes) DeleteNodepools(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
 	for _, node := range v {
-		nodepoolName := nameMap[node.Name()]
-		fullManifest := fmt.Sprintf(`
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: NodePool
-metadata:
-  name: %s
-  namespace: default
-`, nodepoolName) + manifest.Content
+		fullManifest := nodepoolManifest(nameMap[node.Name()], manifest)
 		t.Logf("applying manifest to %q", node.Name())
-		require.NoError(t, node.KubectlDelete(ctx, []byte(fullManifest)))
+		require.NoError(t, node.KubectlDelete(ctx, fullManifest))
 	}
 }
 
@@ -174,11 +177,13 @@ func (v vclusterNodes) CheckAll(ctx context.Context, namespacedName types.Namesp
 	t := framework.T(ctx)
 
 	gvk, _ := schema.ParseKindArg(groupVersionKind)
+	require.NotNil(t, gvk, "failed to parse GVK %q", groupVersionKind)
+
 	for _, node := range v {
 		ok := assert.Eventually(t, func() bool {
 			obj, err := t.Scheme().New(*gvk)
 			if err != nil {
-				t.Logf("error creating object for GVK %v: %v", gvk, err)
+				t.Logf("error creating object for GVK %s: %v", groupVersionKind, err)
 				return false
 			}
 
@@ -254,13 +259,13 @@ func applyNodePoolWithStretchCluster(ctx context.Context, t framework.TestingT, 
 
 func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clusterName, name, namespace, groupVersionKind, finalizer string) {
 	nn := types.NamespacedName{Namespace: namespace, Name: name}
+	nodes := getNodes(ctx, clusterName)
 
-	getNodes(ctx, clusterName).CheckAll(ctx, nn, groupVersionKind, func(o client.Object) bool {
+	nodes.CheckAll(ctx, nn, groupVersionKind, func(o client.Object) bool {
 		return slices.Contains(o.GetFinalizers(), finalizer)
 	})
 
 	// After the finalizer is set, the reconciler should have also set SpecSynced=True.
-	nodes := getNodes(ctx, clusterName)
 	for _, node := range nodes {
 		require.Eventually(t, func() bool {
 			var sc redpandav1alpha2.StretchCluster
@@ -268,7 +273,7 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 				t.Logf("error fetching StretchCluster from %s: %v", node.Name(), err)
 				return false
 			}
-			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, "SpecSynced")
 			if cond == nil {
 				t.Logf("SpecSynced condition not yet present on %s", node.Name())
 				return false
@@ -287,124 +292,98 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	redpandaLicense := os.Getenv(LicenseEnvVar)
 	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
 
-	// Build per-vcluster values upfront. The networking config references
-	// other vclusters by name so names must be deterministic.
-	vclusterValuesList := make([]string, clusters)
-	for i := range clusters {
-		vals := vcluster.DefaultValues
-		switch i {
-		case 0:
-			vals += `
-networking:
-  replicateServices:
-    fromHost:
-    - from: vc-1/second-0-x-default-x-vc-1
-      to: default/second-0
-    - from: vc-2/third-0-x-default-x-vc-2
-      to: default/third-0
-`
-		case 1:
-			vals += `
-networking:
-  replicateServices:
-    fromHost:
-    - from: vc-0/first-0-x-default-x-vc-0
-      to: default/first-0
-    - from: vc-2/third-0-x-default-x-vc-2
-      to: default/third-0
-`
-		case 2:
-			vals += `
-networking:
-  replicateServices:
-    fromHost:
-    - from: vc-0/first-0-x-default-x-vc-0
-      to: default/first-0
-    - from: vc-1/second-0-x-default-x-vc-1
-      to: default/second-0
-`
-		}
-		vclusterValuesList[i] = vals
-	}
+	vclusters := createVClusters(ctx, t, clusters)
+	assignOperatorServiceIPs(ctx, t, vclusters, namespace)
+	peers := bootstrapTLS(ctx, t, vclusters, namespace)
+	deployOperators(ctx, t, vclusters, namespace, redpandaLicense, peers)
 
-	// Create all vclusters in parallel.
-	t.Logf("creating %d vclusters in parallel", clusters)
-	vclusters := make([]*vclusterNode, clusters)
+	return stashNodes(ctx, clusterName, vclusters)
+}
+
+func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) []*vclusterNode {
+	t.Logf("creating %d vclusters", clusters)
+
+	nodes := make([]*vclusterNode, clusters)
 	var wg sync.WaitGroup
-	errs := make([]error, clusters)
+
 	for i := range clusters {
 		wg.Add(1)
-		go func(idx int32) {
+		go func(i int32) {
 			defer wg.Done()
-			t.Logf("creating vcluster %d", idx+1)
 
-			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", idx)), vcluster.WithValues(helm.RawYAML(vclusterValuesList[idx])))
-			if err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d: %w", idx, err)
-				return
-			}
+			vClusterValues := vcluster.DefaultValues + networkingValues(i, clusters)
+			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)), vcluster.WithValues(helm.RawYAML(vClusterValues)))
+			require.NoError(t, err)
 			scheme := t.Scheme()
-			if err := certmanagerv1.AddToScheme(scheme); err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d scheme: %w", idx, err)
-				return
-			}
+			require.NoError(t, certmanagerv1.AddToScheme(scheme))
 			cluster.SetScheme(scheme)
 
-			t.Logf("finished creating vcluster %d (name: %q)", idx+1, cluster.Name())
+			t.Logf("finished creating vcluster %d (name: %q)", i+1, cluster.Name())
 
+			cleanupWrapper(t, func(ctx context.Context) {
+				if err := cluster.Delete(); err != nil {
+					t.Logf("error deleting cluster %s: %v", cluster.Name(), err)
+				}
+			})
 			c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
-			if err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d client: %w", idx, err)
-				return
-			}
+			require.NoError(t, err)
 
 			var apiServer corev1.Service
-			if err := c.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: metav1.NamespaceDefault}, &apiServer); err != nil {
-				errs[idx] = fmt.Errorf("vcluster %d apiserver: %w", idx, err)
-				return
-			}
+			require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: metav1.NamespaceDefault}, &apiServer))
 
-			vclusters[idx] = &vclusterNode{
+			nodes[i] = &vclusterNode{
 				Client:    c,
 				Cluster:   cluster,
 				apiServer: fmt.Sprintf("https://%s", apiServer.Spec.ClusterIPs[0]),
 			}
 		}(i)
 	}
+
 	wg.Wait()
+	return nodes
+}
 
-	// Check for errors and register cleanup.
-	for i, err := range errs {
-		require.NoError(t, err, "failed to create vcluster %d", i)
+// networkingValues generates the vCluster networking YAML for cross-cluster
+// service replication. Each vCluster needs services from all OTHER vClusters
+// replicated into it.
+func networkingValues(index, total int32) string {
+	var entries []string
+	for j := range total {
+		if j == index {
+			continue
+		}
+		name := nameMap[fmt.Sprintf("vc-%d", j)]
+		vcName := fmt.Sprintf("vc-%d", j)
+		entries = append(entries, fmt.Sprintf("    - from: %s/%s-0-x-default-x-%s\n      to: default/%s-0", vcName, name, vcName, name))
 	}
-	for _, vc := range vclusters {
-		vc := vc // capture for closure
-		cleanupWrapper(t, func(ctx context.Context) {
-			require.NoError(t, vc.Cluster.Delete())
-		})
+	if len(entries) == 0 {
+		return ""
 	}
+	return fmt.Sprintf(`
+networking:
+  replicateServices:
+    fromHost:
+%s
+`, strings.Join(entries, "\n"))
+}
 
-	// create a cluster ip service for each of the operators so that we can address them ahead of time
-	// statically by ip rather than using DNS
-	// TODO: consider using a combination of Endpoint + Service for static references to mimic
-	// global DNS a bit better. Also document that we'll need to know the network-resolvable DNS
-	// of the operators prior to deploying them.
+func assignOperatorServiceIPs(ctx context.Context, t framework.TestingT, vclusters []*vclusterNode, namespace string) {
 	for _, cluster := range vclusters {
 		require.NoError(t, cluster.Create(ctx, &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "multicluster-operator",
+				Name:      operatorServiceName,
 				Namespace: namespace,
 			},
 			Spec: corev1.ServiceSpec{
 				Type: corev1.ServiceTypeClusterIP,
 				Ports: []corev1.ServicePort{{
 					Protocol:   corev1.ProtocolTCP,
-					Port:       9443,
-					TargetPort: intstr.FromInt(9443),
+					Port:       operatorGRPCPort,
+					TargetPort: intstr.FromInt(operatorGRPCPort),
 				}},
 				Selector: map[string]string{
 					"app.kubernetes.io/instance": "redpanda",
-					"app.kubernetes.io/name":     "operator",
+					redpandaLabel:                "operator",
 				},
 				// this is necessary since we don't mark the operators as
 				// ready until the quorum forms, but in order to do so
@@ -415,8 +394,8 @@ networking:
 
 		require.Eventually(t, func() bool {
 			var operatorService corev1.Service
-			if err := cluster.Get(ctx, types.NamespacedName{Name: "multicluster-operator", Namespace: metav1.NamespaceDefault}, &operatorService); err != nil {
-				t.Logf("error fetching operator service from %s: %v", cluster.Name(), err)
+			if err := cluster.Get(ctx, types.NamespacedName{Name: operatorServiceName, Namespace: namespace}, &operatorService); err != nil {
+				t.Logf("error fetching operator service in %s: %v", cluster.Name(), err)
 				return false
 			}
 			if len(operatorService.Spec.ClusterIPs) == 0 {
@@ -426,8 +405,9 @@ networking:
 			return true
 		}, 3*time.Minute, 1*time.Second, fmt.Sprintf("cluster %s never got operator cluster ip", cluster.Name()))
 	}
+}
 
-	// next we bootstrap TLS for Raft in the cluster
+func bootstrapTLS(ctx context.Context, t framework.TestingT, vclusters []*vclusterNode, namespace string) []any {
 	bootstrapConfig := bootstrap.BootstrapClusterConfiguration{
 		BootstrapTLS:      true,
 		EnsureNamespace:   true,
@@ -448,16 +428,21 @@ networking:
 	}
 	t.Log("bootstrapping multicluster TLS")
 	require.NoError(t, bootstrap.BootstrapKubernetesClusters(ctx, "redpanda-multicluster-operator", bootstrapConfig))
+
+	return peers
+}
+
+func deployOperators(ctx context.Context, t framework.TestingT, vclusters []*vclusterNode, namespace, redpandaLicense string, peers []any) {
 	defaultSecret, err := generateCASecret("cluster", "default", namespace)
 	require.NoError(t, err)
 	externalSecret, err := generateCASecret("cluster", "external", namespace)
 	require.NoError(t, err)
-	// and finally we do the operator installation in each cluster
+
 	for _, cluster := range vclusters {
 		t.Logf("creating license secret in %q", cluster.Name())
 		require.NoError(t, cluster.Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "redpanda-license",
+				Name:      licenseSecretName,
 				Namespace: namespace,
 			},
 			Data: map[string][]byte{
@@ -507,7 +492,7 @@ networking:
 				},
 				"enterprise": map[string]any{
 					"licenseSecretRef": map[string]any{
-						"name": "redpanda-license",
+						"name": licenseSecretName,
 						"key":  "redpanda.license",
 					},
 				},
@@ -519,8 +504,6 @@ networking:
 			require.NoError(t, cluster.HelmUninstall(ctx, rel))
 		})
 	}
-
-	return stashNodes(ctx, clusterName, vclusters)
 }
 
 func cleanupWrapper(t framework.TestingT, f func(ctx context.Context)) {
@@ -538,7 +521,7 @@ func generateCASecret(clusterName, listener, namespace string) (*corev1.Secret, 
 	secretName := fmt.Sprintf("%s-%s-root-certificate", clusterName, listener)
 
 	ca, err := bootstrap.GenerateCA("redpanda", secretName, &bootstrap.CAConfiguration{
-		CALifetime: 48 * time.Hour,
+		CALifetime: caLifetime,
 	})
 	if err != nil {
 		return nil, err
@@ -604,7 +587,7 @@ func expectStatefulsetsReady(ctx context.Context, t framework.TestingT, stsCount
 		totalReady := int32(0)
 		for _, node := range nodes {
 			var stsList appsv1.StatefulSetList
-			if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{"app.kubernetes.io/name": "redpanda"}); err != nil {
+			if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{redpandaLabel: redpandaLabelValue}); err != nil {
 				t.Logf("error listing statefulsets in %s: %v", node.Name(), err)
 				return false
 			}
@@ -658,18 +641,33 @@ func conditionStatus(cond *metav1.Condition) string {
 func executeCommandInStatefulsetContainers(ctx context.Context, t framework.TestingT, command string) context.Context {
 	nodes := getLastMulticlusterNodes(ctx)
 
+	// Create port-forwarded configs once outside the retry loop to avoid leaking
+	// goroutines on each retry iteration.
+	type nodeExecConfig struct {
+		node *vclusterNode
+		ctl  *kube.Ctl
+	}
+	configs := make([]nodeExecConfig, 0, len(nodes))
+	for _, node := range nodes {
+		pfCfg, err := node.PortForwardedRESTConfig(ctx)
+		require.NoError(t, err, "creating port-forwarded config for %s", node.Name())
+		ctl, err := kube.FromRESTConfig(pfCfg)
+		require.NoError(t, err, "creating kube ctl for %s", node.Name())
+		configs = append(configs, nodeExecConfig{node: node, ctl: ctl})
+	}
+
 	var results []rpkExecResult
 
 	require.Eventually(t, func() bool {
 		results = nil
-		for _, node := range nodes {
+		for _, cfg := range configs {
 			var stsList appsv1.StatefulSetList
-			if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{"app.kubernetes.io/name": "redpanda"}); err != nil {
-				t.Logf("error listing statefulsets in %s: %v", node.Name(), err)
+			if err := cfg.node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{redpandaLabel: redpandaLabelValue}); err != nil {
+				t.Logf("error listing statefulsets in %s: %v", cfg.node.Name(), err)
 				return false
 			}
 			if len(stsList.Items) == 0 {
-				t.Logf("no redpanda StatefulSets in %s", node.Name())
+				t.Logf("no redpanda StatefulSets in %s", cfg.node.Name())
 				return false
 			}
 
@@ -681,51 +679,38 @@ func executeCommandInStatefulsetContainers(ctx context.Context, t framework.Test
 			}
 
 			var pods corev1.PodList
-			if err := node.List(ctx, &pods, client.InNamespace("default"), client.MatchingLabelsSelector{Selector: selector}); err != nil {
-				t.Logf("error listing pods in %s: %v", node.Name(), err)
+			if err := cfg.node.List(ctx, &pods, client.InNamespace("default"), client.MatchingLabelsSelector{Selector: selector}); err != nil {
+				t.Logf("error listing pods in %s: %v", cfg.node.Name(), err)
 				return false
 			}
 			if len(pods.Items) == 0 {
-				t.Logf("no pods for StatefulSet %s in %s", sts.Name, node.Name())
+				t.Logf("no pods for StatefulSet %s in %s", sts.Name, cfg.node.Name())
 				return false
 			}
 
 			pod := &pods.Items[0]
-			// PortForwardedRESTConfig starts a local TCP proxy so that SPDY-based
-			// exec can reach the vCluster API server (the regular RESTConfig uses
-			// a custom Dial that SPDY doesn't honor).
-			pfCfg, err := node.PortForwardedRESTConfig(ctx)
-			if err != nil {
-				t.Logf("error creating port-forwarded config for %s: %v", node.Name(), err)
-				return false
-			}
-			ctl, err := kube.FromRESTConfig(pfCfg)
-			if err != nil {
-				t.Logf("error creating kube ctl for %s: %v", node.Name(), err)
-				return false
-			}
 
 			// Run the specified command
 			var healthOut bytes.Buffer
-			if err := ctl.Exec(ctx, pod, kube.ExecOptions{
+			if err := cfg.ctl.Exec(ctx, pod, kube.ExecOptions{
 				Container: "redpanda",
 				Command:   []string{"/bin/bash", "-c", command},
 				Stdout:    &healthOut,
 			}); err != nil {
-				t.Logf("error executing %q in %s: %v", command, node.Name(), err)
+				t.Logf("error executing %q in %s: %v", command, cfg.node.Name(), err)
 				return false
 			}
 
 			output := healthOut.String()
-			t.Logf("cluster %s output:\n%s", node.Name(), output)
+			t.Logf("cluster %s output:\n%s", cfg.node.Name(), output)
 
 			if strings.TrimSpace(output) == "" {
-				t.Logf("empty output from %s, retrying", node.Name())
+				t.Logf("empty output from %s, retrying", cfg.node.Name())
 				return false
 			}
 
 			results = append(results, rpkExecResult{
-				clusterName: node.Name(),
+				clusterName: cfg.node.Name(),
 				rawOutput:   output,
 			})
 		}

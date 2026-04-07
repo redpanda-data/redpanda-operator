@@ -30,6 +30,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -81,6 +82,7 @@ func newMockManager(clusterNames []string, clients map[string]client.Client) *mo
 func newTestState(sc *redpandav1alpha2.StretchCluster, clusterNames []string) *stretchClusterReconciliationState {
 	return &stretchClusterReconciliationState{
 		cluster: lifecycle.NewStretchClusterWithPools(sc, clusterNames),
+		status:  lifecycle.NewStretchClusterStatus(),
 	}
 }
 
@@ -139,10 +141,11 @@ func TestSyncBootstrapUser_NoExistingSecrets(t *testing.T) {
 	}
 
 	// Verify condition was set: Synced (newly generated).
-	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	state.status.StretchClusterStatus.UpdateConditions(sc)
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterBootstrapUserSynced)
 	require.NotNil(t, cond)
 	require.Equal(t, metav1.ConditionTrue, cond.Status)
-	require.Equal(t, ConditionReasonSynced, cond.Reason)
+	require.Equal(t, string(statuses.StretchClusterBootstrapUserSyncedReasonSynced), cond.Reason)
 	require.Contains(t, cond.Message, "3 cluster(s)")
 }
 
@@ -189,11 +192,12 @@ func TestSyncBootstrapUser_ExistingSecretInOneCluster(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, existingPassword, string(secret.Data[bootstrapUserPasswordKey]))
 
-	// Verify condition was set: ExistingReused.
-	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	// Verify condition was set: ExistingReused (False because the secret was not freshly generated).
+	state.status.StretchClusterStatus.UpdateConditions(sc)
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterBootstrapUserSynced)
 	require.NotNil(t, cond)
-	require.Equal(t, metav1.ConditionTrue, cond.Status)
-	require.Equal(t, ConditionReasonExistingReused, cond.Reason)
+	require.Equal(t, metav1.ConditionFalse, cond.Status)
+	require.Equal(t, string(statuses.StretchClusterBootstrapUserSyncedReasonExistingReused), cond.Reason)
 	require.Contains(t, cond.Message, "cluster-a")
 }
 
@@ -228,11 +232,12 @@ func TestSyncBootstrapUser_AllSecretsExist(t *testing.T) {
 	// Verify the existing password was used.
 	require.Equal(t, password, state.bootstrapPassword)
 
-	// Verify condition: ExistingReused (all existed already).
-	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	// Verify condition: ExistingReused (False because the secret was not freshly generated).
+	state.status.StretchClusterStatus.UpdateConditions(sc)
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterBootstrapUserSynced)
 	require.NotNil(t, cond)
-	require.Equal(t, metav1.ConditionTrue, cond.Status)
-	require.Equal(t, ConditionReasonExistingReused, cond.Reason)
+	require.Equal(t, metav1.ConditionFalse, cond.Status)
+	require.Equal(t, string(statuses.StretchClusterBootstrapUserSyncedReasonExistingReused), cond.Reason)
 }
 
 func TestSyncBootstrapUser_PasswordMismatchAcrossClusters(t *testing.T) {
@@ -274,10 +279,11 @@ func TestSyncBootstrapUser_PasswordMismatchAcrossClusters(t *testing.T) {
 	require.Contains(t, err.Error(), "cluster-b")
 
 	// Verify condition was set: PasswordMismatch with False status.
-	cond := apimeta.FindStatusCondition(sc.Status.Conditions, ConditionTypeBootstrapUserSynced)
+	state.status.StretchClusterStatus.UpdateConditions(sc)
+	cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterBootstrapUserSynced)
 	require.NotNil(t, cond)
 	require.Equal(t, metav1.ConditionFalse, cond.Status)
-	require.Equal(t, ConditionReasonPasswordMismatch, cond.Reason)
+	require.Equal(t, string(statuses.StretchClusterBootstrapUserSyncedReasonPasswordMismatch), cond.Reason)
 	require.Contains(t, cond.Message, "manual intervention")
 }
 

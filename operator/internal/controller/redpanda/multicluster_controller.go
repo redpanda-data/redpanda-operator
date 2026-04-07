@@ -25,7 +25,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -50,16 +49,6 @@ const (
 	bootstrapUserSecretSuffix = "-bootstrap-user"
 	bootstrapUserPasswordKey  = "password"
 	defaultBootstrapUsername  = "kubernetes-controller"
-
-	// ConditionTypeBootstrapUserSynced is a standalone condition (not part of the
-	// generated Quiesced/Stable rollup) that tracks the state of bootstrap user
-	// secret distribution across k8s clusters.
-	ConditionTypeBootstrapUserSynced = "BootstrapUserSynced"
-
-	// Reasons for ConditionTypeBootstrapUserSynced.
-	ConditionReasonSynced           = "Synced"
-	ConditionReasonExistingReused   = "ExistingReused"
-	ConditionReasonPasswordMismatch = "PasswordMismatch"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch;update;patch
@@ -173,8 +162,8 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 
 	// Check that .spec is consistent across all clusters before proceeding.
 	// If there's drift, block reconciliation until the user fixes it.
-	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, cluster, stretchCluster); drifted || driftErr != nil {
-		return driftResult, driftErr
+	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, state, stretchCluster); drifted || driftErr != nil {
+		return r.syncStatus(ctx, cluster, state, driftResult, driftErr)
 	}
 
 	// Update our StretchCluster with our finalizer and any default Annotation FFs.
@@ -238,7 +227,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // verifies that .Spec is identical. If drift is detected it sets SpecSynced=False,
 // persists the status, and returns drifted=true so the caller can abort reconciliation.
 // When specs are aligned it sets SpecSynced=True.
-func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, cl cluster.Cluster, sc *redpandav1alpha2.StretchCluster) (drifted bool, _ ctrl.Result, _ error) {
+func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster) (drifted bool, _ ctrl.Result, _ error) {
 	l := log.FromContext(ctx).WithName("checkSpecConsistency")
 
 	localSpec := sc.Spec
@@ -262,32 +251,14 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, cl cl
 	}
 
 	if len(driftDetails) == 0 {
-		apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
-			Type:               redpandav1alpha2.ConditionTypeSpecSynced,
-			Status:             metav1.ConditionTrue,
-			ObservedGeneration: sc.Generation,
-			Reason:             "Synced",
-			Message:            "Spec is consistent across all clusters",
-		})
+		state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonSynced)
 		return false, ctrl.Result{}, nil
 	}
 
 	msg := fmt.Sprintf("StretchCluster .spec differs on clusters: %s — reconciliation is blocked until specs are aligned", strings.Join(driftDetails, "; "))
 	l.Info(msg)
 
-	apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
-		Type:               redpandav1alpha2.ConditionTypeSpecSynced,
-		Status:             metav1.ConditionFalse,
-		ObservedGeneration: sc.Generation,
-		Reason:             "DriftDetected",
-		Message:            msg,
-	})
-
-	// Persist the condition.
-	if err := cl.GetClient().Status().Update(ctx, sc); err != nil {
-		return true, ctrl.Result{}, err
-	}
-
+	state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonDriftDetected, msg)
 	return true, ctrl.Result{RequeueAfter: requeueTimeout}, nil
 }
 
@@ -342,15 +313,15 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 		return nil, err
 	}
 
-	status := lifecycle.NewClusterStatus()
+	status := lifecycle.NewStretchClusterStatus()
 	status.Pools = pools.PoolStatuses()
 
 	if pools.AnyReady() {
-		status.Status.SetReady(statuses.ClusterReadyReasonReady)
+		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonReady)
 	} else if pools.AllZero() {
-		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, messageNoBrokers)
+		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonNotReady, messageNoBrokers)
 	} else {
-		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, "No pods are ready")
+		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonNotReady, "No pods are ready")
 	}
 
 	return &stretchClusterReconciliationState{
@@ -417,13 +388,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 							"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
 						secretName, clusterName, canonicalCluster,
 					)
-					apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
-						Type:               ConditionTypeBootstrapUserSynced,
-						Status:             metav1.ConditionFalse,
-						ObservedGeneration: sc.Generation,
-						Reason:             ConditionReasonPasswordMismatch,
-						Message:            msg,
-					})
+					state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonPasswordMismatch, msg)
 					return ctrl.Result{}, errors.New(msg)
 				}
 			}
@@ -476,21 +441,9 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 
 	// Phase 4: set status condition.
 	if generated {
-		apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
-			Type:               ConditionTypeBootstrapUserSynced,
-			Status:             metav1.ConditionTrue,
-			ObservedGeneration: sc.Generation,
-			Reason:             ConditionReasonSynced,
-			Message:            fmt.Sprintf("Bootstrap user secret created and synced across %d cluster(s)", len(clusterNames)),
-		})
+		state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonSynced, fmt.Sprintf("Bootstrap user secret created and synced across %d cluster(s)", len(clusterNames)))
 	} else {
-		apimeta.SetStatusCondition(&sc.Status.Conditions, metav1.Condition{
-			Type:               ConditionTypeBootstrapUserSynced,
-			Status:             metav1.ConditionTrue,
-			ObservedGeneration: sc.Generation,
-			Reason:             ConditionReasonExistingReused,
-			Message:            fmt.Sprintf("Using existing bootstrap user secret from cluster %q", canonicalCluster),
-		})
+		state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonExistingReused, fmt.Sprintf("Using existing bootstrap user secret from cluster %q", canonicalCluster))
 	}
 
 	state.bootstrapUser = defaultBootstrapUsername
@@ -507,9 +460,9 @@ func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *
 		if err != nil {
 			logger.Error(err, "error reconciling resources")
 			if internalclient.IsTerminalClientError(err) {
-				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
 			} else {
-				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
 			}
 		}
 
@@ -530,9 +483,9 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 		if err != nil {
 			logger.Error(err, "error reconciling pools")
 			if internalclient.IsTerminalClientError(err) {
-				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
 			} else {
-				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
 			}
 		}
 
@@ -614,25 +567,25 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		if err != nil {
 			logger.Error(err, "error decommissioning brokers")
 			if internalclient.IsTerminalClientError(err) {
-				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
-				state.status.Status.SetHealthy(statuses.ClusterHealthyReasonTerminalError, err.Error())
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
+				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonTerminalError, err.Error())
 			} else {
-				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
-				state.status.Status.SetHealthy(statuses.ClusterHealthyReasonError, err.Error())
+				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
+				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonError, err.Error())
 			}
 			trace.EndSpan(span, err)
 			return
 		}
 
 		if state.pools.AllZero() {
-			state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonSynced)
-			state.status.Status.SetHealthy(statuses.ClusterHealthyReasonNotHealthy, messageNoBrokers)
+			state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
+			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, messageNoBrokers)
 		} else if health.IsHealthy {
-			state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonSynced)
-			state.status.Status.SetHealthy(statuses.ClusterHealthyReasonHealthy)
+			state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
+			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonHealthy)
 		} else {
-			state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonSynced)
-			state.status.Status.SetHealthy(statuses.ClusterHealthyReasonNotHealthy, "Cluster is not healthy")
+			state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
+			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, "Cluster is not healthy")
 		}
 		trace.EndSpan(span, err)
 	}()
@@ -735,9 +688,9 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 	defer func() {
 		if err != nil {
 			if internalclient.IsTerminalClientError(err) {
-				state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonTerminalError, err.Error())
+				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonTerminalError, err.Error())
 			} else {
-				state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonError, err.Error())
+				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonError, err.Error())
 			}
 		} else if license != nil {
 			state.cluster.StretchCluster.Status.LicenseStatus = license
@@ -746,14 +699,14 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 	}()
 
 	if state.pools.AllZero() {
-		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonNotPresent, messageNoBrokers)
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonNotPresent, messageNoBrokers)
 		return ctrl.Result{}, nil
 	}
 
 	// rate limit license reconciliation
-	if statuses.HasRecentCondition(state.cluster.StretchCluster, statuses.ClusterLicenseValid, metav1.ConditionTrue, time.Minute) {
+	if statuses.HasRecentCondition(state.cluster.StretchCluster, statuses.StretchClusterLicenseValid, metav1.ConditionTrue, time.Minute) {
 		// just copy over the license status from our existing status
-		state.status.Status.SetLicenseValidFromCurrent(state.cluster.StretchCluster)
+		state.status.StretchClusterStatus.SetLicenseValidFromCurrent(state.cluster.StretchCluster)
 		return ctrl.Result{}, nil
 	}
 
@@ -776,11 +729,11 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 
 	switch features.LicenseStatus {
 	case rpadmin.LicenseStatusExpired:
-		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonExpired)
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonExpired)
 	case rpadmin.LicenseStatusNotPresent:
-		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonNotPresent)
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonNotPresent)
 	case rpadmin.LicenseStatusValid:
-		state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonValid)
+		state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonValid)
 	}
 
 	licenseStatus := func() *redpandav1alpha2.RedpandaLicenseStatus {
@@ -827,22 +780,22 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 	defer func() {
 		if err != nil {
 			if internalclient.IsTerminalClientError(err) {
-				state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonTerminalError, err.Error())
+				state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonTerminalError, err.Error())
 			} else {
-				state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonError, err.Error())
+				state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonError, err.Error())
 			}
 		}
 		trace.EndSpan(span, err)
 	}()
 
 	if state.pools.AllZero() {
-		state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonNotApplied, messageNoBrokers)
+		state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonNotApplied, messageNoBrokers)
 		return ctrl.Result{}, nil
 	}
 
 	// we rate limit setting cluster configuration to once a minute if it's already been applied and is up-to-date
-	if statuses.HasRecentCondition(state.cluster.StretchCluster, statuses.ClusterConfigurationApplied, metav1.ConditionTrue, time.Minute) {
-		state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
+	if statuses.HasRecentCondition(state.cluster.StretchCluster, statuses.StretchClusterConfigurationApplied, metav1.ConditionTrue, time.Minute) {
+		state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonApplied)
 		return ctrl.Result{}, nil
 	}
 
@@ -855,7 +808,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 	//
 	// For now, mark as applied to allow other reconciliation to proceed
 	logger.V(log.TraceLevel).Info("cluster configuration reconciliation not yet fully implemented for StretchCluster")
-	state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
+	state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonApplied)
 
 	return ctrl.Result{}, nil
 }

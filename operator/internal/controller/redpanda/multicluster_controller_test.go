@@ -34,6 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -290,7 +291,7 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 			if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
 				return false
 			}
-			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterSpecSynced)
 			if cond == nil || cond.Status != metav1.ConditionTrue {
 				return false
 			}
@@ -312,7 +313,7 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 			if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
 				return false
 			}
-			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterSpecSynced)
 			if cond != nil && cond.Status == metav1.ConditionFalse && cond.Reason == "DriftDetected" {
 				return true
 			}
@@ -326,7 +327,7 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 		if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
 			continue
 		}
-		cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+		cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterSpecSynced)
 		if cond != nil && cond.Status == metav1.ConditionFalse {
 			s.Contains(cond.Message, "commonLabels", "condition message should mention the drifting field")
 		}
@@ -344,7 +345,7 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 			if err := env.Client().Get(s.ctx, nn, &sc); err != nil {
 				return false
 			}
-			cond := apimeta.FindStatusCondition(sc.Status.Conditions, redpandav1alpha2.ConditionTypeSpecSynced)
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterSpecSynced)
 			if cond == nil || cond.Status != metav1.ConditionTrue {
 				return false
 			}
