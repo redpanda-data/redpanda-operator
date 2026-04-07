@@ -43,15 +43,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-const (
-	// vClusterChartVersion is the pinned version of the vCluster helm chart. It's
-	// pinned to avoid sudden failures if there are backwards incompatible changes
-	// added.
-	vClusterChartVersion    = "v0.31.2"
-	certManagerChartversion = "v1.17.2"
-)
-
-var DefaultValues = `
+var DefaultValues = fmt.Sprintf(`
 sync:
   fromHost:
     nodes:
@@ -71,7 +63,7 @@ experimental:
       - chart:
           name: cert-manager
           repo: https://charts.jetstack.io
-          version: v1.8.0
+          version: %s
         values: |
           installCRDs: true
           global:
@@ -96,7 +88,7 @@ rbac:
            - get
            - list
            - watch
-`
+`, testutil.CertManagerVersion)
 
 type Cluster struct {
 	config     *kube.RESTConfig
@@ -268,7 +260,7 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 	rel, err := hc.Install(ctx, "loft/vcluster", helm.InstallOptions{
 		Name:      namespace.Name,
 		Namespace: namespace.Name,
-		Version:   vClusterChartVersion,
+		Version:   testutil.VClusterVersion,
 		Values:    vClusterOptions.values,
 	})
 	if err != nil {

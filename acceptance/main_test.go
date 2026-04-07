@@ -78,12 +78,12 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			// Images used by upgrade and upgrade-regressions features.
 			"redpandadata/redpanda:v25.2.11",
 			"redpandadata/redpanda-unstable:v25.3.1-rc4",
-			"quay.io/jetstack/cert-manager-controller:v1.14.2",
-			"quay.io/jetstack/cert-manager-cainjector:v1.14.2",
-			"quay.io/jetstack/cert-manager-startupapicheck:v1.14.2",
-			"quay.io/jetstack/cert-manager-webhook:v1.14.2",
+			"quay.io/jetstack/cert-manager-controller:" + testutil.CertManagerVersion,
+			"quay.io/jetstack/cert-manager-cainjector:" + testutil.CertManagerVersion,
+			"quay.io/jetstack/cert-manager-startupapicheck:" + testutil.CertManagerVersion,
+			"quay.io/jetstack/cert-manager-webhook:" + testutil.CertManagerVersion,
 			"ghcr.io/loft-sh/kubernetes:v1.33.4",
-			"ghcr.io/loft-sh/vcluster-pro:0.28.0",
+			"ghcr.io/loft-sh/vcluster-pro:" + testutil.GetVClusterImageTag(),
 		}...).
 		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install)
 
@@ -94,7 +94,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			WithHelmChart("https://charts.jetstack.io", "jetstack", "cert-manager", helm.InstallOptions{
 				Name:            "cert-manager",
 				Namespace:       "cert-manager",
-				Version:         "v1.14.2",
+				Version:         testutil.CertManagerVersion,
 				CreateNamespace: true,
 				Values: map[string]any{
 					"installCRDs": true,

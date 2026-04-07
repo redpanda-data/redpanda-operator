@@ -27,6 +27,15 @@ var (
 	update                = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
 )
 
+const (
+	CertManagerVersion = "v1.17.1"
+	VClusterVersion    = "v0.31.2"
+)
+
+func GetVClusterImageTag() string {
+	return strings.TrimPrefix(VClusterVersion, "v")
+}
+
 // TestType represents the type of test being run, i.e. unit, integration, or acceptance
 type TestType int
 
