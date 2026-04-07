@@ -611,12 +611,15 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 			}, tc)
 
 			require.Equal(t, &redpandav1alpha2.RedpandaLicenseStatus{
-				Violation:     false,
-				InUseFeatures: []string{"core_balancing_continuous"},
-				Expired:       ptr.To(false),
-				Type:          ptr.To("enterprise"),
-				Organization:  ptr.To("redpanda-testing"),
-				Expiration:    licenseStatus.Expiration,
+				Violation: false,
+				InUseFeatures: []string{
+					"core_balancing_continuous",
+					"partition_auto_balancing_continuous",
+				},
+				Expired:      ptr.To(false),
+				Type:         ptr.To("enterprise"),
+				Organization: ptr.To("redpanda-testing"),
+				Expiration:   licenseStatus.Expiration,
 			}, licenseStatus)
 
 			s.deleteAndWait(t, ctx, c, tc)
