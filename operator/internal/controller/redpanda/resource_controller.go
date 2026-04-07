@@ -18,10 +18,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -119,16 +117,6 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req mcreconcil
 		if controllerutil.RemoveFinalizer(object, FinalizerKey) {
 			return ctrl.Result{}, k8sClient.Update(ctx, object)
 		}
-		return ctrl.Result{}, nil
-	}
-
-	// Don't add the finalizer if the namespace is terminating — doing so would
-	// prevent the namespace from being deleted cleanly.
-	ns := &corev1.Namespace{}
-	if err := k8sClient.Get(ctx, types.NamespacedName{Name: object.GetNamespace()}, ns); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-	if !ns.GetDeletionTimestamp().IsZero() {
 		return ctrl.Result{}, nil
 	}
 

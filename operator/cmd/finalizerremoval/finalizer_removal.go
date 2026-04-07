@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package finalizerremoval contains a pre-delete job that removes finalizers
+// Package finalizerremoval contains a post-delete job that removes finalizers
 // from all operator-managed CRs to allow clean uninstall of the operator.
 package finalizerremoval
 
@@ -16,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -25,16 +24,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 )
 
 const finalizerKey = "operator.redpanda.com/finalizer"
-
-// operatorGroups are the API groups whose resources we manage and may have finalizers.
-var operatorGroups = []string{
-	"cluster.redpanda.com",
-	"redpanda.vectorized.io",
-}
 
 func Command() *cobra.Command {
 	return &cobra.Command{
@@ -54,19 +48,17 @@ func run(ctx context.Context) {
 		log.Fatalf("%s", fmt.Errorf("unable to create client: %w", err))
 	}
 
-	// Discover all non-list GVKs registered in our scheme for the operator groups.
-	// This automatically picks up any new types added in future without requiring
-	// changes to this command.
+	// Derive GVKs from the embedded CRD definitions. This automatically picks
+	// up any new types added in future without requiring changes to this command
+	// and avoids iterating over primitive Kubernetes types in the scheme.
 	var gvks []schema.GroupVersionKind
-	for gvk := range controller.UnifiedScheme.AllKnownTypes() {
-		if strings.HasSuffix(gvk.Kind, "List") {
-			continue
-		}
-		for _, g := range operatorGroups {
-			if gvk.Group == g {
-				gvks = append(gvks, gvk)
-				break
-			}
+	for _, crd := range crds.All() {
+		for _, v := range crd.Spec.Versions {
+			gvks = append(gvks, schema.GroupVersionKind{
+				Group:   crd.Spec.Group,
+				Version: v.Name,
+				Kind:    crd.Spec.Names.Kind,
+			})
 		}
 	}
 

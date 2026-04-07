@@ -204,8 +204,8 @@ multicluster:
   peers: []
   servicePerOperatorDeployment: false
 
-# -- Opt-in pre-delete job that removes finalizers from all operator-managed
-# CRs before uninstall, preventing orphaned resources from blocking namespace deletion.
+# -- Opt-in post-delete job that removes finalizers from all operator-managed
+# CRs after uninstall, preventing orphaned resources from blocking namespace deletion.
 finalizerRemoval:
-  # -- Enables the pre-delete finalizer removal job.
+  # -- Enables the post-delete finalizer removal job.
   enabled: false

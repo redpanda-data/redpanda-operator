@@ -162,13 +162,13 @@ Secret name and key where the license key is stored.
 
 ### [finalizerRemoval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=finalizerRemoval)
 
-Opt-in pre-delete job that removes finalizers from all operator-managed CRs before uninstall, preventing orphaned resources from blocking namespace deletion.
+Opt-in post-delete job that removes finalizers from all operator-managed CRs after uninstall, preventing orphaned resources from blocking namespace deletion.
 
 **Default:** `{"enabled":false}`
 
 ### [finalizerRemoval.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=finalizerRemoval.enabled)
 
-Enables the pre-delete finalizer removal job.
+Enables the post-delete finalizer removal job.
 
 **Default:** `false`
 
