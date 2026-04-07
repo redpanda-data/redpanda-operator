@@ -589,7 +589,7 @@ func (s *RedpandaControllerSuite) TestLicenseReal() {
 
 	for testCaseName, tc := range redpandas {
 		tc := tc
-		t.Run(testCaseName, func(_ *testing.T) {
+		t.Run(testCaseName, func(t *testing.T) {
 			var licenseStatus *redpandav1alpha2.RedpandaLicenseStatus
 			s.applyAndWaitFor(t, ctx, c, func(o client.Object, err error) (bool, error) {
 				if err != nil {
