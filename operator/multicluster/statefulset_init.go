@@ -65,6 +65,7 @@ func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.N
 		VolumeMounts: append(
 			state.commonMounts(),
 			corev1.VolumeMount{Name: baseConfigVolumeName, MountPath: redpandaConfigMountPath},
+			corev1.VolumeMount{Name: datadirVolumeName, MountPath: datadirMountPath},
 		),
 	}
 }
