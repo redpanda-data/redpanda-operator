@@ -57,7 +57,11 @@ func statefulSetRedpandaEnv() []corev1.EnvVar {
 }
 
 func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
-	internalAdvertiseAddress := fmt.Sprintf("%s-%s.%s", pool.GetName(), "$(ORDINAL_NUMBER)", state.namespace)
+	addressDomain := state.namespace
+	if state.Spec().Networking.IsMCS() {
+		addressDomain = state.namespace + ".svc.clusterset.local"
+	}
+	internalAdvertiseAddress := fmt.Sprintf("%s-%s.%s", pool.GetName(), "$(ORDINAL_NUMBER)", addressDomain)
 
 	terminationGracePeriod := defaultTerminationGracePeriod
 

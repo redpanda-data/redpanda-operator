@@ -18,6 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -35,6 +36,9 @@ type ClusterStatus struct {
 	// ConfigVersion is the configuration version from the cluster if one
 	// has been determined this reconciliation loop
 	ConfigVersion *string
+	// LicenseStatus is the license status from the cluster if one
+	// has been determined this reconciliation loop
+	LicenseStatus *redpandav1alpha2.RedpandaLicenseStatus
 }
 
 type PoolStatus struct {

@@ -1379,6 +1379,23 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
+              networking:
+                description: Defines cross-cluster networking settings.
+                properties:
+                  crossClusterMode:
+                    description: |-
+                      CrossClusterMode controls how per-pod Services route traffic to pods
+                      on remote Kubernetes clusters.
+                        - "mesh" (default): Services use selectors; a service mesh (e.g. Cilium)
+                          is expected to mirror endpoints across clusters.
+                        - "flat": Remote per-pod Services are rendered without selectors; the
+                          operator manages EndpointSlices with pod IPs directly. Requires a flat
+                          network where pod IPs are routable across clusters.
+                    enum:
+                    - mesh
+                    - flat
+                    type: string
+                type: object
               rackAwareness:
                 description: Defines rack awareness settings.
                 properties:

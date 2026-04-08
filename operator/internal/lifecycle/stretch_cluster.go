@@ -69,7 +69,7 @@ func StretchClusterResourceManagers(redpandaImage, sidecarImage Image, cloudSecr
 		NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools],
 		SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools],
 	) {
-		return NewStretchClusterOwnershipResolver(), NewStretchClusterStatusUpdater(), NewStretchNodePoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewStretchClusterSimpleResourceRenderer(mgr)
+		return NewStretchClusterOwnershipResolver(), NewStretchClusterStatusUpdater(), NewStretchNodePoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewStretchClusterSimpleResourceRenderer(mgr, redpandaImage, sidecarImage)
 	}
 }
 

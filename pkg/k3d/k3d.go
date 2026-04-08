@@ -90,6 +90,8 @@ type clusterConfig struct {
 	domain           string
 	port             int
 	portMappings     []PortMapping
+	clusterCIDR      string
+	serviceCIDR      string
 }
 
 func defaultClusterConfig() *clusterConfig {
@@ -164,6 +166,16 @@ func WithMappedPorts(mappings ...PortMapping) clusterOpt {
 	}
 }
 
+// WithCIDRs sets non-default cluster and service CIDRs for the k3d cluster.
+// This is required when running multiple k3d clusters that need flat networking
+// (non-overlapping pod IPs reachable across clusters).
+func WithCIDRs(clusterCIDR, serviceCIDR string) clusterOpt {
+	return func(config *clusterConfig) {
+		config.clusterCIDR = clusterCIDR
+		config.serviceCIDR = serviceCIDR
+	}
+}
+
 // GetShared gets or creates the shared "testenv" k3d cluster. Most tests
 // should use this method in combination with [vcluster.New].
 //
@@ -218,6 +230,21 @@ func imageAlreadyImported(clusterName, image string) bool {
 
 func markImageImported(clusterName, image string) {
 	os.WriteFile(imageMarkerPath(clusterName, image), nil, 0o600) //nolint:errcheck
+}
+
+// clearImageMarkers removes all image import marker files for a given cluster,
+// so that a freshly (re)created cluster re-imports all needed images.
+func clearImageMarkers(clusterName string) {
+	prefix := fmt.Sprintf("k3d-%s-img-", clusterName)
+	entries, err := os.ReadDir(os.TempDir())
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), prefix) {
+			os.Remove(filepath.Join(os.TempDir(), e.Name())) //nolint:errcheck
+		}
+	}
 }
 
 // lockFile acquires an exclusive file lock for the given cluster name.
@@ -290,6 +317,13 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		args = append(args, `--api-port`, strconv.Itoa(config.port))
 	}
 
+	if config.clusterCIDR != "" {
+		args = append(args, `--k3s-arg`, `--cluster-cidr=`+config.clusterCIDR+`@server:*`)
+	}
+	if config.serviceCIDR != "" {
+		args = append(args, `--k3s-arg`, `--service-cidr=`+config.serviceCIDR+`@server:*`)
+	}
+
 	if config.serverNoSchedule {
 		args = append(args, []string{
 			// This can be useful for tests in which we don't want to accidentally
@@ -317,6 +351,11 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 
 		return nil, errors.Wrapf(err, "%s", out)
 	}
+
+	// Clear stale image import markers — the cluster was just created so
+	// no images have been imported yet. Stale markers from a previous
+	// cluster with the same name would cause ImportImage to skip needed imports.
+	clearImageMarkers(name)
 
 	return loadCluster(name, config)
 }

@@ -2125,6 +2125,8 @@ and `patternType` must be `literal` + | * |
 |===
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-oidcloginsecrets"]
 ==== OIDCLoginSecrets
 

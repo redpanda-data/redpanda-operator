@@ -44,11 +44,18 @@ type RenderState struct {
 }
 
 func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.NodePool) []string {
+	// In MCS mode, use the clusterset.local domain so DNS resolves via the
+	// MCS controller across cluster boundaries.
+	addressFmt := "%s.%s:%d"
+	if cluster.Spec.Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+
 	var seedServers []string
 	for _, pool := range pools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
 			name := PerPodServiceName(pool, i)
-			seedServers = append(seedServers, fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), cluster.Spec.RPCPort()))
+			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), cluster.Spec.RPCPort()))
 		}
 	}
 	return seedServers

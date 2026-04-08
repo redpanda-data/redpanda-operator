@@ -52,11 +52,25 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 	// of which operator instance (local vs remote) performs the reconciliation.
 	canonicalName := CanonicalClusterName(clusterName, m.mgr)
 
+	// Apply operator-level default images to pools that don't specify their own.
+	applyDefaultImage := defaultImage(m.redpandaImage)
+	applyDefaultSidecar := defaultImage(m.sideCarImage)
+	inCluster := cluster.GetNodePoolsForCluster(canonicalName)
+	for _, pool := range inCluster {
+		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
+		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
+	}
+	allPools := cluster.GetAllNodePools()
+	for _, pool := range allPools {
+		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
+		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
+	}
+
 	state, err := multiclusterRenderer.NewRenderState(
 		cl.GetConfig(),
 		cluster.StretchCluster,
-		cluster.GetNodePoolsForCluster(canonicalName),
-		cluster.GetAllNodePools(),
+		inCluster,
+		allPools,
 		canonicalName)
 	if err != nil {
 		return nil, errors.WithStack(err)

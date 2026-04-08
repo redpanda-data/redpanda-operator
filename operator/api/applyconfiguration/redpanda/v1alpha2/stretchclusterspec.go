@@ -38,6 +38,7 @@ type StretchClusterSpecApplyConfiguration struct {
 	RBAC             *RBACApplyConfiguration             `json:"rbac,omitempty"`
 	ServiceAccount   *ServiceAccountApplyConfiguration   `json:"serviceAccount,omitempty"`
 	Monitoring       *MonitoringApplyConfiguration       `json:"monitoring,omitempty"`
+	Networking       *NetworkingApplyConfiguration       `json:"networking,omitempty"`
 }
 
 // StretchClusterSpecApplyConfiguration constructs a declarative configuration of the StretchClusterSpec type for use with
@@ -211,5 +212,13 @@ func (b *StretchClusterSpecApplyConfiguration) WithServiceAccount(value *Service
 // If called multiple times, the Monitoring field is set to the value of the last call.
 func (b *StretchClusterSpecApplyConfiguration) WithMonitoring(value *MonitoringApplyConfiguration) *StretchClusterSpecApplyConfiguration {
 	b.Monitoring = value
+	return b
+}
+
+// WithNetworking sets the Networking field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Networking field is set to the value of the last call.
+func (b *StretchClusterSpecApplyConfiguration) WithNetworking(value *NetworkingApplyConfiguration) *StretchClusterSpecApplyConfiguration {
+	b.Networking = value
 	return b
 }

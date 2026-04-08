@@ -622,7 +622,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 				state.status.Status.SetLicenseValid(statuses.ClusterLicenseValidReasonError, err.Error())
 			}
 		} else if license != nil {
-			state.cluster.Redpanda.Status.LicenseStatus = license
+			state.status.LicenseStatus = license
 		}
 		trace.EndSpan(span, err)
 	}()

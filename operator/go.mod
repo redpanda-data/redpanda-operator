@@ -65,6 +65,7 @@ require (
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	pgregory.net/rapid v1.1.0
 	sigs.k8s.io/controller-runtime v0.23.1
+	sigs.k8s.io/mcs-api v0.4.1
 	sigs.k8s.io/multicluster-runtime v0.23.1
 	sigs.k8s.io/yaml v1.6.0
 )

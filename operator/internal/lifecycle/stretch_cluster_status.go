@@ -34,5 +34,10 @@ func (m *StretchClusterStatusUpdater) Update(cluster *StretchClusterWithPools, s
 		dirty = true
 	}
 
+	if status.LicenseStatus != nil {
+		cluster.Status.LicenseStatus = status.LicenseStatus
+		dirty = true
+	}
+
 	return dirty
 }

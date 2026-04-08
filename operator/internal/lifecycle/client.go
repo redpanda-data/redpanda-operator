@@ -15,6 +15,7 @@ import (
 	"maps"
 	"reflect"
 	"slices"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -22,9 +23,11 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -124,6 +127,139 @@ func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
 		return mc.GetClusters()
 	}
 	return []string{mcmanager.LocalCluster}
+}
+
+// DeleteNodePoolSet deletes a StatefulSet for a specific node pool, routing to the correct cluster.
+func (r *ResourceClient[T, U]) DeleteNodePoolSet(ctx context.Context, set *MulticlusterStatefulSet) error {
+	ctl, err := r.ctl(ctx, set.clusterName)
+	if err != nil {
+		return err
+	}
+	return ctl.Delete(ctx, set.StatefulSet)
+}
+
+// DeletePod deletes a Pod, routing to the correct cluster.
+func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterPod) error {
+	ctl, err := r.ctl(ctx, pod.clusterName)
+	if err != nil {
+		return err
+	}
+	return ctl.Delete(ctx, pod.Pod)
+}
+
+// SyncEndpointSlices creates or updates EndpointSlices on each cluster for
+// per-pod Services that have no local pod (i.e. remote services in flat network
+// mode). It uses the provided pod endpoints to populate the EndpointSlice with
+// the actual pod IP from whichever cluster the pod runs on.
+func (r *ResourceClient[T, U]) SyncEndpointSlices(ctx context.Context, owner U, endpoints []PodEndpoint) error {
+	logger := log.FromContext(ctx).WithName("SyncEndpointSlices")
+
+	// TODO: should the per-pod service names match the pod names? Currently
+	// pod names are "{statefulset}-{ordinal}" (e.g. "factory-test-pool-0-0")
+	// while service names are "{pool-suffix}-{ordinal}" (e.g. "pool-0-0").
+	// We match by checking if the pod name ends with the service name.
+
+	var syncErr error
+	for _, clusterName := range r.clusterList(owner) {
+		ctl, err := r.ctl(ctx, clusterName)
+		if err != nil {
+			syncErr = errors.Join(syncErr, err)
+			continue
+		}
+
+		// List per-pod Services (they have the ownership labels).
+		svcs, err := kube.List[corev1.ServiceList](ctx, ctl, owner.GetNamespace(), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(owner)))
+		if err != nil {
+			syncErr = errors.Join(syncErr, errors.Wrapf(err, "listing services in cluster %s", clusterName))
+			continue
+		}
+
+		for _, svc := range svcs.Items {
+			// Only manage EndpointSlices for selector-less services (remote in flat mode).
+			if len(svc.Spec.Selector) > 0 {
+				continue
+			}
+
+			// Match service name to pod by suffix: pod "factory-test-pool-0-0"
+			// matches service "pool-0-0" because the pod name ends with the
+			// service name.
+			var ep PodEndpoint
+			found := false
+			for _, e := range endpoints {
+				if strings.HasSuffix(e.Name, svc.Name) {
+					ep = e
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue // no matching pod, skip
+			}
+
+			ownerLabels := r.ownershipResolver.AddLabels(owner)
+
+			// Endpoints — CoreDNS resolves headless service DNS from this API.
+			var v1Ports []corev1.EndpointPort
+			for _, p := range svc.Spec.Ports {
+				v1Ports = append(v1Ports, corev1.EndpointPort{
+					Name:     p.Name,
+					Port:     p.Port,
+					Protocol: p.Protocol,
+				})
+			}
+			epObj := &corev1.Endpoints{
+				TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Endpoints"},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      svc.Name,
+					Namespace: owner.GetNamespace(),
+					Labels:    maps.Clone(ownerLabels),
+				},
+				Subsets: []corev1.EndpointSubset{{
+					Addresses: []corev1.EndpointAddress{{IP: ep.IP}},
+					Ports:     v1Ports,
+				}},
+			}
+			if err := ctl.Apply(ctx, epObj, client.ForceOwnership); err != nil {
+				syncErr = errors.Join(syncErr, errors.Wrapf(err, "applying Endpoints %s in cluster %s", epObj.Name, clusterName))
+				continue
+			}
+
+			// EndpointSlice — for kube-proxy and service mesh consumers.
+			var slicePorts []discoveryv1.EndpointPort
+			for _, p := range svc.Spec.Ports {
+				p := p
+				slicePorts = append(slicePorts, discoveryv1.EndpointPort{
+					Name:     &p.Name,
+					Port:     &p.Port,
+					Protocol: &p.Protocol,
+				})
+			}
+			epSliceLabels := maps.Clone(ownerLabels)
+			epSliceLabels[discoveryv1.LabelServiceName] = svc.Name
+			epSlice := &discoveryv1.EndpointSlice{
+				TypeMeta: metav1.TypeMeta{APIVersion: "discovery.k8s.io/v1", Kind: "EndpointSlice"},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      svc.Name + "-cross-cluster",
+					Namespace: owner.GetNamespace(),
+					Labels:    epSliceLabels,
+				},
+				AddressType: discoveryv1.AddressTypeIPv4,
+				Endpoints: []discoveryv1.Endpoint{{
+					Addresses:  []string{ep.IP},
+					Conditions: discoveryv1.EndpointConditions{Ready: ptr.To(ep.Ready)},
+				}},
+				Ports: slicePorts,
+			}
+			if err := ctl.Apply(ctx, epSlice, client.ForceOwnership); err != nil {
+				syncErr = errors.Join(syncErr, errors.Wrapf(err, "applying EndpointSlice %s in cluster %s", epSlice.Name, clusterName))
+				continue
+			}
+
+			logger.V(log.TraceLevel).Info("synced cross-cluster endpoints", "service", svc.Name, "cluster", clusterName, "podIP", ep.IP)
+		}
+	}
+
+	return syncErr
 }
 
 // PatchlNodePoolSet updates a StatefulSet for a specific node pool.

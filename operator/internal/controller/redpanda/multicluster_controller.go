@@ -40,15 +40,18 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 )
 
 const (
 	bootstrapUserSecretSuffix = "-bootstrap-user"
 	bootstrapUserPasswordKey  = "password"
 	defaultBootstrapUsername  = "kubernetes-controller"
+	caOrganization            = "Redpanda"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch;update;patch
@@ -162,7 +165,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 
 	// Check that .spec is consistent across all clusters before proceeding.
 	// If there's drift, block reconciliation until the user fixes it.
-	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, state, stretchCluster); drifted || driftErr != nil {
+	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, state, stretchCluster, req.ClusterName); drifted || driftErr != nil {
 		return r.syncStatus(ctx, cluster, state, driftResult, driftErr)
 	}
 
@@ -181,6 +184,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// before any per-cluster reconciliation begins.
 	syncers := []stretchClusterReconciliationFn{
 		r.syncBootstrapUser,
+		r.syncCA,
 	}
 
 	for _, syncer := range syncers {
@@ -191,27 +195,34 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		}
 	}
 
-	// Phase 2: per-cluster reconciliation — only runs after all syncers succeed.
-	reconcilers := []stretchClusterReconciliationFn{
-		// we sync all our non pool resources first so that they're in-place
-		// prior to us scaling up our node pools
+	// Phase 2: sync Kubernetes resources (simple resources + node pools).
+	// EndpointSlice sync runs between resource creation and pool readiness
+	// checks so that pods can discover each other before becoming ready.
+	resourceReconcilers := []stretchClusterReconciliationFn{
 		r.reconcileResources,
-		// next we sync up all of our pools themselves
+		r.reconcileEndpointSlices,
 		r.reconcilePools,
-		// now we memoize the admin client onto the state
-		r.initAdminClient,
-		// now we ensure that we reconcile all of our decommissioning nodes
-		r.reconcileDecommission,
-		// now reconcile cluster configuration
-		r.reconcileClusterConfig,
-		// finally reconcile all of our license information
-		r.reconcileLicense,
+	}
+	for _, reconciler := range resourceReconcilers {
+		result, err := reconciler(ctx, state, cluster)
+		if err != nil || result.RequeueAfter > 0 {
+			l.V(log.TraceLevel).Info("aborting reconciliation early during resource sync", "error", err, "requeueAfter", result.RequeueAfter)
+			return r.syncStatus(ctx, cluster, state, result, err)
+		}
 	}
 
-	for _, reconciler := range reconcilers {
+	// All Kubernetes resources are in sync.
+	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
+
+	// Phase 3: cluster-level reconciliation (admin API, decommission, config, license).
+	clusterReconcilers := []stretchClusterReconciliationFn{
+		r.initAdminClient,
+		r.reconcileDecommission,
+		r.reconcileLicense,
+		r.reconcileClusterConfig,
+	}
+	for _, reconciler := range clusterReconcilers {
 		result, err := reconciler(ctx, state, cluster)
-		// if we have an error or an explicit requeue from one of our
-		// sub reconcilers, then just early return
 		if err != nil || result.RequeueAfter > 0 {
 			l.V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
 			return r.syncStatus(ctx, cluster, state, result, err)
@@ -227,13 +238,17 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // verifies that .Spec is identical. If drift is detected it sets SpecSynced=False,
 // persists the status, and returns drifted=true so the caller can abort reconciliation.
 // When specs are aligned it sets SpecSynced=True.
-func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster) (drifted bool, _ ctrl.Result, _ error) {
+func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster, localClusterName string) (drifted bool, _ ctrl.Result, _ error) {
 	l := log.FromContext(ctx).WithName("checkSpecConsistency")
 
 	localSpec := sc.Spec
 	var driftDetails []string
 
 	for _, clusterName := range r.Manager.GetClusterNames() {
+		// Skip the local cluster — we already have its spec.
+		if clusterName == localClusterName {
+			continue
+		}
 		remote, err := r.Manager.GetCluster(ctx, clusterName)
 		if err != nil {
 			return false, ctrl.Result{}, errors.Wrapf(err, "fetching cluster %q for spec consistency check", clusterName)
@@ -421,10 +436,20 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			continue
 		}
 
+		// Fetch the StretchCluster from this specific cluster to get the correct
+		// UID for the owner reference (UIDs differ across clusters).
+		localSC := &redpandav1alpha2.StretchCluster{}
+		if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sc), localSC); err != nil {
+			return ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %s for owner reference", clusterName)
+		}
+
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
 				Namespace: sc.Namespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(localSC, redpandav1alpha2.SchemeGroupVersion.WithKind("StretchCluster")),
+				},
 			},
 			Immutable: ptr.To(true),
 			Type:      corev1.SecretTypeOpaque,
@@ -452,6 +477,119 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 	return ctrl.Result{}, nil
 }
 
+// syncCA ensures that a shared root CA Secret exists for each operator-managed
+// TLS cert. The CA is generated once (on any cluster) and then synced to every
+// known cluster, similar to how syncBootstrapUser works for SASL credentials.
+func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (_ ctrl.Result, err error) {
+	ctx, span := trace.Start(ctx, "syncCA")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error syncing CA")
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	sc := state.cluster.StretchCluster
+
+	// Apply defaults to a copy of the spec so BootstrappedCertNames sees the
+	// same TLS configuration that the renderer will use (MergeDefaults enables
+	// TLS by default when TLS is nil).
+	defaultedSpec := *sc.Spec.DeepCopy()
+	defaultedSpec.MergeDefaults()
+	managedCerts := rendermulticluster.BootstrappedCertNames(&defaultedSpec)
+	if len(managedCerts) == 0 {
+		logger.V(log.TraceLevel).Info("no operator-managed TLS certs, skipping CA sync")
+		return ctrl.Result{}, nil
+	}
+
+	clusterNames := r.Manager.GetClusterNames()
+
+	for _, certName := range managedCerts {
+		secretName := rendermulticluster.CASecretName(sc.Name, certName)
+
+		// Phase 1: scan all clusters for an existing CA secret.
+		var canonicalSecret *corev1.Secret
+		for _, clusterName := range clusterNames {
+			cl, err := r.Manager.GetCluster(ctx, clusterName)
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+			}
+
+			var existing corev1.Secret
+			if err := cl.GetClient().Get(ctx, client.ObjectKey{
+				Namespace: sc.Namespace,
+				Name:      secretName,
+			}, &existing); err == nil {
+				canonicalSecret = &existing
+				logger.V(log.TraceLevel).Info("found existing CA secret", "cert", certName, "cluster", clusterName)
+				break
+			}
+		}
+
+		// Phase 2: if no secret exists anywhere, generate a new CA.
+		if canonicalSecret == nil {
+			ca, err := bootstrap.GenerateCA(caOrganization, secretName, nil)
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "generating CA for cert %q", certName)
+			}
+			canonicalSecret = &corev1.Secret{
+				Data: map[string][]byte{
+					corev1.TLSCertKey:       ca.Bytes(),
+					corev1.TLSPrivateKeyKey: ca.PrivateKeyBytes(),
+					"ca.crt":                ca.Bytes(),
+				},
+			}
+			logger.V(log.DebugLevel).Info("generated new CA", "cert", certName)
+		}
+
+		// Phase 3: ensure the CA secret exists in every cluster.
+		for _, clusterName := range clusterNames {
+			cl, err := r.Manager.GetCluster(ctx, clusterName)
+			if err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+			}
+
+			k8sClient := cl.GetClient()
+
+			var existing corev1.Secret
+			if err := k8sClient.Get(ctx, client.ObjectKey{
+				Namespace: sc.Namespace,
+				Name:      secretName,
+			}, &existing); err == nil {
+				// Secret already exists — nothing to do for this cluster.
+				continue
+			}
+
+			// Fetch the StretchCluster from this cluster for owner reference.
+			localSC := &redpandav1alpha2.StretchCluster{}
+			if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sc), localSC); err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %s for CA owner reference", clusterName)
+			}
+
+			secret := &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      secretName,
+					Namespace: sc.Namespace,
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(localSC, redpandav1alpha2.SchemeGroupVersion.WithKind("StretchCluster")),
+					},
+				},
+				Type: corev1.SecretTypeTLS,
+				Data: canonicalSecret.Data,
+			}
+
+			if err := k8sClient.Create(ctx, secret); err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "creating CA secret %q in cluster %s", secretName, clusterName)
+			}
+			logger.Info("created CA secret", "cert", certName, "cluster", clusterName, "secret", secretName)
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
+
 func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
 	ctx, span := trace.Start(ctx, "reconcileResources")
 	logger := log.FromContext(ctx)
@@ -465,6 +603,8 @@ func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *
 				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
 			}
 		}
+		// Success status for ResourcesSynced is set by reconcileDecommission
+		// which runs later and has the full picture including health status.
 
 		trace.EndSpan(span, err)
 	}()
@@ -488,6 +628,8 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
 			}
 		}
+		// Success status for ResourcesSynced is set after both reconcileResources
+		// and reconcilePools complete successfully, in the main reconcile loop.
 
 		trace.EndSpan(span, err)
 	}()
@@ -537,18 +679,37 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	return result, nil
 }
 
-func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+func (r *MulticlusterReconciler) reconcileEndpointSlices(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
+	sc := state.cluster.StretchCluster
+	defaultedSpec := *sc.Spec.DeepCopy()
+	defaultedSpec.MergeDefaults()
+
+	if !defaultedSpec.Networking.IsFlatNetwork() {
+		return ctrl.Result{}, nil
+	}
+
+	endpoints := state.pools.PodEndpoints()
+	if len(endpoints) == 0 {
+		// No pods have IPs yet — no-op. reconcilePools will create the
+		// StatefulSets, and subsequent reconcile loops will sync EndpointSlices
+		// once pods are scheduled.
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.LifecycleClient.SyncEndpointSlices(ctx, state.cluster, endpoints); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "syncing cross-cluster EndpointSlices")
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
 	if state.pools.AllZero() {
 		return ctrl.Result{}, nil
 	}
 
 	logger := log.FromContext(ctx)
-	adminAPIEndpoints := r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
-	if len(adminAPIEndpoints) == 0 {
-		return ctrl.Result{}, fmt.Errorf("no admin API endpoints found for cluster %s", state.cluster.Name)
-	}
-
-	admin, err := r.ClientFactory.RedpandaAdminClientForMulticluster(adminAPIEndpoints, state.bootstrapUser, state.bootstrapPassword)
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.cluster.StretchCluster)
 	if err != nil {
 		logger.Error(err, "error fetching redpanda admin client")
 		return ctrl.Result{}, err
@@ -567,10 +728,8 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		if err != nil {
 			logger.Error(err, "error decommissioning brokers")
 			if internalclient.IsTerminalClientError(err) {
-				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
 				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonTerminalError, err.Error())
 			} else {
-				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
 				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonError, err.Error())
 			}
 			trace.EndSpan(span, err)
@@ -578,13 +737,10 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		}
 
 		if state.pools.AllZero() {
-			state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
 			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, messageNoBrokers)
 		} else if health.IsHealthy {
-			state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
 			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonHealthy)
 		} else {
-			state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
 			state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonNotHealthy, "Cluster is not healthy")
 		}
 		trace.EndSpan(span, err)
@@ -625,8 +781,8 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// at this point any set that needs to be deleted should have 0 replicas
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
-		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-		if err := cluster.GetClient().Delete(ctx, set.StatefulSet); err != nil {
+		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String(), "cluster", set.GetCluster())
+		if err := r.LifecycleClient.DeleteNodePoolSet(ctx, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
 	}
@@ -655,9 +811,9 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 		if shouldRoll {
 			rolled = true
-			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String())
+			logger.V(log.TraceLevel).Info("rolling pod", "Pod", client.ObjectKeyFromObject(pod).String(), "cluster", pod.GetCluster())
 
-			if err := cluster.GetClient().Delete(ctx, pod.Pod); err != nil {
+			if err := r.LifecycleClient.DeletePod(ctx, pod); err != nil {
 				return ctrl.Result{}, errors.Wrap(err, "deleting pod")
 			}
 		}
@@ -693,7 +849,7 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonError, err.Error())
 			}
 		} else if license != nil {
-			state.cluster.StretchCluster.Status.LicenseStatus = license
+			state.status.LicenseStatus = license
 		}
 		trace.EndSpan(span, err)
 	}()
@@ -710,7 +866,7 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.setupLicense(ctx, state.cluster.StretchCluster, state.admin, cluster); err != nil {
+	if err := r.setupLicense(ctx, state.cluster.StretchCluster, state.admin); err != nil {
 		logger.Error(err, "error setting up license")
 		return ctrl.Result{}, errors.WithStack(err)
 	}
@@ -805,20 +961,38 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 	// 2. Getting superusers configuration
 	// 3. Syncing configuration via admin API using syncclusterconfig.Syncer
 	// 4. Tracking config version for restart-on-change functionality
-	//
-	// For now, mark as applied to allow other reconciliation to proceed
 	logger.V(log.TraceLevel).Info("cluster configuration reconciliation not yet fully implemented for StretchCluster")
-	state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonApplied)
+	state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonNotApplied, "cluster configuration reconciliation not yet implemented for StretchCluster")
 
 	return ctrl.Result{}, nil
 }
 
-func (r *MulticlusterReconciler) syncStatus(ctx context.Context, cluster cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
+func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
 	original := state.cluster.StretchCluster.Status.DeepCopy()
 	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) {
 		log.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
-		syncErr := cluster.GetClient().Status().Update(ctx, state.cluster.StretchCluster)
-		err = errors.Join(syncErr, err)
+
+		// Update status on all clusters, not just the triggering one,
+		// since the StretchCluster CRD exists on every cluster.
+		for _, clusterName := range r.Manager.GetClusterNames() {
+			cl, clErr := r.Manager.GetCluster(ctx, clusterName)
+			if clErr != nil {
+				err = errors.Join(err, errors.Wrapf(clErr, "getting cluster %s for status update", clusterName))
+				continue
+			}
+
+			// Fetch the latest version from this cluster to get the correct resource version.
+			remoteSC := &redpandav1alpha2.StretchCluster{}
+			if clErr := cl.GetClient().Get(ctx, client.ObjectKeyFromObject(state.cluster.StretchCluster), remoteSC); clErr != nil {
+				err = errors.Join(err, errors.Wrapf(clErr, "fetching StretchCluster from cluster %s for status update", clusterName))
+				continue
+			}
+
+			remoteSC.Status = *state.cluster.StretchCluster.Status.DeepCopy()
+			if syncErr := cl.GetClient().Status().Update(ctx, remoteSC); syncErr != nil {
+				err = errors.Join(err, errors.Wrapf(syncErr, "updating status on cluster %s", clusterName))
+			}
+		}
 	}
 
 	syncResult, syncErr := ignoreConflict(err)
@@ -906,7 +1080,7 @@ func (r *MulticlusterReconciler) decommissionBroker(ctx context.Context, admin *
 	return false, nil
 }
 
-func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav1alpha2.StretchCluster, adminClient *rpadmin.AdminAPI, cluster cluster.Cluster) error {
+func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav1alpha2.StretchCluster, adminClient *rpadmin.AdminAPI) error {
 	if sc.Spec.Enterprise == nil {
 		return nil
 	}
@@ -918,16 +1092,29 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	}
 
 	if secretReference := sc.Spec.Enterprise.LicenseSecretRef; secretReference != nil {
-		var licenseSecret corev1.Secret
-
 		name := ptr.Deref(secretReference.Name, "")
 		key := ptr.Deref(secretReference.Key, "")
 		if name == "" || key == "" {
 			return errors.Newf("both name %q and key %q of the secret can not be empty string", name, key)
 		}
 
-		if err := cluster.GetClient().Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: name}, &licenseSecret); err != nil {
-			return errors.WithStack(err)
+		// Search all clusters for the license secret since the user may have
+		// created it on any cluster.
+		var licenseSecret *corev1.Secret
+		for _, clusterName := range r.Manager.GetClusterNames() {
+			cl, err := r.Manager.GetCluster(ctx, clusterName)
+			if err != nil {
+				continue
+			}
+			var secret corev1.Secret
+			if err := cl.GetClient().Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: name}, &secret); err == nil {
+				licenseSecret = &secret
+				break
+			}
+		}
+
+		if licenseSecret == nil {
+			return errors.Newf("license secret %q not found in any cluster", name)
 		}
 
 		literalLicense := licenseSecret.Data[key]
