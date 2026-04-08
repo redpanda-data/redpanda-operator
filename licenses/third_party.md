@@ -59,7 +59,7 @@ run `task generate:third-party-licenses-list`
 | github.com/beorn7/perks/quantile | [MIT](https://github.com/beorn7/perks/blob/v1.0.1/LICENSE) |
 | github.com/blang/semver/v4 | [MIT](https://github.com/blang/semver/blob/v4.0.0/v4/LICENSE) |
 | github.com/buger/jsonparser | [MIT](https://github.com/buger/jsonparser/blob/v1.1.1/LICENSE) |
-| github.com/cenkalti/backoff/v4 | [MIT](https://github.com/cenkalti/backoff/blob/v4.3.0/LICENSE) |
+| github.com/cenkalti/backoff/v5 | [MIT](https://github.com/cenkalti/backoff/blob/v5.0.3/LICENSE) |
 | github.com/cert-manager/cert-manager/pkg/apis | [Apache-2.0](https://github.com/cert-manager/cert-manager/blob/v1.14.5/LICENSE) |
 | github.com/cespare/xxhash/v2 | [MIT](https://github.com/cespare/xxhash/blob/v2.3.0/LICENSE.txt) |
 | github.com/chai2010/gettext-go | [BSD-3-Clause](https://github.com/chai2010/gettext-go/blob/v1.0.2/LICENSE) |
@@ -230,7 +230,9 @@ run `task generate:third-party-licenses-list`
 | go.opentelemetry.io/otel | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/v1.43.0/LICENSE) |
 | go.opentelemetry.io/otel | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/v1.43.0/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.43.0/exporters/otlp/otlptrace/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.43.0/exporters/otlp/otlptrace/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.43.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.43.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
 | go.opentelemetry.io/otel/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.16.0/log/LICENSE) |
 | go.opentelemetry.io/otel/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.16.0/log/LICENSE) |
 | go.opentelemetry.io/otel/metric | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.43.0/metric/LICENSE) |
