@@ -99,12 +99,7 @@ func RenderResources(state *RenderState) ([]kube.Object, error) {
 	manifests = appendIfNotNil(manifests, ppServices...)
 	manifests = appendIfNotNil(manifests, serviceExports(state)...)
 	manifests = appendIfNotNil(manifests, serviceImports(state)...)
-
-	epObjs, err := perPodEndpoints(state)
-	if err != nil {
-		return nil, err
-	}
-	manifests = appendIfNotNil(manifests, epObjs...)
+	manifests = appendIfNotNil(manifests, perPodEndpoints(state)...)
 
 	return manifests, nil
 }

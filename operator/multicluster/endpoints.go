@@ -23,12 +23,12 @@ import (
 // per-pod Services in flat network mode. Each per-pod Service gets an
 // Endpoints object (for CoreDNS) and an EndpointSlice (for kube-proxy/mesh)
 // pointing to the actual pod IP.
-func perPodEndpoints(state *RenderState) ([]kube.Object, error) {
+func perPodEndpoints(state *RenderState) []kube.Object {
 	if !state.Spec().Networking.IsFlatNetwork() {
-		return nil, nil
+		return nil
 	}
 	if len(state.podEndpoints) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	spec := state.Spec()
@@ -58,7 +58,7 @@ func perPodEndpoints(state *RenderState) ([]kube.Object, error) {
 		}
 	}
 
-	return objects, nil
+	return objects
 }
 
 func endpointsForService(state *RenderState, svcName string, ep PodEndpoint, svcPorts []corev1.ServicePort) []kube.Object {
@@ -118,4 +118,3 @@ func endpointsForService(state *RenderState, svcName string, ep PodEndpoint, svc
 
 	return []kube.Object{epObj, epSlice}
 }
-
