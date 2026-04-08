@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/redpanda-data/common-go/license"
@@ -471,4 +472,93 @@ func TestV1OpenSourceLicenseType(t *testing.T) {
 		Products: []license.Product{license.ProductConnect},
 	}
 	assert.False(t, l.AllowsEnterpriseFeatures())
+}
+
+// PodMonitor tests.
+
+func TestRender_PodMonitor_Disabled(t *testing.T) {
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "pm-disabled", Namespace: "default"},
+		Spec:       redpandav1alpha2.PipelineSpec{ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n"},
+	}
+
+	r := &render{
+		pipeline:   pipeline,
+		labels:     Labels(pipeline),
+		monitoring: MonitoringConfig{Enabled: false},
+	}
+	objs, err := r.Render(t.Context())
+	require.NoError(t, err)
+	assert.Len(t, objs, 2, "only ConfigMap + Deployment when monitoring disabled")
+}
+
+func TestRender_PodMonitor_Enabled(t *testing.T) {
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "pm-enabled", Namespace: "default"},
+		Spec:       redpandav1alpha2.PipelineSpec{ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n"},
+	}
+
+	r := &render{
+		pipeline: pipeline,
+		labels:   Labels(pipeline),
+		monitoring: MonitoringConfig{
+			Enabled:        true,
+			ScrapeInterval: "30s",
+			Labels:         map[string]string{"team": "platform"},
+		},
+	}
+	objs, err := r.Render(t.Context())
+	require.NoError(t, err)
+	require.Len(t, objs, 3, "ConfigMap + Deployment + PodMonitor")
+
+	pm := objs[2].(*monitoringv1.PodMonitor)
+	assert.Equal(t, "pm-enabled", pm.Name)
+	assert.Equal(t, "default", pm.Namespace)
+	assert.Equal(t, "platform", pm.Labels["team"])
+	assert.Equal(t, "redpanda-connect", pm.Labels["app.kubernetes.io/name"])
+	require.Len(t, pm.Spec.PodMetricsEndpoints, 1)
+	assert.Equal(t, "/metrics", pm.Spec.PodMetricsEndpoints[0].Path)
+	assert.Equal(t, "http", *pm.Spec.PodMetricsEndpoints[0].Port)
+	assert.Equal(t, monitoringv1.Duration("30s"), pm.Spec.PodMetricsEndpoints[0].Interval)
+	assert.Equal(t, Labels(pipeline), pm.Spec.Selector.MatchLabels)
+}
+
+func TestRender_PodMonitor_CommonAnnotations(t *testing.T) {
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "pm-annotated", Namespace: "default"},
+		Spec:       redpandav1alpha2.PipelineSpec{ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n"},
+	}
+
+	r := &render{
+		pipeline: pipeline,
+		labels:   Labels(pipeline),
+		commonAnnotations: map[string]string{
+			"compliance/owner": "platform-team",
+		},
+		monitoring: MonitoringConfig{Enabled: true},
+	}
+	objs, err := r.Render(t.Context())
+	require.NoError(t, err)
+	require.Len(t, objs, 3)
+
+	pm := objs[2].(*monitoringv1.PodMonitor)
+	assert.Equal(t, "platform-team", pm.Annotations["compliance/owner"])
+}
+
+func TestRender_PodMonitor_NoScrapeInterval(t *testing.T) {
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "pm-no-interval", Namespace: "default"},
+		Spec:       redpandav1alpha2.PipelineSpec{ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n"},
+	}
+
+	r := &render{
+		pipeline:   pipeline,
+		labels:     Labels(pipeline),
+		monitoring: MonitoringConfig{Enabled: true},
+	}
+	objs, err := r.Render(t.Context())
+	require.NoError(t, err)
+
+	pm := objs[2].(*monitoringv1.PodMonitor)
+	assert.Empty(t, pm.Spec.PodMetricsEndpoints[0].Interval, "empty interval uses Prometheus default")
 }

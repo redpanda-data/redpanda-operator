@@ -83,8 +83,15 @@ type VectorizedControllers struct {
 	Enabled bool `json:"enabled"`
 }
 
+type ConnectMonitoringConfig struct {
+	Enabled        bool              `json:"enabled"`
+	ScrapeInterval string            `json:"scrapeInterval,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
+}
+
 type ConnectController struct {
-	Enabled bool `json:"enabled"`
+	Enabled    bool                    `json:"enabled"`
+	Monitoring ConnectMonitoringConfig `json:"monitoring"`
 }
 
 type CRDs struct {

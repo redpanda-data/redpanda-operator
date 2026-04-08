@@ -120,6 +120,9 @@ type RunOptions struct {
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
 	licenseFilePath                     string
 	commonAnnotations                   map[string]string
+	connectMonitoringEnabled            bool
+	connectMonitoringScrapeInterval     string
+	connectMonitoringLabels             map[string]string
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
@@ -144,6 +147,9 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 
 	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file")
 	cmd.Flags().StringToStringVar(&o.commonAnnotations, "common-annotations", nil, "Annotations to propagate to all operator-managed resources (key=value pairs)")
+	cmd.Flags().BoolVar(&o.connectMonitoringEnabled, "connect-monitoring-enabled", false, "Enable PodMonitor creation for Connect pipelines")
+	cmd.Flags().StringVar(&o.connectMonitoringScrapeInterval, "connect-monitoring-scrape-interval", "", "Prometheus scrape interval for Connect pipeline PodMonitors (e.g. 30s)")
+	cmd.Flags().StringToStringVar(&o.connectMonitoringLabels, "connect-monitoring-labels", nil, "Additional labels for Connect pipeline PodMonitors (key=value pairs)")
 
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
@@ -466,7 +472,16 @@ func Run(
 				return err
 			}
 
-			if err := (&pipelinecontroller.Controller{Ctl: pipelineCtl, LicenseFilePath: opts.licenseFilePath, CommonAnnotations: opts.commonAnnotations}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+			if err := (&pipelinecontroller.Controller{
+				Ctl:               pipelineCtl,
+				LicenseFilePath:   opts.licenseFilePath,
+				CommonAnnotations: opts.commonAnnotations,
+				Monitoring: pipelinecontroller.MonitoringConfig{
+					Enabled:        opts.connectMonitoringEnabled,
+					ScrapeInterval: opts.connectMonitoringScrapeInterval,
+					Labels:         opts.connectMonitoringLabels,
+				},
+			}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
 				return err
 			}

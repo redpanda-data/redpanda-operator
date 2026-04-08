@@ -173,7 +173,23 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled) "--enable-connect" (printf "%t" $values.connectController.enabled)) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled) "--enable-connect" (printf "%t" $values.connectController.enabled) "--connect-monitoring-enabled" (printf "%t" $values.connectController.monitoring.enabled)) -}}
+{{- if (ne $values.connectController.monitoring.scrapeInterval "") -}}
+{{- $_ := (set $defaults "--connect-monitoring-scrape-interval" $values.connectController.monitoring.scrapeInterval) -}}
+{{- end -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.connectController.monitoring.labels)))) "r") | int) (0 | int)) -}}
+{{- $labelArg := "" -}}
+{{- range $key, $value := $values.connectController.monitoring.labels -}}
+{{- if (ne $labelArg "") -}}
+{{- $labelArg = (printf "%s%s" $labelArg ",") -}}
+{{- end -}}
+{{- $labelArg = (printf "%s%s" $labelArg (printf "%s=%s" $key $value)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_ := (set $defaults "--connect-monitoring-labels" $labelArg) -}}
+{{- end -}}
 {{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.commonAnnotations)))) "r") | int) (0 | int)) -}}
 {{- $annotationArg := "" -}}

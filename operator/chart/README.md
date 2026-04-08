@@ -132,7 +132,23 @@ Sets the port for the webhook server to listen on.
 
 Enables the Redpanda Connect controller for managing Connect pipeline CRs. Pipelines still require an enterprise license with the CONNECT product on each CR.
 
+**Default:**
+
+```
+{"enabled":false,"monitoring":{"enabled":false}}
+```
+
+### [connectController.monitoring](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController.monitoring)
+
+Monitoring configuration for Connect pipeline pods.
+
 **Default:** `{"enabled":false}`
+
+### [connectController.monitoring.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController.monitoring.enabled)
+
+Enables PodMonitor creation for all Connect pipelines. Requires the Prometheus Operator CRDs (monitoring.coreos.com) to be installed.
+
+**Default:** `false`
 
 ### [crds](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds)
 

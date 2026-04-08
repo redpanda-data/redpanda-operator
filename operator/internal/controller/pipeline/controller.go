@@ -33,6 +33,13 @@ const (
 	FinalizerKey = "pipeline.redpanda.com/finalizer"
 )
 
+// MonitoringConfig holds the operator-level monitoring settings for Connect pipelines.
+type MonitoringConfig struct {
+	Enabled        bool
+	ScrapeInterval string
+	Labels         map[string]string
+}
+
 // Controller reconciles Pipeline resources.
 type Controller struct {
 	Ctl *kube.Ctl
@@ -42,6 +49,8 @@ type Controller struct {
 	// CommonAnnotations are annotations from the operator Helm chart values
 	// that are propagated to all resources managed by the operator.
 	CommonAnnotations map[string]string
+	// Monitoring holds the operator-level monitoring configuration for Connect pipelines.
+	Monitoring MonitoringConfig
 }
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines,verbs=get;list;watch;update;patch
@@ -50,6 +59,7 @@ type Controller struct {
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 
 func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
@@ -154,6 +164,7 @@ func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline) (*kube.Synce
 			pipeline:          pipeline,
 			labels:            labels,
 			commonAnnotations: c.CommonAnnotations,
+			monitoring:        c.Monitoring,
 		},
 		Owner:           *metav1.NewControllerRef(pipeline, gvk),
 		OwnershipLabels: labels,

@@ -153,3 +153,12 @@ enterprise:
 commonAnnotations:
   owner: "platform-team@example.com"
   environment: "production"
+
+-- connect-monitoring-enabled --
+connectController:
+  enabled: true
+  monitoring:
+    enabled: true
+    scrapeInterval: "30s"
+    labels:
+      team: platform

@@ -98,7 +98,8 @@ type PartialVectorizedControllers struct {
 }
 
 type PartialConnectController struct {
-	Enabled *bool "json:\"enabled,omitempty\""
+	Enabled    *bool                           "json:\"enabled,omitempty\""
+	Monitoring *PartialConnectMonitoringConfig "json:\"monitoring,omitempty\""
 }
 
 type PartialMulticluster struct {
@@ -133,6 +134,12 @@ type PartialWebhookConfig struct {
 type PartialLeaderElectionConfig struct {
 	LeaderElect  *bool   "json:\"leaderElect,omitempty\""
 	ResourceName *string "json:\"resourceName,omitempty\""
+}
+
+type PartialConnectMonitoringConfig struct {
+	Enabled        *bool             "json:\"enabled,omitempty\""
+	ScrapeInterval *string           "json:\"scrapeInterval,omitempty\""
+	Labels         map[string]string "json:\"labels,omitempty\""
 }
 
 type PartialMetadata struct {

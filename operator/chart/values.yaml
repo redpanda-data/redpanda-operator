@@ -158,6 +158,15 @@ vectorizedControllers:
 # Pipelines still require an enterprise license with the CONNECT product on each CR.
 connectController:
   enabled: false
+  # -- Monitoring configuration for Connect pipeline pods.
+  monitoring:
+    # -- Enables PodMonitor creation for all Connect pipelines.
+    # Requires the Prometheus Operator CRDs (monitoring.coreos.com) to be installed.
+    enabled: false
+    # -- Prometheus scrape interval for pipeline PodMonitors.
+    # scrapeInterval: "30s"
+    # -- Additional labels to add to pipeline PodMonitors.
+    # labels: {}
 
 # -- Configuration for monitoring.
 monitoring:

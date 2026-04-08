@@ -14,6 +14,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +39,7 @@ type render struct {
 	pipeline          *redpandav1alpha2.Pipeline
 	labels            map[string]string
 	commonAnnotations map[string]string
+	monitoring        MonitoringConfig
 }
 
 // Types returns the set of Kubernetes resource types managed by the Pipeline
@@ -46,6 +48,7 @@ func Types() []kube.Object {
 	return []kube.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
+		&monitoringv1.PodMonitor{},
 	}
 }
 
@@ -62,7 +65,13 @@ func (r *render) Render(_ context.Context) ([]kube.Object, error) {
 
 	dp := r.deployment()
 
-	return []kube.Object{cm, dp}, nil
+	objs := []kube.Object{cm, dp}
+
+	if pm := r.podMonitor(); pm != nil {
+		objs = append(objs, pm)
+	}
+
+	return objs, nil
 }
 
 // Labels returns the standard set of labels applied to Pipeline-owned
@@ -199,6 +208,47 @@ func (r *render) deployment() *appsv1.Deployment {
 					Affinity:                  buildAffinity(r.pipeline),
 					TopologySpreadConstraints: buildTopologySpreadConstraints(r.pipeline, r.labels),
 				},
+			},
+		},
+	}
+}
+
+func (r *render) podMonitor() *monitoringv1.PodMonitor {
+	if !r.monitoring.Enabled {
+		return nil
+	}
+
+	labels := make(map[string]string, len(r.labels)+len(r.monitoring.Labels))
+	for k, v := range r.labels {
+		labels[k] = v
+	}
+	for k, v := range r.monitoring.Labels {
+		labels[k] = v
+	}
+
+	endpoint := monitoringv1.PodMetricsEndpoint{
+		Path: "/metrics",
+		Port: ptr.To("http"),
+	}
+	if r.monitoring.ScrapeInterval != "" {
+		endpoint.Interval = monitoringv1.Duration(r.monitoring.ScrapeInterval)
+	}
+
+	return &monitoringv1.PodMonitor{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "monitoring.coreos.com/v1",
+			Kind:       "PodMonitor",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        r.pipeline.Name,
+			Namespace:   r.pipeline.Namespace,
+			Labels:      labels,
+			Annotations: r.annotations(),
+		},
+		Spec: monitoringv1.PodMonitorSpec{
+			PodMetricsEndpoints: []monitoringv1.PodMetricsEndpoint{endpoint},
+			Selector: metav1.LabelSelector{
+				MatchLabels: r.labels,
 			},
 		},
 	}
