@@ -15,7 +15,6 @@ import (
 	"maps"
 	"reflect"
 	"slices"
-	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -23,11 +22,9 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -147,123 +144,6 @@ func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterP
 	return ctl.Delete(ctx, pod.Pod)
 }
 
-// SyncEndpointSlices creates or updates EndpointSlices on each cluster for
-// per-pod Services that have no local pod (i.e. remote services in flat network
-// mode). It uses the provided pod endpoints to populate the EndpointSlice with
-// the actual pod IP from whichever cluster the pod runs on.
-func (r *ResourceClient[T, U]) SyncEndpointSlices(ctx context.Context, owner U, endpoints []PodEndpoint) error {
-	logger := log.FromContext(ctx).WithName("SyncEndpointSlices")
-
-	// TODO: should the per-pod service names match the pod names? Currently
-	// pod names are "{statefulset}-{ordinal}" (e.g. "factory-test-pool-0-0")
-	// while service names are "{pool-suffix}-{ordinal}" (e.g. "pool-0-0").
-	// We match by checking if the pod name ends with the service name.
-
-	var syncErr error
-	for _, clusterName := range r.clusterList(owner) {
-		ctl, err := r.ctl(ctx, clusterName)
-		if err != nil {
-			syncErr = errors.Join(syncErr, err)
-			continue
-		}
-
-		// List per-pod Services (they have the ownership labels).
-		svcs, err := kube.List[corev1.ServiceList](ctx, ctl, owner.GetNamespace(), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(owner)))
-		if err != nil {
-			syncErr = errors.Join(syncErr, errors.Wrapf(err, "listing services in cluster %s", clusterName))
-			continue
-		}
-
-		for _, svc := range svcs.Items {
-			// Only manage EndpointSlices for selector-less services (remote in flat mode).
-			if len(svc.Spec.Selector) > 0 {
-				continue
-			}
-
-			// Match service name to pod by suffix: pod "factory-test-pool-0-0"
-			// matches service "pool-0-0" because the pod name ends with the
-			// service name.
-			var ep PodEndpoint
-			found := false
-			for _, e := range endpoints {
-				if strings.HasSuffix(e.Name, svc.Name) {
-					ep = e
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue // no matching pod, skip
-			}
-
-			ownerLabels := r.ownershipResolver.AddLabels(owner)
-			// Mark as gc=false so the syncer doesn't delete these out-of-band resources.
-			ownerLabels[GCLabel] = "false"
-
-			// Endpoints — CoreDNS resolves headless service DNS from this API.
-			var v1Ports []corev1.EndpointPort
-			for _, p := range svc.Spec.Ports {
-				v1Ports = append(v1Ports, corev1.EndpointPort{
-					Name:     p.Name,
-					Port:     p.Port,
-					Protocol: p.Protocol,
-				})
-			}
-			epObj := &corev1.Endpoints{ //nolint:staticcheck // Endpoints required for CoreDNS headless service resolution
-				TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Endpoints"},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      svc.Name,
-					Namespace: owner.GetNamespace(),
-					Labels:    maps.Clone(ownerLabels),
-				},
-				Subsets: []corev1.EndpointSubset{{ //nolint:staticcheck // see above
-					Addresses: []corev1.EndpointAddress{{IP: ep.IP}},
-					Ports:     v1Ports,
-				}},
-			}
-			if err := ctl.Apply(ctx, epObj, client.ForceOwnership); err != nil {
-				syncErr = errors.Join(syncErr, errors.Wrapf(err, "applying Endpoints %s in cluster %s", epObj.Name, clusterName))
-				continue
-			}
-
-			// EndpointSlice — for kube-proxy and service mesh consumers.
-			var slicePorts []discoveryv1.EndpointPort
-			for _, p := range svc.Spec.Ports {
-				p := p
-				slicePorts = append(slicePorts, discoveryv1.EndpointPort{
-					Name:     &p.Name,
-					Port:     &p.Port,
-					Protocol: &p.Protocol,
-				})
-			}
-			epSliceLabels := maps.Clone(ownerLabels)
-			epSliceLabels[discoveryv1.LabelServiceName] = svc.Name
-			epSlice := &discoveryv1.EndpointSlice{
-				TypeMeta: metav1.TypeMeta{APIVersion: "discovery.k8s.io/v1", Kind: "EndpointSlice"},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      svc.Name + "-cross-cluster",
-					Namespace: owner.GetNamespace(),
-					Labels:    epSliceLabels,
-				},
-				AddressType: discoveryv1.AddressTypeIPv4,
-				Endpoints: []discoveryv1.Endpoint{{
-					Addresses:  []string{ep.IP},
-					Conditions: discoveryv1.EndpointConditions{Ready: ptr.To(ep.Ready)},
-				}},
-				Ports: slicePorts,
-			}
-			if err := ctl.Apply(ctx, epSlice, client.ForceOwnership); err != nil {
-				syncErr = errors.Join(syncErr, errors.Wrapf(err, "applying EndpointSlice %s in cluster %s", epSlice.Name, clusterName))
-				continue
-			}
-
-			logger.V(log.TraceLevel).Info("synced cross-cluster endpoints", "service", svc.Name, "cluster", clusterName, "podIP", ep.IP)
-		}
-	}
-
-	return syncErr
-}
-
 // PatchlNodePoolSet updates a StatefulSet for a specific node pool.
 func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *MulticlusterStatefulSet) error {
 	ctl, err := r.ctl(ctx, set.clusterName)
@@ -291,6 +171,37 @@ func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus
 
 func (r *ResourceClient[T, U]) GetAdminAPIEndpoints(cluster U) []string {
 	return r.simpleResourceRenderer.GetAdminAPIEndpoints(cluster)
+}
+
+// GetOwnerLabels returns the minimal set of labels that identify ownership.
+func (r *ResourceClient[T, U]) GetOwnerLabels(cluster U) map[string]string {
+	return r.ownershipResolver.GetOwnerLabels(cluster)
+}
+
+// AddOwnerLabels returns the full set of labels to apply to owned resources.
+func (r *ResourceClient[T, U]) AddOwnerLabels(cluster U) map[string]string {
+	return r.ownershipResolver.AddLabels(cluster)
+}
+
+// ResolveOwnerReference resolves the owner for the given cluster and cluster name,
+// returning the owner with the correct UID and GVK for that cluster.
+func (r *ResourceClient[T, U]) ResolveOwnerReference(ctx context.Context, owner U, clusterName string) (U, error) {
+	ctl, err := r.ctl(ctx, clusterName)
+	if err != nil {
+		var zero U
+		return zero, err
+	}
+	return r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
+}
+
+// Ctl returns a kube.Ctl for the given cluster name.
+func (r *ResourceClient[T, U]) Ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
+	return r.ctl(ctx, clusterName)
+}
+
+// ClusterList returns the list of cluster names for the given owner.
+func (r *ResourceClient[T, U]) ClusterList(owner U) []string {
+	return r.clusterList(owner)
 }
 
 type renderer[T any, U Cluster[T]] struct {
@@ -351,8 +262,8 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 			}
 			maps.Copy(o.GetLabels(), r.ownershipResolver.AddLabels(owner))
 		},
-		Owner: *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind()),
-		// GCLabel: GCLabel,
+		Owner:   *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind()),
+		GCLabel: GCLabel,
 	}, nil
 }
 
