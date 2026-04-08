@@ -278,11 +278,17 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	var syncErr error
 	logger := log.FromContext(ctx).WithName("SyncAll")
-	clusterList := r.clusterList(owner)
-	logger.V(log.InfoLevel).Info("syncing all clusters", "clusterList", clusterList)
+	var canonicalClusterList []string
 	for _, clusterName := range r.clusterList(owner) {
-		msg := fmt.Sprintf("syncer called, clusterName=%q, owner.Name=%q owner.UID=%q owner.GroupVersionKind=%q", clusterName, owner.GetName(), owner.GetUID(), owner.GetObjectKind().GroupVersionKind().String())
-		logger.V(log.InfoLevel).Info(msg)
+		canonicalClusterList = append(canonicalClusterList, CanonicalClusterName(clusterName, r.manager))
+	}
+	logger.V(log.DebugLevel).Info("syncing all clusters", "clusterList", canonicalClusterList)
+	for _, clusterName := range r.clusterList(owner) {
+		logger.V(log.TraceLevel).Info("syncer called",
+			"clusterName", CanonicalClusterName(clusterName, r.manager),
+			"ownerName", owner.GetName(),
+			"ownerUID", owner.GetUID(),
+			"ownerGroupVersionKind", owner.GetObjectKind().GroupVersionKind().String())
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			return err
@@ -300,6 +306,7 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 // a tracker that can be used for determining necessary operations on the pools.
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
+	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
 		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
 		if err != nil {
@@ -328,14 +335,14 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 				set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
 			}
 		}
-		log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in cluster %s", len(existingPools), clusterName))
-		log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in cluster %s", len(wrapped), clusterName))
+		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in cluster %s", len(existingPools), clusterName))
+		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in cluster %s", len(wrapped), clusterName))
 
 		pools.addExisting(existingPools...)
 		pools.addDesired(wrapped...)
 	}
-	log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in all clusters", len(pools.existingPools)))
-	log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in all clusters", len(pools.desiredPools)))
+	logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in all clusters", len(pools.existingPools)))
+	logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in all clusters", len(pools.desiredPools)))
 
 	return pools, nil
 }
