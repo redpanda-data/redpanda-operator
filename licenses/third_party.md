@@ -322,6 +322,7 @@ run `task generate:third-party-licenses-list`
 | sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.20.1/api/LICENSE) |
 | sigs.k8s.io/kustomize/kyaml | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/kyaml/v0.20.1/kyaml/LICENSE) |
+| sigs.k8s.io/mcs-api/pkg/apis/v1alpha1 | [Apache-2.0](https://github.com/kubernetes-sigs/mcs-api/blob/v0.4.1/LICENSE) |
 | sigs.k8s.io/multicluster-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/multicluster-runtime/blob/v0.23.1/LICENSE) |
 | sigs.k8s.io/randfill | [Apache-2.0](https://github.com/kubernetes-sigs/randfill/blob/v1.0.0/LICENSE) |
 | sigs.k8s.io/structured-merge-diff/v6 | [Apache-2.0](https://github.com/kubernetes-sigs/structured-merge-diff/blob/v6.3.2/LICENSE) |

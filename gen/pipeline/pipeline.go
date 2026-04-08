@@ -53,6 +53,11 @@ var suites = []TestSuite{
 		Timeout:  30*time.Minute + time.Hour,
 		Retry:    ptr.To(3),
 	},
+	{
+		Name:     "multicluster",
+		Required: false,
+		Timeout:  time.Hour,
+	},
 	// kuttl-v1 is currently the slowest and flakiest of our test suites. The
 	// majority of changes made aren't exercised by this suite. It runs conditionally
 	// until we have time to speed it up and deflake it.
