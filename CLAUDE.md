@@ -39,10 +39,36 @@ The CI lint step (`taskfiles/ci.yml`) runs:
 Multiple test suites use golden file comparison. To regenerate expected output instead of asserting, pass `-update-golden`:
 
 ```bash
-nix develop -c go test ./path/to/... -update-golden
+nix --extra-experimental-features 'nix-command flakes' develop -c go test ./path/to/... -update-golden
 ```
 
-Note: Chart template tests (`TestTemplate`) use `-update` instead of `-update-golden`.
+### Chart template golden tests (`TestTemplate`)
+
+Chart template tests in `operator/chart/` compare rendered Helm output against `operator/chart/testdata/template-cases.golden.txtar`. The input test cases are defined in `operator/chart/testdata/template-cases.txtar`.
+
+**Updating existing entries:** Use `-update` to refresh the golden content for entries that already exist in the golden file:
+```bash
+nix --extra-experimental-features 'nix-command flakes' develop -c go test ./operator/chart/... -run TestTemplate -update
+```
+
+**Adding new test cases:** When you add a new entry to `template-cases.txtar`, the `-update` flag **cannot** create the corresponding golden entry — it fails with "comparing YAMLs with a different number of documents is currently not supported". Use `-update-golden` instead, which handles both new and existing entries:
+```bash
+nix --extra-experimental-features 'nix-command flakes' develop -c go test ./operator/chart/... -run TestTemplate -update-golden
+```
+
+**After rebasing:** If the chart version changed (e.g., `v25.3.1` → `v26.1.1`), the golden file will have stale version strings everywhere. The `-update` and `-update-golden` flags update content but may not catch all version references in a single pass. A bulk `sed` replacement followed by `-update-golden` is the most reliable approach:
+```bash
+sed -i '' 's/v25\.3\.1/v26.1.1/g; s/operator-25\.3\.1/operator-26.1.1/g' operator/chart/testdata/template-cases.golden.txtar
+nix --extra-experimental-features 'nix-command flakes' develop -c go test ./operator/chart/... -run TestTemplate -update-golden
+```
+
+### Gotohelm transpiler limitations
+
+The `gotohelm` transpiler converts Go chart source (`operator/chart/*.go`) into Helm templates (`.tpl` files). It supports a subset of Go — notably, **`strings.Join` is not supported** and will cause a panic. Use manual string concatenation instead. Check the gotohelm source or existing chart code for supported functions.
+
+### RBAC file generation
+
+The `task k8s:generate` step regenerates chart RBAC files by running `rm chart/files/rbac/*.yaml` then re-splitting from `config/rbac/itemized/*.yaml`. If you add a new itemized RBAC file, you **must** also add it to the file list in `taskfiles/k8s.yml` (search for `chart/files/rbac/`), otherwise it will be deleted on every `task generate` run.
 
 ### Lifecycle golden tests
 
