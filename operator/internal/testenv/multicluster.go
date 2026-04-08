@@ -68,6 +68,11 @@ type MulticlusterOptions struct {
 	// InstallCertManager installs cert-manager via helm on every k3d cluster.
 	// Required when the test deploys resources that need TLS certificates.
 	InstallCertManager bool
+	// CIDRBlock is the second octet base for non-overlapping pod/service CIDRs.
+	// Cluster i gets pod CIDR 10.{CIDRBlock+i}.0.0/16 and service CIDR
+	// 10.{CIDRBlock+ClusterSize+i}.0.0/16. Different tests should use different
+	// blocks to avoid conflicts when running in parallel. Defaults to 100.
+	CIDRBlock int
 	// ImportImages is a list of docker images to pre-load into every k3d cluster.
 	// Images must be available locally (e.g. built or pulled) before the test runs.
 	ImportImages []string
@@ -89,11 +94,18 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 	if opts.Name == "" {
 		opts.Name = "mc"
 	}
+	if opts.CIDRBlock == 0 {
+		opts.CIDRBlock = 100
+	}
 	if opts.Namespace == "" {
 		opts.Namespace = opts.Name
 	}
 
 	ports := testutil.FreePorts(t, opts.ClusterSize)
+
+	// Pre-create the shared Docker network so parallel k3d cluster creation
+	// doesn't race on network creation.
+	_ = exec.Command("docker", "network", "create", opts.Name).Run() //nolint:errcheck // ignore "already exists"
 
 	// Pre-create k3d clusters in parallel to speed up bootstrapping.
 	// Each cluster gets a unique pod/service CIDR so that pods can communicate
@@ -105,14 +117,18 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			// Non-overlapping CIDRs: 10.{100+idx}.0.0/16 for pods, 10.{200+idx}.0.0/16 for services.
-			clusterCIDR := fmt.Sprintf("10.%d.0.0/16", 100+idx)
-			serviceCIDR := fmt.Sprintf("10.%d.0.0/16", 200+idx)
-			_, errs[idx] = k3d.GetOrCreate(
-				fmt.Sprintf("%s-%d", opts.Name, idx),
+			k3dOpts := []k3d.ClusterOpt{
 				k3d.WithAgents(1),
 				k3d.WithNetwork(opts.Name),
-				k3d.WithCIDRs(clusterCIDR, serviceCIDR),
+			}
+				// Non-overlapping CIDRs so pods can communicate across clusters.
+			k3dOpts = append(k3dOpts, k3d.WithCIDRs(
+				fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+idx),
+				fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+opts.ClusterSize+idx),
+			))
+			_, errs[idx] = k3d.GetOrCreate(
+				fmt.Sprintf("%s-%d", opts.Name, idx),
+				k3dOpts...,
 			)
 		}(i)
 	}
@@ -121,8 +137,6 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 		require.NoError(t, err, "creating k3d cluster %d", i)
 	}
 
-	// Set up flat networking: add routes on each k3d node so pods can reach
-	// pods on other clusters via their non-overlapping CIDRs.
 	setupFlatNetworking(t, opts.Name, opts.ClusterSize)
 
 	envs := make([]*Env, opts.ClusterSize)
