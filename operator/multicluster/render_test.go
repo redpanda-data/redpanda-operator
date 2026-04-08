@@ -91,6 +91,23 @@ func TestRender(t *testing.T) {
 			state, err := NewRenderState(nil, cluster, pools, pools, "test")
 			require.NoError(t, err)
 
+			// For flat network mode, generate synthetic pod endpoints so
+			// the renderer can produce Endpoints/EndpointSlices.
+			if state.Spec().Networking.IsFlatNetwork() {
+				var endpoints []PodEndpoint
+				for _, pool := range pools {
+					for j := int32(0); j < pool.GetReplicas(); j++ {
+						endpoints = append(endpoints, PodEndpoint{
+							Name:    fmt.Sprintf("%s-%s-%d", cluster.Name, pool.Name, j),
+							IP:      fmt.Sprintf("10.0.%d.%d", len(endpoints)/256, len(endpoints)%256+1),
+							Cluster: "test",
+							Ready:   true,
+						})
+					}
+				}
+				state.WithPodEndpoints(endpoints)
+			}
+
 			// If SASL is enabled, set a deterministic bootstrap user secret
 			// to avoid nondeterminism from random password generation.
 			if state.Spec().Auth.IsSASLEnabled() {

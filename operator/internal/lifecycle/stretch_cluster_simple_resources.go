@@ -73,6 +73,20 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		return nil, errors.WithStack(err)
 	}
 
+	// Pass pod endpoints for flat network Endpoints/EndpointSlice rendering.
+	if len(cluster.PodEndpoints) > 0 {
+		renderEndpoints := make([]multiclusterRenderer.PodEndpoint, len(cluster.PodEndpoints))
+		for i, ep := range cluster.PodEndpoints {
+			renderEndpoints[i] = multiclusterRenderer.PodEndpoint{
+				Name:    ep.Name,
+				IP:      ep.IP,
+				Cluster: ep.Cluster,
+				Ready:   ep.Ready,
+			}
+		}
+		state.WithPodEndpoints(renderEndpoints)
+	}
+
 	resources, err := multiclusterRenderer.RenderResources(state)
 	if err != nil {
 		return nil, errors.WithStack(err)

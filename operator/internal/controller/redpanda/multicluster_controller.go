@@ -13,20 +13,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"maps"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/otelkube"
 	"github.com/redpanda-data/common-go/otelutil/trace"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.opentelemetry.io/otel/attribute"
 	corev1 "k8s.io/api/core/v1"
-	discoveryv1 "k8s.io/api/discovery/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -60,6 +57,10 @@ const (
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceexports,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=multicluster.x-k8s.io,resources=serviceimports,verbs=get;list;watch;create;update;patch;delete
 
 type MulticlusterReconciler struct {
 	Manager         multicluster.Manager
@@ -203,7 +204,6 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// checks so that pods can discover each other before becoming ready.
 	resourceReconcilers := []stretchClusterReconciliationFn{
 		r.reconcileResources,
-		r.reconcileEndpointSlices,
 		r.reconcilePools,
 	}
 	for _, reconciler := range resourceReconcilers {
@@ -341,6 +341,10 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	} else {
 		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonNotReady, "No pods are ready")
 	}
+
+	// Populate pod endpoints on the cluster struct so the renderer can
+	// produce Endpoints/EndpointSlices for flat network mode.
+	sccluster.PodEndpoints = pools.PodEndpoints()
 
 	return &stretchClusterReconciliationState{
 		cluster:               sccluster,
@@ -686,150 +690,6 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 		result.RequeueAfter = requeueTimeout
 	}
 	return result, nil
-}
-
-func (r *MulticlusterReconciler) reconcileEndpointSlices(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
-	sc := state.cluster.StretchCluster
-	defaultedSpec := *sc.Spec.DeepCopy()
-	defaultedSpec.MergeDefaults()
-
-	if !defaultedSpec.Networking.IsFlatNetwork() {
-		return ctrl.Result{}, nil
-	}
-
-	podEndpoints := state.pools.PodEndpoints()
-	if len(podEndpoints) == 0 {
-		// No pods have IPs yet — no-op. reconcilePools will create the
-		// StatefulSets, and subsequent reconcile loops will sync EndpointSlices
-		// once pods are scheduled.
-		return ctrl.Result{}, nil
-	}
-
-	if err := r.syncCrossClusterEndpoints(ctx, state, podEndpoints); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "syncing cross-cluster endpoints")
-	}
-
-	return ctrl.Result{}, nil
-}
-
-// syncCrossClusterEndpoints creates Endpoints and EndpointSlices for selector-less
-// per-pod Services so that DNS resolves to actual pod IPs across clusters.
-func (r *MulticlusterReconciler) syncCrossClusterEndpoints(ctx context.Context, state *stretchClusterReconciliationState, podEndpoints []lifecycle.PodEndpoint) error {
-	logger := log.FromContext(ctx).WithName("syncCrossClusterEndpoints")
-
-	var syncErr error
-	for _, clusterName := range r.LifecycleClient.ClusterList(state.cluster) {
-		ctl, err := r.LifecycleClient.Ctl(ctx, clusterName)
-		if err != nil {
-			syncErr = errors.Join(syncErr, err)
-			continue
-		}
-
-		// Resolve the owner for this cluster to get the correct UID.
-		owner, err := r.LifecycleClient.ResolveOwnerReference(ctx, state.cluster, clusterName)
-		if err != nil {
-			syncErr = errors.Join(syncErr, errors.Wrapf(err, "resolving owner in cluster %s", clusterName))
-			continue
-		}
-		ownerRef := *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())
-
-		// List per-pod Services with ownership labels.
-		svcs, err := kube.List[corev1.ServiceList](ctx, ctl, state.cluster.GetNamespace(),
-			client.MatchingLabels(r.LifecycleClient.GetOwnerLabels(state.cluster)))
-		if err != nil {
-			syncErr = errors.Join(syncErr, errors.Wrapf(err, "listing services in cluster %s", clusterName))
-			continue
-		}
-
-		for _, svc := range svcs.Items {
-			if len(svc.Spec.Selector) > 0 {
-				continue
-			}
-
-			// TODO: should the per-pod service names match the pod names? Currently
-			// pod names are "{statefulset}-{ordinal}" (e.g. "factory-test-pool-0-0")
-			// while service names are "{pool-suffix}-{ordinal}" (e.g. "pool-0-0").
-			// We match by checking if the pod name ends with the service name.
-			var ep lifecycle.PodEndpoint
-			found := false
-			for _, e := range podEndpoints {
-				if strings.HasSuffix(e.Name, svc.Name) {
-					ep = e
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-
-			ownerLabels := r.LifecycleClient.AddOwnerLabels(state.cluster)
-			ownerLabels[lifecycle.GCLabel] = "false"
-
-			// Endpoints — CoreDNS resolves headless service DNS from this API.
-			var v1Ports []corev1.EndpointPort
-			for _, p := range svc.Spec.Ports {
-				v1Ports = append(v1Ports, corev1.EndpointPort{
-					Name:     p.Name,
-					Port:     p.Port,
-					Protocol: p.Protocol,
-				})
-			}
-			epObj := &corev1.Endpoints{ //nolint:staticcheck // Endpoints required for CoreDNS headless service resolution
-				TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Endpoints"},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            svc.Name,
-					Namespace:       state.cluster.GetNamespace(),
-					Labels:          maps.Clone(ownerLabels),
-					OwnerReferences: []metav1.OwnerReference{ownerRef},
-				},
-				Subsets: []corev1.EndpointSubset{{ //nolint:staticcheck // see above
-					Addresses: []corev1.EndpointAddress{{IP: ep.IP}},
-					Ports:     v1Ports,
-				}},
-			}
-			if err := ctl.Apply(ctx, epObj, client.ForceOwnership); err != nil {
-				syncErr = errors.Join(syncErr, errors.Wrapf(err, "applying Endpoints %s in cluster %s", epObj.Name, clusterName))
-				continue
-			}
-
-			// EndpointSlice — for kube-proxy and service mesh consumers.
-			var slicePorts []discoveryv1.EndpointPort
-			for _, p := range svc.Spec.Ports {
-				p := p
-				slicePorts = append(slicePorts, discoveryv1.EndpointPort{
-					Name:     &p.Name,
-					Port:     &p.Port,
-					Protocol: &p.Protocol,
-				})
-			}
-			epSliceLabels := maps.Clone(ownerLabels)
-			epSliceLabels[discoveryv1.LabelServiceName] = svc.Name
-			epSlice := &discoveryv1.EndpointSlice{
-				TypeMeta: metav1.TypeMeta{APIVersion: "discovery.k8s.io/v1", Kind: "EndpointSlice"},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            svc.Name + "-cross-cluster",
-					Namespace:       state.cluster.GetNamespace(),
-					Labels:          epSliceLabels,
-					OwnerReferences: []metav1.OwnerReference{ownerRef},
-				},
-				AddressType: discoveryv1.AddressTypeIPv4,
-				Endpoints: []discoveryv1.Endpoint{{
-					Addresses:  []string{ep.IP},
-					Conditions: discoveryv1.EndpointConditions{Ready: ptr.To(ep.Ready)},
-				}},
-				Ports: slicePorts,
-			}
-			if err := ctl.Apply(ctx, epSlice, client.ForceOwnership); err != nil {
-				syncErr = errors.Join(syncErr, errors.Wrapf(err, "applying EndpointSlice %s in cluster %s", epSlice.Name, clusterName))
-				continue
-			}
-
-			logger.V(log.TraceLevel).Info("synced cross-cluster endpoints", "service", svc.Name, "cluster", clusterName, "podIP", ep.IP)
-		}
-	}
-
-	return syncErr
 }
 
 func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
