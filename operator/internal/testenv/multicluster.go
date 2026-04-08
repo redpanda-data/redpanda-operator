@@ -121,7 +121,7 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 				k3d.WithAgents(1),
 				k3d.WithNetwork(opts.Name),
 			}
-				// Non-overlapping CIDRs so pods can communicate across clusters.
+			// Non-overlapping CIDRs so pods can communicate across clusters.
 			k3dOpts = append(k3dOpts, k3d.WithCIDRs(
 				fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+idx),
 				fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+opts.ClusterSize+idx),
