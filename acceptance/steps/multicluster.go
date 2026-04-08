@@ -293,6 +293,9 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
 
 	vclusters := createVClusters(ctx, t, clusters)
+	t.Cleanup(func(ctx context.Context) {
+		vclusterNodes(vclusters).dumpDiagnostics(ctx, t)
+	})
 	assignOperatorServiceIPs(ctx, t, vclusters, namespace)
 	peers := bootstrapTLS(ctx, t, vclusters, namespace)
 	deployOperators(ctx, t, vclusters, namespace, redpandaLicense, peers)

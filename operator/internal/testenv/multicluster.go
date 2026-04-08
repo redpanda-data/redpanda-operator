@@ -142,16 +142,17 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 	envs := make([]*Env, opts.ClusterSize)
 	for i := range opts.ClusterSize {
 		envs[i] = New(t, Options{
-			Name:               fmt.Sprintf("%s-%d", opts.Name, i),
-			Agents:             1,
-			Scheme:             opts.Scheme,
-			CRDs:               opts.CRDs,
-			Network:            opts.Name,
-			Namespace:          opts.Namespace,
-			Logger:             opts.Logger.WithName(fmt.Sprintf("%s-%d", opts.Name, i)),
-			ImportImages:       opts.ImportImages,
-			WatchAllNamespaces: opts.WatchAllNamespaces,
-			SkipVCluster:       true,
+			Name:                fmt.Sprintf("%s-%d", opts.Name, i),
+			Agents:              1,
+			Scheme:              opts.Scheme,
+			CRDs:                opts.CRDs,
+			Network:             opts.Name,
+			Namespace:           opts.Namespace,
+			Logger:              opts.Logger.WithName(fmt.Sprintf("%s-%d", opts.Name, i)),
+			ImportImages:        opts.ImportImages,
+			WatchAllNamespaces:  opts.WatchAllNamespaces,
+			SkipNamespaceClient: opts.WatchAllNamespaces,
+			SkipVCluster:        true,
 		})
 	}
 

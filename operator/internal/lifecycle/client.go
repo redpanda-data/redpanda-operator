@@ -197,6 +197,8 @@ func (r *ResourceClient[T, U]) SyncEndpointSlices(ctx context.Context, owner U, 
 			}
 
 			ownerLabels := r.ownershipResolver.AddLabels(owner)
+			// Mark as gc=false so the syncer doesn't delete these out-of-band resources.
+			ownerLabels[GCLabel] = "false"
 
 			// Endpoints — CoreDNS resolves headless service DNS from this API.
 			var v1Ports []corev1.EndpointPort
@@ -350,6 +352,7 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 			maps.Copy(o.GetLabels(), r.ownershipResolver.AddLabels(owner))
 		},
 		Owner: *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind()),
+		// GCLabel: GCLabel,
 	}, nil
 }
 
