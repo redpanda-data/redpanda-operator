@@ -239,6 +239,11 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 
 	owner, err = r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
 	if err != nil {
+		// If the owner doesn't exist on this cluster (e.g. already deleted or
+		// not yet created), skip — there are no owned resources to sync.
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("cannot resolve owner reference: %w", err)
 	}
 
@@ -281,6 +286,9 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			return err
+		}
+		if syncer == nil {
+			continue
 		}
 		_, err = syncer.Sync(ctx)
 		syncErr = errors.Join(syncErr, err)
@@ -473,7 +481,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			deleteErr = errors.Join(deleteErr, err)
-		} else {
+		} else if syncer != nil {
 			clusterResourcesDeleted, err = syncer.DeleteAll(ctx)
 			if err != nil {
 				deleteErr = errors.Join(deleteErr, err)
