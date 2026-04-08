@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/kube"
-	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/trace"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +27,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	//"github.com/redpanda-data/common-go/otelutil/log" bring back after https://github.com/redpanda-data/common-go/pull/160
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"

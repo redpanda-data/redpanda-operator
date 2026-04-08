@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	controllerlog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -82,7 +83,7 @@ type stretchClusterReconciliationFn func(ctx context.Context, state *stretchClus
 
 func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (result ctrl.Result, err error) {
 	start := time.Now()
-	l := log.FromContext(ctx).WithName("MulticlusterReconciler.Reconcile")
+	l := controllerlog.FromContext(ctx).WithName("MulticlusterReconciler.Reconcile")
 
 	l.V(1).Info("Starting reconcile loop")
 	defer func() {
@@ -228,7 +229,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // persists the status, and returns drifted=true so the caller can abort reconciliation.
 // When specs are aligned it sets SpecSynced=True.
 func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster) (drifted bool, _ ctrl.Result, _ error) {
-	l := log.FromContext(ctx).WithName("checkSpecConsistency")
+	l := controllerlog.FromContext(ctx).WithName("checkSpecConsistency")
 
 	localSpec := sc.Spec
 	var driftDetails []string
@@ -285,7 +286,7 @@ func specDiffFields(a, b redpandav1alpha2.StretchClusterSpec) []string {
 }
 
 func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*stretchClusterReconciliationState, error) {
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 	logger.V(log.DebugLevel).Info("fetchInitialState")
 
 	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames())
@@ -343,7 +344,7 @@ func bootstrapSecretName(sc *redpandav1alpha2.StretchCluster) string {
 
 func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (_ ctrl.Result, err error) {
 	ctx, span := trace.Start(ctx, "syncBootstrapUser")
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 
 	defer func() {
 		if err != nil {
@@ -454,7 +455,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 
 func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
 	ctx, span := trace.Start(ctx, "reconcileResources")
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 
 	defer func() {
 		if err != nil {
@@ -477,7 +478,7 @@ func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *
 
 func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
 	ctx, span := trace.Start(ctx, "reconcilePools")
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 
 	defer func() {
 		if err != nil {
@@ -542,7 +543,7 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 		return ctrl.Result{}, nil
 	}
 
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 	adminAPIEndpoints := r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
 	if len(adminAPIEndpoints) == 0 {
 		return ctrl.Result{}, fmt.Errorf("no admin API endpoints found for cluster %s", state.cluster.Name)
@@ -561,7 +562,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	var health rpadmin.ClusterHealthOverview
 
 	ctx, span := trace.Start(ctx, "reconcileDecommission")
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 
 	defer func() {
 		if err != nil {
@@ -683,7 +684,7 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 	var license *redpandav1alpha2.RedpandaLicenseStatus
 
 	ctx, span := trace.Start(ctx, "reconcileLicense")
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 
 	defer func() {
 		if err != nil {
@@ -775,7 +776,7 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 
 func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) (_ reconcile.Result, err error) {
 	ctx, span := trace.Start(ctx, "reconcileClusterConfig")
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 
 	defer func() {
 		if err != nil {
@@ -816,7 +817,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 func (r *MulticlusterReconciler) syncStatus(ctx context.Context, cluster cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
 	original := state.cluster.StretchCluster.Status.DeepCopy()
 	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) {
-		log.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
+		controllerlog.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.StretchCluster.Status)
 		syncErr := cluster.GetClient().Status().Update(ctx, state.cluster.StretchCluster)
 		err = errors.Join(syncErr, err)
 	}
@@ -846,7 +847,7 @@ func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *
 // decommissioning the broker with the last pod ordinal and then patching the statefulset with
 // a single less replica.
 func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
-	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
+	logger := controllerlog.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
 	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	brokerID, ok := brokerMap[set.LastPod.GetName()]
@@ -879,7 +880,7 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 
 // decommissionBroker handles decommissioning a broker and waiting until it has finished decommissioning
 func (r *MulticlusterReconciler) decommissionBroker(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerID int) (bool, error) {
-	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].decommissionBroker", *cluster))
+	logger := controllerlog.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].decommissionBroker", *cluster))
 	logger.V(log.TraceLevel).Info("checking decommissioning status for pod", "Pod", client.ObjectKeyFromObject(set.LastPod).String())
 
 	decommissionStatus, err := admin.DecommissionBrokerStatus(ctx, brokerID)

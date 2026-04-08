@@ -16,11 +16,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/redpanda-data/common-go/otelutil/log"
+	//"github.com/redpanda-data/common-go/otelutil/log" bring back after https://github.com/redpanda-data/common-go/pull/160
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"

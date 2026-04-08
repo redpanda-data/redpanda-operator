@@ -411,8 +411,6 @@ github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1
 github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:V3OBV2kcF/BDDytUZuKvIygbaXoGPT5VO3KmMAz+mBM=
 github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a h1:Ce2o1IIQcR1UD8FX8sXwevI7JlEVnWoMtMLkawC5mbU=
 github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a/go.mod h1:FMuuUG3IVwwSad+3da0WIPYHsUuvi3LHnjgSv8ovXug=
-github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1 h1:fLBU7IJZq8PR88AkEdI5G+yyBsftionGapvAOMPW9hg=
-github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:LzztzYWpD+e+A6hV6+eQhYY60zHQR7ePxhLgyMmRn/Q=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=

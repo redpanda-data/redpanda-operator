@@ -14,10 +14,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
+	//"github.com/redpanda-data/common-go/otelutil/log" bring back after https://github.com/redpanda-data/common-go/pull/160
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type MulticlusterStatefulSet struct {

@@ -13,7 +13,8 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
-	"github.com/redpanda-data/common-go/otelutil/log"
+	//"github.com/redpanda-data/common-go/otelutil/log" bring back after https://github.com/redpanda-data/common-go/pull/160
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type FlagBundle int
@@ -107,7 +108,7 @@ func (f *AnnotationFeatureFlag[T]) Get(ctx context.Context, obj AnnotationGetter
 			if err == nil {
 				return parsed
 			}
-			log.Error(ctx, err, "failed to parsed annotation; interpreting as default", "default", f.Default, "value", value)
+			log.FromContext(ctx).Error(err, "failed to parsed annotation; interpreting as default", "default", f.Default, "value", value)
 		}
 	}
 

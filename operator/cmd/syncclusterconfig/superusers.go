@@ -17,7 +17,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/redpanda-data/common-go/otelutil/log"
+	//"github.com/redpanda-data/common-go/otelutil/log" bring back after https://github.com/redpanda-data/common-go/pull/160
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // NormalizeSuperusers de-duplicates and sorts the superusers

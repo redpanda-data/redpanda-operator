@@ -22,7 +22,6 @@ import (
 	"github.com/imdario/mergo"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
-	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,6 +31,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	//"github.com/redpanda-data/common-go/otelutil/log" bring back after https://github.com/redpanda-data/common-go/pull/160
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
@@ -134,7 +135,7 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 	// so we don't NEED to use a finalizer. It's here to prevent accidents if
 	// we need cluster scoped resources one day.
 	if !cr.DeletionTimestamp.IsZero() {
-		log.Info(ctx, "GC'ing Console", "key", kube.AsKey(cr))
+		log.FromContext(ctx).Info("GC'ing Console", "key", kube.AsKey(cr))
 
 		if controllerutil.RemoveFinalizer(cr, finalizerKey) {
 			if _, err := syncer.DeleteAll(ctx); err != nil {
@@ -160,7 +161,7 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	log.Info(ctx, "reconciling Console", "key", kube.AsKey(cr))
+	log.FromContext(ctx).Info("reconciling Console", "key", kube.AsKey(cr))
 
 	// Add the finalizer, if not present.
 	if controllerutil.AddFinalizer(cr, finalizerKey) {
@@ -342,7 +343,7 @@ func (c *Controller) skipServiceMonitorWatchIfNotInstalled(ctx context.Context) 
 	if errors.Is(err, &meta.NoKindMatchError{}) {
 		return true
 	} else if err != nil {
-		log.Error(ctx, err, "could not list ServiceMonitors")
+		log.FromContext(ctx).Error(err, "could not list ServiceMonitors")
 		return true
 	}
 	return false

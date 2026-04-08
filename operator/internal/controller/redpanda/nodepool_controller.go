@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/otelutil/log"
+	// Remove controller-runtime logger after https://github.com/redpanda-data/common-go/pull/160
 	"github.com/redpanda-data/common-go/otelutil/otelkube"
 	"github.com/redpanda-data/common-go/otelutil/trace"
 	"go.opentelemetry.io/otel/attribute"
@@ -27,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	controllerlog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
@@ -63,7 +65,7 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 		).
 		Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {
 			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
-				l := log.FromContext(ctx).WithName("NodePoolReconciler.StretchClusterWatch").V(log.TraceLevel)
+				l := controllerlog.FromContext(ctx).WithName("NodePoolReconciler.StretchClusterWatch").V(log.TraceLevel)
 				l.Info("StretchCluster event received", "stretchCluster", client.ObjectKeyFromObject(object).String(), "knownClusters", mgr.GetClusterNames())
 				var reqs []mcreconcile.Request
 				for _, clusterName := range mgr.GetClusterNames() {
@@ -148,7 +150,7 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 
 // Reconcile reconciles NodePool objects
 func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (result ctrl.Result, err error) {
-	l := log.FromContext(ctx).WithName("NodePoolReconciler.Reconcile").WithValues("object", req.NamespacedName.String(), "cluster", req.ClusterName)
+	l := controllerlog.FromContext(ctx).WithName("NodePoolReconciler.Reconcile").WithValues("object", req.NamespacedName.String(), "cluster", req.ClusterName)
 	l.V(log.DebugLevel).Info("Starting reconcile loop")
 	start := time.Now()
 	defer func() {
@@ -189,7 +191,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	))
 	defer func() { trace.EndSpan(span, err) }()
 
-	logger := log.FromContext(ctx)
+	logger := controllerlog.FromContext(ctx)
 
 	if !feature.V2Managed.Get(ctx, pool) {
 		if controllerutil.RemoveFinalizer(pool, FinalizerKey) {

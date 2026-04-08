@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	// Remove controller-runtime logger after https://github.com/redpanda-data/common-go/pull/160
+	controllerlog "sigs.k8s.io/controller-runtime/pkg/log"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -72,7 +74,7 @@ type TopicReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *TopicReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
 	start := time.Now()
-	l := log.FromContext(ctx).WithName("TopicReconciler.Reconcile")
+	l := controllerlog.FromContext(ctx).WithName("TopicReconciler.Reconcile")
 
 	l.V(1).Info("Starting reconcile loop")
 	defer func() {

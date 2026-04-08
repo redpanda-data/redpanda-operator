@@ -19,9 +19,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/time/rate"
+	//"github.com/redpanda-data/common-go/otelutil/log" bring back after https://github.com/redpanda-data/common-go/pull/160
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func Command() *cobra.Command {
@@ -51,6 +52,7 @@ The default retry parameters are tuned for a a long running process, such as the
 
 			ctx, cancel := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer cancel()
+			log := log.FromContext(ctx)
 
 			limiter := rate.NewLimiter(rate.Every(retryRate), retryBurst)
 			runner := Runner{
@@ -80,13 +82,13 @@ The default retry parameters are tuned for a a long running process, such as the
 				delay := reservation.Delay()
 
 				if delay > 0 {
-					log.Info(ctx, "backing off retries", "delay", delay.String())
+					log.Info("backing off retries", "delay", delay.String())
 				}
 
 				// Otherwise wait until we have a retry "credit" available.
 				select {
 				case <-ctx.Done():
-					log.Info(ctx, "shutting down")
+					log.Info("shutting down")
 					return
 
 				case <-time.After(reservation.Delay()):
@@ -117,7 +119,8 @@ type Runner struct {
 func (r *Runner) Run(
 	ctx context.Context,
 ) (cont bool) {
-	log.Info(ctx, "starting process", "command", r.Command)
+	log := log.FromContext(ctx)
+	log.Info("starting process", "command", r.Command)
 
 	//nolint:gosec // This is running with a users permissions, nothing to exploit here.
 	subprocess := exec.Command(r.Command[0], r.Command[1:]...)
@@ -127,7 +130,7 @@ func (r *Runner) Run(
 	subprocess.Stdout = r.Stdout
 
 	if err := subprocess.Start(); err != nil {
-		log.Error(ctx, err, "failed to start process", "command", r.Command)
+		log.Error(err, "failed to start process", "command", r.Command)
 		// If we fail to startup the provided process, don't continue to retry
 		// as it's exceptionally unlikely this type of issue will resolve
 		// itself.
@@ -142,19 +145,19 @@ func (r *Runner) Run(
 	for {
 		select {
 		case err := <-doneCh:
-			log.Error(ctx, err, "process exited")
+			log.Error(err, "process exited")
 			return true // Continue to re-run on any process crashes.
 
 		case sig := <-r.Signals:
 			// Forward signals onto our child process.
-			log.Info(ctx, "forwarding signal", "signal", sig)
+			log.Info("forwarding signal", "signal", sig)
 			if err := subprocess.Process.Signal(sig); err != nil {
-				log.Error(ctx, err, "failed to forward signal to subprocess", "signal", sig)
+				log.Error(err, "failed to forward signal to subprocess", "signal", sig)
 			}
 			continue
 
 		case <-ctx.Done():
-			log.Info(ctx, "terminating process")
+			log.Info("terminating process")
 
 			// Initiate the shutdown process by sending SIGTERM to match
 			// Kubernetes' behavior[1] (in most cases).
@@ -167,10 +170,10 @@ func (r *Runner) Run(
 			// before KILL'ing it.
 			select {
 			case <-doneCh:
-				log.Info(ctx, "process gracefully terminated")
+				log.Info("process gracefully terminated")
 			case <-time.After(r.GracePeriod):
 				_ = subprocess.Process.Kill()
-				log.Info(ctx, "process killed")
+				log.Info("process killed")
 			}
 
 			// If the context has been cancelled, don't continue the loop.
