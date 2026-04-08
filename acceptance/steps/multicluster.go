@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"slices"
 	"strings"
@@ -32,7 +33,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -120,6 +123,53 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 			for _, event := range vcEvents.Items {
 				t.Logf("[multicluster-diagnostics] event %s %s/%s: %s", event.Type, event.InvolvedObject.Kind, event.InvolvedObject.Name, event.Message)
 			}
+		}
+
+		// Dump StretchCluster objects.
+		var scList redpandav1alpha2.StretchClusterList
+		if err := node.List(diagCtx, &scList); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list StretchClusters: %v", err)
+		} else {
+			for _, sc := range scList.Items {
+				t.Logf("[multicluster-diagnostics] StretchCluster %s/%s: finalizers=%v, conditions=%d, generation=%d",
+					sc.Namespace, sc.Name, sc.Finalizers, len(sc.Status.Conditions), sc.Generation)
+				for _, cond := range sc.Status.Conditions {
+					t.Logf("[multicluster-diagnostics]   condition %s=%s reason=%s: %s", cond.Type, cond.Status, cond.Reason, cond.Message)
+				}
+			}
+		}
+
+		// Dump NodePools.
+		var npList redpandav1alpha2.NodePoolList
+		if err := node.List(diagCtx, &npList); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list NodePools: %v", err)
+		} else {
+			for _, np := range npList.Items {
+				t.Logf("[multicluster-diagnostics] NodePool %s/%s: replicas=%d, conditions=%d",
+					np.Namespace, np.Name, ptr.Deref(np.Spec.Replicas, 0), len(np.Status.Conditions))
+			}
+		}
+
+		// Dump operator pod logs (last 100 lines).
+		k8sClient, err := kubernetes.NewForConfig(node.RESTConfig())
+		if err != nil {
+			t.Logf("[multicluster-diagnostics] failed to create k8s client for logs: %v", err)
+			continue
+		}
+		for _, pod := range vcPods.Items {
+			if !strings.Contains(pod.Name, "operator") {
+				continue
+			}
+			tailLines := int64(100)
+			req := k8sClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{TailLines: &tailLines})
+			logStream, err := req.Stream(diagCtx)
+			if err != nil {
+				t.Logf("[multicluster-diagnostics] failed to get logs for %s: %v", pod.Name, err)
+				continue
+			}
+			logBytes, _ := io.ReadAll(logStream)
+			_ = logStream.Close()
+			t.Logf("[multicluster-diagnostics] === operator logs %s (last 100 lines) ===\n%s", pod.Name, string(logBytes))
 		}
 	}
 }
