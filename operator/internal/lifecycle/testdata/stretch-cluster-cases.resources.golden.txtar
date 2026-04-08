@@ -1226,43 +1226,11 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-default-selfsigned-issuer
-    namespace: compat-test
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: compat-test
-      cluster.redpanda.com/owner: compat-test
     name: compat-test-default-root-issuer
     namespace: compat-test
   spec:
     ca:
       secretName: compat-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: compat-test
-      cluster.redpanda.com/owner: compat-test
-    name: compat-test-external-selfsigned-issuer
-    namespace: compat-test
-  spec:
-    selfSigned: {}
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -1292,58 +1260,6 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-default-root-certificate
-    namespace: compat-test
-  spec:
-    commonName: compat-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: compat-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: compat-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: compat-test
-      cluster.redpanda.com/owner: compat-test
-    name: compat-test-external-root-certificate
-    namespace: compat-test
-  spec:
-    commonName: compat-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: compat-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: compat-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: compat-test
-      cluster.redpanda.com/owner: compat-test
     name: compat-test-default-cert
     namespace: compat-test
   spec:
@@ -1360,6 +1276,9 @@
     - '*.compat-test.compat-test.svc.cluster.local'
     - '*.compat-test.compat-test.svc'
     - '*.compat-test.compat-test'
+    - '*.compat-test.svc.cluster.local'
+    - '*.compat-test.svc'
+    - '*.compat-test'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -1397,6 +1316,9 @@
     - '*.compat-test.compat-test.svc.cluster.local'
     - '*.compat-test.compat-test.svc'
     - '*.compat-test.compat-test'
+    - '*.compat-test.svc.cluster.local'
+    - '*.compat-test.svc'
+    - '*.compat-test'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2233,43 +2155,11 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-default-selfsigned-issuer
-    namespace: nodepool-basic-test
-  spec:
-    selfSigned: {}
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: nodepool-basic-test
-      cluster.redpanda.com/owner: nodepool-basic-test
     name: nodepool-basic-test-default-root-issuer
     namespace: nodepool-basic-test
   spec:
     ca:
       secretName: nodepool-basic-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: nodepool-basic-test
-      cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-external-selfsigned-issuer
-    namespace: nodepool-basic-test
-  spec:
-    selfSigned: {}
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -2299,58 +2189,6 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-default-root-certificate
-    namespace: nodepool-basic-test
-  spec:
-    commonName: nodepool-basic-test-default-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: nodepool-basic-test-default-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: nodepool-basic-test-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: nodepool-basic-test
-      cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-external-root-certificate
-    namespace: nodepool-basic-test
-  spec:
-    commonName: nodepool-basic-test-external-root-certificate
-    duration: 43800h0m0s
-    isCA: true
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: nodepool-basic-test-external-selfsigned-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: nodepool-basic-test-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: ""
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: nodepool-basic-test
-      cluster.redpanda.com/owner: nodepool-basic-test
     name: nodepool-basic-test-default-cert
     namespace: nodepool-basic-test
   spec:
@@ -2367,6 +2205,9 @@
     - '*.nodepool-basic-test.nodepool-basic-test.svc.cluster.local'
     - '*.nodepool-basic-test.nodepool-basic-test.svc'
     - '*.nodepool-basic-test.nodepool-basic-test'
+    - '*.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2404,6 +2245,9 @@
     - '*.nodepool-basic-test.nodepool-basic-test.svc.cluster.local'
     - '*.nodepool-basic-test.nodepool-basic-test.svc'
     - '*.nodepool-basic-test.nodepool-basic-test'
+    - '*.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io

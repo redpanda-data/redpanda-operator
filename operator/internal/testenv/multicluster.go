@@ -12,12 +12,11 @@ package testenv
 import (
 	"context"
 	"fmt"
+	"net"
 	"os/exec"
+	"strings"
 	"sync"
 	"testing"
-
-	"net"
-	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
@@ -322,7 +321,7 @@ func (m *MulticlusterEnv) DialContext(ctx context.Context, network, address stri
 	// Look up the Endpoints object for this service across all clusters
 	// to find the actual backing pod name.
 	for i, env := range m.Envs {
-		var ep corev1.Endpoints
+		var ep corev1.Endpoints //nolint:staticcheck // Endpoints used for CoreDNS headless service resolution
 		if err := env.Client().Get(ctx, client.ObjectKey{Name: svcName, Namespace: ns}, &ep); err != nil {
 			continue
 		}

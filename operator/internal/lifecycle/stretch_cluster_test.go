@@ -59,7 +59,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 	logger := testr.NewWithOptions(t, testr.Options{Verbosity: 6})
 
 	manager, err := multicluster.NewSingleClusterManager(config, ctrl.Options{
-		Scheme: controller.V2Scheme,
+		Scheme: controller.MulticlusterScheme,
 		Logger: logger,
 		Metrics: metricsserver.Options{
 			// disable metrics

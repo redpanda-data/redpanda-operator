@@ -44,7 +44,7 @@ var (
 		clientgoscheme.AddToScheme,
 		redpandav1alpha2.Install,
 		monitoringv1.AddToScheme,
-		mcsv1alpha1.AddToScheme,
+		mcsv1alpha1.Install,
 	}
 
 	MulticlusterScheme *runtime.Scheme

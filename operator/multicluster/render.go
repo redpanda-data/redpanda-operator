@@ -34,7 +34,7 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
-		&corev1.Endpoints{},
+		&corev1.Endpoints{}, //nolint:staticcheck // Endpoints used for CoreDNS headless service resolution
 		&discoveryv1.EndpointSlice{},
 		&mcsv1alpha1.ServiceExport{},
 		&mcsv1alpha1.ServiceImport{},

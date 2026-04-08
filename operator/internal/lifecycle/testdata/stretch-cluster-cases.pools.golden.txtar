@@ -78,8 +78,8 @@
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: v26.1.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+            value: localhost/redpanda-operator:dev
+          image: redpandadata/redpanda:v26.1.1
           lifecycle:
             postStart:
               exec:
@@ -192,7 +192,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: localhost/redpanda-operator:dev
           name: sidecar
           readinessProbe:
             failureThreshold: 3
@@ -218,7 +218,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: tuning
           resources: {}
           securityContext:
@@ -259,7 +259,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -280,7 +280,7 @@
           - /tmp/base-config
           - --out-dir
           - /tmp/config
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: localhost/redpanda-operator:dev
           name: bootstrap-yaml-envsubst
           resources:
             limits:
@@ -454,7 +454,7 @@
             value: v26.1.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           lifecycle:
             postStart:
               exec:
@@ -593,7 +593,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: tuning
           resources: {}
           securityContext:
@@ -634,7 +634,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -829,8 +829,8 @@
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
             value: v26.1.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+            value: localhost/redpanda-operator:dev
+          image: redpandadata/redpanda:v26.1.1
           lifecycle:
             postStart:
               exec:
@@ -943,7 +943,7 @@
             valueFrom:
               fieldRef:
                 fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: localhost/redpanda-operator:dev
           name: sidecar
           readinessProbe:
             failureThreshold: 3
@@ -969,7 +969,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: tuning
           resources: {}
           securityContext:
@@ -1010,7 +1010,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:
@@ -1031,7 +1031,7 @@
           - /tmp/base-config
           - --out-dir
           - /tmp/config
-          image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          image: localhost/redpanda-operator:dev
           name: bootstrap-yaml-envsubst
           resources:
             limits:
@@ -1205,7 +1205,7 @@
             value: v26.1.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           lifecycle:
             postStart:
               exec:
@@ -1344,7 +1344,7 @@
           - /bin/bash
           - -c
           - rpk redpanda tune all
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: tuning
           resources: {}
           securityContext:
@@ -1385,7 +1385,7 @@
               fieldRef:
                 apiVersion: v1
                 fieldPath: status.hostIP
-          image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
+          image: redpandadata/redpanda:v26.1.1
           name: redpanda-configurator
           resources: {}
           volumeMounts:

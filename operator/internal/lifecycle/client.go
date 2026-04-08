@@ -207,14 +207,14 @@ func (r *ResourceClient[T, U]) SyncEndpointSlices(ctx context.Context, owner U, 
 					Protocol: p.Protocol,
 				})
 			}
-			epObj := &corev1.Endpoints{
+			epObj := &corev1.Endpoints{ //nolint:staticcheck // Endpoints required for CoreDNS headless service resolution
 				TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Endpoints"},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      svc.Name,
 					Namespace: owner.GetNamespace(),
 					Labels:    maps.Clone(ownerLabels),
 				},
-				Subsets: []corev1.EndpointSubset{{
+				Subsets: []corev1.EndpointSubset{{ //nolint:staticcheck // see above
 					Addresses: []corev1.EndpointAddress{{IP: ep.IP}},
 					Ports:     v1Ports,
 				}},

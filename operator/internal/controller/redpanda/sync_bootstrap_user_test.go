@@ -102,17 +102,28 @@ func testStretchCluster() *redpandav1alpha2.StretchCluster {
 	}
 }
 
+func stretchClusterForCluster(sc *redpandav1alpha2.StretchCluster, clusterName string) *redpandav1alpha2.StretchCluster {
+	return &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      sc.Name,
+			Namespace: sc.Namespace,
+			UID:       types.UID("uid-" + clusterName),
+		},
+		Spec: sc.Spec,
+	}
+}
+
 func TestSyncBootstrapUser_NoExistingSecrets(t *testing.T) {
 	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
 
 	clusterNames := []string{"cluster-a", "cluster-b", "cluster-c"}
+	sc := testStretchCluster()
 	clients := map[string]client.Client{
-		"cluster-a": newFakeClient(),
-		"cluster-b": newFakeClient(),
-		"cluster-c": newFakeClient(),
+		"cluster-a": newFakeClient(stretchClusterForCluster(sc, "cluster-a")),
+		"cluster-b": newFakeClient(stretchClusterForCluster(sc, "cluster-b")),
+		"cluster-c": newFakeClient(stretchClusterForCluster(sc, "cluster-c")),
 	}
 	mgr := newMockManager(clusterNames, clients)
-	sc := testStretchCluster()
 	state := newTestState(sc, clusterNames)
 
 	r := &MulticlusterReconciler{Manager: mgr}
@@ -169,8 +180,8 @@ func TestSyncBootstrapUser_ExistingSecretInOneCluster(t *testing.T) {
 	}
 
 	clients := map[string]client.Client{
-		"cluster-a": newFakeClient(existingSecret),
-		"cluster-b": newFakeClient(),
+		"cluster-a": newFakeClient(stretchClusterForCluster(sc, "cluster-a"), existingSecret),
+		"cluster-b": newFakeClient(stretchClusterForCluster(sc, "cluster-b")),
 	}
 	mgr := newMockManager(clusterNames, clients)
 	state := newTestState(sc, clusterNames)
@@ -210,7 +221,7 @@ func TestSyncBootstrapUser_AllSecretsExist(t *testing.T) {
 
 	clients := map[string]client.Client{}
 	for _, clusterName := range clusterNames {
-		clients[clusterName] = newFakeClient(&corev1.Secret{
+		clients[clusterName] = newFakeClient(stretchClusterForCluster(sc, clusterName), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      bootstrapSecretName(sc),
 				Namespace: sc.Namespace,
@@ -247,7 +258,7 @@ func TestSyncBootstrapUser_PasswordMismatchAcrossClusters(t *testing.T) {
 	sc := testStretchCluster()
 
 	clients := map[string]client.Client{
-		"cluster-a": newFakeClient(&corev1.Secret{
+		"cluster-a": newFakeClient(stretchClusterForCluster(sc, "cluster-a"), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      bootstrapSecretName(sc),
 				Namespace: sc.Namespace,
@@ -257,7 +268,7 @@ func TestSyncBootstrapUser_PasswordMismatchAcrossClusters(t *testing.T) {
 			},
 			Type: corev1.SecretTypeOpaque,
 		}),
-		"cluster-b": newFakeClient(&corev1.Secret{
+		"cluster-b": newFakeClient(stretchClusterForCluster(sc, "cluster-b"), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      bootstrapSecretName(sc),
 				Namespace: sc.Namespace,
@@ -292,11 +303,11 @@ func TestSyncBootstrapUser_ClusterUnreachable(t *testing.T) {
 
 	// "cluster-b" is not in the manager's cluster map, simulating unreachable.
 	clusterNames := []string{"cluster-a", "cluster-b"}
+	sc := testStretchCluster()
 	clients := map[string]client.Client{
-		"cluster-a": newFakeClient(),
+		"cluster-a": newFakeClient(stretchClusterForCluster(sc, "cluster-a")),
 	}
 	mgr := newMockManager(clusterNames, clients)
-	sc := testStretchCluster()
 	state := newTestState(sc, clusterNames)
 
 	r := &MulticlusterReconciler{Manager: mgr}
