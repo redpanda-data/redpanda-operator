@@ -119,6 +119,7 @@ type RunOptions struct {
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
 	licenseFilePath                     string
+	commonAnnotations                   map[string]string
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
@@ -142,6 +143,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.webhookEnabled, "webhook-enabled", false, "Enable webhook Manager")
 
 	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file")
+	cmd.Flags().StringToStringVar(&o.commonAnnotations, "common-annotations", nil, "Annotations to propagate to all operator-managed resources (key=value pairs)")
 
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
@@ -464,7 +466,7 @@ func Run(
 				return err
 			}
 
-			if err := (&pipelinecontroller.Controller{Ctl: pipelineCtl, LicenseFilePath: opts.licenseFilePath}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+			if err := (&pipelinecontroller.Controller{Ctl: pipelineCtl, LicenseFilePath: opts.licenseFilePath, CommonAnnotations: opts.commonAnnotations}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
 				return err
 			}

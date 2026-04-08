@@ -12,6 +12,7 @@ package operator
 
 import (
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -349,6 +350,15 @@ func operatorArguments(dot *helmette.Dot) []string {
 	}
 
 	addLicenseFilePathArg(defaults, values)
+
+	if len(values.CommonAnnotations) > 0 {
+		// Build comma-separated key=value pairs for --common-annotations flag.
+		var pairs []string
+		for key, value := range helmette.SortedMap(values.CommonAnnotations) {
+			pairs = append(pairs, fmt.Sprintf("%s=%s", key, value))
+		}
+		defaults["--common-annotations"] = strings.Join(pairs, ",")
+	}
 
 	if values.Webhook.Enabled {
 		defaults["--webhook-cert-path"] = webhookCertificatePath

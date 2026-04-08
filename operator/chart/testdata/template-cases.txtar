@@ -148,3 +148,8 @@ enterprise:
   licenseSecretRef:
     name: redpanda-license
     key: license
+
+-- common-annotations --
+commonAnnotations:
+  owner: "platform-team@example.com"
+  environment: "production"

@@ -187,15 +187,18 @@ func TestRender_CommonAnnotations(t *testing.T) {
 		},
 		Spec: redpandav1alpha2.PipelineSpec{
 			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
-			CommonAnnotations: map[string]string{
-				"compliance/owner": "platform-team",
-				"compliance/env":   "production",
-			},
 		},
 	}
 
 	labels := Labels(pipeline)
-	r := &render{pipeline: pipeline, labels: labels}
+	r := &render{
+		pipeline: pipeline,
+		labels:   labels,
+		commonAnnotations: map[string]string{
+			"compliance/owner": "platform-team",
+			"compliance/env":   "production",
+		},
+	}
 
 	// Verify annotations propagate to all rendered objects.
 	objs, err := r.Render(t.Context())

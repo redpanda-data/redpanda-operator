@@ -67,6 +67,7 @@ type Values struct {
 	PodLabels             map[string]string             `json:"podLabels"`
 	AdditionalCmdFlags    []string                      `json:"additionalCmdFlags"`
 	CommonLabels          map[string]string             `json:"commonLabels"`
+	CommonAnnotations     map[string]string             `json:"commonAnnotations"`
 	Monitoring            MonitoringConfig              `json:"monitoring"`
 	WebhookSecretName     string                        `json:"webhookSecretName"`
 	PodTemplate           *PodTemplateSpec              `json:"podTemplate,omitempty"`

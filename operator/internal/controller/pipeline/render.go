@@ -35,8 +35,9 @@ const (
 
 // render implements [kube.Renderer] for Pipeline resources.
 type render struct {
-	pipeline *redpandav1alpha2.Pipeline
-	labels   map[string]string
+	pipeline          *redpandav1alpha2.Pipeline
+	labels            map[string]string
+	commonAnnotations map[string]string
 }
 
 // Types returns the set of Kubernetes resource types managed by the Pipeline
@@ -76,11 +77,11 @@ func Labels(pipeline *redpandav1alpha2.Pipeline) map[string]string {
 }
 
 func (r *render) annotations() map[string]string {
-	if len(r.pipeline.Spec.CommonAnnotations) == 0 {
+	if len(r.commonAnnotations) == 0 {
 		return nil
 	}
-	out := make(map[string]string, len(r.pipeline.Spec.CommonAnnotations))
-	for k, v := range r.pipeline.Spec.CommonAnnotations {
+	out := make(map[string]string, len(r.commonAnnotations))
+	for k, v := range r.commonAnnotations {
 		out[k] = v
 	}
 	return out

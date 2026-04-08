@@ -144,6 +144,11 @@ additionalCmdFlags: []
 # For example, `my.k8s.service: redpanda-operator`.
 commonLabels: {}
 
+# -- Additional annotations to add to all resources managed by the operator.
+# Useful for satisfying OPA Gatekeeper RequiredAnnotations constraints.
+# For example, `owner: "platform-team@example.com"`.
+commonAnnotations: {}
+
 # @ignored
 # Enables controllers for the Resources in the Vectorized group.
 vectorizedControllers:

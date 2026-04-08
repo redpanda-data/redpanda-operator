@@ -39,6 +39,9 @@ type Controller struct {
 	// LicenseFilePath is the path to the operator-level enterprise license file,
 	// configured via enterprise.licenseSecretRef in the operator Helm chart values.
 	LicenseFilePath string
+	// CommonAnnotations are annotations from the operator Helm chart values
+	// that are propagated to all resources managed by the operator.
+	CommonAnnotations map[string]string
 }
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines,verbs=get;list;watch;update;patch
@@ -148,8 +151,9 @@ func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline) (*kube.Synce
 		Ctl:       c.Ctl,
 		Namespace: pipeline.Namespace,
 		Renderer: &render{
-			pipeline: pipeline,
-			labels:   labels,
+			pipeline:          pipeline,
+			labels:            labels,
+			commonAnnotations: c.CommonAnnotations,
 		},
 		Owner:           *metav1.NewControllerRef(pipeline, gvk),
 		OwnershipLabels: labels,

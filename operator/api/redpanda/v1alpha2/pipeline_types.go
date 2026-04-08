@@ -133,12 +133,6 @@ type PipelineSpec struct {
 	// +optional
 	SecretRef []corev1.LocalObjectReference `json:"secretRef,omitempty"`
 
-	// CommonAnnotations are annotations applied to all resources created by the
-	// controller for this Pipeline (Deployment, ConfigMap, Pods). This is useful
-	// for satisfying OPA Gatekeeper RequiredAnnotations constraints.
-	// +optional
-	CommonAnnotations map[string]string `json:"commonAnnotations,omitempty"`
-
 	// Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
