@@ -249,3 +249,51 @@ nix develop -c task lint
 # Update golden files (prefer -update-golden)
 nix develop -c go test ./path/to/... -update-golden
 ```
+
+## Creating a New CRD
+
+When adding a new Custom Resource Definition to the operator, follow this checklist to ensure it integrates properly with all repository conventions.
+
+### 1. Define Types (`operator/api/redpanda/v1alpha2/`)
+- Define the CRD types in a `<resource>_types.go` file.
+- Use **typed constants** for status phases (e.g., `type FooPhase string` with `const FooPhaseRunning FooPhase = "Running"`).
+- Define **named constants** for all condition types and reasons (e.g., `FooConditionReady`, `FooReasonFailed`). Never use bare string literals for conditions.
+- Register the type in `zz_generated.register.go` (or ensure code generation picks it up).
+- Run `nix develop -c task k8s:generate` to regenerate CRD YAML, deep copy, and RBAC.
+
+### 2. Controller (`operator/internal/controller/<resource>/`)
+- Use **`kube.Ctl`** (from `common-go/kube`) as the primary client — not `client.Client` directly.
+- Use **server-side apply (SSA)** via `ctl.Apply()` and `ctl.ApplyStatus()` instead of `CreateOrPatch` / `Update`.
+- Use **`kube.Syncer`** for managing child resources. This handles ownership labels, GC, and SSA in one place.
+- **Externalize resource rendering** to a `render` struct implementing `kube.Renderer` (with `Types()` and `Render()` methods) in a separate file (e.g., `render.go`). Avoid inlining Deployment/ConfigMap specs in the reconciler.
+- **Never swallow status update errors.** Always return or propagate errors from `ApplyStatus`.
+- Use the **`utils.StatusConditionConfigs`** helper for SSA-compatible condition merging.
+
+### 3. RBAC
+- Add kubebuilder RBAC markers to the controller.
+- Create an itemized RBAC file at `operator/config/rbac/itemized/<resource>.yaml`.
+- **Copy** (or symlink) the RBAC file to `operator/chart/files/rbac/<resource>.ClusterRole.yaml`.
+- Add the RBAC file to the appropriate bundle in `operator/chart/rbac.go` (gated by a feature flag if applicable).
+
+### 4. CRD Installation
+- Add the CRD to the `stableCRDs` (or `experimentalCRDs`) list in `operator/cmd/crd/crd.go`.
+- Ensure the CRD accessor function exists in `operator/config/crd/bases/crds.go`.
+
+### 5. Helm Chart Integration
+- Add any new values (e.g., feature flags) to `operator/chart/values.go`, `values.yaml`, and `values.schema.json`.
+- Wire the flag to the operator Deployment args in `operator/chart/deployment.go`.
+- Add at least one **template rendering test case** in `operator/chart/testdata/template-cases.txtar`.
+- Run `nix develop -c task generate` to regenerate templates and partials.
+
+### 6. Controller Registration
+- Register the controller in `operator/cmd/run/run.go`, gated behind a feature flag if applicable.
+- Create `kube.Ctl` with the same pattern as other controllers (cache reader, field manager).
+
+### 7. Tests
+- **Reconciler tests**: Use `kubetest.NewEnv()` with `controller.UnifiedScheme` to get a `*kube.Ctl` for tests. Test both the reconciler (apply CR, reconcile, check status/child resources) and the render logic.
+- **License/validation tests**: If the feature is gated, test all validation paths.
+- **Helm rendering tests**: Add test cases for the feature flag in `template-cases.txtar` and regenerate golden files.
+- **Acceptance tests**: Add at least one `.feature` file in `acceptance/features/` with step definitions in `acceptance/steps/`. Register steps in `acceptance/steps/register.go`. Enable the feature in `acceptance/main_test.go`.
+
+### 8. Changelog
+- Add a changie entry: `nix develop -c changie new -j operator`

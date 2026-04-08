@@ -451,7 +451,20 @@ func Run(
 
 		// Connect Reconciler (enterprise feature, gated by license on each CR or operator-level license).
 		if opts.enableConnectController {
-			if err := (&pipelinecontroller.Controller{Client: mgr.GetClient(), LicenseFilePath: opts.licenseFilePath}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+			pipelineCtl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+				Options: client.Options{
+					Scheme: mgr.GetScheme(),
+					Cache: &client.CacheOptions{
+						Reader: mgr.GetCache(),
+					},
+				},
+				FieldManager: string(lifecycle.DefaultFieldOwner),
+			})
+			if err != nil {
+				return err
+			}
+
+			if err := (&pipelinecontroller.Controller{Ctl: pipelineCtl, LicenseFilePath: opts.licenseFilePath}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
 				return err
 			}

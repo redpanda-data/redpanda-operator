@@ -221,6 +221,9 @@ func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
 			VectorizedControllers: &operatorchart.PartialVectorizedControllers{
 				Enabled: ptr.To(true),
 			},
+			ConnectController: &operatorchart.PartialConnectController{
+				Enabled: ptr.To(true),
+			},
 			AdditionalCmdFlags: []string{
 				"--configurator-image-pull-policy=IfNotPresent",
 				"--additional-controllers=nodeWatcher,decommission",

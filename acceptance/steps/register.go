@@ -145,6 +145,10 @@ func init() {
 	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
 	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
 
+	// Pipeline scenario steps
+	framework.RegisterStep(`^pipeline "([^"]*)" is successfully running$`, pipelineIsSuccessfullyRunning)
+	framework.RegisterStep(`^pipeline "([^"]*)" is stopped$`, pipelineIsStopped)
+
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 }

@@ -22,6 +22,50 @@ const (
 	PipelineDefaultImage = "docker.redpanda.com/redpandadata/connect:4.84.1"
 )
 
+// PipelinePhase describes the lifecycle phase of a Pipeline.
+// +kubebuilder:validation:Enum=Pending;Provisioning;Running;Stopped;Unknown
+type PipelinePhase string
+
+const (
+	// PipelinePhasePending indicates the pipeline has been accepted but
+	// its Deployment has not yet been created.
+	PipelinePhasePending PipelinePhase = "Pending"
+	// PipelinePhaseProvisioning indicates the Deployment exists but not all
+	// replicas are ready.
+	PipelinePhaseProvisioning PipelinePhase = "Provisioning"
+	// PipelinePhaseRunning indicates all desired replicas are ready and
+	// processing data.
+	PipelinePhaseRunning PipelinePhase = "Running"
+	// PipelinePhaseStopped indicates the pipeline is paused (replicas scaled
+	// to zero).
+	PipelinePhaseStopped PipelinePhase = "Stopped"
+	// PipelinePhaseUnknown is used when the controller cannot determine the
+	// pipeline state.
+	PipelinePhaseUnknown PipelinePhase = "Unknown"
+)
+
+// Pipeline condition types.
+const (
+	// PipelineConditionReady indicates whether the pipeline is fully
+	// reconciled and running.
+	PipelineConditionReady = "Ready"
+)
+
+// Pipeline condition reasons.
+const (
+	// PipelineReasonRunning means the pipeline is running with all replicas
+	// available.
+	PipelineReasonRunning = "Running"
+	// PipelineReasonProvisioning means the Deployment is being rolled out.
+	PipelineReasonProvisioning = "Provisioning"
+	// PipelineReasonPaused means the pipeline is intentionally stopped.
+	PipelineReasonPaused = "Paused"
+	// PipelineReasonLicenseInvalid means the enterprise license check failed.
+	PipelineReasonLicenseInvalid = "LicenseInvalid"
+	// PipelineReasonFailed means a reconciliation step failed.
+	PipelineReasonFailed = "Failed"
+)
+
 // PipelineSpec defines the desired state of a Redpanda Connect pipeline.
 type PipelineSpec struct {
 	// ConfigYAML is the Redpanda Connect pipeline configuration in YAML format.
@@ -89,6 +133,12 @@ type PipelineSpec struct {
 	// +optional
 	SecretRef []corev1.LocalObjectReference `json:"secretRef,omitempty"`
 
+	// CommonAnnotations are annotations applied to all resources created by the
+	// controller for this Pipeline (Deployment, ConfigMap, Pods). This is useful
+	// for satisfying OPA Gatekeeper RequiredAnnotations constraints.
+	// +optional
+	CommonAnnotations map[string]string `json:"commonAnnotations,omitempty"`
+
 	// Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
@@ -130,7 +180,7 @@ type PipelineStatus struct {
 
 	// Phase describes the current phase of the pipeline lifecycle.
 	// +optional
-	Phase string `json:"phase,omitempty"`
+	Phase PipelinePhase `json:"phase,omitempty"`
 
 	// Replicas is the number of desired replicas.
 	// +optional

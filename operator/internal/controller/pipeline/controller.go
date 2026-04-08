@@ -7,42 +7,35 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package connect implements the controller for the Connect CRD.
+// Package pipeline implements the controller for the Pipeline CRD.
 package pipeline
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/license"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 const (
 	FinalizerKey = "pipeline.redpanda.com/finalizer"
-
-	// Default resource requests for Connect pods.
-	defaultMemoryRequest = "256Mi"
-	defaultCPURequest    = "100m"
 )
 
-// Controller reconciles Connect resources.
+// Controller reconciles Pipeline resources.
 type Controller struct {
-	client.Client
+	Ctl *kube.Ctl
 	// LicenseFilePath is the path to the operator-level enterprise license file,
 	// configured via enterprise.licenseSecretRef in the operator Helm chart values.
 	LicenseFilePath string
@@ -58,28 +51,34 @@ type Controller struct {
 func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Pipeline{}).
-		Owns(&appsv1.Deployment{}).
-		Owns(&corev1.ConfigMap{})
+		Owns(&appsv1.Deployment{})
 
 	return builder.Complete(c)
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithName("connect")
+	logger := log.FromContext(ctx).WithName("pipeline")
 
-	var connect redpandav1alpha2.Pipeline
-	if err := c.Get(ctx, req.NamespacedName, &connect); err != nil {
+	pipeline, err := kube.Get[redpandav1alpha2.Pipeline](ctx, c.Ctl, req.NamespacedName)
+	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
 	}
 
-	// Handle deletion.
-	if !connect.DeletionTimestamp.IsZero() {
-		if controllerutil.ContainsFinalizer(&connect, FinalizerKey) {
-			controllerutil.RemoveFinalizer(&connect, FinalizerKey)
-			if err := c.Update(ctx, &connect); err != nil {
+	// Handle deletion: clean up owned resources and remove finalizer.
+	if !pipeline.DeletionTimestamp.IsZero() {
+		if controllerutil.RemoveFinalizer(pipeline, FinalizerKey) {
+			syncer, err := c.syncerFor(pipeline)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if _, err := syncer.DeleteAll(ctx); err != nil {
+				return ctrl.Result{}, err
+			}
+			// NB: Apply can't be used to remove finalizers.
+			if err := c.Ctl.Update(ctx, pipeline); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -87,49 +86,77 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Add finalizer if missing.
-	if !controllerutil.ContainsFinalizer(&connect, FinalizerKey) {
-		controllerutil.AddFinalizer(&connect, FinalizerKey)
-		if err := c.Update(ctx, &connect); err != nil {
+	if controllerutil.AddFinalizer(pipeline, FinalizerKey) {
+		if err := c.Ctl.Apply(ctx, pipeline, client.ForceOwnership); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	// Validate license before proceeding.
-	if err := c.validateLicense(ctx, &connect); err != nil {
+	if err := c.validateLicense(); err != nil {
 		logger.Error(err, "license validation failed")
-		c.setCondition(&connect, metav1.ConditionFalse, "LicenseInvalid", err.Error())
-		if updateErr := c.Status().Update(ctx, &connect); updateErr != nil {
-			return ctrl.Result{}, updateErr
+		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, metav1.Condition{
+			Type:    redpandav1alpha2.PipelineConditionReady,
+			Status:  metav1.ConditionFalse,
+			Reason:  redpandav1alpha2.PipelineReasonLicenseInvalid,
+			Message: err.Error(),
+		}); statusErr != nil {
+			return ctrl.Result{}, statusErr
 		}
 		// Requeue to retry license check periodically.
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
-	// Reconcile ConfigMap.
-	if err := c.reconcileConfigMap(ctx, &connect); err != nil {
-		logger.Error(err, "failed to reconcile ConfigMap")
-		c.setCondition(&connect, metav1.ConditionFalse, redpandav1alpha2.FailedReason, fmt.Sprintf("ConfigMap reconciliation failed: %v", err))
-		_ = c.Status().Update(ctx, &connect)
+	// Sync all child resources (ConfigMap, Deployment) via SSA.
+	syncer, err := c.syncerFor(pipeline)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Reconcile Deployment.
-	if err := c.reconcileDeployment(ctx, &connect); err != nil {
-		logger.Error(err, "failed to reconcile Deployment")
-		c.setCondition(&connect, metav1.ConditionFalse, redpandav1alpha2.FailedReason, fmt.Sprintf("Deployment reconciliation failed: %v", err))
-		_ = c.Status().Update(ctx, &connect)
+	objs, err := syncer.Sync(ctx)
+	if err != nil {
+		logger.Error(err, "failed to sync resources")
+		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhaseUnknown, metav1.Condition{
+			Type:    redpandav1alpha2.PipelineConditionReady,
+			Status:  metav1.ConditionFalse,
+			Reason:  redpandav1alpha2.PipelineReasonFailed,
+			Message: FormatConditionMessage("Resource", err.Error()),
+		}); statusErr != nil {
+			return ctrl.Result{}, statusErr
+		}
 		return ctrl.Result{}, err
 	}
 
-	// Update status from Deployment.
-	if err := c.updateStatus(ctx, &connect); err != nil {
+	// Derive status from the synced Deployment.
+	phase, condition := c.deriveStatus(pipeline, objs)
+	if err := c.applyStatus(ctx, pipeline, phase, condition); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
-func (c *Controller) validateLicense(_ context.Context, _ *redpandav1alpha2.Pipeline) error {
+func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline) (*kube.Syncer, error) {
+	gvk, err := kube.GVKFor(c.Ctl.Scheme(), pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	labels := Labels(pipeline)
+
+	return &kube.Syncer{
+		Ctl:       c.Ctl,
+		Namespace: pipeline.Namespace,
+		Renderer: &render{
+			pipeline: pipeline,
+			labels:   labels,
+		},
+		Owner:           *metav1.NewControllerRef(pipeline, gvk),
+		OwnershipLabels: labels,
+	}, nil
+}
+
+func (c *Controller) validateLicense() error {
 	if c.LicenseFilePath == "" {
 		return errors.New("no license configured: set enterprise.licenseSecretRef in the operator Helm chart values")
 	}
@@ -154,241 +181,78 @@ func (c *Controller) validateLicense(_ context.Context, _ *redpandav1alpha2.Pipe
 	return nil
 }
 
-func (c *Controller) reconcileConfigMap(ctx context.Context, connect *redpandav1alpha2.Pipeline) error {
-	name := connect.Name
-	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: connect.Namespace}}
-
-	_, err := controllerutil.CreateOrPatch(ctx, c.Client, cm, func() error {
-		cm.Data = map[string]string{
-			"connect.yaml": connect.Spec.ConfigYAML,
-		}
-		for filename, content := range connect.Spec.ConfigFiles {
-			if filename == "connect.yaml" {
-				return errors.New("configFiles cannot contain a key named \"connect.yaml\"; use configYaml instead")
-			}
-			cm.Data[filename] = content
-		}
-		return controllerutil.SetControllerReference(connect, cm, c.Scheme())
-	})
-	return err
-}
-
-func (c *Controller) reconcileDeployment(ctx context.Context, connect *redpandav1alpha2.Pipeline) error {
-	name := connect.Name
-	replicas := connect.GetReplicas()
-	image := connect.GetImage()
-
-	labels := map[string]string{
-		"app.kubernetes.io/name":       "redpanda-connect",
-		"app.kubernetes.io/instance":   name,
-		"app.kubernetes.io/managed-by": "redpanda-operator",
-		"app.kubernetes.io/component":  "connect-pipeline",
-	}
-
-	resources := corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse(defaultMemoryRequest),
-			corev1.ResourceCPU:    resource.MustParse(defaultCPURequest),
-		},
-	}
-	if connect.Spec.Resources != nil {
-		resources = *connect.Spec.Resources
-	}
-
-	dp := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: connect.Namespace}}
-
-	_, err := controllerutil.CreateOrPatch(ctx, c.Client, dp, func() error {
-		dp.Spec.Replicas = ptr.To(replicas)
-		dp.Spec.Strategy = appsv1.DeploymentStrategy{
-			Type: appsv1.RecreateDeploymentStrategyType,
+// deriveStatus examines the synced objects to determine the Pipeline phase and
+// Ready condition.
+func (c *Controller) deriveStatus(pipeline *redpandav1alpha2.Pipeline, objs []kube.Object) (redpandav1alpha2.PipelinePhase, metav1.Condition) {
+	for _, obj := range objs {
+		dp, ok := obj.(*appsv1.Deployment)
+		if !ok {
+			continue
 		}
 
-		// Selector is immutable — only set on creation.
-		if dp.CreationTimestamp.IsZero() {
-			dp.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: labels,
-			}
-		}
-
-		dp.Spec.Template = corev1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name:    "connect",
-						Image:   image,
-						Command: []string{"redpanda-connect", "run", "/config/connect.yaml"},
-						Ports: []corev1.ContainerPort{
-							{Name: "http", ContainerPort: 4195, Protocol: corev1.ProtocolTCP},
-						},
-						Env:       connect.Spec.Env,
-						EnvFrom:   buildEnvFrom(connect),
-						Resources: resources,
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      "config",
-								MountPath: "/config",
-								ReadOnly:  true,
-							},
-						},
-					},
-				},
-				Volumes: []corev1.Volume{
-					{
-						Name: "config",
-						VolumeSource: corev1.VolumeSource{
-							ConfigMap: &corev1.ConfigMapVolumeSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: name,
-								},
-							},
-						},
-					},
-				},
-				NodeSelector:              connect.Spec.NodeSelector,
-				Tolerations:               connect.Spec.Tolerations,
-				Affinity:                  buildAffinity(connect),
-				TopologySpreadConstraints: buildTopologySpreadConstraints(connect, labels),
-			},
-		}
-
-		return controllerutil.SetControllerReference(connect, dp, c.Scheme())
-	})
-	return err
-}
-
-// buildEnvFrom constructs EnvFromSource entries for each referenced Secret,
-// injecting all key-value pairs as environment variables into the container.
-func buildEnvFrom(pipeline *redpandav1alpha2.Pipeline) []corev1.EnvFromSource {
-	if len(pipeline.Spec.SecretRef) == 0 {
-		return nil
-	}
-
-	envFrom := make([]corev1.EnvFromSource, 0, len(pipeline.Spec.SecretRef))
-	for _, ref := range pipeline.Spec.SecretRef {
-		envFrom = append(envFrom, corev1.EnvFromSource{
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: ref,
-			},
-		})
-	}
-	return envFrom
-}
-
-const zoneTopologyKey = "topology.kubernetes.io/zone"
-
-// buildAffinity constructs a node affinity that restricts pods to the specified
-// zones. Returns nil if no zones are configured.
-func buildAffinity(connect *redpandav1alpha2.Pipeline) *corev1.Affinity {
-	if len(connect.Spec.Zones) == 0 {
-		return nil
-	}
-
-	return &corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					{
-						MatchExpressions: []corev1.NodeSelectorRequirement{
-							{
-								Key:      zoneTopologyKey,
-								Operator: corev1.NodeSelectorOpIn,
-								Values:   connect.Spec.Zones,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-// buildTopologySpreadConstraints returns the topology spread constraints for
-// the pipeline. If zones are configured and no explicit constraints are
-// provided, a default constraint is generated to spread pods evenly across
-// the specified zones.
-func buildTopologySpreadConstraints(connect *redpandav1alpha2.Pipeline, selectorLabels map[string]string) []corev1.TopologySpreadConstraint {
-	// Explicit constraints take precedence.
-	if len(connect.Spec.TopologySpreadConstraints) > 0 {
-		return connect.Spec.TopologySpreadConstraints
-	}
-
-	// Auto-generate a zone spread constraint when zones are specified.
-	if len(connect.Spec.Zones) > 0 {
-		return []corev1.TopologySpreadConstraint{
-			{
-				MaxSkew:           1,
-				TopologyKey:       zoneTopologyKey,
-				WhenUnsatisfiable: corev1.ScheduleAnyway,
-				LabelSelector: &metav1.LabelSelector{
-					MatchLabels: selectorLabels,
-				},
-			},
-		}
-	}
-
-	return nil
-}
-
-func (c *Controller) updateStatus(ctx context.Context, connect *redpandav1alpha2.Pipeline) error {
-	name := connect.Name
-
-	var dp appsv1.Deployment
-	if err := c.Get(ctx, types.NamespacedName{Name: name, Namespace: connect.Namespace}, &dp); err != nil {
-		if apierrors.IsNotFound(err) {
-			connect.Status.Phase = "Pending"
-			connect.Status.Replicas = 0
-			connect.Status.ReadyReplicas = 0
-			c.setCondition(connect, metav1.ConditionFalse, redpandav1alpha2.ProgressingReason, "Deployment not yet created")
-		} else {
-			return err
-		}
-	} else {
-		connect.Status.Replicas = dp.Status.Replicas
-		connect.Status.ReadyReplicas = dp.Status.ReadyReplicas
+		pipeline.Status.Replicas = dp.Status.Replicas
+		pipeline.Status.ReadyReplicas = dp.Status.ReadyReplicas
 
 		switch {
-		case connect.Spec.Paused:
-			connect.Status.Phase = "Stopped"
-			c.setCondition(connect, metav1.ConditionTrue, redpandav1alpha2.SucceededReason, "Pipeline is paused")
+		case pipeline.Spec.Paused:
+			return redpandav1alpha2.PipelinePhaseStopped, metav1.Condition{
+				Type:    redpandav1alpha2.PipelineConditionReady,
+				Status:  metav1.ConditionTrue,
+				Reason:  redpandav1alpha2.PipelineReasonPaused,
+				Message: "Pipeline is paused",
+			}
 		case dp.Status.ReadyReplicas == dp.Status.Replicas && dp.Status.Replicas > 0:
-			connect.Status.Phase = "Running"
-			c.setCondition(connect, metav1.ConditionTrue, redpandav1alpha2.SucceededReason, "Pipeline is running")
-		case dp.Status.ReadyReplicas < dp.Status.Replicas:
-			connect.Status.Phase = "Provisioning"
-			c.setCondition(connect, metav1.ConditionFalse, redpandav1alpha2.ProgressingReason, "Pipeline is starting up")
+			return redpandav1alpha2.PipelinePhaseRunning, metav1.Condition{
+				Type:    redpandav1alpha2.PipelineConditionReady,
+				Status:  metav1.ConditionTrue,
+				Reason:  redpandav1alpha2.PipelineReasonRunning,
+				Message: "Pipeline is running",
+			}
 		default:
-			connect.Status.Phase = "Unknown"
-			c.setCondition(connect, metav1.ConditionFalse, redpandav1alpha2.ProgressingReason, "Pipeline status unknown")
+			return redpandav1alpha2.PipelinePhaseProvisioning, metav1.Condition{
+				Type:    redpandav1alpha2.PipelineConditionReady,
+				Status:  metav1.ConditionFalse,
+				Reason:  redpandav1alpha2.PipelineReasonProvisioning,
+				Message: "Pipeline is starting up",
+			}
 		}
 	}
 
-	connect.Status.ObservedGeneration = connect.Generation
-	return c.Status().Update(ctx, connect)
+	// Deployment not yet observed in sync results.
+	pipeline.Status.Replicas = 0
+	pipeline.Status.ReadyReplicas = 0
+	return redpandav1alpha2.PipelinePhasePending, metav1.Condition{
+		Type:    redpandav1alpha2.PipelineConditionReady,
+		Status:  metav1.ConditionFalse,
+		Reason:  redpandav1alpha2.PipelineReasonProvisioning,
+		Message: "Deployment not yet created",
+	}
 }
 
-func (c *Controller) setCondition(connect *redpandav1alpha2.Pipeline, status metav1.ConditionStatus, reason, message string) {
-	condition := metav1.Condition{
-		Type:               redpandav1alpha2.ReadyCondition,
-		Status:             status,
-		Reason:             reason,
-		Message:            message,
-		ObservedGeneration: connect.Generation,
-		LastTransitionTime: metav1.Now(),
-	}
+// applyStatus uses server-side apply to update the Pipeline status sub-resource.
+func (c *Controller) applyStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, phase redpandav1alpha2.PipelinePhase, condition metav1.Condition) error {
+	pipeline.Status.ObservedGeneration = pipeline.Generation
+	pipeline.Status.Phase = phase
+	pipeline.Status.Conditions = conditionsForApply(pipeline, condition)
 
-	for i := range connect.Status.Conditions {
-		if connect.Status.Conditions[i].Type == redpandav1alpha2.ReadyCondition {
-			if connect.Status.Conditions[i].Status == status &&
-				connect.Status.Conditions[i].Reason == reason {
-				return
-			}
-			connect.Status.Conditions[i] = condition
-			return
-		}
-	}
+	return c.Ctl.ApplyStatus(ctx, pipeline, client.ForceOwnership)
+}
 
-	connect.Status.Conditions = append(connect.Status.Conditions, condition)
+// conditionsForApply merges the desired condition into the existing conditions
+// using the SSA-compatible helper from utils.
+func conditionsForApply(pipeline *redpandav1alpha2.Pipeline, condition metav1.Condition) []metav1.Condition {
+	configs := utils.StatusConditionConfigs(pipeline.Status.Conditions, pipeline.Generation, []metav1.Condition{condition})
+
+	out := make([]metav1.Condition, 0, len(configs))
+	for _, cfg := range configs {
+		out = append(out, metav1.Condition{
+			Type:               *cfg.Type,
+			Status:             *cfg.Status,
+			Reason:             *cfg.Reason,
+			Message:            *cfg.Message,
+			ObservedGeneration: *cfg.ObservedGeneration,
+			LastTransitionTime: *cfg.LastTransitionTime,
+		})
+	}
+	return out
 }

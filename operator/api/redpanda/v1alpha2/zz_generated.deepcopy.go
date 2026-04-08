@@ -2964,6 +2964,13 @@ func (in *PipelineSpec) DeepCopyInto(out *PipelineSpec) {
 		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
+	if in.CommonAnnotations != nil {
+		in, out := &in.CommonAnnotations, &out.CommonAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
