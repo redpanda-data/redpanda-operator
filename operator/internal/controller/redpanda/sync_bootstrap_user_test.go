@@ -63,6 +63,7 @@ func (m *mockManager) AddOrReplaceCluster(_ context.Context, _ string, _ cluster
 	return nil
 }
 func (m *mockManager) Health(_ *http.Request) error { return nil }
+func (m *mockManager) GetLogger() logr.Logger                     { return logr.Discard() }
 
 func newFakeClient(objs ...client.Object) client.Client {
 	scheme := runtime.NewScheme()
@@ -126,7 +127,10 @@ func TestSyncBootstrapUser_NoExistingSecrets(t *testing.T) {
 	mgr := newMockManager(clusterNames, clients)
 	state := newTestState(sc, clusterNames)
 
-	r := &MulticlusterReconciler{Manager: mgr}
+	r := &MulticlusterReconciler{
+		Manager:         mgr,
+		LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(lifecycle.Image{}, lifecycle.Image{}, lifecycle.CloudSecretsFlags{})),
+	}
 	result, err := r.syncBootstrapUser(ctx, state, nil)
 	require.NoError(t, err)
 	require.Zero(t, result.RequeueAfter)
@@ -186,7 +190,10 @@ func TestSyncBootstrapUser_ExistingSecretInOneCluster(t *testing.T) {
 	mgr := newMockManager(clusterNames, clients)
 	state := newTestState(sc, clusterNames)
 
-	r := &MulticlusterReconciler{Manager: mgr}
+	r := &MulticlusterReconciler{
+		Manager:         mgr,
+		LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(lifecycle.Image{}, lifecycle.Image{}, lifecycle.CloudSecretsFlags{})),
+	}
 	result, err := r.syncBootstrapUser(ctx, state, nil)
 	require.NoError(t, err)
 	require.Zero(t, result.RequeueAfter)
@@ -235,7 +242,10 @@ func TestSyncBootstrapUser_AllSecretsExist(t *testing.T) {
 	mgr := newMockManager(clusterNames, clients)
 	state := newTestState(sc, clusterNames)
 
-	r := &MulticlusterReconciler{Manager: mgr}
+	r := &MulticlusterReconciler{
+		Manager:         mgr,
+		LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(lifecycle.Image{}, lifecycle.Image{}, lifecycle.CloudSecretsFlags{})),
+	}
 	result, err := r.syncBootstrapUser(ctx, state, nil)
 	require.NoError(t, err)
 	require.Zero(t, result.RequeueAfter)
