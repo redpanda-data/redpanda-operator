@@ -41,6 +41,7 @@ type PartialValues struct {
 	PodLabels             map[string]string             "json:\"podLabels,omitempty\""
 	AdditionalCmdFlags    []string                      "json:\"additionalCmdFlags,omitempty\""
 	CommonLabels          map[string]string             "json:\"commonLabels,omitempty\""
+	CommonAnnotations     map[string]string             "json:\"commonAnnotations,omitempty\""
 	Monitoring            *PartialMonitoringConfig      "json:\"monitoring,omitempty\""
 	WebhookSecretName     *string                       "json:\"webhookSecretName,omitempty\""
 	PodTemplate           *PartialPodTemplateSpec       "json:\"podTemplate,omitempty\""

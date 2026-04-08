@@ -2305,6 +2305,23 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinephase"]
+==== PipelinePhase
+
+_Underlying type:_ _string_
+
+PipelinePhase describes the lifecycle phase of a Pipeline.
+
+.Validation:
+- Enum: [Pending Provisioning Running Stopped Unknown]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus[$$PipelineStatus$$]
+****
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec"]
 ==== PipelineSpec
 
@@ -2406,7 +2423,8 @@ PipelineStatus defines the observed state of a Connect resource.
 
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Connect resource. + |  | Optional: \{} +
 
-| *`phase`* __string__ | Phase describes the current phase of the pipeline lifecycle. + |  | Optional: \{} +
+| *`phase`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinephase[$$PipelinePhase$$]__ | Phase describes the current phase of the pipeline lifecycle. + |  | Enum: [Pending Provisioning Running Stopped Unknown] +
+Optional: \{} +
 
 | *`replicas`* __integer__ | Replicas is the number of desired replicas. + |  | Optional: \{} +
 

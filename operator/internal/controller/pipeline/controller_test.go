@@ -23,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -174,9 +175,9 @@ func TestReconcile_Deletion(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Verify the finalizer was removed (which means the object can be GC'd).
-	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
-	assert.NotContains(t, pipeline.Finalizers, FinalizerKey)
+	// Verify the object was GC'd (finalizer removal allows API server to delete it).
+	err = ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline)
+	assert.True(t, apierrors.IsNotFound(err), "expected object to be garbage collected after finalizer removal")
 }
 
 func TestRender_CommonAnnotations(t *testing.T) {

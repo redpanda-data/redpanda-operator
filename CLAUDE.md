@@ -222,32 +222,32 @@ For a **charts/redpanda** release (e.g. `v25.1.4`):
 
 ## Common Commands
 
-All commands should be run inside the nix devshell to ensure correct tool versions and environment variables. Prefix commands with `nix develop -c` or enter the shell with `nix develop`.
+All commands should be run inside the nix devshell to ensure correct tool versions and environment variables. Since `nix develop` is an experimental command, you must enable it with `--extra-experimental-features 'nix-command flakes'`. For brevity, the examples below use the alias `nix develop` — prepend the flag if your system requires it.
 
 ```bash
 # Enter nix devshell (recommended for interactive work)
-nix develop
+nix --extra-experimental-features 'nix-command flakes' develop
 
 # Or prefix individual commands
-nix develop -c go build ./operator/...
+nix --extra-experimental-features 'nix-command flakes' develop -c go build ./operator/...
 
 # Build all
-nix develop -c bash -c 'go build ./operator/... && go build ./charts/console/... && go build ./charts/redpanda/...'
+nix --extra-experimental-features 'nix-command flakes' develop -c bash -c 'go build ./operator/... && go build ./charts/console/... && go build ./charts/redpanda/...'
 
 # Run unit tests (envtest is configured by the devshell)
-nix develop -c task test:unit
+nix --extra-experimental-features 'nix-command flakes' develop -c task test:unit
 
 # Run chart template tests
-nix develop -c bash -c 'helm dep build charts/redpanda/chart && go test ./charts/redpanda/... -run TestTemplate'
+nix --extra-experimental-features 'nix-command flakes' develop -c bash -c 'helm dep build charts/redpanda/chart && go test ./charts/redpanda/... -run TestTemplate'
 
 # Regenerate ALL generated files (preferred — matches CI)
-nix develop -c task generate
+nix --extra-experimental-features 'nix-command flakes' develop -c task generate
 
 # Run golangci-lint (v2 format)
-nix develop -c task lint
+nix --extra-experimental-features 'nix-command flakes' develop -c task lint
 
 # Update golden files (prefer -update-golden)
-nix develop -c go test ./path/to/... -update-golden
+nix --extra-experimental-features 'nix-command flakes' develop -c go test ./path/to/... -update-golden
 ```
 
 ## Creating a New CRD

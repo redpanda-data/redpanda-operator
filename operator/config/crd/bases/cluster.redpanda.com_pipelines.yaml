@@ -2941,6 +2941,12 @@ spec:
                 type: integer
               phase:
                 description: Phase describes the current phase of the pipeline lifecycle.
+                enum:
+                - Pending
+                - Provisioning
+                - Running
+                - Stopped
+                - Unknown
                 type: string
               readyReplicas:
                 description: ReadyReplicas is the number of ready pipeline pods.

@@ -4,59 +4,59 @@ kind: ClusterRole
 metadata:
   name: pipeline
 rules:
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - pipelines
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-  - patch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - pipelines/status
-  verbs:
-  - get
-  - update
-  - patch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - pipelines/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
+  - apiGroups:
+      - cluster.redpanda.com
+    resources:
+      - pipelines
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - cluster.redpanda.com
+    resources:
+      - pipelines/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - cluster.redpanda.com
+    resources:
+      - pipelines/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch

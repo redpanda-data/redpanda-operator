@@ -40,6 +40,12 @@ Sets the Kubernetes cluster domain.
 
 **Default:** `"cluster.local"`
 
+### [commonAnnotations](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=commonAnnotations)
+
+Additional annotations to add to all resources managed by the operator. Useful for satisfying OPA Gatekeeper RequiredAnnotations constraints. For example, `owner: "platform-team@example.com"`.
+
+**Default:** `{}`
+
 ### [commonLabels](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=commonLabels)
 
 Additional labels to add to all Kubernetes objects. For example, `my.k8s.service: redpanda-operator`.

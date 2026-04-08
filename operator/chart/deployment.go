@@ -12,7 +12,6 @@ package operator
 
 import (
 	"fmt"
-	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -353,11 +352,14 @@ func operatorArguments(dot *helmette.Dot) []string {
 
 	if len(values.CommonAnnotations) > 0 {
 		// Build comma-separated key=value pairs for --common-annotations flag.
-		var pairs []string
+		annotationArg := ""
 		for key, value := range helmette.SortedMap(values.CommonAnnotations) {
-			pairs = append(pairs, fmt.Sprintf("%s=%s", key, value))
+			if annotationArg != "" {
+				annotationArg = annotationArg + ","
+			}
+			annotationArg = annotationArg + fmt.Sprintf("%s=%s", key, value)
 		}
-		defaults["--common-annotations"] = strings.Join(pairs, ",")
+		defaults["--common-annotations"] = annotationArg
 	}
 
 	if values.Webhook.Enabled {

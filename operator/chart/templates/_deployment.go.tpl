@@ -112,8 +112,9 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $vol := (list (get (fromJson (include "operator.serviceAccountTokenVolume" (dict "a" (list)))) "r")) -}}
-{{- if (and (ne (toJson $values.enterprise.licenseSecretRef) "null") (not (empty $values.enterprise.licenseSecretRef.name))) -}}
-{{- $vol = (concat (default (list) $vol) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "defaultMode" ((420 | int) | int) "secretName" $values.enterprise.licenseSecretRef.name)))) (dict "name" "license")))) -}}
+{{- $licenseVol := (get (fromJson (include "operator.licenseVolume" (dict "a" (list $values)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $licenseVol)))) "r") | int) (0 | int)) -}}
+{{- $vol = (concat (default (list) $vol) (default (list) $licenseVol)) -}}
 {{- end -}}
 {{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
@@ -151,8 +152,9 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $volMount := (list (get (fromJson (include "operator.serviceAccountTokenVolumeMount" (dict "a" (list)))) "r")) -}}
-{{- if (and (ne (toJson $values.enterprise.licenseSecretRef) "null") (not (empty $values.enterprise.licenseSecretRef.name))) -}}
-{{- $volMount = (concat (default (list) $volMount) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "license" "mountPath" "/redpanda/license" "readOnly" true)))) -}}
+{{- $liceVolMount := (get (fromJson (include "operator.licenseVolumeMount" (dict "a" (list $values)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $liceVolMount)))) "r") | int) (0 | int)) -}}
+{{- $volMount = (concat (default (list) $volMount) (default (list) $liceVolMount)) -}}
 {{- end -}}
 {{- if (not $values.webhook.enabled) -}}
 {{- $_is_returning = true -}}
@@ -172,12 +174,19 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled) "--enable-connect" (printf "%t" $values.connectController.enabled)) -}}
-{{- if (and (ne (toJson $values.enterprise.licenseSecretRef) "null") (not (empty $values.enterprise.licenseSecretRef.name))) -}}
-{{- if (ne $values.enterprise.licenseSecretRef.key "") -}}
-{{- $_ := (set $defaults "--license-file-path" (printf "%s/%s" "/redpanda/license" $values.enterprise.licenseSecretRef.key)) -}}
-{{- else -}}
-{{- $_ := (set $defaults "--license-file-path" (printf "%s/%s" "/redpanda/license" $values.enterprise.licenseSecretRef.name)) -}}
+{{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.commonAnnotations)))) "r") | int) (0 | int)) -}}
+{{- $annotationArg := "" -}}
+{{- range $key, $value := $values.commonAnnotations -}}
+{{- if (ne $annotationArg "") -}}
+{{- $annotationArg = (printf "%s%s" $annotationArg ",") -}}
 {{- end -}}
+{{- $annotationArg = (printf "%s%s" $annotationArg (printf "%s=%s" $key $value)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_ := (set $defaults "--common-annotations" $annotationArg) -}}
 {{- end -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
@@ -196,6 +205,51 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $flags) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.addLicenseFilePathArg" -}}
+{{- $defaults := (index .a 0) -}}
+{{- $values := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (and (ne (toJson $values.enterprise.licenseSecretRef) "null") (not (empty $values.enterprise.licenseSecretRef.name))) -}}
+{{- if (ne $values.enterprise.licenseSecretRef.key "") -}}
+{{- $_ := (set $defaults "--license-file-path" (printf "%s/%s" "/redpanda/license" $values.enterprise.licenseSecretRef.key)) -}}
+{{- else -}}
+{{- $_ := (set $defaults "--license-file-path" (printf "%s/%s" "/redpanda/license" $values.enterprise.licenseSecretRef.name)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.licenseVolume" -}}
+{{- $values := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (and (ne (toJson $values.enterprise.licenseSecretRef) "null") (not (empty $values.enterprise.licenseSecretRef.name))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "secret" (mustMergeOverwrite (dict) (dict "defaultMode" ((420 | int) | int) "secretName" $values.enterprise.licenseSecretRef.name)))) (dict "name" "license")))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.licenseVolumeMount" -}}
+{{- $values := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (and (ne (toJson $values.enterprise.licenseSecretRef) "null") (not (empty $values.enterprise.licenseSecretRef.name))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "license" "mountPath" "/redpanda/license" "readOnly" true)))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
