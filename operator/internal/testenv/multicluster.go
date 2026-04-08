@@ -543,7 +543,7 @@ func setupMulticlusterRBAC(t *testing.T, ctx context.Context, env *Env) string {
 	}
 
 	apply(
-		&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name}},
+		&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: env.Namespace()}},
 		&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{Name: name},
 			Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Namespace: env.Namespace(), Name: name}},
