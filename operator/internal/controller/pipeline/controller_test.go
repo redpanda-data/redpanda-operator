@@ -32,15 +32,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 )
 
-// writeLicenseFile creates a temporary license file for test use.
-// Returns "" if no valid license is available for testing.
-func writeLicenseFile(t *testing.T) string {
-	t.Helper()
-	// We can't create real license files in unit tests since they require
-	// valid signed license data. Return empty to test the no-license path.
-	return ""
-}
-
 func setupTestEnv(t *testing.T) *kube.Ctl {
 	t.Helper()
 
