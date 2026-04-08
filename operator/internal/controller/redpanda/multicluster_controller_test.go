@@ -114,10 +114,12 @@ func (s *MulticlusterControllerSuite) TestManagesFinalizers() {
 		require.Eventually(t, func() bool {
 			var cluster redpandav1alpha2.StretchCluster
 			if err := cl.Get(ctx, nn, &cluster); err != nil {
+				t.Logf("[TestManagesFinalizers] Get on env %d (%s): %v", i, env.Name, err)
 				return false
 			}
+			t.Logf("[TestManagesFinalizers] Get on env %d (%s): finalizers=%v", i, env.Name, cluster.Finalizers)
 			return slices.Contains(cluster.Finalizers, redpanda.FinalizerKey)
-		}, 1*time.Minute, 1*time.Second, fmt.Sprintf("cluster in env %d never contained finalizer", i))
+		}, 1*time.Minute, 1*time.Second, fmt.Sprintf("cluster in env %d (%s) never contained finalizer", i, env.Name))
 	}
 
 	s.mc.DeleteAll(t, ctx, ns.Name, &redpandav1alpha2.StretchCluster{})

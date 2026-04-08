@@ -22,6 +22,7 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
@@ -520,6 +521,11 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	}
 	expectedOwner, err := r.ownershipResolver.ResolveOwnerReference(ctx, cluster, clusterName, ctl)
 	if err != nil {
+		// If the cluster object doesn't exist on this cluster yet (e.g. during
+		// initial rollout), there can't be any owned StatefulSets either.
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrapf(err, "resolving owner reference")
 	}
 	// swap cluster to correct one

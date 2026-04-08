@@ -256,7 +256,9 @@ func (m *MulticlusterEnv) CreateTestNamespace(t *testing.T) *MulticlusterTestNam
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tn.Name}}
 		rawClient, err := client.New(env.RESTConfig(), client.Options{Scheme: env.Client().Scheme()})
 		require.NoError(t, err)
+		t.Logf("[CreateTestNamespace] creating namespace %q on %s", tn.Name, env.Name)
 		require.NoError(t, rawClient.Create(ctx, ns))
+		t.Logf("[CreateTestNamespace] created namespace %q on %s", tn.Name, env.Name)
 
 		nsClient := client.NewNamespacedClient(rawClient, tn.Name)
 		clients = append(clients, nsClient)
@@ -280,6 +282,7 @@ func (m *MulticlusterEnv) DeleteAll(t *testing.T, ctx context.Context, ns string
 	t.Helper()
 	for _, env := range m.Envs {
 		for _, obj := range objs {
+			t.Logf("[DeleteAll] deleting %T in ns=%s on %s", obj, ns, env.Name)
 			require.NoError(t, env.Client().DeleteAllOf(ctx, obj, client.InNamespace(ns)))
 		}
 	}
@@ -295,7 +298,10 @@ func (m *MulticlusterEnv) ApplyAll(t *testing.T, ctx context.Context, objs ...cl
 			obj.SetManagedFields(nil)
 			obj.SetResourceVersion("")
 			obj.GetObjectKind().SetGroupVersionKind(gvk)
-			require.NoError(t, env.Client().Patch(ctx, obj.DeepCopyObject().(client.Object), client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO
+			copy := obj.DeepCopyObject().(client.Object)
+			t.Logf("[ApplyAll] applying %s/%s (ns=%s) to %s", gvk.Kind, obj.GetName(), obj.GetNamespace(), env.Name)
+			require.NoError(t, env.Client().Patch(ctx, copy, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO
+			t.Logf("[ApplyAll] applied %s/%s (ns=%s) to %s successfully", gvk.Kind, obj.GetName(), obj.GetNamespace(), env.Name)
 		}
 	}
 }
