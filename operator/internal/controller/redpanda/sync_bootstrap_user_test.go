@@ -63,7 +63,7 @@ func (m *mockManager) AddOrReplaceCluster(_ context.Context, _ string, _ cluster
 	return nil
 }
 func (m *mockManager) Health(_ *http.Request) error { return nil }
-func (m *mockManager) GetLogger() logr.Logger                     { return logr.Discard() }
+func (m *mockManager) GetLogger() logr.Logger       { return logr.Discard() }
 
 func newFakeClient(objs ...client.Object) client.Client {
 	scheme := runtime.NewScheme()
