@@ -65,6 +65,26 @@ tasks:
         done
       done
 
+  rpk-plugin:
+    desc: "Build the rpk k8s plugin binary"
+    vars:
+      LD_FLAGS: >-
+        -X "google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore"
+    cmds:
+    - CGO_ENABLED=0
+      go build -C ./operator
+      -o ../.build/.rpk.ac-k8s
+      -ldflags='{{.LD_FLAGS}}'
+      ./cmd/rpk-k8s
+
+  rpk-plugin:install:
+    desc: "Build and install the rpk k8s plugin to ~/.local/bin"
+    deps:
+    - rpk-plugin
+    cmds:
+    - mkdir -p ~/.local/bin
+    - cp .build/.rpk.ac-k8s ~/.local/bin/.rpk.ac-k8s
+
   gen:
     cmds:
       - task: go:build

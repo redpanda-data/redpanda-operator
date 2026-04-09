@@ -289,6 +289,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		HeartbeatInterval: config.HeartbeatInterval,
 		GRPCMaxBackoff:    config.GRPCMaxBackoff,
 		Logger:            &raftLogr{logger: config.Logger},
+		IDsToNames:        idsToNames,
 	}
 
 	if config.Bootstrap {

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package transport.v1;
 
+option go_package = "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1;transportv1";
+
 message CheckRequest {
   bool fromLeader = 1;
 }
@@ -25,8 +27,21 @@ message KubeconfigResponse {
   bytes payload = 1;
 }
 
+message StatusRequest {}
+
+message StatusResponse {
+  string name = 1;
+  string raft_state = 2;
+  string leader = 3;
+  uint64 term = 4;
+  repeated string cluster_names = 5;
+  repeated string unhealthy_peers = 6;
+  bool is_healthy = 7;
+}
+
 service TransportService {
   rpc Check(CheckRequest) returns (CheckResponse);
   rpc Send(SendRequest) returns (SendResponse);
   rpc Kubeconfig(KubeconfigRequest) returns (KubeconfigResponse);
+  rpc Status(StatusRequest) returns (StatusResponse);
 }

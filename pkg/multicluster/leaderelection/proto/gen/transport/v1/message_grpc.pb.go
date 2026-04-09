@@ -22,6 +22,7 @@ const (
 	TransportService_Check_FullMethodName      = "/transport.v1.TransportService/Check"
 	TransportService_Send_FullMethodName       = "/transport.v1.TransportService/Send"
 	TransportService_Kubeconfig_FullMethodName = "/transport.v1.TransportService/Kubeconfig"
+	TransportService_Status_FullMethodName     = "/transport.v1.TransportService/Status"
 )
 
 // TransportServiceClient is the client API for TransportService service.
@@ -31,6 +32,7 @@ type TransportServiceClient interface {
 	Check(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (*SendResponse, error)
 	Kubeconfig(ctx context.Context, in *KubeconfigRequest, opts ...grpc.CallOption) (*KubeconfigResponse, error)
+	Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 }
 
 type transportServiceClient struct {
@@ -71,6 +73,16 @@ func (c *transportServiceClient) Kubeconfig(ctx context.Context, in *KubeconfigR
 	return out, nil
 }
 
+func (c *transportServiceClient) Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, TransportService_Status_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TransportServiceServer is the server API for TransportService service.
 // All implementations must embed UnimplementedTransportServiceServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type TransportServiceServer interface {
 	Check(context.Context, *CheckRequest) (*CheckResponse, error)
 	Send(context.Context, *SendRequest) (*SendResponse, error)
 	Kubeconfig(context.Context, *KubeconfigRequest) (*KubeconfigResponse, error)
+	Status(context.Context, *StatusRequest) (*StatusResponse, error)
 	mustEmbedUnimplementedTransportServiceServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedTransportServiceServer) Send(context.Context, *SendRequest) (
 }
 func (UnimplementedTransportServiceServer) Kubeconfig(context.Context, *KubeconfigRequest) (*KubeconfigResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Kubeconfig not implemented")
+}
+func (UnimplementedTransportServiceServer) Status(context.Context, *StatusRequest) (*StatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Status not implemented")
 }
 func (UnimplementedTransportServiceServer) mustEmbedUnimplementedTransportServiceServer() {}
 func (UnimplementedTransportServiceServer) testEmbeddedByValue()                          {}
@@ -172,6 +188,24 @@ func _TransportService_Kubeconfig_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TransportService_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TransportServiceServer).Status(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TransportService_Status_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TransportServiceServer).Status(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TransportService_ServiceDesc is the grpc.ServiceDesc for TransportService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var TransportService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Kubeconfig",
 			Handler:    _TransportService_Kubeconfig_Handler,
+		},
+		{
+			MethodName: "Status",
+			Handler:    _TransportService_Status_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
