@@ -165,7 +165,7 @@ func (r *render) deployment() *appsv1.Deployment {
 						{
 							Name:    "connect",
 							Image:   image,
-							Command: []string{"redpanda-connect", "run", "/config/connect.yaml"},
+							Command: []string{"/redpanda-connect", "run", "/config/connect.yaml"},
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 4195, Protocol: corev1.ProtocolTCP},
 							},
