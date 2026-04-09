@@ -22,6 +22,7 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
@@ -126,6 +127,24 @@ func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
 	return []string{mcmanager.LocalCluster}
 }
 
+// DeleteStatefulSetForNodePool deletes a StatefulSet for a specific node pool, routing to the correct cluster.
+func (r *ResourceClient[T, U]) DeleteStatefulSetForNodePool(ctx context.Context, set *MulticlusterStatefulSet) error {
+	ctl, err := r.ctl(ctx, set.clusterName)
+	if err != nil {
+		return err
+	}
+	return ctl.Delete(ctx, set.StatefulSet)
+}
+
+// DeletePod deletes a Pod, routing to the correct cluster.
+func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterPod) error {
+	ctl, err := r.ctl(ctx, pod.clusterName)
+	if err != nil {
+		return err
+	}
+	return ctl.Delete(ctx, pod.Pod)
+}
+
 // PatchlNodePoolSet updates a StatefulSet for a specific node pool.
 func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *MulticlusterStatefulSet) error {
 	ctl, err := r.ctl(ctx, set.clusterName)
@@ -153,6 +172,37 @@ func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus
 
 func (r *ResourceClient[T, U]) GetAdminAPIEndpoints(cluster U) []string {
 	return r.simpleResourceRenderer.GetAdminAPIEndpoints(cluster)
+}
+
+// GetOwnerLabels returns the minimal set of labels that identify ownership.
+func (r *ResourceClient[T, U]) GetOwnerLabels(cluster U) map[string]string {
+	return r.ownershipResolver.GetOwnerLabels(cluster)
+}
+
+// AddOwnerLabels returns the full set of labels to apply to owned resources.
+func (r *ResourceClient[T, U]) AddOwnerLabels(cluster U) map[string]string {
+	return r.ownershipResolver.AddLabels(cluster)
+}
+
+// ResolveOwnerReference resolves the owner for the given cluster and cluster name,
+// returning the owner with the correct UID and GVK for that cluster.
+func (r *ResourceClient[T, U]) ResolveOwnerReference(ctx context.Context, owner U, clusterName string) (U, error) {
+	ctl, err := r.ctl(ctx, clusterName)
+	if err != nil {
+		var zero U
+		return zero, err
+	}
+	return r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
+}
+
+// Ctl returns a kube.Ctl for the given cluster name.
+func (r *ResourceClient[T, U]) Ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
+	return r.ctl(ctx, clusterName)
+}
+
+// ClusterList returns the list of cluster names for the given owner.
+func (r *ResourceClient[T, U]) ClusterList(owner U) []string {
+	return r.clusterList(owner)
 }
 
 type renderer[T any, U Cluster[T]] struct {
@@ -189,6 +239,11 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 
 	owner, err = r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
 	if err != nil {
+		// If the owner doesn't exist on this cluster (e.g. already deleted or
+		// not yet created), skip — there are no owned resources to sync.
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("cannot resolve owner reference: %w", err)
 	}
 
@@ -213,7 +268,8 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 			}
 			maps.Copy(o.GetLabels(), r.ownershipResolver.AddLabels(owner))
 		},
-		Owner: *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind()),
+		Owner:   *metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind()),
+		GCLabel: GCLabel,
 	}, nil
 }
 
@@ -222,14 +278,23 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	var syncErr error
 	logger := log.FromContext(ctx).WithName("SyncAll")
-	clusterList := r.clusterList(owner)
-	logger.V(log.InfoLevel).Info("syncing all clusters", "clusterList", clusterList)
+	var canonicalClusterList []string
 	for _, clusterName := range r.clusterList(owner) {
-		msg := fmt.Sprintf("syncer called, clusterName=%q, owner.Name=%q owner.UID=%q owner.GroupVersionKind=%q", clusterName, owner.GetName(), owner.GetUID(), owner.GetObjectKind().GroupVersionKind().String())
-		logger.V(log.InfoLevel).Info(msg)
+		canonicalClusterList = append(canonicalClusterList, CanonicalClusterName(clusterName, r.manager))
+	}
+	logger.V(log.DebugLevel).Info("syncing all clusters", "clusterList", canonicalClusterList)
+	for _, clusterName := range r.clusterList(owner) {
+		logger.V(log.TraceLevel).Info("syncer called",
+			"clusterName", CanonicalClusterName(clusterName, r.manager),
+			"ownerName", owner.GetName(),
+			"ownerUID", owner.GetUID(),
+			"ownerGroupVersionKind", owner.GetObjectKind().GroupVersionKind().String())
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			return err
+		}
+		if syncer == nil {
+			continue
 		}
 		_, err = syncer.Sync(ctx)
 		syncErr = errors.Join(syncErr, err)
@@ -241,6 +306,7 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 // a tracker that can be used for determining necessary operations on the pools.
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
+	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
 		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
 		if err != nil {
@@ -269,14 +335,14 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 				set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
 			}
 		}
-		log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in cluster %s", len(existingPools), clusterName))
-		log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in cluster %s", len(wrapped), clusterName))
+		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in cluster %s", len(existingPools), clusterName))
+		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in cluster %s", len(wrapped), clusterName))
 
 		pools.addExisting(existingPools...)
 		pools.addDesired(wrapped...)
 	}
-	log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in all clusters", len(pools.existingPools)))
-	log.FromContext(ctx).V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in all clusters", len(pools.desiredPools)))
+	logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in all clusters", len(pools.existingPools)))
+	logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in all clusters", len(pools.desiredPools)))
 
 	return pools, nil
 }
@@ -422,7 +488,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			deleteErr = errors.Join(deleteErr, err)
-		} else {
+		} else if syncer != nil {
 			clusterResourcesDeleted, err = syncer.DeleteAll(ctx)
 			if err != nil {
 				deleteErr = errors.Join(deleteErr, err)
@@ -470,6 +536,11 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	}
 	expectedOwner, err := r.ownershipResolver.ResolveOwnerReference(ctx, cluster, clusterName, ctl)
 	if err != nil {
+		// If the cluster object doesn't exist on this cluster yet (e.g. during
+		// initial rollout), there can't be any owned StatefulSets either.
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrapf(err, "resolving owner reference")
 	}
 	// swap cluster to correct one

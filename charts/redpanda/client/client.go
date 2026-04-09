@@ -67,7 +67,7 @@ func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rp
 	return client, nil
 }
 
-func AdminClientForStretch(dialer DialContextFunc, hosts []string, username, password string) (*rpadmin.AdminAPI, error) {
+func AdminClientForStretch(dialer DialContextFunc, hosts []string, username, password string, tlsConfig *tls.Config) (*rpadmin.AdminAPI, error) {
 	var auth rpadmin.Auth
 	if username != "" {
 		auth = &rpadmin.BasicAuth{
@@ -78,23 +78,13 @@ func AdminClientForStretch(dialer DialContextFunc, hosts []string, username, pas
 		auth = &rpadmin.NopAuth{}
 	}
 
-	params := &AdminConnectionParams{
-		Hosts: hosts, AdminAuthParams: AdminAuthParams{
-			Username: username,
-			Password: password,
-		},
-		TLSConfig: &tls.Config{
-			InsecureSkipVerify: true, //nolint:gosec
-		},
-	}
-
 	// NB: rpadmin automatically infers http or https, if not provided, based on the tlsConfig.
-	client, err := rpadmin.NewAdminAPIWithDialer(params.Hosts, auth, params.TLSConfig, dialer)
+	c, err := rpadmin.NewAdminAPIWithDialer(hosts, auth, tlsConfig, dialer)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return client, nil
+	return c, nil
 }
 
 type AdminAuthParams struct {
@@ -240,7 +230,7 @@ func KafkaClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...kg
 		if dialer == nil {
 			opts = append(opts, kgo.DialTLSConfig(tlsConfig))
 		} else {
-			opts = append(opts, kgo.Dialer(wrapTLSDialer(dialer, tlsConfig)))
+			opts = append(opts, kgo.Dialer(WrapTLSDialer(dialer, tlsConfig)))
 		}
 	} else if dialer != nil {
 		opts = append(opts, kgo.Dialer(dialer))
@@ -308,13 +298,23 @@ func saslOpt(user, password, mechanism string) kgo.Opt {
 	return kgo.SASL(m)
 }
 
-func wrapTLSDialer(dialer DialContextFunc, config *tls.Config) DialContextFunc {
-	return func(ctx context.Context, network, host string) (net.Conn, error) {
-		conn, err := dialer(ctx, network, host)
+// WrapTLSDialer wraps a dialer to perform a TLS handshake after connecting.
+// It clones the TLS config per connection and sets ServerName from the dial address.
+func WrapTLSDialer(dialer DialContextFunc, config *tls.Config) DialContextFunc {
+	return func(ctx context.Context, network, address string) (net.Conn, error) {
+		conn, err := dialer(ctx, network, address)
 		if err != nil {
 			return nil, err
 		}
-		return tls.Client(conn, config), nil
+		tlsCfg := config.Clone()
+		if tlsCfg.ServerName == "" {
+			host, _, err := net.SplitHostPort(address)
+			if err != nil {
+				return nil, err
+			}
+			tlsCfg.ServerName = host
+		}
+		return tls.Client(conn, tlsCfg), nil
 	}
 }
 

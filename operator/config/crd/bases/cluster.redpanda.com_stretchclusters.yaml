@@ -1379,6 +1379,19 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
+              networking:
+                description: Defines cross-cluster networking settings.
+                properties:
+                  crossClusterMode:
+                    description: |-
+                      CrossClusterMode controls how per-pod Services route traffic to pods
+                      on remote Kubernetes clusters. Defaults to "mesh".
+                    enum:
+                    - mesh
+                    - flat
+                    - mcs
+                    type: string
+                type: object
               rackAwareness:
                 description: Defines rack awareness settings.
                 properties:

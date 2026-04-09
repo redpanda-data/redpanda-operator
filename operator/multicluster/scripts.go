@@ -70,12 +70,21 @@ type ScriptParams struct {
 }
 
 // scriptParamsFromState extracts all values needed for script generation from a RenderState.
+// scriptInternalAdvertiseAddress returns the advertised address template for
+// internal listeners. In MCS mode, uses the clusterset.local domain.
+func scriptInternalAdvertiseAddress(state *RenderState) string {
+	if state.Spec().Networking.IsMCS() {
+		return fmt.Sprintf("${SERVICE_NAME}.%s.svc.clusterset.local", state.namespace)
+	}
+	return fmt.Sprintf("${SERVICE_NAME}.%s", state.Spec().InternalDomain(state.fullname(), state.namespace))
+}
+
 func scriptParamsFromState(state *RenderState) ScriptParams {
 	p := ScriptParams{
 		AdminCurlFlags:              state.adminTLSCurlFlags(),
 		CurlURL:                     state.Spec().AdminInternalURL(state.fullname(), state.namespace),
 		TotalReplicas:               state.totalReplicas(),
-		InternalAdvertiseAddress:    fmt.Sprintf("%s.%s", "${SERVICE_NAME}", state.Spec().InternalDomain(state.fullname(), state.namespace)),
+		InternalAdvertiseAddress:    scriptInternalAdvertiseAddress(state),
 		KafkaPort:                   state.Spec().KafkaPort(),
 		HTTPPort:                    state.Spec().HTTPPort(),
 		RedpandaAtLeast22_3:         state.Spec().Image.AtLeast("22.3.0"),

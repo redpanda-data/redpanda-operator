@@ -132,6 +132,18 @@ func (a *Auth) IsSASLEnabled() bool {
 	return a != nil && a.SASL.IsEnabled()
 }
 
+// --- Networking ---
+
+// IsFlatNetwork returns whether cross-cluster mode is set to "flat". Safe to call on nil receiver.
+func (n *Networking) IsFlatNetwork() bool {
+	return n != nil && ptr.Deref(n.CrossClusterMode, CrossClusterModeMesh) == CrossClusterModeFlat
+}
+
+// IsMCS returns whether cross-cluster mode is set to "mcs". Safe to call on nil receiver.
+func (n *Networking) IsMCS() bool {
+	return n != nil && ptr.Deref(n.CrossClusterMode, CrossClusterModeMesh) == CrossClusterModeMCS
+}
+
 // --- TLS ---
 
 // IsEnabled returns whether TLS is globally enabled. Safe to call on nil receiver.

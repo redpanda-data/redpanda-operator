@@ -140,9 +140,13 @@ func (p *PoolTracker) AllZero() bool {
 }
 
 // PoolStatuses returns a list of the pool statuses of the existing StatefulSets tracked by the PoolTracker.
+// It also includes desired pools that don't yet exist so the status reflects intent to create them.
 func (p *PoolTracker) PoolStatuses() []PoolStatus {
 	sets := []PoolStatus{}
+	seen := map[ClusterNamespacedName]struct{}{}
+
 	for nn, pool := range p.existingPools {
+		seen[nn] = struct{}{}
 		desiredReplicas := ptr.Deref(pool.set.Spec.Replicas, 0)
 		condemnedReplicas := pool.set.Status.Replicas - desiredReplicas
 		if condemnedReplicas < 0 {
@@ -159,6 +163,19 @@ func (p *PoolTracker) PoolStatuses() []PoolStatus {
 			CondemnedReplicas: condemnedReplicas,
 		})
 	}
+
+	// Include desired pools that don't yet exist so the user can see
+	// pending pool creation in the status.
+	for nn, pool := range p.desiredPools {
+		if _, ok := seen[nn]; ok {
+			continue
+		}
+		sets = append(sets, PoolStatus{
+			Name:            nn.Name,
+			DesiredReplicas: ptr.Deref(pool.set.Spec.Replicas, 0),
+		})
+	}
+
 	return sets
 }
 
@@ -384,6 +401,47 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 	}
 
 	return pods
+}
+
+// PodEndpoint holds the information needed to create an EndpointSlice
+// for a pod in a multicluster stretch cluster.
+type PodEndpoint struct {
+	// Name is the pod name (matches the per-pod Service name, e.g. "pool-0-0").
+	Name string
+	// IP is the pod's IP address.
+	IP string
+	// Cluster is the Kubernetes cluster the pod runs on.
+	Cluster string
+	// Ready indicates whether the pod's readiness probe is passing.
+	Ready bool
+}
+
+// PodEndpoints returns the IP and cluster information for all existing pods
+// across all clusters. This is used by the controller to manage EndpointSlices
+// for cross-cluster per-pod Services in flat network mode.
+func (p *PoolTracker) PodEndpoints() []PodEndpoint {
+	var endpoints []PodEndpoint
+	for _, pool := range p.existingPools {
+		for _, pod := range pool.pods {
+			if pod.pod.Status.PodIP == "" {
+				continue
+			}
+			ready := false
+			for _, cond := range pod.pod.Status.Conditions {
+				if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+					ready = true
+					break
+				}
+			}
+			endpoints = append(endpoints, PodEndpoint{
+				Name:    pod.pod.Name,
+				IP:      pod.pod.Status.PodIP,
+				Cluster: pool.set.clusterName,
+				Ready:   ready,
+			})
+		}
+	}
+	return endpoints
 }
 
 // addExisting poolWithOrdinals to the tracker

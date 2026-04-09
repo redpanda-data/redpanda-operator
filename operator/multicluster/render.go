@@ -17,8 +17,10 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	mcsv1alpha1 "sigs.k8s.io/mcs-api/pkg/apis/v1alpha1"
 )
 
 // Types returns a slice containing the set of all [kube.Object] types that
@@ -32,6 +34,10 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
+		&corev1.Endpoints{}, //nolint:staticcheck // Endpoints used for CoreDNS headless service resolution
+		&discoveryv1.EndpointSlice{},
+		&mcsv1alpha1.ServiceExport{},
+		&mcsv1alpha1.ServiceImport{},
 		&monitoringv1.ServiceMonitor{},
 		&policyv1.PodDisruptionBudget{},
 		&rbacv1.ClusterRoleBinding{},
@@ -83,7 +89,6 @@ func RenderResources(state *RenderState) ([]kube.Object, error) {
 	manifests = appendIfNotNil(manifests, serviceMonitor(state))
 	manifests = appendIfNotNil(manifests, cm...)
 	manifests = appendIfNotNil(manifests, certIssuers(state)...)
-	manifests = appendIfNotNil(manifests, rootCAs(state)...)
 	manifests = appendIfNotNil(manifests, certs...)
 	manifests = appendIfNotNil(manifests, roles(state)...)
 	manifests = appendIfNotNil(manifests, clusterRoles(state)...)
@@ -92,6 +97,9 @@ func RenderResources(state *RenderState) ([]kube.Object, error) {
 	manifests = appendIfNotNil(manifests, lbServices...)
 	manifests = appendIfNotNil(manifests, secretObjs...)
 	manifests = appendIfNotNil(manifests, ppServices...)
+	manifests = appendIfNotNil(manifests, serviceExports(state)...)
+	manifests = appendIfNotNil(manifests, serviceImports(state)...)
+	manifests = appendIfNotNil(manifests, perPodEndpoints(state)...)
 
 	return manifests, nil
 }

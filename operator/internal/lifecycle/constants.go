@@ -18,8 +18,12 @@ const (
 	defaultOwnerLabel     = "cluster.redpanda.com/owner"
 	generationLabel       = "cluster.redpanda.com/generation"
 	configVersionLabel    = "cluster.redpanda.com/configVersion"
-	componentLabel        = "app.kubernetes.io/component"
-	instanceLabel         = "app.kubernetes.io/instance"
-	fluxNameLabel         = "helm.toolkit.fluxcd.io/name"
-	fluxNamespaceLabel    = "helm.toolkit.fluxcd.io/namespace"
+	// GCLabel is applied to out-of-band resources (Endpoints, EndpointSlices)
+	// that should retain ownership labels for tracking but should not be
+	// garbage collected by the syncer.
+	GCLabel            = "cluster.redpanda.com/gc"
+	componentLabel     = "app.kubernetes.io/component"
+	instanceLabel      = "app.kubernetes.io/instance"
+	fluxNameLabel      = "helm.toolkit.fluxcd.io/name"
+	fluxNamespaceLabel = "helm.toolkit.fluxcd.io/namespace"
 )

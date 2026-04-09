@@ -11,6 +11,7 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -59,7 +60,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 	logger := testr.NewWithOptions(t, testr.Options{Verbosity: 6})
 
 	manager, err := multicluster.NewSingleClusterManager(config, ctrl.Options{
-		Scheme: controller.V2Scheme,
+		Scheme: controller.MulticlusterScheme,
 		Logger: logger,
 		Metrics: metricsserver.Options{
 			// disable metrics
@@ -160,6 +161,20 @@ func TestStretchClusterResourceClient(t *testing.T) {
 				}
 			}
 			cluster := NewStretchClusterWithPools(stretchCluster, []string{""}, wrapped...)
+
+			// For flat network mode, generate synthetic pod endpoints.
+			if stretchCluster.Spec.Networking.IsFlatNetwork() {
+				for _, pool := range pools {
+					for j := int32(0); j < pool.GetReplicas(); j++ {
+						cluster.PodEndpoints = append(cluster.PodEndpoints, PodEndpoint{
+							Name:    fmt.Sprintf("%s-%s-%d", stretchCluster.Name, pool.Name, j),
+							IP:      fmt.Sprintf("10.0.%d.%d", len(cluster.PodEndpoints)/256, len(cluster.PodEndpoints)%256+1),
+							Cluster: "",
+							Ready:   true,
+						})
+					}
+				}
+			}
 
 			ownerLabels := resourceClient.ownershipResolver.GetOwnerLabels(cluster)
 

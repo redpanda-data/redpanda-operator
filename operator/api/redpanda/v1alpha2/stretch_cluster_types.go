@@ -91,6 +91,37 @@ type StretchClusterSpec struct {
 
 	// Defines settings for monitoring Redpanda.
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
+
+	// Defines cross-cluster networking settings.
+	Networking *Networking `json:"networking,omitempty"`
+}
+
+// CrossClusterMode defines how per-pod Services route traffic to pods
+// on remote Kubernetes clusters.
+// +kubebuilder:validation:Enum=mesh;flat;mcs
+type CrossClusterMode string
+
+const (
+	// CrossClusterModeMesh is the default mode. Services use selectors; a
+	// service mesh (e.g. Cilium) is expected to mirror endpoints across clusters.
+	CrossClusterModeMesh CrossClusterMode = "mesh"
+	// CrossClusterModeFlat renders all per-pod Services as headless without
+	// selectors. The operator manages Endpoints and EndpointSlices with pod IPs
+	// directly. Requires a flat network where pod IPs are routable across clusters.
+	CrossClusterModeFlat CrossClusterMode = "flat"
+	// CrossClusterModeMCS renders per-pod Services with selectors on the owning
+	// cluster and exports them via the MCS (Multi-Cluster Services) API.
+	// ServiceExport resources are created alongside each per-pod Service, and seed
+	// server addresses use the clusterset.local DNS domain. Requires an MCS
+	// controller (e.g. Submariner, Lighthouse, or GKE multi-cluster services).
+	CrossClusterModeMCS CrossClusterMode = "mcs"
+)
+
+// Networking configures cross-cluster networking for stretch clusters.
+type Networking struct {
+	// CrossClusterMode controls how per-pod Services route traffic to pods
+	// on remote Kubernetes clusters. Defaults to "mesh".
+	CrossClusterMode *CrossClusterMode `json:"crossClusterMode,omitempty"`
 }
 
 type StretchClusterStatus struct {

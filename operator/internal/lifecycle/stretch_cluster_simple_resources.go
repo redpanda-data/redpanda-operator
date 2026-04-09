@@ -22,15 +22,19 @@ import (
 
 // StretchClusterSimpleResourceRenderer represents a simple resource multiclusterRenderer for stretch clusters.
 type StretchClusterSimpleResourceRenderer struct {
-	mgr multicluster.Manager
+	mgr           multicluster.Manager
+	redpandaImage Image
+	sideCarImage  Image
 }
 
 var _ SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchClusterSimpleResourceRenderer)(nil)
 
 // NewStretchClusterSimpleResourceRenderer returns a StretchClusterSimpleResourceRenderer.
-func NewStretchClusterSimpleResourceRenderer(mgr multicluster.Manager) *StretchClusterSimpleResourceRenderer {
+func NewStretchClusterSimpleResourceRenderer(mgr multicluster.Manager, redpandaImage, sideCarImage Image) *StretchClusterSimpleResourceRenderer {
 	return &StretchClusterSimpleResourceRenderer{
-		mgr: mgr,
+		mgr:           mgr,
+		redpandaImage: redpandaImage,
+		sideCarImage:  sideCarImage,
 	}
 }
 
@@ -45,15 +49,42 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 	// of which operator instance (local vs remote) performs the reconciliation.
 	canonicalName := CanonicalClusterName(clusterName, m.mgr)
 
+	applyDefaultImage := defaultImage(m.redpandaImage)
+	applyDefaultSidecar := defaultImage(m.sideCarImage)
+	inCluster := cluster.GetNodePoolsForCluster(canonicalName)
+	for _, pool := range inCluster {
+		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
+		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
+	}
+	allPools := cluster.GetAllNodePools()
+	for _, pool := range allPools {
+		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
+		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
+	}
+
 	state, err := multiclusterRenderer.NewRenderState(
 		cl.GetConfig(),
 		cluster.StretchCluster,
-		cluster.GetNodePoolsForCluster(canonicalName),
-		cluster.GetAllNodePools(),
+		inCluster,
+		allPools,
 		canonicalName,
 	)
 	if err != nil {
 		return nil, errors.WithStack(err)
+	}
+
+	// Pass pod endpoints for flat network Endpoints/EndpointSlice rendering.
+	if len(cluster.PodEndpoints) > 0 {
+		renderEndpoints := make([]multiclusterRenderer.PodEndpoint, len(cluster.PodEndpoints))
+		for i, ep := range cluster.PodEndpoints {
+			renderEndpoints[i] = multiclusterRenderer.PodEndpoint{
+				Name:    ep.Name,
+				IP:      ep.IP,
+				Cluster: ep.Cluster,
+				Ready:   ep.Ready,
+			}
+		}
+		state.WithPodEndpoints(renderEndpoints)
 	}
 
 	resources, err := multiclusterRenderer.RenderResources(state)
