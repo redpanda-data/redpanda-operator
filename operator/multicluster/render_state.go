@@ -27,10 +27,24 @@ import (
 // RenderState contains contextual information about the current rendering of
 // stretch cluster resources. Exported methods are limited to those useful for
 // establishing client connections to the cluster.
+// PodEndpoint holds the information needed to create Endpoints/EndpointSlices
+// for a pod in a multicluster stretch cluster.
+type PodEndpoint struct {
+	// Name is the pod name (e.g. "factory-test-pool-0-0").
+	Name string
+	// IP is the pod's IP address.
+	IP string
+	// Cluster is the Kubernetes cluster the pod runs on.
+	Cluster string
+	// Ready indicates whether the pod's readiness probe is passing.
+	Ready bool
+}
+
 type RenderState struct {
 	cluster        *redpandav1alpha2.StretchCluster
 	inClusterPools []*redpandav1alpha2.NodePool
 	pools          []*redpandav1alpha2.NodePool
+	podEndpoints   []PodEndpoint
 	clusterName    string
 	releaseName    string
 	namespace      string
@@ -44,11 +58,18 @@ type RenderState struct {
 }
 
 func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.NodePool) []string {
+	// In MCS mode, use the clusterset.local domain so DNS resolves via the
+	// MCS controller across cluster boundaries.
+	addressFmt := "%s.%s:%d"
+	if cluster.Spec.Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+
 	var seedServers []string
 	for _, pool := range pools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
 			name := PerPodServiceName(pool, i)
-			seedServers = append(seedServers, fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), cluster.Spec.RPCPort()))
+			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), cluster.Spec.RPCPort()))
 		}
 	}
 	return seedServers
@@ -122,6 +143,13 @@ func NewRenderState(
 	}
 
 	return state, nil
+}
+
+// WithPodEndpoints sets the pod endpoints on the render state, enabling
+// the renderer to produce Endpoints and EndpointSlices for flat network mode.
+func (r *RenderState) WithPodEndpoints(endpoints []PodEndpoint) *RenderState {
+	r.podEndpoints = endpoints
+	return r
 }
 
 // tplData returns the template context data for Go template expansion.

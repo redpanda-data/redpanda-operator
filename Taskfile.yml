@@ -294,6 +294,23 @@ tasks:
           ref: .GO_TEST_RUNNER
         CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 60m -tags integration'
 
+  test:multicluster:
+    desc: "Run all multicluster tests (~60m)"
+    deps:
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: test:pull-images
+    vars:
+      RUN: '{{ default `"^TestMulticluster"` .RUN }}'
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+    cmds:
+    - task: test:unit
+      vars:
+        GO_TEST_RUNNER:
+          ref: .GO_TEST_RUNNER
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 60m -tags multicluster'
+
   test:acceptance:
     desc: "Run all acceptance tests (~90m)"
     deps:

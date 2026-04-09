@@ -61,6 +61,23 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				fmt.Sprintf("*.%s.%s.svc.%s", service, ns, domain),
 				fmt.Sprintf("*.%s.%s.svc", service, ns),
 				fmt.Sprintf("*.%s.%s", service, ns),
+				// Per-pod service names are standalone services in the namespace,
+				// not subdomains of the headless service. Add a namespace-wide
+				// wildcard so TLS verification passes for addresses like
+				// "pool-0-0.sc-factory:9644".
+				fmt.Sprintf("*.%s.svc.%s", ns, domain),
+				fmt.Sprintf("*.%s.svc", ns),
+				fmt.Sprintf("*.%s", ns),
+			)
+		}
+
+		// In MCS mode, add clusterset.local SANs for cross-cluster DNS.
+		if state.Spec().Networking.IsMCS() {
+			names = append(names,
+				fmt.Sprintf("%s-cluster.%s.%s.svc.clusterset.local", fullname, service, ns),
+				fmt.Sprintf("*.%s-cluster.%s.%s.svc.clusterset.local", fullname, service, ns),
+				fmt.Sprintf("%s.%s.svc.clusterset.local", service, ns),
+				fmt.Sprintf("*.%s.%s.svc.clusterset.local", service, ns),
 			)
 		}
 

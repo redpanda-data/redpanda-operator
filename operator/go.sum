@@ -600,8 +600,8 @@ github.com/redis/go-redis/v9 v9.8.0 h1:q3nRvjrlge/6UD7eTu/DSg2uYiU2mCL0G/uzBWqhi
 github.com/redis/go-redis/v9 v9.8.0/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6Q5lHuCH/Iw=
 github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 h1:wWHiS4LNYzl5HkUPG6dpGPPvFW3ze7ZnraYvyqZ/+8s=
 github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1/go.mod h1:V3OBV2kcF/BDDytUZuKvIygbaXoGPT5VO3KmMAz+mBM=
-github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a h1:Ce2o1IIQcR1UD8FX8sXwevI7JlEVnWoMtMLkawC5mbU=
-github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a/go.mod h1:FMuuUG3IVwwSad+3da0WIPYHsUuvi3LHnjgSv8ovXug=
+github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27 h1:735zfoMDegKzXO+mipLeEJhjvoboMiOwlZiEfWTs9IY=
+github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27/go.mod h1:87/jKBvBse9m7PBwCxzISdxOpHblNKTqxZZNa1U1utM=
 github.com/redpanda-data/common-go/license v0.0.0-20260120073450-935d3dd3d6c1 h1:6aPxMthcrAljux5bgqU78yHxM8BK1ITqh9G9H+s707U=
 github.com/redpanda-data/common-go/license v0.0.0-20260120073450-935d3dd3d6c1/go.mod h1:F1fp8xVNS2UwWFosOjJ9+5jaEZnXSjB9AdHk2R9XlpI=
 github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 h1:MXLdjFdFjOtyuUR4TdVVsqFP8xnru2YDwzH9bJTUr1M=
@@ -896,8 +896,8 @@ google.golang.org/genproto v0.0.0-20260217215200-42d3e9bedb6d h1:vsOm753cOAMkt76
 google.golang.org/genproto v0.0.0-20260217215200-42d3e9bedb6d/go.mod h1:0oz9d7g9QLSdv9/lgbIjowW1JoxMbxmBVNe8i6tORJI=
 google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d h1:EocjzKLywydp5uZ5tJ79iP6Q0UjDnyiHkGRWxuPBP8s=
 google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d/go.mod h1:48U2I+QQUYhsFrg2SY6r+nJzeOtjey7j//WBESw+qyQ=
-google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d h1:t/LOSXPJ9R0B6fnZNyALBRfZBH0Uy0gT+uR+SJ6syqQ=
-google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d/go.mod h1:4Hqkh8ycfw05ld/3BWL7rJOSfebL2Q+DVDeRgYgxUU8=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20260319171110-e3a33c96fb44 h1:sRy++txmErSjyVWlIgQB5nB+U75+Di+AH7eEZ002B/s=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20260319171110-e3a33c96fb44/go.mod h1:4Hqkh8ycfw05ld/3BWL7rJOSfebL2Q+DVDeRgYgxUU8=
 google.golang.org/grpc v1.79.3 h1:sybAEdRIEtvcD68Gx7dmnwjZKlyfuc61Dyo9pGXXkKE=
 google.golang.org/grpc v1.79.3/go.mod h1:KmT0Kjez+0dde/v2j9vzwoAScgEPx/Bw1CYChhHLrHQ=
 google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=
@@ -964,6 +964,8 @@ sigs.k8s.io/kustomize/api v0.20.1 h1:iWP1Ydh3/lmldBnH/S5RXgT98vWYMaTUL1ADcr+Sv7I
 sigs.k8s.io/kustomize/api v0.20.1/go.mod h1:t6hUFxO+Ph0VxIk1sKp1WS0dOjbPCtLJ4p8aADLwqjM=
 sigs.k8s.io/kustomize/kyaml v0.20.1 h1:PCMnA2mrVbRP3NIB6v9kYCAc38uvFLVs8j/CD567A78=
 sigs.k8s.io/kustomize/kyaml v0.20.1/go.mod h1:0EmkQHRUsJxY8Ug9Niig1pUMSCGHxQ5RklbpV/Ri6po=
+sigs.k8s.io/mcs-api v0.4.1 h1:rUygPnCZVS5xiZCzAi54Ngs9on6UQr7MNfx4uJXR2kA=
+sigs.k8s.io/mcs-api v0.4.1/go.mod h1:zZ5CK8uS6HaLkxY4HqsmcBHfzHuNMrY2uJy8T7jffK4=
 sigs.k8s.io/multicluster-runtime v0.23.1 h1:isjVh6zBuk/U1HjYm22knRZmFsn6sFinmyvV+/4puCc=
 sigs.k8s.io/multicluster-runtime v0.23.1/go.mod h1:ri1Gvx7Qehy5nis6OnTgSpJIWaf2SuorHDwF/jvbWvM=
 sigs.k8s.io/randfill v1.0.0 h1:JfjMILfT8A6RbawdsK2JXGBR5AQVfd+9TbzrlneTyrU=

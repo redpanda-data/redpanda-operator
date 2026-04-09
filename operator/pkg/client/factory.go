@@ -218,6 +218,10 @@ func (c *Factory) KafkaClientForCluster(ctx context.Context, obj any, clusterNam
 		return c.kafkaForCluster(ctx, cluster, clusterName, opts...)
 	}
 
+	if sc, ok := obj.(*redpandav1alpha2.StretchCluster); ok {
+		return c.kafkaForStretchCluster(ctx, sc, clusterName, opts...)
+	}
+
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
 		return c.kafkaForV1Cluster(ctx, cluster, clusterName)
 	}
@@ -266,6 +270,11 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 		return c.redpandaAdminForCluster(ctx, cluster, clusterName)
 	}
 
+	// if we pass in a StretchCluster, use the multicluster path
+	if sc, ok := obj.(*redpandav1alpha2.StretchCluster); ok {
+		return c.redpandaAdminForStretchCluster(ctx, sc, clusterName)
+	}
+
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
 		return c.redpandaAdminForV1Cluster(ctx, cluster, clusterName)
 	}
@@ -304,8 +313,9 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 	return nil, ErrInvalidRedpandaClientObject
 }
 
+// Deprecated: Use RedpandaAdminClientForCluster with a *StretchCluster instead.
 func (c *Factory) RedpandaAdminClientForMulticluster(adminAPIEndpoints []string, username, password string) (*rpadmin.AdminAPI, error) {
-	return c.redpandaAdminForStretchCluster(adminAPIEndpoints, username, password)
+	return redpanda.AdminClientForStretch(c.dialer, adminAPIEndpoints, username, password, nil)
 }
 
 func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.AdminAPI, error) {
@@ -316,6 +326,10 @@ func (c *Factory) SchemaRegistryClientForCluster(ctx context.Context, obj any, c
 	// if we pass in a Redpanda cluster, just use it
 	if cluster, ok := obj.(*redpandav1alpha2.Redpanda); ok {
 		return c.schemaRegistryForCluster(ctx, cluster, clusterName)
+	}
+
+	if sc, ok := obj.(*redpandav1alpha2.StretchCluster); ok {
+		return c.schemaRegistryForStretchCluster(ctx, sc, clusterName)
 	}
 
 	if cluster, ok := obj.(*vectorizedv1alpha1.Cluster); ok {
@@ -694,12 +708,4 @@ func (c *Factory) kafkaUserAuth() (kgo.Opt, error) {
 	}
 
 	return nil, nil
-}
-
-func (c *Factory) redpandaAdminForStretchCluster(hosts []string, username, password string) (*rpadmin.AdminAPI, error) {
-	adminClient, err := redpanda.AdminClientForStretch(c.dialer, hosts, username, password)
-	if err != nil {
-		return nil, err
-	}
-	return adminClient, nil
 }

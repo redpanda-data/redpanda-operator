@@ -10,7 +10,7 @@ require (
 	github.com/gonvenience/ytbx v1.4.4
 	github.com/homeport/dyff v1.7.1
 	github.com/imdario/mergo v0.3.16
-	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a
+	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
@@ -202,7 +202,7 @@ require (
 	golang.org/x/time v0.14.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260319171110-e3a33c96fb44 // indirect
 	google.golang.org/grpc v1.79.3 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect

@@ -33,7 +33,7 @@ func perPodServices(state *RenderState) ([]*corev1.Service, error) {
 			continue
 		}
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			svc, err := perPodService(state, pool, i, override)
+			svc, err := perPodService(state, pool, i, isLocal, override)
 			if err != nil {
 				return nil, err
 			}
@@ -43,7 +43,7 @@ func perPodServices(state *RenderState) ([]*corev1.Service, error) {
 	return services, nil
 }
 
-func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
+func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32, _ bool, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
 	spec := state.Spec()
 
 	labels := state.commonLabels()
@@ -57,8 +57,17 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 		// TODO: consider a special field for per pod service annotation, either in nodepool or stretchcluster spec.
 		annotations = spec.Service.Internal.Annotations
 	}
-	// make sure this service only selects one pod
-	selector := perPodServiceSelector(state, pool, ordinal)
+
+	// In flat network mode, ALL per-pod Services are rendered as headless
+	// without selectors. The controller manages EndpointSlices with actual
+	// pod IPs for both local and remote pods.
+	var selector map[string]string
+	clusterIP := ""
+	if spec.Networking.IsFlatNetwork() {
+		clusterIP = corev1.ClusterIPNone
+	} else {
+		selector = perPodServiceSelector(state, pool, ordinal)
+	}
 
 	svc := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -73,6 +82,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,
+			ClusterIP:                clusterIP,
 			PublishNotReadyAddresses: true,
 			Selector:                 selector,
 			Ports:                    ports,

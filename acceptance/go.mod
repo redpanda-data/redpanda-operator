@@ -6,7 +6,7 @@ require (
 	github.com/cert-manager/cert-manager v1.19.3
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.67.5
-	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a
+	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
 	github.com/redpanda-data/common-go/rpadmin v0.2.4
 	github.com/redpanda-data/common-go/rpsr v0.1.4
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000
@@ -294,7 +294,7 @@ require (
 	google.golang.org/api v0.265.0 // indirect
 	google.golang.org/genproto v0.0.0-20260217215200-42d3e9bedb6d // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260319171110-e3a33c96fb44 // indirect
 	google.golang.org/grpc v1.79.3 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
@@ -317,6 +317,7 @@ require (
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
+	sigs.k8s.io/mcs-api v0.4.1 // indirect
 	sigs.k8s.io/multicluster-runtime v0.23.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2 // indirect

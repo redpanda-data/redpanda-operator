@@ -1009,3 +1009,45 @@ spec:
   replicas: 2
   additionalSelectorLabels:
     tier: cold
+-- flat-network --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec:
+  networking:
+    crossClusterMode: flat
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 2
+-- mcs-network --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec:
+  networking:
+    crossClusterMode: mcs
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 2

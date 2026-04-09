@@ -38,6 +38,11 @@ func (m *V2ClusterStatusUpdater) Update(cluster *ClusterWithPools, status *Clust
 		dirty = true
 	}
 
+	if status.LicenseStatus != nil {
+		cluster.Status.LicenseStatus = status.LicenseStatus
+		dirty = true
+	}
+
 	return dirty
 }
 

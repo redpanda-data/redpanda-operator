@@ -89,5 +89,9 @@ func (m *StretchClusterOwnershipResolver) ResolveOwnerReference(ctx context.Cont
 		newOwner.APIVersion = redpandav1alpha2.GroupVersion.String()
 		return newOwner, nil
 	}
+	// Ensure GVK is set on the returned owner so that downstream callers
+	// (e.g. NewControllerRef) produce valid owner references.
+	owner.Kind = "StretchCluster"
+	owner.APIVersion = redpandav1alpha2.GroupVersion.String()
 	return owner, nil
 }
