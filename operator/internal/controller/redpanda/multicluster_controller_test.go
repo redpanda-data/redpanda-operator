@@ -28,6 +28,7 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -91,7 +92,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		Tag:        "dev",
 	}
 
-	s.mc = testenv.NewMulticluster(t, s.ctx, testenv.MulticlusterOptions{
+	s.mc = testenv.NewMulticlusterVind(t, s.ctx, testenv.MulticlusterOptions{
 		Name:               "multicluster",
 		ClusterSize:        3,
 		Scheme:             controller.MulticlusterScheme,
@@ -188,9 +189,13 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 	// Introduce drift: patch the spec on one cluster only.
 	driftedEnv := s.mc.Envs[0]
 	var sc redpandav1alpha2.StretchCluster
-	require.NoError(t, driftedEnv.Client().Get(ctx, nn, &sc))
-	sc.Spec.CommonLabels = map[string]string{"env": "staging"}
-	require.NoError(t, driftedEnv.Client().Update(ctx, &sc))
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := driftedEnv.Client().Get(ctx, nn, &sc); err != nil {
+			return err
+		}
+		sc.Spec.CommonLabels = map[string]string{"env": "staging"}
+		return driftedEnv.Client().Update(ctx, &sc)
+	}))
 
 	// The reconciler should detect drift and set the condition.
 	require.Eventually(t, func() bool {
@@ -220,9 +225,13 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 	}
 
 	// Fix the drift: align the spec back.
-	require.NoError(t, driftedEnv.Client().Get(ctx, nn, &sc))
-	sc.Spec.CommonLabels = map[string]string{"env": "prod"}
-	require.NoError(t, driftedEnv.Client().Update(ctx, &sc))
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := driftedEnv.Client().Get(ctx, nn, &sc); err != nil {
+			return err
+		}
+		sc.Spec.CommonLabels = map[string]string{"env": "prod"}
+		return driftedEnv.Client().Update(ctx, &sc)
+	}))
 
 	// The condition should go back to True.
 	require.Eventually(t, func() bool {

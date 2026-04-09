@@ -221,6 +221,82 @@ func New(t *testing.T, options Options) *Env {
 	return env
 }
 
+// NewFromConfig creates an Env from an existing REST config without creating
+// any k3d or vCluster infrastructure. Used for vind-based environments where
+// cluster creation is handled externally.
+func NewFromConfig(t *testing.T, config *rest.Config, options Options) *Env {
+	t.Helper()
+
+	if options.Scheme == nil {
+		options.Scheme = goclientscheme.Scheme
+	}
+	if options.Logger.IsZero() {
+		options.Logger = logr.Discard()
+	}
+
+	if len(options.CRDs) > 0 {
+		crds, err := envtest.InstallCRDs(config, envtest.CRDInstallOptions{
+			CRDs:               dupCRDs(options.CRDs),
+			ErrorIfPathMissing: false,
+		})
+		if err != nil && !k8sapierrors.IsAlreadyExists(err) && !strings.Contains(err.Error(), "already exists") {
+			require.NoError(t, err)
+		}
+		if err == nil {
+			require.Equal(t, len(options.CRDs), len(crds))
+		}
+	}
+
+	c, err := client.New(config, client.Options{Scheme: options.Scheme})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background()) //nolint:gosec
+
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{GenerateName: "testenv-"}}
+	if options.Namespace != "" {
+		ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: options.Namespace}}
+	}
+	createErr := c.Create(ctx, ns)
+	if !k8sapierrors.IsAlreadyExists(createErr) {
+		require.NoError(t, createErr)
+	}
+
+	var otelClient client.Client
+	if options.SkipNamespaceClient {
+		otelClient = otelkube.NewClient(c)
+	} else {
+		otelClient = otelkube.NewClient(client.NewNamespacedClient(c, ns.Name))
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	env := &Env{
+		t:                  t,
+		scheme:             options.Scheme,
+		logger:             options.Logger,
+		namespace:          ns,
+		group:              g,
+		ctx:                ctx,
+		cancel:             cancel,
+		config:             config,
+		client:             otelClient,
+		watchAllNamespaces: options.WatchAllNamespaces,
+		Name:               options.Name,
+	}
+
+	t.Logf("Executing in namespace %q on %s", ns.Name, config.Host)
+
+	t.Cleanup(func() {
+		if t.Failed() {
+			env.dumpDiagnostics()
+		}
+		env.cancel()
+		assert.NoError(env.t, env.group.Wait())
+	})
+
+	return env
+}
+
 func (e *Env) Client() client.Client {
 	return e.client
 }

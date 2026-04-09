@@ -54,6 +54,7 @@ func TestMulticlusterStretchClusterFactory(t *testing.T) {
 type StretchClusterFactorySuite struct {
 	suite.Suite
 
+	ctx           context.Context
 	mc            *testenv.MulticlusterEnv
 	factory       *internalclient.Factory
 	redpandaImage lifecycle.Image
@@ -82,7 +83,7 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 	// SetupFn) and the test's factory. Since NewMulticluster hasn't returned
 	// yet when SetupFn runs, we capture the pointer and set it after.
 	var mc *testenv.MulticlusterEnv
-	s.mc = testenv.NewMulticluster(t, ctx, testenv.MulticlusterOptions{
+	s.mc = testenv.NewMulticlusterVind(t, s.ctx, testenv.MulticlusterOptions{
 		Name:               "sc-factory",
 		ClusterSize:        3,
 		Scheme:             controller.MulticlusterScheme,

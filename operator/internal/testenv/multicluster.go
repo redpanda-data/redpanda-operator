@@ -30,10 +30,9 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 // MulticlusterEnv wraps multiple [Env] instances configured as a Raft-based
@@ -80,148 +79,6 @@ type MulticlusterOptions struct {
 	// register controllers. The first invocation's Manager is captured as the
 	// "primary" manager.
 	SetupFn func(multicluster.Manager) error
-}
-
-// NewMulticluster creates a multicluster test environment with the given options.
-// It creates ClusterSize k3d-backed environments, configures Raft-based leader
-// election, sets up RBAC, and registers controllers via SetupFn.
-func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions) *MulticlusterEnv {
-	t.Helper()
-
-	if opts.ClusterSize == 0 {
-		opts.ClusterSize = 3
-	}
-	if opts.Name == "" {
-		opts.Name = "mc"
-	}
-	if opts.CIDRBlock == 0 {
-		opts.CIDRBlock = 100
-	}
-	if opts.Namespace == "" {
-		opts.Namespace = opts.Name
-	}
-
-	ports := testutil.FreePorts(t, opts.ClusterSize)
-
-	// Pre-create the shared Docker network so parallel k3d cluster creation
-	// doesn't race on network creation.
-	_ = exec.Command("docker", "network", "create", opts.Name).Run() //nolint:errcheck // ignore "already exists"
-
-	// Pre-create k3d clusters in parallel to speed up bootstrapping.
-	// Each cluster gets a unique pod/service CIDR so that pods can communicate
-	// across clusters when routes are set up (flat networking).
-	// k3d.GetOrCreate is safe to call concurrently (uses file-based locking).
-	var wg sync.WaitGroup
-	errs := make([]error, opts.ClusterSize)
-	for i := range opts.ClusterSize {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			k3dOpts := []k3d.ClusterOpt{
-				k3d.WithAgents(1),
-				k3d.WithNetwork(opts.Name),
-			}
-			// Non-overlapping CIDRs so pods can communicate across clusters.
-			k3dOpts = append(k3dOpts, k3d.WithCIDRs(
-				fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+idx),
-				fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+opts.ClusterSize+idx),
-			))
-			_, errs[idx] = k3d.GetOrCreate(
-				fmt.Sprintf("%s-%d", opts.Name, idx),
-				k3dOpts...,
-			)
-		}(i)
-	}
-	wg.Wait()
-	for i, err := range errs {
-		require.NoError(t, err, "creating k3d cluster %d", i)
-	}
-
-	setupFlatNetworking(t, opts.Name, opts.ClusterSize)
-
-	envs := make([]*Env, opts.ClusterSize)
-	for i := range opts.ClusterSize {
-		envs[i] = New(t, Options{
-			Name:                fmt.Sprintf("%s-%d", opts.Name, i),
-			Agents:              1,
-			Scheme:              opts.Scheme,
-			CRDs:                opts.CRDs,
-			Network:             opts.Name,
-			Namespace:           opts.Namespace,
-			Logger:              opts.Logger.WithName(fmt.Sprintf("%s-%d", opts.Name, i)),
-			ImportImages:        opts.ImportImages,
-			WatchAllNamespaces:  opts.WatchAllNamespaces,
-			SkipNamespaceClient: opts.WatchAllNamespaces,
-			SkipVCluster:        true,
-		})
-	}
-
-	if opts.InstallCertManager {
-		var cmWg sync.WaitGroup
-		cmErrs := make([]error, opts.ClusterSize)
-		for i, env := range envs {
-			cmWg.Add(1)
-			go func(idx int, env *Env) { //nolint:gosec // ctx is suite-scoped, not request-scoped
-				defer cmWg.Done()
-				hc, err := helm.New(helm.Options{KubeConfig: env.RESTConfig()})
-				if err != nil {
-					cmErrs[idx] = fmt.Errorf("creating helm client for cluster %d: %w", idx, err)
-					return
-				}
-				if err := hc.RepoAdd(ctx, "jetstack", "https://charts.jetstack.io"); err != nil {
-					cmErrs[idx] = fmt.Errorf("adding jetstack repo on cluster %d: %w", idx, err)
-					return
-				}
-				if _, err := hc.Upgrade(ctx, "cert-manager", "jetstack/cert-manager", helm.UpgradeOptions{
-					Install:         true,
-					CreateNamespace: true,
-					Namespace:       "cert-manager",
-					Version:         "v1.17.2",
-					Values: map[string]any{
-						"installCRDs": true,
-					},
-				}); err != nil {
-					cmErrs[idx] = fmt.Errorf("installing cert-manager on cluster %d: %w", idx, err)
-				}
-			}(i, env)
-		}
-		cmWg.Wait()
-		for i, err := range cmErrs {
-			require.NoError(t, err, "installing cert-manager on cluster %d", i)
-		}
-	}
-
-	peers := make([]multicluster.RaftCluster, opts.ClusterSize)
-	for i, env := range envs {
-		peers[i] = multicluster.RaftCluster{
-			Name:       env.Name,
-			Address:    fmt.Sprintf("127.0.0.1:%d", ports[i]),
-			Kubeconfig: env.RESTConfig(),
-		}
-	}
-
-	managers := make([]multicluster.Manager, opts.ClusterSize)
-	for i, env := range envs {
-		idx := i
-		sa := setupMulticlusterRBAC(t, ctx, env)
-		env.SetupMulticlusterManager(
-			sa,
-			fmt.Sprintf("127.0.0.1:%d", ports[i]),
-			peers,
-			func(mgr multicluster.Manager) error {
-				managers[idx] = mgr
-				if opts.SetupFn != nil {
-					return opts.SetupFn(mgr)
-				}
-				return nil
-			},
-		)
-	}
-
-	return &MulticlusterEnv{
-		Envs:     envs,
-		Managers: managers,
-	}
 }
 
 // PrimaryManager returns the first non-nil Manager. Panics if none exist.
@@ -298,9 +155,9 @@ func (m *MulticlusterEnv) ApplyAll(t *testing.T, ctx context.Context, objs ...cl
 			obj.SetManagedFields(nil)
 			obj.SetResourceVersion("")
 			obj.GetObjectKind().SetGroupVersionKind(gvk)
-			copy := obj.DeepCopyObject().(client.Object)
+			objCopy := obj.DeepCopyObject().(client.Object)
 			t.Logf("[ApplyAll] applying %s/%s (ns=%s) to %s", gvk.Kind, obj.GetName(), obj.GetNamespace(), env.Name)
-			require.NoError(t, env.Client().Patch(ctx, copy, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO
+			require.NoError(t, env.Client().Patch(ctx, objCopy, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO
 			t.Logf("[ApplyAll] applied %s/%s (ns=%s) to %s successfully", gvk.Kind, obj.GetName(), obj.GetNamespace(), env.Name)
 		}
 	}
@@ -399,41 +256,6 @@ func (m *MulticlusterEnv) findPodByIP(ctx context.Context, namespace, ip string)
 	return "", -1
 }
 
-// setupFlatNetworking adds routes between all k3d cluster nodes so that pods
-// on different clusters can reach each other via their non-overlapping CIDRs.
-// Each cluster i uses pod CIDR 10.{100+i}.0.0/16. We add a route on every node
-// in cluster i pointing 10.{100+j}.0.0/16 to the server node of cluster j.
-func setupFlatNetworking(t *testing.T, name string, clusterSize int) {
-	t.Helper()
-
-	// Resolve the Docker-internal IP of each cluster's server node.
-	serverIPs := make([]string, clusterSize)
-	for i := range clusterSize {
-		container := fmt.Sprintf("k3d-%s-%d-server-0", name, i)
-		out, err := exec.Command("docker", "inspect", "-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}", container).Output()
-		require.NoError(t, err, "inspecting container %s", container)
-		serverIPs[i] = string(out[:len(out)-1]) // trim trailing newline
-	}
-
-	// For each cluster, add routes to every other cluster's pod CIDR via that cluster's server IP.
-	for i := range clusterSize {
-		// All node containers for cluster i: server + agents.
-		nodes := []string{fmt.Sprintf("k3d-%s-%d-server-0", name, i)}
-		nodes = append(nodes, fmt.Sprintf("k3d-%s-%d-agent-0", name, i))
-
-		for j := range clusterSize {
-			if i == j {
-				continue
-			}
-			cidr := fmt.Sprintf("10.%d.0.0/16", 100+j)
-			for _, node := range nodes {
-				// Ignore errors — route may already exist from a previous run.
-				_ = exec.Command("docker", "exec", node, "ip", "route", "add", cidr, "via", serverIPs[j]).Run()
-			}
-		}
-	}
-}
-
 // FixupCrossClusterServices patches per-pod Services on each cluster that
 // reference pods running on OTHER clusters. It removes the selector (so
 // kube doesn't fight with us) and creates an EndpointSlice pointing
@@ -526,6 +348,161 @@ func (m *MulticlusterEnv) FixupCrossClusterServices(t *testing.T, ctx context.Co
 			}
 
 			t.Logf("Fixed up cross-cluster service %s on %s -> %s", svc.Name, env.Name, podIP)
+		}
+	}
+}
+
+// NewMulticlusterVind creates a multicluster test environment using vind
+// (vCluster in Docker) clusters instead of k3d. It provides the same
+// interface as NewMulticluster but uses Docker-based virtual clusters
+// that share a Docker network for flat networking. Images available on the
+// host Docker daemon are immediately accessible inside vind clusters.
+func NewMulticlusterVind(t *testing.T, ctx context.Context, opts MulticlusterOptions) *MulticlusterEnv {
+	t.Helper()
+
+	if opts.ClusterSize == 0 {
+		opts.ClusterSize = 3
+	}
+	if opts.Name == "" {
+		opts.Name = "mc"
+	}
+	if opts.CIDRBlock == 0 {
+		opts.CIDRBlock = 100
+	}
+	if opts.Namespace == "" {
+		opts.Namespace = opts.Name
+	}
+
+	ports := testutil.FreePorts(t, opts.ClusterSize)
+
+	// Pre-create the shared Docker network so parallel vind creation
+	// doesn't race on network creation.
+	_ = exec.Command("docker", "network", "create", opts.Name).Run() //nolint:errcheck // ignore "already exists"
+
+	vindOpts := func(idx int) []vcluster.VindOpt {
+		o := []vcluster.VindOpt{
+			vcluster.VindWithNetwork(opts.Name),
+			vcluster.VindWithPodCIDR(fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+idx)),
+			vcluster.VindWithServiceCIDR(fmt.Sprintf("10.%d.0.0/16", opts.CIDRBlock+opts.ClusterSize+idx)),
+		}
+		if opts.InstallCertManager {
+			o = append(o, vcluster.VindWithCertManager())
+		}
+		return o
+	}
+
+	// Create vind clusters in parallel. CreateVind uses a file-based lock
+	// to serialize the binary extraction across parallel test processes.
+	clusters := make([]*vcluster.VindCluster, opts.ClusterSize)
+	var wg sync.WaitGroup
+	errs := make([]error, opts.ClusterSize)
+	for i := range opts.ClusterSize {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			clusters[idx], errs[idx] = vcluster.CreateVind(
+				fmt.Sprintf("%s-%d", opts.Name, idx),
+				vindOpts(idx)...,
+			)
+		}(i)
+	}
+	wg.Wait()
+	for i, err := range errs {
+		require.NoError(t, err, "creating vind cluster %d", i)
+	}
+
+	// Register vind cleanup BEFORE creating Envs so it runs AFTER
+	// Env cleanups (t.Cleanup is LIFO).
+	t.Cleanup(func() {
+		if testutil.Retain() {
+			return
+		}
+		for _, cluster := range clusters {
+			if err := cluster.Delete(); err != nil {
+				t.Logf("WARNING: failed to delete vind cluster %s: %v", cluster.Name(), err)
+			}
+		}
+	})
+
+	setupVindFlatNetworking(t, clusters, opts.CIDRBlock)
+
+	envs := make([]*Env, opts.ClusterSize)
+	for i, cluster := range clusters {
+		envs[i] = NewFromConfig(t, cluster.RESTConfig(), Options{
+			Name:                cluster.Name(),
+			Scheme:              opts.Scheme,
+			CRDs:                opts.CRDs,
+			Namespace:           opts.Namespace,
+			Logger:              opts.Logger.WithName(cluster.Name()),
+			WatchAllNamespaces:  opts.WatchAllNamespaces,
+			SkipNamespaceClient: opts.WatchAllNamespaces,
+		})
+	}
+
+	peers := make([]multicluster.RaftCluster, opts.ClusterSize)
+	for i, env := range envs {
+		peers[i] = multicluster.RaftCluster{
+			Name:       env.Name,
+			Address:    fmt.Sprintf("127.0.0.1:%d", ports[i]),
+			Kubeconfig: env.RESTConfig(),
+		}
+	}
+
+	managers := make([]multicluster.Manager, opts.ClusterSize)
+	for i, env := range envs {
+		idx := i
+		sa := setupMulticlusterRBAC(t, ctx, env)
+		env.SetupMulticlusterManager(
+			sa,
+			fmt.Sprintf("127.0.0.1:%d", ports[i]),
+			peers,
+			func(mgr multicluster.Manager) error {
+				managers[idx] = mgr
+				if opts.SetupFn != nil {
+					return opts.SetupFn(mgr)
+				}
+				return nil
+			},
+		)
+	}
+
+	return &MulticlusterEnv{
+		Envs:     envs,
+		Managers: managers,
+	}
+}
+
+// setupVindFlatNetworking adds routes between all vind cluster containers so
+// that pods on different clusters can reach each other via non-overlapping
+// CIDRs. Each cluster i uses pod CIDR 10.{cidrBlock+i}.0.0/16.
+func setupVindFlatNetworking(t *testing.T, clusters []*vcluster.VindCluster, cidrBlock int) {
+	t.Helper()
+
+	clusterSize := len(clusters)
+
+	// Get the Docker-internal IP of each cluster's control plane container.
+	cpIPs := make([]string, clusterSize)
+	for i, cluster := range clusters {
+		ip, err := cluster.CPContainerIP()
+		require.NoError(t, err, "getting CP IP for cluster %d", i)
+		cpIPs[i] = ip
+	}
+
+	// For each cluster, add routes to every other cluster's pod CIDR
+	// via that cluster's CP container IP.
+	for i, cluster := range clusters {
+		containers, err := cluster.Containers()
+		require.NoError(t, err, "listing containers for cluster %d", i)
+
+		for j := range clusterSize {
+			if i == j {
+				continue
+			}
+			cidr := fmt.Sprintf("10.%d.0.0/16", cidrBlock+j)
+			for _, container := range containers {
+				// Ignore errors — route may already exist from a previous run.
+				_ = exec.Command("docker", "exec", container, "ip", "route", "add", cidr, "via", cpIPs[j]).Run() //nolint:gosec,errcheck
+			}
 		}
 	}
 }
