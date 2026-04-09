@@ -11,10 +11,14 @@
 
 package v1alpha2
 
+import (
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+)
+
 // NetworkingApplyConfiguration represents a declarative configuration of the Networking type for use
 // with apply.
 type NetworkingApplyConfiguration struct {
-	CrossClusterMode *string `json:"crossClusterMode,omitempty"`
+	CrossClusterMode *redpandav1alpha2.CrossClusterMode `json:"crossClusterMode,omitempty"`
 }
 
 // NetworkingApplyConfiguration constructs a declarative configuration of the Networking type for use with
@@ -26,7 +30,7 @@ func Networking() *NetworkingApplyConfiguration {
 // WithCrossClusterMode sets the CrossClusterMode field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CrossClusterMode field is set to the value of the last call.
-func (b *NetworkingApplyConfiguration) WithCrossClusterMode(value string) *NetworkingApplyConfiguration {
+func (b *NetworkingApplyConfiguration) WithCrossClusterMode(value redpandav1alpha2.CrossClusterMode) *NetworkingApplyConfiguration {
 	b.CrossClusterMode = &value
 	return b
 }

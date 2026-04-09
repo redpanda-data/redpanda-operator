@@ -2640,7 +2640,7 @@ func (in *Networking) DeepCopyInto(out *Networking) {
 	*out = *in
 	if in.CrossClusterMode != nil {
 		in, out := &in.CrossClusterMode, &out.CrossClusterMode
-		*out = new(string)
+		*out = new(CrossClusterMode)
 		**out = **in
 	}
 }

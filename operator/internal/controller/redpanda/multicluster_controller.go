@@ -568,7 +568,9 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 				Namespace: sc.Namespace,
 				Name:      secretName,
 			}, &existing); err == nil {
-				// Secret already exists — nothing to do for this cluster.
+				// Secret already exists — don't overwrite. CA secrets are
+				// create-once: overwriting would invalidate all existing
+				// leaf certs signed by the old CA.
 				continue
 			}
 
@@ -771,7 +773,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
 		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String(), "cluster", set.GetCluster())
-		if err := r.LifecycleClient.DeleteNodePoolSet(ctx, set); err != nil {
+		if err := r.LifecycleClient.DeleteStatefulSetForNodePool(ctx, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
 	}

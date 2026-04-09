@@ -134,7 +134,7 @@ func (s *StretchClusterFactorySuite) TestFactoryClients() {
 		},
 		Spec: redpandav1alpha2.StretchClusterSpec{
 			Networking: &redpandav1alpha2.Networking{
-				CrossClusterMode: ptr.To("flat"),
+				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
 			},
 		},
 	}

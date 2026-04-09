@@ -127,8 +127,8 @@ func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
 	return []string{mcmanager.LocalCluster}
 }
 
-// DeleteNodePoolSet deletes a StatefulSet for a specific node pool, routing to the correct cluster.
-func (r *ResourceClient[T, U]) DeleteNodePoolSet(ctx context.Context, set *MulticlusterStatefulSet) error {
+// DeleteStatefulSetForNodePool deletes a StatefulSet for a specific node pool, routing to the correct cluster.
+func (r *ResourceClient[T, U]) DeleteStatefulSetForNodePool(ctx context.Context, set *MulticlusterStatefulSet) error {
 	ctl, err := r.ctl(ctx, set.clusterName)
 	if err != nil {
 		return err
