@@ -18,13 +18,12 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/license"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap/zapcore"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -60,7 +59,6 @@ type MulticlusterOptions struct {
 	KubernetesAPIServer    string
 	KubeconfigNamespace    string
 	KubeconfigName         string
-	LogLevel               string
 	BaseImage              string
 	BaseTag                string
 	HealthProbeBindAddress string
@@ -141,23 +139,6 @@ func peerFromFlag(value string) (RaftCluster, error) {
 	}, nil
 }
 
-func parseLogLevel(level string) (zapcore.Level, error) {
-	switch level {
-	case "debug":
-		return zapcore.DebugLevel, nil
-	case "info":
-		return zapcore.InfoLevel, nil
-	case "warn", "warning":
-		return zapcore.WarnLevel, nil
-	case "error":
-		return zapcore.ErrorLevel, nil
-	case "fatal":
-		return zapcore.FatalLevel, nil
-	default:
-		return zapcore.InfoLevel, fmt.Errorf("unknown log level: %s, defaulting to info", level)
-	}
-}
-
 func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Name, "name", "", "raft node name")
 	cmd.Flags().StringVar(&o.Address, "raft-address", "", "raft node address")
@@ -170,7 +151,6 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.KubernetesAPIServer, "kubernetes-api-address", "", "raft kubernetes api server address")
 	cmd.Flags().StringVar(&o.KubeconfigNamespace, "kubeconfig-namespace", "default", "raft kubeconfig namespace")
 	cmd.Flags().StringVar(&o.KubeconfigName, "kubeconfig-name", "multicluster-kubeconfig", "raft kubeconfig name")
-	cmd.Flags().StringVar(&o.LogLevel, "log-level", "info", "log level")
 	cmd.Flags().StringVar(&o.WebhookCertPath, "webhook-cert-path", "", "path on disk to the webhook certificate, implies enabling webhooks")
 	cmd.Flags().StringVar(&o.WebhookKeyPath, "webhook-key-path", "", "path on disk to the webhook certificate key, implies enabling webhooks")
 	cmd.Flags().StringVar(&o.MetricsBindAddress, "metrics-bind-address", "", "address for binding metrics server")
@@ -207,7 +187,7 @@ func Run(
 	ctx context.Context,
 	opts *MulticlusterOptions,
 ) error {
-	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
+	setupLog := log.FromContext(ctx).WithName("setup")
 
 	if err := opts.validate(); err != nil {
 		return err
@@ -233,21 +213,12 @@ func Run(
 		return err
 	}
 
-	// Parse and configure log level
-	logLevel, err := parseLogLevel(opts.LogLevel)
-	if err != nil {
-		setupLog.Error(err, "failed to parse log level, using default")
-	}
-
-	// Create a logger with the specified log level
-	raftLogger := ctrlzap.New(ctrlzap.Level(logLevel)).WithName("raft")
-
 	config := multicluster.RaftConfiguration{
 		Name:                opts.Name,
 		Address:             opts.Address,
 		ElectionTimeout:     opts.ElectionTimeout,
 		HeartbeatInterval:   opts.HeartbeatInterval,
-		Logger:              raftLogger,
+		Logger:              log.FromContext(ctx).WithName(opts.Name),
 		RestConfig:          k8sConfig,
 		Meta:                []byte("node-name=" + opts.Name),
 		Scheme:              controller.MulticlusterScheme,
