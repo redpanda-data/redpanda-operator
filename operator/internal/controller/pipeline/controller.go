@@ -14,10 +14,13 @@ import (
 	"context"
 	"time"
 
+	"fmt"
+
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/license"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,6 +61,7 @@ type Controller struct {
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 
@@ -108,12 +112,12 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Validate license before proceeding.
 	if err := c.validateLicense(); err != nil {
 		logger.Error(err, "license validation failed")
-		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, metav1.Condition{
+		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, []metav1.Condition{{
 			Type:    redpandav1alpha2.PipelineConditionReady,
 			Status:  metav1.ConditionFalse,
 			Reason:  redpandav1alpha2.PipelineReasonLicenseInvalid,
 			Message: err.Error(),
-		}); statusErr != nil {
+		}}); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
 		// Requeue to retry license check periodically.
@@ -129,20 +133,20 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	objs, err := syncer.Sync(ctx)
 	if err != nil {
 		logger.Error(err, "failed to sync resources")
-		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhaseUnknown, metav1.Condition{
+		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhaseUnknown, []metav1.Condition{{
 			Type:    redpandav1alpha2.PipelineConditionReady,
 			Status:  metav1.ConditionFalse,
 			Reason:  redpandav1alpha2.PipelineReasonFailed,
 			Message: FormatConditionMessage("Resource", err.Error()),
-		}); statusErr != nil {
+		}}); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
 		return ctrl.Result{}, err
 	}
 
 	// Derive status from the synced Deployment.
-	phase, condition := c.deriveStatus(pipeline, objs)
-	if err := c.applyStatus(ctx, pipeline, phase, condition); err != nil {
+	phase, conditions := c.deriveStatus(ctx, pipeline, objs)
+	if err := c.applyStatus(ctx, pipeline, phase, conditions); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -197,8 +201,9 @@ func (c *Controller) validateLicense() error {
 }
 
 // deriveStatus examines the synced objects to determine the Pipeline phase and
-// Ready condition.
-func (c *Controller) deriveStatus(pipeline *redpandav1alpha2.Pipeline, objs []kube.Object) (redpandav1alpha2.PipelinePhase, metav1.Condition) {
+// conditions. It returns both a Ready condition and, when applicable, a
+// ConfigValid condition based on the lint init container status.
+func (c *Controller) deriveStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, objs []kube.Object) (redpandav1alpha2.PipelinePhase, []metav1.Condition) {
 	for _, obj := range objs {
 		dp, ok := obj.(*appsv1.Deployment)
 		if !ok {
@@ -210,53 +215,112 @@ func (c *Controller) deriveStatus(pipeline *redpandav1alpha2.Pipeline, objs []ku
 
 		switch {
 		case pipeline.Spec.Paused:
-			return redpandav1alpha2.PipelinePhaseStopped, metav1.Condition{
+			return redpandav1alpha2.PipelinePhaseStopped, []metav1.Condition{{
 				Type:    redpandav1alpha2.PipelineConditionReady,
 				Status:  metav1.ConditionTrue,
 				Reason:  redpandav1alpha2.PipelineReasonPaused,
 				Message: "Pipeline is paused",
-			}
+			}}
 		case dp.Status.ReadyReplicas == dp.Status.Replicas && dp.Status.Replicas > 0:
-			return redpandav1alpha2.PipelinePhaseRunning, metav1.Condition{
-				Type:    redpandav1alpha2.PipelineConditionReady,
-				Status:  metav1.ConditionTrue,
-				Reason:  redpandav1alpha2.PipelineReasonRunning,
-				Message: "Pipeline is running",
+			return redpandav1alpha2.PipelinePhaseRunning, []metav1.Condition{
+				{
+					Type:    redpandav1alpha2.PipelineConditionReady,
+					Status:  metav1.ConditionTrue,
+					Reason:  redpandav1alpha2.PipelineReasonRunning,
+					Message: "Pipeline is running",
+				},
+				{
+					Type:    redpandav1alpha2.PipelineConditionConfigValid,
+					Status:  metav1.ConditionTrue,
+					Reason:  redpandav1alpha2.PipelineReasonConfigValid,
+					Message: "Configuration passed lint validation",
+				},
 			}
 		default:
-			return redpandav1alpha2.PipelinePhaseProvisioning, metav1.Condition{
+			conditions := []metav1.Condition{{
 				Type:    redpandav1alpha2.PipelineConditionReady,
 				Status:  metav1.ConditionFalse,
 				Reason:  redpandav1alpha2.PipelineReasonProvisioning,
 				Message: "Pipeline is starting up",
+			}}
+
+			healthy, msg := c.checkInitContainerStatus(ctx, dp)
+			if !healthy {
+				conditions = append(conditions, metav1.Condition{
+					Type:    redpandav1alpha2.PipelineConditionConfigValid,
+					Status:  metav1.ConditionFalse,
+					Reason:  redpandav1alpha2.PipelineReasonConfigInvalid,
+					Message: msg,
+				})
+			} else {
+				conditions = append(conditions, metav1.Condition{
+					Type:    redpandav1alpha2.PipelineConditionConfigValid,
+					Status:  metav1.ConditionTrue,
+					Reason:  redpandav1alpha2.PipelineReasonConfigValid,
+					Message: "Configuration passed lint validation",
+				})
 			}
+			return redpandav1alpha2.PipelinePhaseProvisioning, conditions
 		}
 	}
 
 	// Deployment not yet observed in sync results.
 	pipeline.Status.Replicas = 0
 	pipeline.Status.ReadyReplicas = 0
-	return redpandav1alpha2.PipelinePhasePending, metav1.Condition{
+	return redpandav1alpha2.PipelinePhasePending, []metav1.Condition{{
 		Type:    redpandav1alpha2.PipelineConditionReady,
 		Status:  metav1.ConditionFalse,
 		Reason:  redpandav1alpha2.PipelineReasonProvisioning,
 		Message: "Deployment not yet created",
+	}}
+}
+
+// checkInitContainerStatus lists pods for the given Deployment and checks
+// whether the lint init container has failed. Returns (healthy, message).
+func (c *Controller) checkInitContainerStatus(ctx context.Context, dp *appsv1.Deployment) (bool, string) {
+	var podList corev1.PodList
+	if err := c.Ctl.List(ctx, dp.Namespace, &podList, client.MatchingLabels(dp.Spec.Selector.MatchLabels)); err != nil {
+		// If we can't list pods, don't block — assume healthy.
+		return true, ""
 	}
+
+	for i := range podList.Items {
+		for _, initStatus := range podList.Items[i].Status.InitContainerStatuses {
+			if initStatus.Name != "lint" {
+				continue
+			}
+			if initStatus.State.Terminated != nil && initStatus.State.Terminated.ExitCode != 0 {
+				msg := initStatus.State.Terminated.Message
+				if msg == "" {
+					msg = fmt.Sprintf("lint exited with code %d", initStatus.State.Terminated.ExitCode)
+				}
+				return false, msg
+			}
+			if initStatus.State.Waiting != nil && initStatus.State.Waiting.Reason == "CrashLoopBackOff" {
+				msg := initStatus.State.Waiting.Message
+				if msg == "" {
+					msg = "lint init container is in CrashLoopBackOff — check pipeline configuration"
+				}
+				return false, msg
+			}
+		}
+	}
+	return true, ""
 }
 
 // applyStatus uses server-side apply to update the Pipeline status sub-resource.
-func (c *Controller) applyStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, phase redpandav1alpha2.PipelinePhase, condition metav1.Condition) error {
+func (c *Controller) applyStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, phase redpandav1alpha2.PipelinePhase, conditions []metav1.Condition) error {
 	pipeline.Status.ObservedGeneration = pipeline.Generation
 	pipeline.Status.Phase = phase
-	pipeline.Status.Conditions = conditionsForApply(pipeline, condition)
+	pipeline.Status.Conditions = conditionsForApply(pipeline, conditions)
 
 	return c.Ctl.ApplyStatus(ctx, pipeline, client.ForceOwnership)
 }
 
-// conditionsForApply merges the desired condition into the existing conditions
+// conditionsForApply merges the desired conditions into the existing conditions
 // using the SSA-compatible helper from utils.
-func conditionsForApply(pipeline *redpandav1alpha2.Pipeline, condition metav1.Condition) []metav1.Condition {
-	configs := utils.StatusConditionConfigs(pipeline.Status.Conditions, pipeline.Generation, []metav1.Condition{condition})
+func conditionsForApply(pipeline *redpandav1alpha2.Pipeline, conditions []metav1.Condition) []metav1.Condition {
+	configs := utils.StatusConditionConfigs(pipeline.Status.Conditions, pipeline.Generation, conditions)
 
 	out := make([]metav1.Condition, 0, len(configs))
 	for _, cfg := range configs {

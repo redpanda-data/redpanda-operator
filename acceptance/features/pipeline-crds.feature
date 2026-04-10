@@ -23,14 +23,14 @@ Feature: Pipeline CRDs
     """
     Then pipeline "demo-pipeline" is successfully running
 
-  Scenario: Pause and resume a Pipeline
+  Scenario: Delete a Pipeline
     When I apply Kubernetes manifest:
     """
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Pipeline
     metadata:
-      name: pausable-pipeline
+      name: delete-pipeline
     spec:
       configYaml: |
         input:
@@ -41,14 +41,74 @@ Feature: Pipeline CRDs
           stdout: {}
       replicas: 1
     """
-    And pipeline "pausable-pipeline" is successfully running
+    And pipeline "delete-pipeline" is successfully running
+    When I delete the CRD pipeline "delete-pipeline"
+    Then pipeline "delete-pipeline" does not exist
+
+  Scenario: Update a Pipeline config
     When I apply Kubernetes manifest:
     """
     ---
     apiVersion: cluster.redpanda.com/v1alpha2
     kind: Pipeline
     metadata:
-      name: pausable-pipeline
+      name: update-pipeline
+    spec:
+      configYaml: |
+        input:
+          generate:
+            mapping: 'root.message = "original"'
+            interval: "5s"
+        output:
+          stdout: {}
+      replicas: 1
+    """
+    And pipeline "update-pipeline" is successfully running
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: update-pipeline
+    spec:
+      configYaml: |
+        input:
+          generate:
+            mapping: 'root.message = "updated"'
+            interval: "5s"
+        output:
+          stdout: {}
+      replicas: 1
+    """
+    Then pipeline "update-pipeline" is successfully running
+
+  Scenario: Stop a Pipeline
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: stop-pipeline
+    spec:
+      configYaml: |
+        input:
+          generate:
+            mapping: 'root.message = "hello"'
+            interval: "5s"
+        output:
+          stdout: {}
+      replicas: 1
+    """
+    And pipeline "stop-pipeline" is successfully running
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: stop-pipeline
     spec:
       configYaml: |
         input:
@@ -60,4 +120,81 @@ Feature: Pipeline CRDs
       replicas: 1
       paused: true
     """
-    Then pipeline "pausable-pipeline" is stopped
+    Then pipeline "stop-pipeline" is stopped
+
+  Scenario: Resume a stopped Pipeline
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: resume-pipeline
+    spec:
+      configYaml: |
+        input:
+          generate:
+            mapping: 'root.message = "hello"'
+            interval: "5s"
+        output:
+          stdout: {}
+      replicas: 1
+    """
+    And pipeline "resume-pipeline" is successfully running
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: resume-pipeline
+    spec:
+      configYaml: |
+        input:
+          generate:
+            mapping: 'root.message = "hello"'
+            interval: "5s"
+        output:
+          stdout: {}
+      replicas: 1
+      paused: true
+    """
+    And pipeline "resume-pipeline" is stopped
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: resume-pipeline
+    spec:
+      configYaml: |
+        input:
+          generate:
+            mapping: 'root.message = "hello"'
+            interval: "5s"
+        output:
+          stdout: {}
+      replicas: 1
+      paused: false
+    """
+    Then pipeline "resume-pipeline" is successfully running
+
+  Scenario: Invalid Pipeline config detected by lint
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: invalid-pipeline
+    spec:
+      configYaml: |
+        input:
+          not_a_real_input:
+            mapping: 'root = "broken"'
+        output:
+          stdout: {}
+      replicas: 1
+    """
+    Then pipeline "invalid-pipeline" has invalid config

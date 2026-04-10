@@ -49,6 +49,9 @@ const (
 	// PipelineConditionReady indicates whether the pipeline is fully
 	// reconciled and running.
 	PipelineConditionReady = "Ready"
+	// PipelineConditionConfigValid indicates whether the pipeline
+	// configuration passed lint validation.
+	PipelineConditionConfigValid = "ConfigValid"
 )
 
 // Pipeline condition reasons.
@@ -64,6 +67,10 @@ const (
 	PipelineReasonLicenseInvalid = "LicenseInvalid"
 	// PipelineReasonFailed means a reconciliation step failed.
 	PipelineReasonFailed = "Failed"
+	// PipelineReasonConfigValid means the config passed lint validation.
+	PipelineReasonConfigValid = "ConfigValid"
+	// PipelineReasonConfigInvalid means the config failed lint validation.
+	PipelineReasonConfigInvalid = "ConfigInvalid"
 )
 
 // PipelineSpec defines the desired state of a Redpanda Connect pipeline.

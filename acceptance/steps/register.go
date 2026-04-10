@@ -148,6 +148,9 @@ func init() {
 	// Pipeline scenario steps
 	framework.RegisterStep(`^pipeline "([^"]*)" is successfully running$`, pipelineIsSuccessfullyRunning)
 	framework.RegisterStep(`^pipeline "([^"]*)" is stopped$`, pipelineIsStopped)
+	framework.RegisterStep(`^I delete the CRD pipeline "([^"]*)"$`, iDeleteTheCRDPipeline)
+	framework.RegisterStep(`^pipeline "([^"]*)" does not exist$`, pipelineDoesNotExist)
+	framework.RegisterStep(`^pipeline "([^"]*)" has invalid config$`, pipelineHasInvalidConfig)
 
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)

@@ -179,6 +179,21 @@ func (r *render) deployment() *appsv1.Deployment {
 					Annotations: r.podAnnotations(),
 				},
 				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name:                     "lint",
+							Image:                    image,
+							Command:                  []string{"/redpanda-connect", "lint", "/config/connect.yaml"},
+							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "config",
+									MountPath: "/config",
+									ReadOnly:  true,
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:    "connect",

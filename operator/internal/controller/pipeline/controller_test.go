@@ -298,6 +298,38 @@ func TestRender_PodAnnotations_Override(t *testing.T) {
 		"per-pipeline annotations should override commonAnnotations on pod template")
 }
 
+func TestRender_Deployment_HasLintInitContainer(t *testing.T) {
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "lint-test",
+			Namespace: "default",
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+		},
+	}
+
+	labels := Labels(pipeline)
+	r := &render{pipeline: pipeline, labels: labels}
+
+	objs, err := r.Render(t.Context())
+	require.NoError(t, err)
+
+	dp := objs[1].(*appsv1.Deployment)
+
+	require.Len(t, dp.Spec.Template.Spec.InitContainers, 1, "expected one init container")
+	init := dp.Spec.Template.Spec.InitContainers[0]
+	assert.Equal(t, "lint", init.Name)
+	assert.Equal(t, []string{"/redpanda-connect", "lint", "/config/connect.yaml"}, init.Command)
+	assert.Equal(t, redpandav1alpha2.PipelineDefaultImage, init.Image, "init container should use same image as main container")
+	assert.Equal(t, corev1.TerminationMessageFallbackToLogsOnError, init.TerminationMessagePolicy)
+
+	require.Len(t, init.VolumeMounts, 1)
+	assert.Equal(t, "config", init.VolumeMounts[0].Name)
+	assert.Equal(t, "/config", init.VolumeMounts[0].MountPath)
+	assert.True(t, init.VolumeMounts[0].ReadOnly)
+}
+
 func TestRender_ConfigMap(t *testing.T) {
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
