@@ -133,6 +133,13 @@ type PipelineSpec struct {
 	// +optional
 	SecretRef []corev1.LocalObjectReference `json:"secretRef,omitempty"`
 
+	// Annotations specifies additional annotations to apply to the pipeline pod
+	// template. These are merged with any operator-level commonAnnotations, with
+	// per-pipeline annotations taking precedence. Useful for integrations like
+	// Datadog autodiscovery that rely on pod annotations.
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+
 	// Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`

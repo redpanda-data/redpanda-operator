@@ -96,6 +96,24 @@ func (r *render) annotations() map[string]string {
 	return out
 }
 
+// podAnnotations returns annotations for the pod template, merging
+// commonAnnotations with per-pipeline spec.annotations. Per-pipeline
+// annotations take precedence.
+func (r *render) podAnnotations() map[string]string {
+	specAnn := r.pipeline.Spec.Annotations
+	if len(r.commonAnnotations) == 0 && len(specAnn) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(r.commonAnnotations)+len(specAnn))
+	for k, v := range r.commonAnnotations {
+		out[k] = v
+	}
+	for k, v := range specAnn {
+		out[k] = v
+	}
+	return out
+}
+
 func (r *render) configMap() (*corev1.ConfigMap, error) {
 	data := map[string]string{
 		"connect.yaml": r.pipeline.Spec.ConfigYAML,
@@ -158,7 +176,7 @@ func (r *render) deployment() *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels:      r.labels,
-					Annotations: r.annotations(),
+					Annotations: r.podAnnotations(),
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

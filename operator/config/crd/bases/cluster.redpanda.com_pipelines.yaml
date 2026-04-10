@@ -57,6 +57,15 @@ spec:
           spec:
             description: Spec defines the desired state of the Connect pipeline.
             properties:
+              annotations:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Annotations specifies additional annotations to apply to the pipeline pod
+                  template. These are merged with any operator-level commonAnnotations, with
+                  per-pipeline annotations taking precedence. Useful for integrations like
+                  Datadog autodiscovery that rely on pod annotations.
+                type: object
               cluster:
                 description: ClusterSource is a reference to the Redpanda cluster
                   this pipeline connects to.

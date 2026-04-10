@@ -221,6 +221,83 @@ func TestRender_CommonAnnotations(t *testing.T) {
 	assert.Equal(t, "platform-team", podAnnotations["compliance/owner"])
 }
 
+func TestRender_PodAnnotations(t *testing.T) {
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dd-pipeline",
+			Namespace: "default",
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+			Annotations: map[string]string{
+				"ad.datadoghq.com/connect.checks": `{"openmetrics":{"instances":[{"openmetrics_endpoint":"http://%%host%%:4195/metrics","namespace":"redpanda_connect","metrics":[".*"]}]}}`,
+			},
+		},
+	}
+
+	labels := Labels(pipeline)
+	r := &render{
+		pipeline: pipeline,
+		labels:   labels,
+		commonAnnotations: map[string]string{
+			"compliance/owner": "platform-team",
+		},
+	}
+
+	objs, err := r.Render(t.Context())
+	require.NoError(t, err)
+
+	// ConfigMap should only have commonAnnotations, not pod annotations.
+	cm := objs[0].(*corev1.ConfigMap)
+	assert.Equal(t, "platform-team", cm.Annotations["compliance/owner"])
+	assert.Empty(t, cm.Annotations["ad.datadoghq.com/connect.checks"],
+		"spec.annotations should not propagate to ConfigMap")
+
+	// Pod template should have both commonAnnotations and spec.annotations.
+	dp := objs[1].(*appsv1.Deployment)
+	podAnn := dp.Spec.Template.ObjectMeta.Annotations
+	assert.Equal(t, "platform-team", podAnn["compliance/owner"],
+		"commonAnnotations should be on pod template")
+	assert.Contains(t, podAnn["ad.datadoghq.com/connect.checks"], "openmetrics",
+		"spec.annotations should be on pod template")
+
+	// Deployment metadata should only have commonAnnotations.
+	assert.Empty(t, dp.Annotations["ad.datadoghq.com/connect.checks"],
+		"spec.annotations should not propagate to Deployment metadata")
+}
+
+func TestRender_PodAnnotations_Override(t *testing.T) {
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "override-pipeline",
+			Namespace: "default",
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+			Annotations: map[string]string{
+				"shared-key": "from-pipeline",
+			},
+		},
+	}
+
+	labels := Labels(pipeline)
+	r := &render{
+		pipeline: pipeline,
+		labels:   labels,
+		commonAnnotations: map[string]string{
+			"shared-key": "from-common",
+		},
+	}
+
+	objs, err := r.Render(t.Context())
+	require.NoError(t, err)
+
+	dp := objs[1].(*appsv1.Deployment)
+	podAnn := dp.Spec.Template.ObjectMeta.Annotations
+	assert.Equal(t, "from-pipeline", podAnn["shared-key"],
+		"per-pipeline annotations should override commonAnnotations on pod template")
+}
+
 func TestRender_ConfigMap(t *testing.T) {
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{

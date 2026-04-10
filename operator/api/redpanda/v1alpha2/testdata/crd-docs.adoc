@@ -2401,6 +2401,11 @@ password: ${KAFKA_PASSWORD} +
 
 See: https://docs.redpanda.com/redpanda-connect/configuration/secrets/ + |  | Optional: \{} +
 
+| *`annotations`* __object (keys:string, values:string)__ | Annotations specifies additional annotations to apply to the pipeline pod +
+template. These are merged with any operator-level commonAnnotations, with +
+per-pipeline annotations taking precedence. Useful for integrations like +
+Datadog autodiscovery that rely on pod annotations. + |  | Optional: \{} +
+
 | *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes. + |  | Optional: \{} +
 
 | *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector constrains pipeline pods to nodes with matching labels. + |  | Optional: \{} +
