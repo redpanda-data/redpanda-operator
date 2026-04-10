@@ -18,8 +18,20 @@ This is a Go monorepo using `go.work` with multiple modules:
 
 - **Task runner**: [go-task](https://taskfile.dev/) via `Taskfile.yml` with includes from `taskfiles/`
 - **CI**: Buildkite (`.buildkite/pipeline.yml` → `.buildkite/testsuite.yml`)
-- **Nix**: `flake.nix` provides the dev environment. CI runs all commands inside a nix container via `ci/scripts/run-in-nix-docker.sh`
+- **Nix**: `flake.nix` provides the dev environment. CI runs all commands inside a nix container via `ci/scripts/run-in-nix-docker.sh`. If `nix` is not on `$PATH`, it can be found at `/nix/var/nix/profiles/default/bin/nix`.
 - **Code generation**: Go source is transpiled to Helm templates via `gotohelm`, JSON schemas are produced by `gen schema`, and Go partials by `gen partial`. **Do not invoke these tools directly.** Instead, use `nix develop -c task generate` which runs all generators in the correct order and matches CI. For CRD/RBAC regeneration specifically, use `nix develop -c task k8s:generate`.
+
+### IMPORTANT: Never hand-edit generated files
+
+The following files are **machine-generated** and must only be updated by running `nix develop -c task generate`:
+- `operator/api/redpanda/v1alpha2/zz_generated.deepcopy.go` — DeepCopy functions
+- `operator/api/redpanda/v1alpha2/testdata/crd-docs.adoc` — CRD reference documentation
+- `operator/config/crd/bases/*.yaml` — CRD OpenAPI schemas
+- `operator/config/rbac/bases/` — RBAC role definitions from kubebuilder markers
+- `operator/chart/files/rbac/*.ClusterRole.yaml` — RBAC files copied from `config/rbac/itemized/`
+- `operator/chart/templates/*.tpl` — Helm templates transpiled from Go source
+
+**Never** attempt to reconstruct these files from CI diffs or hand-edit them to match expected output. Always run `task generate` (via nix) to regenerate them. The only exception is `operator/config/rbac/itemized/*.yaml` which are manually maintained source files (not generated output).
 
 ## CI Lint Flow
 
