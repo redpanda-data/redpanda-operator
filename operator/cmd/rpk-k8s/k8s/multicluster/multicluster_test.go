@@ -23,8 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	operatorchart "github.com/redpanda-data/redpanda-operator/operator/chart"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
@@ -151,7 +154,46 @@ func TestMulticlusterBootstrapAndStatus(t *testing.T) {
 		t.Log("REDPANDA_SAMPLE_LICENSE not set, skipping operator deployment tests")
 		return
 	}
-	mc.DeployOperators(t, ctx, opts, peerValues(mc.Nodes), license)
+
+	// Create license secret on each node before deploying.
+	for _, node := range mc.Nodes {
+		require.NoError(t, node.Ctl().Create(ctx, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "redpanda-license",
+				Namespace: opts.Namespace,
+			},
+			Data: map[string][]byte{
+				"redpanda.license": []byte(license),
+			},
+		}))
+	}
+
+	peers := buildPeers(mc.Nodes)
+	mc.DeployOperators(t, ctx, opts, func(node *vcluster.MulticlusterNode) any {
+		return operatorchart.PartialValues{
+			CRDs: &operatorchart.PartialCRDs{
+				Enabled:      ptr.To(true),
+				Experimental: ptr.To(true),
+			},
+			LogLevel: ptr.To("debug"),
+			Multicluster: &operatorchart.PartialMulticluster{
+				Enabled:                      ptr.To(true),
+				Name:                         ptr.To(node.Name()),
+				KubernetesAPIExternalAddress: ptr.To(node.APIServer()),
+				Peers:                        peers,
+			},
+			Image: &operatorchart.PartialImage{
+				Repository: ptr.To("localhost/redpanda-operator"),
+				Tag:        ptr.To("dev"),
+			},
+			Enterprise: &operatorchart.PartialEnterprise{
+				LicenseSecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "redpanda-license"},
+					Key:                  "redpanda.license",
+				},
+			},
+		}
+	})
 
 	t.Run("deploy", func(t *testing.T) {
 		t.Run("operators_become_ready", func(t *testing.T) {
@@ -226,12 +268,12 @@ func connectionsFromNodes(t *testing.T, nodes []*vcluster.MulticlusterNode) []mu
 	return conns
 }
 
-func peerValues(nodes []*vcluster.MulticlusterNode) []map[string]any {
-	peers := make([]map[string]any, len(nodes))
+func buildPeers(nodes []*vcluster.MulticlusterNode) []operatorchart.PartialPeer {
+	peers := make([]operatorchart.PartialPeer, len(nodes))
 	for i, node := range nodes {
-		peers[i] = map[string]any{
-			"name":    node.Name(),
-			"address": node.ExternalIP(),
+		peers[i] = operatorchart.PartialPeer{
+			Name:    ptr.To(node.Name()),
+			Address: ptr.To(node.ExternalIP()),
 		}
 	}
 	return peers

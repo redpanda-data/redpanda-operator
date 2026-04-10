@@ -155,58 +155,25 @@ func (e *Multicluster) BootstrapTLS(t *testing.T, ctx context.Context, opts Mult
 	return peers
 }
 
-// DeployOperators installs the operator helm chart on each vcluster with
-// multicluster configuration. Requires BootstrapTLS to have been called first.
-// licenseSecretData is the raw license file content; pass empty to skip license setup.
-func (e *Multicluster) DeployOperators(t *testing.T, ctx context.Context, opts MulticlusterOptions, peers []map[string]any, licenseSecretData string) {
+// ValuesFunc builds helm values for a single node. It receives the node so the
+// caller can incorporate per-node identity (name, API server, etc.) into the
+// typed chart values.
+type ValuesFunc func(node *MulticlusterNode) any
+
+// DeployOperators installs the operator helm chart on each vcluster. The
+// valuesFunc is called per node to produce the helm values; use it to
+// construct typed chart values (e.g. PartialValues) that pass schema
+// validation.
+func (e *Multicluster) DeployOperators(t *testing.T, ctx context.Context, opts MulticlusterOptions, valuesFunc ValuesFunc) {
 	t.Helper()
 	opts.defaults()
 	require.NotEmpty(t, opts.OperatorChartPath, "OperatorChartPath is required")
 
 	for _, node := range e.Nodes {
-		if licenseSecretData != "" {
-			t.Logf("creating license secret in %q", node.Name())
-			require.NoError(t, node.ctl.Create(ctx, &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "redpanda-license",
-					Namespace: opts.Namespace,
-				},
-				Data: map[string][]byte{
-					"redpanda.license": []byte(licenseSecretData),
-				},
-			}))
-		}
-
-		values := map[string]any{
-			"crds": map[string]any{
-				"enabled":      true,
-				"experimental": true,
-			},
-			"logLevel": "debug",
-			"multicluster": map[string]any{
-				"enabled":                  true,
-				"name":                     node.Name(),
-				"apiServerExternalAddress": node.APIServer(),
-				"peers":                    peers,
-			},
-			"image": map[string]any{
-				"repository": opts.OperatorImage,
-				"tag":        opts.OperatorTag,
-			},
-		}
-		if licenseSecretData != "" {
-			values["enterprise"] = map[string]any{
-				"licenseSecretRef": map[string]any{
-					"name": "redpanda-license",
-					"key":  "redpanda.license",
-				},
-			}
-		}
-
 		t.Logf("deploying operator in %q", node.Name())
 		rel, err := node.HelmInstall(ctx, opts.OperatorChartPath, helm.InstallOptions{
 			Name:      "redpanda",
-			Values:    values,
+			Values:    valuesFunc(node),
 			Namespace: opts.Namespace,
 		})
 		require.NoError(t, err)
