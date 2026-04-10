@@ -181,6 +181,29 @@ type PipelineSpec struct {
 	// ClusterSource is a reference to the Redpanda cluster this pipeline connects to.
 	// +optional
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
+
+	// Credentials specifies SASL credentials for the pipeline to authenticate
+	// with the Redpanda cluster. When set alongside a clusterRef, these
+	// credentials are used instead of the cluster's bootstrap (admin) user.
+	// This enables least-privilege access by pairing a Pipeline with a
+	// dedicated User CRD.
+	// +optional
+	Credentials *PipelineSASLCredentials `json:"credentials,omitempty"`
+}
+
+// PipelineSASLCredentials defines SASL authentication credentials for a Pipeline.
+type PipelineSASLCredentials struct {
+	// Mechanism is the SASL mechanism (e.g., SCRAM-SHA-256, SCRAM-SHA-512).
+	// +kubebuilder:validation:Required
+	Mechanism string `json:"mechanism"`
+
+	// Username is the SASL username.
+	// +kubebuilder:validation:Required
+	Username string `json:"username"`
+
+	// PasswordSecretRef references a Secret key containing the SASL password.
+	// +kubebuilder:validation:Required
+	PasswordSecretRef corev1.SecretKeySelector `json:"passwordSecretRef"`
 }
 
 // PipelineStatus defines the observed state of a Connect resource.

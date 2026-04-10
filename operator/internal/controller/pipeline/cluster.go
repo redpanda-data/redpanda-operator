@@ -85,7 +85,15 @@ func resolveClusterSource(ctx context.Context, ctl *kube.Ctl, pipeline *redpanda
 			}
 		}
 
-		if cfg.Kafka.SASL != nil {
+		// Use explicit Pipeline credentials if provided; otherwise fall back
+		// to the cluster's bootstrap (admin) user.
+		if creds := pipeline.Spec.Credentials; creds != nil {
+			conn.SASL = &clusterSASL{
+				Mechanism:   creds.Mechanism,
+				Username:    creds.Username,
+				PasswordRef: &creds.PasswordSecretRef,
+			}
+		} else if cfg.Kafka.SASL != nil {
 			conn.SASL = &clusterSASL{
 				Mechanism: string(cfg.Kafka.SASL.Mechanism),
 				Username:  cfg.Kafka.SASL.Username,
