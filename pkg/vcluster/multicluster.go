@@ -217,7 +217,16 @@ func createMulticlusterNodes(t *testing.T, ctx context.Context, host *k3d.Cluste
 				return
 			}
 
-			ctl, err := kube.FromRESTConfig(cluster.RESTConfig())
+			// Use PortForwardedRESTConfig so that the kube.Ctl has a
+			// standard REST config (without custom Dial). This allows
+			// SPDY-based operations like kubectl port-forward to work
+			// against pods inside the vcluster.
+			pfCfg, err := cluster.PortForwardedRESTConfig(ctx)
+			if err != nil {
+				errs[idx] = fmt.Errorf("creating port-forwarded config for vcluster %d: %w", idx, err)
+				return
+			}
+			ctl, err := kube.FromRESTConfig(pfCfg)
 			if err != nil {
 				errs[idx] = fmt.Errorf("creating kube.Ctl for vcluster %d: %w", idx, err)
 				return
