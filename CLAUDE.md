@@ -24,7 +24,7 @@ This is a Go monorepo using `go.work` with multiple modules:
 ## CI Lint Flow
 
 The CI lint step (`taskfiles/ci.yml`) runs:
-1. `task :generate` — regenerates ALL generated files (CRDs, RBAC, templates, schemas, partials, licenses, changelog, buildkite pipelines, then `lint-fix`)
+1. `task :generate` — regenerates ALL generated files (CRDs, RBAC, templates, schemas, partials, licenses, changelog, buildkite pipelines, then `lint-fix` which runs `gci` import ordering)
 2. `task :lint` — runs `golangci-lint run`, `helm lint --strict`, and `actionlint`
 3. `git diff --exit-code` — fails if any generated file doesn't match what's committed
 
@@ -33,6 +33,28 @@ The CI lint step (`taskfiles/ci.yml`) runs:
 - Adding dependencies without updating `licenses/third_party.md`
 - Changing kubebuilder RBAC markers without running `controller-gen`
 - Import ordering violations caught by `gci` formatter
+
+### Local lint workflow
+
+Always use `task generate` (not `task k8s:generate`) as the final step before committing. The full `task generate` includes `lint-fix` which runs `gci` to fix import ordering. Running only `task k8s:generate` regenerates CRDs and RBAC but does **not** run `gci`, so generated files like `zz_generated.deprecations_test.go` will have incorrect import ordering that fails CI.
+
+**Correct order:**
+```bash
+# 1. Regenerate everything (CRDs, RBAC, templates, AND lint-fix/gci)
+nix develop -c task generate
+
+# 2. Update golden files if needed (chart templates, controller tests)
+nix develop -c go test ./operator/chart/... -run TestTemplate -update-golden
+nix develop -c go test ./operator/internal/controller/pipeline/... -run TestRender_GoldenFiles -update-golden
+
+# 3. Run tests
+nix develop -c go test ./operator/internal/controller/pipeline/...
+
+# 4. Verify lint passes
+nix develop -c task lint
+```
+
+**Common mistake:** Running `task k8s:generate` then manually fixing `gci` import ordering, then `task k8s:generate` again (which re-generates the file and reverts the manual fix). Use `task generate` instead — it runs `k8s:generate` followed by `lint-fix` in the correct order.
 
 ## Golden Test Files
 
