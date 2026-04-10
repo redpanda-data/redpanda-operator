@@ -45,6 +45,10 @@ type clusterSASL struct {
 	// the appropriate ValueSource (Secret, ConfigMap, inline, or resolved
 	// external secret).
 	Password corev1.EnvVar
+	// FromCredentials is true when the credentials come from the Pipeline's
+	// spec.credentials field (dedicated user) rather than the cluster's
+	// bootstrap admin user. This controls which env var names are used.
+	FromCredentials bool
 }
 
 // BrokersString returns the broker list as a comma-separated string.
@@ -92,9 +96,10 @@ func resolveClusterSource(ctx context.Context, ctl *kube.Ctl, pipeline *redpanda
 		// to the cluster's bootstrap (admin) user.
 		if creds := pipeline.Spec.Credentials; creds != nil {
 			conn.SASL = &clusterSASL{
-				Mechanism: creds.Mechanism,
-				Username:  creds.Username,
-				Password:  envVarFromValueSource("RPK_SASL_PASSWORD", &creds.Password),
+				Mechanism:       creds.Mechanism,
+				Username:        creds.Username,
+				Password:        envVarFromValueSource("RPK_CREDENTIALS_SASL_PASSWORD", &creds.Password),
+				FromCredentials: true,
 			}
 		} else if cfg.Kafka.SASL != nil {
 			sasl := &clusterSASL{

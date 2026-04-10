@@ -322,11 +322,19 @@ func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []
 	}
 
 	if cc.SASL != nil {
+		// Use different env var prefixes depending on whether credentials
+		// come from spec.credentials (dedicated user) or the cluster's
+		// bootstrap admin user.
+		prefix := "RPK_SASL"
+		if cc.SASL.FromCredentials {
+			prefix = "RPK_CREDENTIALS_SASL"
+		}
+
 		env = append(env, corev1.EnvVar{
-			Name:  "RPK_SASL_MECHANISM",
+			Name:  prefix + "_MECHANISM",
 			Value: cc.SASL.Mechanism,
 		}, corev1.EnvVar{
-			Name:  "RPK_SASL_USER",
+			Name:  prefix + "_USER",
 			Value: cc.SASL.Username,
 		})
 
