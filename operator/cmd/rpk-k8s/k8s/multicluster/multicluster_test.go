@@ -217,38 +217,38 @@ func TestMulticlusterBootstrapAndStatus(t *testing.T) {
 
 	t.Run("status", func(t *testing.T) {
 		var out bytes.Buffer
-			cfg := multicluster.StatusConfig{
-				Connection: multicluster.ConnectionConfig{
-					Namespace:   opts.Namespace,
-					ServiceName: "operator",
-					Connections: conns,
-				},
-			}
-			result, err := cfg.Run(ctx, &out)
-			require.NoError(t, err, "status failed: %s", out.String())
-			t.Logf("status output:\n%s", out.String())
+		cfg := multicluster.StatusConfig{
+			Connection: multicluster.ConnectionConfig{
+				Namespace:   opts.Namespace,
+				ServiceName: "operator",
+				Connections: conns,
+			},
+		}
+		result, err := cfg.Run(ctx, &out)
+		require.NoError(t, err, "status failed: %s", out.String())
+		t.Logf("status output:\n%s", out.String())
 
-			// Verify all clusters appear in the output.
-			for _, node := range mc.Nodes {
-				assert.Contains(t, out.String(), node.Name())
-			}
+		// Verify all clusters appear in the output.
+		for _, node := range mc.Nodes {
+			assert.Contains(t, out.String(), node.Name())
+		}
 
-			// Pod and deployment checks should pass.
-			for i, rs := range result.ClusterResults {
-				for _, r := range rs {
-					if r.Name == "pod" || r.Name == "deployment" {
-						assert.True(t, r.OK, "[%s] check %s failed: %s",
-							result.Contexts[i].Context, r.Name, r.Message)
-					}
+		// Pod and deployment checks should pass.
+		for i, rs := range result.ClusterResults {
+			for _, r := range rs {
+				if r.Name == "pod" || r.Name == "deployment" {
+					assert.True(t, r.OK, "[%s] check %s failed: %s",
+						result.Contexts[i].Context, r.Name, r.Message)
 				}
 			}
+		}
 
-			// CA consistency should pass after bootstrap.
-			for _, r := range result.CrossResults {
-				if r.Name == "ca-consistency" || r.Name == "unique-names" {
-					assert.True(t, r.OK, "cross-cluster check %s failed: %s", r.Name, r.Message)
-				}
+		// CA consistency should pass after bootstrap.
+		for _, r := range result.CrossResults {
+			if r.Name == "ca-consistency" || r.Name == "unique-names" {
+				assert.True(t, r.OK, "cross-cluster check %s failed: %s", r.Name, r.Message)
 			}
+		}
 	})
 }
 
