@@ -240,6 +240,15 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	// pods can schedule and cert-manager webhook stays available.
 	s.cleanupStaleState()
 
+	// Wait for cert-manager webhook to have ready endpoints before
+	// proceeding. Without this, helm installs that create Certificate
+	// resources can fail with "no endpoints available for service
+	// cert-manager-webhook" under parallel test load.
+	s.Require().NoError(
+		testutil.WaitForCertManagerWebhook(s.ctx, s.client, 2*time.Minute),
+		"cert-manager webhook not ready",
+	)
+
 	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
 		mgr := mcmgr.GetLocalManager()
 		helmClient, err := helm.New(helm.Options{
@@ -310,12 +319,23 @@ func (s *StatefulSetDecommissionerSuite) installChart(name string, overrides map
 		values = functional.MergeMaps(values, overrides)
 	}
 
-	release, err := s.helm.Install(s.ctx, redpandaChartPath, helm.InstallOptions{
-		CreateNamespace: true,
-		Name:            name,
-		Namespace:       s.env.Namespace(),
-		Values:          values,
-	})
+	// Retry on transient cert-manager webhook errors, matching the
+	// pattern in upgradeChart.
+	var release helm.Release
+	var err error
+	for attempt := range 3 {
+		release, err = s.helm.Install(s.ctx, redpandaChartPath, helm.InstallOptions{
+			CreateNamespace: true,
+			Name:            name,
+			Namespace:       s.env.Namespace(),
+			Values:          values,
+		})
+		if err == nil || !strings.Contains(err.Error(), "webhook") {
+			break
+		}
+		s.T().Logf("helm install attempt %d failed with webhook error, retrying: %v", attempt+1, err)
+		time.Sleep(10 * time.Second)
+	}
 	s.Require().NoError(err)
 
 	c := &chart{
