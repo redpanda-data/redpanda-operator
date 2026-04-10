@@ -18,8 +18,12 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -87,14 +91,25 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer usersClient.Close()
 	defer syncer.Close()
 
-	if !hasUser && shouldManageUser {
+	switch {
+	case shouldManageUser && !hasManagedUser:
+		// Create a new user or adopt an existing one. UpsertSCRAM is
+		// idempotent so this is safe regardless of whether the user
+		// already exists in Redpanda.
 		if err := usersClient.Create(ctx, user); err != nil {
 			return createPatch(err)
 		}
 		hasManagedUser = true
-	}
 
-	if hasUser && !shouldManageUser {
+	case shouldManageUser && hasManagedUser && user.ShouldSyncCredentials():
+		// Re-read the password from the referenced Secret and upsert
+		// credentials. This enables external rotation (e.g. via ESO)
+		// to propagate on each reconciliation cycle.
+		if err := usersClient.Update(ctx, user); err != nil {
+			return createPatch(err)
+		}
+
+	case !shouldManageUser && hasUser && hasManagedUser:
 		if err := usersClient.Delete(ctx, user); err != nil {
 			return createPatch(err)
 		}
@@ -171,6 +186,8 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 	return usersClient, syncer, hasUser, nil
 }
 
+const userPasswordSecretIndex = "__user_referencing_password_secret"
+
 func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
@@ -194,12 +211,67 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 			}
 			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User, controller.WatchOptions(clusterName)...)
 		}
+
+		// Index Users by the password Secret they reference so we can
+		// watch for external Secret changes (e.g. from ESO) and
+		// immediately reconcile the referencing User.
+		cluster, err := mgr.GetCluster(ctx, clusterName)
+		if err != nil {
+			return err
+		}
+		if err := cluster.GetFieldIndexer().IndexField(ctx, &redpandav1alpha2.User{}, userPasswordSecretIndex, func(o client.Object) []string {
+			user, ok := o.(*redpandav1alpha2.User)
+			if !ok {
+				return nil
+			}
+			if name := user.GetPasswordSecretName(); name != "" {
+				return []string{types.NamespacedName{Namespace: user.Namespace, Name: name}.String()}
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+
+		builder.Watches(&corev1.Secret{}, enqueueUsersForSecret(mgr, clusterName), controller.WatchOptions(clusterName)...)
 	}
 
-	controller := NewResourceController(mgr, factory, &UserReconciler{}, "UserReconciler")
+	ctrl := NewResourceController(mgr, factory, &UserReconciler{}, "UserReconciler")
 
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
-	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+	return builder.Complete(ctrl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+}
+
+// enqueueUsersForSecret returns an event handler that, when a Secret changes,
+// looks up all User resources that reference that Secret via
+// spec.authentication.password.valueFrom.secretKeyRef and enqueues them for
+// reconciliation. This enables immediate reconciliation when an external
+// system (e.g. ESO) updates a password Secret.
+func enqueueUsersForSecret(mgr multicluster.Manager, clusterName string) mchandler.EventHandlerFunc {
+	return mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		cluster, err := mgr.GetCluster(ctx, clusterName)
+		if err != nil {
+			return nil
+		}
+
+		var userList redpandav1alpha2.UserList
+		nn := types.NamespacedName{Namespace: o.GetNamespace(), Name: o.GetName()}
+		if err := cluster.GetClient().List(ctx, &userList, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(userPasswordSecretIndex, nn.String()),
+		}); err != nil {
+			return nil
+		}
+
+		requests := make([]reconcile.Request, 0, len(userList.Items))
+		for i := range userList.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: userList.Items[i].Namespace,
+					Name:      userList.Items[i].Name,
+				},
+			})
+		}
+		return requests
+	})
 }

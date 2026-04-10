@@ -72,6 +72,28 @@ func (u *User) HasManagedUser() bool {
 	return u.Status.ManagedUser
 }
 
+// ShouldSyncCredentials returns true if the user has credential sync enabled,
+// meaning the operator should re-read the password from the referenced Secret
+// and upsert it to Redpanda on each reconciliation cycle.
+func (u *User) ShouldSyncCredentials() bool {
+	return u.Spec.Authentication != nil && u.Spec.Authentication.SyncCredentials
+}
+
+// GetPasswordSecretName returns the name of the Secret referenced by the
+// user's password configuration, or empty string if no Secret is referenced.
+func (u *User) GetPasswordSecretName() string {
+	if u.Spec.Authentication == nil {
+		return ""
+	}
+	if u.Spec.Authentication.Password.ValueFrom == nil {
+		return ""
+	}
+	if u.Spec.Authentication.Password.ValueFrom.SecretKeyRef == nil {
+		return ""
+	}
+	return u.Spec.Authentication.Password.ValueFrom.SecretKeyRef.Name
+}
+
 func (u *User) ShouldManageACLs() bool {
 	return u.Spec.Authorization != nil
 }
@@ -125,6 +147,12 @@ type UserAuthenticationSpec struct {
 	Type *SASLMechanism `json:"type,omitempty"`
 	// Password specifies where a password is read from.
 	Password Password `json:"password"`
+	// SyncCredentials when set to true causes the operator to re-read the
+	// password from the referenced Secret on every reconciliation cycle
+	// (default: every 5 minutes) and upsert the credentials to Redpanda.
+	// This enables password rotation via external systems like the External
+	// Secrets Operator (ESO) without requiring user recreation.
+	SyncCredentials bool `json:"syncCredentials,omitempty"`
 }
 
 // Password specifies a password for the user.

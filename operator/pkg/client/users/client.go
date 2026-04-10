@@ -92,6 +92,25 @@ func (c *Client) Create(ctx context.Context, user *redpandav1alpha2.User) error 
 	return c.create(ctx, user.Name, password, sasl)
 }
 
+// Update re-reads the password from the referenced Secret and upserts the
+// user's SCRAM credentials in Redpanda. Unlike Create, it never generates
+// or stores a new password — it only reads the current value from the
+// existing Secret. This is used for ongoing credential sync when
+// syncCredentials is enabled.
+func (c *Client) Update(ctx context.Context, user *redpandav1alpha2.User) error {
+	password, err := user.Spec.Authentication.Password.Fetch(ctx, c.client, user.Namespace)
+	if err != nil {
+		return err
+	}
+
+	sasl, err := user.Spec.Authentication.Type.ScramToKafka()
+	if err != nil {
+		return err
+	}
+
+	return c.create(ctx, user.Name, password, sasl)
+}
+
 // Has returns whether or not the Redpanda cluster already contains the given user.
 func (c *Client) Has(ctx context.Context, user *redpandav1alpha2.User) (bool, error) {
 	return c.has(ctx, user.Name)
