@@ -29,6 +29,14 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments

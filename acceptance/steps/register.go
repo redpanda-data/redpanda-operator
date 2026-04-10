@@ -151,6 +151,8 @@ func init() {
 	framework.RegisterStep(`^I delete the CRD pipeline "([^"]*)"$`, iDeleteTheCRDPipeline)
 	framework.RegisterStep(`^pipeline "([^"]*)" does not exist$`, pipelineDoesNotExist)
 	framework.RegisterStep(`^pipeline "([^"]*)" has invalid config$`, pipelineHasInvalidConfig)
+	framework.RegisterStep(`^topic "([^"]*)" has messages in cluster "([^"]*)"$`, topicHasMessagesInCluster)
+	framework.RegisterStep(`^I produce messages to "([^"]*)" in cluster "([^"]*)"$`, iProduceMessagesToTopicInCluster)
 
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)

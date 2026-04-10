@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/kgo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -88,4 +89,43 @@ func pipelineHasInvalidConfig(ctx context.Context, t framework.TestingT, name st
 	}, func() []metav1.Condition {
 		return pipeline.Status.Conditions
 	})
+}
+
+func topicHasMessagesInCluster(ctx context.Context, t framework.TestingT, topic, cluster string) {
+	clients := clientsForCluster(ctx, cluster)
+	clients.ExpectTopic(ctx, topic)
+
+	kafkaClient := clients.Kafka(ctx)
+	defer kafkaClient.Close()
+
+	consumerClient, err := kgo.NewClient(append(kafkaClient.Opts(),
+		kgo.ConsumeTopics(topic),
+		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
+	)...)
+	require.NoError(t, err)
+	defer consumerClient.Close()
+
+	t.Logf("Polling records from topic %q in cluster %q", topic, cluster)
+	require.Eventually(t, func() bool {
+		fetches := consumerClient.PollRecords(ctx, 1)
+		return len(fetches.Records()) > 0
+	}, 2*time.Minute, 2*time.Second, "Topic %q in cluster %q should have messages", topic, cluster)
+	t.Logf("Found messages in topic %q", topic)
+}
+
+func iProduceMessagesToTopicInCluster(ctx context.Context, t framework.TestingT, topic, cluster string) {
+	clients := clientsForCluster(ctx, cluster)
+	clients.ExpectTopic(ctx, topic)
+
+	kafkaClient := clients.Kafka(ctx)
+	defer kafkaClient.Close()
+
+	t.Logf("Producing test messages to topic %q in cluster %q", topic, cluster)
+	for i := range 5 {
+		require.NoError(t, kafkaClient.ProduceSync(ctx, &kgo.Record{
+			Topic: topic,
+			Value: []byte("test-message-" + string(rune('0'+i))),
+		}).FirstErr())
+	}
+	t.Logf("Produced 5 messages to topic %q", topic)
 }

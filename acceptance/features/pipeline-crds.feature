@@ -198,3 +198,65 @@ Feature: Pipeline CRDs
       replicas: 1
     """
     Then pipeline "invalid-pipeline" has invalid config
+
+  Scenario: Pipeline produces to Redpanda via clusterRef
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: producer-pipeline
+    spec:
+      cluster:
+        clusterRef:
+          name: basic
+      configYaml: |
+        input:
+          generate:
+            count: 0
+            interval: "1s"
+            mapping: 'root.message = "hello from pipeline"'
+        output:
+          redpanda:
+            seed_brokers:
+              - "${RPK_BROKERS}"
+            tls:
+              enabled: ${RPK_TLS_ENABLED}
+              root_cas_file: "${RPK_TLS_ROOT_CAS_FILE}"
+            topic: "pipeline-produce-test"
+      replicas: 1
+    """
+    Then pipeline "producer-pipeline" is successfully running
+    And topic "pipeline-produce-test" has messages in cluster "basic"
+
+  Scenario: Pipeline reads from Redpanda via clusterRef
+    Given I create topic "pipeline-consume-test" in cluster "basic"
+    And I produce messages to "pipeline-consume-test" in cluster "basic"
+    When I apply Kubernetes manifest:
+    """
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    metadata:
+      name: consumer-pipeline
+    spec:
+      cluster:
+        clusterRef:
+          name: basic
+      configYaml: |
+        input:
+          redpanda:
+            seed_brokers:
+              - "${RPK_BROKERS}"
+            tls:
+              enabled: ${RPK_TLS_ENABLED}
+              root_cas_file: "${RPK_TLS_ROOT_CAS_FILE}"
+            topics:
+              - "pipeline-consume-test"
+            consumer_group: "pipeline-consumer-group"
+        output:
+          drop: {}
+      replicas: 1
+    """
+    Then pipeline "consumer-pipeline" is successfully running

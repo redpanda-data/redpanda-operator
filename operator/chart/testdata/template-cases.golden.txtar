@@ -74660,6 +74660,14 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -75521,6 +75529,14 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -76188,6 +76204,14 @@ rules:
   - pipelines/finalizers
   verbs:
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -77058,6 +77082,14 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -77725,6 +77757,14 @@ rules:
   - pipelines/finalizers
   verbs:
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -78588,6 +78628,14 @@ rules:
   - pipelines/finalizers
   verbs:
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:

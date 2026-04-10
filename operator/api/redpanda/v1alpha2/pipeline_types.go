@@ -52,6 +52,9 @@ const (
 	// PipelineConditionConfigValid indicates whether the pipeline
 	// configuration passed lint validation.
 	PipelineConditionConfigValid = "ConfigValid"
+	// PipelineConditionClusterRef indicates whether the referenced
+	// Redpanda cluster was resolved successfully.
+	PipelineConditionClusterRef = "ClusterRef"
 )
 
 // Pipeline condition reasons.
@@ -71,6 +74,10 @@ const (
 	PipelineReasonConfigValid = "ConfigValid"
 	// PipelineReasonConfigInvalid means the config failed lint validation.
 	PipelineReasonConfigInvalid = "ConfigInvalid"
+	// PipelineReasonClusterRefResolved means the referenced cluster was resolved.
+	PipelineReasonClusterRefResolved = "ClusterRefResolved"
+	// PipelineReasonClusterRefInvalid means the referenced cluster could not be found or resolved.
+	PipelineReasonClusterRefInvalid = "ClusterRefInvalid"
 )
 
 // PipelineSpec defines the desired state of a Redpanda Connect pipeline.

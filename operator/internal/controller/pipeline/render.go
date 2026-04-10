@@ -40,6 +40,10 @@ type render struct {
 	labels            map[string]string
 	commonAnnotations map[string]string
 	monitoring        MonitoringConfig
+	// clusterConn holds resolved Redpanda cluster connection details when
+	// the Pipeline references a cluster via clusterRef. Nil when no
+	// clusterRef is configured.
+	clusterConn *clusterConnection
 }
 
 // Types returns the set of Kubernetes resource types managed by the Pipeline
@@ -140,6 +144,13 @@ func (r *render) configMap() (*corev1.ConfigMap, error) {
 	}, nil
 }
 
+const (
+	// clusterTLSVolumeName is the volume name for the CA certificate from the referenced cluster.
+	clusterTLSVolumeName = "cluster-tls-ca"
+	// clusterTLSMountPath is the mount path for the cluster CA certificate.
+	clusterTLSMountPath = "/etc/tls/certs/ca"
+)
+
 func (r *render) deployment() *appsv1.Deployment {
 	replicas := r.pipeline.GetReplicas()
 	image := r.pipeline.GetImage()
@@ -152,6 +163,35 @@ func (r *render) deployment() *appsv1.Deployment {
 	}
 	if r.pipeline.Spec.Resources != nil {
 		resources = *r.pipeline.Spec.Resources
+	}
+
+	env := append([]corev1.EnvVar{}, r.pipeline.Spec.Env...)
+	volumes := []corev1.Volume{
+		{
+			Name: "config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: r.pipeline.Name,
+					},
+				},
+			},
+		},
+	}
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "config",
+			MountPath: "/config",
+			ReadOnly:  true,
+		},
+	}
+
+	// Inject cluster connection env vars and TLS volumes when clusterRef is set.
+	if cc := r.clusterConn; cc != nil {
+		clusterEnv, clusterVolumes, clusterMounts := buildClusterConnectionResources(cc)
+		env = append(env, clusterEnv...)
+		volumes = append(volumes, clusterVolumes...)
+		volumeMounts = append(volumeMounts, clusterMounts...)
 	}
 
 	return &appsv1.Deployment{
@@ -185,13 +225,7 @@ func (r *render) deployment() *appsv1.Deployment {
 							Image:                    image,
 							Command:                  []string{"/redpanda-connect", "lint", "/config/connect.yaml"},
 							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "config",
-									MountPath: "/config",
-									ReadOnly:  true,
-								},
-							},
+							VolumeMounts: volumeMounts,
 						},
 					},
 					Containers: []corev1.Container{
@@ -202,7 +236,7 @@ func (r *render) deployment() *appsv1.Deployment {
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 4195, Protocol: corev1.ProtocolTCP},
 							},
-							Env:       r.pipeline.Spec.Env,
+							Env:       env,
 							EnvFrom:   buildEnvFrom(r.pipeline),
 							Resources: resources,
 							ReadinessProbe: &corev1.Probe{
@@ -215,27 +249,10 @@ func (r *render) deployment() *appsv1.Deployment {
 								InitialDelaySeconds: 5,
 								PeriodSeconds:       10,
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "config",
-									MountPath: "/config",
-									ReadOnly:  true,
-								},
-							},
+							VolumeMounts: volumeMounts,
 						},
 					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "config",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: r.pipeline.Name,
-									},
-								},
-							},
-						},
-					},
+					Volumes:                   volumes,
 					NodeSelector:              r.pipeline.Spec.NodeSelector,
 					Tolerations:               r.pipeline.Spec.Tolerations,
 					Affinity:                  buildAffinity(r.pipeline),
@@ -244,6 +261,86 @@ func (r *render) deployment() *appsv1.Deployment {
 			},
 		},
 	}
+}
+
+// buildClusterConnectionResources returns the env vars, volumes, and volume
+// mounts needed to connect to a Redpanda cluster via clusterRef.
+func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []corev1.Volume, []corev1.VolumeMount) {
+	var env []corev1.EnvVar
+	var volumes []corev1.Volume
+	var mounts []corev1.VolumeMount
+
+	env = append(env, corev1.EnvVar{
+		Name:  "RPK_BROKERS",
+		Value: cc.BrokersString(),
+	})
+
+	if cc.TLS != nil {
+		caCertPath := fmt.Sprintf("%s/%s", clusterTLSMountPath, cc.TLS.CACertSecretRef.Key)
+
+		env = append(env, corev1.EnvVar{
+			Name:  "RPK_TLS_ENABLED",
+			Value: "true",
+		}, corev1.EnvVar{
+			Name:  "RPK_TLS_ROOT_CAS_FILE",
+			Value: caCertPath,
+		})
+
+		volumes = append(volumes, corev1.Volume{
+			Name: clusterTLSVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: cc.TLS.CACertSecretRef.Name,
+								},
+								Items: []corev1.KeyToPath{
+									{
+										Key:  cc.TLS.CACertSecretRef.Key,
+										Path: cc.TLS.CACertSecretRef.Key,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      clusterTLSVolumeName,
+			MountPath: clusterTLSMountPath,
+			ReadOnly:  true,
+		})
+	} else {
+		env = append(env, corev1.EnvVar{
+			Name:  "RPK_TLS_ENABLED",
+			Value: "false",
+		})
+	}
+
+	if cc.SASL != nil {
+		env = append(env, corev1.EnvVar{
+			Name:  "RPK_SASL_MECHANISM",
+			Value: cc.SASL.Mechanism,
+		}, corev1.EnvVar{
+			Name:  "RPK_SASL_USER",
+			Value: cc.SASL.Username,
+		})
+
+		if cc.SASL.PasswordRef != nil {
+			env = append(env, corev1.EnvVar{
+				Name: "RPK_SASL_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: cc.SASL.PasswordRef,
+				},
+			})
+		}
+	}
+
+	return env, volumes, mounts
 }
 
 func (r *render) podMonitor() *monitoringv1.PodMonitor {
