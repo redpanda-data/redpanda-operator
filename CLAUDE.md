@@ -296,10 +296,16 @@ When adding a new Custom Resource Definition to the operator, follow this checkl
 - Use the **`utils.StatusConditionConfigs`** helper for SSA-compatible condition merging.
 
 ### 3. RBAC
-- Add kubebuilder RBAC markers to the controller.
-- Create an itemized RBAC file at `operator/config/rbac/itemized/<resource>.yaml`.
-- **Copy** (or symlink) the RBAC file to `operator/chart/files/rbac/<resource>.ClusterRole.yaml`.
+- Add kubebuilder RBAC markers to the controller (e.g., `// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch`).
+- Create an itemized RBAC file at `operator/config/rbac/itemized/<resource>.yaml`. **Note:** Some controllers (e.g., Pipeline) have manually maintained RBAC files — controller-gen only generates for controllers listed in `taskfiles/k8s.yml`. When adding new permissions, update the itemized YAML directly.
+- Add the RBAC file to the file list in `taskfiles/k8s.yml` (search for `chart/files/rbac/`) — otherwise `task k8s:generate` will delete it on every run.
+- Run `nix develop -c task k8s:generate` — this copies itemized RBAC files to `operator/chart/files/rbac/<resource>.ClusterRole.yaml` automatically.
 - Add the RBAC file to the appropriate bundle in `operator/chart/rbac.go` (gated by a feature flag if applicable).
+- **After any RBAC change**, regenerate chart golden files to pick up the new ClusterRole rules:
+  ```bash
+  nix develop -c go test ./operator/chart/... -run TestTemplate -update-golden
+  ```
+  Failure to do this causes `TestTemplate` failures in CI for any test case that renders RBAC (e.g., `connect-controller-enabled`, `common-annotations`).
 
 ### 4. CRD Installation
 - Add the CRD to the `stableCRDs` (or `experimentalCRDs`) list in `operator/cmd/crd/crd.go`.
