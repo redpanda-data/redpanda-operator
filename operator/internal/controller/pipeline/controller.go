@@ -12,9 +12,8 @@ package pipeline
 
 import (
 	"context"
-	"time"
-
 	"fmt"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
