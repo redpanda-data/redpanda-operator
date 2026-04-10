@@ -16,23 +16,25 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/license"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 const (
-	FinalizerKey = "pipeline.redpanda.com/finalizer"
+	finalizerKey = "operator.redpanda.com/finalizer"
 )
 
 // MonitoringConfig holds the operator-level monitoring settings for Connect pipelines.
@@ -44,7 +46,8 @@ type MonitoringConfig struct {
 
 // Controller reconciles Pipeline resources.
 type Controller struct {
-	Ctl *kube.Ctl
+	Ctl       *kube.Ctl
+	namespace string
 	// LicenseFilePath is the path to the operator-level enterprise license file,
 	// configured via enterprise.licenseSecretRef in the operator Helm chart values.
 	LicenseFilePath string
@@ -65,15 +68,29 @@ type Controller struct {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 
 func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
+	c.namespace = namespace
+
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.Pipeline{}).
-		Owns(&appsv1.Deployment{})
+		For(&redpandav1alpha2.Pipeline{})
+
+	for _, t := range Types() {
+		// Skip PodMonitor watch if the CRD is not installed. If it gets
+		// installed during operator runtime, the operator must be restarted.
+		if _, ok := t.(*monitoringv1.PodMonitor); ok {
+			if c.skipPodMonitorWatchIfNotInstalled(ctx) {
+				continue
+			}
+		}
+		builder = builder.Owns(t)
+	}
 
 	return builder.Complete(c)
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithName("pipeline")
+	if c.namespace != "" && req.Namespace != c.namespace {
+		return ctrl.Result{}, nil
+	}
 
 	pipeline, err := kube.Get[redpandav1alpha2.Pipeline](ctx, c.Ctl, req.NamespacedName)
 	if err != nil {
@@ -85,7 +102,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Handle deletion: clean up owned resources and remove finalizer.
 	if !pipeline.DeletionTimestamp.IsZero() {
-		if controllerutil.RemoveFinalizer(pipeline, FinalizerKey) {
+		if controllerutil.RemoveFinalizer(pipeline, finalizerKey) {
 			syncer, err := c.syncerFor(pipeline)
 			if err != nil {
 				return ctrl.Result{}, err
@@ -102,7 +119,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Add finalizer if missing.
-	if controllerutil.AddFinalizer(pipeline, FinalizerKey) {
+	if controllerutil.AddFinalizer(pipeline, finalizerKey) {
 		if err := c.Ctl.Apply(ctx, pipeline, client.ForceOwnership); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -110,7 +127,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Validate license before proceeding.
 	if err := c.validateLicense(); err != nil {
-		logger.Error(err, "license validation failed")
+		log.Error(ctx, err, "license validation failed")
 		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, []metav1.Condition{{
 			Type:    redpandav1alpha2.PipelineConditionReady,
 			Status:  metav1.ConditionFalse,
@@ -131,7 +148,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	objs, err := syncer.Sync(ctx)
 	if err != nil {
-		logger.Error(err, "failed to sync resources")
+		log.Error(ctx, err, "failed to sync resources")
 		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhaseUnknown, []metav1.Condition{{
 			Type:    redpandav1alpha2.PipelineConditionReady,
 			Status:  metav1.ConditionFalse,
@@ -333,4 +350,16 @@ func conditionsForApply(pipeline *redpandav1alpha2.Pipeline, conditions []metav1
 		})
 	}
 	return out
+}
+
+func (c *Controller) skipPodMonitorWatchIfNotInstalled(ctx context.Context) (skip bool) {
+	var podMonitorList monitoringv1.PodMonitorList
+	err := c.Ctl.List(ctx, "default", &podMonitorList)
+	if errors.Is(err, &meta.NoKindMatchError{}) {
+		return true
+	} else if err != nil {
+		log.Error(ctx, err, "could not list PodMonitors")
+		return true
+	}
+	return false
 }

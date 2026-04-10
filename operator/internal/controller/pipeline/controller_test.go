@@ -10,8 +10,12 @@
 package pipeline
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,12 +30,15 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 func setupTestEnv(t *testing.T) *kube.Ctl {
@@ -154,7 +161,7 @@ func TestReconcile_Deletion(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       ns.Name,
 			Namespace:  ns.Name,
-			Finalizers: []string{FinalizerKey},
+			Finalizers: []string{finalizerKey},
 		},
 		Spec: redpandav1alpha2.PipelineSpec{
 			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
@@ -179,6 +186,182 @@ func TestReconcile_Deletion(t *testing.T) {
 	// Verify the object was GC'd (finalizer removal allows API server to delete it).
 	err = ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline)
 	assert.True(t, apierrors.IsNotFound(err), "expected object to be garbage collected after finalizer removal")
+}
+
+func TestRender_GoldenFiles(t *testing.T) {
+	golden := testutil.NewTxTar(t, "testdata/controller-tests.golden.txtar")
+
+	testCases := []struct {
+		name     string
+		pipeline *redpandav1alpha2.Pipeline
+	}{
+		{
+			name: "basic-pipeline",
+			pipeline: &redpandav1alpha2.Pipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic-pipeline",
+					Namespace: "default",
+				},
+				Spec: redpandav1alpha2.PipelineSpec{
+					ConfigYAML: "input:\n  generate:\n    mapping: 'root.message = \"hello\"'\n    interval: \"5s\"\noutput:\n  stdout: {}\n",
+				},
+			},
+		},
+		{
+			name: "pipeline-with-annotations",
+			pipeline: &redpandav1alpha2.Pipeline{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "annotated-pipeline",
+					Namespace: "default",
+				},
+				Spec: redpandav1alpha2.PipelineSpec{
+					ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+					Annotations: map[string]string{
+						"ad.datadoghq.com/connect.checks": "openmetrics",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			labels := Labels(tc.pipeline)
+			r := &render{
+				pipeline: tc.pipeline,
+				labels:   labels,
+			}
+
+			objs, err := r.Render(t.Context())
+			require.NoError(t, err)
+
+			manifest, err := yaml.Marshal(objs)
+			require.NoError(t, err)
+
+			golden.AssertGolden(t, testutil.YAML, tc.name, manifest)
+		})
+	}
+}
+
+func TestReconcile_DeletionGC(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-deletion-gc"},
+	})
+	require.NoError(t, err)
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "gc-pipeline",
+			Namespace:  ns.Name,
+			Finalizers: []string{finalizerKey},
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	// Create child resources that the syncer would manage.
+	syncer := &kube.Syncer{
+		Ctl:       ctl,
+		Namespace: ns.Name,
+		Renderer: &render{
+			pipeline: pipeline,
+			labels:   Labels(pipeline),
+		},
+		Owner:           *metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
+		OwnershipLabels: Labels(pipeline),
+	}
+	_, err = syncer.Sync(t.Context())
+	require.NoError(t, err)
+
+	// Verify child objects exist.
+	objects := scrapeControllerObjects(t, ctl, pipeline)
+	require.NotEmpty(t, objects, "expected child resources to exist before deletion")
+
+	// Trigger deletion.
+	require.NoError(t, ctl.Delete(t.Context(), pipeline))
+
+	c := &Controller{Ctl: ctl}
+
+	// Reconcile the deletion a few times.
+	doneCh := make(chan error, 1)
+	go func() {
+		ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		defer cancel()
+		doneCh <- ctl.DeleteAndWait(ctx, pipeline)
+		close(doneCh)
+	}()
+
+	for range 3 {
+		_, err = c.Reconcile(t.Context(), ctrl.Request{
+			NamespacedName: kube.AsKey(pipeline),
+		})
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, <-doneCh)
+
+	// Assert that all child resources have been GC'd.
+	require.Empty(t, scrapeControllerObjects(t, ctl, pipeline))
+}
+
+// scrapeControllerObjects finds all objects created by the pipeline controller using ownership labels.
+func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, pipeline *redpandav1alpha2.Pipeline) []kube.Object {
+	ownershipLabels := Labels(pipeline)
+
+	var objects []kube.Object
+	for _, objType := range Types() {
+		// Skip PodMonitor as it's optional (only created when monitoring.enabled is true).
+		if _, ok := objType.(*monitoringv1.PodMonitor); ok {
+			continue
+		}
+		list, err := kube.ListFor(ctl.Scheme(), objType)
+		require.NoError(t, err)
+
+		err = ctl.List(
+			t.Context(),
+			pipeline.Namespace,
+			list,
+			client.MatchingLabels(ownershipLabels),
+		)
+		require.NoError(t, err)
+
+		objs, err := kube.Items[kube.Object](list)
+		require.NoError(t, err)
+
+		for _, obj := range objs {
+			cleanObjectForGolden(ctl.Scheme(), obj)
+			objects = append(objects, obj)
+		}
+	}
+
+	slices.SortFunc(objects, func(i, j client.Object) int {
+		iKey := fmt.Sprintf("%T%s%s", i, i.GetNamespace(), i.GetName())
+		jKey := fmt.Sprintf("%T%s%s", j, j.GetNamespace(), j.GetName())
+		return strings.Compare(iKey, jKey)
+	})
+
+	return objects
+}
+
+// cleanObjectForGolden removes dynamic fields that change between test runs.
+func cleanObjectForGolden(scheme *runtime.Scheme, obj client.Object) {
+	gvks, _, err := scheme.ObjectKinds(obj)
+	if err != nil {
+		panic(err)
+	}
+	obj.GetObjectKind().SetGroupVersionKind(gvks[0])
+
+	obj.SetCreationTimestamp(metav1.Time{})
+	obj.SetFinalizers(nil)
+	obj.SetGeneration(0)
+	obj.SetManagedFields(nil)
+	obj.SetOwnerReferences(nil)
+	obj.SetResourceVersion("")
+	obj.SetUID("")
 }
 
 func TestRender_CommonAnnotations(t *testing.T) {
