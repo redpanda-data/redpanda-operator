@@ -50,7 +50,12 @@ func (c *TLSCheck) Run(ctx context.Context, cc *CheckContext) []Result {
 	}
 
 	var secret corev1.Secret
-	if err := cc.Ctl.Get(ctx, kube.ObjectKey{Name: secretName, Namespace: cc.Namespace}, &secret); err != nil {
+	secret.Name = secretName
+	secret.Namespace = cc.Namespace
+	err := cc.Ctl.WaitFor(ctx, &secret, func(_ kube.Object, err error) (bool, error) {
+		return err == nil, nil
+	})
+	if err != nil {
 		return []Result{Fail(c.Name(), fmt.Sprintf("cannot read secret %s: %v", secretName, err))}
 	}
 	cc.TLSSecret = &secret

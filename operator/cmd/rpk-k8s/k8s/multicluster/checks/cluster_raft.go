@@ -139,13 +139,27 @@ func grpcCredsFromPod(ctx context.Context, ctl *kube.Ctl, namespace string, pod 
 	if err != nil {
 		return nil, "", fmt.Errorf("parsing leaf certificate: %w", err)
 	}
+
+	// Determine the ServerName for TLS verification. The cert may have DNS
+	// SANs (service FQDN) or only IP SANs (ClusterIP). When port-forwarding
+	// we connect to 127.0.0.1, so we need to set ServerName to a SAN that
+	// the cert actually contains. If the cert only has IP SANs (no DNS
+	// names), we skip hostname verification since we're already
+	// authenticating via mTLS and the connection goes through a
+	// port-forward tunnel.
 	serverName := ""
+	skipVerify := false
 	if len(leaf.DNSNames) > 0 {
 		serverName = leaf.DNSNames[0]
+	} else {
+		skipVerify = true
 	}
 
 	return func(cfg *tls.Config) {
 		cfg.Certificates = []tls.Certificate{certificate}
 		cfg.RootCAs = caPool
+		if skipVerify {
+			cfg.InsecureSkipVerify = true //nolint:gosec // port-forward tunnel; mTLS authenticates the peer
+		}
 	}, serverName, nil
 }

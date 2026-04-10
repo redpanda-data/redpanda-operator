@@ -196,31 +196,27 @@ func TestMulticlusterBootstrapAndStatus(t *testing.T) {
 		}
 	})
 
-	t.Run("deploy", func(t *testing.T) {
-		t.Run("operators_become_ready", func(t *testing.T) {
-			t.Parallel()
-			for _, node := range mc.Nodes {
-				require.Eventually(t, func() bool {
-					var pods corev1.PodList
-					if err := node.Ctl().List(ctx, opts.Namespace, &pods, client.MatchingLabels{
-						"app.kubernetes.io/name": "operator",
-					}); err != nil || len(pods.Items) == 0 {
-						return false
-					}
-					for _, cond := range pods.Items[0].Status.Conditions {
-						if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
-							return true
-						}
-					}
-					return false
-				}, 5*time.Minute, 5*time.Second,
-					"operator pod never became ready in %s", node.Name())
+	// Wait for operators to become ready before running status checks.
+	for _, node := range mc.Nodes {
+		require.Eventually(t, func() bool {
+			var pods corev1.PodList
+			if err := node.Ctl().List(ctx, opts.Namespace, &pods, client.MatchingLabels{
+				"app.kubernetes.io/name": "operator",
+			}); err != nil || len(pods.Items) == 0 {
+				return false
 			}
-		})
+			for _, cond := range pods.Items[0].Status.Conditions {
+				if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+					return true
+				}
+			}
+			return false
+		}, 5*time.Minute, 5*time.Second,
+			"operator pod never became ready in %s", node.Name())
+	}
 
-		t.Run("status", func(t *testing.T) {
-			t.Parallel()
-			var out bytes.Buffer
+	t.Run("status", func(t *testing.T) {
+		var out bytes.Buffer
 			cfg := multicluster.StatusConfig{
 				Connection: multicluster.ConnectionConfig{
 					Namespace:   opts.Namespace,
@@ -253,7 +249,6 @@ func TestMulticlusterBootstrapAndStatus(t *testing.T) {
 					assert.True(t, r.OK, "cross-cluster check %s failed: %s", r.Name, r.Message)
 				}
 			}
-		})
 	})
 }
 
