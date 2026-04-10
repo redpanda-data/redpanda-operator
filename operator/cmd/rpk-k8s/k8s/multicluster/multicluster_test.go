@@ -46,6 +46,7 @@ func TestMulticlusterBootstrapAndStatus(t *testing.T) {
 
 	opts := vcluster.MulticlusterOptions{
 		Size:              3,
+		Namespace:         "default",
 		OperatorChartPath: operatorChartPath,
 	}
 

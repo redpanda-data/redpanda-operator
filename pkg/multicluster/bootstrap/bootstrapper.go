@@ -25,7 +25,7 @@ type RemoteConfiguration struct {
 }
 
 func (r RemoteConfiguration) Client() (client.Client, error) {
-	config, err := configFromContext(r.ContextName)
+	config, err := r.Config()
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +34,9 @@ func (r RemoteConfiguration) Client() (client.Client, error) {
 }
 
 func (r RemoteConfiguration) Config() (*rest.Config, error) {
+	if r.KubeConfig != nil {
+		return r.KubeConfig, nil
+	}
 	return configFromContext(r.ContextName)
 }
 
