@@ -13,6 +13,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -210,6 +211,53 @@ func (s *StatefulSetDecommissionerSuite) untaintNode(name string) {
 	s.Require().NoError(s.client.Update(s.ctx, &node))
 }
 
+func (s *StatefulSetDecommissionerSuite) dumpCertManagerDiagnostics() {
+	t := s.T()
+	t.Log("=== cert-manager diagnostics ===")
+
+	var pods corev1.PodList
+	if err := s.client.List(s.ctx, &pods, client.InNamespace("cert-manager")); err != nil {
+		t.Logf("  failed to list cert-manager pods: %v", err)
+	} else if len(pods.Items) == 0 {
+		t.Log("  NO pods found in cert-manager namespace")
+	} else {
+		for _, pod := range pods.Items {
+			t.Logf("  pod/%s phase=%s", pod.Name, pod.Status.Phase)
+			for _, cs := range pod.Status.ContainerStatuses {
+				msg := fmt.Sprintf("    container %s: ready=%v restarts=%d", cs.Name, cs.Ready, cs.RestartCount)
+				if cs.State.Waiting != nil {
+					msg += fmt.Sprintf(" waiting=%s(%s)", cs.State.Waiting.Reason, cs.State.Waiting.Message)
+				}
+				if cs.State.Terminated != nil {
+					msg += fmt.Sprintf(" terminated=%s(exit=%d)", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
+				}
+				t.Log(msg)
+			}
+		}
+	}
+
+	var nodes corev1.NodeList
+	if err := s.client.List(s.ctx, &nodes); err != nil {
+		t.Logf("  failed to list nodes: %v", err)
+	} else {
+		for _, node := range nodes.Items {
+			taints := ""
+			for _, taint := range node.Spec.Taints {
+				taints += fmt.Sprintf(" %s=%s:%s", taint.Key, taint.Value, taint.Effect)
+			}
+			ready := "NotReady"
+			for _, cond := range node.Status.Conditions {
+				if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
+					ready = "Ready"
+				}
+			}
+			t.Logf("  node/%s %s taints=[%s]", node.Name, ready, strings.TrimSpace(taints))
+		}
+	}
+
+	t.Log("=== end cert-manager diagnostics ===")
+}
+
 func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	t := s.T()
 
@@ -244,10 +292,11 @@ func (s *StatefulSetDecommissionerSuite) SetupSuite() {
 	// proceeding. Without this, helm installs that create Certificate
 	// resources can fail with "no endpoints available for service
 	// cert-manager-webhook" under parallel test load.
-	s.Require().NoError(
-		testutil.WaitForCertManagerWebhook(s.ctx, s.client, 2*time.Minute),
-		"cert-manager webhook not ready",
-	)
+	if err := testutil.WaitForCertManagerWebhook(s.ctx, s.client, 2*time.Minute); err != nil {
+		// Dump diagnostics before failing.
+		s.dumpCertManagerDiagnostics()
+		s.Require().NoError(err, "cert-manager webhook not ready")
+	}
 
 	s.env.SetupManager(s.setupRBAC(), func(mcmgr multicluster.Manager) error {
 		mgr := mcmgr.GetLocalManager()

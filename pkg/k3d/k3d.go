@@ -34,6 +34,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -203,7 +204,23 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 	cluster, err := NewCluster(name, opts...)
 	if err != nil {
 		if errors.Is(err, ErrExists) {
-			return loadCluster(name, config)
+			c, loadErr := loadCluster(name, config)
+			if loadErr != nil {
+				// Cluster exists but is unhealthy (e.g. stale cert-manager
+				// from a previous build). Delete and recreate.
+				fmt.Fprintf(os.Stderr, "WARNING: existing k3d cluster %q is unhealthy (%v), deleting and recreating\n", name, loadErr)
+				deleteCluster(name)
+				clearImageMarkers(name)
+				c2, err2 := NewCluster(name, opts...)
+				if err2 != nil {
+					return nil, errors.Wrapf(err2, "recreating cluster %q after unhealthy load", name)
+				}
+				if err2 := c2.importImages("localhost/redpanda-operator:dev"); err2 != nil {
+					return nil, err2
+				}
+				return c2, nil
+			}
+			return c, nil
 		}
 		return nil, err
 	}
@@ -213,6 +230,15 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 	}
 
 	return cluster, nil
+}
+
+// deleteCluster removes a k3d cluster by name. Best-effort — errors are logged
+// but not returned, since this is used as cleanup before recreation.
+func deleteCluster(name string) {
+	out, err := exec.Command("k3d", "cluster", "delete", name).CombinedOutput()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "WARNING: failed to delete k3d cluster %q: %v: %s\n", name, err, out)
+	}
 }
 
 // imageMarkerPath returns a file path used to track whether an image has
@@ -342,12 +368,12 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		// If k3d cluster create will fail please uncomment the following debug logs from containers
 		for i := 0; i < config.agents; i++ {
 			containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-agent-%d", name, i)).CombinedOutput()
-			fmt.Printf("Agent-%d logs:\n%s\n", i, string(containerLogs))
+			fmt.Fprintf(os.Stderr, "Agent-%d logs:\n%s\n", i, string(containerLogs))
 		}
 		containerLogs, _ := exec.Command("docker", "logs", fmt.Sprintf("k3d-%s-server-0", name)).CombinedOutput()
-		fmt.Printf("server-0 logs:\n%s\n", string(containerLogs))
+		fmt.Fprintf(os.Stderr, "server-0 logs:\n%s\n", string(containerLogs))
 		containerLogs, _ = exec.Command("docker", "network", "inspect", config.network).CombinedOutput()
-		fmt.Printf("docker network inspect:\n%s\n", string(containerLogs))
+		fmt.Fprintf(os.Stderr, "docker network inspect:\n%s\n", string(containerLogs))
 
 		return nil, errors.Wrapf(err, "%s", out)
 	}
@@ -509,6 +535,17 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 	}
 
 	if !c.skipManifests {
+		// Pre-import cert-manager images into the k3d cluster so the k3s
+		// helm controller doesn't need to pull them from the internet.
+		// The CI `test:pull-images` task downloads these into the host
+		// Docker daemon, but k3d's containerd is separate — images must
+		// be explicitly imported via `k3d image import`.
+		if err := c.importImages(certManagerImages()...); err != nil {
+			// Non-fatal: if the images aren't in the host Docker daemon
+			// (e.g. local dev), k3s will pull them from the registry.
+			fmt.Fprintf(os.Stderr, "WARNING: failed to import cert-manager images (will rely on registry pull): %v\n", err)
+		}
+
 		// NB: Originally this functionality was achieved via the --volume flag to
 		// k3d but CI runs via a docker in docker setup which makes it unreasonable
 		// to use --volume.
@@ -549,9 +586,103 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 	// helm controller. Wait for its webhook to be ready before returning,
 	// otherwise helm operations that create Certificate resources will fail.
 	if !c.skipManifests {
-		return testutil.WaitForCertManagerWebhook(ctx, cl, 2*time.Minute)
+		if err := testutil.WaitForCertManagerWebhook(ctx, cl, 5*time.Minute); err != nil {
+			// Dump diagnostic info to help debug CI failures.
+			c.dumpCertManagerDiagnostics(ctx, cl)
+			return err
+		}
 	}
 	return nil
+}
+
+// dumpCertManagerDiagnostics prints cert-manager pod and job status to stdout
+// for CI debugging when the webhook readiness check fails.
+func (c *Cluster) dumpCertManagerDiagnostics(ctx context.Context, cl client.Client) {
+	fmt.Fprintf(os.Stderr, "\n=== cert-manager diagnostics for k3d cluster %q ===\n", c.Name)
+
+	// Dump pods in cert-manager namespace.
+	var pods corev1.PodList
+	if err := cl.List(ctx, &pods, client.InNamespace("cert-manager")); err != nil {
+		fmt.Fprintf(os.Stderr, "  failed to list cert-manager pods: %v\n", err)
+	} else if len(pods.Items) == 0 {
+		fmt.Fprintf(os.Stderr, "  NO pods found in cert-manager namespace\n")
+	} else {
+		for _, pod := range pods.Items {
+			fmt.Fprintf(os.Stderr, "  pod/%s phase=%s\n", pod.Name, pod.Status.Phase)
+			for _, cs := range pod.Status.ContainerStatuses {
+				fmt.Fprintf(os.Stderr, "    container %s: ready=%v restarts=%d", cs.Name, cs.Ready, cs.RestartCount)
+				if cs.State.Waiting != nil {
+					fmt.Fprintf(os.Stderr, " waiting=%s(%s)", cs.State.Waiting.Reason, cs.State.Waiting.Message)
+				}
+				if cs.State.Terminated != nil {
+					fmt.Fprintf(os.Stderr, " terminated=%s(exit=%d)", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
+				}
+				fmt.Println()
+			}
+			for _, cs := range pod.Status.InitContainerStatuses {
+				fmt.Fprintf(os.Stderr, "    init/%s: ready=%v restarts=%d", cs.Name, cs.Ready, cs.RestartCount)
+				if cs.State.Waiting != nil {
+					fmt.Fprintf(os.Stderr, " waiting=%s(%s)", cs.State.Waiting.Reason, cs.State.Waiting.Message)
+				}
+				if cs.State.Terminated != nil {
+					fmt.Fprintf(os.Stderr, " terminated=%s(exit=%d)", cs.State.Terminated.Reason, cs.State.Terminated.ExitCode)
+				}
+				fmt.Println()
+			}
+		}
+	}
+
+	// Dump helm controller jobs in kube-system.
+	var jobs batchv1.JobList
+	if err := cl.List(ctx, &jobs, client.InNamespace("kube-system")); err != nil {
+		fmt.Fprintf(os.Stderr, "  failed to list kube-system jobs: %v\n", err)
+	} else {
+		for _, job := range jobs.Items {
+			if !strings.Contains(job.Name, "cert-manager") {
+				continue
+			}
+			fmt.Fprintf(os.Stderr, "  job/%s active=%d succeeded=%d failed=%d\n",
+				job.Name, job.Status.Active, job.Status.Succeeded, job.Status.Failed)
+			for _, cond := range job.Status.Conditions {
+				fmt.Fprintf(os.Stderr, "    condition %s=%s: %s\n", cond.Type, cond.Status, cond.Message)
+			}
+		}
+	}
+
+	// Dump HelmChart in kube-system.
+	var helmCharts unstructured.UnstructuredList
+	helmCharts.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "helm.cattle.io",
+		Version: "v1",
+		Kind:    "HelmChartList",
+	})
+	if err := cl.List(ctx, &helmCharts, client.InNamespace("kube-system")); err != nil {
+		fmt.Fprintf(os.Stderr, "  failed to list HelmCharts: %v\n", err)
+	} else {
+		for _, hc := range helmCharts.Items {
+			if !strings.Contains(hc.GetName(), "cert-manager") {
+				continue
+			}
+			spec, _ := hc.Object["spec"].(map[string]any)
+			status, _ := hc.Object["status"].(map[string]any)
+			fmt.Fprintf(os.Stderr, "  helmchart/%s version=%v jobName=%v\n", hc.GetName(), spec["version"], status["jobName"])
+		}
+	}
+
+	fmt.Fprintf(os.Stderr, "=== end cert-manager diagnostics ===\n\n")
+}
+
+// certManagerImages returns the container images needed by the cert-manager
+// version deployed via the startup manifests. These are imported into the k3d
+// cluster so the k3s helm controller doesn't need to pull from the internet.
+func certManagerImages() []string {
+	v := testutil.CertManagerVersion
+	return []string{
+		"quay.io/jetstack/cert-manager-controller:" + v,
+		"quay.io/jetstack/cert-manager-webhook:" + v,
+		"quay.io/jetstack/cert-manager-cainjector:" + v,
+		"quay.io/jetstack/cert-manager-startupapicheck:" + v,
+	}
 }
 
 // startupManifests parses the embedded FS of Kubernetes manifests as a slice
