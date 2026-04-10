@@ -225,7 +225,7 @@ func (r *render) deployment() *appsv1.Deployment {
 							Image:                    image,
 							Command:                  []string{"/redpanda-connect", "lint", "/config/connect.yaml"},
 							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-							VolumeMounts: volumeMounts,
+							VolumeMounts:             volumeMounts,
 						},
 					},
 					Containers: []corev1.Container{
