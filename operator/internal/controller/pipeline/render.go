@@ -330,13 +330,8 @@ func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []
 			Value: cc.SASL.Username,
 		})
 
-		if cc.SASL.PasswordRef != nil {
-			env = append(env, corev1.EnvVar{
-				Name: "RPK_SASL_PASSWORD",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: cc.SASL.PasswordRef,
-				},
-			})
+		if cc.SASL.Password.Name != "" {
+			env = append(env, cc.SASL.Password)
 		}
 	}
 

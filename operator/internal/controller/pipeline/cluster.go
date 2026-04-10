@@ -39,9 +39,12 @@ type clusterTLS struct {
 
 // clusterSASL holds SASL credentials resolved from a Redpanda cluster.
 type clusterSASL struct {
-	Mechanism   string
-	Username    string
-	PasswordRef *corev1.SecretKeySelector
+	Mechanism string
+	Username  string
+	// Password is the env var to inject for the SASL password. Built from
+	// the appropriate ValueSource (Secret, ConfigMap, inline, or resolved
+	// external secret).
+	Password corev1.EnvVar
 }
 
 // BrokersString returns the broker list as a comma-separated string.
@@ -89,20 +92,63 @@ func resolveClusterSource(ctx context.Context, ctl *kube.Ctl, pipeline *redpanda
 		// to the cluster's bootstrap (admin) user.
 		if creds := pipeline.Spec.Credentials; creds != nil {
 			conn.SASL = &clusterSASL{
-				Mechanism:   creds.Mechanism,
-				Username:    creds.Username,
-				PasswordRef: &creds.PasswordSecretRef,
+				Mechanism: creds.Mechanism,
+				Username:  creds.Username,
+				Password:  envVarFromValueSource("RPK_SASL_PASSWORD", &creds.Password),
 			}
 		} else if cfg.Kafka.SASL != nil {
-			conn.SASL = &clusterSASL{
+			sasl := &clusterSASL{
 				Mechanism: string(cfg.Kafka.SASL.Mechanism),
 				Username:  cfg.Kafka.SASL.Username,
 			}
 			if cfg.Kafka.SASL.Password != nil && cfg.Kafka.SASL.Password.SecretKeyRef != nil {
-				conn.SASL.PasswordRef = cfg.Kafka.SASL.Password.SecretKeyRef
+				sasl.Password = corev1.EnvVar{
+					Name: "RPK_SASL_PASSWORD",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: cfg.Kafka.SASL.Password.SecretKeyRef,
+					},
+				}
 			}
+			conn.SASL = sasl
 		}
 	}
 
 	return conn, nil
+}
+
+// envVarFromValueSource converts a ValueSource into a corev1.EnvVar. Supports
+// SecretKeyRef, ConfigMapKeyRef, and Inline sources. ExternalSecretRef is not
+// supported in this path — use ESO or the operator's cloud secret expander to
+// sync external secrets into a Kubernetes Secret first.
+func envVarFromValueSource(name string, vs *redpandav1alpha2.ValueSource) corev1.EnvVar {
+	if vs == nil {
+		return corev1.EnvVar{Name: name}
+	}
+
+	if vs.SecretKeyRef != nil {
+		return corev1.EnvVar{
+			Name: name,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: vs.SecretKeyRef,
+			},
+		}
+	}
+
+	if vs.ConfigMapKeyRef != nil {
+		return corev1.EnvVar{
+			Name: name,
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: vs.ConfigMapKeyRef,
+			},
+		}
+	}
+
+	if vs.Inline != nil {
+		return corev1.EnvVar{
+			Name:  name,
+			Value: *vs.Inline,
+		}
+	}
+
+	return corev1.EnvVar{Name: name}
 }

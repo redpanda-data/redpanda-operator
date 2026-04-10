@@ -201,9 +201,12 @@ type PipelineSASLCredentials struct {
 	// +kubebuilder:validation:Required
 	Username string `json:"username"`
 
-	// PasswordSecretRef references a Secret key containing the SASL password.
+	// Password references the SASL password. Supports Kubernetes Secrets,
+	// ConfigMaps, inline values, and external secret providers (AWS Secrets
+	// Manager, GCP Secret Manager, Azure Key Vault) via the operator's
+	// native cloud secret integration.
 	// +kubebuilder:validation:Required
-	PasswordSecretRef corev1.SecretKeySelector `json:"passwordSecretRef"`
+	Password ValueSource `json:"password"`
 }
 
 // PipelineStatus defines the observed state of a Connect resource.
