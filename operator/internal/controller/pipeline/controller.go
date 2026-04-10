@@ -118,9 +118,10 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, nil
 	}
 
-	// Add finalizer if missing.
+	// Add finalizer if missing. Use Update (not Apply/SSA) to avoid taking
+	// ownership of spec fields, which would conflict with user-side SSA.
 	if controllerutil.AddFinalizer(pipeline, finalizerKey) {
-		if err := c.Ctl.Apply(ctx, pipeline, client.ForceOwnership); err != nil {
+		if err := c.Ctl.Update(ctx, pipeline); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -166,7 +167,14 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+	// Use a shorter requeue when the pipeline is not yet running so we can
+	// detect init-container lint failures quickly. Once running, use a
+	// longer interval for periodic drift detection.
+	requeueAfter := 5 * time.Minute
+	if phase != redpandav1alpha2.PipelinePhaseRunning && phase != redpandav1alpha2.PipelinePhaseStopped {
+		requeueAfter = 15 * time.Second
+	}
+	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
 
 func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline) (*kube.Syncer, error) {
@@ -316,6 +324,16 @@ func (c *Controller) checkInitContainerStatus(ctx context.Context, dp *appsv1.De
 				msg := initStatus.State.Waiting.Message
 				if msg == "" {
 					msg = "lint init container is in CrashLoopBackOff — check pipeline configuration"
+				}
+				return false, msg
+			}
+			// Also check LastTerminationState: between restarts the current
+			// State may be Running or Waiting (not yet CrashLoopBackOff),
+			// but LastTerminationState records the previous failure.
+			if initStatus.LastTerminationState.Terminated != nil && initStatus.LastTerminationState.Terminated.ExitCode != 0 {
+				msg := initStatus.LastTerminationState.Terminated.Message
+				if msg == "" {
+					msg = fmt.Sprintf("lint exited with code %d", initStatus.LastTerminationState.Terminated.ExitCode)
 				}
 				return false, msg
 			}
