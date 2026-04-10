@@ -2364,6 +2364,119 @@ spec:
                   This follows the standard Redpanda Connect configuration schema with
                   input, pipeline, and output sections.
                 type: string
+              credentials:
+                description: |-
+                  Credentials specifies SASL credentials for the pipeline to authenticate
+                  with the Redpanda cluster. When set alongside a clusterRef, these
+                  credentials are used instead of the cluster's bootstrap (admin) user.
+                  This enables least-privilege access by pairing a Pipeline with a
+                  dedicated User CRD.
+                properties:
+                  mechanism:
+                    description: Mechanism is the SASL mechanism (e.g., SCRAM-SHA-256,
+                      SCRAM-SHA-512).
+                    type: string
+                  password:
+                    description: |-
+                      Password references the SASL password. Supports Kubernetes Secrets,
+                      ConfigMaps, inline values, and external secret providers (AWS Secrets
+                      Manager, GCP Secret Manager, Azure Key Vault) via the operator's
+                      native cloud secret integration.
+                    properties:
+                      configMapKeyRef:
+                        description: |-
+                          If the value is supplied by a kubernetes object reference, coordinates are embedded here.
+                          For target values, the string value fetched from the source will be treated as
+                          a raw string.
+                        properties:
+                          key:
+                            description: The key to select.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the ConfigMap or its key
+                              must be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      externalSecretRef:
+                        description: |-
+                          If the value is supplied by an external source, coordinates are embedded here.
+                          Note: we interpret all fetched external secrets as raw string values
+                        properties:
+                          name:
+                            type: string
+                        required:
+                        - name
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      inline:
+                        description: Inline is the raw value specified inline.
+                        type: string
+                      secretKeyRef:
+                        description: |-
+                          Should the value be contained in a k8s secret rather than configmap, we can refer
+                          to it here.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            default: ""
+                            description: |-
+                              Name of the referent.
+                              This field is effectively required, but due to backwards compatibility is
+                              allowed to be empty. Instances of this type with an empty value here are
+                              almost certainly wrong.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    type: object
+                    x-kubernetes-map-type: atomic
+                    x-kubernetes-validations:
+                    - message: one of inline, configMapKeyRef, secretKeyRef, or externalSecretRef
+                        must be set
+                      rule: has(self.inline) || has(self.configMapKeyRef) || has(self.secretKeyRef)
+                        || has(self.externalSecretRef)
+                    - message: if inline is set no other field can be set
+                      rule: '!has(self.inline) || (has(self.inline) && !(has(self.configMapKeyRef)
+                        || has(self.secretKeyRef) || has(self.externalSecretRef)))'
+                    - message: if configMapKeyRef is set no other field can be set
+                      rule: '!has(self.configMapKeyRef) || (has(self.configMapKeyRef)
+                        && !(has(self.inline) || has(self.secretKeyRef) || has(self.externalSecretRef)))'
+                    - message: if secretKeyRef is set no other field can be set
+                      rule: '!has(self.secretKeyRef) || (has(self.secretKeyRef) &&
+                        !(has(self.configMapKeyRef) || has(self.inline) || has(self.externalSecretRef)))'
+                    - message: if externalSecretRef is set no other field can be set
+                      rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
+                        && !(has(self.configMapKeyRef) || has(self.secretKeyRef) ||
+                        has(self.inline)))'
+                  username:
+                    description: Username is the SASL username.
+                    type: string
+                required:
+                - mechanism
+                - password
+                - username
+                type: object
               description:
                 description: |-
                   Description is an optional description of what this pipeline does.

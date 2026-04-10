@@ -2342,6 +2342,35 @@ PipelinePhase describes the lifecycle phase of a Pipeline.
 
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesaslcredentials"]
+==== PipelineSASLCredentials
+
+
+
+PipelineSASLCredentials defines SASL authentication credentials for a Pipeline.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`mechanism`* __string__ | Mechanism is the SASL mechanism (e.g., SCRAM-SHA-256, SCRAM-SHA-512). + |  | Required: \{} +
+
+| *`username`* __string__ | Username is the SASL username. + |  | Required: \{} +
+
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Password references the SASL password. Supports Kubernetes Secrets, +
+ConfigMaps, inline values, and external secret providers (AWS Secrets +
+Manager, GCP Secret Manager, Azure Key Vault) via the operator's +
+native cloud secret integration. + |  | Required: \{} +
+
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec"]
 ==== PipelineSpec
 
@@ -2423,6 +2452,12 @@ be spread. When set, the controller configures: +
 The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
 
 | *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource is a reference to the Redpanda cluster this pipeline connects to. + |  | Optional: \{} +
+
+| *`credentials`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesaslcredentials[$$PipelineSASLCredentials$$]__ | Credentials specifies SASL credentials for the pipeline to authenticate +
+with the Redpanda cluster. When set alongside a clusterRef, these +
+credentials are used instead of the cluster's bootstrap (admin) user. +
+This enables least-privilege access by pairing a Pipeline with a +
+dedicated User CRD. + |  | Optional: \{} +
 
 |===
 
@@ -5061,6 +5096,7 @@ ValueSource represents where a value can be pulled from
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinesaslcredentials[$$PipelineSASLCredentials$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]
 ****
 
