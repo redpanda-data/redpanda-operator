@@ -18,8 +18,9 @@ import (
 // UserAuthenticationSpecApplyConfiguration represents a declarative configuration of the UserAuthenticationSpec type for use
 // with apply.
 type UserAuthenticationSpecApplyConfiguration struct {
-	Type     *redpandav1alpha2.SASLMechanism `json:"type,omitempty"`
-	Password *PasswordApplyConfiguration     `json:"password,omitempty"`
+	Type            *redpandav1alpha2.SASLMechanism `json:"type,omitempty"`
+	Password        *PasswordApplyConfiguration     `json:"password,omitempty"`
+	SyncCredentials *bool                           `json:"syncCredentials,omitempty"`
 }
 
 // UserAuthenticationSpecApplyConfiguration constructs a declarative configuration of the UserAuthenticationSpec type for use with
@@ -41,5 +42,13 @@ func (b *UserAuthenticationSpecApplyConfiguration) WithType(value redpandav1alph
 // If called multiple times, the Password field is set to the value of the last call.
 func (b *UserAuthenticationSpecApplyConfiguration) WithPassword(value *PasswordApplyConfiguration) *UserAuthenticationSpecApplyConfiguration {
 	b.Password = value
+	return b
+}
+
+// WithSyncCredentials sets the SyncCredentials field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SyncCredentials field is set to the value of the last call.
+func (b *UserAuthenticationSpecApplyConfiguration) WithSyncCredentials(value bool) *UserAuthenticationSpecApplyConfiguration {
+	b.SyncCredentials = &value
 	return b
 }
