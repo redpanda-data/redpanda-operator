@@ -351,3 +351,49 @@ When adding a new Custom Resource Definition to the operator, follow this checkl
 
 ### 8. Changelog
 - Add a changie entry: `nix develop -c changie new -j operator`
+
+## ClusterRef — Connecting CRDs to Redpanda Clusters
+
+CRDs that need to communicate with a Redpanda cluster use the `ClusterSource` type (`operator/api/redpanda/v1alpha2/common.go`), which supports two modes:
+- **`clusterRef`** — references an operator-managed `Redpanda` CR by name. The operator resolves broker addresses, TLS certificates, and SASL credentials automatically.
+- **`staticConfiguration`** — explicit connection details (brokers, TLS, SASL) for clusters not managed by the operator.
+
+### How ClusterRef resolution works
+
+Controllers resolve a `clusterRef` by converting the Redpanda CR into a `RenderState` via `conversion.ConvertV2ToRenderState()`, then calling `state.AsStaticConfigSource()` to extract an `ir.StaticConfigurationSource` containing:
+- Kafka broker addresses (internal DNS: `{fullname}-{ordinal}.{service}.{namespace}.svc.cluster.local:{port}`)
+- TLS CA certificate references (from `{fullname}-{name}-root-certificate` or custom `secretRef`)
+- SASL bootstrap user credentials (from `{fullname}-bootstrap-user` Secret)
+
+This is the same pattern used by the Console controller (`operator/internal/controller/console/controller.go:414-450`) and the Pipeline controller (`operator/internal/controller/pipeline/cluster.go`).
+
+### Watching referenced clusters
+
+Controllers should watch Redpanda CRs so that changes to a cluster trigger re-reconciliation of referencing resources. Two patterns exist:
+- **Multicluster controllers** (Console, Topic, User, etc.): Use `controller.RegisterClusterSourceIndex()` from `operator/internal/controller/index.go` with `multicluster.Manager`.
+- **Single-cluster controllers** (Pipeline): Use standard controller-runtime field indexing with `mgr.GetFieldIndexer().IndexField()` and `builder.Watches()` with `handler.EnqueueRequestsFromMapFunc()`.
+
+## ValueSource — Secrets and External Secret Providers
+
+The `ValueSource` type (`operator/api/redpanda/v1alpha2/common.go:187`) is the standard way to reference sensitive values across all CRDs. It supports four sources:
+
+| Source | Field | Description |
+|--------|-------|-------------|
+| Kubernetes Secret | `secretKeyRef` | References a key in a K8s Secret |
+| ConfigMap | `configMapKeyRef` | References a key in a K8s ConfigMap |
+| Inline | `inline` | Raw string value (avoid for production secrets) |
+| External secret provider | `externalSecretRef` | AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault via the operator's native `CloudExpander` (`pkg/secrets/secrets.go`) |
+
+### Cloud secret provider configuration
+
+The `CloudExpander` is configured at operator startup via CLI flags:
+- `--cloud-secret-aws-region` — enables AWS Secrets Manager
+- `--cloud-secret-gcp-project-id` — enables GCP Secret Manager
+- `--cloud-secret-azure-key-vault-uri` — enables Azure Key Vault
+
+Controllers that need to resolve `ValueSource` at reconcile time (e.g., Topic, User, Role) receive a `CloudExpander` via the `ClientFactory`. Controllers that inject `ValueSource` into pod env vars (e.g., Pipeline) convert `secretKeyRef`/`configMapKeyRef`/`inline` directly to `corev1.EnvVar` fields — `externalSecretRef` requires ESO or the cloud expander to sync the value into a K8s Secret first.
+
+### When to use ValueSource vs corev1.SecretKeySelector
+
+- Use `ValueSource` for any field that holds a secret or sensitive value (passwords, tokens, API keys). This ensures compatibility with external secret providers.
+- Use `corev1.SecretKeySelector` only for internal references where external secret support is not needed (e.g., referencing operator-created Secrets like the bootstrap user password).
