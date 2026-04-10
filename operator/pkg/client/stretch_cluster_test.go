@@ -170,7 +170,7 @@ func (s *StretchClusterFactorySuite) TestFactoryClients() {
 	}
 
 	// Wait for the reconciler to process the cluster (finalizer present).
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -181,7 +181,7 @@ func (s *StretchClusterFactorySuite) TestFactoryClients() {
 	// Wait for at least one broker to become ready.
 	// In flat network mode, the controller manages EndpointSlices for remote
 	// per-pod Services, so brokers can discover each other without manual fixup.
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -325,7 +325,7 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	}
 
 	// Wait for the reconciler to process (finalizer present).
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -334,7 +334,7 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	}, 2*time.Minute, 1*time.Second, "StretchCluster never received finalizer")
 
 	// Wait for at least one broker to become ready.
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -348,7 +348,7 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	}, 5*time.Minute, 5*time.Second, "no brokers became ready")
 
 	// Wait for ConfigurationApplied=True.
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -357,8 +357,8 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 		return cond != nil && cond.Status == metav1.ConditionTrue
 	}, 3*time.Minute, 5*time.Second, "ConfigurationApplied=True never appeared")
 
-	// Wait for Stable=True and record pod UIDs for restart detection.
-	s.Require().Eventually(func() bool {
+	// Wait for Stable=True.
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -412,7 +412,7 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	s.mc.ApplyAll(t, s.ctx, mutatedSC)
 
 	// Verify ConfigurationApplied returns to True and the config version changed.
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -429,7 +429,7 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	s.mc.DeleteAll(t, s.ctx, ns, &redpandav1alpha2.StretchCluster{})
 
 	// Wait for the StretchCluster to be fully deleted (finalizer removed).
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var list redpandav1alpha2.StretchClusterList
 		if err := s.mc.Envs[0].Client().List(s.ctx, &list, client.InNamespace(ns)); err != nil {
 			return false
