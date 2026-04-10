@@ -136,3 +136,7 @@ multicluster:
 enterprise:
   licenseSecretRef:
     name: my-secret
+
+-- finalizer-removal-enabled --
+finalizerRemoval:
+  enabled: true
