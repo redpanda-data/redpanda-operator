@@ -37,18 +37,11 @@ type clusterTLS struct {
 	CACertSecretRef *corev1.SecretKeySelector
 }
 
-// clusterSASL holds SASL credentials resolved from a Redpanda cluster.
+// clusterSASL holds the cluster's bootstrap user SASL credentials.
 type clusterSASL struct {
-	Mechanism string
-	Username  string
-	// Password is the env var to inject for the SASL password. Built from
-	// the appropriate ValueSource (Secret, ConfigMap, inline, or resolved
-	// external secret).
-	Password corev1.EnvVar
-	// FromCredentials is true when the credentials come from the Pipeline's
-	// spec.credentials field (dedicated user) rather than the cluster's
-	// bootstrap admin user. This controls which env var names are used.
-	FromCredentials bool
+	Mechanism   string
+	Username    string
+	PasswordRef *corev1.SecretKeySelector
 }
 
 // BrokersString returns the broker list as a comma-separated string.
@@ -92,68 +85,16 @@ func resolveClusterSource(ctx context.Context, ctl *kube.Ctl, pipeline *redpanda
 			}
 		}
 
-		// Use explicit Pipeline credentials if provided; otherwise fall back
-		// to the cluster's bootstrap (admin) user.
-		if creds := pipeline.Spec.Credentials; creds != nil {
+		if cfg.Kafka.SASL != nil {
 			conn.SASL = &clusterSASL{
-				Mechanism:       creds.Mechanism,
-				Username:        creds.Username,
-				Password:        envVarFromValueSource("RPK_CREDENTIALS_SASL_PASSWORD", &creds.Password),
-				FromCredentials: true,
-			}
-		} else if cfg.Kafka.SASL != nil {
-			sasl := &clusterSASL{
 				Mechanism: string(cfg.Kafka.SASL.Mechanism),
 				Username:  cfg.Kafka.SASL.Username,
 			}
 			if cfg.Kafka.SASL.Password != nil && cfg.Kafka.SASL.Password.SecretKeyRef != nil {
-				sasl.Password = corev1.EnvVar{
-					Name: "RPK_SASL_PASSWORD",
-					ValueFrom: &corev1.EnvVarSource{
-						SecretKeyRef: cfg.Kafka.SASL.Password.SecretKeyRef,
-					},
-				}
+				conn.SASL.PasswordRef = cfg.Kafka.SASL.Password.SecretKeyRef
 			}
-			conn.SASL = sasl
 		}
 	}
 
 	return conn, nil
-}
-
-// envVarFromValueSource converts a ValueSource into a corev1.EnvVar. Supports
-// SecretKeyRef, ConfigMapKeyRef, and Inline sources. ExternalSecretRef is not
-// supported in this path — use ESO or the operator's cloud secret expander to
-// sync external secrets into a Kubernetes Secret first.
-func envVarFromValueSource(name string, vs *redpandav1alpha2.ValueSource) corev1.EnvVar {
-	if vs == nil {
-		return corev1.EnvVar{Name: name}
-	}
-
-	if vs.SecretKeyRef != nil {
-		return corev1.EnvVar{
-			Name: name,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: vs.SecretKeyRef,
-			},
-		}
-	}
-
-	if vs.ConfigMapKeyRef != nil {
-		return corev1.EnvVar{
-			Name: name,
-			ValueFrom: &corev1.EnvVarSource{
-				ConfigMapKeyRef: vs.ConfigMapKeyRef,
-			},
-		}
-	}
-
-	if vs.Inline != nil {
-		return corev1.EnvVar{
-			Name:  name,
-			Value: *vs.Inline,
-		}
-	}
-
-	return corev1.EnvVar{Name: name}
 }
