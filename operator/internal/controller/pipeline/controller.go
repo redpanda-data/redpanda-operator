@@ -152,6 +152,11 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 			// NB: Apply can't be used to remove finalizers.
 			if err := c.Ctl.Update(ctx, pipeline); err != nil {
+				// The object may have been fully deleted between Get and
+				// Update. This is benign — the finalizer is already gone.
+				if apierrors.IsNotFound(err) || apierrors.IsConflict(err) {
+					return ctrl.Result{}, nil
+				}
 				return ctrl.Result{}, err
 			}
 		}

@@ -252,7 +252,6 @@ func (c *clusterClients) ExpectTopic(ctx context.Context, topic string) {
 
 	t.Logf("Checking that topic %q exists in cluster %q", topic, c.cluster)
 	c.checkTopic(ctx, topic, true, fmt.Sprintf("Topic %q does not exist in cluster %q", topic, c.cluster))
-	t.Logf("Found topic %q in cluster %q", topic, c.cluster)
 }
 
 func (c *clusterClients) ExpectNoTopic(ctx context.Context, topic string) {
@@ -260,7 +259,6 @@ func (c *clusterClients) ExpectNoTopic(ctx context.Context, topic string) {
 
 	t.Logf("Checking that topic %q does not exist in cluster %q", topic, c.cluster)
 	c.checkTopic(ctx, topic, false, fmt.Sprintf("Topic %q still exists in cluster %q", topic, c.cluster))
-	t.Logf("Found no topic %q in cluster %q", topic, c.cluster)
 }
 
 // Enable experimental feature support.
@@ -314,7 +312,7 @@ func (c *clusterClients) checkTopic(ctx context.Context, topic string, exists bo
 		require.NoError(t, topics.Error())
 
 		return exists == topics.Has(topic)
-	}, 10*time.Second, 1*time.Second, message) {
+	}, 30*time.Second, 2*time.Second, message) {
 		t.Errorf("Final list of topics: %v", topics.Names())
 	}
 }

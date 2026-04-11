@@ -200,6 +200,7 @@ Feature: Pipeline CRDs
     Then pipeline "invalid-pipeline" has invalid config
 
   Scenario: Pipeline produces to Redpanda via clusterRef
+    Given I create topic "pipeline-produce-test" in cluster "basic"
     When I apply Kubernetes manifest:
     """
     ---
