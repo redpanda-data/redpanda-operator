@@ -738,10 +738,6 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		trace.EndSpan(span, err)
 	}()
 
-	if state.pools.AllZero() {
-		return reconcile.Result{}, nil
-	}
-
 	health, err = r.fetchClusterHealth(ctx, state.admin)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
@@ -777,6 +773,13 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		if err := r.LifecycleClient.DeleteStatefulSetForNodePool(ctx, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
+	}
+
+	if state.pools.AllZero() {
+		// When there is no desired node pool the cluster is tearing down, so
+		// no pods needs to be roll over.
+		logger.V(log.TraceLevel).Info("no desired node pool found")
+		return reconcile.Result{}, nil
 	}
 
 	// finally, we make sure we roll every pod that is not in-sync with its statefulset
