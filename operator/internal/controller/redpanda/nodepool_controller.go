@@ -213,6 +213,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 
 	// Examine if the object is under deletion
 	if !pool.ObjectMeta.DeletionTimestamp.IsZero() {
+		logger.V(log.TraceLevel).Info("deleting finalizer")
 		if controllerutil.RemoveFinalizer(pool, FinalizerKey) {
 			if err := k8sClient.Update(ctx, pool); err != nil {
 				logger.Error(err, "updating cluster finalizer")
@@ -228,6 +229,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	// If any changes are made, persist the changes and immediately requeue to
 	// prevent any cache / resource version synchronization issues.
 	if controllerutil.AddFinalizer(pool, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, pool) {
+		logger.V(log.TraceLevel).Info("adding finalizer")
 		if err := k8sClient.Update(ctx, pool); err != nil {
 			logger.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
