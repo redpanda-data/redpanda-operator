@@ -510,81 +510,57 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 	})
 
 	t.Run("PartialStretchClusterDeletion", func(t *testing.T) {
-		// Delete the StretchCluster from clusters 1 and 2 only (keep on cluster 0).
-		// This simulates an accidental partial deletion and exposes reconciler bugs.
-		for i := 1; i <= 2; i++ {
-			scToDelete := &redpandav1alpha2.StretchCluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      nn.Name,
-					Namespace: nn.Namespace,
-				},
-			}
-			require.NoError(t, s.mc.Envs[i].Client().Delete(ctx, scToDelete))
-		}
-
-		// The StretchCluster on cluster 0 still exists. The reconciler's
-		// checkSpecConsistency will fail because it can't fetch the SC from
-		// clusters 1 and 2 (NotFound). Verify the cluster is no longer Stable.
-		require.Eventually(t, func() bool {
-			var cluster redpandav1alpha2.StretchCluster
-			if err := s.mc.Envs[0].Client().Get(ctx, nn, &cluster); err != nil {
-				return false
-			}
-			cond := apimeta.FindStatusCondition(cluster.Status.Conditions, statuses.StretchClusterStable)
-			if cond != nil && cond.Status == metav1.ConditionTrue {
-				return false
-			}
-			return true
-		}, 2*time.Minute, 5*time.Second, "reconciler did not detect partial StretchCluster deletion")
-
-		// Verify the SCs on clusters 1 and 2 are fully deleted (finalizers removed).
-		// Known bug: the deletion cleanup path iterates ALL clusters (including
-		// cluster 0 where the SC still exists), destroying resources that should
-		// be kept. The SC finalizer may also get stuck due to raft peer issues.
-		for i := 1; i <= 2; i++ {
-			env := s.mc.Envs[i]
-			require.Eventually(t, func() bool {
-				var list redpandav1alpha2.StretchClusterList
-				if err := env.Client().List(ctx, &list, client.InNamespace(ns)); err != nil {
-					return false
-				}
-				for _, item := range list.Items {
-					if item.Name == nn.Name {
-						return false
-					}
-				}
-				return true
-			}, 2*time.Minute, 1*time.Second, "StretchCluster on cluster %d was not fully deleted", i)
-		}
-
-		// Restore: re-apply the StretchCluster to all clusters so the
-		// FullDeletion subtest can clean up properly.
-		s.mc.ApplyAll(t, ctx, &redpandav1alpha2.StretchCluster{
+		// Delete the StretchCluster from cluster 1 only (keep on clusters 0 and 2).
+		// The partial deletion guard should block cleanup and preserve resources.
+		scToDelete := &redpandav1alpha2.StretchCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      nn.Name,
 				Namespace: nn.Namespace,
 			},
-			Spec: redpandav1alpha2.StretchClusterSpec{
-				Networking: &redpandav1alpha2.Networking{
-					CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
-				},
-				External: &redpandav1alpha2.External{
-					Enabled: ptr.To(false),
-				},
-			},
-		})
+		}
+		require.NoError(t, s.mc.Envs[1].Client().Delete(ctx, scToDelete))
 
-		// Wait for the reconciler to recover (Stable=True).
-		// Known bug: recovery after partial deletion + re-creation fails because
-		// the reconciler gets stuck on stale state / empty cluster name "".
+		// The guard should block deletion — the SC stays in Terminating state
+		// with its finalizer intact. Verify via ResourcesSynced condition.
+		require.Eventually(t, func() bool {
+			var sc redpandav1alpha2.StretchCluster
+			if err := s.mc.Envs[1].Client().Get(ctx, nn, &sc); err != nil {
+				return false
+			}
+			if sc.DeletionTimestamp.IsZero() {
+				return false
+			}
+			cond := apimeta.FindStatusCondition(sc.Status.Conditions, statuses.StretchClusterResourcesSynced)
+			if cond == nil {
+				return false
+			}
+			t.Logf("ResourcesSynced on cluster 1: status=%s reason=%s msg=%s", cond.Status, cond.Reason, cond.Message)
+			return cond.Status == metav1.ConditionFalse
+		}, 2*time.Minute, 5*time.Second, "partial deletion guard did not activate on cluster 1")
+
+		// The SC on cluster 1 should still have its finalizer (deletion blocked).
+		var guardedSC redpandav1alpha2.StretchCluster
+		require.NoError(t, s.mc.Envs[1].Client().Get(ctx, nn, &guardedSC))
+		require.True(t, slices.Contains(guardedSC.Finalizers, redpandacontrollers.FinalizerKey),
+			"finalizer should be preserved by the partial deletion guard")
+
+		// Resources on cluster 1 should still exist (no cleanup ran).
+		stsCount := s.countOwnedResourcesAcrossClusters(t, ctx, &appsv1.StatefulSetList{}, ownerLabels)
+		require.GreaterOrEqual(t, stsCount, 2, "StatefulSets should be preserved during guarded partial deletion")
+
+		// The surviving cluster should remain healthy while the guard holds.
 		require.Eventually(t, func() bool {
 			var cluster redpandav1alpha2.StretchCluster
 			if err := s.mc.Envs[0].Client().Get(ctx, nn, &cluster); err != nil {
 				return false
 			}
-			cond := apimeta.FindStatusCondition(cluster.Status.Conditions, statuses.StretchClusterStable)
-			return cond != nil && cond.Status == metav1.ConditionTrue
-		}, 3*time.Minute, 5*time.Second, "reconciler did not recover after restoring StretchCluster")
+			for _, pool := range cluster.Status.NodePools {
+				if pool.ReadyReplicas > 0 {
+					return true
+				}
+			}
+			return false
+		}, 1*time.Minute, 5*time.Second, "surviving cluster lost all healthy brokers during guarded partial deletion")
 	})
 
 	t.Run("FullDeletion", func(t *testing.T) {
@@ -593,14 +569,21 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 		// Delete the StretchCluster from all clusters.
 		s.mc.DeleteAll(t, ctx, ns, &redpandav1alpha2.StretchCluster{})
 
-		// Wait for the StretchCluster to be fully deleted (finalizer removed).
-		require.Eventually(t, func() bool {
-			var list redpandav1alpha2.StretchClusterList
-			if err := s.mc.Envs[0].Client().List(ctx, &list, client.InNamespace(ns)); err != nil {
-				return false
-			}
-			return len(list.Items) == 0
-		}, 3*time.Minute, 1*time.Second, "StretchCluster was not fully deleted")
+		// Wait for the StretchCluster to be fully deleted on all clusters.
+		// The SC on cluster 1 was already Terminating (from partial deletion);
+		// once clusters 0 and 2 also start deleting, the guard passes and
+		// cleanup proceeds on all clusters.
+		for i, env := range s.mc.Envs {
+			env := env
+			i := i
+			require.Eventually(t, func() bool {
+				var list redpandav1alpha2.StretchClusterList
+				if err := env.Client().List(ctx, &list, client.InNamespace(ns)); err != nil {
+					return false
+				}
+				return len(list.Items) == 0
+			}, 3*time.Minute, 1*time.Second, "StretchCluster was not fully deleted on cluster %d", i)
+		}
 
 		// Verify ALL owned StatefulSets are deleted across all clusters.
 		require.Eventually(t, func() bool {

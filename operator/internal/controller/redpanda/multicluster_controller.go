@@ -154,7 +154,25 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// Examine if the object is under deletion
 	if !stretchCluster.ObjectMeta.DeletionTimestamp.IsZero() {
 		l.V(log.TraceLevel).Info("deletion timestamp is not zero. Resources cleanup and remove finalizer")
-		// clean up all dependant resources
+		// Guard: block partial deletion. If the SC is still alive on any other
+		// cluster, refuse to clean up resources — running cleanup here would
+		// destroy resources that the surviving clusters still need, and the
+		// cross-cluster syncers would fight with deletion.
+		// Recovery: remove the finalizer (kubectl patch) then re-apply the SC.
+		if aliveCluster := r.findAliveCluster(ctx, stretchCluster, req.ClusterName); aliveCluster != "" {
+			msg := fmt.Sprintf(
+				"StretchCluster still active on cluster %q — deletion blocked to prevent data loss. "+
+					"Either delete from all clusters, or recover by removing the finalizer and re-applying the StretchCluster.",
+				aliveCluster,
+			)
+			l.Info("blocking partial deletion", "aliveCluster", aliveCluster)
+			state.status.StretchClusterStatus.SetResourcesSynced(
+				statuses.StretchClusterResourcesSyncedReasonError, msg,
+			)
+			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: requeueTimeout}, nil)
+		}
+
+		// All clusters are deleting — safe to proceed with cleanup.
 		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
 			return r.syncStatus(ctx, cluster, state, ctrl.Result{}, err)
 		}
@@ -237,6 +255,29 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// we're at the end of reconciliation, so sync back our status
 	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
+}
+
+// findAliveCluster checks whether the StretchCluster exists and is NOT being
+// deleted on any cluster other than localClusterName. Returns the name of the
+// first alive cluster found, or "" if all clusters are deleting.
+func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpandav1alpha2.StretchCluster, localClusterName string) string {
+	for _, clusterName := range r.Manager.GetClusterNames() {
+		if clusterName == localClusterName || clusterName == "" {
+			continue
+		}
+		remote, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			continue
+		}
+		remoteSC := &redpandav1alpha2.StretchCluster{}
+		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
+			continue
+		}
+		if remoteSC.DeletionTimestamp.IsZero() {
+			return clusterName
+		}
+	}
+	return ""
 }
 
 // checkSpecConsistency fetches the StretchCluster from every reachable cluster
@@ -464,9 +505,18 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 
 		// Fetch the StretchCluster from this specific cluster to get the correct
 		// UID for the owner reference (UIDs differ across clusters).
+		// Skip clusters where the SC doesn't exist or is being deleted.
 		localSC := &redpandav1alpha2.StretchCluster{}
 		if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sc), localSC); err != nil {
+			if client.IgnoreNotFound(err) == nil {
+				logger.V(log.TraceLevel).Info("StretchCluster not found on cluster, skipping bootstrap user sync", "cluster", clusterName)
+				continue
+			}
 			return ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %s for owner reference", clusterName)
+		}
+		if !localSC.DeletionTimestamp.IsZero() {
+			logger.V(log.TraceLevel).Info("StretchCluster is being deleted on cluster, skipping bootstrap user sync", "cluster", clusterName)
+			continue
 		}
 
 		labels := r.LifecycleClient.AddOwnerLabels(state.cluster)
@@ -594,9 +644,18 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 			}
 
 			// Fetch the StretchCluster from this cluster for owner reference.
+			// Skip clusters where the SC doesn't exist or is being deleted.
 			localSC := &redpandav1alpha2.StretchCluster{}
 			if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sc), localSC); err != nil {
+				if client.IgnoreNotFound(err) == nil {
+					logger.V(log.TraceLevel).Info("StretchCluster not found on cluster, skipping CA sync", "cluster", clusterName)
+					continue
+				}
 				return ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %s for CA owner reference", clusterName)
+			}
+			if !localSC.DeletionTimestamp.IsZero() {
+				logger.V(log.TraceLevel).Info("StretchCluster is being deleted on cluster, skipping CA sync", "cluster", clusterName)
+				continue
 			}
 
 			caLabels := r.LifecycleClient.AddOwnerLabels(state.cluster)
@@ -1056,9 +1115,12 @@ func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Clust
 			}
 
 			// Fetch the latest version from this cluster to get the correct resource version.
+			// Skip clusters where the SC doesn't exist (e.g. partial deletion).
 			remoteSC := &redpandav1alpha2.StretchCluster{}
 			if clErr := cl.GetClient().Get(ctx, client.ObjectKeyFromObject(state.cluster.StretchCluster), remoteSC); clErr != nil {
-				err = errors.Join(err, errors.Wrapf(clErr, "fetching StretchCluster from cluster %s for status update", clusterName))
+				if client.IgnoreNotFound(clErr) != nil {
+					err = errors.Join(err, errors.Wrapf(clErr, "fetching StretchCluster from cluster %s for status update", clusterName))
+				}
 				continue
 			}
 
