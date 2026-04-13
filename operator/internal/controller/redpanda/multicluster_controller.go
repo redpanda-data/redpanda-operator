@@ -650,7 +650,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 		trace.EndSpan(span, err)
 	}()
 
-	if !state.pools.CheckScale() {
+	if !state.pools.CheckScale(ctx) {
 		logger.V(log.TraceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil

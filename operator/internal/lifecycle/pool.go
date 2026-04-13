@@ -206,7 +206,7 @@ func (p *PoolTracker) DesiredStatefulSets() []string {
 
 // CheckScale checks if scaling operations can proceed based on the current state of pools.
 // It returns true if scaling is allowed (i.e. no scaling operation is currently in progress).
-func (p *PoolTracker) CheckScale() bool {
+func (p *PoolTracker) CheckScale(ctx context.Context) bool {
 	// if we have no existing pools
 	if len(p.existingPools) == 0 {
 		return true
@@ -216,11 +216,13 @@ func (p *PoolTracker) CheckScale() bool {
 		replicas := ptr.Deref(pool.set.Spec.Replicas, 0)
 		if replicas != pool.set.Status.Replicas || int(replicas) != len(pool.pods) {
 			// we're potentially in the middle of a scaling operation
-			log.FromContext(context.Background()).Info(
+			log.FromContext(ctx).V(log.DebugLevel).Info(
 				"Checking pool scale returns false",
 				"replicas", replicas,
 				"pool.set.Status.Replicas", pool.set.Status.Replicas,
 				"len(pool.pods)", len(pool.pods),
+				"poolName", pool.set.GetName(),
+				"clusterName", pool.set.GetCanonicalClusterName(),
 			)
 			return false
 		}

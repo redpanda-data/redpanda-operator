@@ -392,7 +392,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 		trace.EndSpan(span, err)
 	}()
 
-	if !state.pools.CheckScale() {
+	if !state.pools.CheckScale(ctx) {
 		logger.V(log.TraceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
