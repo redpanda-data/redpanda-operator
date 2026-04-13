@@ -124,7 +124,7 @@ func setupEngageTestClusters(t *testing.T, ctx context.Context, logger logr.Logg
 		env := kubetest.NewEnv(t)
 		rctx, rcancel := context.WithCancel(ctx)
 
-		mgr, err := multicluster.NewRaftRuntimeManager(multicluster.RaftConfiguration{
+		mgr, err := multicluster.NewRaftRuntimeManager(&multicluster.RaftConfiguration{
 			Name:               peers[i].Name,
 			Address:            peers[i].Address,
 			Peers:              peers,

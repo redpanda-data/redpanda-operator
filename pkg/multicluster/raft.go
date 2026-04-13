@@ -212,7 +212,7 @@ func (r RaftConfiguration) validate() error {
 
 // NewRaftRuntimeManager creates a Manager backed by raft-based cross-cluster
 // leader election. Only the raft leader's manager starts controller runnables.
-func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
+func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 	if err := config.validate(); err != nil {
 		return nil, err
 	}
