@@ -169,7 +169,7 @@ func setupClusters(t *testing.T, ctx context.Context, logger logr.Logger, numClu
 			replicaName := fmt.Sprintf("%s-r%d", clusterName, j)
 			rctx, rcancel := context.WithCancel(ctx)
 
-			mgr, err := multicluster.NewRaftRuntimeManager(multicluster.RaftConfiguration{
+			mgr, err := multicluster.NewRaftRuntimeManager(&multicluster.RaftConfiguration{
 				Name:               clusterName,
 				Address:            peers[i].Address,
 				Peers:              peers,
