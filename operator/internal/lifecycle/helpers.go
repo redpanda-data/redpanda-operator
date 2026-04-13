@@ -115,10 +115,11 @@ type clusterObject interface {
 	GetNamespace() string
 	GetName() string
 	GetCluster() string
+	GetCanonicalClusterName() string
 }
 
 func clusterObjectKey(o clusterObject) string {
-	return fmt.Sprintf("%s/%s/%s", o.GetCluster(), o.GetNamespace(), o.GetName())
+	return fmt.Sprintf("%s/%s/%s", o.GetCanonicalClusterName(), o.GetNamespace(), o.GetName())
 }
 
 // sortByNameAndCluster sorts a generic list of client.Objects by the combination

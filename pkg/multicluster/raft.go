@@ -256,7 +256,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 			}
 			c, err := cluster.New(kubeConfig, func(o *cluster.Options) {
 				o.Scheme = config.Scheme
-				o.Logger = config.Logger
+				o.Logger = config.Logger.WithName("clusterProvider").WithValues("peerName", peer.Name)
 			})
 			if err != nil {
 				return nil, err
@@ -268,7 +268,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		if peer.Kubeconfig != nil {
 			c, err := cluster.New(peer.Kubeconfig, func(o *cluster.Options) {
 				o.Scheme = config.Scheme
-				o.Logger = config.Logger
+				o.Logger = config.Logger.WithName("clusterProvider").WithValues("peerName", peer.Name)
 			})
 			if err != nil {
 				return nil, err
@@ -288,7 +288,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		ElectionTimeout:   config.ElectionTimeout,
 		HeartbeatInterval: config.HeartbeatInterval,
 		GRPCMaxBackoff:    config.GRPCMaxBackoff,
-		Logger:            &raftLogr{logger: config.Logger},
+		Logger:            &raftLogr{logger: config.Logger.WithName("raft")},
 	}
 
 	if config.Bootstrap {
@@ -332,7 +332,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 	opts := manager.Options{
 		Scheme:         config.Scheme,
 		LeaderElection: config.LocalLeaderElection != nil,
-		Logger:         config.Logger,
+		Logger:         config.Logger.WithName("multicluster-manager"),
 		WebhookServer:  config.Webhooks,
 		BaseContext:    config.BaseContext,
 	}
@@ -403,7 +403,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 					config.Logger.Info("initializing cluster for peer", "peer", peer.Name)
 					c, err := cluster.New(kubeConfig, func(o *cluster.Options) {
 						o.Scheme = config.Scheme
-						o.Logger = config.Logger
+						o.Logger = config.Logger.WithName("clusterProvider").WithValues("peerName", peer.Name)
 					})
 					if err != nil {
 						config.Logger.Error(err, "initializing cluster for peer", "peer", peer.Name)
@@ -424,7 +424,7 @@ func NewRaftRuntimeManager(config RaftConfiguration) (Manager, error) {
 		}
 	}
 
-	manager, err := newManager(config.Name, config.LocalLeaderElection != nil, config.Logger, restConfig, clusterProvider, broadcaster, func() string {
+	manager, err := newManager(config.Name, config.LocalLeaderElection != nil, config.Logger.WithName("manager"), restConfig, clusterProvider, broadcaster, func() string {
 		return idsToNames[currentLeader.Load()]
 	}, func() map[string]cluster.Cluster {
 		clusters := map[string]cluster.Cluster{}
@@ -504,11 +504,11 @@ func newManager(localClusterName string, localLeaderElection bool, logger logr.L
 		return nil
 	})
 
-	runnable := &leaderRunnable{manager: manager, logger: logger, broadcaster: broadcaster, getClusters: getClusters, needsLocalLeaderElection: localLeaderElection}
+	runnable := &leaderRunnable{manager: manager, logger: logger.WithName("leader-runnable"), broadcaster: broadcaster, getClusters: getClusters, needsLocalLeaderElection: localLeaderElection}
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
-	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger, localClusterName: localClusterName, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
+	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger.WithName("raft-manager"), localClusterName: localClusterName, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
 }
 
 func (m *raftManager) Add(r mcmanager.Runnable) error {
