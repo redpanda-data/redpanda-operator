@@ -26,6 +26,7 @@ func init() {
 	framework.RegisterStep(`^I enable "([^"]*)" logging for the "([^"]*)" logger on( vectorized)? cluster "([^"]*)"`, setLogLevelOn)
 
 	// Schema scenario steps
+	framework.RegisterStep(`^there is a schema "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsASchema)
 	framework.RegisterStep(`^there is no schema "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, thereIsNoSchema)
 	framework.RegisterStep(`^schema "([^"]*)" is successfully synced$`, schemaIsSuccessfullySynced)
 	framework.RegisterStep(`^I should be able to check compatibility against "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, iShouldBeAbleToCheckCompatibilityAgainst)

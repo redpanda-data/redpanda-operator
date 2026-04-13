@@ -30,6 +30,10 @@ func schemaIsSuccessfullySynced(ctx context.Context, t framework.TestingT, schem
 	})
 }
 
+func thereIsASchema(ctx context.Context, schema, version, cluster string) {
+	versionedClientsForCluster(ctx, version, cluster).ExpectSchema(ctx, schema)
+}
+
 func thereIsNoSchema(ctx context.Context, schema, version, cluster string) {
 	versionedClientsForCluster(ctx, version, cluster).ExpectNoSchema(ctx, schema)
 }
