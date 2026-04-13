@@ -111,6 +111,13 @@ func init() {
 	framework.RegisterStep(`^I expect all (\d+) NodePools in "([^"]*)" to be eventually bound and deployed$`, expectNodePoolsBoundAndDeployed)
 	framework.RegisterStep(`^I execute "([^"]*)" command in the statefulset container in each cluster$`, executeCommandInStatefulsetContainers)
 	framework.RegisterStep(`^I expect them to return the same Redpanda broker list$`, expectSameBrokerList)
+	framework.RegisterStep(`^all clusters should report exactly (\d+) brokers$`, allClustersReportExactlyNBrokers)
+	framework.RegisterStep(`^all brokers should be alive and active$`, allBrokersAliveAndActive)
+	framework.RegisterStep(`^the StretchCluster "([^"]*)" in namespace "([^"]*)" in "([^"]*)" should have condition "([^"]*)" with status "([^"]*)" within (\d+) seconds$`, stretchClusterConditionWithinTimeout)
+	framework.RegisterStep(`^I delete the Redpanda pod and its PVC in cluster "([^"]*)" of "([^"]*)"$`, deleteRedpandaPodAndPVC)
+	framework.RegisterStep(`^the pod in cluster "([^"]*)" of "([^"]*)" is eventually running and ready$`, podEventuallyRunningAndReady)
+	framework.RegisterStep(`^Redpanda should auto-decommission the ghost broker within (\d+) seconds$`, redpandaAutoDecommissionsGhostBrokerWithin)
+	framework.RegisterStep(`^all clusters in "([^"]*)" should report StretchClusters as healthy$`, multiclusterStretchClustersHealthy)
 
 	// Scaling scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)
