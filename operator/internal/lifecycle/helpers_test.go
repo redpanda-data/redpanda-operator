@@ -145,7 +145,8 @@ func TestSortByName(t *testing.T) {
 			expected: []string{"cluster-a/namespace-1/pod-1", "cluster-a/namespace-1/pod-2", "cluster-a/namespace-2/pod-1", "cluster-a/namespace-2/pod-2", "cluster-b/namespace-1/pod-1"},
 			items: []*MulticlusterPod{
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-1",
@@ -154,7 +155,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-2",
@@ -163,7 +165,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-1",
@@ -172,7 +175,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-2",
@@ -181,7 +185,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-b",
+					canonicalClusterName: "cluster-b",
+					clusterName:          "cluster-b",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-1",
@@ -195,7 +200,8 @@ func TestSortByName(t *testing.T) {
 			expected: []string{"cluster-a/namespace-1/pod-1", "cluster-a/namespace-1/pod-2", "cluster-a/namespace-2/pod-1", "cluster-a/namespace-2/pod-2", "cluster-b/namespace-1/pod-1"},
 			items: []*MulticlusterPod{
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-2",
@@ -204,7 +210,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-1",
@@ -213,7 +220,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-b",
+					canonicalClusterName: "cluster-b",
+					clusterName:          "cluster-b",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-1",
@@ -222,7 +230,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-2",
@@ -231,7 +240,8 @@ func TestSortByName(t *testing.T) {
 					},
 				},
 				{
-					clusterName: "cluster-a",
+					canonicalClusterName: "cluster-a",
+					clusterName:          "cluster-a",
 					Pod: &corev1.Pod{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "pod-1",

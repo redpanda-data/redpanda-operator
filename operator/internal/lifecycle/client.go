@@ -280,12 +280,12 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	logger := log.FromContext(ctx).WithName("SyncAll")
 	var canonicalClusterList []string
 	for _, clusterName := range r.clusterList(owner) {
-		canonicalClusterList = append(canonicalClusterList, CanonicalClusterName(clusterName, r.manager))
+		canonicalClusterList = append(canonicalClusterList, CanonicalClusterName(clusterName, r.manager.GetLocalClusterName))
 	}
 	logger.V(log.DebugLevel).Info("syncing all clusters", "clusterList", canonicalClusterList)
 	for _, clusterName := range r.clusterList(owner) {
 		logger.V(log.TraceLevel).Info("syncer called",
-			"clusterName", CanonicalClusterName(clusterName, r.manager),
+			"clusterName", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName),
 			"ownerName", owner.GetName(),
 			"ownerUID", owner.GetUID(),
 			"ownerGroupVersionKind", owner.GetObjectKind().GroupVersionKind().String())
@@ -320,7 +320,7 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 
 		wrapped := []*MulticlusterStatefulSet{}
 		for _, set := range desired {
-			wrapped = append(wrapped, &MulticlusterStatefulSet{StatefulSet: set, clusterName: clusterName})
+			wrapped = append(wrapped, &MulticlusterStatefulSet{StatefulSet: set, clusterName: clusterName, canonicalClusterName: CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)})
 		}
 
 		// ensure we have and OnDelete type for our statefulset
@@ -335,8 +335,8 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 				set.Spec.Template.Labels = setConfigVersionLabels(set.Spec.Template.Labels, configVersion)
 			}
 		}
-		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in cluster %s", len(existingPools), clusterName))
-		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in cluster %s", len(wrapped), clusterName))
+		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] existing pools in cluster %s", len(existingPools), CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)))
+		logger.V(log.DebugLevel).Info(fmt.Sprintf("found [%d] desired pools in cluster %s", len(wrapped), CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)))
 
 		pools.addExisting(existingPools...)
 		pools.addDesired(wrapped...)
@@ -604,8 +604,9 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 
 		existing = append(existing, &poolWithOrdinals{
 			set: &MulticlusterStatefulSet{
-				StatefulSet: &statefulSet,
-				clusterName: clusterName,
+				StatefulSet:          &statefulSet,
+				clusterName:          clusterName,
+				canonicalClusterName: CanonicalClusterName(clusterName, r.manager.GetLocalClusterName),
 			},
 			revisions: sortRevisions(ownedRevisions),
 			pods:      withOrdinals,
@@ -631,7 +632,7 @@ func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context
 			clusterRef := pool.Spec.ClusterRef
 			if clusterRef.IsStretchCluster() && clusterRef.Name == cluster.GetName() {
 				nodePools = append(nodePools, &NodePoolInCluster{
-					cluster:  CanonicalClusterName(clusterName, r.manager),
+					cluster:  CanonicalClusterName(clusterName, r.manager.GetLocalClusterName),
 					nodePool: pool.DeepCopy(),
 				})
 			}

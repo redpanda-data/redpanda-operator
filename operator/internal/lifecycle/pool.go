@@ -22,20 +22,30 @@ import (
 
 type MulticlusterStatefulSet struct {
 	*appsv1.StatefulSet
-	clusterName string
+	clusterName          string
+	canonicalClusterName string
 }
 
 func (s *MulticlusterStatefulSet) GetCluster() string {
 	return s.clusterName
 }
 
+func (s *MulticlusterStatefulSet) GetCanonicalClusterName() string {
+	return s.canonicalClusterName
+}
+
 type MulticlusterPod struct {
 	*corev1.Pod
-	clusterName string
+	clusterName          string
+	canonicalClusterName string
 }
 
 func (p *MulticlusterPod) GetCluster() string {
 	return p.clusterName
+}
+
+func (p *MulticlusterPod) GetCanonicalClusterName() string {
+	return p.canonicalClusterName
 }
 
 // podWithOrdinals is a container for sorting pods
@@ -73,21 +83,27 @@ func (s *ScaleDownSet) GetName() string {
 	return s.LastPod.Name
 }
 
+func (s *ScaleDownSet) GetCanonicalClusterName() string {
+	return s.StatefulSet.canonicalClusterName
+}
+
 type ClusterNamespacedName struct {
-	Cluster   string
-	Namespace string
-	Name      string
+	Cluster              string
+	Namespace            string
+	Name                 string
+	CanonicalClusterName string
 }
 
 func (c ClusterNamespacedName) String() string {
-	return fmt.Sprintf("%s/%s/%s", c.Cluster, c.Namespace, c.Name)
+	return fmt.Sprintf("%s/%s/%s", c.CanonicalClusterName, c.Namespace, c.Name)
 }
 
 func objectKeyFromObject(o clusterObject) ClusterNamespacedName {
 	return ClusterNamespacedName{
-		Cluster:   o.GetCluster(),
-		Namespace: o.GetNamespace(),
-		Name:      o.GetName(),
+		Cluster:              o.GetCluster(),
+		Namespace:            o.GetNamespace(),
+		Name:                 o.GetName(),
+		CanonicalClusterName: o.GetCanonicalClusterName(),
 	}
 }
 
@@ -227,7 +243,7 @@ func (p *PoolTracker) ToCreate() []*MulticlusterStatefulSet {
 				set.Labels = map[string]string{}
 			}
 			set.Labels[generationLabel] = generation
-			sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName})
+			sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
 		}
 	}
 
@@ -253,7 +269,7 @@ func (p *PoolTracker) ToScaleUp() []*MulticlusterStatefulSet {
 					set.Labels = map[string]string{}
 				}
 				set.Labels[generationLabel] = generation
-				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName})
+				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
 			}
 		}
 	}
@@ -295,7 +311,7 @@ func (p *PoolTracker) RequiresUpdate() []*MulticlusterStatefulSet {
 					set.Labels = map[string]string{}
 				}
 				set.Labels[generationLabel] = generation
-				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName})
+				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
 			}
 		}
 	}
@@ -327,7 +343,7 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, &ScaleDownSet{
-					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName},
+					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName},
 					LastPod:     lastPod.pod.DeepCopy(),
 				})
 			}
@@ -347,7 +363,7 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, &ScaleDownSet{
-					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName},
+					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName},
 					LastPod:     lastPod.pod.DeepCopy(),
 				})
 			}
@@ -371,7 +387,7 @@ func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
 				// })
 
 				mcset := p.existingPools[nn].set
-				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: mcset.DeepCopy(), clusterName: mcset.clusterName})
+				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: mcset.DeepCopy(), clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
 			}
 		}
 	}

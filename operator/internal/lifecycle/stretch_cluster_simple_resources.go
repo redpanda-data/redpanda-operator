@@ -47,7 +47,7 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 
 	// Use the canonical cluster name so that labels are identical regardless
 	// of which operator instance (local vs remote) performs the reconciliation.
-	canonicalName := CanonicalClusterName(clusterName, m.mgr)
+	canonicalName := CanonicalClusterName(clusterName, m.mgr.GetLocalClusterName)
 
 	applyDefaultImage := defaultImage(m.redpandaImage)
 	applyDefaultSidecar := defaultImage(m.sideCarImage)
