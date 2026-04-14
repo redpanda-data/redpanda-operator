@@ -67,10 +67,11 @@ func (c *StatusConfig) Run(ctx context.Context, out io.Writer) (*StatusResult, e
 
 	for i, conn := range conns {
 		cc := &checks.CheckContext{
-			Context:     conn.Name,
-			Namespace:   c.Connection.Namespace,
-			ServiceName: c.Connection.ServiceName,
-			Ctl:         conn.Ctl,
+			Context:      conn.Name,
+			Namespace:    c.Connection.Namespace,
+			ServiceName:  c.Connection.ServiceName,
+			SecretPrefix: conn.SecretPrefix,
+			Ctl:          conn.Ctl,
 		}
 		contexts[i] = cc
 		clusterResults[i] = checks.RunClusterChecks(ctx, cc, defaultClusterChecks)
@@ -108,10 +109,11 @@ inspects Deployment configuration and TLS secrets for correctness.`,
   rpk k8s multicluster status \
     --context cluster-a --context cluster-b --context cluster-c
 
-  # Check with custom namespace and service name
+  # Override the TLS secret prefix per context (when helm release names differ from context names)
   rpk k8s multicluster status \
     --context cluster-a --context cluster-b \
-    --namespace redpanda --service-name redpanda-multicluster`,
+    --name-override cluster-a=redpanda-operator \
+    --name-override cluster-b=rp-operator`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			_, err := cfg.Run(cmd.Context(), cmd.OutOrStdout())
 			return err

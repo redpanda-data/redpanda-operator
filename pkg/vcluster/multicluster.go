@@ -65,6 +65,13 @@ type MulticlusterOptions struct {
 	// OperatorServiceName is the name of the Service created in front of the
 	// operator's raft gRPC port. Defaults to "multicluster-operator".
 	OperatorServiceName string
+	// OperatorFullname is the helm fullname of the operator deployment on each
+	// cluster (i.e. the Fullname produced by the operator chart for the chosen
+	// release name). Used by BootstrapTLS to derive the TLS secret name
+	// (<OperatorFullname>-multicluster-certificates) so it matches what the
+	// helm chart creates. Defaults to "redpanda-operator", which corresponds
+	// to a helm release named "redpanda" using the operator chart.
+	OperatorFullname string
 	// OperatorChartPath is the path to the operator helm chart. Required for
 	// DeployOperators. Typically "../operator/chart" or similar.
 	OperatorChartPath string
@@ -84,6 +91,9 @@ func (o *MulticlusterOptions) defaults() {
 	}
 	if o.OperatorServiceName == "" {
 		o.OperatorServiceName = "multicluster-operator"
+	}
+	if o.OperatorFullname == "" {
+		o.OperatorFullname = "redpanda-operator"
 	}
 	if o.OperatorImage == "" {
 		o.OperatorImage = "localhost/redpanda-operator"
@@ -133,7 +143,6 @@ func (e *Multicluster) BootstrapTLS(t *testing.T, ctx context.Context, opts Mult
 		BootstrapTLS:      true,
 		EnsureNamespace:   true,
 		OperatorNamespace: opts.Namespace,
-		ServiceName:       "redpanda-operator-multicluster",
 	}
 
 	var peers []map[string]any
@@ -142,6 +151,7 @@ func (e *Multicluster) BootstrapTLS(t *testing.T, ctx context.Context, opts Mult
 			KubeConfig:     node.RESTConfig(),
 			APIServer:      node.APIServer(),
 			ServiceAddress: node.ExternalIP(),
+			Name:           opts.OperatorFullname,
 		})
 		peers = append(peers, map[string]any{
 			"name":    node.Name(),

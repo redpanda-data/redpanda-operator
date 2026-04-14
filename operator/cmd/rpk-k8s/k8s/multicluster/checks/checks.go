@@ -35,10 +35,11 @@ import (
 // checks execute. Earlier checks populate fields that later checks read.
 type CheckContext struct {
 	// Inputs — set before checks run.
-	Context     string
-	Namespace   string
-	ServiceName string
-	Ctl         *kube.Ctl
+	Context      string
+	Namespace    string
+	ServiceName  string
+	SecretPrefix string // helm fullname prefix for TLS secret discovery (<SecretPrefix>-multicluster-certificates)
+	Ctl          *kube.Ctl
 
 	// Accumulated state — populated by checks for downstream consumers.
 	Pod         *corev1.Pod

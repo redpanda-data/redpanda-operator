@@ -50,6 +50,7 @@ func (c *BootstrapConfig) Run(ctx context.Context, out io.Writer) error {
 			KubeConfig:     conn.Ctl.RestConfig(),
 			ContextName:    conn.Name,
 			ServiceAddress: dnsOverrides[conn.Name],
+			Name:           conn.SecretPrefix,
 		}
 	}
 
@@ -96,24 +97,32 @@ contexts from the kubeconfig file are used.`,
 		Example: `  # Bootstrap all clusters from a kubeconfig file
   rpk k8s multicluster bootstrap \
     --kubeconfig /path/to/kubeconfig \
-    --namespace redpanda --service-name redpanda-multicluster
+    --namespace redpanda
 
   # Bootstrap specific contexts (uses default kubeconfig loading rules)
   rpk k8s multicluster bootstrap \
     --context cluster-a --context cluster-b --context cluster-c \
-    --namespace redpanda --service-name redpanda-multicluster
+    --namespace redpanda
+
+  # Override the TLS secret prefix when helm release names differ from context names
+  rpk k8s multicluster bootstrap \
+    --context cluster-a --context cluster-b --context cluster-c \
+    --name-override cluster-a=redpanda-operator \
+    --name-override cluster-b=redpanda-operator \
+    --name-override cluster-c=redpanda-operator \
+    --namespace redpanda
 
   # Override DNS names for TLS SANs on specific clusters
   rpk k8s multicluster bootstrap \
     --context cluster-a --context cluster-b \
     --dns-override cluster-a=cluster-a.example.com \
     --dns-override cluster-b=cluster-b.example.com \
-    --namespace redpanda --service-name redpanda-multicluster
+    --namespace redpanda
 
   # Bootstrap only TLS certificates
   rpk k8s multicluster bootstrap \
     --kubeconfig /path/to/kubeconfig \
-    --namespace redpanda --service-name redpanda-multicluster \
+    --namespace redpanda \
     --tls --kubeconfigs=false`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cfg.Run(cmd.Context(), cmd.OutOrStdout())

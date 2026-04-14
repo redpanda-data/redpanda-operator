@@ -32,15 +32,20 @@ func (c *TLSCheck) Name() string { return "tls" }
 func (c *TLSCheck) Run(ctx context.Context, cc *CheckContext) []Result {
 	secretName := c.findSecretName(cc)
 	if secretName == "" {
-		// Fall back: scan secrets in namespace.
-		var secrets corev1.SecretList
-		if err := cc.Ctl.List(ctx, cc.Namespace, &secrets); err != nil {
-			return []Result{Fail(c.Name(), fmt.Sprintf("listing secrets: %v", err))}
-		}
-		for _, sec := range secrets.Items {
-			if strings.HasSuffix(sec.Name, "-multicluster-certificates") {
-				secretName = sec.Name
-				break
+		// Fall back: if we know the expected secret name, try it directly.
+		if cc.SecretPrefix != "" {
+			secretName = cc.SecretPrefix + "-multicluster-certificates"
+		} else {
+			// Last resort: scan all secrets by suffix.
+			var secrets corev1.SecretList
+			if err := cc.Ctl.List(ctx, cc.Namespace, &secrets); err != nil {
+				return []Result{Fail(c.Name(), fmt.Sprintf("listing secrets: %v", err))}
+			}
+			for _, sec := range secrets.Items {
+				if strings.HasSuffix(sec.Name, "-multicluster-certificates") {
+					secretName = sec.Name
+					break
+				}
 			}
 		}
 	}
@@ -139,8 +144,22 @@ func (c *TLSCheck) findSecretName(cc *CheckContext) string {
 	if cc.Deployment == nil {
 		return ""
 	}
+	// Prefer exact match: look for the volume whose name is
+	// <SecretPrefix>-multicluster-certificates (as set by the helm chart).
+	// Read the SecretName from that volume rather than matching on the
+	// secret name directly, so user-defined volumes with similar secret
+	// names don't produce false matches.
+	if cc.SecretPrefix != "" {
+		target := cc.SecretPrefix + "-multicluster-certificates"
+		for _, vol := range cc.Deployment.Spec.Template.Spec.Volumes {
+			if vol.Name == target && vol.Secret != nil {
+				return vol.Secret.SecretName
+			}
+		}
+	}
+	// Fallback: any volume whose name ends with the multicluster suffix.
 	for _, vol := range cc.Deployment.Spec.Template.Spec.Volumes {
-		if vol.Secret != nil && strings.Contains(vol.Secret.SecretName, "multicluster-certificates") {
+		if strings.HasSuffix(vol.Name, "-multicluster-certificates") && vol.Secret != nil {
 			return vol.Secret.SecretName
 		}
 	}

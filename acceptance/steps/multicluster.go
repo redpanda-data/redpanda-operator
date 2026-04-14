@@ -465,7 +465,6 @@ func bootstrapTLS(ctx context.Context, t framework.TestingT, vclusters []*vclust
 		BootstrapTLS:      true,
 		EnsureNamespace:   true,
 		OperatorNamespace: namespace,
-		ServiceName:       "redpanda-operator-multicluster",
 	}
 	peers := []any{}
 	for _, cluster := range vclusters {
@@ -473,6 +472,7 @@ func bootstrapTLS(ctx context.Context, t framework.TestingT, vclusters []*vclust
 			KubeConfig:     cluster.RESTConfig(),
 			APIServer:      cluster.APIServer(),
 			ServiceAddress: cluster.ExternalIP(),
+			Name:           "redpanda-operator", // Fullname for helm release "redpanda" with the operator chart
 		})
 		peers = append(peers, map[string]any{
 			"name":    cluster.Name(),

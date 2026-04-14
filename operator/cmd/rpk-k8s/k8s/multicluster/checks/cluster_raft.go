@@ -43,7 +43,7 @@ func (c *RaftCheck) Run(ctx context.Context, cc *CheckContext) []Result {
 		return []Result{Fail(c.Name(), fmt.Sprintf("skipped: pod %s is not running (phase: %s)", cc.Pod.Name, cc.Pod.Status.Phase))}
 	}
 
-	status, err := queryRaftStatus(ctx, cc.Ctl, cc.Namespace, cc.Pod)
+	status, err := queryRaftStatus(ctx, cc.Ctl, cc.Namespace, cc.SecretPrefix, cc.Pod)
 	if err != nil {
 		return []Result{Fail(c.Name(), fmt.Sprintf("cannot query raft status: %v", err))}
 	}
@@ -62,7 +62,7 @@ func (c *RaftCheck) Run(ctx context.Context, cc *CheckContext) []Result {
 	return results
 }
 
-func queryRaftStatus(ctx context.Context, ctl *kube.Ctl, namespace string, pod *corev1.Pod) (*transportv1.StatusResponse, error) {
+func queryRaftStatus(ctx context.Context, ctl *kube.Ctl, namespace, secretPrefix string, pod *corev1.Pod) (*transportv1.StatusResponse, error) {
 	forwardedPorts, stop, err := ctl.PortForward(ctx, pod, io.Discard, io.Discard)
 	if err != nil {
 		return nil, fmt.Errorf("port-forward to %s: %w", pod.Name, err)
@@ -81,7 +81,7 @@ func queryRaftStatus(ctx context.Context, ctl *kube.Ctl, namespace string, pod *
 		return nil, fmt.Errorf("port %d not found in forwarded ports for pod %s", raftPort, pod.Name)
 	}
 
-	tlsCreds, serverName, err := grpcCredsFromPod(ctx, ctl, namespace, pod)
+	tlsCreds, serverName, err := grpcCredsFromPod(ctx, ctl, namespace, secretPrefix, pod)
 	if err != nil {
 		return nil, fmt.Errorf("building gRPC credentials: %w", err)
 	}
@@ -108,12 +108,26 @@ func queryRaftStatus(ctx context.Context, ctl *kube.Ctl, namespace string, pod *
 	return client.Status(callCtx, &transportv1.StatusRequest{})
 }
 
-func grpcCredsFromPod(ctx context.Context, ctl *kube.Ctl, namespace string, pod *corev1.Pod) (func(*tls.Config), string, error) {
+func grpcCredsFromPod(ctx context.Context, ctl *kube.Ctl, namespace, secretPrefix string, pod *corev1.Pod) (func(*tls.Config), string, error) {
 	var secretName string
-	for _, vol := range pod.Spec.Volumes {
-		if vol.Secret != nil && strings.Contains(vol.Secret.SecretName, "multicluster-certificates") {
-			secretName = vol.Secret.SecretName
-			break
+	// Prefer exact match: look for the volume whose name is
+	// <secretPrefix>-multicluster-certificates and read SecretName from it.
+	if secretPrefix != "" {
+		target := secretPrefix + "-multicluster-certificates"
+		for _, vol := range pod.Spec.Volumes {
+			if vol.Name == target && vol.Secret != nil {
+				secretName = vol.Secret.SecretName
+				break
+			}
+		}
+	}
+	// Fallback: any volume whose name ends with the multicluster suffix.
+	if secretName == "" {
+		for _, vol := range pod.Spec.Volumes {
+			if strings.HasSuffix(vol.Name, "-multicluster-certificates") && vol.Secret != nil {
+				secretName = vol.Secret.SecretName
+				break
+			}
 		}
 	}
 	if secretName == "" {

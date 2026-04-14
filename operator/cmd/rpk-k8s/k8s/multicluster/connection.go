@@ -11,6 +11,7 @@ package multicluster
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/spf13/cobra"
@@ -22,6 +23,10 @@ import (
 type ClusterConnection struct {
 	Name string
 	Ctl  *kube.Ctl
+	// SecretPrefix is the helm fullname of the operator on this cluster,
+	// used to derive the TLS secret name (<SecretPrefix>-multicluster-certificates).
+	// Defaults to Name (the kubernetes context name) when not set.
+	SecretPrefix string
 }
 
 // ConnectionConfig holds the configuration for connecting to multiple k8s
@@ -36,8 +41,13 @@ type ConnectionConfig struct {
 	Contexts []string
 	// Namespace is the namespace for operator resources.
 	Namespace string
-	// ServiceName is the operator service name used for label selection.
+	// ServiceName is the operator service name used for label selection
+	// (app.kubernetes.io/name). Typically "operator" for the redpanda operator chart.
 	ServiceName string
+	// NameOverrides maps context names to their helm fullname override, in
+	// "context=prefix" format. The prefix is used to derive the TLS secret
+	// name (<prefix>-multicluster-certificates). Defaults to the context name.
+	NameOverrides []string
 
 	// Connections is a pre-resolved list of cluster connections. When set,
 	// Kubeconfig and Contexts are ignored. This allows tests to pass
@@ -50,23 +60,58 @@ func (c *ConnectionConfig) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&c.Kubeconfig, "kubeconfig", "", "Path to a kubeconfig file (all contexts in the file are used unless --context is also specified)")
 	cmd.Flags().StringSliceVar(&c.Contexts, "context", nil, "Kubernetes contexts (repeatable; if omitted with --kubeconfig, all contexts in the file are used)")
 	cmd.Flags().StringVar(&c.Namespace, "namespace", "redpanda", "Namespace for operator resources")
-	cmd.Flags().StringVar(&c.ServiceName, "service-name", "redpanda-multicluster", "Service name for the multicluster operator")
+	cmd.Flags().StringVar(&c.ServiceName, "service-name", "operator", "Operator deployment label selector value (app.kubernetes.io/name)")
+	cmd.Flags().StringArrayVar(&c.NameOverrides, "name-override", nil, "Override the TLS secret prefix for a context in context=prefix format (repeatable; defaults to the context name)")
 }
 
 // Resolve returns ClusterConnections from the config. If Connections is
-// already set (programmatic use), it is returned directly. Otherwise,
-// connections are built from Kubeconfig/Contexts flags.
+// already set (programmatic use), it is returned directly (with SecretPrefix
+// defaulted to Name for any connection that has no prefix set). Otherwise,
+// connections are built from Kubeconfig/Contexts flags and NameOverrides
+// are applied.
 func (c *ConnectionConfig) Resolve() ([]ClusterConnection, error) {
-	if len(c.Connections) > 0 {
-		return c.Connections, nil
+	nameOverrides, err := parseNameOverrides(c.NameOverrides)
+	if err != nil {
+		return nil, err
 	}
+
+	if len(c.Connections) > 0 {
+		conns := make([]ClusterConnection, len(c.Connections))
+		copy(conns, c.Connections)
+		for i, conn := range conns {
+			if conn.SecretPrefix == "" {
+				if override, ok := nameOverrides[conn.Name]; ok {
+					conns[i].SecretPrefix = override
+				} else {
+					conns[i].SecretPrefix = conn.Name
+				}
+			}
+		}
+		return conns, nil
+	}
+
 	if c.Kubeconfig == "" && len(c.Contexts) == 0 {
 		return nil, fmt.Errorf("either --kubeconfig or --context must be specified")
 	}
+
+	var conns []ClusterConnection
 	if c.Kubeconfig != "" {
-		return connectionsFromKubeconfig(c.Kubeconfig, c.Contexts)
+		conns, err = connectionsFromKubeconfig(c.Kubeconfig, c.Contexts)
+	} else {
+		conns, err = connectionsFromContexts(c.Contexts)
 	}
-	return connectionsFromContexts(c.Contexts)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, conn := range conns {
+		if override, ok := nameOverrides[conn.Name]; ok {
+			conns[i].SecretPrefix = override
+		} else {
+			conns[i].SecretPrefix = conn.Name
+		}
+	}
+	return conns, nil
 }
 
 func connectionsFromKubeconfig(path string, contexts []string) ([]ClusterConnection, error) {
@@ -132,4 +177,18 @@ func configFromAPIConfig(config *clientcmdapi.Config, contextName string) (*kube
 		&clientcmd.ConfigOverrides{CurrentContext: contextName},
 		nil,
 	).ClientConfig()
+}
+
+// parseNameOverrides parses --name-override flags in "context=prefix" format
+// into a map keyed by context name.
+func parseNameOverrides(overrides []string) (map[string]string, error) {
+	m := make(map[string]string, len(overrides))
+	for _, o := range overrides {
+		parts := strings.SplitN(o, "=", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			return nil, fmt.Errorf("invalid --name-override format %q, expected context=prefix", o)
+		}
+		m[parts[0]] = parts[1]
+	}
+	return m, nil
 }

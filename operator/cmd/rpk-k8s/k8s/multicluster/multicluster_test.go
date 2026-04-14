@@ -69,7 +69,6 @@ func TestMulticlusterBootstrapAndStatus(t *testing.T) {
 		cfg := multicluster.BootstrapConfig{
 			Connection: multicluster.ConnectionConfig{
 				Namespace:   opts.Namespace,
-				ServiceName: "redpanda-operator-multicluster",
 				Connections: conns,
 			},
 			Organization: "Redpanda",
@@ -257,8 +256,9 @@ func connectionsFromNodes(t *testing.T, nodes []*vcluster.MulticlusterNode) []mu
 	conns := make([]multicluster.ClusterConnection, len(nodes))
 	for i, node := range nodes {
 		conns[i] = multicluster.ClusterConnection{
-			Name: node.Name(),
-			Ctl:  node.Ctl(),
+			Name:         node.Name(),
+			Ctl:          node.Ctl(),
+			SecretPrefix: "redpanda-operator", // matches Fullname for helm release "redpanda" with the operator chart
 		}
 	}
 	return conns
