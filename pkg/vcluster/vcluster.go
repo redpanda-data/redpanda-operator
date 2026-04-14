@@ -12,6 +12,7 @@ package vcluster
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -518,7 +519,30 @@ func (c *Cluster) HelmInstall(ctx context.Context, chartName string, options hel
 		return nil, err
 	}
 
-	return install.Run(chart, options.Values.(map[string]any))
+	vals, err := toStringMap(options.Values)
+	if err != nil {
+		return nil, fmt.Errorf("converting values: %w", err)
+	}
+
+	return install.Run(chart, vals)
+}
+
+// toStringMap converts a values object to map[string]any. If it's already a
+// map[string]any, it's returned directly. Otherwise it's marshaled to JSON
+// and back to handle typed structs (e.g. PartialValues).
+func toStringMap(v any) (map[string]any, error) {
+	if m, ok := v.(map[string]any); ok {
+		return m, nil
+	}
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *Cluster) HelmUninstall(ctx context.Context, rel *release.Release) error {

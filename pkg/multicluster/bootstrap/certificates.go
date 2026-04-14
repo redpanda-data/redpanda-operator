@@ -376,7 +376,7 @@ func CreateTLSSecret(ctx context.Context, ca *CACertificate, certificate *Certif
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      configuration.Name + "-certificates",
+			Name:      configuration.Name + "-multicluster-certificates",
 			Namespace: configuration.Namespace,
 		},
 		Data: map[string][]byte{

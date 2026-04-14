@@ -88,6 +88,9 @@ type LockConfiguration struct {
 	GRPCMaxBackoff time.Duration
 	// Logger is used for raft-internal logging.
 	Logger raft.Logger
+	// IDsToNames maps raft node IDs to human-readable cluster names.
+	// Used by the Status RPC to return cluster names instead of IDs.
+	IDsToNames map[uint64]string
 }
 
 func (c *LockConfiguration) validate() error {
@@ -262,6 +265,8 @@ func run(ctx context.Context, config LockConfiguration, transportCallback func(t
 		transportCallback(cl)
 	}
 	transport.logger = config.Logger
+	transport.idsToNames = config.IDsToNames
+	transport.localID = config.ID
 
 	for node, address := range nodes {
 		if config.Logger != nil {
@@ -368,17 +373,24 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 			// Observe soft state changes for leadership
 			var nowLeader bool
 			var leader uint64
+			var raftState raft.StateType
 			if rd.SoftState != nil {
 				leader = rd.SoftState.Lead
-				nowLeader = leader == config.ID || rd.SoftState.RaftState == raft.StateLeader
+				raftState = rd.SoftState.RaftState
+				nowLeader = leader == config.ID || raftState == raft.StateLeader
 			} else {
 				status := node.Status()
 				leader = status.Lead
-				nowLeader = leader == config.ID || status.RaftState == raft.StateLeader
+				raftState = status.RaftState
+				nowLeader = leader == config.ID || raftState == raft.StateLeader
 			}
 
 			transport.leader.Store(leader)
 			transport.isLeader.Store(nowLeader)
+			transport.raftState.Store(raftState.String())
+			if rd.HardState.Term != 0 {
+				transport.term.Store(rd.HardState.Term)
+			}
 
 			if callbacks != nil && callbacks.SetLeader != nil {
 				callbacks.SetLeader(leader)

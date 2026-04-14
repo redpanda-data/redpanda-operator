@@ -293,6 +293,134 @@ func (x *KubeconfigResponse) GetPayload() []byte {
 	return nil
 }
 
+type StatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusRequest) Reset() {
+	*x = StatusRequest{}
+	mi := &file_transport_v1_message_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusRequest) ProtoMessage() {}
+
+func (x *StatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_transport_v1_message_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusRequest.ProtoReflect.Descriptor instead.
+func (*StatusRequest) Descriptor() ([]byte, []int) {
+	return file_transport_v1_message_proto_rawDescGZIP(), []int{6}
+}
+
+type StatusResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	RaftState      string                 `protobuf:"bytes,2,opt,name=raft_state,json=raftState,proto3" json:"raft_state,omitempty"`
+	Leader         string                 `protobuf:"bytes,3,opt,name=leader,proto3" json:"leader,omitempty"`
+	Term           uint64                 `protobuf:"varint,4,opt,name=term,proto3" json:"term,omitempty"`
+	ClusterNames   []string               `protobuf:"bytes,5,rep,name=cluster_names,json=clusterNames,proto3" json:"cluster_names,omitempty"`
+	UnhealthyPeers []string               `protobuf:"bytes,6,rep,name=unhealthy_peers,json=unhealthyPeers,proto3" json:"unhealthy_peers,omitempty"`
+	IsHealthy      bool                   `protobuf:"varint,7,opt,name=is_healthy,json=isHealthy,proto3" json:"is_healthy,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *StatusResponse) Reset() {
+	*x = StatusResponse{}
+	mi := &file_transport_v1_message_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusResponse) ProtoMessage() {}
+
+func (x *StatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_transport_v1_message_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusResponse.ProtoReflect.Descriptor instead.
+func (*StatusResponse) Descriptor() ([]byte, []int) {
+	return file_transport_v1_message_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *StatusResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *StatusResponse) GetRaftState() string {
+	if x != nil {
+		return x.RaftState
+	}
+	return ""
+}
+
+func (x *StatusResponse) GetLeader() string {
+	if x != nil {
+		return x.Leader
+	}
+	return ""
+}
+
+func (x *StatusResponse) GetTerm() uint64 {
+	if x != nil {
+		return x.Term
+	}
+	return 0
+}
+
+func (x *StatusResponse) GetClusterNames() []string {
+	if x != nil {
+		return x.ClusterNames
+	}
+	return nil
+}
+
+func (x *StatusResponse) GetUnhealthyPeers() []string {
+	if x != nil {
+		return x.UnhealthyPeers
+	}
+	return nil
+}
+
+func (x *StatusResponse) GetIsHealthy() bool {
+	if x != nil {
+		return x.IsHealthy
+	}
+	return false
+}
+
 var File_transport_v1_message_proto protoreflect.FileDescriptor
 
 const file_transport_v1_message_proto_rawDesc = "" +
@@ -312,12 +440,24 @@ const file_transport_v1_message_proto_rawDesc = "" +
 	"\aapplied\x18\x01 \x01(\bR\aapplied\"\x13\n" +
 	"\x11KubeconfigRequest\".\n" +
 	"\x12KubeconfigResponse\x12\x18\n" +
-	"\apayload\x18\x01 \x01(\fR\apayload2\xe4\x01\n" +
+	"\apayload\x18\x01 \x01(\fR\apayload\"\x0f\n" +
+	"\rStatusRequest\"\xdc\x01\n" +
+	"\x0eStatusResponse\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"raft_state\x18\x02 \x01(\tR\traftState\x12\x16\n" +
+	"\x06leader\x18\x03 \x01(\tR\x06leader\x12\x12\n" +
+	"\x04term\x18\x04 \x01(\x04R\x04term\x12#\n" +
+	"\rcluster_names\x18\x05 \x03(\tR\fclusterNames\x12'\n" +
+	"\x0funhealthy_peers\x18\x06 \x03(\tR\x0eunhealthyPeers\x12\x1d\n" +
+	"\n" +
+	"is_healthy\x18\a \x01(\bR\tisHealthy2\xa9\x02\n" +
 	"\x10TransportService\x12@\n" +
 	"\x05Check\x12\x1a.transport.v1.CheckRequest\x1a\x1b.transport.v1.CheckResponse\x12=\n" +
 	"\x04Send\x12\x19.transport.v1.SendRequest\x1a\x1a.transport.v1.SendResponse\x12O\n" +
 	"\n" +
-	"Kubeconfig\x12\x1f.transport.v1.KubeconfigRequest\x1a .transport.v1.KubeconfigResponseB\xe0\x01\n" +
+	"Kubeconfig\x12\x1f.transport.v1.KubeconfigRequest\x1a .transport.v1.KubeconfigResponse\x12C\n" +
+	"\x06Status\x12\x1b.transport.v1.StatusRequest\x1a\x1c.transport.v1.StatusResponseB\xe0\x01\n" +
 	"\x10com.transport.v1B\fMessageProtoP\x01Zmgithub.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1;transportv1\xa2\x02\x03TXX\xaa\x02\fTransport.V1\xca\x02\fTransport\\V1\xe2\x02\x18Transport\\V1\\GPBMetadata\xea\x02\rTransport::V1b\x06proto3"
 
 var (
@@ -332,7 +472,7 @@ func file_transport_v1_message_proto_rawDescGZIP() []byte {
 	return file_transport_v1_message_proto_rawDescData
 }
 
-var file_transport_v1_message_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_transport_v1_message_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_transport_v1_message_proto_goTypes = []any{
 	(*CheckRequest)(nil),       // 0: transport.v1.CheckRequest
 	(*CheckResponse)(nil),      // 1: transport.v1.CheckResponse
@@ -340,16 +480,20 @@ var file_transport_v1_message_proto_goTypes = []any{
 	(*SendResponse)(nil),       // 3: transport.v1.SendResponse
 	(*KubeconfigRequest)(nil),  // 4: transport.v1.KubeconfigRequest
 	(*KubeconfigResponse)(nil), // 5: transport.v1.KubeconfigResponse
+	(*StatusRequest)(nil),      // 6: transport.v1.StatusRequest
+	(*StatusResponse)(nil),     // 7: transport.v1.StatusResponse
 }
 var file_transport_v1_message_proto_depIdxs = []int32{
 	0, // 0: transport.v1.TransportService.Check:input_type -> transport.v1.CheckRequest
 	2, // 1: transport.v1.TransportService.Send:input_type -> transport.v1.SendRequest
 	4, // 2: transport.v1.TransportService.Kubeconfig:input_type -> transport.v1.KubeconfigRequest
-	1, // 3: transport.v1.TransportService.Check:output_type -> transport.v1.CheckResponse
-	3, // 4: transport.v1.TransportService.Send:output_type -> transport.v1.SendResponse
-	5, // 5: transport.v1.TransportService.Kubeconfig:output_type -> transport.v1.KubeconfigResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	6, // 3: transport.v1.TransportService.Status:input_type -> transport.v1.StatusRequest
+	1, // 4: transport.v1.TransportService.Check:output_type -> transport.v1.CheckResponse
+	3, // 5: transport.v1.TransportService.Send:output_type -> transport.v1.SendResponse
+	5, // 6: transport.v1.TransportService.Kubeconfig:output_type -> transport.v1.KubeconfigResponse
+	7, // 7: transport.v1.TransportService.Status:output_type -> transport.v1.StatusResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -366,7 +510,7 @@ func file_transport_v1_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_transport_v1_message_proto_rawDesc), len(file_transport_v1_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

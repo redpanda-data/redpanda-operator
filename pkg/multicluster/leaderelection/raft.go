@@ -125,6 +125,11 @@ type grpcTransport struct {
 	leader   atomic.Uint64
 	isLeader atomic.Bool
 
+	raftState  atomic.Value // stores string
+	term       atomic.Uint64
+	idsToNames map[uint64]string
+	localID    uint64
+
 	node     raft.Node
 	nodeLock sync.RWMutex
 
@@ -369,6 +374,43 @@ func (t *grpcTransport) Check(ctx context.Context, req *transportv1.CheckRequest
 	}
 
 	return &transportv1.CheckResponse{HasLeader: false, Meta: t.meta}, nil
+}
+
+func (t *grpcTransport) Status(ctx context.Context, req *transportv1.StatusRequest) (*transportv1.StatusResponse, error) {
+	leader := t.leader.Load()
+	leaderName := t.idsToNames[leader]
+	raftState, _ := t.raftState.Load().(string)
+	term := t.term.Load()
+
+	clusterNames := make([]string, 0, len(t.idsToNames))
+	for _, name := range t.idsToNames {
+		clusterNames = append(clusterNames, name)
+	}
+
+	// Determine health and unhealthy peers via the Check RPC.
+	var unhealthyPeers []string
+	isHealthy := leader != 0
+	checkResp, err := t.Check(ctx, &transportv1.CheckRequest{})
+	if err == nil && checkResp != nil {
+		isHealthy = checkResp.HasLeader
+		for _, id := range checkResp.UnhealthyNodes {
+			if name, ok := t.idsToNames[id]; ok {
+				unhealthyPeers = append(unhealthyPeers, name)
+			}
+		}
+	}
+
+	name := t.idsToNames[t.localID]
+
+	return &transportv1.StatusResponse{
+		Name:           name,
+		RaftState:      raftState,
+		Leader:         leaderName,
+		Term:           term,
+		ClusterNames:   clusterNames,
+		UnhealthyPeers: unhealthyPeers,
+		IsHealthy:      isHealthy,
+	}, nil
 }
 
 func (t *grpcTransport) Kubeconfig(ctx context.Context, req *transportv1.KubeconfigRequest) (*transportv1.KubeconfigResponse, error) {

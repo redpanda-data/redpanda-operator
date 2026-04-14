@@ -22,10 +22,14 @@ type RemoteConfiguration struct {
 	ContextName    string
 	APIServer      string
 	ServiceAddress string
+	// Name is the helm fullname of the operator on this cluster, used as the
+	// TLS secret name prefix (<Name>-multicluster-certificates). When empty,
+	// BootstrapClusterConfiguration.ServiceName is used as the fallback.
+	Name string
 }
 
 func (r RemoteConfiguration) Client() (client.Client, error) {
-	config, err := configFromContext(r.ContextName)
+	config, err := r.Config()
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +38,9 @@ func (r RemoteConfiguration) Client() (client.Client, error) {
 }
 
 func (r RemoteConfiguration) Config() (*rest.Config, error) {
+	if r.KubeConfig != nil {
+		return r.KubeConfig, nil
+	}
 	return configFromContext(r.ContextName)
 }
 
@@ -53,8 +60,14 @@ func (r RemoteConfiguration) FQDN(c BootstrapClusterConfiguration) (string, erro
 	if r.ServiceAddress != "" {
 		return strings.Split(r.ServiceAddress, ":")[0], nil
 	}
-
-	return c.ServiceName + "-" + r.ContextName, nil
+	// Use the per-cluster helm fullname as the FQDN base when available,
+	// falling back to the global ServiceName. The ContextName disambiguates
+	// between clusters that share the same fullname.
+	base := r.Name
+	if base == "" {
+		base = c.ServiceName
+	}
+	return base + "-" + r.ContextName, nil
 }
 
 type BootstrapClusterConfiguration struct {
@@ -108,13 +121,20 @@ func BootstrapKubernetesClusters(ctx context.Context, organization string, confi
 
 	for i, cluster := range configuration.RemoteClusters {
 		if configuration.BootstrapKubeconfigs {
-			for i := range kubeconfigs {
-				kubeconfig := kubeconfigs[i]
+			// Use the per-cluster helm fullname as the kubeconfig secret prefix so
+			// that it matches --kubeconfig-name=Fullname(dot) in the operator chart.
+			// Fall back to ServiceName when Name is not set.
+			kubeconfigPrefix := cluster.Name
+			if kubeconfigPrefix == "" {
+				kubeconfigPrefix = configuration.ServiceName
+			}
+			for j := range kubeconfigs {
+				kubeconfig := kubeconfigs[j]
 
 				if err := CreateKubeconfigSecret(ctx, kubeconfig, &RemoteKubernetesConfiguration{
 					ContextName:     cluster.ContextName,
 					Namespace:       configuration.OperatorNamespace,
-					Name:            configuration.ServiceName + "-" + configuration.RemoteClusters[i].ContextName,
+					Name:            kubeconfigPrefix + "-" + configuration.RemoteClusters[j].ContextName,
 					EnsureNamespace: configuration.EnsureNamespace,
 					RESTConfig:      cluster.KubeConfig,
 				}); err != nil {
@@ -123,11 +143,15 @@ func BootstrapKubernetesClusters(ctx context.Context, organization string, confi
 			}
 		}
 		if configuration.BootstrapTLS {
+			tlsName := cluster.Name
+			if tlsName == "" {
+				tlsName = configuration.ServiceName
+			}
 			certificate := certificates[i]
 			if err := CreateTLSSecret(ctx, caCertificate, certificate, &RemoteKubernetesConfiguration{
 				ContextName:     cluster.ContextName,
 				Namespace:       configuration.OperatorNamespace,
-				Name:            configuration.ServiceName,
+				Name:            tlsName,
 				EnsureNamespace: configuration.EnsureNamespace,
 				RESTConfig:      cluster.KubeConfig,
 			}); err != nil {
