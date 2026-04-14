@@ -17,17 +17,22 @@ import (
 	"net/http"
 	"os"
 	"sort"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -49,33 +54,105 @@ func stringToHash(s string) uint64 {
 	return h.Sum64()
 }
 
-// restartBroadcaster provides a broadcast notification mechanism.
-// Calling notify() wakes ALL goroutines waiting on channel(), unlike a
-// regular channel send which wakes only one receiver.
-type restartBroadcaster struct {
-	mu sync.Mutex
-	ch chan struct{}
+// kubeconfigCacheSecretName returns the name of the Secret used to cache a
+// peer's kubeconfig in the local cluster.
+func kubeconfigCacheSecretName(kubeconfigName, peerName string) string {
+	return kubeconfigName + "-" + peerName
 }
 
-func newRestartBroadcaster() *restartBroadcaster {
-	return &restartBroadcaster{ch: make(chan struct{})}
+// writeCachedKubeconfig writes kubeconfig bytes as a Secret in the local cluster.
+func writeCachedKubeconfig(ctx context.Context, cl client.Client, name, namespace string, data []byte) error {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	_, err := controllerutil.CreateOrUpdate(ctx, cl, secret, func() error {
+		secret.Data = map[string][]byte{"kubeconfig.yaml": data}
+		return nil
+	})
+	return err
 }
 
-// notify wakes all goroutines currently blocked on channel().
-func (b *restartBroadcaster) notify() {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	close(b.ch)
-	b.ch = make(chan struct{})
+// readCachedKubeconfig reads a previously cached kubeconfig from a local Secret.
+// Returns nil, nil if the Secret does not exist.
+func readCachedKubeconfig(ctx context.Context, cl client.Client, name, namespace string) ([]byte, error) {
+	var secret corev1.Secret
+	if err := cl.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &secret); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return secret.Data["kubeconfig.yaml"], nil
 }
 
-// channel returns the current broadcast channel. Callers should select on
-// it; when it closes (via notify), they must call channel() again to get
-// the fresh replacement.
-func (b *restartBroadcaster) channel() <-chan struct{} {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.ch
+// startupKubeconfigFetcher is a Runnable that unconditionally fetches kubeconfigs
+// for all bootstrap peers at startup and caches them as Secrets in the local
+// cluster. This ensures the raft leader can recover cached configs on failover
+// without requiring a live gRPC connection to each peer.
+type startupKubeconfigFetcher struct {
+	config     RaftConfiguration
+	raftConfig leaderelection.LockConfiguration
+	client     client.Client
+	logger     logr.Logger
+}
+
+func (s *startupKubeconfigFetcher) Start(ctx context.Context) error {
+	// Collect indices of peers that need bootstrap kubeconfigs cached.
+	pending := []int{}
+	for i, peer := range s.config.Peers {
+		if peer.Name != s.config.Name && peer.KubeconfigFile == "" && peer.Kubeconfig == nil {
+			pending = append(pending, i)
+		}
+	}
+
+	// Retry failed peers until all succeed or the context is cancelled.
+	// This handles the case where a peer's gRPC server isn't ready yet at
+	// startup (e.g., concurrent pod restarts).
+	for len(pending) > 0 {
+		var failed []int
+		for _, i := range pending {
+			peer := s.config.Peers[i]
+			secretName := kubeconfigCacheSecretName(s.config.KubeconfigName, peer.Name)
+			s.logger.Info("startup: fetching kubeconfig for peer", "peer", peer.Name)
+			grpcClient, err := leaderelection.ClientFor(s.raftConfig, s.raftConfig.Peers[i])
+			if err != nil {
+				s.logger.Error(err, "startup: failed to connect to peer", "peer", peer.Name)
+				failed = append(failed, i)
+				continue
+			}
+			response, err := grpcClient.Kubeconfig(ctx, &transportv1.KubeconfigRequest{})
+			if err != nil {
+				s.logger.Error(err, "startup: failed to fetch kubeconfig from peer", "peer", peer.Name)
+				failed = append(failed, i)
+				continue
+			}
+			if err := writeCachedKubeconfig(ctx, s.client, secretName, s.config.KubeconfigNamespace, response.Payload); err != nil {
+				s.logger.Error(err, "startup: failed to cache kubeconfig", "peer", peer.Name)
+				failed = append(failed, i)
+				continue
+			}
+		}
+		pending = failed
+		if len(pending) == 0 {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(5 * time.Second):
+		}
+	}
+
+	<-ctx.Done()
+	return nil
+}
+
+// Engage is a no-op; the startup fetcher does not respond to cluster events.
+func (s *startupKubeconfigFetcher) Engage(_ context.Context, _ string, _ cluster.Cluster) error {
+	return nil
 }
 
 // RaftCluster describes a single cluster participating in raft-based
@@ -154,6 +231,11 @@ type RaftConfiguration struct {
 	KubeconfigNamespace string
 	// KubeconfigName is the name of the bootstrap kubeconfig secret.
 	KubeconfigName string
+
+	// Fetcher overrides the kubeconfig fetcher used in bootstrap mode. When
+	// nil, a default fetcher that creates a ServiceAccount and token in the
+	// local cluster is used. Primarily useful for testing.
+	Fetcher leaderelection.KubeconfigFetcher
 
 	// SkipNameValidation allows multiple controllers with the same name,
 	// needed for multicluster run in the same testing process.
@@ -292,20 +374,26 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 		IDsToNames:        idsToNames,
 	}
 
+	var localClient client.Client
 	if config.Bootstrap {
-		raftConfig.Fetcher = leaderelection.KubeconfigFetcherFn(func(ctx context.Context) ([]byte, error) {
-			data, err := bootstrap.CreateRemoteKubeconfig(ctx, &bootstrap.RemoteKubernetesConfiguration{
-				RESTConfig: restConfig,
-				APIServer:  config.KubernetesAPIServer,
-				Namespace:  config.KubeconfigNamespace,
-				Name:       config.KubeconfigName,
-			})
-			if err != nil {
-				return nil, err
-			}
+		var err error
+		localClient, err = client.New(restConfig, client.Options{Scheme: config.Scheme})
+		if err != nil {
+			return nil, err
+		}
 
-			return data, nil
-		})
+		if config.Fetcher != nil {
+			raftConfig.Fetcher = config.Fetcher
+		} else {
+			raftConfig.Fetcher = leaderelection.KubeconfigFetcherFn(func(ctx context.Context) ([]byte, error) {
+				return bootstrap.CreateRemoteKubeconfig(ctx, &bootstrap.RemoteKubernetesConfiguration{
+					RESTConfig: restConfig,
+					APIServer:  config.KubernetesAPIServer,
+					Namespace:  config.KubeconfigNamespace,
+					Name:       config.KubeconfigName,
+				})
+			})
+		}
 	}
 
 	if !config.Insecure && (len(config.ClientTLSOptions) == 0 || len(config.ServerTLSOptions) == 0) {
@@ -379,24 +467,38 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 
 	if config.Bootstrap {
 		for i, peer := range config.Peers {
-			if peer.Name != config.Name && peer.KubeconfigFile == "" {
+			if peer.Name != config.Name && peer.KubeconfigFile == "" && peer.Kubeconfig == nil {
 				config.Logger.Info("registering leader routine", "peer", peer.Name)
 				lockManager.RegisterRoutine(func(ctx context.Context) error {
-					config.Logger.Info("fetching client for peer", "peer", peer.Name)
-					client, err := leaderelection.ClientFor(raftConfig, raftConfig.Peers[i])
+					secretName := kubeconfigCacheSecretName(config.KubeconfigName, peer.Name)
+
+					// Try the local secret cache first so that a new raft leader
+					// can reconnect to peers without requiring a live gRPC call.
+					kubeconfigBytes, err := readCachedKubeconfig(ctx, localClient, secretName, config.KubeconfigNamespace)
 					if err != nil {
-						config.Logger.Error(err, "fetching client for peer", "peer", peer.Name)
-						return err
+						config.Logger.Error(err, "reading cached kubeconfig, falling back to gRPC", "peer", peer.Name)
 					}
-					config.Logger.Info("fetching kubeconfig for peer", "peer", peer.Name)
-					response, err := client.Kubeconfig(ctx, &transportv1.KubeconfigRequest{})
-					if err != nil {
-						config.Logger.Error(err, "fetching kubeconfig for peer", "peer", peer.Name)
-						return err
+
+					if len(kubeconfigBytes) == 0 {
+						config.Logger.Info("no cached kubeconfig, fetching from peer", "peer", peer.Name)
+						grpcClient, err := leaderelection.ClientFor(raftConfig, raftConfig.Peers[i])
+						if err != nil {
+							config.Logger.Error(err, "fetching client for peer", "peer", peer.Name)
+							return err
+						}
+						response, err := grpcClient.Kubeconfig(ctx, &transportv1.KubeconfigRequest{})
+						if err != nil {
+							config.Logger.Error(err, "fetching kubeconfig for peer", "peer", peer.Name)
+							return err
+						}
+						kubeconfigBytes = response.Payload
+						if cacheErr := writeCachedKubeconfig(ctx, localClient, secretName, config.KubeconfigNamespace, kubeconfigBytes); cacheErr != nil {
+							config.Logger.Error(cacheErr, "caching kubeconfig for peer", "peer", peer.Name)
+						}
 					}
 
 					config.Logger.Info("loading kubeconfig for peer", "peer", peer.Name)
-					kubeConfig, err := loadKubeconfigFromBytes(response.Payload)
+					kubeConfig, err := loadKubeconfigFromBytes(kubeconfigBytes)
 					if err != nil {
 						config.Logger.Error(err, "loading kubeconfig for peer", "peer", peer.Name)
 						return err
@@ -444,6 +546,17 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 	}, lockManager, opts)
 	if err != nil {
 		return nil, err
+	}
+
+	if config.Bootstrap {
+		if err := manager.Add(&startupKubeconfigFetcher{
+			config:     config,
+			raftConfig: raftConfig,
+			client:     localClient,
+			logger:     config.Logger,
+		}); err != nil {
+			return nil, err
+		}
 	}
 
 	return manager, nil
@@ -593,17 +706,7 @@ func (l *leaderRunnable) wrapStart(doEngage func(context.Context), fn func(conte
 
 		doEngage(cancelCtx)
 
-		go func() {
-			for {
-				ch := l.broadcaster.channel()
-				select {
-				case <-cancelCtx.Done():
-					return
-				case <-ch:
-					doEngage(cancelCtx)
-				}
-			}
-		}()
+		go drainNotifications(cancelCtx, l.broadcaster, doEngage)
 
 		return fn(cancelCtx)
 	}
