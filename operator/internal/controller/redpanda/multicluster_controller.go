@@ -1064,6 +1064,11 @@ func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *
 
 	var health rpadmin.ClusterHealthOverview
 
+	if admin == nil {
+		log.FromContext(ctx).Error(errors.New("no admin api"), "Admin must be initialized")
+		return health, nil
+	}
+
 	health, err = admin.GetHealthOverview(ctx)
 	if err != nil {
 		return health, err
