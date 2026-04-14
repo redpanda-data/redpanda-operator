@@ -7,8 +7,6 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-//go:build integration
-
 package multicluster_test
 
 import (
@@ -21,12 +19,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
+	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/redpanda-data/common-go/kube"
-	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
