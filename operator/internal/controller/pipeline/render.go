@@ -276,7 +276,9 @@ func (r *render) podDisruptionBudget() *policyv1.PodDisruptionBudget {
 		return nil
 	}
 
-	pdb := &policyv1.PodDisruptionBudget{
+	maxUnavailable := intstr.FromInt32(int32(budget.MaxUnavailable))
+
+	return &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "policy/v1",
 			Kind:       "PodDisruptionBudget",
@@ -288,20 +290,12 @@ func (r *render) podDisruptionBudget() *policyv1.PodDisruptionBudget {
 			Annotations: r.annotations(),
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
+			MaxUnavailable: &maxUnavailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: r.labels,
 			},
 		},
 	}
-
-	if budget.MaxUnavailable != nil {
-		pdb.Spec.MaxUnavailable = budget.MaxUnavailable
-	}
-	if budget.MinAvailable != nil {
-		pdb.Spec.MinAvailable = budget.MinAvailable
-	}
-
-	return pdb
 }
 
 // buildClusterConnectionResources returns the env vars, volumes, and volume

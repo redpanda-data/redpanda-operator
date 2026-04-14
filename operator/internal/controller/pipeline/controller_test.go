@@ -32,7 +32,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -688,13 +687,12 @@ func TestRender_PDB_NotConfigured(t *testing.T) {
 }
 
 func TestRender_PDB_MaxUnavailable(t *testing.T) {
-	maxUnavail := intstr.FromInt32(1)
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "pdb-max", Namespace: "default"},
 		Spec: redpandav1alpha2.PipelineSpec{
 			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
 			Budget: &redpandav1alpha2.PipelineBudget{
-				MaxUnavailable: &maxUnavail,
+				MaxUnavailable: 1,
 			},
 		},
 	}
@@ -721,14 +719,13 @@ func TestRender_PDB_MaxUnavailable(t *testing.T) {
 	assert.Nil(t, pdb.Spec.MinAvailable)
 }
 
-func TestRender_PDB_MinAvailable(t *testing.T) {
-	minAvail := intstr.FromString("75%")
+func TestRender_PDB_ZeroMaxUnavailable(t *testing.T) {
 	pipeline := &redpandav1alpha2.Pipeline{
-		ObjectMeta: metav1.ObjectMeta{Name: "pdb-min", Namespace: "default"},
+		ObjectMeta: metav1.ObjectMeta{Name: "pdb-zero", Namespace: "default"},
 		Spec: redpandav1alpha2.PipelineSpec{
 			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
 			Budget: &redpandav1alpha2.PipelineBudget{
-				MinAvailable: &minAvail,
+				MaxUnavailable: 0,
 			},
 		},
 	}
@@ -745,9 +742,8 @@ func TestRender_PDB_MinAvailable(t *testing.T) {
 		}
 	}
 	require.NotNil(t, pdb, "expected a PodDisruptionBudget in rendered objects")
-	require.NotNil(t, pdb.Spec.MinAvailable)
-	assert.Equal(t, "75%", pdb.Spec.MinAvailable.StrVal)
-	assert.Nil(t, pdb.Spec.MaxUnavailable)
+	require.NotNil(t, pdb.Spec.MaxUnavailable)
+	assert.Equal(t, int32(0), pdb.Spec.MaxUnavailable.IntVal)
 }
 
 // License validation unit tests.
