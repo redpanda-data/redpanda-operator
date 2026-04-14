@@ -25,6 +25,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -260,18 +261,29 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // findAliveCluster checks whether the StretchCluster exists and is NOT being
 // deleted on any cluster other than localClusterName. Returns the name of the
 // first alive cluster found, or "" if all clusters are deleting.
+//
+// On transient errors (anything other than NotFound) the function assumes the
+// remote cluster is alive and returns its name. This is the safe default —
+// allowing cleanup to proceed when a cluster is unreachable could destroy
+// resources that the surviving cluster still needs.
 func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpandav1alpha2.StretchCluster, localClusterName string) string {
+	l := log.FromContext(ctx).WithName("findAliveCluster")
 	for _, clusterName := range r.Manager.GetClusterNames() {
 		if clusterName == localClusterName || clusterName == "" {
 			continue
 		}
 		remote, err := r.Manager.GetCluster(ctx, clusterName)
 		if err != nil {
-			continue
+			l.Info("cannot reach cluster, assuming alive to block cleanup", "cluster", clusterName, "error", err)
+			return clusterName
 		}
 		remoteSC := &redpandav1alpha2.StretchCluster{}
 		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
-			continue
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			l.Info("cannot fetch StretchCluster from cluster, assuming alive to block cleanup", "cluster", clusterName, "error", err)
+			return clusterName
 		}
 		if remoteSC.DeletionTimestamp.IsZero() {
 			return clusterName

@@ -520,16 +520,17 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 		}
 
 		// Check whether the owner exists and is being deleted on this cluster.
-		// Skip clusters where the owner is alive and healthy.
+		// Skip clusters where the owner is alive and healthy. If the owner is
+		// NotFound (e.g. force-deleted with finalizer stripped), proceed with
+		// cleanup to avoid leaking orphaned resources.
 		resolvedOwner, err := r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
 		if err != nil {
-			if apierrors.IsNotFound(err) {
+			if !apierrors.IsNotFound(err) {
+				deleteErr = errors.Join(deleteErr, err)
 				continue
 			}
-			deleteErr = errors.Join(deleteErr, err)
-			continue
-		}
-		if resolvedOwner.GetDeletionTimestamp().IsZero() {
+			// Owner gone — fall through to clean up orphaned resources.
+		} else if resolvedOwner.GetDeletionTimestamp().IsZero() {
 			continue
 		}
 
