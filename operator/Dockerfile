@@ -15,4 +15,4 @@ COPY redpanda-operator-${TARGETOS}-${TARGETARCH} /redpanda-operator
 # that still specify old entrypoints/commands.
 COPY alias-${TARGETOS}-${TARGETARCH} /manager
 
-ENTRYPOINT ["redpanda-operator", "run"]
+ENTRYPOINT ["/redpanda-operator", "run"]

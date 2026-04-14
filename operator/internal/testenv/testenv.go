@@ -290,7 +290,7 @@ func (e *Env) SetupMulticlusterManager(serviceAccount string, address string, pe
 		config.Impersonate.UserName = fmt.Sprintf("system:serviceaccount:%s:%s", e.Namespace(), serviceAccount)
 	}
 
-	manager, err := multicluster.NewRaftRuntimeManager(multicluster.RaftConfiguration{
+	manager, err := multicluster.NewRaftRuntimeManager(&multicluster.RaftConfiguration{
 		Name:               e.Name,
 		Address:            address,
 		Peers:              peers,

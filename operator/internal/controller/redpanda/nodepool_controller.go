@@ -54,7 +54,7 @@ type NodePoolReconciler struct {
 }
 
 func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
-	mgr.GetLogger().WithName("SetupWithMultiClusterManager").Info("registering NodePool controller", "knownClusters", mgr.GetClusterNames())
+	mgr.GetLogger().WithName("SetupWithMultiClusterManager").Info("registering NodePool controller", "knownClusters", createCanonicalClusterNameList(mgr))
 	return mcbuilder.ControllerManagedBy(mgr).
 		For(
 			&redpandav1alpha2.NodePool{},
@@ -64,7 +64,7 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 		Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {
 			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
 				l := log.FromContext(ctx).WithName("NodePoolReconciler.StretchClusterWatch").V(log.TraceLevel)
-				l.Info("StretchCluster event received", "stretchCluster", client.ObjectKeyFromObject(object).String(), "knownClusters", mgr.GetClusterNames())
+				l.Info("StretchCluster event received", "stretchCluster", client.ObjectKeyFromObject(object).String(), "knownClusters", createCanonicalClusterNameList(mgr))
 				var reqs []mcreconcile.Request
 				for _, clusterName := range mgr.GetClusterNames() {
 					k8sCluster, err := mgr.GetCluster(ctx, clusterName)
@@ -79,7 +79,7 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 						l.Error(err, "cannot list NodePools", "cluster", clusterName)
 						continue
 					}
-					l.Info("listed NodePools", "cluster", clusterName, "count", len(nodePools.Items))
+					l.Info("listed NodePools", "cluster", lifecycle.CanonicalClusterName(clusterName, mgr.GetLocalClusterName), "count", len(nodePools.Items))
 					for _, pool := range nodePools.Items {
 						l.Info("checking NodePool", "cluster", clusterName, "nodePool", pool.Name, "clusterRefName", pool.Spec.ClusterRef.Name, "isStretchCluster", pool.Spec.ClusterRef.IsStretchCluster())
 						if pool.Spec.ClusterRef.IsStretchCluster() && pool.Spec.ClusterRef.Name == object.GetName() {
@@ -104,6 +104,14 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 				Manager: mgr,
 			},
 		)
+}
+
+func createCanonicalClusterNameList(mgr multicluster.Manager) []string {
+	var canonicalClusterList []string
+	for _, clusterName := range mgr.GetClusterNames() {
+		canonicalClusterList = append(canonicalClusterList, lifecycle.CanonicalClusterName(clusterName, mgr.GetLocalClusterName))
+	}
+	return canonicalClusterList
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -205,6 +213,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 
 	// Examine if the object is under deletion
 	if !pool.ObjectMeta.DeletionTimestamp.IsZero() {
+		logger.V(log.TraceLevel).Info("deleting finalizer")
 		if controllerutil.RemoveFinalizer(pool, FinalizerKey) {
 			if err := k8sClient.Update(ctx, pool); err != nil {
 				logger.Error(err, "updating cluster finalizer")
@@ -220,6 +229,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	// If any changes are made, persist the changes and immediately requeue to
 	// prevent any cache / resource version synchronization issues.
 	if controllerutil.AddFinalizer(pool, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, pool) {
+		logger.V(log.TraceLevel).Info("adding finalizer")
 		if err := k8sClient.Update(ctx, pool); err != nil {
 			logger.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)

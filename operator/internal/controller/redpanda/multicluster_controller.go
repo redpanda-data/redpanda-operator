@@ -38,6 +38,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	syncclusterconfig "github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
@@ -152,6 +153,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 
 	// Examine if the object is under deletion
 	if !stretchCluster.ObjectMeta.DeletionTimestamp.IsZero() {
+		l.V(log.TraceLevel).Info("deletion timestamp is not zero. Resources cleanup and remove finalizer")
 		// clean up all dependant resources
 		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
 			return r.syncStatus(ctx, cluster, state, ctrl.Result{}, err)
@@ -649,7 +651,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 		trace.EndSpan(span, err)
 	}()
 
-	if !state.pools.CheckScale() {
+	if !state.pools.CheckScale(ctx) {
 		logger.V(log.TraceLevel).Info("scale operation currently underway")
 		// we're not yet ready to scale, so just requeue
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
@@ -737,10 +739,6 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		trace.EndSpan(span, err)
 	}()
 
-	if state.pools.AllZero() {
-		return reconcile.Result{}, nil
-	}
-
 	health, err = r.fetchClusterHealth(ctx, state.admin)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
@@ -772,10 +770,17 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// at this point any set that needs to be deleted should have 0 replicas
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
-		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String(), "cluster", set.GetCluster())
+		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String(), "cluster", set.GetCanonicalClusterName())
 		if err := r.LifecycleClient.DeleteStatefulSetForNodePool(ctx, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
+	}
+
+	if state.pools.AllZero() {
+		// When there is no desired node pool the cluster is tearing down, so
+		// no pods needs to be roll over.
+		logger.V(log.TraceLevel).Info("no desired node pool found")
+		return reconcile.Result{}, nil
 	}
 
 	// finally, we make sure we roll every pod that is not in-sync with its statefulset
@@ -946,16 +951,77 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 		return ctrl.Result{}, nil
 	}
 
-	// TODO(stretch-cluster): Implement full cluster configuration reconciliation for StretchCluster
-	// This will require:
-	// 1. Extracting cluster config from the multicluster package render state
-	// 2. Getting superusers configuration
-	// 3. Syncing configuration via admin API using syncclusterconfig.Syncer
-	// 4. Tracking config version for restart-on-change functionality
-	logger.V(log.TraceLevel).Info("cluster configuration reconciliation not yet fully implemented for StretchCluster")
-	state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonNotApplied, "cluster configuration reconciliation not yet implemented for StretchCluster")
+	config := state.cluster.StretchCluster.Spec.GetClusterConfig()
+	if config == nil {
+		config = map[string]any{}
+	}
 
-	return ctrl.Result{}, nil
+	superusers, err := r.superusersFor(ctx, state, cluster)
+	if err != nil {
+		logger.Error(err, "fetching super users")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	mode := feature.ClusterConfigSyncMode.Get(ctx, state.cluster.StretchCluster)
+
+	syncer := syncclusterconfig.Syncer{Client: state.admin, Mode: mode}
+	configStatus, err := syncer.Sync(ctx, config, superusers)
+	if err != nil {
+		logger.Error(err, "syncing cluster config")
+		return ctrl.Result{}, errors.WithStack(err)
+	}
+
+	state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonApplied)
+
+	version := configStatus.PropertiesThatNeedRestartHash
+	didConfigChange := state.cluster.StretchCluster.Status.ConfigVersion != version
+	state.status.ConfigVersion = ptr.To(version)
+
+	logger.Info("cluster config sync result",
+		"configVersion", version,
+		"previousConfigVersion", state.cluster.StretchCluster.Status.ConfigVersion,
+		"didConfigChange", didConfigChange,
+		"restartOnConfigChange", state.restartOnConfigChange,
+		"needsRestart", configStatus.NeedsRestart,
+	)
+
+	result := ctrl.Result{}
+	if didConfigChange && state.restartOnConfigChange {
+		logger.Info("config version changed, requeuing for rolling restart")
+		result.RequeueAfter = requeueTimeout
+	}
+
+	return result, nil
+}
+
+func (r *MulticlusterReconciler) superusersFor(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster) ([]string, error) {
+	sc := state.cluster.StretchCluster
+
+	if sc.Spec.Auth == nil || sc.Spec.Auth.SASL == nil || !ptr.Deref(sc.Spec.Auth.SASL.Enabled, false) {
+		return nil, nil
+	}
+
+	superusers := []string{}
+
+	if sc.Spec.Auth.SASL.SecretRef != nil {
+		key := client.ObjectKey{Namespace: sc.Namespace, Name: *sc.Spec.Auth.SASL.SecretRef}
+
+		var users corev1.Secret
+		if err := cluster.GetClient().Get(ctx, key, &users); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		for filename, userTXT := range users.Data {
+			superusers = append(superusers, syncclusterconfig.LoadUsersFile(ctx, filename, userTXT)...)
+		}
+	}
+
+	// The bootstrap user was already set by syncBootstrapUser earlier in the reconciliation chain.
+	if state.bootstrapUser != "" {
+		superusers = append(superusers, state.bootstrapUser)
+	}
+
+	return syncclusterconfig.NormalizeSuperusers(superusers), nil
 }
 
 func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
@@ -998,6 +1064,11 @@ func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *
 	defer func() { trace.EndSpan(span, err) }()
 
 	var health rpadmin.ClusterHealthOverview
+
+	if admin == nil {
+		log.FromContext(ctx).Error(errors.New("no admin api"), "Admin must be initialized")
+		return health, nil
+	}
 
 	health, err = admin.GetHealthOverview(ctx)
 	if err != nil {

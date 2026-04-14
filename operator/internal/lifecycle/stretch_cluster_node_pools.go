@@ -50,7 +50,7 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 
 	// Use the canonical cluster name so that labels are identical regardless
 	// of which operator instance (local vs remote) performs the reconciliation.
-	canonicalName := CanonicalClusterName(clusterName, m.mgr)
+	canonicalName := CanonicalClusterName(clusterName, m.mgr.GetLocalClusterName)
 
 	// Apply operator-level default images to pools that don't specify their own.
 	applyDefaultImage := defaultImage(m.redpandaImage)
@@ -84,10 +84,10 @@ func (m *StretchNodePoolRenderer) IsNodePool(object client.Object) bool {
 	return isNodePool(object)
 }
 
-func CanonicalClusterName(clusterName string, mgr multicluster.Manager) string {
+func CanonicalClusterName(clusterName string, getLocalClusterName func() string) string {
 	canonicalName := clusterName
 	if canonicalName == mcmanager.LocalCluster {
-		canonicalName = mgr.GetLocalClusterName()
+		canonicalName = getLocalClusterName()
 	}
 	return canonicalName
 }

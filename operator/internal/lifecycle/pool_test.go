@@ -128,7 +128,7 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 
 			tracker := NewPoolTracker(0)
 			tracker.addExisting(tt.existingPools...)
-			require.Equal(t, tt.canScale, tracker.CheckScale())
+			require.Equal(t, tt.canScale, tracker.CheckScale(t.Context()))
 		})
 	}
 }

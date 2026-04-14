@@ -24,7 +24,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/twmb/franz-go/pkg/kadm"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,6 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -167,7 +170,7 @@ func (s *StretchClusterFactorySuite) TestFactoryClients() {
 	}
 
 	// Wait for the reconciler to process the cluster (finalizer present).
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -178,7 +181,7 @@ func (s *StretchClusterFactorySuite) TestFactoryClients() {
 	// Wait for at least one broker to become ready.
 	// In flat network mode, the controller manages EndpointSlices for remote
 	// per-pod Services, so brokers can discover each other without manual fixup.
-	s.Require().Eventually(func() bool {
+	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
 			return false
@@ -253,4 +256,184 @@ func (s *StretchClusterFactorySuite) TestFactoryClients() {
 			return true
 		}, 2*time.Minute, 5*time.Second, "schema registry client never connected")
 	})
+}
+
+func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
+	t := s.T()
+	ns := "sc-factory"
+	nn := types.NamespacedName{Name: "config-sync", Namespace: ns}
+
+	// Deploy a StretchCluster with SASL auth, initial cluster config, and
+	// the restart-on-config-change annotation.
+	sc := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nn.Name,
+			Namespace: nn.Namespace,
+			Annotations: map[string]string{
+				"operator.redpanda.com/restart-cluster-on-config-change": "true",
+			},
+		},
+		Spec: redpandav1alpha2.StretchClusterSpec{
+			Networking: &redpandav1alpha2.Networking{
+				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
+			},
+			RBAC: &redpandav1alpha2.RBAC{
+				Enabled: ptr.To(true),
+			},
+			Auth: &redpandav1alpha2.Auth{
+				SASL: &redpandav1alpha2.SASL{
+					Enabled:   ptr.To(true),
+					SecretRef: ptr.To("sasl-users"),
+					Users: []redpandav1alpha2.UsersItems{
+						{Name: ptr.To("admin"), Password: ptr.To("changeme")},
+					},
+				},
+			},
+			Config: &redpandav1alpha2.Config{
+				Cluster: &runtime.RawExtension{
+					Raw: []byte(`{"auto_create_topics_enabled":true}`),
+				},
+			},
+		},
+	}
+	s.mc.ApplyAll(t, s.ctx, sc)
+
+	// Deploy NodePools on each cluster.
+	for i, env := range s.mc.Envs {
+		pool := &redpandav1alpha2.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("cfg-pool-%d", i),
+				Namespace: ns,
+			},
+			Spec: redpandav1alpha2.NodePoolSpec{
+				EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+					Replicas: ptr.To(int32(1)),
+				},
+				ClusterRef: redpandav1alpha2.ClusterRef{
+					Name:  nn.Name,
+					Group: ptr.To("cluster.redpanda.com"),
+					Kind:  ptr.To("StretchCluster"),
+				},
+			},
+		}
+
+		gvk, err := env.Client().GroupVersionKindFor(pool)
+		require.NoError(t, err)
+		pool.GetObjectKind().SetGroupVersionKind(gvk)
+		pool.SetManagedFields(nil)
+		require.NoError(t, env.Client().Patch(s.ctx, pool, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO
+	}
+
+	// Wait for the reconciler to process (finalizer present).
+	require.Eventually(t, func() bool {
+		var cluster redpandav1alpha2.StretchCluster
+		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
+			return false
+		}
+		return slices.Contains(cluster.Finalizers, redpandacontrollers.FinalizerKey)
+	}, 2*time.Minute, 1*time.Second, "StretchCluster never received finalizer")
+
+	// Wait for at least one broker to become ready.
+	require.Eventually(t, func() bool {
+		var cluster redpandav1alpha2.StretchCluster
+		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
+			return false
+		}
+		for _, pool := range cluster.Status.NodePools {
+			if pool.ReadyReplicas > 0 {
+				return true
+			}
+		}
+		return false
+	}, 5*time.Minute, 5*time.Second, "no brokers became ready")
+
+	// Wait for ConfigurationApplied=True.
+	require.Eventually(t, func() bool {
+		var cluster redpandav1alpha2.StretchCluster
+		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
+			return false
+		}
+		cond := apimeta.FindStatusCondition(cluster.Status.Conditions, statuses.StretchClusterConfigurationApplied)
+		return cond != nil && cond.Status == metav1.ConditionTrue
+	}, 3*time.Minute, 5*time.Second, "ConfigurationApplied=True never appeared")
+
+	// Wait for Stable=True.
+	require.Eventually(t, func() bool {
+		var cluster redpandav1alpha2.StretchCluster
+		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
+			return false
+		}
+		cond := apimeta.FindStatusCondition(cluster.Status.Conditions, statuses.StretchClusterStable)
+		return cond != nil && cond.Status == metav1.ConditionTrue
+	}, 3*time.Minute, 5*time.Second, "Stable=True never appeared")
+
+	// Record the initial config version.
+	var initialConfigVersion string
+	{
+		var cluster redpandav1alpha2.StretchCluster
+		require.NoError(t, s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster))
+		initialConfigVersion = cluster.Status.ConfigVersion
+	}
+	require.NotEmpty(t, initialConfigVersion, "expected non-empty initial config version")
+
+	// Mutate: add a restart-requiring property (append_chunk_size).
+	// Must apply to ALL clusters to pass spec consistency check.
+	mutatedSC := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      nn.Name,
+			Namespace: nn.Namespace,
+			Annotations: map[string]string{
+				"operator.redpanda.com/restart-cluster-on-config-change": "true",
+			},
+		},
+		Spec: redpandav1alpha2.StretchClusterSpec{
+			Networking: &redpandav1alpha2.Networking{
+				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
+			},
+			RBAC: &redpandav1alpha2.RBAC{
+				Enabled: ptr.To(true),
+			},
+			Auth: &redpandav1alpha2.Auth{
+				SASL: &redpandav1alpha2.SASL{
+					Enabled:   ptr.To(true),
+					SecretRef: ptr.To("sasl-users"),
+					Users: []redpandav1alpha2.UsersItems{
+						{Name: ptr.To("admin"), Password: ptr.To("changeme")},
+					},
+				},
+			},
+			Config: &redpandav1alpha2.Config{
+				Cluster: &runtime.RawExtension{
+					Raw: []byte(`{"auto_create_topics_enabled":true,"append_chunk_size":32768}`),
+				},
+			},
+		},
+	}
+	s.mc.ApplyAll(t, s.ctx, mutatedSC)
+
+	// Verify ConfigurationApplied returns to True and the config version changed.
+	require.Eventually(t, func() bool {
+		var cluster redpandav1alpha2.StretchCluster
+		if err := s.mc.Envs[0].Client().Get(s.ctx, nn, &cluster); err != nil {
+			return false
+		}
+		cond := apimeta.FindStatusCondition(cluster.Status.Conditions, statuses.StretchClusterConfigurationApplied)
+		if cond == nil || cond.Status != metav1.ConditionTrue {
+			return false
+		}
+		return cluster.Status.ConfigVersion != "" && cluster.Status.ConfigVersion != initialConfigVersion
+	}, 3*time.Minute, 5*time.Second, "ConfigurationApplied=True with new config version never appeared after config change")
+
+	// Clean up to avoid resource conflicts with other tests in the suite.
+	s.mc.DeleteAll(t, s.ctx, ns, &redpandav1alpha2.NodePool{})
+	s.mc.DeleteAll(t, s.ctx, ns, &redpandav1alpha2.StretchCluster{})
+
+	// Wait for the StretchCluster to be fully deleted (finalizer removed).
+	require.Eventually(t, func() bool {
+		var list redpandav1alpha2.StretchClusterList
+		if err := s.mc.Envs[0].Client().List(s.ctx, &list, client.InNamespace(ns)); err != nil {
+			return false
+		}
+		return len(list.Items) == 0
+	}, 2*time.Minute, 1*time.Second, "StretchCluster was not fully deleted")
 }

@@ -141,7 +141,7 @@ require (
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
-	github.com/redpanda-data/common-go/otelutil v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
+	github.com/redpanda-data/common-go/otelutil v0.0.0-20260413160920-df1679f86269 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect
