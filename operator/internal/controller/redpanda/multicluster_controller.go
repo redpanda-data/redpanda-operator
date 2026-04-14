@@ -153,6 +153,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 
 	// Examine if the object is under deletion
 	if !stretchCluster.ObjectMeta.DeletionTimestamp.IsZero() {
+		l.V(log.TraceLevel).Info("deletion timestamp is not zero. Resources cleanup and remove finalizer")
 		// clean up all dependant resources
 		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
 			return r.syncStatus(ctx, cluster, state, ctrl.Result{}, err)
