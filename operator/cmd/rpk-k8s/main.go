@@ -20,13 +20,13 @@ import (
 )
 
 func main() {
-	root := rpkk8s.Command()
+	k8s := rpkk8s.Command()
 
 	// rpk plugin autocomplete support: when invoked with
 	// --help-autocomplete, emit JSON describing all subcommands
 	// so rpk can register them for shell completion.
 	if len(os.Args) > 1 && os.Args[1] == "--help-autocomplete" {
-		helps := collectHelps("k8s", root)
+		helps := collectHelps("k8s", k8s)
 		out, err := json.Marshal(helps)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error marshalling help: %v\n", err)
@@ -35,6 +35,18 @@ func main() {
 		fmt.Println(string(out))
 		return
 	}
+
+	// Wrap k8s under a phantom "rpk" root so cobra renders usage paths as
+	// "rpk k8s ..." instead of "k8s ...". Cobra derives CommandPath from
+	// parent names, so the phantom parent is the only way to inject "rpk"
+	// into the displayed path. We prepend "k8s" to the real args so routing
+	// goes through the full phantom→k8s→... tree.
+	root := &cobra.Command{
+		Use:          "rpk",
+		SilenceUsage: true,
+	}
+	root.AddCommand(k8s)
+	root.SetArgs(append([]string{"k8s"}, os.Args[1:]...))
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
