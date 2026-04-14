@@ -12,6 +12,7 @@ package v1alpha2
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -178,9 +179,31 @@ type PipelineSpec struct {
 	// +optional
 	Zones []string `json:"zones,omitempty"`
 
+	// Budget configures a PodDisruptionBudget for the pipeline Deployment,
+	// protecting pipeline pods from voluntary disruptions such as node drains
+	// and cluster autoscaler evictions. When not set, no PDB is created.
+	// +optional
+	Budget *PipelineBudget `json:"budget,omitempty"`
+
 	// ClusterSource is a reference to the Redpanda cluster this pipeline connects to.
 	// +optional
 	ClusterSource *ClusterSource `json:"cluster,omitempty"`
+}
+
+// PipelineBudget configures a PodDisruptionBudget for the pipeline.
+// Exactly one of MaxUnavailable or MinAvailable must be specified.
+// +kubebuilder:validation:XValidation:message="exactly one of maxUnavailable or minAvailable must be set",rule="has(self.maxUnavailable) != has(self.minAvailable)"
+type PipelineBudget struct {
+	// MaxUnavailable is the maximum number of pipeline pods that can be
+	// unavailable during a voluntary disruption. Can be an absolute number
+	// (e.g. 1) or a percentage (e.g. "25%").
+	// +optional
+	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty"`
+	// MinAvailable is the minimum number of pipeline pods that must remain
+	// available during a voluntary disruption. Can be an absolute number
+	// (e.g. 2) or a percentage (e.g. "75%").
+	// +optional
+	MinAvailable *intstr.IntOrString `json:"minAvailable,omitempty"`
 }
 
 // PipelineStatus defines the observed state of a Connect resource.

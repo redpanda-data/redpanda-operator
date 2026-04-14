@@ -18,6 +18,7 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -52,6 +53,7 @@ func Types() []kube.Object {
 	return []kube.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
+		&policyv1.PodDisruptionBudget{},
 		&monitoringv1.PodMonitor{},
 	}
 }
@@ -70,6 +72,10 @@ func (r *render) Render(_ context.Context) ([]kube.Object, error) {
 	dp := r.deployment()
 
 	objs := []kube.Object{cm, dp}
+
+	if pdb := r.podDisruptionBudget(); pdb != nil {
+		objs = append(objs, pdb)
+	}
 
 	if pm := r.podMonitor(); pm != nil {
 		objs = append(objs, pm)
@@ -262,6 +268,40 @@ func (r *render) deployment() *appsv1.Deployment {
 			},
 		},
 	}
+}
+
+func (r *render) podDisruptionBudget() *policyv1.PodDisruptionBudget {
+	budget := r.pipeline.Spec.Budget
+	if budget == nil {
+		return nil
+	}
+
+	pdb := &policyv1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "policy/v1",
+			Kind:       "PodDisruptionBudget",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        r.pipeline.Name,
+			Namespace:   r.pipeline.Namespace,
+			Labels:      r.labels,
+			Annotations: r.annotations(),
+		},
+		Spec: policyv1.PodDisruptionBudgetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: r.labels,
+			},
+		},
+	}
+
+	if budget.MaxUnavailable != nil {
+		pdb.Spec.MaxUnavailable = budget.MaxUnavailable
+	}
+	if budget.MinAvailable != nil {
+		pdb.Spec.MinAvailable = budget.MinAvailable
+	}
+
+	return pdb
 }
 
 // buildClusterConnectionResources returns the env vars, volumes, and volume

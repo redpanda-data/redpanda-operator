@@ -66,6 +66,34 @@ spec:
                   per-pipeline annotations taking precedence. Useful for integrations like
                   Datadog autodiscovery that rely on pod annotations.
                 type: object
+              budget:
+                description: |-
+                  Budget configures a PodDisruptionBudget for the pipeline Deployment,
+                  protecting pipeline pods from voluntary disruptions such as node drains
+                  and cluster autoscaler evictions. When not set, no PDB is created.
+                properties:
+                  maxUnavailable:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: |-
+                      MaxUnavailable is the maximum number of pipeline pods that can be
+                      unavailable during a voluntary disruption. Can be an absolute number
+                      (e.g. 1) or a percentage (e.g. "25%").
+                    x-kubernetes-int-or-string: true
+                  minAvailable:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: |-
+                      MinAvailable is the minimum number of pipeline pods that must remain
+                      available during a voluntary disruption. Can be an absolute number
+                      (e.g. 2) or a percentage (e.g. "75%").
+                    x-kubernetes-int-or-string: true
+                type: object
+                x-kubernetes-validations:
+                - message: exactly one of maxUnavailable or minAvailable must be set
+                  rule: has(self.maxUnavailable) != has(self.minAvailable)
               cluster:
                 description: ClusterSource is a reference to the Redpanda cluster
                   this pipeline connects to.

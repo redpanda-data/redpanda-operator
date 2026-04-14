@@ -46,6 +46,8 @@ tasks:
           PATH: ./internal/controller/redpanda
         - NAME: console
           PATH: ./internal/controller/console
+        - NAME: pipeline
+          PATH: ./internal/controller/pipeline
         - NAME: v1-manager
           PATH: ./internal/controller/vectorized
         - NAME: decommission
