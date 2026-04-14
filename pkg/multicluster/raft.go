@@ -661,19 +661,25 @@ func (l *leaderRunnable) NeedLeaderElection() bool {
 func (l *leaderRunnable) Add(r mcmanager.Runnable) {
 	doEngage := func(ctx context.Context) {
 		for name, cluster := range l.getClusters() {
-			l.logger.Info("engaging cluster", "cluster", name)
-
-			if err := r.Engage(ctx, name, cluster); err != nil {
-				l.logger.Error(err, "error engaging cluster", "cluster", name)
-				// Schedule a retry so transient failures are recovered.
-				go func() {
-					select {
-					case <-ctx.Done():
-					case <-time.After(10 * time.Second):
-						l.broadcaster.notify()
-					}
-				}()
-			}
+			name, cluster := name, cluster
+			// Run each cluster's Engage concurrently so that a blocked or
+			// slow Engage (e.g. WaitForCacheSync on an unreachable cluster)
+			// does not prevent other clusters from being engaged or the
+			// runnable's Start/Warmup fn from beginning.
+			go func() {
+				l.logger.Info("engaging cluster", "cluster", name)
+				if err := r.Engage(ctx, name, cluster); err != nil {
+					l.logger.Error(err, "error engaging cluster", "cluster", name)
+					// Schedule a retry so transient failures are recovered.
+					go func() {
+						select {
+						case <-ctx.Done():
+						case <-time.After(10 * time.Second):
+							l.broadcaster.notify()
+						}
+					}()
+				}
+			}()
 		}
 	}
 

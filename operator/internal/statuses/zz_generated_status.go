@@ -491,6 +491,13 @@ const (
 	// spec differs between clusters. Reconciliation is blocked until specs are
 	// aligned.
 	StretchClusterSpecSyncedReasonDriftDetected StretchClusterSpecSyncedCondition = "DriftDetected"
+	// StretchClusterSpecSyncedReasonClusterUnreachable - This reason is used with
+	// the "SpecSynced" condition when one or more peer clusters are unreachable.
+	// The spec consistency check was only performed against the clusters that could
+	// be contacted; reconciliation continues on those clusters. The condition
+	// resolves when all clusters become reachable again and their specs are
+	// verified to be consistent.
+	StretchClusterSpecSyncedReasonClusterUnreachable StretchClusterSpecSyncedCondition = "ClusterUnreachable"
 	// StretchClusterSpecSyncedReasonError - This reason is used when a stretch
 	// cluster has only been partially reconciled and we have early returned due to
 	// a retryable error occurring prior to applying the desired cluster state. If
@@ -1448,6 +1455,8 @@ func (s *StretchClusterStatus) SetSpecSynced(reason StretchClusterSpecSyncedCond
 		}
 		status = metav1.ConditionTrue
 	case StretchClusterSpecSyncedReasonDriftDetected:
+		status = metav1.ConditionFalse
+	case StretchClusterSpecSyncedReasonClusterUnreachable:
 		status = metav1.ConditionFalse
 	case StretchClusterSpecSyncedReasonError:
 		s.isSpecSyncedTransientError = true

@@ -352,6 +352,12 @@
             This reason is used with the "SpecSynced" condition when it evaluates to False because
             the StretchCluster spec differs between clusters. Reconciliation is blocked until specs
             are aligned.
+        - name: ClusterUnreachable
+          description: >
+            This reason is used with the "SpecSynced" condition when one or more peer clusters are
+            unreachable. The spec consistency check was only performed against the clusters that
+            could be contacted; reconciliation continues on those clusters. The condition resolves
+            when all clusters become reachable again and their specs are verified to be consistent.
     - name: BootstrapUserSynced
       description: >
         This condition indicates whether the bootstrap superuser secret has been

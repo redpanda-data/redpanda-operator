@@ -171,8 +171,8 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 
 	// Check that .spec is consistent across all clusters before proceeding.
 	// If there's drift, block reconciliation until the user fixes it.
-	if drifted, driftResult, driftErr := r.checkSpecConsistency(ctx, state, stretchCluster, req.ClusterName); drifted || driftErr != nil {
-		return r.syncStatus(ctx, cluster, state, driftResult, driftErr)
+	if drifted, driftResult := r.checkSpecConsistency(ctx, state, stretchCluster, req.ClusterName); drifted {
+		return r.syncStatus(ctx, cluster, state, driftResult, nil)
 	}
 
 	// Update our StretchCluster with our finalizer and any default Annotation FFs.
@@ -239,15 +239,18 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
 }
 
-// checkSpecConsistency fetches the StretchCluster from every known cluster and
-// verifies that .Spec is identical. If drift is detected it sets SpecSynced=False,
-// persists the status, and returns drifted=true so the caller can abort reconciliation.
-// When specs are aligned it sets SpecSynced=True.
-func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster, localClusterName string) (drifted bool, _ ctrl.Result, _ error) {
+// checkSpecConsistency fetches the StretchCluster from every reachable cluster
+// and verifies that .Spec is identical. Unreachable clusters are skipped with a
+// logged warning — reconciliation continues on the clusters that are available
+// rather than being blocked by a transient outage. If drift is detected on a
+// reachable cluster it sets SpecSynced=False and returns drifted=true so the
+// caller can abort. When all reachable specs are aligned it sets SpecSynced=True.
+func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster, localClusterName string) (drifted bool, _ ctrl.Result) {
 	l := log.FromContext(ctx).WithName("checkSpecConsistency")
 
 	localSpec := sc.Spec
 	var driftDetails []string
+	var unreachable []string
 
 	for _, clusterName := range r.Manager.GetClusterNames() {
 		// Skip the local cluster — we already have its spec.
@@ -256,12 +259,16 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 		}
 		remote, err := r.Manager.GetCluster(ctx, clusterName)
 		if err != nil {
-			return false, ctrl.Result{}, errors.Wrapf(err, "fetching cluster %q for spec consistency check", clusterName)
+			l.Info("cluster unreachable during spec consistency check, skipping", "cluster", clusterName, "error", err)
+			unreachable = append(unreachable, clusterName)
+			continue
 		}
 
 		remoteSC := &redpandav1alpha2.StretchCluster{}
 		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
-			return false, ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %q", clusterName)
+			l.Info("could not fetch StretchCluster from cluster, skipping", "cluster", clusterName, "error", err)
+			unreachable = append(unreachable, clusterName)
+			continue
 		}
 
 		if !apiequality.Semantic.DeepEqual(localSpec, remoteSC.Spec) {
@@ -271,15 +278,25 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 	}
 
 	if len(driftDetails) == 0 {
-		state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonSynced)
-		return false, ctrl.Result{}, nil
+		if len(unreachable) > 0 {
+			msg := fmt.Sprintf("clusters unreachable, spec consistency could not be verified: %s", strings.Join(unreachable, ", "))
+			l.Info(msg)
+			// Reachable specs are aligned but some clusters are down. Use the
+			// ClusterUnreachable reason so operators can distinguish a partial
+			// check from a genuine drift or error. Reconciliation continues on
+			// live clusters — we do NOT block on an unreachable peer.
+			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonClusterUnreachable, msg)
+		} else {
+			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonSynced)
+		}
+		return false, ctrl.Result{}
 	}
 
 	msg := fmt.Sprintf("StretchCluster .spec differs on clusters: %s — reconciliation is blocked until specs are aligned", strings.Join(driftDetails, "; "))
 	l.Info(msg)
 
 	state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonDriftDetected, msg)
-	return true, ctrl.Result{RequeueAfter: requeueTimeout}, nil
+	return true, ctrl.Result{RequeueAfter: requeueTimeout}
 }
 
 // specDiffFields returns the top-level JSON field names of StretchClusterSpec

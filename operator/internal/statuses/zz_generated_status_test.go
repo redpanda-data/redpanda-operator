@@ -592,6 +592,14 @@ func TestStretchCluster(t *testing.T) {
 				status.SetSpecSynced(StretchClusterSpecSyncedReasonDriftDetected, "reason")
 			},
 		},
+		"SpecSynced/ClusterUnreachable": {
+			condition: StretchClusterSpecSynced,
+			reason:    string(StretchClusterSpecSyncedReasonClusterUnreachable),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *StretchClusterStatus) {
+				status.SetSpecSynced(StretchClusterSpecSyncedReasonClusterUnreachable, "reason")
+			},
+		},
 		"SpecSynced/Error": {
 			condition: StretchClusterSpecSynced,
 			reason:    string(StretchClusterSpecSyncedReasonError),
