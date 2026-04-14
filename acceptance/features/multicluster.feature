@@ -17,6 +17,36 @@ Feature: Multicluster Operator
         enabled: false
       rbac:
         enabled: true
+      tls:
+        enabled: true
+        certs:
+          issuer-managed:
+            caEnabled: true
+            applyInternalDNSNames: true
+            issuerRef:
+              name: custom-issuer-managed-issuer
+              kind: Issuer
+              group: cert-manager.io
+          user-provided:
+            caEnabled: true
+            secretRef:
+              name: cluster-user-provided-cert
+      listeners:
+        admin:
+          tls:
+            cert: issuer-managed
+        kafka:
+          tls:
+            cert: user-provided
+        http:
+          tls:
+            cert: issuer-managed
+        schemaRegistry:
+          tls:
+            cert: issuer-managed
+        rpc:
+          tls:
+            cert: issuer-managed
     """
     Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
     And I apply a NodePool Kubernetes manifest to "multicluster":
@@ -42,3 +72,6 @@ Feature: Multicluster Operator
     And I expect all 3 NodePools in "multicluster" to be eventually bound and deployed
     When I execute "rpk redpanda admin brokers list" command in the statefulset container in each cluster
     And I expect them to return the same Redpanda broker list
+    # rpk topic list exercises the Kafka listener which uses the "user-provided"
+    # cert (SecretRef), validating that the pre-signed TLS secret works.
+    And I execute "rpk topic list" command in the statefulset container in each cluster

@@ -486,10 +486,44 @@ func bootstrapTLS(ctx context.Context, t framework.TestingT, vclusters []*vclust
 }
 
 func deployOperators(ctx context.Context, t framework.TestingT, vclusters []*vclusterNode, namespace, redpandaLicense string, peers []any) {
-	defaultSecret, err := generateCASecret("cluster", "default", namespace)
+	// "issuer-managed" cert: user provides CA secret + Issuer, StretchCluster
+	// uses IssuerRef. Used by admin, http, schemaRegistry, and rpc listeners.
+	issuerManagedSecret, err := generateCASecret("cluster", "issuer-managed", namespace)
 	require.NoError(t, err)
-	externalSecret, err := generateCASecret("cluster", "external", namespace)
+
+	// "user-provided" cert: user provides a pre-signed server cert secret
+	// directly, StretchCluster uses SecretRef (no cert-manager involvement).
+	// Used by the kafka listener.
+	userProvidedCASecret, err := generateCASecret("cluster", "user-provided", namespace)
 	require.NoError(t, err)
+	userProvidedCA, err := bootstrap.LoadCA(
+		userProvidedCASecret.Data[corev1.TLSCertKey],
+		userProvidedCASecret.Data[corev1.TLSPrivateKeyKey],
+		&bootstrap.CAConfiguration{CALifetime: caLifetime, CertificateLifetime: 24 * time.Hour},
+	)
+	require.NoError(t, err)
+	// Sign a wildcard leaf cert. Include localhost (rpk connects locally)
+	// and wildcard SANs for cross-pod service resolution.
+	userProvidedLeafCert, err := userProvidedCA.Sign(
+		"localhost",
+		"*.default.svc.cluster.local",
+		"*.cluster.default.svc.cluster.local",
+		"*.default.svc",
+		"*.default",
+	)
+	require.NoError(t, err)
+	userProvidedServerSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-user-provided-cert",
+			Namespace: namespace,
+		},
+		Type: corev1.SecretTypeTLS,
+		Data: map[string][]byte{
+			corev1.TLSCertKey:       userProvidedLeafCert.Bytes(),
+			corev1.TLSPrivateKeyKey: userProvidedLeafCert.PrivateKeyBytes(),
+			"ca.crt":                userProvidedCA.Bytes(),
+		},
+	}
 
 	for _, cluster := range vclusters {
 		t.Logf("creating license secret in %q", cluster.Name())
@@ -502,12 +536,12 @@ func deployOperators(ctx context.Context, t framework.TestingT, vclusters []*vcl
 				"redpanda.license": []byte(redpandaLicense),
 			},
 		}))
-		t.Logf("creating TLS secrets and issuers in %q", cluster.Name())
-		require.NoError(t, cluster.Create(ctx, defaultSecret.DeepCopy()))
-		require.NoError(t, cluster.Create(ctx, externalSecret.DeepCopy()))
 
-		defaultIssuer := newCAIssuer("cluster", "default", namespace)
-		externalIssuer := newCAIssuer("cluster", "external", namespace)
+		// Create the CA secret + Issuer for "issuer-managed" cert (IssuerRef flow).
+		t.Logf("creating TLS secrets and issuers in %q", cluster.Name())
+		require.NoError(t, cluster.Create(ctx, issuerManagedSecret.DeepCopy()))
+
+		issuerManagedIssuer := newCAIssuer("cluster", "issuer-managed", namespace)
 		webhookRetry := wait.Backoff{
 			Steps:    100,
 			Duration: 1 * time.Second,
@@ -518,11 +552,12 @@ func deployOperators(ctx context.Context, t framework.TestingT, vclusters []*vcl
 			return err != nil && strings.Contains(err.Error(), "webhook")
 		}
 		require.NoError(t, retry.OnError(webhookRetry, isWebhookErr, func() error {
-			return cluster.Create(ctx, defaultIssuer)
+			return cluster.Create(ctx, issuerManagedIssuer)
 		}))
-		require.NoError(t, retry.OnError(webhookRetry, isWebhookErr, func() error {
-			return cluster.Create(ctx, externalIssuer)
-		}))
+
+		// Create the pre-signed server cert secret for "user-provided" cert (SecretRef flow).
+		// No Issuer needed — the operator uses this secret directly.
+		require.NoError(t, cluster.Create(ctx, userProvidedServerSecret.DeepCopy()))
 
 		t.Logf("deploying operator in %q", cluster.Name())
 		rel, err := cluster.HelmInstall(ctx, "../operator/chart", helm.InstallOptions{
@@ -571,7 +606,7 @@ func cleanupWrapper(t framework.TestingT, f func(ctx context.Context)) {
 // and returns it as a kubernetes.io/tls Secret matching the naming convention used
 // by the Redpanda helm chart: {clusterName}-{listener}-root-certificate.
 func generateCASecret(clusterName, listener, namespace string) (*corev1.Secret, error) {
-	secretName := fmt.Sprintf("%s-%s-root-certificate", clusterName, listener)
+	secretName := fmt.Sprintf("%s-%s-ca-provided-by-user", clusterName, listener)
 
 	ca, err := bootstrap.GenerateCA("redpanda", secretName, &bootstrap.CAConfiguration{
 		CALifetime: caLifetime,
@@ -580,22 +615,10 @@ func generateCASecret(clusterName, listener, namespace string) (*corev1.Secret, 
 		return nil, err
 	}
 
-	issuerName := fmt.Sprintf("%s-%s-selfsigned-issuer", clusterName, listener)
-
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: namespace,
-			Annotations: map[string]string{
-				"cert-manager.io/alt-names":        "",
-				"cert-manager.io/certificate-name": secretName,
-				"cert-manager.io/common-name":      secretName,
-				"cert-manager.io/ip-sans":          "",
-				"cert-manager.io/issuer-group":     "cert-manager.io",
-				"cert-manager.io/issuer-kind":      "Issuer",
-				"cert-manager.io/issuer-name":      issuerName,
-				"cert-manager.io/uri-sans":         "",
-			},
 		},
 		Type: corev1.SecretTypeTLS,
 		Data: map[string][]byte{
@@ -608,9 +631,9 @@ func generateCASecret(clusterName, listener, namespace string) (*corev1.Secret, 
 
 // newCAIssuer creates a cert-manager Issuer that references the CA secret
 // matching the naming convention: {clusterName}-{listener}-root-{certificate,issuer}.
-func newCAIssuer(clusterName, listener, namespace string) *certmanagerv1.Issuer {
-	secretName := fmt.Sprintf("%s-%s-root-certificate", clusterName, listener)
-	issuerName := fmt.Sprintf("%s-%s-root-issuer", clusterName, listener)
+func newCAIssuer(clusterName, certName, namespace string) *certmanagerv1.Issuer {
+	secretName := fmt.Sprintf("%s-%s-ca-provided-by-user", clusterName, certName)
+	issuerName := fmt.Sprintf("custom-%s-issuer", certName)
 
 	return &certmanagerv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
@@ -750,7 +773,7 @@ func executeCommandInStatefulsetContainers(ctx context.Context, t framework.Test
 				Command:   []string{"/bin/bash", "-c", command},
 				Stdout:    &healthOut,
 			}); err != nil {
-				t.Logf("error executing %q in %s: %v", command, cfg.node.Name(), err)
+				t.Logf("error executing %q in %s: %v \n output: %s", command, cfg.node.Name(), err, healthOut.String())
 				return false
 			}
 
