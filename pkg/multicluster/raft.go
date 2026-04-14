@@ -550,7 +550,7 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 
 	if config.Bootstrap {
 		if err := manager.Add(&startupKubeconfigFetcher{
-			config:     config,
+			config:     *config,
 			raftConfig: raftConfig,
 			client:     localClient,
 			logger:     config.Logger,
