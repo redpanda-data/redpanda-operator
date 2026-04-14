@@ -121,13 +121,20 @@ func BootstrapKubernetesClusters(ctx context.Context, organization string, confi
 
 	for i, cluster := range configuration.RemoteClusters {
 		if configuration.BootstrapKubeconfigs {
-			for i := range kubeconfigs {
-				kubeconfig := kubeconfigs[i]
+			// Use the per-cluster helm fullname as the kubeconfig secret prefix so
+			// that it matches --kubeconfig-name=Fullname(dot) in the operator chart.
+			// Fall back to ServiceName when Name is not set.
+			kubeconfigPrefix := cluster.Name
+			if kubeconfigPrefix == "" {
+				kubeconfigPrefix = configuration.ServiceName
+			}
+			for j := range kubeconfigs {
+				kubeconfig := kubeconfigs[j]
 
 				if err := CreateKubeconfigSecret(ctx, kubeconfig, &RemoteKubernetesConfiguration{
 					ContextName:     cluster.ContextName,
 					Namespace:       configuration.OperatorNamespace,
-					Name:            configuration.ServiceName + "-" + configuration.RemoteClusters[i].ContextName,
+					Name:            kubeconfigPrefix + "-" + configuration.RemoteClusters[j].ContextName,
 					EnsureNamespace: configuration.EnsureNamespace,
 					RESTConfig:      cluster.KubeConfig,
 				}); err != nil {
