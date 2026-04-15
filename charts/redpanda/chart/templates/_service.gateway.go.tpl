@@ -55,7 +55,7 @@
 {{- $_is_returning := false -}}
 {{- $ports := (coalesce nil) -}}
 {{- range $name, $listener := $state.Values.listeners.admin.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "admin-%s" $name) "protocol" "TCP" "port" ($listener.port | int))))) -}}
@@ -64,7 +64,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.kafka.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "kafka-%s" $name) "protocol" "TCP" "port" ($listener.port | int))))) -}}
@@ -73,7 +73,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.http.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "http-%s" $name) "protocol" "TCP" "port" ($listener.port | int))))) -}}
@@ -82,7 +82,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.schemaRegistry.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "schema-%s" $name) "protocol" "TCP" "port" ($listener.port | int))))) -}}

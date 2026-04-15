@@ -10,11 +10,6 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- if (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
-{{- break -}}
-{{- end -}}
 {{- if (ne $state.Values.external.type "LoadBalancer") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}

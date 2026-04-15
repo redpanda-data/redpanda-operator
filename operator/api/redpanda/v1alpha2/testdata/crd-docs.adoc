@@ -1249,6 +1249,7 @@ internal and external listeners. However, it is ignored when specified +
 on internal listeners. + |  | 
 | *`advertisedPorts`* __integer array__ | Specifies the network port that the external Service listens on. + |  | 
 | *`nodePort`* __integer__ |  |  | 
+| *`gateway`* __boolean__ | Opts this listener into Gateway API TLSRoute mode. Requires external.gateway to be configured. When true, a TLSRoute is created for this listener instead of including it in NodePort/LoadBalancer services. + |  | 
 | *`host`* __string__ | Host is the SNI hostname for the bootstrap TLSRoute when using Gateway API external access. + |  | 
 | *`hostTemplate`* __string__ | HostTemplate is a Go template for per-broker TLSRoute SNI hostnames. Supports $POD_ORDINAL and $POD_NAME variables. + |  | 
 |===

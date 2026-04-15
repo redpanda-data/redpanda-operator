@@ -23,7 +23,7 @@
 {{- end -}}
 {{- $routes := (coalesce nil) -}}
 {{- range $name, $listener := $state.Values.listeners.kafka.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "kafka" ($listener.port | int))))) "r") -}}
@@ -33,7 +33,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.http.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "http" ($listener.port | int))))) "r") -}}
@@ -43,7 +43,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.admin.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "admin" ($listener.port | int))))) "r") -}}
@@ -53,7 +53,7 @@
 {{- break -}}
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.schemaRegistry.external -}}
-{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) -}}
+{{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
 {{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "schema" ($listener.port | int))))) "r") -}}

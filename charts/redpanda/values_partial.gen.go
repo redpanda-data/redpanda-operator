@@ -426,6 +426,7 @@ type PartialExternalListener[T ~string] struct {
 	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
 	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""
 	PrefixTemplate       *string             "json:\"prefixTemplate,omitempty\""
+	Gateway              *bool               "json:\"gateway,omitempty\""
 	Host                 *string             "json:\"host,omitempty\""
 	HostTemplate         *string             "json:\"hostTemplate,omitempty\""
 }

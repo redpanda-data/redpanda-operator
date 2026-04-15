@@ -1575,6 +1575,11 @@ func (in *ExternalListener) DeepCopyInto(out *ExternalListener) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.Gateway != nil {
+		in, out := &in.Gateway, &out.Gateway
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Host != nil {
 		in, out := &in.Host, &out.Host
 		*out = new(string)

@@ -86,7 +86,7 @@ func TLSRoutes(state *RenderState) []*TLSRoute {
 	var routes []*TLSRoute
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, parentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "kafka", listener.Port)
@@ -94,7 +94,7 @@ func TLSRoutes(state *RenderState) []*TLSRoute {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, parentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "http", listener.Port)
@@ -102,7 +102,7 @@ func TLSRoutes(state *RenderState) []*TLSRoute {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, parentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "admin", listener.Port)
@@ -110,7 +110,7 @@ func TLSRoutes(state *RenderState) []*TLSRoute {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, parentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "schema", listener.Port)

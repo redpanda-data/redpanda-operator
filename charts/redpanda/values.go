@@ -1715,6 +1715,11 @@ func (l *ListenerConfig[T]) ServicePorts(namePrefix string, external *ExternalCo
 		if !ptr.Deref(listener.Enabled, external.Enabled) {
 			continue
 		}
+		// Skip listeners that opted into Gateway API TLSRoute mode;
+		// they get their own ClusterIP services instead.
+		if external.IsGatewayEnabled() && ptr.Deref(listener.Gateway, false) {
+			continue
+		}
 
 		fallbackPorts := append(listener.AdvertisedPorts, l.Port)
 
@@ -1829,13 +1834,18 @@ type ExternalListener[T ~string] struct {
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
 
-	// Host is the SNI hostname used when external.gateway is enabled.
-	// Used as the hostname in the bootstrap TLSRoute. For per-broker
-	// TLSRoutes, the pod ordinal is interpolated via HostTemplate.
+	// Gateway opts this individual listener into Gateway API TLSRoute mode.
+	// Requires external.gateway to be configured with parentRefs.
+	// When true, a TLSRoute is created for this listener instead of
+	// including it in NodePort/LoadBalancer services. This allows gradual
+	// migration: some listeners can use TLSRoute while others remain on
+	// NodePort/LoadBalancer.
+	Gateway *bool `json:"gateway,omitempty"`
+	// Host is the SNI hostname for the bootstrap TLSRoute (requires gateway: true).
 	Host *string `json:"host,omitempty"`
-	// HostTemplate is a Go template for per-broker TLSRoute hostnames.
+	// HostTemplate is a template for per-broker TLSRoute SNI hostnames.
 	// Available variables: $POD_ORDINAL, $POD_NAME.
-	// Example: "kafka-{{$POD_ORDINAL}}-broker.example.com"
+	// Example: "kafka-$POD_ORDINAL-broker.example.com"
 	HostTemplate *string `json:"hostTemplate,omitempty"`
 }
 
@@ -1854,6 +1864,7 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		TLS:                  l.TLS,
 		AuthenticationMethod: auth,
 		PrefixTemplate:       l.PrefixTemplate,
+		Gateway:              l.Gateway,
 		Host:                 l.Host,
 		HostTemplate:         l.HostTemplate,
 	}
@@ -1866,6 +1877,12 @@ func (ExternalListener[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (l *ExternalListener[T]) IsEnabled() bool {
 	return ptr.Deref(l.Enabled, true) && l.Port > 0
+}
+
+// IsGatewayListener returns true when this listener has opted into Gateway API
+// TLSRoute mode via the gateway: true field.
+func (l *ExternalListener[T]) IsGatewayListener() bool {
+	return ptr.Deref(l.Gateway, false)
 }
 
 type TunableConfig map[string]any

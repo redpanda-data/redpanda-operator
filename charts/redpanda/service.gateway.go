@@ -104,7 +104,7 @@ func gatewayServicePorts(state *RenderState) []corev1.ServicePort {
 	var ports []corev1.ServicePort
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		ports = append(ports, corev1.ServicePort{
@@ -115,7 +115,7 @@ func gatewayServicePorts(state *RenderState) []corev1.ServicePort {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		ports = append(ports, corev1.ServicePort{
@@ -126,7 +126,7 @@ func gatewayServicePorts(state *RenderState) []corev1.ServicePort {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		ports = append(ports, corev1.ServicePort{
@@ -137,7 +137,7 @@ func gatewayServicePorts(state *RenderState) []corev1.ServicePort {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
 		ports = append(ports, corev1.ServicePort{

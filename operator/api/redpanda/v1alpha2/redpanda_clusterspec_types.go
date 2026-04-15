@@ -999,6 +999,8 @@ type ExternalListener struct {
 	// Specifies the network port that the external Service listens on.
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
 	NodePort        *int32  `json:"nodePort,omitempty"`
+	// Opts this listener into Gateway API TLSRoute mode. Requires external.gateway to be configured. When true, a TLSRoute is created for this listener instead of including it in NodePort/LoadBalancer services.
+	Gateway *bool `json:"gateway,omitempty"`
 	// Host is the SNI hostname for the bootstrap TLSRoute when using Gateway API external access.
 	Host *string `json:"host,omitempty"`
 	// HostTemplate is a Go template for per-broker TLSRoute SNI hostnames. Supports $POD_ORDINAL and $POD_NAME variables.

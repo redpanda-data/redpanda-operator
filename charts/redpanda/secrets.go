@@ -540,7 +540,8 @@ func externalAdvertiseAddress(state *RenderState) string {
 func advertisedHostJSON(state *RenderState, externalName string, port int32, replicaIndex int) map[string]any {
 	// Gateway API mode: advertise the TLSRoute SNI hostname and the
 	// gateway's advertised port (default 443) rather than a NodePort/LB address.
-	if state.Values.External.IsGatewayEnabled() {
+	// Only applies to listeners that opted into gateway mode.
+	if state.Values.External.IsGatewayEnabled() && isListenerGatewayEnabled(state, externalName) {
 		return advertisedHostJSONGateway(state, externalName, replicaIndex)
 	}
 
@@ -623,6 +624,24 @@ func findListenerHostTemplate(state *RenderState, name string) string {
 		return ptr.Deref(l.HostTemplate, "")
 	}
 	return ""
+}
+
+// isListenerGatewayEnabled returns true if the named listener has opted into
+// Gateway API TLSRoute mode.
+func isListenerGatewayEnabled(state *RenderState, name string) bool {
+	if l, ok := state.Values.Listeners.Kafka.External[name]; ok {
+		return l.IsGatewayListener()
+	}
+	if l, ok := state.Values.Listeners.HTTP.External[name]; ok {
+		return l.IsGatewayListener()
+	}
+	if l, ok := state.Values.Listeners.Admin.External[name]; ok {
+		return l.IsGatewayListener()
+	}
+	if l, ok := state.Values.Listeners.SchemaRegistry.External[name]; ok {
+		return l.IsGatewayListener()
+	}
+	return false
 }
 
 // findListenerHost searches all listener types for an external listener with

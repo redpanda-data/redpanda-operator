@@ -4687,6 +4687,9 @@
                     "enabled": {
                       "type": "boolean"
                     },
+                    "gateway": {
+                      "type": "boolean"
+                    },
                     "host": {
                       "type": "string"
                     },
@@ -4882,6 +4885,9 @@
                       ]
                     },
                     "enabled": {
+                      "type": "boolean"
+                    },
+                    "gateway": {
                       "type": "boolean"
                     },
                     "host": {
@@ -5081,6 +5087,9 @@
                       ]
                     },
                     "enabled": {
+                      "type": "boolean"
+                    },
+                    "gateway": {
                       "type": "boolean"
                     },
                     "host": {
@@ -5340,6 +5349,9 @@
                       ]
                     },
                     "enabled": {
+                      "type": "boolean"
+                    },
+                    "gateway": {
                       "type": "boolean"
                     },
                     "host": {

@@ -10,19 +10,18 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- if (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
-{{- break -}}
-{{- end -}}
 {{- if (ne $state.Values.external.type "NodePort") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
+{{- $gwEnabled := (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r") -}}
 {{- $ports := (coalesce nil) -}}
 {{- range $name, $listener := $state.Values.listeners.admin.external -}}
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- continue -}}
+{{- end -}}
+{{- if (and $gwEnabled (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -38,6 +37,9 @@
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
+{{- if (and $gwEnabled (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r")) -}}
+{{- continue -}}
+{{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $listener.advertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- $nodePort = (index $listener.advertisedPorts (0 | int)) -}}
@@ -49,6 +51,9 @@
 {{- end -}}
 {{- range $name, $listener := $state.Values.listeners.http.external -}}
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
+{{- continue -}}
+{{- end -}}
+{{- if (and $gwEnabled (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
@@ -64,6 +69,9 @@
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $listener)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
+{{- if (and $gwEnabled (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r")) -}}
+{{- continue -}}
+{{- end -}}
 {{- $nodePort := ($listener.port | int) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $listener.advertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- $nodePort = (index $listener.advertisedPorts (0 | int)) -}}
@@ -71,6 +79,11 @@
 {{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" (printf "schema-%s" $name) "protocol" "TCP" "port" ($listener.port | int) "nodePort" $nodePort)))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $ports)))) "r") | int) (0 | int)) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $annotations := $state.Values.external.annotations -}}
