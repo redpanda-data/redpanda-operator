@@ -154,11 +154,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: audit-logging-pool-a-0.audit-logging.audit-logging.svc.cluster.local.
+        - address: pool-a-0.audit-logging
           port: 9093
-        - address: audit-logging-pool-a-1.audit-logging.audit-logging.svc.cluster.local.
+        - address: pool-a-1.audit-logging
           port: 9093
-        - address: audit-logging-pool-a-2.audit-logging.audit-logging.svc.cluster.local.
+        - address: pool-a-2.audit-logging
           port: 9093
       redpanda:
         admin:
@@ -230,25 +230,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - audit-logging-pool-a-0.audit-logging.audit-logging.svc.cluster.local.:9644
-          - audit-logging-pool-a-1.audit-logging.audit-logging.svc.cluster.local.:9644
-          - audit-logging-pool-a-2.audit-logging.audit-logging.svc.cluster.local.:9644
+          - pool-a-0.audit-logging:9644
+          - pool-a-1.audit-logging:9644
+          - pool-a-2.audit-logging:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - audit-logging-pool-a-0.audit-logging.audit-logging.svc.cluster.local.:9093
-          - audit-logging-pool-a-1.audit-logging.audit-logging.svc.cluster.local.:9093
-          - audit-logging-pool-a-2.audit-logging.audit-logging.svc.cluster.local.:9093
+          - pool-a-0.audit-logging:9093
+          - pool-a-1.audit-logging:9093
+          - pool-a-2.audit-logging:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - audit-logging-pool-a-0.audit-logging.audit-logging.svc.cluster.local.:8081
-          - audit-logging-pool-a-1.audit-logging.audit-logging.svc.cluster.local.:8081
-          - audit-logging-pool-a-2.audit-logging.audit-logging.svc.cluster.local.:8081
+          - pool-a-0.audit-logging:8081
+          - pool-a-1.audit-logging:8081
+          - pool-a-2.audit-logging:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -279,11 +279,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: audit-logging-pool-a-0.audit-logging.audit-logging.svc.cluster.local.
+        - address: pool-a-0.audit-logging
           port: 9093
-        - address: audit-logging-pool-a-1.audit-logging.audit-logging.svc.cluster.local.
+        - address: pool-a-1.audit-logging
           port: 9093
-        - address: audit-logging-pool-a-2.audit-logging.audit-logging.svc.cluster.local.
+        - address: pool-a-2.audit-logging
           port: 9093
   kind: ConfigMap
   metadata:
@@ -910,11 +910,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: common-labels-pool-a-0.common-labels.common-labels.svc.cluster.local.
+        - address: pool-a-0.common-labels
           port: 9093
-        - address: common-labels-pool-a-1.common-labels.common-labels.svc.cluster.local.
+        - address: pool-a-1.common-labels
           port: 9093
-        - address: common-labels-pool-a-2.common-labels.common-labels.svc.cluster.local.
+        - address: pool-a-2.common-labels
           port: 9093
       redpanda:
         admin:
@@ -986,25 +986,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - common-labels-pool-a-0.common-labels.common-labels.svc.cluster.local.:9644
-          - common-labels-pool-a-1.common-labels.common-labels.svc.cluster.local.:9644
-          - common-labels-pool-a-2.common-labels.common-labels.svc.cluster.local.:9644
+          - pool-a-0.common-labels:9644
+          - pool-a-1.common-labels:9644
+          - pool-a-2.common-labels:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - common-labels-pool-a-0.common-labels.common-labels.svc.cluster.local.:9093
-          - common-labels-pool-a-1.common-labels.common-labels.svc.cluster.local.:9093
-          - common-labels-pool-a-2.common-labels.common-labels.svc.cluster.local.:9093
+          - pool-a-0.common-labels:9093
+          - pool-a-1.common-labels:9093
+          - pool-a-2.common-labels:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - common-labels-pool-a-0.common-labels.common-labels.svc.cluster.local.:8081
-          - common-labels-pool-a-1.common-labels.common-labels.svc.cluster.local.:8081
-          - common-labels-pool-a-2.common-labels.common-labels.svc.cluster.local.:8081
+          - pool-a-0.common-labels:8081
+          - pool-a-1.common-labels:8081
+          - pool-a-2.common-labels:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1035,11 +1035,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: common-labels-pool-a-0.common-labels.common-labels.svc.cluster.local.
+        - address: pool-a-0.common-labels
           port: 9093
-        - address: common-labels-pool-a-1.common-labels.common-labels.svc.cluster.local.
+        - address: pool-a-1.common-labels
           port: 9093
-        - address: common-labels-pool-a-2.common-labels.common-labels.svc.cluster.local.
+        - address: pool-a-2.common-labels
           port: 9093
   kind: ConfigMap
   metadata:
@@ -1684,11 +1684,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-cluster-domain-pool-a-0.custom-cluster-domain.custom-cluster-domain.svc.custom.local
+        - address: pool-a-0.custom-cluster-domain
           port: 9093
-        - address: custom-cluster-domain-pool-a-1.custom-cluster-domain.custom-cluster-domain.svc.custom.local
+        - address: pool-a-1.custom-cluster-domain
           port: 9093
-        - address: custom-cluster-domain-pool-a-2.custom-cluster-domain.custom-cluster-domain.svc.custom.local
+        - address: pool-a-2.custom-cluster-domain
           port: 9093
       redpanda:
         admin:
@@ -1760,25 +1760,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - custom-cluster-domain-pool-a-0.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9644
-          - custom-cluster-domain-pool-a-1.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9644
-          - custom-cluster-domain-pool-a-2.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9644
+          - pool-a-0.custom-cluster-domain:9644
+          - pool-a-1.custom-cluster-domain:9644
+          - pool-a-2.custom-cluster-domain:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - custom-cluster-domain-pool-a-0.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9093
-          - custom-cluster-domain-pool-a-1.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9093
-          - custom-cluster-domain-pool-a-2.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9093
+          - pool-a-0.custom-cluster-domain:9093
+          - pool-a-1.custom-cluster-domain:9093
+          - pool-a-2.custom-cluster-domain:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - custom-cluster-domain-pool-a-0.custom-cluster-domain.custom-cluster-domain.svc.custom.local:8081
-          - custom-cluster-domain-pool-a-1.custom-cluster-domain.custom-cluster-domain.svc.custom.local:8081
-          - custom-cluster-domain-pool-a-2.custom-cluster-domain.custom-cluster-domain.svc.custom.local:8081
+          - pool-a-0.custom-cluster-domain:8081
+          - pool-a-1.custom-cluster-domain:8081
+          - pool-a-2.custom-cluster-domain:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1809,11 +1809,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-cluster-domain-pool-a-0.custom-cluster-domain.custom-cluster-domain.svc.custom.local
+        - address: pool-a-0.custom-cluster-domain
           port: 9093
-        - address: custom-cluster-domain-pool-a-1.custom-cluster-domain.custom-cluster-domain.svc.custom.local
+        - address: pool-a-1.custom-cluster-domain
           port: 9093
-        - address: custom-cluster-domain-pool-a-2.custom-cluster-domain.custom-cluster-domain.svc.custom.local
+        - address: pool-a-2.custom-cluster-domain
           port: 9093
   kind: ConfigMap
   metadata:
@@ -2432,11 +2432,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-config-pool-a-0.custom-config.custom-config.svc.cluster.local.
+        - address: pool-a-0.custom-config
           port: 9093
-        - address: custom-config-pool-a-1.custom-config.custom-config.svc.cluster.local.
+        - address: pool-a-1.custom-config
           port: 9093
-        - address: custom-config-pool-a-2.custom-config.custom-config.svc.cluster.local.
+        - address: pool-a-2.custom-config
           port: 9093
       redpanda:
         admin:
@@ -2509,25 +2509,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - custom-config-pool-a-0.custom-config.custom-config.svc.cluster.local.:9644
-          - custom-config-pool-a-1.custom-config.custom-config.svc.cluster.local.:9644
-          - custom-config-pool-a-2.custom-config.custom-config.svc.cluster.local.:9644
+          - pool-a-0.custom-config:9644
+          - pool-a-1.custom-config:9644
+          - pool-a-2.custom-config:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - custom-config-pool-a-0.custom-config.custom-config.svc.cluster.local.:9093
-          - custom-config-pool-a-1.custom-config.custom-config.svc.cluster.local.:9093
-          - custom-config-pool-a-2.custom-config.custom-config.svc.cluster.local.:9093
+          - pool-a-0.custom-config:9093
+          - pool-a-1.custom-config:9093
+          - pool-a-2.custom-config:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - custom-config-pool-a-0.custom-config.custom-config.svc.cluster.local.:8081
-          - custom-config-pool-a-1.custom-config.custom-config.svc.cluster.local.:8081
-          - custom-config-pool-a-2.custom-config.custom-config.svc.cluster.local.:8081
+          - pool-a-0.custom-config:8081
+          - pool-a-1.custom-config:8081
+          - pool-a-2.custom-config:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -2558,11 +2558,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-config-pool-a-0.custom-config.custom-config.svc.cluster.local.
+        - address: pool-a-0.custom-config
           port: 9093
-        - address: custom-config-pool-a-1.custom-config.custom-config.svc.cluster.local.
+        - address: pool-a-1.custom-config
           port: 9093
-        - address: custom-config-pool-a-2.custom-config.custom-config.svc.cluster.local.
+        - address: pool-a-2.custom-config
           port: 9093
   kind: ConfigMap
   metadata:
@@ -3181,11 +3181,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-image-pool-a-0.custom-image.custom-image.svc.cluster.local.
+        - address: pool-a-0.custom-image
           port: 9093
-        - address: custom-image-pool-a-1.custom-image.custom-image.svc.cluster.local.
+        - address: pool-a-1.custom-image
           port: 9093
-        - address: custom-image-pool-a-2.custom-image.custom-image.svc.cluster.local.
+        - address: pool-a-2.custom-image
           port: 9093
       redpanda:
         admin:
@@ -3257,25 +3257,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - custom-image-pool-a-0.custom-image.custom-image.svc.cluster.local.:9644
-          - custom-image-pool-a-1.custom-image.custom-image.svc.cluster.local.:9644
-          - custom-image-pool-a-2.custom-image.custom-image.svc.cluster.local.:9644
+          - pool-a-0.custom-image:9644
+          - pool-a-1.custom-image:9644
+          - pool-a-2.custom-image:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - custom-image-pool-a-0.custom-image.custom-image.svc.cluster.local.:9093
-          - custom-image-pool-a-1.custom-image.custom-image.svc.cluster.local.:9093
-          - custom-image-pool-a-2.custom-image.custom-image.svc.cluster.local.:9093
+          - pool-a-0.custom-image:9093
+          - pool-a-1.custom-image:9093
+          - pool-a-2.custom-image:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - custom-image-pool-a-0.custom-image.custom-image.svc.cluster.local.:8081
-          - custom-image-pool-a-1.custom-image.custom-image.svc.cluster.local.:8081
-          - custom-image-pool-a-2.custom-image.custom-image.svc.cluster.local.:8081
+          - pool-a-0.custom-image:8081
+          - pool-a-1.custom-image:8081
+          - pool-a-2.custom-image:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -3306,11 +3306,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-image-pool-a-0.custom-image.custom-image.svc.cluster.local.
+        - address: pool-a-0.custom-image
           port: 9093
-        - address: custom-image-pool-a-1.custom-image.custom-image.svc.cluster.local.
+        - address: pool-a-1.custom-image
           port: 9093
-        - address: custom-image-pool-a-2.custom-image.custom-image.svc.cluster.local.
+        - address: pool-a-2.custom-image
           port: 9093
   kind: ConfigMap
   metadata:
@@ -3929,11 +3929,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-resources-pool-a-0.custom-resources.custom-resources.svc.cluster.local.
+        - address: pool-a-0.custom-resources
           port: 9093
-        - address: custom-resources-pool-a-1.custom-resources.custom-resources.svc.cluster.local.
+        - address: pool-a-1.custom-resources
           port: 9093
-        - address: custom-resources-pool-a-2.custom-resources.custom-resources.svc.cluster.local.
+        - address: pool-a-2.custom-resources
           port: 9093
       redpanda:
         admin:
@@ -4005,25 +4005,25 @@
         - --smp=4
         admin_api:
           addresses:
-          - custom-resources-pool-a-0.custom-resources.custom-resources.svc.cluster.local.:9644
-          - custom-resources-pool-a-1.custom-resources.custom-resources.svc.cluster.local.:9644
-          - custom-resources-pool-a-2.custom-resources.custom-resources.svc.cluster.local.:9644
+          - pool-a-0.custom-resources:9644
+          - pool-a-1.custom-resources:9644
+          - pool-a-2.custom-resources:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - custom-resources-pool-a-0.custom-resources.custom-resources.svc.cluster.local.:9093
-          - custom-resources-pool-a-1.custom-resources.custom-resources.svc.cluster.local.:9093
-          - custom-resources-pool-a-2.custom-resources.custom-resources.svc.cluster.local.:9093
+          - pool-a-0.custom-resources:9093
+          - pool-a-1.custom-resources:9093
+          - pool-a-2.custom-resources:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - custom-resources-pool-a-0.custom-resources.custom-resources.svc.cluster.local.:8081
-          - custom-resources-pool-a-1.custom-resources.custom-resources.svc.cluster.local.:8081
-          - custom-resources-pool-a-2.custom-resources.custom-resources.svc.cluster.local.:8081
+          - pool-a-0.custom-resources:8081
+          - pool-a-1.custom-resources:8081
+          - pool-a-2.custom-resources:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -4054,11 +4054,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-resources-pool-a-0.custom-resources.custom-resources.svc.cluster.local.
+        - address: pool-a-0.custom-resources
           port: 9093
-        - address: custom-resources-pool-a-1.custom-resources.custom-resources.svc.cluster.local.
+        - address: pool-a-1.custom-resources
           port: 9093
-        - address: custom-resources-pool-a-2.custom-resources.custom-resources.svc.cluster.local.
+        - address: pool-a-2.custom-resources
           port: 9093
   kind: ConfigMap
   metadata:
@@ -4677,11 +4677,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-resources-explicit-pool-a-0.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
+        - address: pool-a-0.custom-resources-explicit
           port: 9093
-        - address: custom-resources-explicit-pool-a-1.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
+        - address: pool-a-1.custom-resources-explicit
           port: 9093
-        - address: custom-resources-explicit-pool-a-2.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
+        - address: pool-a-2.custom-resources-explicit
           port: 9093
       redpanda:
         admin:
@@ -4753,25 +4753,25 @@
         - --smp=2
         admin_api:
           addresses:
-          - custom-resources-explicit-pool-a-0.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:9644
-          - custom-resources-explicit-pool-a-1.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:9644
-          - custom-resources-explicit-pool-a-2.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:9644
+          - pool-a-0.custom-resources-explicit:9644
+          - pool-a-1.custom-resources-explicit:9644
+          - pool-a-2.custom-resources-explicit:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - custom-resources-explicit-pool-a-0.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:9093
-          - custom-resources-explicit-pool-a-1.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:9093
-          - custom-resources-explicit-pool-a-2.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:9093
+          - pool-a-0.custom-resources-explicit:9093
+          - pool-a-1.custom-resources-explicit:9093
+          - pool-a-2.custom-resources-explicit:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - custom-resources-explicit-pool-a-0.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:8081
-          - custom-resources-explicit-pool-a-1.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:8081
-          - custom-resources-explicit-pool-a-2.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.:8081
+          - pool-a-0.custom-resources-explicit:8081
+          - pool-a-1.custom-resources-explicit:8081
+          - pool-a-2.custom-resources-explicit:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -4802,11 +4802,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: custom-resources-explicit-pool-a-0.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
+        - address: pool-a-0.custom-resources-explicit
           port: 9093
-        - address: custom-resources-explicit-pool-a-1.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
+        - address: pool-a-1.custom-resources-explicit
           port: 9093
-        - address: custom-resources-explicit-pool-a-2.custom-resources-explicit.custom-resources-explicit.svc.cluster.local.
+        - address: pool-a-2.custom-resources-explicit
           port: 9093
   kind: ConfigMap
   metadata:
@@ -5425,11 +5425,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: enterprise-pool-a-0.enterprise.enterprise.svc.cluster.local.
+        - address: pool-a-0.enterprise
           port: 9093
-        - address: enterprise-pool-a-1.enterprise.enterprise.svc.cluster.local.
+        - address: pool-a-1.enterprise
           port: 9093
-        - address: enterprise-pool-a-2.enterprise.enterprise.svc.cluster.local.
+        - address: pool-a-2.enterprise
           port: 9093
       redpanda:
         admin:
@@ -5501,25 +5501,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - enterprise-pool-a-0.enterprise.enterprise.svc.cluster.local.:9644
-          - enterprise-pool-a-1.enterprise.enterprise.svc.cluster.local.:9644
-          - enterprise-pool-a-2.enterprise.enterprise.svc.cluster.local.:9644
+          - pool-a-0.enterprise:9644
+          - pool-a-1.enterprise:9644
+          - pool-a-2.enterprise:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - enterprise-pool-a-0.enterprise.enterprise.svc.cluster.local.:9093
-          - enterprise-pool-a-1.enterprise.enterprise.svc.cluster.local.:9093
-          - enterprise-pool-a-2.enterprise.enterprise.svc.cluster.local.:9093
+          - pool-a-0.enterprise:9093
+          - pool-a-1.enterprise:9093
+          - pool-a-2.enterprise:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - enterprise-pool-a-0.enterprise.enterprise.svc.cluster.local.:8081
-          - enterprise-pool-a-1.enterprise.enterprise.svc.cluster.local.:8081
-          - enterprise-pool-a-2.enterprise.enterprise.svc.cluster.local.:8081
+          - pool-a-0.enterprise:8081
+          - pool-a-1.enterprise:8081
+          - pool-a-2.enterprise:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -5550,11 +5550,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: enterprise-pool-a-0.enterprise.enterprise.svc.cluster.local.
+        - address: pool-a-0.enterprise
           port: 9093
-        - address: enterprise-pool-a-1.enterprise.enterprise.svc.cluster.local.
+        - address: pool-a-1.enterprise
           port: 9093
-        - address: enterprise-pool-a-2.enterprise.enterprise.svc.cluster.local.
+        - address: pool-a-2.enterprise
           port: 9093
   kind: ConfigMap
   metadata:
@@ -6124,11 +6124,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: external-loadbalancer-pool-a-0.external-loadbalancer.external-loadbalancer.svc.cluster.local.
+        - address: pool-a-0.external-loadbalancer
           port: 9093
-        - address: external-loadbalancer-pool-a-1.external-loadbalancer.external-loadbalancer.svc.cluster.local.
+        - address: pool-a-1.external-loadbalancer
           port: 9093
-        - address: external-loadbalancer-pool-a-2.external-loadbalancer.external-loadbalancer.svc.cluster.local.
+        - address: pool-a-2.external-loadbalancer
           port: 9093
       redpanda:
         admin:
@@ -6188,25 +6188,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - external-loadbalancer-pool-a-0.external-loadbalancer.external-loadbalancer.svc.cluster.local.:9644
-          - external-loadbalancer-pool-a-1.external-loadbalancer.external-loadbalancer.svc.cluster.local.:9644
-          - external-loadbalancer-pool-a-2.external-loadbalancer.external-loadbalancer.svc.cluster.local.:9644
+          - pool-a-0.external-loadbalancer:9644
+          - pool-a-1.external-loadbalancer:9644
+          - pool-a-2.external-loadbalancer:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - external-loadbalancer-pool-a-0.external-loadbalancer.external-loadbalancer.svc.cluster.local.:9093
-          - external-loadbalancer-pool-a-1.external-loadbalancer.external-loadbalancer.svc.cluster.local.:9093
-          - external-loadbalancer-pool-a-2.external-loadbalancer.external-loadbalancer.svc.cluster.local.:9093
+          - pool-a-0.external-loadbalancer:9093
+          - pool-a-1.external-loadbalancer:9093
+          - pool-a-2.external-loadbalancer:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - external-loadbalancer-pool-a-0.external-loadbalancer.external-loadbalancer.svc.cluster.local.:8081
-          - external-loadbalancer-pool-a-1.external-loadbalancer.external-loadbalancer.svc.cluster.local.:8081
-          - external-loadbalancer-pool-a-2.external-loadbalancer.external-loadbalancer.svc.cluster.local.:8081
+          - pool-a-0.external-loadbalancer:8081
+          - pool-a-1.external-loadbalancer:8081
+          - pool-a-2.external-loadbalancer:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -6231,11 +6231,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: external-loadbalancer-pool-a-0.external-loadbalancer.external-loadbalancer.svc.cluster.local.
+        - address: pool-a-0.external-loadbalancer
           port: 9093
-        - address: external-loadbalancer-pool-a-1.external-loadbalancer.external-loadbalancer.svc.cluster.local.
+        - address: pool-a-1.external-loadbalancer
           port: 9093
-        - address: external-loadbalancer-pool-a-2.external-loadbalancer.external-loadbalancer.svc.cluster.local.
+        - address: pool-a-2.external-loadbalancer
           port: 9093
   kind: ConfigMap
   metadata:
@@ -6926,11 +6926,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: external-nodeport-pool-a-0.external-nodeport.external-nodeport.svc.cluster.local.
+        - address: pool-a-0.external-nodeport
           port: 9093
-        - address: external-nodeport-pool-a-1.external-nodeport.external-nodeport.svc.cluster.local.
+        - address: pool-a-1.external-nodeport
           port: 9093
-        - address: external-nodeport-pool-a-2.external-nodeport.external-nodeport.svc.cluster.local.
+        - address: pool-a-2.external-nodeport
           port: 9093
       redpanda:
         admin:
@@ -6990,25 +6990,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - external-nodeport-pool-a-0.external-nodeport.external-nodeport.svc.cluster.local.:9644
-          - external-nodeport-pool-a-1.external-nodeport.external-nodeport.svc.cluster.local.:9644
-          - external-nodeport-pool-a-2.external-nodeport.external-nodeport.svc.cluster.local.:9644
+          - pool-a-0.external-nodeport:9644
+          - pool-a-1.external-nodeport:9644
+          - pool-a-2.external-nodeport:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - external-nodeport-pool-a-0.external-nodeport.external-nodeport.svc.cluster.local.:9093
-          - external-nodeport-pool-a-1.external-nodeport.external-nodeport.svc.cluster.local.:9093
-          - external-nodeport-pool-a-2.external-nodeport.external-nodeport.svc.cluster.local.:9093
+          - pool-a-0.external-nodeport:9093
+          - pool-a-1.external-nodeport:9093
+          - pool-a-2.external-nodeport:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - external-nodeport-pool-a-0.external-nodeport.external-nodeport.svc.cluster.local.:8081
-          - external-nodeport-pool-a-1.external-nodeport.external-nodeport.svc.cluster.local.:8081
-          - external-nodeport-pool-a-2.external-nodeport.external-nodeport.svc.cluster.local.:8081
+          - pool-a-0.external-nodeport:8081
+          - pool-a-1.external-nodeport:8081
+          - pool-a-2.external-nodeport:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -7039,11 +7039,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: external-nodeport-pool-a-0.external-nodeport.external-nodeport.svc.cluster.local.
+        - address: pool-a-0.external-nodeport
           port: 9093
-        - address: external-nodeport-pool-a-1.external-nodeport.external-nodeport.svc.cluster.local.
+        - address: pool-a-1.external-nodeport
           port: 9093
-        - address: external-nodeport-pool-a-2.external-nodeport.external-nodeport.svc.cluster.local.
+        - address: pool-a-2.external-nodeport
           port: 9093
   kind: ConfigMap
   metadata:
@@ -7623,11 +7623,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: external-tls-pool-a-0.external-tls.external-tls.svc.cluster.local.
+        - address: pool-a-0.external-tls
           port: 9093
-        - address: external-tls-pool-a-1.external-tls.external-tls.svc.cluster.local.
+        - address: pool-a-1.external-tls
           port: 9093
-        - address: external-tls-pool-a-2.external-tls.external-tls.svc.cluster.local.
+        - address: pool-a-2.external-tls
           port: 9093
       redpanda:
         admin:
@@ -7699,25 +7699,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - external-tls-pool-a-0.external-tls.external-tls.svc.cluster.local.:9644
-          - external-tls-pool-a-1.external-tls.external-tls.svc.cluster.local.:9644
-          - external-tls-pool-a-2.external-tls.external-tls.svc.cluster.local.:9644
+          - pool-a-0.external-tls:9644
+          - pool-a-1.external-tls:9644
+          - pool-a-2.external-tls:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - external-tls-pool-a-0.external-tls.external-tls.svc.cluster.local.:9093
-          - external-tls-pool-a-1.external-tls.external-tls.svc.cluster.local.:9093
-          - external-tls-pool-a-2.external-tls.external-tls.svc.cluster.local.:9093
+          - pool-a-0.external-tls:9093
+          - pool-a-1.external-tls:9093
+          - pool-a-2.external-tls:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - external-tls-pool-a-0.external-tls.external-tls.svc.cluster.local.:8081
-          - external-tls-pool-a-1.external-tls.external-tls.svc.cluster.local.:8081
-          - external-tls-pool-a-2.external-tls.external-tls.svc.cluster.local.:8081
+          - pool-a-0.external-tls:8081
+          - pool-a-1.external-tls:8081
+          - pool-a-2.external-tls:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -7748,11 +7748,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: external-tls-pool-a-0.external-tls.external-tls.svc.cluster.local.
+        - address: pool-a-0.external-tls
           port: 9093
-        - address: external-tls-pool-a-1.external-tls.external-tls.svc.cluster.local.
+        - address: pool-a-1.external-tls
           port: 9093
-        - address: external-tls-pool-a-2.external-tls.external-tls.svc.cluster.local.
+        - address: pool-a-2.external-tls
           port: 9093
   kind: ConfigMap
   metadata:
@@ -8443,9 +8443,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: flat-network-pool-a-0.flat-network.flat-network.svc.cluster.local.
+        - address: pool-a-0.flat-network
           port: 9093
-        - address: flat-network-pool-a-1.flat-network.flat-network.svc.cluster.local.
+        - address: pool-a-1.flat-network
           port: 9093
       redpanda:
         admin:
@@ -8514,22 +8514,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - flat-network-pool-a-0.flat-network.flat-network.svc.cluster.local.:9644
-          - flat-network-pool-a-1.flat-network.flat-network.svc.cluster.local.:9644
+          - pool-a-0.flat-network:9644
+          - pool-a-1.flat-network:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - flat-network-pool-a-0.flat-network.flat-network.svc.cluster.local.:9093
-          - flat-network-pool-a-1.flat-network.flat-network.svc.cluster.local.:9093
+          - pool-a-0.flat-network:9093
+          - pool-a-1.flat-network:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - flat-network-pool-a-0.flat-network.flat-network.svc.cluster.local.:8081
-          - flat-network-pool-a-1.flat-network.flat-network.svc.cluster.local.:8081
+          - pool-a-0.flat-network:8081
+          - pool-a-1.flat-network:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -8560,9 +8560,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: flat-network-pool-a-0.flat-network.flat-network.svc.cluster.local.
+        - address: pool-a-0.flat-network
           port: 9093
-        - address: flat-network-pool-a-1.flat-network.flat-network.svc.cluster.local.
+        - address: pool-a-1.flat-network
           port: 9093
   kind: ConfigMap
   metadata:
@@ -9220,15 +9220,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-0.full-featured
           port: 9093
-        - address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-0.full-featured
           port: 9093
-        - address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-2.full-featured
           port: 9093
       config_file: /etc/redpanda/redpanda.yaml
       pandaproxy:
@@ -9260,15 +9260,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-0.full-featured
           port: 9093
-        - address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-0.full-featured
           port: 9093
-        - address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-2.full-featured
           port: 9093
       redpanda:
         admin:
@@ -9348,31 +9348,31 @@
         - --smp=8
         admin_api:
           addresses:
-          - full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.:9644
+          - pool-cold-0.full-featured:9644
+          - pool-cold-1.full-featured:9644
+          - pool-hot-0.full-featured:9644
+          - pool-hot-1.full-featured:9644
+          - pool-hot-2.full-featured:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.:9093
+          - pool-cold-0.full-featured:9093
+          - pool-cold-1.full-featured:9093
+          - pool-hot-0.full-featured:9093
+          - pool-hot-1.full-featured:9093
+          - pool-hot-2.full-featured:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.:8081
+          - pool-cold-0.full-featured:8081
+          - pool-cold-1.full-featured:8081
+          - pool-hot-0.full-featured:8081
+          - pool-hot-1.full-featured:8081
+          - pool-hot-2.full-featured:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -9403,15 +9403,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-0.full-featured
           port: 9093
-        - address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-0.full-featured
           port: 9093
-        - address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-2.full-featured
           port: 9093
   kind: ConfigMap
   metadata:
@@ -9435,15 +9435,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-0.full-featured
           port: 9093
-        - address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-0.full-featured
           port: 9093
-        - address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-2.full-featured
           port: 9093
       config_file: /etc/redpanda/redpanda.yaml
       pandaproxy:
@@ -9475,15 +9475,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-0.full-featured
           port: 9093
-        - address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-0.full-featured
           port: 9093
-        - address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-2.full-featured
           port: 9093
       redpanda:
         admin:
@@ -9564,31 +9564,31 @@
         - --idle-poll-time-us=0
         admin_api:
           addresses:
-          - full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.:9644
-          - full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.:9644
+          - pool-cold-0.full-featured:9644
+          - pool-cold-1.full-featured:9644
+          - pool-hot-0.full-featured:9644
+          - pool-hot-1.full-featured:9644
+          - pool-hot-2.full-featured:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.:9093
-          - full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.:9093
+          - pool-cold-0.full-featured:9093
+          - pool-cold-1.full-featured:9093
+          - pool-hot-0.full-featured:9093
+          - pool-hot-1.full-featured:9093
+          - pool-hot-2.full-featured:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.:8081
-          - full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.:8081
+          - pool-cold-0.full-featured:8081
+          - pool-cold-1.full-featured:8081
+          - pool-hot-0.full-featured:8081
+          - pool-hot-1.full-featured:8081
+          - pool-hot-2.full-featured:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -9619,15 +9619,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: full-featured-pool-cold-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-0.full-featured
           port: 9093
-        - address: full-featured-pool-cold-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-cold-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-0.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-0.full-featured
           port: 9093
-        - address: full-featured-pool-hot-1.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-1.full-featured
           port: 9093
-        - address: full-featured-pool-hot-2.full-featured.full-featured.svc.cluster.local.
+        - address: pool-hot-2.full-featured
           port: 9093
   kind: ConfigMap
   metadata:
@@ -10669,11 +10669,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: init-containers-pool-a-0.init-containers.init-containers.svc.cluster.local.
+        - address: pool-a-0.init-containers
           port: 9093
-        - address: init-containers-pool-a-1.init-containers.init-containers.svc.cluster.local.
+        - address: pool-a-1.init-containers
           port: 9093
-        - address: init-containers-pool-a-2.init-containers.init-containers.svc.cluster.local.
+        - address: pool-a-2.init-containers
           port: 9093
       redpanda:
         admin:
@@ -10745,25 +10745,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - init-containers-pool-a-0.init-containers.init-containers.svc.cluster.local.:9644
-          - init-containers-pool-a-1.init-containers.init-containers.svc.cluster.local.:9644
-          - init-containers-pool-a-2.init-containers.init-containers.svc.cluster.local.:9644
+          - pool-a-0.init-containers:9644
+          - pool-a-1.init-containers:9644
+          - pool-a-2.init-containers:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - init-containers-pool-a-0.init-containers.init-containers.svc.cluster.local.:9093
-          - init-containers-pool-a-1.init-containers.init-containers.svc.cluster.local.:9093
-          - init-containers-pool-a-2.init-containers.init-containers.svc.cluster.local.:9093
+          - pool-a-0.init-containers:9093
+          - pool-a-1.init-containers:9093
+          - pool-a-2.init-containers:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - init-containers-pool-a-0.init-containers.init-containers.svc.cluster.local.:8081
-          - init-containers-pool-a-1.init-containers.init-containers.svc.cluster.local.:8081
-          - init-containers-pool-a-2.init-containers.init-containers.svc.cluster.local.:8081
+          - pool-a-0.init-containers:8081
+          - pool-a-1.init-containers:8081
+          - pool-a-2.init-containers:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -10794,11 +10794,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: init-containers-pool-a-0.init-containers.init-containers.svc.cluster.local.
+        - address: pool-a-0.init-containers
           port: 9093
-        - address: init-containers-pool-a-1.init-containers.init-containers.svc.cluster.local.
+        - address: pool-a-1.init-containers
           port: 9093
-        - address: init-containers-pool-a-2.init-containers.init-containers.svc.cluster.local.
+        - address: pool-a-2.init-containers
           port: 9093
   kind: ConfigMap
   metadata:
@@ -11469,9 +11469,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: mcs-network-pool-a-0.mcs-network.mcs-network.svc.cluster.local.
+        - address: pool-a-0.mcs-network.svc.clusterset.local
           port: 9093
-        - address: mcs-network-pool-a-1.mcs-network.mcs-network.svc.cluster.local.
+        - address: pool-a-1.mcs-network.svc.clusterset.local
           port: 9093
       redpanda:
         admin:
@@ -11540,22 +11540,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - mcs-network-pool-a-0.mcs-network.mcs-network.svc.cluster.local.:9644
-          - mcs-network-pool-a-1.mcs-network.mcs-network.svc.cluster.local.:9644
+          - pool-a-0.mcs-network.svc.clusterset.local:9644
+          - pool-a-1.mcs-network.svc.clusterset.local:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - mcs-network-pool-a-0.mcs-network.mcs-network.svc.cluster.local.:9093
-          - mcs-network-pool-a-1.mcs-network.mcs-network.svc.cluster.local.:9093
+          - pool-a-0.mcs-network.svc.clusterset.local:9093
+          - pool-a-1.mcs-network.svc.clusterset.local:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - mcs-network-pool-a-0.mcs-network.mcs-network.svc.cluster.local.:8081
-          - mcs-network-pool-a-1.mcs-network.mcs-network.svc.cluster.local.:8081
+          - pool-a-0.mcs-network.svc.clusterset.local:8081
+          - pool-a-1.mcs-network.svc.clusterset.local:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -11586,9 +11586,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: mcs-network-pool-a-0.mcs-network.mcs-network.svc.cluster.local.
+        - address: pool-a-0.mcs-network.svc.clusterset.local
           port: 9093
-        - address: mcs-network-pool-a-1.mcs-network.mcs-network.svc.cluster.local.
+        - address: pool-a-1.mcs-network.svc.clusterset.local
           port: 9093
   kind: ConfigMap
   metadata:
@@ -12197,11 +12197,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: memory-locking-pool-a-0.memory-locking.memory-locking.svc.cluster.local.
+        - address: pool-a-0.memory-locking
           port: 9093
-        - address: memory-locking-pool-a-1.memory-locking.memory-locking.svc.cluster.local.
+        - address: pool-a-1.memory-locking
           port: 9093
-        - address: memory-locking-pool-a-2.memory-locking.memory-locking.svc.cluster.local.
+        - address: pool-a-2.memory-locking
           port: 9093
       redpanda:
         admin:
@@ -12273,25 +12273,25 @@
         - --smp=2
         admin_api:
           addresses:
-          - memory-locking-pool-a-0.memory-locking.memory-locking.svc.cluster.local.:9644
-          - memory-locking-pool-a-1.memory-locking.memory-locking.svc.cluster.local.:9644
-          - memory-locking-pool-a-2.memory-locking.memory-locking.svc.cluster.local.:9644
+          - pool-a-0.memory-locking:9644
+          - pool-a-1.memory-locking:9644
+          - pool-a-2.memory-locking:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - memory-locking-pool-a-0.memory-locking.memory-locking.svc.cluster.local.:9093
-          - memory-locking-pool-a-1.memory-locking.memory-locking.svc.cluster.local.:9093
-          - memory-locking-pool-a-2.memory-locking.memory-locking.svc.cluster.local.:9093
+          - pool-a-0.memory-locking:9093
+          - pool-a-1.memory-locking:9093
+          - pool-a-2.memory-locking:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - memory-locking-pool-a-0.memory-locking.memory-locking.svc.cluster.local.:8081
-          - memory-locking-pool-a-1.memory-locking.memory-locking.svc.cluster.local.:8081
-          - memory-locking-pool-a-2.memory-locking.memory-locking.svc.cluster.local.:8081
+          - pool-a-0.memory-locking:8081
+          - pool-a-1.memory-locking:8081
+          - pool-a-2.memory-locking:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -12322,11 +12322,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: memory-locking-pool-a-0.memory-locking.memory-locking.svc.cluster.local.
+        - address: pool-a-0.memory-locking
           port: 9093
-        - address: memory-locking-pool-a-1.memory-locking.memory-locking.svc.cluster.local.
+        - address: pool-a-1.memory-locking
           port: 9093
-        - address: memory-locking-pool-a-2.memory-locking.memory-locking.svc.cluster.local.
+        - address: pool-a-2.memory-locking
           port: 9093
   kind: ConfigMap
   metadata:
@@ -12945,11 +12945,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: minimal-pool-a-0.minimal.minimal.svc.cluster.local.
+        - address: pool-a-0.minimal
           port: 9093
-        - address: minimal-pool-a-1.minimal.minimal.svc.cluster.local.
+        - address: pool-a-1.minimal
           port: 9093
-        - address: minimal-pool-a-2.minimal.minimal.svc.cluster.local.
+        - address: pool-a-2.minimal
           port: 9093
       redpanda:
         admin:
@@ -13021,25 +13021,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - minimal-pool-a-0.minimal.minimal.svc.cluster.local.:9644
-          - minimal-pool-a-1.minimal.minimal.svc.cluster.local.:9644
-          - minimal-pool-a-2.minimal.minimal.svc.cluster.local.:9644
+          - pool-a-0.minimal:9644
+          - pool-a-1.minimal:9644
+          - pool-a-2.minimal:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - minimal-pool-a-0.minimal.minimal.svc.cluster.local.:9093
-          - minimal-pool-a-1.minimal.minimal.svc.cluster.local.:9093
-          - minimal-pool-a-2.minimal.minimal.svc.cluster.local.:9093
+          - pool-a-0.minimal:9093
+          - pool-a-1.minimal:9093
+          - pool-a-2.minimal:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - minimal-pool-a-0.minimal.minimal.svc.cluster.local.:8081
-          - minimal-pool-a-1.minimal.minimal.svc.cluster.local.:8081
-          - minimal-pool-a-2.minimal.minimal.svc.cluster.local.:8081
+          - pool-a-0.minimal:8081
+          - pool-a-1.minimal:8081
+          - pool-a-2.minimal:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -13070,11 +13070,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: minimal-pool-a-0.minimal.minimal.svc.cluster.local.
+        - address: pool-a-0.minimal
           port: 9093
-        - address: minimal-pool-a-1.minimal.minimal.svc.cluster.local.
+        - address: pool-a-1.minimal
           port: 9093
-        - address: minimal-pool-a-2.minimal.minimal.svc.cluster.local.
+        - address: pool-a-2.minimal
           port: 9093
   kind: ConfigMap
   metadata:
@@ -13719,11 +13719,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: monitoring-pool-a-0.monitoring.monitoring.svc.cluster.local.
+        - address: pool-a-0.monitoring
           port: 9093
-        - address: monitoring-pool-a-1.monitoring.monitoring.svc.cluster.local.
+        - address: pool-a-1.monitoring
           port: 9093
-        - address: monitoring-pool-a-2.monitoring.monitoring.svc.cluster.local.
+        - address: pool-a-2.monitoring
           port: 9093
       redpanda:
         admin:
@@ -13795,25 +13795,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - monitoring-pool-a-0.monitoring.monitoring.svc.cluster.local.:9644
-          - monitoring-pool-a-1.monitoring.monitoring.svc.cluster.local.:9644
-          - monitoring-pool-a-2.monitoring.monitoring.svc.cluster.local.:9644
+          - pool-a-0.monitoring:9644
+          - pool-a-1.monitoring:9644
+          - pool-a-2.monitoring:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - monitoring-pool-a-0.monitoring.monitoring.svc.cluster.local.:9093
-          - monitoring-pool-a-1.monitoring.monitoring.svc.cluster.local.:9093
-          - monitoring-pool-a-2.monitoring.monitoring.svc.cluster.local.:9093
+          - pool-a-0.monitoring:9093
+          - pool-a-1.monitoring:9093
+          - pool-a-2.monitoring:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - monitoring-pool-a-0.monitoring.monitoring.svc.cluster.local.:8081
-          - monitoring-pool-a-1.monitoring.monitoring.svc.cluster.local.:8081
-          - monitoring-pool-a-2.monitoring.monitoring.svc.cluster.local.:8081
+          - pool-a-0.monitoring:8081
+          - pool-a-1.monitoring:8081
+          - pool-a-2.monitoring:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -13844,11 +13844,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: monitoring-pool-a-0.monitoring.monitoring.svc.cluster.local.
+        - address: pool-a-0.monitoring
           port: 9093
-        - address: monitoring-pool-a-1.monitoring.monitoring.svc.cluster.local.
+        - address: pool-a-1.monitoring
           port: 9093
-        - address: monitoring-pool-a-2.monitoring.monitoring.svc.cluster.local.
+        - address: pool-a-2.monitoring
           port: 9093
   kind: ConfigMap
   metadata:
@@ -14467,15 +14467,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-1.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-2.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-1.multi-pool
           port: 9093
       redpanda:
         admin:
@@ -14553,31 +14553,31 @@
         - --smp=1
         admin_api:
           addresses:
-          - multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.:9644
+          - pool-a-0.multi-pool:9644
+          - pool-a-1.multi-pool:9644
+          - pool-a-2.multi-pool:9644
+          - pool-b-0.multi-pool:9644
+          - pool-b-1.multi-pool:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.:9093
+          - pool-a-0.multi-pool:9093
+          - pool-a-1.multi-pool:9093
+          - pool-a-2.multi-pool:9093
+          - pool-b-0.multi-pool:9093
+          - pool-b-1.multi-pool:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.:8081
+          - pool-a-0.multi-pool:8081
+          - pool-a-1.multi-pool:8081
+          - pool-a-2.multi-pool:8081
+          - pool-b-0.multi-pool:8081
+          - pool-b-1.multi-pool:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -14608,15 +14608,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-1.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-2.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-1.multi-pool
           port: 9093
   kind: ConfigMap
   metadata:
@@ -14661,15 +14661,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-1.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-2.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-1.multi-pool
           port: 9093
       redpanda:
         admin:
@@ -14748,31 +14748,31 @@
         - --abort-on-seastar-signal-handling-failure
         admin_api:
           addresses:
-          - multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.:9644
-          - multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.:9644
+          - pool-a-0.multi-pool:9644
+          - pool-a-1.multi-pool:9644
+          - pool-a-2.multi-pool:9644
+          - pool-b-0.multi-pool:9644
+          - pool-b-1.multi-pool:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.:9093
-          - multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.:9093
+          - pool-a-0.multi-pool:9093
+          - pool-a-1.multi-pool:9093
+          - pool-a-2.multi-pool:9093
+          - pool-b-0.multi-pool:9093
+          - pool-b-1.multi-pool:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.:8081
-          - multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.:8081
+          - pool-a-0.multi-pool:8081
+          - pool-a-1.multi-pool:8081
+          - pool-a-2.multi-pool:8081
+          - pool-b-0.multi-pool:8081
+          - pool-b-1.multi-pool:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -14803,15 +14803,15 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: multi-pool-pool-a-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-1.multi-pool
           port: 9093
-        - address: multi-pool-pool-a-2.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-a-2.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-0.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-0.multi-pool
           port: 9093
-        - address: multi-pool-pool-b-1.multi-pool.multi-pool.svc.cluster.local.
+        - address: pool-b-1.multi-pool
           port: 9093
   kind: ConfigMap
   metadata:
@@ -15557,7 +15557,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.
+        - address: pool-a-0.per-pod-service-overrides
           port: 9093
       redpanda:
         admin:
@@ -15623,19 +15623,19 @@
         - --smp=1
         admin_api:
           addresses:
-          - per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.:9644
+          - pool-a-0.per-pod-service-overrides:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.:9093
+          - pool-a-0.per-pod-service-overrides:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.:8081
+          - pool-a-0.per-pod-service-overrides:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -15666,7 +15666,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: per-pod-service-overrides-pool-a-0.per-pod-service-overrides.per-pod-service-overrides.svc.cluster.local.
+        - address: pool-a-0.per-pod-service-overrides
           port: 9093
   kind: ConfigMap
   metadata:
@@ -16199,7 +16199,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.
+        - address: pool-a-0.per-pod-service-remote-disabled
           port: 9093
       redpanda:
         admin:
@@ -16265,19 +16265,19 @@
         - --smp=1
         admin_api:
           addresses:
-          - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.:9644
+          - pool-a-0.per-pod-service-remote-disabled:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.:9093
+          - pool-a-0.per-pod-service-remote-disabled:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.:8081
+          - pool-a-0.per-pod-service-remote-disabled:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -16308,7 +16308,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled.per-pod-service-remote-disabled.svc.cluster.local.
+        - address: pool-a-0.per-pod-service-remote-disabled
           port: 9093
   kind: ConfigMap
   metadata:
@@ -16838,11 +16838,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: rack-awareness-pool-a-0.rack-awareness.rack-awareness.svc.cluster.local.
+        - address: pool-a-0.rack-awareness
           port: 9093
-        - address: rack-awareness-pool-a-1.rack-awareness.rack-awareness.svc.cluster.local.
+        - address: pool-a-1.rack-awareness
           port: 9093
-        - address: rack-awareness-pool-a-2.rack-awareness.rack-awareness.svc.cluster.local.
+        - address: pool-a-2.rack-awareness
           port: 9093
       redpanda:
         admin:
@@ -16914,25 +16914,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - rack-awareness-pool-a-0.rack-awareness.rack-awareness.svc.cluster.local.:9644
-          - rack-awareness-pool-a-1.rack-awareness.rack-awareness.svc.cluster.local.:9644
-          - rack-awareness-pool-a-2.rack-awareness.rack-awareness.svc.cluster.local.:9644
+          - pool-a-0.rack-awareness:9644
+          - pool-a-1.rack-awareness:9644
+          - pool-a-2.rack-awareness:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - rack-awareness-pool-a-0.rack-awareness.rack-awareness.svc.cluster.local.:9093
-          - rack-awareness-pool-a-1.rack-awareness.rack-awareness.svc.cluster.local.:9093
-          - rack-awareness-pool-a-2.rack-awareness.rack-awareness.svc.cluster.local.:9093
+          - pool-a-0.rack-awareness:9093
+          - pool-a-1.rack-awareness:9093
+          - pool-a-2.rack-awareness:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - rack-awareness-pool-a-0.rack-awareness.rack-awareness.svc.cluster.local.:8081
-          - rack-awareness-pool-a-1.rack-awareness.rack-awareness.svc.cluster.local.:8081
-          - rack-awareness-pool-a-2.rack-awareness.rack-awareness.svc.cluster.local.:8081
+          - pool-a-0.rack-awareness:8081
+          - pool-a-1.rack-awareness:8081
+          - pool-a-2.rack-awareness:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -16963,11 +16963,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: rack-awareness-pool-a-0.rack-awareness.rack-awareness.svc.cluster.local.
+        - address: pool-a-0.rack-awareness
           port: 9093
-        - address: rack-awareness-pool-a-1.rack-awareness.rack-awareness.svc.cluster.local.
+        - address: pool-a-1.rack-awareness
           port: 9093
-        - address: rack-awareness-pool-a-2.rack-awareness.rack-awareness.svc.cluster.local.
+        - address: pool-a-2.rack-awareness
           port: 9093
   kind: ConfigMap
   metadata:
@@ -17631,11 +17631,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: sasl-scram256-pool-a-0.sasl-scram256.sasl-scram256.svc.cluster.local.
+        - address: pool-a-0.sasl-scram256
           port: 9093
-        - address: sasl-scram256-pool-a-1.sasl-scram256.sasl-scram256.svc.cluster.local.
+        - address: pool-a-1.sasl-scram256
           port: 9093
-        - address: sasl-scram256-pool-a-2.sasl-scram256.sasl-scram256.svc.cluster.local.
+        - address: pool-a-2.sasl-scram256
           port: 9093
       redpanda:
         admin:
@@ -17709,25 +17709,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - sasl-scram256-pool-a-0.sasl-scram256.sasl-scram256.svc.cluster.local.:9644
-          - sasl-scram256-pool-a-1.sasl-scram256.sasl-scram256.svc.cluster.local.:9644
-          - sasl-scram256-pool-a-2.sasl-scram256.sasl-scram256.svc.cluster.local.:9644
+          - pool-a-0.sasl-scram256:9644
+          - pool-a-1.sasl-scram256:9644
+          - pool-a-2.sasl-scram256:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - sasl-scram256-pool-a-0.sasl-scram256.sasl-scram256.svc.cluster.local.:9093
-          - sasl-scram256-pool-a-1.sasl-scram256.sasl-scram256.svc.cluster.local.:9093
-          - sasl-scram256-pool-a-2.sasl-scram256.sasl-scram256.svc.cluster.local.:9093
+          - pool-a-0.sasl-scram256:9093
+          - pool-a-1.sasl-scram256:9093
+          - pool-a-2.sasl-scram256:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - sasl-scram256-pool-a-0.sasl-scram256.sasl-scram256.svc.cluster.local.:8081
-          - sasl-scram256-pool-a-1.sasl-scram256.sasl-scram256.svc.cluster.local.:8081
-          - sasl-scram256-pool-a-2.sasl-scram256.sasl-scram256.svc.cluster.local.:8081
+          - pool-a-0.sasl-scram256:8081
+          - pool-a-1.sasl-scram256:8081
+          - pool-a-2.sasl-scram256:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -17758,11 +17758,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: sasl-scram256-pool-a-0.sasl-scram256.sasl-scram256.svc.cluster.local.
+        - address: pool-a-0.sasl-scram256
           port: 9093
-        - address: sasl-scram256-pool-a-1.sasl-scram256.sasl-scram256.svc.cluster.local.
+        - address: pool-a-1.sasl-scram256
           port: 9093
-        - address: sasl-scram256-pool-a-2.sasl-scram256.sasl-scram256.svc.cluster.local.
+        - address: pool-a-2.sasl-scram256
           port: 9093
   kind: ConfigMap
   metadata:
@@ -18398,11 +18398,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
+        - address: pool-a-0.sasl-scram512-with-tls
           port: 9093
-        - address: sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
+        - address: pool-a-1.sasl-scram512-with-tls
           port: 9093
-        - address: sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
+        - address: pool-a-2.sasl-scram512-with-tls
           port: 9093
       redpanda:
         admin:
@@ -18476,25 +18476,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:9644
-          - sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:9644
-          - sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:9644
+          - pool-a-0.sasl-scram512-with-tls:9644
+          - pool-a-1.sasl-scram512-with-tls:9644
+          - pool-a-2.sasl-scram512-with-tls:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:9093
-          - sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:9093
-          - sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:9093
+          - pool-a-0.sasl-scram512-with-tls:9093
+          - pool-a-1.sasl-scram512-with-tls:9093
+          - pool-a-2.sasl-scram512-with-tls:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:8081
-          - sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:8081
-          - sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.:8081
+          - pool-a-0.sasl-scram512-with-tls:8081
+          - pool-a-1.sasl-scram512-with-tls:8081
+          - pool-a-2.sasl-scram512-with-tls:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -18525,11 +18525,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
+        - address: pool-a-0.sasl-scram512-with-tls
           port: 9093
-        - address: sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
+        - address: pool-a-1.sasl-scram512-with-tls
           port: 9093
-        - address: sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls.sasl-scram512-with-tls.svc.cluster.local.
+        - address: pool-a-2.sasl-scram512-with-tls
           port: 9093
   kind: ConfigMap
   metadata:
@@ -19163,7 +19163,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: single-replica-pool-a-0.single-replica.single-replica.svc.cluster.local.
+        - address: pool-a-0.single-replica
           port: 9093
       redpanda:
         admin:
@@ -19229,19 +19229,19 @@
         - --smp=1
         admin_api:
           addresses:
-          - single-replica-pool-a-0.single-replica.single-replica.svc.cluster.local.:9644
+          - pool-a-0.single-replica:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - single-replica-pool-a-0.single-replica.single-replica.svc.cluster.local.:9093
+          - pool-a-0.single-replica:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - single-replica-pool-a-0.single-replica.single-replica.svc.cluster.local.:8081
+          - pool-a-0.single-replica:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -19272,7 +19272,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: single-replica-pool-a-0.single-replica.single-replica.svc.cluster.local.
+        - address: pool-a-0.single-replica
           port: 9093
   kind: ConfigMap
   metadata:
@@ -19802,11 +19802,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: storage-hostpath-pool-a-0.storage-hostpath.storage-hostpath.svc.cluster.local.
+        - address: pool-a-0.storage-hostpath
           port: 9093
-        - address: storage-hostpath-pool-a-1.storage-hostpath.storage-hostpath.svc.cluster.local.
+        - address: pool-a-1.storage-hostpath
           port: 9093
-        - address: storage-hostpath-pool-a-2.storage-hostpath.storage-hostpath.svc.cluster.local.
+        - address: pool-a-2.storage-hostpath
           port: 9093
       redpanda:
         admin:
@@ -19878,25 +19878,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - storage-hostpath-pool-a-0.storage-hostpath.storage-hostpath.svc.cluster.local.:9644
-          - storage-hostpath-pool-a-1.storage-hostpath.storage-hostpath.svc.cluster.local.:9644
-          - storage-hostpath-pool-a-2.storage-hostpath.storage-hostpath.svc.cluster.local.:9644
+          - pool-a-0.storage-hostpath:9644
+          - pool-a-1.storage-hostpath:9644
+          - pool-a-2.storage-hostpath:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - storage-hostpath-pool-a-0.storage-hostpath.storage-hostpath.svc.cluster.local.:9093
-          - storage-hostpath-pool-a-1.storage-hostpath.storage-hostpath.svc.cluster.local.:9093
-          - storage-hostpath-pool-a-2.storage-hostpath.storage-hostpath.svc.cluster.local.:9093
+          - pool-a-0.storage-hostpath:9093
+          - pool-a-1.storage-hostpath:9093
+          - pool-a-2.storage-hostpath:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - storage-hostpath-pool-a-0.storage-hostpath.storage-hostpath.svc.cluster.local.:8081
-          - storage-hostpath-pool-a-1.storage-hostpath.storage-hostpath.svc.cluster.local.:8081
-          - storage-hostpath-pool-a-2.storage-hostpath.storage-hostpath.svc.cluster.local.:8081
+          - pool-a-0.storage-hostpath:8081
+          - pool-a-1.storage-hostpath:8081
+          - pool-a-2.storage-hostpath:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -19927,11 +19927,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: storage-hostpath-pool-a-0.storage-hostpath.storage-hostpath.svc.cluster.local.
+        - address: pool-a-0.storage-hostpath
           port: 9093
-        - address: storage-hostpath-pool-a-1.storage-hostpath.storage-hostpath.svc.cluster.local.
+        - address: pool-a-1.storage-hostpath
           port: 9093
-        - address: storage-hostpath-pool-a-2.storage-hostpath.storage-hostpath.svc.cluster.local.
+        - address: pool-a-2.storage-hostpath
           port: 9093
   kind: ConfigMap
   metadata:
@@ -20550,11 +20550,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: storage-pv-custom-pool-a-0.storage-pv-custom.storage-pv-custom.svc.cluster.local.
+        - address: pool-a-0.storage-pv-custom
           port: 9093
-        - address: storage-pv-custom-pool-a-1.storage-pv-custom.storage-pv-custom.svc.cluster.local.
+        - address: pool-a-1.storage-pv-custom
           port: 9093
-        - address: storage-pv-custom-pool-a-2.storage-pv-custom.storage-pv-custom.svc.cluster.local.
+        - address: pool-a-2.storage-pv-custom
           port: 9093
       redpanda:
         admin:
@@ -20626,25 +20626,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - storage-pv-custom-pool-a-0.storage-pv-custom.storage-pv-custom.svc.cluster.local.:9644
-          - storage-pv-custom-pool-a-1.storage-pv-custom.storage-pv-custom.svc.cluster.local.:9644
-          - storage-pv-custom-pool-a-2.storage-pv-custom.storage-pv-custom.svc.cluster.local.:9644
+          - pool-a-0.storage-pv-custom:9644
+          - pool-a-1.storage-pv-custom:9644
+          - pool-a-2.storage-pv-custom:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - storage-pv-custom-pool-a-0.storage-pv-custom.storage-pv-custom.svc.cluster.local.:9093
-          - storage-pv-custom-pool-a-1.storage-pv-custom.storage-pv-custom.svc.cluster.local.:9093
-          - storage-pv-custom-pool-a-2.storage-pv-custom.storage-pv-custom.svc.cluster.local.:9093
+          - pool-a-0.storage-pv-custom:9093
+          - pool-a-1.storage-pv-custom:9093
+          - pool-a-2.storage-pv-custom:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - storage-pv-custom-pool-a-0.storage-pv-custom.storage-pv-custom.svc.cluster.local.:8081
-          - storage-pv-custom-pool-a-1.storage-pv-custom.storage-pv-custom.svc.cluster.local.:8081
-          - storage-pv-custom-pool-a-2.storage-pv-custom.storage-pv-custom.svc.cluster.local.:8081
+          - pool-a-0.storage-pv-custom:8081
+          - pool-a-1.storage-pv-custom:8081
+          - pool-a-2.storage-pv-custom:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -20675,11 +20675,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: storage-pv-custom-pool-a-0.storage-pv-custom.storage-pv-custom.svc.cluster.local.
+        - address: pool-a-0.storage-pv-custom
           port: 9093
-        - address: storage-pv-custom-pool-a-1.storage-pv-custom.storage-pv-custom.svc.cluster.local.
+        - address: pool-a-1.storage-pv-custom
           port: 9093
-        - address: storage-pv-custom-pool-a-2.storage-pv-custom.storage-pv-custom.svc.cluster.local.
+        - address: pool-a-2.storage-pv-custom
           port: 9093
   kind: ConfigMap
   metadata:
@@ -21298,11 +21298,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
+        - address: pool-a-0.tiered-storage-emptydir
           port: 9093
-        - address: tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
+        - address: pool-a-1.tiered-storage-emptydir
           port: 9093
-        - address: tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
+        - address: pool-a-2.tiered-storage-emptydir
           port: 9093
       redpanda:
         admin:
@@ -21374,25 +21374,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:9644
-          - tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:9644
-          - tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:9644
+          - pool-a-0.tiered-storage-emptydir:9644
+          - pool-a-1.tiered-storage-emptydir:9644
+          - pool-a-2.tiered-storage-emptydir:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:9093
-          - tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:9093
-          - tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:9093
+          - pool-a-0.tiered-storage-emptydir:9093
+          - pool-a-1.tiered-storage-emptydir:9093
+          - pool-a-2.tiered-storage-emptydir:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:8081
-          - tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:8081
-          - tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.:8081
+          - pool-a-0.tiered-storage-emptydir:8081
+          - pool-a-1.tiered-storage-emptydir:8081
+          - pool-a-2.tiered-storage-emptydir:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -21423,11 +21423,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
+        - address: pool-a-0.tiered-storage-emptydir
           port: 9093
-        - address: tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
+        - address: pool-a-1.tiered-storage-emptydir
           port: 9093
-        - address: tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir.tiered-storage-emptydir.svc.cluster.local.
+        - address: pool-a-2.tiered-storage-emptydir
           port: 9093
   kind: ConfigMap
   metadata:
@@ -22046,11 +22046,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
+        - address: pool-a-0.tiered-storage-hostpath
           port: 9093
-        - address: tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
+        - address: pool-a-1.tiered-storage-hostpath
           port: 9093
-        - address: tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
+        - address: pool-a-2.tiered-storage-hostpath
           port: 9093
       redpanda:
         admin:
@@ -22122,25 +22122,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:9644
-          - tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:9644
-          - tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:9644
+          - pool-a-0.tiered-storage-hostpath:9644
+          - pool-a-1.tiered-storage-hostpath:9644
+          - pool-a-2.tiered-storage-hostpath:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:9093
-          - tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:9093
-          - tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:9093
+          - pool-a-0.tiered-storage-hostpath:9093
+          - pool-a-1.tiered-storage-hostpath:9093
+          - pool-a-2.tiered-storage-hostpath:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:8081
-          - tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:8081
-          - tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.:8081
+          - pool-a-0.tiered-storage-hostpath:8081
+          - pool-a-1.tiered-storage-hostpath:8081
+          - pool-a-2.tiered-storage-hostpath:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -22171,11 +22171,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
+        - address: pool-a-0.tiered-storage-hostpath
           port: 9093
-        - address: tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
+        - address: pool-a-1.tiered-storage-hostpath
           port: 9093
-        - address: tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath.tiered-storage-hostpath.svc.cluster.local.
+        - address: pool-a-2.tiered-storage-hostpath
           port: 9093
   kind: ConfigMap
   metadata:
@@ -22794,11 +22794,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tiered-storage-pv-pool-a-0.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
+        - address: pool-a-0.tiered-storage-pv
           port: 9093
-        - address: tiered-storage-pv-pool-a-1.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
+        - address: pool-a-1.tiered-storage-pv
           port: 9093
-        - address: tiered-storage-pv-pool-a-2.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
+        - address: pool-a-2.tiered-storage-pv
           port: 9093
       redpanda:
         admin:
@@ -22870,25 +22870,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - tiered-storage-pv-pool-a-0.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:9644
-          - tiered-storage-pv-pool-a-1.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:9644
-          - tiered-storage-pv-pool-a-2.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:9644
+          - pool-a-0.tiered-storage-pv:9644
+          - pool-a-1.tiered-storage-pv:9644
+          - pool-a-2.tiered-storage-pv:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - tiered-storage-pv-pool-a-0.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:9093
-          - tiered-storage-pv-pool-a-1.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:9093
-          - tiered-storage-pv-pool-a-2.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:9093
+          - pool-a-0.tiered-storage-pv:9093
+          - pool-a-1.tiered-storage-pv:9093
+          - pool-a-2.tiered-storage-pv:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - tiered-storage-pv-pool-a-0.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:8081
-          - tiered-storage-pv-pool-a-1.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:8081
-          - tiered-storage-pv-pool-a-2.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.:8081
+          - pool-a-0.tiered-storage-pv:8081
+          - pool-a-1.tiered-storage-pv:8081
+          - pool-a-2.tiered-storage-pv:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -22919,11 +22919,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tiered-storage-pv-pool-a-0.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
+        - address: pool-a-0.tiered-storage-pv
           port: 9093
-        - address: tiered-storage-pv-pool-a-1.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
+        - address: pool-a-1.tiered-storage-pv
           port: 9093
-        - address: tiered-storage-pv-pool-a-2.tiered-storage-pv.tiered-storage-pv.svc.cluster.local.
+        - address: pool-a-2.tiered-storage-pv
           port: 9093
   kind: ConfigMap
   metadata:
@@ -23542,11 +23542,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-issuer-ref-pool-a-0.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.
+        - address: pool-a-0.tls-issuer-ref
           port: 9093
-        - address: tls-issuer-ref-pool-a-1.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.
+        - address: pool-a-1.tls-issuer-ref
           port: 9093
-        - address: tls-issuer-ref-pool-a-2.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.
+        - address: pool-a-2.tls-issuer-ref
           port: 9093
       redpanda:
         admin:
@@ -23618,25 +23618,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - tls-issuer-ref-pool-a-0.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:9644
-          - tls-issuer-ref-pool-a-1.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:9644
-          - tls-issuer-ref-pool-a-2.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:9644
+          - pool-a-0.tls-issuer-ref:9644
+          - pool-a-1.tls-issuer-ref:9644
+          - pool-a-2.tls-issuer-ref:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - tls-issuer-ref-pool-a-0.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:9093
-          - tls-issuer-ref-pool-a-1.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:9093
-          - tls-issuer-ref-pool-a-2.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:9093
+          - pool-a-0.tls-issuer-ref:9093
+          - pool-a-1.tls-issuer-ref:9093
+          - pool-a-2.tls-issuer-ref:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - tls-issuer-ref-pool-a-0.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:8081
-          - tls-issuer-ref-pool-a-1.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:8081
-          - tls-issuer-ref-pool-a-2.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.:8081
+          - pool-a-0.tls-issuer-ref:8081
+          - pool-a-1.tls-issuer-ref:8081
+          - pool-a-2.tls-issuer-ref:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -23667,11 +23667,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-issuer-ref-pool-a-0.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.
+        - address: pool-a-0.tls-issuer-ref
           port: 9093
-        - address: tls-issuer-ref-pool-a-1.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.
+        - address: pool-a-1.tls-issuer-ref
           port: 9093
-        - address: tls-issuer-ref-pool-a-2.tls-issuer-ref.tls-issuer-ref.svc.cluster.local.
+        - address: pool-a-2.tls-issuer-ref
           port: 9093
   kind: ConfigMap
   metadata:
@@ -24261,11 +24261,11 @@
           require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.
+        - address: pool-a-0.tls-issuer-ref-mtls
           port: 9093
-        - address: tls-issuer-ref-mtls-pool-a-1.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.
+        - address: pool-a-1.tls-issuer-ref-mtls
           port: 9093
-        - address: tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.
+        - address: pool-a-2.tls-issuer-ref-mtls
           port: 9093
       redpanda:
         admin:
@@ -24337,9 +24337,9 @@
         - --smp=1
         admin_api:
           addresses:
-          - tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9644
-          - tls-issuer-ref-mtls-pool-a-1.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9644
-          - tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9644
+          - pool-a-0.tls-issuer-ref-mtls:9644
+          - pool-a-1.tls-issuer-ref-mtls:9644
+          - pool-a-2.tls-issuer-ref-mtls:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
             cert_file: /etc/tls/certs/default-client/tls.crt
@@ -24347,9 +24347,9 @@
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9093
-          - tls-issuer-ref-mtls-pool-a-1.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9093
-          - tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9093
+          - pool-a-0.tls-issuer-ref-mtls:9093
+          - pool-a-1.tls-issuer-ref-mtls:9093
+          - pool-a-2.tls-issuer-ref-mtls:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
             cert_file: /etc/tls/certs/default-client/tls.crt
@@ -24357,9 +24357,9 @@
         overprovisioned: false
         schema_registry:
           addresses:
-          - tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:8081
-          - tls-issuer-ref-mtls-pool-a-1.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:8081
-          - tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:8081
+          - pool-a-0.tls-issuer-ref-mtls:8081
+          - pool-a-1.tls-issuer-ref-mtls:8081
+          - pool-a-2.tls-issuer-ref-mtls:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
             cert_file: /etc/tls/certs/default-client/tls.crt
@@ -24394,11 +24394,11 @@
           require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.
+        - address: pool-a-0.tls-issuer-ref-mtls
           port: 9093
-        - address: tls-issuer-ref-mtls-pool-a-1.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.
+        - address: pool-a-1.tls-issuer-ref-mtls
           port: 9093
-        - address: tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.
+        - address: pool-a-2.tls-issuer-ref-mtls
           port: 9093
   kind: ConfigMap
   metadata:
@@ -25011,11 +25011,11 @@
           require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-mtls-pool-a-0.tls-mtls.tls-mtls.svc.cluster.local.
+        - address: pool-a-0.tls-mtls
           port: 9093
-        - address: tls-mtls-pool-a-1.tls-mtls.tls-mtls.svc.cluster.local.
+        - address: pool-a-1.tls-mtls
           port: 9093
-        - address: tls-mtls-pool-a-2.tls-mtls.tls-mtls.svc.cluster.local.
+        - address: pool-a-2.tls-mtls
           port: 9093
       redpanda:
         admin:
@@ -25087,9 +25087,9 @@
         - --smp=1
         admin_api:
           addresses:
-          - tls-mtls-pool-a-0.tls-mtls.tls-mtls.svc.cluster.local.:9644
-          - tls-mtls-pool-a-1.tls-mtls.tls-mtls.svc.cluster.local.:9644
-          - tls-mtls-pool-a-2.tls-mtls.tls-mtls.svc.cluster.local.:9644
+          - pool-a-0.tls-mtls:9644
+          - pool-a-1.tls-mtls:9644
+          - pool-a-2.tls-mtls:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
             cert_file: /etc/tls/certs/default-client/tls.crt
@@ -25097,9 +25097,9 @@
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - tls-mtls-pool-a-0.tls-mtls.tls-mtls.svc.cluster.local.:9093
-          - tls-mtls-pool-a-1.tls-mtls.tls-mtls.svc.cluster.local.:9093
-          - tls-mtls-pool-a-2.tls-mtls.tls-mtls.svc.cluster.local.:9093
+          - pool-a-0.tls-mtls:9093
+          - pool-a-1.tls-mtls:9093
+          - pool-a-2.tls-mtls:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
             cert_file: /etc/tls/certs/default-client/tls.crt
@@ -25107,9 +25107,9 @@
         overprovisioned: false
         schema_registry:
           addresses:
-          - tls-mtls-pool-a-0.tls-mtls.tls-mtls.svc.cluster.local.:8081
-          - tls-mtls-pool-a-1.tls-mtls.tls-mtls.svc.cluster.local.:8081
-          - tls-mtls-pool-a-2.tls-mtls.tls-mtls.svc.cluster.local.:8081
+          - pool-a-0.tls-mtls:8081
+          - pool-a-1.tls-mtls:8081
+          - pool-a-2.tls-mtls:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
             cert_file: /etc/tls/certs/default-client/tls.crt
@@ -25144,11 +25144,11 @@
           require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-mtls-pool-a-0.tls-mtls.tls-mtls.svc.cluster.local.
+        - address: pool-a-0.tls-mtls
           port: 9093
-        - address: tls-mtls-pool-a-1.tls-mtls.tls-mtls.svc.cluster.local.
+        - address: pool-a-1.tls-mtls
           port: 9093
-        - address: tls-mtls-pool-a-2.tls-mtls.tls-mtls.svc.cluster.local.
+        - address: pool-a-2.tls-mtls
           port: 9093
   kind: ConfigMap
   metadata:
@@ -25790,11 +25790,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-self-signed-pool-a-0.tls-self-signed.tls-self-signed.svc.cluster.local.
+        - address: pool-a-0.tls-self-signed
           port: 9093
-        - address: tls-self-signed-pool-a-1.tls-self-signed.tls-self-signed.svc.cluster.local.
+        - address: pool-a-1.tls-self-signed
           port: 9093
-        - address: tls-self-signed-pool-a-2.tls-self-signed.tls-self-signed.svc.cluster.local.
+        - address: pool-a-2.tls-self-signed
           port: 9093
       redpanda:
         admin:
@@ -25866,25 +25866,25 @@
         - --smp=1
         admin_api:
           addresses:
-          - tls-self-signed-pool-a-0.tls-self-signed.tls-self-signed.svc.cluster.local.:9644
-          - tls-self-signed-pool-a-1.tls-self-signed.tls-self-signed.svc.cluster.local.:9644
-          - tls-self-signed-pool-a-2.tls-self-signed.tls-self-signed.svc.cluster.local.:9644
+          - pool-a-0.tls-self-signed:9644
+          - pool-a-1.tls-self-signed:9644
+          - pool-a-2.tls-self-signed:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - tls-self-signed-pool-a-0.tls-self-signed.tls-self-signed.svc.cluster.local.:9093
-          - tls-self-signed-pool-a-1.tls-self-signed.tls-self-signed.svc.cluster.local.:9093
-          - tls-self-signed-pool-a-2.tls-self-signed.tls-self-signed.svc.cluster.local.:9093
+          - pool-a-0.tls-self-signed:9093
+          - pool-a-1.tls-self-signed:9093
+          - pool-a-2.tls-self-signed:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - tls-self-signed-pool-a-0.tls-self-signed.tls-self-signed.svc.cluster.local.:8081
-          - tls-self-signed-pool-a-1.tls-self-signed.tls-self-signed.svc.cluster.local.:8081
-          - tls-self-signed-pool-a-2.tls-self-signed.tls-self-signed.svc.cluster.local.:8081
+          - pool-a-0.tls-self-signed:8081
+          - pool-a-1.tls-self-signed:8081
+          - pool-a-2.tls-self-signed:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -25915,11 +25915,11 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: tls-self-signed-pool-a-0.tls-self-signed.tls-self-signed.svc.cluster.local.
+        - address: pool-a-0.tls-self-signed
           port: 9093
-        - address: tls-self-signed-pool-a-1.tls-self-signed.tls-self-signed.svc.cluster.local.
+        - address: pool-a-1.tls-self-signed
           port: 9093
-        - address: tls-self-signed-pool-a-2.tls-self-signed.tls-self-signed.svc.cluster.local.
+        - address: pool-a-2.tls-self-signed
           port: 9093
   kind: ConfigMap
   metadata:
