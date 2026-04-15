@@ -274,7 +274,8 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 }
 
 // SyncAll synchronizes the simple resources associated with the given cluster,
-// cleaning up any resources that should no longer exist.
+// cleaning up any resources that should no longer exist. It skips clusters
+// where the owner is being deleted or does not exist.
 func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	var syncErr error
 	logger := log.FromContext(ctx).WithName("SyncAll")
@@ -289,6 +290,16 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 			"ownerName", owner.GetName(),
 			"ownerUID", owner.GetUID(),
 			"ownerGroupVersionKind", owner.GetObjectKind().GroupVersionKind().String())
+
+		// Skip clusters where the owner is being deleted — the deletion
+		// reconciler handles cleanup there independently.
+		if deleting, err := r.isOwnerDeleting(ctx, owner, clusterName); err != nil {
+			return err
+		} else if deleting {
+			logger.V(log.TraceLevel).Info("owner is being deleted on cluster, skipping sync", "clusterName", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName))
+			continue
+		}
+
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
 			return err
@@ -300,6 +311,23 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 		syncErr = errors.Join(syncErr, err)
 	}
 	return syncErr
+}
+
+// isOwnerDeleting checks if the owner resource is being deleted on a given cluster.
+// Returns true if the owner is being deleted or does not exist.
+func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clusterName string) (bool, error) {
+	ctl, err := r.ctl(ctx, clusterName)
+	if err != nil {
+		return false, err
+	}
+	resolved, err := r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	return !resolved.GetDeletionTimestamp().IsZero(), nil
 }
 
 // FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
@@ -479,11 +507,33 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 }
 
 // DeleteAll deletes all resources owned by the given cluster, including node pools.
+// It only cleans up resources on clusters where the owner is being deleted or no
+// longer exists, leaving resources on healthy clusters untouched.
 func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, error) {
 	allDeleted := true
 
 	var deleteErr error
 	for _, clusterName := range r.clusterList(owner) {
+		ctl, err := r.ctl(ctx, clusterName)
+		if err != nil {
+			return false, err
+		}
+
+		// Check whether the owner exists and is being deleted on this cluster.
+		// Skip clusters where the owner is alive and healthy. If the owner is
+		// NotFound (e.g. force-deleted with finalizer stripped), proceed with
+		// cleanup to avoid leaking orphaned resources.
+		resolvedOwner, err := r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				deleteErr = errors.Join(deleteErr, err)
+				continue
+			}
+			// Owner gone — fall through to clean up orphaned resources.
+		} else if resolvedOwner.GetDeletionTimestamp().IsZero() {
+			continue
+		}
+
 		var clusterResourcesDeleted bool
 		syncer, err := r.syncer(ctx, owner, clusterName)
 		if err != nil {
@@ -493,11 +543,6 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 			if err != nil {
 				deleteErr = errors.Join(deleteErr, err)
 			}
-		}
-
-		ctl, err := r.ctl(ctx, clusterName)
-		if err != nil {
-			return false, err
 		}
 
 		pools, err := r.fetchExistingPools(ctx, owner, clusterName)

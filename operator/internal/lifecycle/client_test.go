@@ -331,6 +331,11 @@ func TestClientDeleteAll(t *testing.T) {
 				require.NoError(t, instances.k8sClient.Create(ctx, resource))
 			}
 
+			// Mark the cluster as deleting — DeleteAll only cleans up clusters
+			// where the owner has a DeletionTimestamp set.
+			now := metav1.Now()
+			cluster.DeletionTimestamp = &now
+
 			deleted, err := instances.resourceClient.DeleteAll(ctx, cluster)
 			require.NoError(t, err)
 			require.Equal(t, tt.HasDeleteableResources(), deleted)

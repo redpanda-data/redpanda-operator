@@ -1,0 +1,10 @@
+project: operator
+kind: Fixed
+body: |
+  Fixed StretchCluster partial deletion causing cross-cluster resource destruction. When a
+  StretchCluster was deleted from a subset of clusters, the reconciler would destroy resources
+  on surviving clusters and leave the cluster in an unrecoverable state. Added a partial
+  deletion guard that blocks cleanup when the StretchCluster is still active on other clusters,
+  and scoped cross-cluster sync operations (SyncAll, syncBootstrapUser, syncCA) to skip clusters
+  where the StretchCluster is being deleted.
+time: 2026-04-13T12:00:00.000000+02:00
