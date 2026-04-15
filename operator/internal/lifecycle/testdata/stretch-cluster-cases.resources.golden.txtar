@@ -888,9 +888,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-a-0.compat-test
           port: 9093
-        - address: compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-b-0.compat-test
           port: 9093
       redpanda:
         admin:
@@ -959,22 +959,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.:9644
-          - compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.:9644
+          - basic-a-0.compat-test:9644
+          - basic-b-0.compat-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.:9093
-          - compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.:9093
+          - basic-a-0.compat-test:9093
+          - basic-b-0.compat-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.:8081
-          - compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.:8081
+          - basic-a-0.compat-test:8081
+          - basic-b-0.compat-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1005,9 +1005,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-a-0.compat-test
           port: 9093
-        - address: compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-b-0.compat-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -1054,9 +1054,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-a-0.compat-test
           port: 9093
-        - address: compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-b-0.compat-test
           port: 9093
       redpanda:
         admin:
@@ -1125,22 +1125,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.:9644
-          - compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.:9644
+          - basic-a-0.compat-test:9644
+          - basic-b-0.compat-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.:9093
-          - compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.:9093
+          - basic-a-0.compat-test:9093
+          - basic-b-0.compat-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.:8081
-          - compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.:8081
+          - basic-a-0.compat-test:8081
+          - basic-b-0.compat-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1171,9 +1171,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: compat-test-basic-a-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-a-0.compat-test
           port: 9093
-        - address: compat-test-basic-b-0.compat-test.compat-test.svc.cluster.local.
+        - address: basic-b-0.compat-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -1817,7 +1817,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: flat-network-test-pool-a-0.flat-network-test.flat-network-test.svc.cluster.local.
+        - address: pool-a-0.flat-network-test
           port: 9093
       redpanda:
         admin:
@@ -1883,19 +1883,19 @@
         - --smp=1
         admin_api:
           addresses:
-          - flat-network-test-pool-a-0.flat-network-test.flat-network-test.svc.cluster.local.:9644
+          - pool-a-0.flat-network-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - flat-network-test-pool-a-0.flat-network-test.flat-network-test.svc.cluster.local.:9093
+          - pool-a-0.flat-network-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - flat-network-test-pool-a-0.flat-network-test.flat-network-test.svc.cluster.local.:8081
+          - pool-a-0.flat-network-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1926,7 +1926,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: flat-network-test-pool-a-0.flat-network-test.flat-network-test.svc.cluster.local.
+        - address: pool-a-0.flat-network-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -2549,7 +2549,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: mcs-network-test-pool-a-0.mcs-network-test.mcs-network-test.svc.cluster.local.
+        - address: pool-a-0.mcs-network-test.svc.clusterset.local
           port: 9093
       redpanda:
         admin:
@@ -2615,19 +2615,19 @@
         - --smp=1
         admin_api:
           addresses:
-          - mcs-network-test-pool-a-0.mcs-network-test.mcs-network-test.svc.cluster.local.:9644
+          - pool-a-0.mcs-network-test.svc.clusterset.local:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - mcs-network-test-pool-a-0.mcs-network-test.mcs-network-test.svc.cluster.local.:9093
+          - pool-a-0.mcs-network-test.svc.clusterset.local:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - mcs-network-test-pool-a-0.mcs-network-test.mcs-network-test.svc.cluster.local.:8081
+          - pool-a-0.mcs-network-test.svc.clusterset.local:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -2658,7 +2658,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: mcs-network-test-pool-a-0.mcs-network-test.mcs-network-test.svc.cluster.local.
+        - address: pool-a-0.mcs-network-test.svc.clusterset.local
           port: 9093
   kind: ConfigMap
   metadata:
@@ -3241,9 +3241,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-a-0.nodepool-basic-test
           port: 9093
-        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-b-0.nodepool-basic-test
           port: 9093
       redpanda:
         admin:
@@ -3312,22 +3312,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
-          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - basic-a-0.nodepool-basic-test:9644
+          - basic-b-0.nodepool-basic-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - basic-a-0.nodepool-basic-test:9093
+          - basic-b-0.nodepool-basic-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - basic-a-0.nodepool-basic-test:8081
+          - basic-b-0.nodepool-basic-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -3358,9 +3358,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-a-0.nodepool-basic-test
           port: 9093
-        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-b-0.nodepool-basic-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -3407,9 +3407,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-a-0.nodepool-basic-test
           port: 9093
-        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-b-0.nodepool-basic-test
           port: 9093
       redpanda:
         admin:
@@ -3478,22 +3478,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
-          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - basic-a-0.nodepool-basic-test:9644
+          - basic-b-0.nodepool-basic-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
-          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9093
+          - basic-a-0.nodepool-basic-test:9093
+          - basic-b-0.nodepool-basic-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
-          - nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:8081
+          - basic-a-0.nodepool-basic-test:8081
+          - basic-b-0.nodepool-basic-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -3524,9 +3524,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-a-0.nodepool-basic-test
           port: 9093
-        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
+        - address: basic-b-0.nodepool-basic-test
           port: 9093
   kind: ConfigMap
   metadata:

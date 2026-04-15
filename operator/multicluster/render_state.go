@@ -234,12 +234,20 @@ func (r *RenderState) totalReplicas() int32 {
 }
 
 // BrokerList returns a list of broker addresses for the given port.
+// For MCS mode, uses the clusterset.local domain. For mesh/flat modes,
+// uses the per-pod service name (<pool>-<ordinal>.<namespace>) which
+// resolves across clusters via the synced per-pod Services.
 func (r *RenderState) BrokerList(port int32) []string {
+	addressFmt := "%s.%s:%d"
+	if r.Spec().Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+
 	var brokers []string
 	for _, pool := range r.pools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			brokers = append(brokers, fmt.Sprintf("%s%s-%d.%s:%d",
-				r.fullname(), pool.Suffix(), i, r.Spec().InternalDomain(r.fullname(), r.namespace), port))
+			name := PerPodServiceName(pool, i)
+			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, port))
 		}
 	}
 	return brokers
