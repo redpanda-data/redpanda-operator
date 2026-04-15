@@ -46,7 +46,7 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 
 // secretSTSLifecycle returns the lifecycle scripts Secret for the StatefulSet.
 func secretSTSLifecycle(state *RenderState) *corev1.Secret {
-	p := scriptParamsFromState(state)
+	p := scriptParamsForLifecycle(state)
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -178,7 +178,7 @@ func secretFSValidator(state *RenderState, pool *redpandav1alpha2.NodePool) *cor
 
 // secretConfigurator returns the configurator script Secret for a pool.
 func secretConfigurator(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Secret {
-	p := scriptParamsFromState(state)
+	p := scriptParamsFromState(state, pool)
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
