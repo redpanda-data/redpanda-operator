@@ -258,6 +258,63 @@ func TestTLS(t *testing.T) {
 			assert.Equal(t, "release-unknown-root-certificate", certSecret)
 			assert.Equal(t, "release-default-client-cert", clientSecret)
 		})
+
+		t.Run("with issuerRef returns leaf cert secret and ca.crt key", func(t *testing.T) {
+			tls := &redpandav1alpha2.TLS{
+				Certs: map[string]*redpandav1alpha2.Certificate{
+					"my-cert": {
+						Enabled: ptr.To(true),
+						IssuerRef: &redpandav1alpha2.IssuerRef{
+							Name: ptr.To("my-issuer"),
+							Kind: ptr.To("ClusterIssuer"),
+						},
+					},
+				},
+			}
+			certSecret, certKey, clientSecret := tls.CertificatesFor("release", "my-cert")
+			// When IssuerRef is set, the CA is in the leaf cert's secret under ca.crt.
+			assert.Equal(t, "release-my-cert-cert", certSecret)
+			assert.Equal(t, "ca.crt", certKey)
+			assert.Equal(t, "release-my-cert-client-cert", clientSecret)
+		})
+
+		t.Run("with issuerRef and clientSecretRef", func(t *testing.T) {
+			tls := &redpandav1alpha2.TLS{
+				Certs: map[string]*redpandav1alpha2.Certificate{
+					"my-cert": {
+						Enabled: ptr.To(true),
+						IssuerRef: &redpandav1alpha2.IssuerRef{
+							Name: ptr.To("my-issuer"),
+							Kind: ptr.To("Issuer"),
+						},
+						ClientSecretRef: &redpandav1alpha2.SecretRef{Name: ptr.To("custom-client")},
+					},
+				},
+			}
+			certSecret, certKey, clientSecret := tls.CertificatesFor("release", "my-cert")
+			assert.Equal(t, "release-my-cert-cert", certSecret)
+			assert.Equal(t, "ca.crt", certKey)
+			assert.Equal(t, "custom-client", clientSecret)
+		})
+
+		t.Run("secretRef takes precedence over issuerRef", func(t *testing.T) {
+			tls := &redpandav1alpha2.TLS{
+				Certs: map[string]*redpandav1alpha2.Certificate{
+					"my-cert": {
+						Enabled:   ptr.To(true),
+						SecretRef: &redpandav1alpha2.SecretRef{Name: ptr.To("custom-server")},
+						IssuerRef: &redpandav1alpha2.IssuerRef{
+							Name: ptr.To("my-issuer"),
+						},
+					},
+				},
+			}
+			certSecret, certKey, clientSecret := tls.CertificatesFor("release", "my-cert")
+			// SecretRef takes precedence — user provides everything.
+			assert.Equal(t, "custom-server", certSecret)
+			assert.Equal(t, corev1.TLSCertKey, certKey)
+			assert.Equal(t, "release-my-cert-client-cert", clientSecret)
+		})
 	})
 }
 

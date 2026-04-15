@@ -744,12 +744,27 @@ func (t *TLS) CertServerCAPath(certName string) string {
 
 // CertificatesFor returns the server cert secret name, cert key, and client cert secret name
 // for the given TLS certificate. Safe to call on nil receiver.
+//
+// The returned certSecret and certKey identify where the root CA public key can
+// be read from. The behaviour depends on how the certificate is configured:
+//   - Default (operator-managed CA): the root-certificate secret, key "tls.crt".
+//   - SecretRef set: the user-provided secret, key "tls.crt".
+//   - IssuerRef set (no SecretRef): the leaf cert secret created by cert-manager,
+//     key "ca.crt" (cert-manager populates the CA chain there).
 func (t *TLS) CertificatesFor(fullname, name string) (certSecret, certKey, clientSecret string) {
 	if t != nil {
 		if cert, ok := t.Certs[name]; ok && cert.IsEnabled() {
 			certSecret = fmt.Sprintf("%s-%s-root-certificate", fullname, name)
+			certKey = corev1.TLSCertKey
 			if cert.SecretRef != nil && cert.SecretRef.Name != nil {
 				certSecret = *cert.SecretRef.Name
+			} else if cert.IssuerRef != nil {
+				// When using an external issuer, there is no separate
+				// root-certificate secret. cert-manager populates the
+				// leaf cert's secret with a ca.crt key containing the
+				// CA chain.
+				certSecret = t.CertServerSecretName(fullname, name)
+				certKey = "ca.crt"
 			}
 
 			clientSecret = fmt.Sprintf("%s-%s-client-cert", fullname, name)
@@ -757,7 +772,7 @@ func (t *TLS) CertificatesFor(fullname, name string) (certSecret, certKey, clien
 				clientSecret = *cert.ClientSecretRef.Name
 			}
 
-			return certSecret, corev1.TLSCertKey, clientSecret
+			return certSecret, certKey, clientSecret
 		}
 	}
 

@@ -426,6 +426,107 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+-- tls-issuer-ref --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec:
+  tls:
+    enabled: true
+    certs:
+      default:
+        caEnabled: true
+        issuerRef:
+          name: my-ca-issuer
+          kind: ClusterIssuer
+          group: cert-manager.io
+  listeners:
+    kafka:
+      port: 9093
+      tls:
+        cert: default
+        requireClientAuth: false
+    admin:
+      port: 9644
+      tls:
+        cert: default
+    http:
+      port: 8082
+      tls:
+        cert: default
+    schemaRegistry:
+      port: 8081
+      tls:
+        cert: default
+    rpc:
+      port: 33145
+      tls:
+        cert: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+-- tls-issuer-ref-mtls --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec:
+  tls:
+    enabled: true
+    certs:
+      default:
+        caEnabled: true
+        issuerRef:
+          name: my-ca-issuer
+          kind: ClusterIssuer
+          group: cert-manager.io
+  listeners:
+    kafka:
+      port: 9093
+      tls:
+        cert: default
+        requireClientAuth: true
+    admin:
+      port: 9644
+      tls:
+        cert: default
+        requireClientAuth: true
+    http:
+      port: 8082
+      tls:
+        cert: default
+    schemaRegistry:
+      port: 8081
+      tls:
+        cert: default
+    rpc:
+      port: 33145
+      tls:
+        cert: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
 -- rack-awareness --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
