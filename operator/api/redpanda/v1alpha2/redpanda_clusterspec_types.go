@@ -520,6 +520,32 @@ type External struct {
 	ExternalDNS *ExternalDNS `json:"externalDns,omitempty"`
 	// Specifies a naming prefix template for external Services.
 	PrefixTemplate *string `json:"prefixTemplate,omitempty"`
+	// Configures Gateway API TLSRoute-based external access. When enabled, ClusterIP services and TLSRoute resources are created instead of NodePort/LoadBalancer services. The Gateway itself must be managed externally.
+	Gateway *GatewayExternalConfig `json:"gateway,omitempty"`
+}
+
+// GatewayExternalConfig holds configuration for Gateway API-based external access using TLSRoute resources with SNI-based routing.
+type GatewayExternalConfig struct {
+	// Enables Gateway API TLSRoute-based external access.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Defines which Gateway(s) handle the TLSRoutes. At least one parent reference must be provided.
+	ParentRefs []GatewayParentRefConfig `json:"parentRefs,omitempty"`
+	// The port advertised to clients. Defaults to 443.
+	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
+}
+
+// GatewayParentRefConfig identifies a Gateway (or ListenerSet) that should handle the TLSRoute traffic. Schema mirrors the upstream Gateway API ParentReference.
+type GatewayParentRefConfig struct {
+	// API group of the referent. Defaults to "gateway.networking.k8s.io".
+	Group *string `json:"group,omitempty"`
+	// Kind of the referent. Defaults to "Gateway".
+	Kind *string `json:"kind,omitempty"`
+	// Name of the referent.
+	Name string `json:"name"`
+	// Namespace of the referent.
+	Namespace *string `json:"namespace,omitempty"`
+	// Name of a section within the target resource.
+	SectionName *string `json:"sectionName,omitempty"`
 }
 
 // Logging configures logging settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/troubleshooting/troubleshoot/.
@@ -973,6 +999,10 @@ type ExternalListener struct {
 	// Specifies the network port that the external Service listens on.
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
 	NodePort        *int32  `json:"nodePort,omitempty"`
+	// Host is the SNI hostname for the bootstrap TLSRoute when using Gateway API external access.
+	Host *string `json:"host,omitempty"`
+	// HostTemplate is a Go template for per-broker TLSRoute SNI hostnames. Supports $POD_ORDINAL and $POD_NAME variables.
+	HostTemplate *string `json:"hostTemplate,omitempty"`
 }
 
 // Admin configures settings for the Admin API listeners.

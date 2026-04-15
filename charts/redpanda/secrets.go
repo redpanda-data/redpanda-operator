@@ -538,6 +538,12 @@ func externalAdvertiseAddress(state *RenderState) string {
 
 // was advertised-host
 func advertisedHostJSON(state *RenderState, externalName string, port int32, replicaIndex int) map[string]any {
+	// Gateway API mode: advertise the TLSRoute SNI hostname and the
+	// gateway's advertised port (default 443) rather than a NodePort/LB address.
+	if state.Values.External.IsGatewayEnabled() {
+		return advertisedHostJSONGateway(state, externalName, replicaIndex)
+	}
+
 	host := map[string]any{
 		"name":    externalName,
 		"address": externalAdvertiseAddress(state),
@@ -565,6 +571,76 @@ func advertisedHostJSON(state *RenderState, externalName string, port int32, rep
 		}
 	}
 	return host
+}
+
+// advertisedHostJSONGateway builds the advertised host entry for Gateway API
+// mode. The address is the per-broker SNI hostname (from HostTemplate) and the
+// port is the gateway's advertised port (default 443).
+func advertisedHostJSONGateway(state *RenderState, externalName string, replicaIndex int) map[string]any {
+	gw := state.Values.External.Gateway
+	port := gw.GatewayAdvertisedPort()
+
+	// Look up the listener's HostTemplate to build the per-broker address.
+	// We search all listener types for the matching external name.
+	hostTemplate := findListenerHostTemplate(state, externalName)
+	if hostTemplate == "" {
+		// Fallback: use the bootstrap host if no template is set.
+		hostTemplate = findListenerHost(state, externalName)
+	}
+
+	pods := PodNames(state, Pool{Statefulset: state.Values.Statefulset})
+	for _, set := range state.Pools {
+		pods = append(pods, PodNames(state, set)...)
+	}
+
+	podName := ""
+	if replicaIndex < len(pods) {
+		podName = pods[replicaIndex]
+	}
+
+	address := renderBrokerHost(hostTemplate, replicaIndex, podName)
+
+	return map[string]any{
+		"name":    externalName,
+		"address": address,
+		"port":    port,
+	}
+}
+
+// findListenerHostTemplate searches all listener types for an external listener
+// with the given name and returns its HostTemplate.
+func findListenerHostTemplate(state *RenderState, name string) string {
+	if l, ok := state.Values.Listeners.Kafka.External[name]; ok {
+		return ptr.Deref(l.HostTemplate, "")
+	}
+	if l, ok := state.Values.Listeners.HTTP.External[name]; ok {
+		return ptr.Deref(l.HostTemplate, "")
+	}
+	if l, ok := state.Values.Listeners.Admin.External[name]; ok {
+		return ptr.Deref(l.HostTemplate, "")
+	}
+	if l, ok := state.Values.Listeners.SchemaRegistry.External[name]; ok {
+		return ptr.Deref(l.HostTemplate, "")
+	}
+	return ""
+}
+
+// findListenerHost searches all listener types for an external listener with
+// the given name and returns its Host (bootstrap hostname).
+func findListenerHost(state *RenderState, name string) string {
+	if l, ok := state.Values.Listeners.Kafka.External[name]; ok {
+		return ptr.Deref(l.Host, "")
+	}
+	if l, ok := state.Values.Listeners.HTTP.External[name]; ok {
+		return ptr.Deref(l.Host, "")
+	}
+	if l, ok := state.Values.Listeners.Admin.External[name]; ok {
+		return ptr.Deref(l.Host, "")
+	}
+	if l, ok := state.Values.Listeners.SchemaRegistry.External[name]; ok {
+		return ptr.Deref(l.Host, "")
+	}
+	return ""
 }
 
 // adminInternalHTTPProtocol was admin-http-protocol

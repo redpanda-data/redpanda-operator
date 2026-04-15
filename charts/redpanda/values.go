@@ -260,6 +260,61 @@ type ExternalConfig struct {
 	SourceRanges   []string           `json:"sourceRanges"`
 	Service        Enableable         `json:"service"`
 	ExternalDNS    *Enableable        `json:"externalDns"`
+	// Gateway configures Gateway API TLSRoute-based external access.
+	// When enabled, ClusterIP services and TLSRoute resources are created
+	// instead of NodePort/LoadBalancer services. The Gateway itself must be
+	// managed separately; the chart only creates TLSRoute resources that
+	// reference it.
+	Gateway *GatewayConfig `json:"gateway,omitempty"`
+}
+
+// GatewayConfig holds configuration for Gateway API-based external access
+// using TLSRoute resources with SNI-based routing.
+type GatewayConfig struct {
+	// Enabled activates Gateway API TLSRoute-based external access. When true,
+	// this takes precedence over the NodePort/LoadBalancer external.type setting.
+	Enabled bool `json:"enabled"`
+	// ParentRefs defines which Gateway(s) handle the TLSRoutes. At least one
+	// parent reference must be provided. These are passed directly into each
+	// TLSRoute's spec.parentRefs.
+	ParentRefs []GatewayParentRef `json:"parentRefs"`
+	// AdvertisedPort is the port advertised to clients. Defaults to 443
+	// because the actual listening port is configured on the Gateway, not
+	// on the TLSRoute.
+	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
+}
+
+// GatewayParentRef identifies a Gateway (or ListenerSet) that should handle
+// the TLSRoute traffic. The schema mirrors the upstream Gateway API
+// ParentReference so users see familiar field names.
+type GatewayParentRef struct {
+	// Group is the API group of the referent. Defaults to
+	// "gateway.networking.k8s.io".
+	Group *string `json:"group,omitempty"`
+	// Kind is the kind of the referent. Defaults to "Gateway".
+	Kind *string `json:"kind,omitempty"`
+	// Name is the name of the referent.
+	Name string `json:"name"`
+	// Namespace is the namespace of the referent. When unspecified, refers
+	// to the local namespace of the TLSRoute.
+	Namespace *string `json:"namespace,omitempty"`
+	// SectionName is the name of a section within the target resource.
+	SectionName *string `json:"sectionName,omitempty"`
+}
+
+// IsGatewayEnabled returns true when Gateway API TLSRoute-based external
+// access is configured and enabled.
+func (e *ExternalConfig) IsGatewayEnabled() bool {
+	return e.Enabled && e.Gateway != nil && e.Gateway.Enabled && len(e.Gateway.ParentRefs) > 0
+}
+
+// GatewayAdvertisedPort returns the port to advertise to clients when using
+// Gateway API. Defaults to 443.
+func (g *GatewayConfig) GatewayAdvertisedPort() int32 {
+	if g.AdvertisedPort != nil {
+		return *g.AdvertisedPort
+	}
+	return 443
 }
 
 type Enableable struct {
@@ -1773,6 +1828,15 @@ type ExternalListener[T ~string] struct {
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
+
+	// Host is the SNI hostname used when external.gateway is enabled.
+	// Used as the hostname in the bootstrap TLSRoute. For per-broker
+	// TLSRoutes, the pod ordinal is interpolated via HostTemplate.
+	Host *string `json:"host,omitempty"`
+	// HostTemplate is a Go template for per-broker TLSRoute hostnames.
+	// Available variables: $POD_ORDINAL, $POD_NAME.
+	// Example: "kafka-{{$POD_ORDINAL}}-broker.example.com"
+	HostTemplate *string `json:"hostTemplate,omitempty"`
 }
 
 func (l *ExternalListener[T]) AsString() ExternalListener[string] {
@@ -1790,6 +1854,8 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		TLS:                  l.TLS,
 		AuthenticationMethod: auth,
 		PrefixTemplate:       l.PrefixTemplate,
+		Host:                 l.Host,
+		HostTemplate:         l.HostTemplate,
 	}
 }
 

@@ -24,6 +24,11 @@ func NodePortService(state *RenderState) *corev1.Service {
 		return nil
 	}
 
+	// Gateway API mode uses its own ClusterIP services and TLSRoutes.
+	if state.Values.External.IsGatewayEnabled() {
+		return nil
+	}
+
 	if state.Values.External.Type != corev1.ServiceTypeNodePort {
 		return nil
 	}
