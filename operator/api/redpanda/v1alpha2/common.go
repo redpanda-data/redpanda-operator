@@ -323,6 +323,11 @@ type ClusterRef struct {
 	// Name specifies the name of the cluster being referenced.
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+	// Namespace optionally specifies the namespace of the cluster being
+	// referenced. When set, allows referencing a cluster in a different
+	// namespace from the resource. Requires the operator to be running in
+	// global scope mode (without --namespace flag).
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 const (
@@ -332,6 +337,19 @@ const (
 	v2ClusterRefKind      = "Redpanda"
 	StretchClusterRefKind = "StretchCluster"
 )
+
+// GetNamespace returns the namespace from the ClusterRef if set, otherwise
+// falls back to the provided default (typically the referencing object's
+// namespace).
+func (c *ClusterRef) GetNamespace(defaultNamespace string) string {
+	return ptr.Deref(c.Namespace, defaultNamespace)
+}
+
+// IsCrossNamespace returns true if this ClusterRef points to a namespace
+// different from the given one.
+func (c *ClusterRef) IsCrossNamespace(objectNamespace string) bool {
+	return c.Namespace != nil && *c.Namespace != "" && *c.Namespace != objectNamespace
+}
 
 func (c *ClusterRef) GetGroup() string {
 	return ptr.Deref(c.Group, v2ClusterRefGroup)

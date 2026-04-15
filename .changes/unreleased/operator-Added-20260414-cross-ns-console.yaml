@@ -1,0 +1,7 @@
+project: operator
+kind: Added
+body: |-
+    Console clusterRef now supports an optional `namespace` field to reference a
+    Redpanda cluster in a different namespace. This requires the operator to be
+    running in global scope mode (without the `--namespace` flag).
+time: 2026-04-14T21:00:00.000000-04:00

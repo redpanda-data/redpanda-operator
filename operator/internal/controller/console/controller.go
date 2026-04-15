@@ -64,6 +64,11 @@ type Controller struct {
 	Ctl    *kube.Ctl
 	Config *kube.RESTConfig
 
+	// namespace is the operator's configured namespace scope. Empty means
+	// global scope (all namespaces). Cross-namespace ClusterRef is only
+	// allowed when this is empty.
+	namespace string
+
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
 	// value.
@@ -78,6 +83,8 @@ type Controller struct {
 }
 
 func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
+	c.namespace = namespace
+
 	// If rng is not set for testing, create and seed a new one.
 	if c.rng == nil {
 		// TODO: Weak RNG is probably acceptable here but best to doublecheck
@@ -122,6 +129,21 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
+	}
+
+	// Reject cross-namespace ClusterRef when the operator is running in
+	// namespace-scoped mode. Cross-namespace references require global
+	// scope because the operator needs cache access to the target namespace.
+	if c.namespace != "" {
+		if src := cr.Spec.ClusterSource; src != nil {
+			if ref := src.ClusterRef; ref != nil && ref.IsCrossNamespace(cr.Namespace) {
+				return ctrl.Result{}, fmt.Errorf(
+					"cross-namespace clusterRef (namespace %q) is not allowed when the operator is running in namespace-scoped mode (--namespace=%q); "+
+						"remove the --namespace flag to enable global scope",
+					ptr.Deref(ref.Namespace, ""), c.namespace,
+				)
+			}
+		}
 	}
 
 	syncer, err := c.syncerFor(cr)
@@ -419,7 +441,7 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 	if ref := r.console.Spec.ClusterSource.ClusterRef; ref != nil {
 		key := kube.ObjectKey{
 			Name:      ref.Name,
-			Namespace: r.console.Namespace,
+			Namespace: ref.GetNamespace(r.console.Namespace),
 		}
 
 		// TODO: Add support for vectorized clusters?

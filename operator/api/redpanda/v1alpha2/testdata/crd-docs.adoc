@@ -601,6 +601,10 @@ If unspecified, defaults to "cluster.redpanda.com". + |  |
 If unspecified, defaults to "Redpanda". + |  | 
 | *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: \{} +
 
+| *`namespace`* __string__ | Namespace optionally specifies the namespace of the cluster being +
+referenced. When set, allows referencing a cluster in a different +
+namespace from the resource. Requires the operator to be running in +
+global scope mode (without --namespace flag). + |  | 
 |===
 
 

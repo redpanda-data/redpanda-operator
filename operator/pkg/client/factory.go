@@ -587,7 +587,8 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			ns := ref.GetNamespace(obj.GetNamespace())
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ns, Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
