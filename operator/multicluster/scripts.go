@@ -72,19 +72,38 @@ type ScriptParams struct {
 // scriptParamsFromState extracts all values needed for script generation from a RenderState.
 // scriptInternalAdvertiseAddress returns the advertised address template for
 // internal listeners. In MCS mode, uses the clusterset.local domain.
-func scriptInternalAdvertiseAddress(state *RenderState) string {
+// For mesh/flat modes, uses the per-pod service name (<pool>-<ordinal>)
+// which is resolvable across clusters, rather than the StatefulSet pod FQDN
+// which only resolves within the local cluster.
+func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.NodePool) string {
 	if state.Spec().Networking.IsMCS() {
 		return fmt.Sprintf("${SERVICE_NAME}.%s.svc.clusterset.local", state.namespace)
 	}
-	return fmt.Sprintf("${SERVICE_NAME}.%s", state.Spec().InternalDomain(state.fullname(), state.namespace))
+	// Use per-pod service name pattern: <pool-name>-<ordinal>.<namespace>
+	// This matches the cross-cluster per-pod Service created by the operator
+	// (see PerPodServiceName in service_per_pod.go). ${POD_ORDINAL} is
+	// derived at script runtime from SERVICE_NAME.
+	return fmt.Sprintf("%s-${POD_ORDINAL}.%s", pool.GetName(), state.namespace)
 }
 
-func scriptParamsFromState(state *RenderState) ScriptParams {
+// scriptParamsForLifecycle returns script params for lifecycle hooks which
+// don't need pool-specific fields like InternalAdvertiseAddress.
+func scriptParamsForLifecycle(state *RenderState) ScriptParams {
+	return ScriptParams{
+		AdminCurlFlags:    state.adminTLSCurlFlags(),
+		CurlURL:           state.Spec().AdminInternalURL(state.fullname(), state.namespace),
+		TotalReplicas:     state.totalReplicas(),
+		AdminHTTPProtocol: state.Spec().AdminInternalHTTPProtocol(),
+		AdminAPIURLs:      state.Spec().AdminAPIURLs(state.fullname(), state.namespace),
+	}
+}
+
+func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.NodePool) ScriptParams {
 	p := ScriptParams{
 		AdminCurlFlags:              state.adminTLSCurlFlags(),
 		CurlURL:                     state.Spec().AdminInternalURL(state.fullname(), state.namespace),
 		TotalReplicas:               state.totalReplicas(),
-		InternalAdvertiseAddress:    scriptInternalAdvertiseAddress(state),
+		InternalAdvertiseAddress:    scriptInternalAdvertiseAddress(state, pool),
 		KafkaPort:                   state.Spec().KafkaPort(),
 		HTTPPort:                    state.Spec().HTTPPort(),
 		RedpandaAtLeast22_3:         state.Spec().Image.AtLeast("22.3.0"),

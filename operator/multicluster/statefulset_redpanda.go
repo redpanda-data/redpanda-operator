@@ -65,7 +65,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Nod
 
 	terminationGracePeriod := defaultTerminationGracePeriod
 
-	p := scriptParamsFromState(state)
+	p := scriptParamsFromState(state, pool)
 
 	l := state.Spec().Listeners
 

@@ -1510,13 +1510,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -1547,13 +1547,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -2263,13 +2263,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.flat-network-test.flat-network-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.flat-network-test.flat-network-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -3863,13 +3863,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -3900,13 +3900,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
