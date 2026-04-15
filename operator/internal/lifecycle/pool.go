@@ -300,7 +300,8 @@ func (p *PoolTracker) RequiresUpdate() []*MulticlusterStatefulSet {
 
 		outOfDateGeneration := labels[generationLabel] != generation
 		outOfDateConfigVersion := labels[configVersionLabel] != desired.set.Labels[configVersionLabel]
-		if outOfDateGeneration || outOfDateConfigVersion {
+		outOfDateNodePool := labels[nodePoolGenerationLabel] != desired.set.Labels[nodePoolGenerationLabel]
+		if outOfDateGeneration || outOfDateConfigVersion || outOfDateNodePool {
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
 
