@@ -1266,8 +1266,8 @@ listeners:
       default:
         port: 9094
         gateway: true
-        host: kafka.example.com
-        hostTemplate: kafka-$POD_ORDINAL-broker.example.com
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
         tls:
           cert: default
 
@@ -1303,7 +1303,7 @@ listeners:
       gw-listener:
         port: 9095
         gateway: true
-        host: kafka.example.com
-        hostTemplate: kafka-$POD_ORDINAL-broker.example.com
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
         tls:
           cert: default

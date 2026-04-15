@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Added
+body: |-
+    Added Gateway API TLSRoute support for external access. Individual external
+    listeners can opt into TLSRoute mode via `gateway: true`, enabling SNI-based
+    routing through a user-managed Gateway. This supports per-listener domains
+    and gradual migration from NodePort/LoadBalancer to Gateway API.
+time: 2026-04-14T20:00:00.000000-04:00

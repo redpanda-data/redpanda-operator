@@ -106740,13 +106740,13 @@ stringData:
     ADVERTISED_KAFKA_ADDRESSES=()
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"kafka-0-broker.example.com\",\"name\":\"gw-listener\",\"port\":443}")
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-0-broker.example.com\",\"name\":\"gw-listener\",\"port\":443}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"kafka-1-broker.example.com\",\"name\":\"gw-listener\",\"port\":443}")
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-1-broker.example.com\",\"name\":\"gw-listener\",\"port\":443}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"kafka-2-broker.example.com\",\"name\":\"gw-listener\",\"port\":443}")
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-2-broker.example.com\",\"name\":\"gw-listener\",\"port\":443}")
 
     rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[2] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
 
@@ -108032,7 +108032,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka.example.com
+  - redpanda.example.com
   parentRefs:
   - group: null
     kind: null
@@ -108058,7 +108058,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka-0-broker.example.com
+  - redpanda-0-broker.example.com
   parentRefs:
   - group: null
     kind: null
@@ -108084,7 +108084,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka-1-broker.example.com
+  - redpanda-1-broker.example.com
   parentRefs:
   - group: null
     kind: null
@@ -108110,7 +108110,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka-2-broker.example.com
+  - redpanda-2-broker.example.com
   parentRefs:
   - group: null
     kind: null
@@ -108398,13 +108398,13 @@ stringData:
     ADVERTISED_KAFKA_ADDRESSES=()
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"kafka-0-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-0-broker.example.com\",\"name\":\"default\",\"port\":9094}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"kafka-1-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-1-broker.example.com\",\"name\":\"default\",\"port\":9094}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"kafka-2-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-2-broker.example.com\",\"name\":\"default\",\"port\":9094}")
 
     rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
 
@@ -108414,13 +108414,13 @@ stringData:
     ADVERTISED_HTTP_ADDRESSES=()
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"kafka-0-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-0-broker.example.com\",\"name\":\"default\",\"port\":9094}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"kafka-1-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-1-broker.example.com\",\"name\":\"default\",\"port\":9094}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"kafka-2-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-2-broker.example.com\",\"name\":\"default\",\"port\":9094}")
 
     rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
 type: Opaque
@@ -109674,7 +109674,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka.example.com
+  - redpanda.example.com
   parentRefs:
   - group: null
     kind: null
@@ -109700,7 +109700,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka-0-broker.example.com
+  - redpanda-0-broker.example.com
   parentRefs:
   - group: null
     kind: null
@@ -109726,7 +109726,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka-1-broker.example.com
+  - redpanda-1-broker.example.com
   parentRefs:
   - group: null
     kind: null
@@ -109752,7 +109752,7 @@ metadata:
   namespace: default
 spec:
   hostnames:
-  - kafka-2-broker.example.com
+  - redpanda-2-broker.example.com
   parentRefs:
   - group: null
     kind: null
