@@ -116,8 +116,7 @@
 {{- $_is_returning := false -}}
 {{- $parentRefs := (coalesce nil) -}}
 {{- range $_, $ref := $refs -}}
-{{- $pr := (mustMergeOverwrite (dict "name" "") (dict "name" $ref.name "group" $ref.group "kind" $ref.kind "namespace" $ref.namespace "sectionName" $ref.sectionName)) -}}
-{{- $parentRefs = (concat (default (list) $parentRefs) (list $pr)) -}}
+{{- $parentRefs = (concat (default (list) $parentRefs) (list $ref)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
