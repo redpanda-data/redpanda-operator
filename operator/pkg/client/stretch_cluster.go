@@ -228,15 +228,21 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 		certName = "default"
 	}
 
-	caSecretName := rendermulticluster.CASecretName(sc.Name, certName)
+	// CertificatesFor resolves the CA secret name and key based on the cert
+	// type: operator-managed CA, user-provided SecretRef, or external IssuerRef.
+	caSecretName, caKey, _ := spec.TLS.CertificatesFor(sc.Name, certName)
 	var caSecret corev1.Secret
 	if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: caSecretName}, &caSecret); err != nil {
 		return nil, errors.Wrapf(err, "reading CA secret %q", caSecretName)
 	}
 
-	caCert := caSecret.Data["ca.crt"]
+	caCert := caSecret.Data[caKey]
 	if len(caCert) == 0 {
-		caCert = caSecret.Data[corev1.TLSCertKey]
+		// Fallback: try ca.crt then tls.crt.
+		caCert = caSecret.Data["ca.crt"]
+		if len(caCert) == 0 {
+			caCert = caSecret.Data[corev1.TLSCertKey]
+		}
 	}
 
 	tlsConfig := &tls.Config{
