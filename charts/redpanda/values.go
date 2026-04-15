@@ -294,7 +294,7 @@ type GatewayParentRef struct {
 	// Kind is the kind of the referent. Defaults to "Gateway".
 	Kind *string `json:"kind,omitempty"`
 	// Name is the name of the referent.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// Namespace is the namespace of the referent. When unspecified, refers
 	// to the local namespace of the TLSRoute.
 	Namespace *string `json:"namespace,omitempty"`

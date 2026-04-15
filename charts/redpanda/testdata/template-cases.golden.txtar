@@ -108034,10 +108034,7 @@ spec:
   hostnames:
   - redpanda.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
@@ -108060,10 +108057,7 @@ spec:
   hostnames:
   - redpanda-0-broker.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
@@ -108086,10 +108080,7 @@ spec:
   hostnames:
   - redpanda-1-broker.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
@@ -108112,10 +108103,7 @@ spec:
   hostnames:
   - redpanda-2-broker.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
@@ -109676,10 +109664,7 @@ spec:
   hostnames:
   - redpanda.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
@@ -109702,10 +109687,7 @@ spec:
   hostnames:
   - redpanda-0-broker.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
@@ -109728,10 +109710,7 @@ spec:
   hostnames:
   - redpanda-1-broker.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
@@ -109754,10 +109733,7 @@ spec:
   hostnames:
   - redpanda-2-broker.example.com
   parentRefs:
-  - group: null
-    kind: null
-    name: kafka-gateway
-    namespace: null
+  - name: kafka-gateway
     sectionName: kafka
   rules:
   - backendRefs:
