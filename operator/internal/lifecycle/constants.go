@@ -12,12 +12,13 @@ package lifecycle
 import "sigs.k8s.io/controller-runtime/pkg/client"
 
 const (
-	DefaultFieldOwner     = client.FieldOwner("cluster.redpanda.com/operator")
-	DefaultNamespaceLabel = "cluster.redpanda.com/namespace"
-	defaultOperatorLabel  = "cluster.redpanda.com/operator"
-	defaultOwnerLabel     = "cluster.redpanda.com/owner"
-	generationLabel       = "cluster.redpanda.com/generation"
-	configVersionLabel    = "cluster.redpanda.com/configVersion"
+	DefaultFieldOwner       = client.FieldOwner("cluster.redpanda.com/operator")
+	DefaultNamespaceLabel   = "cluster.redpanda.com/namespace"
+	defaultOperatorLabel    = "cluster.redpanda.com/operator"
+	defaultOwnerLabel       = "cluster.redpanda.com/owner"
+	generationLabel         = "cluster.redpanda.com/generation"
+	configVersionLabel      = "cluster.redpanda.com/configVersion"
+	nodePoolGenerationLabel = "cluster.redpanda.com/nodepool-generation"
 	// GCLabel is applied to out-of-band resources (Endpoints, EndpointSlices)
 	// that should retain ownership labels for tracking but should not be
 	// garbage collected by the syncer.

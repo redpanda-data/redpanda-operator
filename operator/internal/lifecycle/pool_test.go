@@ -533,6 +533,119 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 				},
 			}},
 		},
+		"nodepool-generation-changed": {
+			// StretchCluster generation unchanged, but NodePool generation bumped
+			// (e.g. user changed spec.image.tag on the NodePool).
+			generation:           1,
+			expectedSetsToUpdate: []string{"pool-1"},
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+						Labels: map[string]string{
+							generationLabel:         "1",
+							nodePoolGenerationLabel: "1",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}},
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+						Labels: map[string]string{
+							nodePoolGenerationLabel: "2",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}},
+		},
+		"nodepool-generation-unchanged": {
+			// Both StretchCluster and NodePool generations match — no update.
+			generation: 1,
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+						Labels: map[string]string{
+							generationLabel:         "1",
+							nodePoolGenerationLabel: "2",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}},
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+						Labels: map[string]string{
+							nodePoolGenerationLabel: "2",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}},
+		},
+		"only-one-pool-nodepool-generation-changed": {
+			// Two pools, only pool-2 has a NodePool generation bump.
+			generation:           1,
+			expectedSetsToUpdate: []string{"pool-2"},
+			existingPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+						Labels: map[string]string{
+							generationLabel:         "1",
+							nodePoolGenerationLabel: "3",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}, {
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+						Labels: map[string]string{
+							generationLabel:         "1",
+							nodePoolGenerationLabel: "3",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}},
+			desiredPools: []*MulticlusterStatefulSet{{
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-1",
+						Labels: map[string]string{
+							nodePoolGenerationLabel: "3",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}, {
+				clusterName: mcmanager.LocalCluster,
+				StatefulSet: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "pool-2",
+						Labels: map[string]string{
+							nodePoolGenerationLabel: "4",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+				},
+			}},
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
