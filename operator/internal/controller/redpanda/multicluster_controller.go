@@ -282,7 +282,7 @@ func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpa
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			l.Info("cannot fetch StretchCluster from cluster, assuming alive to block cleanup", "cluster", clusterName, "error", err)
+			l.Error(err, "cannot fetch StretchCluster from cluster, assuming alive to block cleanup", "cluster", clusterName)
 			return clusterName
 		}
 		if remoteSC.DeletionTimestamp.IsZero() {
