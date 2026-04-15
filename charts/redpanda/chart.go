@@ -74,16 +74,15 @@ func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
-	must(addTLSRouteToScheme(Scheme))
+	addTLSRouteToScheme(Scheme)
 }
 
 // addTLSRouteToScheme registers our lightweight TLSRoute type with a
 // runtime.Scheme so the test harness can decode it.
 // +gotohelm:ignore=true
-func addTLSRouteToScheme(s *runtime.Scheme) error {
+func addTLSRouteToScheme(s *runtime.Scheme) {
 	gv := schema.GroupVersion{Group: "gateway.networking.k8s.io", Version: "v1alpha2"}
 	s.AddKnownTypeWithName(gv.WithKind("TLSRoute"), &TLSRoute{})
-	return nil
 }
 
 // +gotohelm:ignore=true
