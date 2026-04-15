@@ -198,14 +198,7 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 func toTLSRouteParentRefs(refs []GatewayParentRef) []TLSRouteParentRef {
 	var parentRefs []TLSRouteParentRef
 	for _, ref := range refs {
-		pr := TLSRouteParentRef{
-			Name:        ref.Name,
-			Group:       ref.Group,
-			Kind:        ref.Kind,
-			Namespace:   ref.Namespace,
-			SectionName: ref.SectionName,
-		}
-		parentRefs = append(parentRefs, pr)
+		parentRefs = append(parentRefs, TLSRouteParentRef(ref))
 	}
 	return parentRefs
 }
