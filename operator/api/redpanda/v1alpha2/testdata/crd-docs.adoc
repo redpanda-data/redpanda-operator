@@ -1190,6 +1190,7 @@ External defines external connectivity settings in the Helm values.
 | *`type`* __string__ | Specifies the external Service type. Only NodePort and LoadBalancer are supported. If undefined, then advertised listeners will be configured in Redpanda, but the Helm chart will not create a Service. NodePort is recommended in cases where latency is a priority. + |  | 
 | *`externalDns`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-externaldns[$$ExternalDNS$$]__ | Defines externalDNS configurations. + |  | 
 | *`prefixTemplate`* __string__ | Specifies a naming prefix template for external Services. + |  | 
+| *`gateway`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayexternalconfig[$$GatewayExternalConfig$$]__ | Configures Gateway API TLSRoute-based external access. When enabled, ClusterIP services and TLSRoute resources are created instead of NodePort/LoadBalancer services. The Gateway itself must be managed externally. + |  | 
 |===
 
 
@@ -1248,6 +1249,8 @@ internal and external listeners. However, it is ignored when specified +
 on internal listeners. + |  | 
 | *`advertisedPorts`* __integer array__ | Specifies the network port that the external Service listens on. + |  | 
 | *`nodePort`* __integer__ |  |  | 
+| *`host`* __string__ | Host is the SNI hostname for the bootstrap TLSRoute when using Gateway API external access. + |  | 
+| *`hostTemplate`* __string__ | HostTemplate is a Go template for per-broker TLSRoute SNI hostnames. Supports $POD_ORDINAL and $POD_NAME variables. + |  | 
 |===
 
 
@@ -1331,6 +1334,54 @@ FilterType specifies the type, either include or exclude of a consumer group fil
 | *`expectedFS`* __string__ |  |  | 
 | *`extraVolumeMounts`* __string__ | Adds extra volume mounts. + |  | 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Specifies the resource requirements. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayexternalconfig"]
+==== GatewayExternalConfig
+
+
+
+GatewayExternalConfig holds configuration for Gateway API-based external access using TLSRoute resources with SNI-based routing.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enables Gateway API TLSRoute-based external access. + |  | 
+| *`parentRefs`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayparentrefconfig[$$GatewayParentRefConfig$$] array__ | Defines which Gateway(s) handle the TLSRoutes. At least one parent reference must be provided. + |  | 
+| *`advertisedPort`* __integer__ | The port advertised to clients. Defaults to 443. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayparentrefconfig"]
+==== GatewayParentRefConfig
+
+
+
+GatewayParentRefConfig identifies a Gateway (or ListenerSet) that should handle the TLSRoute traffic. Schema mirrors the upstream Gateway API ParentReference.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayexternalconfig[$$GatewayExternalConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`group`* __string__ | API group of the referent. Defaults to "gateway.networking.k8s.io". + |  | 
+| *`kind`* __string__ | Kind of the referent. Defaults to "Gateway". + |  | 
+| *`name`* __string__ | Name of the referent. + |  | 
+| *`namespace`* __string__ | Namespace of the referent. + |  | 
+| *`sectionName`* __string__ | Name of a section within the target resource. + |  | 
 |===
 
 

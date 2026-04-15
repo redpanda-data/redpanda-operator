@@ -95,15 +95,16 @@ type PartialTLS struct {
 }
 
 type PartialExternalConfig struct {
-	Addresses      []string            "json:\"addresses,omitempty\""
-	Annotations    map[string]string   "json:\"annotations,omitempty\""
-	Domain         *string             "json:\"domain,omitempty\""
-	Enabled        *bool               "json:\"enabled,omitempty\" jsonschema:\"required\""
-	Type           *corev1.ServiceType "json:\"type,omitempty\" jsonschema:\"pattern=^(LoadBalancer|NodePort)$\""
-	PrefixTemplate *string             "json:\"prefixTemplate,omitempty\""
-	SourceRanges   []string            "json:\"sourceRanges,omitempty\""
-	Service        *PartialEnableable  "json:\"service,omitempty\""
-	ExternalDNS    *PartialEnableable  "json:\"externalDns,omitempty\""
+	Addresses      []string              "json:\"addresses,omitempty\""
+	Annotations    map[string]string     "json:\"annotations,omitempty\""
+	Domain         *string               "json:\"domain,omitempty\""
+	Enabled        *bool                 "json:\"enabled,omitempty\" jsonschema:\"required\""
+	Type           *corev1.ServiceType   "json:\"type,omitempty\" jsonschema:\"pattern=^(LoadBalancer|NodePort)$\""
+	PrefixTemplate *string               "json:\"prefixTemplate,omitempty\""
+	SourceRanges   []string              "json:\"sourceRanges,omitempty\""
+	Service        *PartialEnableable    "json:\"service,omitempty\""
+	ExternalDNS    *PartialEnableable    "json:\"externalDns,omitempty\""
+	Gateway        *PartialGatewayConfig "json:\"gateway,omitempty\""
 }
 
 type PartialLogging struct {
@@ -325,6 +326,12 @@ type PartialSASLAuth struct {
 	BootstrapUser *PartialBootstrapUser "json:\"bootstrapUser,omitempty\""
 }
 
+type PartialGatewayConfig struct {
+	Enabled        *bool                     "json:\"enabled,omitempty\""
+	ParentRefs     []PartialGatewayParentRef "json:\"parentRefs,omitempty\""
+	AdvertisedPort *int32                    "json:\"advertisedPort,omitempty\""
+}
+
 type PartialListenerConfig[T ~string] struct {
 	Enabled              *bool                                 "json:\"enabled,omitempty\""
 	External             map[string]PartialExternalListener[T] "json:\"external,omitempty\""
@@ -403,6 +410,14 @@ type PartialSASLUser struct {
 	Mechanism *SASLMechanism "json:\"mechanism,omitempty\""
 }
 
+type PartialGatewayParentRef struct {
+	Group       *string "json:\"group,omitempty\""
+	Kind        *string "json:\"kind,omitempty\""
+	Name        *string "json:\"name,omitempty\""
+	Namespace   *string "json:\"namespace,omitempty\""
+	SectionName *string "json:\"sectionName,omitempty\""
+}
+
 type PartialExternalListener[T ~string] struct {
 	Enabled              *bool               "json:\"enabled,omitempty\""
 	AdvertisedPorts      []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
@@ -411,6 +426,8 @@ type PartialExternalListener[T ~string] struct {
 	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
 	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""
 	PrefixTemplate       *string             "json:\"prefixTemplate,omitempty\""
+	Host                 *string             "json:\"host,omitempty\""
+	HostTemplate         *string             "json:\"hostTemplate,omitempty\""
 }
 
 type PartialTrustStore struct {

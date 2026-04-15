@@ -24,8 +24,8 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
@@ -57,7 +57,7 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
-		&gatewayv1alpha2.TLSRoute{},
+		&TLSRoute{},
 		&monitoringv1.PodMonitor{},
 		&monitoringv1.ServiceMonitor{},
 		&networkingv1.Ingress{},
@@ -73,8 +73,17 @@ func Types() []kube.Object {
 func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
-	must(gatewayv1alpha2.Install(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
+	must(addTLSRouteToScheme(Scheme))
+}
+
+// addTLSRouteToScheme registers our lightweight TLSRoute type with a
+// runtime.Scheme so the test harness can decode it.
+// +gotohelm:ignore=true
+func addTLSRouteToScheme(s *runtime.Scheme) error {
+	gv := schema.GroupVersion{Group: "gateway.networking.k8s.io", Version: "v1alpha2"}
+	s.AddKnownTypeWithName(gv.WithKind("TLSRoute"), &TLSRoute{})
+	return nil
 }
 
 // +gotohelm:ignore=true

@@ -1240,3 +1240,32 @@ statefulset:
       - name: "3rd-party-certs"
         secret:
           secretName: "redpanda-external-cert"
+
+-- gateway-api-tlsroute --
+# Gateway API TLSRoute-based external access with per-listener SNI hostnames.
+# Verifies that ClusterIP services and TLSRoute resources are generated,
+# and that NodePort/LoadBalancer services are NOT created.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: kafka-gateway
+      sectionName: kafka
+    advertisedPort: 9094
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        host: kafka.example.com
+        hostTemplate: kafka-$POD_ORDINAL-broker.example.com
+        tls:
+          cert: default

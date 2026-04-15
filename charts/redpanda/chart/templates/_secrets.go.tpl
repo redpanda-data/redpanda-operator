@@ -346,6 +346,11 @@ echo "passed"`) -}}
 {{- $replicaIndex := (index .a 3) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- if (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "redpanda.advertisedHostJSONGateway" (dict "a" (list $state $externalName $replicaIndex)))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
 {{- $host := (dict "name" $externalName "address" (get (fromJson (include "redpanda.externalAdvertiseAddress" (dict "a" (list $state)))) "r") "port" $port) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.external.addresses)))) "r") | int) (0 | int)) -}}
 {{- $address := "" -}}
@@ -363,6 +368,122 @@ echo "passed"`) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $host) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.advertisedHostJSONGateway" -}}
+{{- $state := (index .a 0) -}}
+{{- $externalName := (index .a 1) -}}
+{{- $replicaIndex := (index .a 2) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $gw := $state.Values.external.gateway -}}
+{{- $port := ((get (fromJson (include "redpanda.GatewayConfig.GatewayAdvertisedPort" (dict "a" (list $gw)))) "r") | int) -}}
+{{- $hostTemplate := (get (fromJson (include "redpanda.findListenerHostTemplate" (dict "a" (list $state $externalName)))) "r") -}}
+{{- if (eq $hostTemplate "") -}}
+{{- $hostTemplate = (get (fromJson (include "redpanda.findListenerHost" (dict "a" (list $state $externalName)))) "r") -}}
+{{- end -}}
+{{- $pods := (get (fromJson (include "redpanda.PodNames" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
+{{- range $_, $set := $state.Pools -}}
+{{- $pods = (concat (default (list) $pods) (default (list) (get (fromJson (include "redpanda.PodNames" (dict "a" (list $state $set)))) "r"))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $podName := "" -}}
+{{- if (lt $replicaIndex ((get (fromJson (include "_shims.len" (dict "a" (list $pods)))) "r") | int)) -}}
+{{- $podName = (index $pods $replicaIndex) -}}
+{{- end -}}
+{{- $address := (get (fromJson (include "redpanda.renderBrokerHost" (dict "a" (list $hostTemplate $replicaIndex $podName)))) "r") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (dict "name" $externalName "address" $address "port" $port)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.findListenerHostTemplate" -}}
+{{- $state := (index .a 0) -}}
+{{- $name := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_618_l_6_ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.kafka.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_6 := (index $_618_l_6_ok_7 0) -}}
+{{- $ok_7 := (index $_618_l_6_ok_7 1) -}}
+{{- if $ok_7 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_6.hostTemplate "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_622_l_8_ok_9 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.http.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_8 := (index $_622_l_8_ok_9 0) -}}
+{{- $ok_9 := (index $_622_l_8_ok_9 1) -}}
+{{- if $ok_9 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_8.hostTemplate "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_626_l_10_ok_11 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.admin.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_10 := (index $_626_l_10_ok_11 0) -}}
+{{- $ok_11 := (index $_626_l_10_ok_11 1) -}}
+{{- if $ok_11 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_10.hostTemplate "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_630_l_12_ok_13 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.schemaRegistry.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_12 := (index $_630_l_12_ok_13 0) -}}
+{{- $ok_13 := (index $_630_l_12_ok_13 1) -}}
+{{- if $ok_13 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_12.hostTemplate "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" "") | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.findListenerHost" -}}
+{{- $state := (index .a 0) -}}
+{{- $name := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_640_l_14_ok_15 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.kafka.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_14 := (index $_640_l_14_ok_15 0) -}}
+{{- $ok_15 := (index $_640_l_14_ok_15 1) -}}
+{{- if $ok_15 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_14.host "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_644_l_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.http.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_16 := (index $_644_l_16_ok_17 0) -}}
+{{- $ok_17 := (index $_644_l_16_ok_17 1) -}}
+{{- if $ok_17 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_16.host "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_648_l_18_ok_19 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.admin.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_18 := (index $_648_l_18_ok_19 0) -}}
+{{- $ok_19 := (index $_648_l_18_ok_19 1) -}}
+{{- if $ok_19 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_18.host "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_652_l_20_ok_21 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.listeners.schemaRegistry.external $name (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)))))) "r") -}}
+{{- $l_20 := (index $_652_l_20_ok_21 0) -}}
+{{- $ok_21 := (index $_652_l_20_ok_21 1) -}}
+{{- if $ok_21 -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l_20.host "")))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" "") | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
