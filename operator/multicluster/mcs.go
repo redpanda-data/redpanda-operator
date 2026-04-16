@@ -28,7 +28,7 @@ func serviceExports(state *RenderState) []*mcsv1alpha1.ServiceExport {
 			continue
 		}
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			name := PerPodServiceName(pool, i)
+			name := PerPodServiceName(state.poolFullname(pool), i)
 			exports = append(exports, &mcsv1alpha1.ServiceExport{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "multicluster.x-k8s.io/v1alpha1",
@@ -59,7 +59,7 @@ func serviceImports(state *RenderState) []*mcsv1alpha1.ServiceImport {
 			continue
 		}
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			name := PerPodServiceName(pool, i)
+			name := PerPodServiceName(state.poolFullname(pool), i)
 			ports := perPodServicePorts(state.Spec())
 			var importPorts []mcsv1alpha1.ServicePort
 			for _, p := range ports {

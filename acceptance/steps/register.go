@@ -102,6 +102,12 @@ func init() {
 	framework.RegisterStep(`^the helm release for "([^"]*)" can be deleted by removing its stored secret$`, iDeleteHelmReleaseSecret)
 	framework.RegisterStep(`^the cluster "([^"]*)" is healthy$`, redpandaClusterIsHealthy)
 
+	// Rolling restart scenario steps
+	framework.RegisterStep(`^I create a sentinel topic in the stretch cluster of "([^"]*)"$`, createSentinelTopicInStretchCluster)
+	framework.RegisterStep(`^I upgrade the NodePools in "([^"]*)" to use image "([^"]*)"$`, upgradeNodePoolsToImage)
+	framework.RegisterStep(`^the upgrade of "([^"]*)" completes with at most 1 pod unavailable at a time$`, upgradeCompletesWithAtMostOneUnavailable)
+	framework.RegisterStep(`^the sentinel data is still readable in "([^"]*)"$`, sentinelDataIsReadable)
+
 	// Multicluster scenario steps
 	framework.RegisterStep(`^I create a multicluster operator named "([^"]*)" with (\d+) nodes$`, createNetworkedVClusterOperators)
 	framework.RegisterStep(`^I apply a multicluster Kubernetes manifest to "([^"]*)":$`, iApplyKuberneteMulticlusterManifest)
@@ -111,6 +117,16 @@ func init() {
 	framework.RegisterStep(`^I expect all (\d+) NodePools in "([^"]*)" to be eventually bound and deployed$`, expectNodePoolsBoundAndDeployed)
 	framework.RegisterStep(`^I execute "([^"]*)" command in the statefulset container in each cluster$`, executeCommandInStatefulsetContainers)
 	framework.RegisterStep(`^I expect them to return the same Redpanda broker list$`, expectSameBrokerList)
+
+	// Regional outage scenario steps
+	framework.RegisterStep(`^I take the "([^"]*)" region of "([^"]*)" offline$`, takeRegionOffline)
+	framework.RegisterStep(`^I bring the "([^"]*)" region of "([^"]*)" back online$`, bringRegionOnline)
+	framework.RegisterStep(`^the remaining regions of "([^"]*)" should eventually report SpecSynced as "([^"]*)"$`, remainingRegionsReportSpecSynced)
+	framework.RegisterStep(`^all regions of "([^"]*)" should eventually report SpecSynced as "([^"]*)"$`, allRegionsReportSpecSynced)
+	framework.RegisterStep(`^the remaining regions of "([^"]*)" should eventually report the "([^"]*)" broker as unavailable$`, remainingRegionsReportBrokerUnavailable)
+	framework.RegisterStep(`^the reachable regions of "([^"]*)" should eventually reflect the updated StretchCluster spec$`, reachableRegionsReflectUpdatedSpec)
+	framework.RegisterStep(`^the "([^"]*)" region of "([^"]*)" should reflect the updated StretchCluster spec$`, regionReflectsUpdatedSpec)
+	framework.RegisterStep(`^the operator in the "([^"]*)" region of "([^"]*)" should eventually be running and reconciling$`, operatorInRegionRecovering)
 
 	// Scaling scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)

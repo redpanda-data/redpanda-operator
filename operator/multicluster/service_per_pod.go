@@ -51,7 +51,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 
 	ports := perPodServicePorts(spec)
 
-	name := PerPodServiceName(pool, ordinal)
+	name := PerPodServiceName(state.poolFullname(pool), ordinal)
 	annotations := make(map[string]string)
 	if spec.Service != nil && spec.Service.Internal != nil {
 		// TODO: consider a special field for per pod service annotation, either in nodepool or stretchcluster spec.
@@ -118,9 +118,8 @@ func perPodServiceOverride(pool *redpandav1alpha2.NodePool, isLocal bool) *redpa
 	return pool.Spec.Services.PerPod.Remote
 }
 
-func PerPodServiceName(pool *redpandav1alpha2.NodePool, ordinal int32) string {
-	// Service name is the pool name + ordinal (no cluster prefix).
-	return fmt.Sprintf("%s-%d", pool.Suffix()[1:], ordinal) // pool.Suffix() returns "-poolname", strip leading dash
+func PerPodServiceName(poolFullname string, ordinal int32) string {
+	return fmt.Sprintf("%s-%d", poolFullname, ordinal)
 }
 
 func perPodServicePorts(spec *redpandav1alpha2.StretchClusterSpec) []corev1.ServicePort {

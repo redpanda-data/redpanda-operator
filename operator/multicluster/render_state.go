@@ -68,7 +68,8 @@ func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []
 	var seedServers []string
 	for _, pool := range pools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			name := PerPodServiceName(pool, i)
+			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.Suffix()
+			name := PerPodServiceName(poolFullname, i)
 			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), cluster.Spec.RPCPort()))
 		}
 	}
@@ -246,7 +247,7 @@ func (r *RenderState) BrokerList(port int32) []string {
 	var brokers []string
 	for _, pool := range r.pools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			name := PerPodServiceName(pool, i)
+			name := PerPodServiceName(r.poolFullname(pool), i)
 			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, port))
 		}
 	}

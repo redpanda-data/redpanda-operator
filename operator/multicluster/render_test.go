@@ -212,15 +212,15 @@ func TestPerPodServiceOverrides_LocalVsRemote(t *testing.T) {
 			continue
 		}
 		switch svc.Name {
-		case "local-pool-0":
+		case "test-local-pool-0":
 			localSvc = svc
-		case "remote-pool-0":
+		case "test-remote-pool-0":
 			remoteSvc = svc
 		}
 	}
 
-	require.NotNil(t, localSvc, "local-pool-0 service not found")
-	require.NotNil(t, remoteSvc, "remote-pool-0 service not found")
+	require.NotNil(t, localSvc, "test-local-pool-0 service not found")
+	require.NotNil(t, remoteSvc, "test-remote-pool-0 service not found")
 
 	// Local service should have "local" annotation and a selector.
 	require.Equal(t, "local", localSvc.Annotations["scope"])
@@ -285,10 +285,10 @@ func TestPerPodServiceOverrides_RemoteDisabled(t *testing.T) {
 		serviceNames = append(serviceNames, svc.Name)
 	}
 
-	// local-pool-0 should exist (local service, remote disabled doesn't affect local).
-	require.Contains(t, serviceNames, "local-pool-0", "local per-pod service should be created")
-	// remote-pool-0 should NOT exist (remote is disabled).
-	require.NotContains(t, serviceNames, "remote-pool-0", "remote per-pod service should not be created when disabled")
+	// test-local-pool-0 should exist (local service, remote disabled doesn't affect local).
+	require.Contains(t, serviceNames, "test-local-pool-0", "local per-pod service should be created")
+	// test-remote-pool-0 should NOT exist (remote is disabled).
+	require.NotContains(t, serviceNames, "test-remote-pool-0", "remote per-pod service should not be created when disabled")
 }
 
 func selectorNilOverride() *applycorev1.ServiceSpecApplyConfiguration {

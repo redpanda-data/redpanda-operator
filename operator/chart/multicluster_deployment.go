@@ -190,7 +190,7 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 		"--private-key-file":          "/tls/tls.key",
 		"--kubernetes-api-address":    values.Multicluster.KubernetesAPIExternalAddress,
 		"--kubeconfig-namespace":      dot.Release.Namespace,
-		"--kubeconfig-name":           Fullname(dot),
+		"--kubeconfig-name":           ServiceAccountName(dot),
 	}
 
 	if values.Webhook.Enabled {

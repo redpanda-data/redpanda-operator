@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -105,7 +106,8 @@ func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *Str
 	var adminAPIEndpoints []string
 	for _, pool := range cluster.NodePools {
 		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
-			name := multiclusterRenderer.PerPodServiceName(pool.nodePool, i)
+			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.nodePool.Suffix()
+			name := multiclusterRenderer.PerPodServiceName(poolFullname, i)
 			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), cluster.Spec.AdminPort()))
 		}
 	}

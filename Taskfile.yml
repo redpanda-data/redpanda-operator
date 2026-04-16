@@ -332,6 +332,24 @@ tasks:
         PKG: ./acceptance/
         CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 85m -tags acceptance'
 
+  test:acceptance-multicluster:
+    desc: "Run multicluster acceptance tests (~60m)"
+    deps:
+    - task: test:pull-images
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
+    vars:
+      RUN: '{{ default `"^TestAcceptance"` .RUN }}'
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+    cmds:
+    - task: test:unit
+      vars:
+        GO_TEST_RUNNER: 'HARPOON_GROUPS=multicluster {{.GO_TEST_RUNNER}}'
+        PKG: ./acceptance/
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 60m -tags acceptance'
+
   test:pull-images:
     vars:
       DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2

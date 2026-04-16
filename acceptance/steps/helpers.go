@@ -386,6 +386,54 @@ func setupTestManager(ctx context.Context, cfg *rest.Config, c runtimeclient.Cli
 	return mgr
 }
 
+// setupMulticlusterManager builds a StaticMulticlusterManager from the given
+// vcluster nodes. It port-forwards a REST config for each node and returns both
+// the manager and the per-node REST configs (needed to construct a dialer). The
+// manager uses direct (non-cached) clients and does not require starting.
+func setupMulticlusterManager(ctx context.Context, nodes []*vclusterNode) (multicluster.Manager, map[string]*rest.Config) {
+	t := framework.T(ctx)
+
+	pfCfgs := make(map[string]*rest.Config, len(nodes))
+	for _, node := range nodes {
+		pfCfg, err := node.PortForwardedRESTConfig(ctx)
+		if err != nil {
+			t.Fatalf("port-forwarded REST config for %s: %v", node.Name(), err)
+		}
+		pfCfgs[node.Name()] = pfCfg
+	}
+
+	mgr, err := multicluster.NewStaticMulticlusterManager(nodes[0].Name(), pfCfgs, t.Scheme())
+	if err != nil {
+		t.Fatalf("initializing multicluster manager: %v", err)
+	}
+	go mgr.Start(ctx)
+
+	// Elected fires when leader election completes (immediately for non-LE
+	// managers) but does NOT wait for cache sync. We must wait for both.
+	select {
+	case <-mgr.Elected():
+	case <-time.After(60 * time.Second):
+		t.Fatalf("multicluster manager did not become elected within 60s")
+	}
+
+	// Wait for all informer caches to sync so that cached-client List/Get
+	// calls don't block on first access. Sync each cluster individually
+	// since the multicluster Manager doesn't expose a global GetCache.
+	syncCtx, syncCancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer syncCancel()
+	for _, name := range mgr.GetClusterNames() {
+		cl, err := mgr.GetCluster(syncCtx, name)
+		if err != nil {
+			t.Fatalf("getting cluster %s for cache sync: %v", name, err)
+		}
+		if !cl.GetCache().WaitForCacheSync(syncCtx) {
+			t.Fatalf("cache for cluster %s did not sync within 2m", name)
+		}
+	}
+
+	return mgr, pfCfgs
+}
+
 func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t := framework.T(ctx)
 

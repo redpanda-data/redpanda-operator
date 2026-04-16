@@ -27,6 +27,7 @@ import (
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
 // defaultedSpec returns a copy of the StretchCluster spec with defaults applied,
@@ -204,7 +205,8 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 				continue
 			}
 			for j := int32(0); j < pool.GetReplicas(); j++ {
-				name := rendermulticluster.PerPodServiceName(pool, j)
+				poolFullname := tplutil.CleanForK8s(sc.Name) + pool.Suffix()
+				name := rendermulticluster.PerPodServiceName(poolFullname, j)
 				endpoints = append(endpoints, fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), port))
 			}
 		}

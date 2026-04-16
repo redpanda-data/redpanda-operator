@@ -67,6 +67,19 @@ tasks:
           CLI_ARGS: '-- {{.CLI_ARGS}}'
           CLI_ARGS: '{{.CLI_ARGS}}'
 
+  test:acceptance-multicluster:
+    env:
+      ACCEPTANCE_ARTIFACTS_DIR: '{{.SRC_DIR}}/artifacts/acceptance-multicluster-diagnostics'
+      BUILD_GOOS: linux
+      BUILD_GOARCH: amd64
+    cmds:
+      - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/**/*"'
+      - 'echo "--- Running multicluster acceptance tests"'
+      - task: :test:acceptance-multicluster
+        vars:
+          GO_TEST_RUNNER: 'gotestsum --junitfile=artifacts/acceptance-multicluster-tests.xml --format testname --rerun-fails --packages'
+          CLI_ARGS: '{{.CLI_ARGS}}'
+
   test:kuttl-v1:
     env:
       BUILD_GOOS: linux
