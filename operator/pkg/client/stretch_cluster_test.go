@@ -66,6 +66,7 @@ var _ suite.SetupAllSuite = (*StretchClusterFactorySuite)(nil)
 func (s *StretchClusterFactorySuite) SetupSuite() {
 	t := s.T()
 	ctx := trace.Test(t)
+	s.ctx = ctx
 
 	cloudSecrets := lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false}
 	s.redpandaImage = lifecycle.Image{

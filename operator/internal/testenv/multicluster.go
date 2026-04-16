@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
@@ -437,6 +438,13 @@ func NewMulticlusterVind(t *testing.T, ctx context.Context, opts MulticlusterOpt
 			WatchAllNamespaces:  opts.WatchAllNamespaces,
 			SkipNamespaceClient: opts.WatchAllNamespaces,
 		})
+	}
+
+	if opts.InstallCertManager {
+		for i, env := range envs {
+			require.NoError(t, testutil.WaitForCertManagerWebhook(ctx, env.Client(), 2*time.Minute),
+				"waiting for cert-manager webhook on cluster %d", i)
+		}
 	}
 
 	peers := make([]multicluster.RaftCluster, opts.ClusterSize)
