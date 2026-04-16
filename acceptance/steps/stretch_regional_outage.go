@@ -148,7 +148,6 @@ func remainingRegionsReportSpecSynced(ctx context.Context, t framework.TestingT,
 		if node.offline {
 			continue
 		}
-		node := node
 		require.Eventually(t, func() bool {
 			var sc redpandav1alpha2.StretchCluster
 			if err := node.Get(ctx, scKey, &sc); err != nil {
@@ -172,7 +171,6 @@ func remainingRegionsReportSpecSynced(ctx context.Context, t framework.TestingT,
 func allRegionsReportSpecSynced(ctx context.Context, t framework.TestingT, clusterName, expectedReason string) {
 	scKey := types.NamespacedName{Name: "cluster", Namespace: "default"}
 	for _, node := range getNodes(ctx, clusterName) {
-		node := node
 		require.Eventually(t, func() bool {
 			var sc redpandav1alpha2.StretchCluster
 			if err := node.Get(ctx, scKey, &sc); err != nil {
@@ -201,7 +199,6 @@ func remainingRegionsReportBrokerUnavailable(ctx context.Context, t framework.Te
 		if node.offline {
 			continue
 		}
-		node := node
 		require.Eventually(t, func() bool {
 			out, err := execInNodeRedpandaPod(ctx, node, "rpk redpanda admin brokers list")
 			if err != nil {
@@ -230,7 +227,6 @@ func reachableRegionsReflectUpdatedSpec(ctx context.Context, t framework.Testing
 		if node.offline {
 			continue
 		}
-		node := node
 		require.Eventually(t, func() bool {
 			return stretchClusterHasOutageTestConfig(ctx, t, node, scKey)
 		}, 5*time.Minute, 2*time.Second,

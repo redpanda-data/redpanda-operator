@@ -106,11 +106,10 @@ func vclusterPodDialer(nodes []*vclusterNode, pfCfgs map[string]*rest.Config) fu
 	}
 }
 
-// getOrCreateKafkaFactory returns a reusable client Factory for the named
-// stretch cluster, creating one on first call and caching it in the context.
-// This avoids creating multiple competing StaticMulticlusterManagers (each
-// with its own set of informer caches) across test steps.
-func getOrCreateKafkaFactory(ctx context.Context, t framework.TestingT, clusterName string) *kafkaFactoryState {
+// getKafkaFactory returns the shared client Factory for the named stretch
+// cluster. The factory must have been initialized earlier by initKafkaFactory
+// (called from createSentinelTopicInStretchCluster).
+func getKafkaFactory(ctx context.Context, t framework.TestingT, clusterName string) *kafkaFactoryState {
 	if state, ok := ctx.Value(kafkaFactoryStateKey{}).(*kafkaFactoryState); ok {
 		return state
 	}
@@ -134,7 +133,7 @@ func initKafkaFactory(ctx context.Context, _ framework.TestingT, clusterName str
 // by the factory via the StretchCluster spec; the multicluster-aware dialer
 // routes connections through per-vcluster port-forwarded PodDialers.
 func stretchClusterKafkaClient(ctx context.Context, t framework.TestingT, clusterName string, extraOpts ...kgo.Opt) *kgo.Client {
-	state := getOrCreateKafkaFactory(ctx, t, clusterName)
+	state := getKafkaFactory(ctx, t, clusterName)
 
 	// Fetch the StretchCluster from the first available node.
 	var sc redpandav1alpha2.StretchCluster
@@ -158,8 +157,6 @@ func stretchClusterKafkaClient(ctx context.Context, t framework.TestingT, cluste
 }
 
 func createSentinelTopicInStretchCluster(ctx context.Context, t framework.TestingT, clusterName string) context.Context {
-	// Initialize the shared kafka factory on first use and stash it in context
-	// so that sentinelDataIsReadable reuses the same manager/caches.
 	ctx, _ = initKafkaFactory(ctx, t, clusterName)
 
 	cl := stretchClusterKafkaClient(ctx, t, clusterName)
