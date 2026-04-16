@@ -13,6 +13,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"hash/fnv"
 	"net/http"
 	"os"
@@ -287,6 +288,17 @@ func (r RaftConfiguration) validate() error {
 	}
 	if len(r.Peers) == 0 {
 		return errors.New("peers must be set")
+	}
+
+	found := false
+	for _, peer := range r.Peers {
+		if peer.Name == r.Name {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("node name %q not found in peers list", r.Name)
 	}
 
 	return nil
