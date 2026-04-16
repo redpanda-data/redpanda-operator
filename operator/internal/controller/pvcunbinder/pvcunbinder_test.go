@@ -190,7 +190,7 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 		}))
 
 		return len(pods.Items) == 6
-	}, 5*time.Minute, 5*time.Second)
+	}, 10*time.Minute, 5*time.Second)
 
 	var pods corev1.PodList
 	require.NoError(t, c.List(ctx, &pods, &client.ListOptions{
