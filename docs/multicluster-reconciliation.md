@@ -317,15 +317,15 @@ Most errors the reconciler encounters are transient and resolve on their own thr
 
 ### Spec drift across clusters
 
-**Symptom:** Reconciliation is blocked. No resources are created, updated, or deleted.
-**Condition:** `SpecSynced` = False, reason `DriftDetected`. The message lists which clusters differ and which fields.
-**Cause:** The `StretchCluster` `.spec` was modified on one cluster without updating the others.
-**Recovery:** Update the spec on all clusters so they are identical. Reconciliation resumes automatically once the specs match.
+- **Symptom:** Reconciliation is blocked. No resources are created, updated, or deleted.
+- **Condition:** `SpecSynced` = False, reason `DriftDetected`. The message lists which clusters differ and which fields.
+- **Cause:** The `StretchCluster` `.spec` was modified on one cluster without updating the others.
+- **Recovery:** Update the spec on all clusters so they are identical. Reconciliation resumes automatically once the specs match.
 
 ### Deletion stuck
 
-**Symptom:** The `StretchCluster` was deleted but the finalizer is not removed. The resource continues to exist with a `deletionTimestamp` and is never fully removed.
-**Condition:** `ResourcesSynced` = False. The message may name a specific cluster.
+- **Symptom:** The `StretchCluster` was deleted but the finalizer is not removed. The resource continues to exist with a `deletionTimestamp` and is never fully removed.
+- **Condition:** `ResourcesSynced` = False. The message may name a specific cluster.
 
 The deletion guard blocks cleanup whenever it cannot confirm that every cluster is also deleting the resource. There are two common causes:
 
@@ -335,59 +335,59 @@ The deletion guard blocks cleanup whenever it cannot confirm that every cluster 
 
 ### Bootstrap user password mismatch
 
-**Symptom:** Reconciliation is blocked at the secret sync phase. Brokers may not start or may fail authentication.
-**Condition:** `BootstrapUserSynced` = False, reason `PasswordMismatch`. The message names the clusters with conflicting secrets.
-**Cause:** The bootstrap user secret was created independently on multiple clusters with different passwords. This can happen if an administrator manually created or modified the secret.
-**Recovery:** Delete the incorrect secret(s) on the clusters named in the condition message. The reconciler will recreate them with a consistent password on the next pass.
+- **Symptom:** Reconciliation is blocked at the secret sync phase. Brokers may not start or may fail authentication.
+- **Condition:** `BootstrapUserSynced` = False, reason `PasswordMismatch`. The message names the clusters with conflicting secrets.
+- **Cause:** The bootstrap user secret was created independently on multiple clusters with different passwords. This can happen if an administrator manually created or modified the secret.
+- **Recovery:** Delete the incorrect secret(s) on the clusters named in the condition message. The reconciler will recreate them with a consistent password on the next pass.
 
 ### Terminal error on resource sync
 
-**Symptom:** Reconciliation completes but resources are not in the desired state.
-**Condition:** `ResourcesSynced` = False, reason `TerminalError`. The message contains the API server rejection.
-**Cause:** The spec produces a Kubernetes resource that the API server rejects — for example, an invalid field value, a resource that violates an admission webhook, or a resource type that does not exist in the cluster.
-**Recovery:** Fix the `StretchCluster` spec to produce valid resources. The reconciler does not retry terminal errors automatically.
+- **Symptom:** Reconciliation completes but resources are not in the desired state.
+- **Condition:** `ResourcesSynced` = False, reason `TerminalError`. The message contains the API server rejection.
+- **Cause:** The spec produces a Kubernetes resource that the API server rejects — for example, an invalid field value, a resource that violates an admission webhook, or a resource type that does not exist in the cluster.
+- **Recovery:** Fix the `StretchCluster` spec to produce valid resources. The reconciler does not retry terminal errors automatically.
 
 ### Invalid cluster configuration
 
-**Symptom:** Kubernetes resources and broker pods are healthy, but the cluster configuration is not applied. The reconciler retries with exponential backoff.
-**Condition:** `ConfigurationApplied` = False, reason `TerminalError`. The message contains the Redpanda admin API rejection (typically a 400 Bad Request with details about which property is invalid).
-**Cause:** The `StretchCluster` spec contains cluster configuration properties that Redpanda rejects — for example, a property value outside the allowed range, conflicting properties that cannot both be set, or a property name that does not exist on this Redpanda version.
-**Recovery:** Fix the cluster configuration in the `StretchCluster` spec. The admin API error message identifies which property was rejected and why. Once the spec is corrected, the reconciler applies the configuration on the next pass.
+- **Symptom:** Kubernetes resources and broker pods are healthy, but the cluster configuration is not applied. The reconciler retries with exponential backoff.
+- **Condition:** `ConfigurationApplied` = False, reason `TerminalError`. The message contains the Redpanda admin API rejection (typically a 400 Bad Request with details about which property is invalid).
+- **Cause:** The `StretchCluster` spec contains cluster configuration properties that Redpanda rejects — for example, a property value outside the allowed range, conflicting properties that cannot both be set, or a property name that does not exist on this Redpanda version.
+- **Recovery:** Fix the cluster configuration in the `StretchCluster` spec. The admin API error message identifies which property was rejected and why. Once the spec is corrected, the reconciler applies the configuration on the next pass.
 
 ### Missing referenced Secrets or ConfigMaps
 
-**Symptom:** Reconciliation fails repeatedly at the license or configuration phase. The reconciler retries with exponential backoff but never succeeds.
-**Condition:** `LicenseValid` = False (reason `Error`) if the license Secret is missing; `ConfigurationApplied` = False (reason `Error`) if a Secret or ConfigMap referenced by cluster configuration environment variables is missing.
-**Cause:** The spec references a Kubernetes Secret or ConfigMap that does not exist — for example, a license Secret that was never created, a SASL user Secret that was deleted, or a ConfigMap used for environment variable substitution in cluster configuration.
-**Recovery:** Create the missing Secret or ConfigMap in the correct namespace, or update the spec to remove or correct the reference. The reconciler will pick up the resource on the next pass.
+- **Symptom:** Reconciliation fails repeatedly at the license or configuration phase. The reconciler retries with exponential backoff but never succeeds.
+- **Condition:** `LicenseValid` = False (reason `Error`) if the license Secret is missing. `ConfigurationApplied` = False (reason `Error`) if a Secret or ConfigMap referenced by cluster configuration environment variables is missing.
+- **Cause:** The spec references a Kubernetes Secret or ConfigMap that does not exist — for example, a license Secret that was never created, a SASL user Secret that was deleted, or a ConfigMap used for environment variable substitution in cluster configuration.
+- **Recovery:** Create the missing Secret or ConfigMap in the correct namespace, or update the spec to remove or correct the reference. The reconciler will pick up the resource on the next pass.
 
 ### Unhealthy cluster blocking rolling restarts
 
-**Symptom:** Pods are running an outdated spec but are not being restarted. The reconciler requeues every 10 seconds without making progress.
-**Condition:** `Healthy` = False, reason `NotHealthy`.
-**Cause:** The Redpanda cluster reports itself as unhealthy (under-replicated partitions, unreachable brokers, etc.). The reconciler refuses to restart additional pods while the cluster is in this state to avoid making things worse.
-**Recovery:** Investigate and resolve the cluster health issue. Common causes include: a broker that crashed and is not restarting, persistent storage failures, or network partitions between brokers. Once the cluster reports healthy, rolling restarts resume automatically.
+- **Symptom:** Pods are running an outdated spec but are not being restarted. The reconciler requeues every 10 seconds without making progress.
+- **Condition:** `Healthy` = False, reason `NotHealthy`.
+- **Cause:** The Redpanda cluster reports itself as unhealthy (under-replicated partitions, unreachable brokers, etc.). The reconciler refuses to restart additional pods while the cluster is in this state to avoid making things worse.
+- **Recovery:** Investigate and resolve the cluster health issue. Common causes include: a broker that crashed and is not restarting, persistent storage failures, or network partitions between brokers. Once the cluster reports healthy, rolling restarts resume automatically.
 
 ### Pods not becoming ready
 
-**Symptom:** Reconciliation is stuck at the pool management phase, requeuing every 10 seconds. The admin API phases (decommissioning, license, configuration) never run.
-**Condition:** `Ready` = False, reason `NotReady`.
-**Cause:** Broker pods cannot start or pass their readiness checks. Common causes include: image pull errors, insufficient CPU or memory resources, PersistentVolumeClaim binding failures, or misconfigured liveness/readiness probes.
-**Recovery:** Inspect the pod events and logs (`kubectl describe pod`, `kubectl logs`) to identify why the pods are not ready. Fix the underlying issue (e.g. correct the image reference, increase resource quotas, provision storage). The reconciler will detect readiness and proceed automatically.
+- **Symptom:** Reconciliation is stuck at the pool management phase, requeuing every 10 seconds. The admin API phases (decommissioning, license, configuration) never run.
+- **Condition:** `Ready` = False, reason `NotReady`.
+- **Cause:** Broker pods cannot start or pass their readiness checks. Common causes include: image pull errors, insufficient CPU or memory resources, PersistentVolumeClaim binding failures, or misconfigured liveness/readiness probes.
+- **Recovery:** Inspect the pod events and logs (`kubectl describe pod`, `kubectl logs`) to identify why the pods are not ready. Fix the underlying issue (e.g. correct the image reference, increase resource quotas, provision storage). The reconciler will detect readiness and proceed automatically.
 
 ### Admin API unreachable
 
-**Symptom:** Kubernetes resources (StatefulSets, Services, ConfigMaps) are created and up to date, and broker pods are running, but license, configuration, decommissioning, and rolling restart operations never execute. The reconciler retries with exponential backoff.
-**Condition:** No specific condition signals this directly. `ResourcesSynced` may be True (Kubernetes resources are fine), but `Healthy`, `ConfigurationApplied`, and `LicenseValid` remain stale or Unknown because the phases that set them never run.
-**Cause:** The operator cannot establish a connection to the Redpanda admin HTTP API. Common causes include: TLS certificates were manually rotated or modified without updating the corresponding Kubernetes Secrets, the bootstrap user secret was deleted or modified (breaking authentication), or a network policy is blocking the operator from reaching the admin API port.
-**Recovery:** Check the operator logs for the specific connection error. If TLS-related: verify that the TLS Secrets referenced by the `StretchCluster` contain valid certificates and that the CA matches what the brokers are using. If authentication-related: verify that the bootstrap user secret exists on the leader's cluster and that its password matches what the brokers expect. If the bootstrap user secret was corrupted, delete it on all clusters and let the reconciler regenerate it (Phase 5). If a network policy is the cause, update it to allow the operator pod to reach the admin API service.
+- **Symptom:** Kubernetes resources (StatefulSets, Services, ConfigMaps) are created and up to date, and broker pods are running, but license, configuration, decommissioning, and rolling restart operations never execute. The reconciler retries with exponential backoff.
+- **Condition:** No specific condition signals this directly. `ResourcesSynced` may be True (Kubernetes resources are fine), but `Healthy`, `ConfigurationApplied`, and `LicenseValid` remain stale or Unknown because the phases that set them never run.
+- **Cause:** The operator cannot establish a connection to the Redpanda admin HTTP API. Common causes include: TLS certificates were manually rotated or modified without updating the corresponding Kubernetes Secrets, the bootstrap user secret was deleted or modified (breaking authentication), or a network policy is blocking the operator from reaching the admin API port.
+- **Recovery:** Check the operator logs for the specific connection error. If TLS-related: verify that the TLS Secrets referenced by the `StretchCluster` contain valid certificates and that the CA matches what the brokers are using. If authentication-related: verify that the bootstrap user secret exists on the leader's cluster and that its password matches what the brokers expect. If the bootstrap user secret was corrupted, delete it on all clusters and let the reconciler regenerate it (Phase 5). If a network policy is the cause, update it to allow the operator pod to reach the admin API service.
 
 ### Decommission never completing
 
-**Symptom:** A scale-down operation is in progress but the broker count does not decrease. The reconciler requeues every 10 seconds indefinitely.
-**Condition:** `Healthy` may be True (the cluster is healthy but the decommission is not finishing).
-**Cause:** Redpanda cannot finish moving partition replicas off the broker being decommissioned. This can happen if there are not enough remaining brokers to satisfy the replication factor, or if other brokers do not have sufficient disk space.
-**Recovery:** Check the decommission status via the Redpanda admin API (`rpk cluster partitions` or the admin API's decommission status endpoint). Either add capacity (more brokers or more disk space) so the partition moves can complete, or cancel the scale-down by restoring the original replica count in the spec.
+- **Symptom:** A scale-down operation is in progress but the broker count does not decrease. The reconciler requeues every 10 seconds indefinitely.
+- **Condition:** `Healthy` may be True (the cluster is healthy but the decommission is not finishing).
+- **Cause:** Redpanda cannot finish moving partition replicas off the broker being decommissioned. This can happen if there are not enough remaining brokers to satisfy the replication factor, or if other brokers do not have sufficient disk space.
+- **Recovery:** Check the decommission status via the Redpanda admin API (`rpk cluster partitions` or the admin API's decommission status endpoint). Either add capacity (more brokers or more disk space) so the partition moves can complete, or cancel the scale-down by restoring the original replica count in the spec.
 
 ---
 
