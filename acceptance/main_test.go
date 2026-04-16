@@ -46,6 +46,13 @@ var (
 	imageTag  = "dev"
 )
 
+func init() {
+	// Register harpoon's CLI flags so they are available when the Go test
+	// framework calls flag.Parse() inside testing.M.Run(). SuiteBuilderFromFlags
+	// is called lazily inside setupSuite which runs after flag.Parse().
+	framework.RegisterFlags()
+}
+
 func getSuite(t *testing.T) *framework.Suite {
 	suite, err := setupSuite()
 	require.NoError(t, err)
@@ -127,6 +134,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			dumpSharedOperatorLogs(ctx, t)
 		}).
 		RegisterTag("cluster", 2, ClusterTag).
+		RegisterGroup("multicluster", "multicluster").
 		ExitOnCleanupFailures()
 
 	if testutil.MultiClusterSetupOnly() {

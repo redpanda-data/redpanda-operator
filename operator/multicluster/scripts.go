@@ -79,11 +79,11 @@ func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.N
 	if state.Spec().Networking.IsMCS() {
 		return fmt.Sprintf("${SERVICE_NAME}.%s.svc.clusterset.local", state.namespace)
 	}
-	// Use per-pod service name pattern: <pool-name>-<ordinal>.<namespace>
+	// Use per-pod service name pattern: <cluster-pool-name>-<ordinal>.<namespace>
 	// This matches the cross-cluster per-pod Service created by the operator
 	// (see PerPodServiceName in service_per_pod.go). ${POD_ORDINAL} is
 	// derived at script runtime from SERVICE_NAME.
-	return fmt.Sprintf("%s-${POD_ORDINAL}.%s", pool.GetName(), state.namespace)
+	return fmt.Sprintf("%s-${POD_ORDINAL}.%s", state.poolFullname(pool), state.namespace)
 }
 
 // scriptParamsForLifecycle returns script params for lifecycle hooks which

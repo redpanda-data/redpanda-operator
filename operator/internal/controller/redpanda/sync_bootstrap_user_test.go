@@ -62,8 +62,9 @@ func (m *mockManager) GetLocalClusterName() string { return m.names[0] }
 func (m *mockManager) AddOrReplaceCluster(_ context.Context, _ string, _ cluster.Cluster) error {
 	return nil
 }
-func (m *mockManager) Health(_ *http.Request) error { return nil }
-func (m *mockManager) GetLogger() logr.Logger       { return logr.Discard() }
+func (m *mockManager) Health(_ *http.Request) error     { return nil }
+func (m *mockManager) IsClusterReachable(_ string) bool { return true }
+func (m *mockManager) GetLogger() logr.Logger           { return logr.Discard() }
 
 func newFakeClient(objs ...client.Object) client.Client {
 	scheme := runtime.NewScheme()

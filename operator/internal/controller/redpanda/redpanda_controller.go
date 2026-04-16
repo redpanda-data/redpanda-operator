@@ -529,6 +529,18 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 
 	// finally, we make sure we roll every pod that is not in-sync with its statefulset
 	rollSet := state.pools.PodsToRoll()
+
+	// Don't start rolling while a recently replaced pod is still coming up.
+	// The cluster health view (brokerMap, isHealthy) lags behind pod state,
+	// and rolling a second pod before the first one's replacement is ready
+	// would cause two pods to be unavailable simultaneously.
+	// Only check when there are actually pods to roll — otherwise we'd block
+	// normal reconciliation when a pod is unready for unrelated reasons.
+	if len(rollSet) > 0 && state.pools.HasRecentlyReplacedPods() {
+		logger.V(log.DebugLevel).Info("recently replaced pods not ready, deferring rolling restart")
+		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+	}
+
 	rolled := false
 	for _, pod := range rollSet {
 		shouldRoll, continueExecution := false, false

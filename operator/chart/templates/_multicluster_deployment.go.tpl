@@ -86,7 +86,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--log-level" $values.logLevel "--name" $values.multicluster.name "--base-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--base-image" $values.image.repository "--raft-address" "0.0.0.0:9443" "--ca-file" "/tls/ca.crt" "--certificate-file" "/tls/tls.crt" "--private-key-file" "/tls/tls.key" "--kubernetes-api-address" $values.multicluster.apiServerExternalAddress "--kubeconfig-namespace" $dot.Release.Namespace "--kubeconfig-name" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r")) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--log-level" $values.logLevel "--name" $values.multicluster.name "--base-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--base-image" $values.image.repository "--raft-address" "0.0.0.0:9443" "--ca-file" "/tls/ca.crt" "--certificate-file" "/tls/tls.crt" "--private-key-file" "/tls/tls.key" "--kubernetes-api-address" $values.multicluster.apiServerExternalAddress "--kubeconfig-namespace" $dot.Release.Namespace "--kubeconfig-name" (get (fromJson (include "operator.ServiceAccountName" (dict "a" (list $dot)))) "r")) -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.crt")) -}}
 {{- $_ := (set $defaults "--webhook-key-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.key")) -}}

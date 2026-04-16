@@ -51,7 +51,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).audit-logging:33145
+          - --advertise-rpc-addr=audit-logging-pool-a-$(ORDINAL_NUMBER).audit-logging:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -429,7 +429,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).common-labels:33145
+          - --advertise-rpc-addr=common-labels-pool-a-$(ORDINAL_NUMBER).common-labels:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -803,7 +803,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).custom-cluster-domain:33145
+          - --advertise-rpc-addr=custom-cluster-domain-pool-a-$(ORDINAL_NUMBER).custom-cluster-domain:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -1177,7 +1177,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).custom-config:33145
+          - --advertise-rpc-addr=custom-config-pool-a-$(ORDINAL_NUMBER).custom-config:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -1551,7 +1551,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).custom-image:33145
+          - --advertise-rpc-addr=custom-image-pool-a-$(ORDINAL_NUMBER).custom-image:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -1927,7 +1927,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).custom-resources:33145
+          - --advertise-rpc-addr=custom-resources-pool-a-$(ORDINAL_NUMBER).custom-resources:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -2301,7 +2301,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).custom-resources-explicit:33145
+          - --advertise-rpc-addr=custom-resources-explicit-pool-a-$(ORDINAL_NUMBER).custom-resources-explicit:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -2678,7 +2678,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).enterprise:33145
+          - --advertise-rpc-addr=enterprise-pool-a-$(ORDINAL_NUMBER).enterprise:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -3052,7 +3052,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).external-loadbalancer:33145
+          - --advertise-rpc-addr=external-loadbalancer-pool-a-$(ORDINAL_NUMBER).external-loadbalancer:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -3414,7 +3414,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).external-nodeport:33145
+          - --advertise-rpc-addr=external-nodeport-pool-a-$(ORDINAL_NUMBER).external-nodeport:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -3788,7 +3788,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).external-tls:33145
+          - --advertise-rpc-addr=external-tls-pool-a-$(ORDINAL_NUMBER).external-tls:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -4150,7 +4150,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).flat-network:33145
+          - --advertise-rpc-addr=flat-network-pool-a-$(ORDINAL_NUMBER).flat-network:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -4529,7 +4529,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-cold-$(ORDINAL_NUMBER).full-featured:33145
+          - --advertise-rpc-addr=full-featured-pool-cold-$(ORDINAL_NUMBER).full-featured:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -4963,7 +4963,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-hot-$(ORDINAL_NUMBER).full-featured:33145
+          - --advertise-rpc-addr=full-featured-pool-hot-$(ORDINAL_NUMBER).full-featured:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -5416,7 +5416,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).init-containers:33145
+          - --advertise-rpc-addr=init-containers-pool-a-$(ORDINAL_NUMBER).init-containers:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -5829,7 +5829,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).mcs-network.svc.clusterset.local:33145
+          - --advertise-rpc-addr=mcs-network-pool-a-$(ORDINAL_NUMBER).mcs-network.svc.clusterset.local:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -6203,7 +6203,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).memory-locking:33145
+          - --advertise-rpc-addr=memory-locking-pool-a-$(ORDINAL_NUMBER).memory-locking:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -6577,7 +6577,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).minimal:33145
+          - --advertise-rpc-addr=minimal-pool-a-$(ORDINAL_NUMBER).minimal:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -6951,7 +6951,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).monitoring:33145
+          - --advertise-rpc-addr=monitoring-pool-a-$(ORDINAL_NUMBER).monitoring:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -7325,7 +7325,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).multi-pool:33145
+          - --advertise-rpc-addr=multi-pool-pool-a-$(ORDINAL_NUMBER).multi-pool:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -7701,7 +7701,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-b-$(ORDINAL_NUMBER).multi-pool:33145
+          - --advertise-rpc-addr=multi-pool-pool-b-$(ORDINAL_NUMBER).multi-pool:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -8076,7 +8076,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).per-pod-service-overrides:33145
+          - --advertise-rpc-addr=per-pod-service-overrides-pool-a-$(ORDINAL_NUMBER).per-pod-service-overrides:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -8450,7 +8450,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).per-pod-service-remote-disabled:33145
+          - --advertise-rpc-addr=per-pod-service-remote-disabled-pool-a-$(ORDINAL_NUMBER).per-pod-service-remote-disabled:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -8824,7 +8824,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).rack-awareness:33145
+          - --advertise-rpc-addr=rack-awareness-pool-a-$(ORDINAL_NUMBER).rack-awareness:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -9201,7 +9201,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).sasl-scram256:33145
+          - --advertise-rpc-addr=sasl-scram256-pool-a-$(ORDINAL_NUMBER).sasl-scram256:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -9601,7 +9601,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).sasl-scram512-with-tls:33145
+          - --advertise-rpc-addr=sasl-scram512-with-tls-pool-a-$(ORDINAL_NUMBER).sasl-scram512-with-tls:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -10001,7 +10001,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).single-replica:33145
+          - --advertise-rpc-addr=single-replica-pool-a-$(ORDINAL_NUMBER).single-replica:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -10375,7 +10375,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).storage-hostpath:33145
+          - --advertise-rpc-addr=storage-hostpath-pool-a-$(ORDINAL_NUMBER).storage-hostpath:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -10735,7 +10735,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).storage-pv-custom:33145
+          - --advertise-rpc-addr=storage-pv-custom-pool-a-$(ORDINAL_NUMBER).storage-pv-custom:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -11110,7 +11110,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).tiered-storage-emptydir:33145
+          - --advertise-rpc-addr=tiered-storage-emptydir-pool-a-$(ORDINAL_NUMBER).tiered-storage-emptydir:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -11509,7 +11509,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).tiered-storage-hostpath:33145
+          - --advertise-rpc-addr=tiered-storage-hostpath-pool-a-$(ORDINAL_NUMBER).tiered-storage-hostpath:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -11908,7 +11908,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).tiered-storage-pv:33145
+          - --advertise-rpc-addr=tiered-storage-pv-pool-a-$(ORDINAL_NUMBER).tiered-storage-pv:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -12318,7 +12318,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).tls-issuer-ref:33145
+          - --advertise-rpc-addr=tls-issuer-ref-pool-a-$(ORDINAL_NUMBER).tls-issuer-ref:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -12692,7 +12692,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).tls-issuer-ref-mtls:33145
+          - --advertise-rpc-addr=tls-issuer-ref-mtls-pool-a-$(ORDINAL_NUMBER).tls-issuer-ref-mtls:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -13079,7 +13079,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).tls-mtls:33145
+          - --advertise-rpc-addr=tls-mtls-pool-a-$(ORDINAL_NUMBER).tls-mtls:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -13466,7 +13466,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).tls-self-signed:33145
+          - --advertise-rpc-addr=tls-self-signed-pool-a-$(ORDINAL_NUMBER).tls-self-signed:33145
           env:
           - name: SERVICE_NAME
             valueFrom:

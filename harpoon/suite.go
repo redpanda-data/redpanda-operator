@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -33,6 +34,38 @@ import (
 	"github.com/redpanda-data/redpanda-operator/harpoon/internal/tracking"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 )
+
+// Package-level variables bound to harpoon's CLI flags by RegisterFlags.
+var (
+	flagsOnce           sync.Once
+	suiteKubeConfig     string
+	suiteOutput         string
+	suiteProvider       string
+	suiteCleanupTimeout time.Duration
+	suiteTimeout        time.Duration
+	suiteOutputFormat   = "pretty"
+	suiteNoColor        bool
+	suiteSeed           = int64(-1)
+	suiteGroups         string
+)
+
+// RegisterFlags registers all harpoon suite builder CLI flags with the
+// standard flag package. It is idempotent and safe to call multiple times.
+// Call this in an init() function in your test binary so that the flags are
+// available when the Go test framework calls flag.Parse() in testing.M.Run().
+func RegisterFlags() {
+	flagsOnce.Do(func() {
+		flag.DurationVar(&suiteCleanupTimeout, "cleanup-timeout", 0, "timeout for running any cleanup routines after a scenario")
+		flag.DurationVar(&suiteTimeout, "timeout", 0, "timeout for running any individual test")
+		flag.StringVar(&suiteKubeConfig, "kube-config", "", "path to kube-config to use for scenario runs")
+		flag.StringVar(&suiteOutput, "output", "", "path to write test formatter output to")
+		flag.StringVar(&suiteProvider, "provider", "", "provider for the test suite")
+		flag.StringVar(&suiteOutputFormat, "output-format", "pretty", "godog output format")
+		flag.BoolVar(&suiteNoColor, "no-color", false, "print only in black and white")
+		flag.Int64Var(&suiteSeed, "seed", -1, "seed for tests, set to -1 for a random seed")
+		flag.StringVar(&suiteGroups, "groups", "", "comma-separated list of test groups to run (e.g. 'default,somegroup'); omit or use 'default' to run only non-grouped tests")
+	})
+}
 
 func setShortTimeout(timeout *time.Duration, short time.Duration) {
 	if testing.Short() && *timeout == 0 {
@@ -63,46 +96,62 @@ type SuiteBuilder struct {
 	afterSetup            []func(ctx context.Context, restConfig *rest.Config) error
 	exitOnCleanupFailures bool
 	skipCleanup           bool
+	// registeredGroups maps group name to the feature tag that identifies it.
+	// The special "default" group represents features with none of the registered tags.
+	registeredGroups map[string]string
+	// requestedGroups is the parsed value of the -groups flag. Empty means
+	// only the "default" group is run.
+	requestedGroups []string
 }
 
 func SuiteBuilderFromFlags() *SuiteBuilder {
-	godogOpts := godog.Options{Output: colors.Colored(os.Stdout)}
-
-	var config string
-	var output string
-	options := &internaltesting.TestingOptions{ExitBehavior: internaltesting.ExitBehaviorLog}
-
-	// TODO: Consider adding an -always-retain flag that doesn't actually delete anything. If
-	// we add something like that we'll still have to do some "stateful" cleanup in the lifecycle,
-	// i.e. switching namespaces even if we don't delete the old one depending on when namespace
-	// isolation occurs, so consider if it would make sense to add something like a T.AlwaysCleanup
-	// or something that allows us to switch between "optional" and "required" test cleanup.
-	// TODO(chrisseto): This conflicts with the -retain flag defined in
-	// pkg/testutil. Figure out how to rely on that or "spy" on the already defined flag.
-	// flag.BoolVar(&options.RetainOnFailure, "retain", false, "retain resources when a scenario fails")
-	flag.DurationVar(&options.CleanupTimeout, "cleanup-timeout", 0, "timeout for running any cleanup routines after a scenario")
-	flag.DurationVar(&options.Timeout, "timeout", 0, "timeout for running any individual test")
-	flag.StringVar(&config, "kube-config", "", "path to kube-config to use for scenario runs")
-	flag.StringVar(&output, "output", "", "path to write test formatter output to")
-	flag.StringVar(&options.Provider, "provider", "", "provider for the test suite")
-	flag.StringVar(&godogOpts.Format, "output-format", "pretty", "godog output format")
-	flag.BoolVar(&godogOpts.NoColors, "no-color", false, "print only in black and white")
-	flag.Int64Var(&godogOpts.Randomize, "seed", -1, "seed for tests, set to -1 for a random seed")
+	// Ensure flags are registered (idempotent if RegisterFlags was already
+	// called in an init() function).
+	RegisterFlags()
 
 	flag.Parse()
 
-	options.KubectlOptions = internaltesting.NewKubectlOptions(config)
+	godogOpts := godog.Options{
+		Output:    colors.Colored(os.Stdout),
+		Format:    suiteOutputFormat,
+		NoColors:  suiteNoColor,
+		Randomize: suiteSeed,
+	}
+	options := &internaltesting.TestingOptions{
+		ExitBehavior:   internaltesting.ExitBehaviorLog,
+		Provider:       suiteProvider,
+		CleanupTimeout: suiteCleanupTimeout,
+		Timeout:        suiteTimeout,
+	}
+
+	options.KubectlOptions = internaltesting.NewKubectlOptions(suiteKubeConfig)
 
 	setShortTimeout(&options.Timeout, 2*time.Minute)
 	setShortTimeout(&options.CleanupTimeout, 2*time.Minute)
 
+	// -groups flag takes precedence; fall back to HARPOON_GROUPS env var.
+	groups := suiteGroups
+	if groups == "" {
+		groups = os.Getenv("HARPOON_GROUPS")
+	}
+
+	var requestedGroups []string
+	for _, g := range strings.Split(groups, ",") {
+		g = strings.TrimSpace(g)
+		if g != "" {
+			requestedGroups = append(requestedGroups, g)
+		}
+	}
+
 	registry := internaltesting.NewTagRegistry()
 	builder := &SuiteBuilder{
-		testingOpts: options,
-		output:      output,
-		opts:        godogOpts,
-		registry:    registry,
-		providers:   make(map[string]FullProvider),
+		testingOpts:      options,
+		output:           suiteOutput,
+		opts:             godogOpts,
+		registry:         registry,
+		providers:        make(map[string]FullProvider),
+		registeredGroups: make(map[string]string),
+		requestedGroups:  requestedGroups,
 	}
 
 	builder.RegisterTag("isolated", -1000, isolatedTag)
@@ -116,6 +165,93 @@ func SuiteBuilderFromFlags() *SuiteBuilder {
 func (b *SuiteBuilder) WithDefaultProvider(name string) *SuiteBuilder {
 	b.defaultProvider = name
 	return b
+}
+
+// RegisterGroup registers a named test group identified by a feature tag.
+// The special "default" group (features without any registered group tag) is
+// always available without explicit registration.
+//
+// When -groups is not specified, only the "default" group runs. Pass
+// -groups=somegroup to run only that group, or -groups=default,somegroup
+// to run all tests.
+func (b *SuiteBuilder) RegisterGroup(name, tag string) *SuiteBuilder {
+	b.registeredGroups[name] = tag
+	return b
+}
+
+// buildTagExpression constructs the godog tag expression that selects which
+// scenarios to run based on the provider filter and the requested groups.
+func (b *SuiteBuilder) buildTagExpression() string {
+	providerFilter := fmt.Sprintf("~@skip:%s", b.testingOpts.Provider)
+
+	if len(b.registeredGroups) == 0 {
+		return providerFilter
+	}
+
+	// Determine effective groups: empty means "default" only.
+	requestedGroups := b.requestedGroups
+	if len(requestedGroups) == 0 {
+		requestedGroups = []string{"default"}
+	}
+
+	requestedSet := make(map[string]bool, len(requestedGroups))
+	for _, g := range requestedGroups {
+		requestedSet[g] = true
+	}
+
+	// If both "default" and all registered groups are requested, no group
+	// filtering is needed.
+	if requestedSet["default"] {
+		allIncluded := true
+		for name := range b.registeredGroups {
+			if !requestedSet[name] {
+				allIncluded = false
+				break
+			}
+		}
+		if allIncluded {
+			return providerFilter
+		}
+	}
+
+	// Collect sorted group tags for deterministic output.
+	var allGroupTags []string
+	for _, tag := range b.registeredGroups {
+		allGroupTags = append(allGroupTags, tag)
+	}
+	sort.Strings(allGroupTags)
+
+	var parts []string
+
+	if requestedSet["default"] {
+		// "default" = features not tagged with any registered group tag.
+		var notParts []string
+		for _, tag := range allGroupTags {
+			notParts = append(notParts, "~@"+tag)
+		}
+		if len(notParts) == 1 {
+			parts = append(parts, notParts[0])
+		} else {
+			parts = append(parts, "("+strings.Join(notParts, " && ")+")")
+		}
+	}
+
+	for _, g := range requestedGroups {
+		if g == "default" {
+			continue
+		}
+		if tag, ok := b.registeredGroups[g]; ok {
+			parts = append(parts, "@"+tag)
+		}
+	}
+
+	if len(parts) == 0 {
+		return providerFilter
+	}
+	if len(parts) == 1 {
+		return providerFilter + " && " + parts[0]
+	}
+	return providerFilter + " && (" + strings.Join(parts, " || ") + ")"
 }
 
 func (b *SuiteBuilder) RegisterTag(tag string, priority int, handler TagHandler) *SuiteBuilder {
@@ -211,7 +347,7 @@ func (b *SuiteBuilder) ExitOnCleanupFailures() *SuiteBuilder {
 }
 
 // SkipCleanup prevents the suite from running any teardown or cleanup logic.
-// This is useful for multicluster setups where the infrastructure is managed
+// This is useful for setups where the infrastructure is managed
 // externally.
 func (b *SuiteBuilder) SkipCleanup() *SuiteBuilder {
 	b.skipCleanup = true
@@ -262,11 +398,13 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 	ctx := provider.GetBaseContext()
 	ctx = internaltesting.ProviderIntoContext(ctx, provider)
 
+	tagExpression := b.buildTagExpression()
+
 	// Use a temporary tracker + suite just to discover and parse features.
 	tmpTracker := tracking.NewFeatureHookTracker(b.registry, b.testingOpts, b.onFeatures, b.onScenarios)
 	discoveryOpts := tmpTracker.RegisterFormatter(b.opts)
 	discoveryOpts.DefaultContext = ctx
-	discoveryOpts.Tags = fmt.Sprintf("~@skip:%s", providerName)
+	discoveryOpts.Tags = tagExpression
 
 	parsingSuite := &godog.TestSuite{
 		Name:    "acceptance",
@@ -307,6 +445,7 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 		registry:              b.registry,
 		provider:              provider,
 		providerName:          providerName,
+		tagExpression:         tagExpression,
 		ctx:                   ctx,
 		features:              resolved,
 		injectors:             b.injectors,
@@ -328,6 +467,7 @@ type Suite struct {
 	registry              *internaltesting.TagRegistry
 	provider              FullProvider
 	providerName          string
+	tagExpression         string
 	ctx                   context.Context
 	features              []featureContent
 	injectors             []func(context.Context) context.Context
@@ -352,7 +492,7 @@ func (s *Suite) makeGodogSuite(
 ) *godog.TestSuite {
 	opts := tracker.RegisterFormatter(s.baseOpts)
 	opts.DefaultContext = s.ctx
-	opts.Tags = fmt.Sprintf("~@skip:%s", s.providerName)
+	opts.Tags = s.tagExpression
 	// Only use in-memory feature contents; don't discover from disk.
 	// Set a non-empty Paths to prevent godog from falling back to the
 	// default "features" directory when FeatureContents is empty

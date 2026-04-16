@@ -27,11 +27,13 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	apirand "k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
@@ -150,6 +152,33 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 			}
 		}
 
+		// Dump ClusterRoles.
+		var crList rbacv1.ClusterRoleList
+		if err := node.List(diagCtx, &crList); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list ClusterRoles: %v", err)
+		} else {
+			for _, cr := range crList.Items {
+				t.Logf("[multicluster-diagnostics] ClusterRole %s: rules=%d", cr.Name, len(cr.Rules))
+				for _, rule := range cr.Rules {
+					t.Logf("[multicluster-diagnostics]   groups=%v resources=%v verbs=%v", rule.APIGroups, rule.Resources, rule.Verbs)
+				}
+			}
+		}
+
+		// Dump ClusterRoleBindings.
+		var crbList rbacv1.ClusterRoleBindingList
+		if err := node.List(diagCtx, &crbList); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list ClusterRoleBindings: %v", err)
+		} else {
+			for _, crb := range crbList.Items {
+				subjects := make([]string, len(crb.Subjects))
+				for i, s := range crb.Subjects {
+					subjects[i] = fmt.Sprintf("%s/%s", s.Namespace, s.Name)
+				}
+				t.Logf("[multicluster-diagnostics] ClusterRoleBinding %s: role=%s subjects=%v", crb.Name, crb.RoleRef.Name, subjects)
+			}
+		}
+
 		// Dump operator pod logs (last 100 lines).
 		k8sClient, err := kubernetes.NewForConfig(node.RESTConfig())
 		if err != nil {
@@ -183,6 +212,10 @@ var nameMap = map[string]string{
 func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	t := framework.T(ctx)
 	for _, node := range v {
+		if node.offline {
+			t.Logf("skipping offline node %q for manifest apply", node.Name())
+			continue
+		}
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlApply(ctx, manifest))
 	}
@@ -201,7 +234,7 @@ metadata:
 func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
 	for _, node := range v {
-		fullManifest := nodepoolManifest(nameMap[node.Name()], manifest)
+		fullManifest := nodepoolManifest(nameMap[node.logicalName], manifest)
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlApply(ctx, fullManifest))
 	}
@@ -210,7 +243,7 @@ func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Con
 func (v vclusterNodes) DeleteNodepools(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
 	for _, node := range v {
-		fullManifest := nodepoolManifest(nameMap[node.Name()], manifest)
+		fullManifest := nodepoolManifest(nameMap[node.logicalName], manifest)
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlDelete(ctx, fullManifest))
 	}
@@ -255,8 +288,18 @@ func (v vclusterNodes) CheckAll(ctx context.Context, namespacedName types.Namesp
 type vclusterNode struct {
 	client.Client
 	*vcluster.Cluster
-	apiServer  string
+	apiServer string
+	// externalIP is the ClusterIP of the operator service in this vcluster,
+	// used by peer vclusters to reach this one's operator over gRPC.
 	externalIP string
+	// logicalName is the stable region identifier used in feature files and
+	// step arguments (e.g. "vc-0", "vc-1", "vc-2"). It is independent of the
+	// actual vcluster name, which includes a per-test-run unique suffix to
+	// prevent namespace collisions when tests run in parallel.
+	logicalName string
+	// offline is set to true when the region is intentionally taken offline for
+	// disaster-recovery tests. ApplyAll and similar helpers skip offline nodes.
+	offline bool
 }
 
 func (n *vclusterNode) APIServer() string {
@@ -343,12 +386,15 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
 
 	vclusters := createVClusters(ctx, t, clusters)
-	t.Cleanup(func(ctx context.Context) {
-		vclusterNodes(vclusters).dumpDiagnostics(ctx, t)
-	})
 	assignOperatorServiceIPs(ctx, t, vclusters, namespace)
 	peers := bootstrapTLS(ctx, t, vclusters, namespace)
 	deployOperators(ctx, t, vclusters, namespace, redpandaLicense, peers)
+	// Register dumpDiagnostics AFTER deployOperators so it fires before the
+	// HelmUninstall cleanup (t.Cleanup is LIFO), ensuring ClusterRoles and
+	// other resources are still present when diagnostics are collected.
+	t.Cleanup(func(ctx context.Context) {
+		vclusterNodes(vclusters).dumpDiagnostics(ctx, t)
+	})
 
 	return stashNodes(ctx, clusterName, vclusters)
 }
@@ -356,22 +402,36 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) []*vclusterNode {
 	t.Logf("creating %d vclusters", clusters)
 
+	// Generate a unique per-test suffix so that vcluster host namespaces never
+	// collide when tests run in parallel or back-to-back (a terminating namespace
+	// from a previous run would block reuse of the same name).
+	suffix := apirand.String(8)
+
 	nodes := make([]*vclusterNode, clusters)
 	var wg sync.WaitGroup
+
+	// Register cert-manager types into the shared scheme once, before launching
+	// parallel goroutines. AddToScheme mutates the scheme's internal maps and is
+	// not safe to call concurrently.
+	require.NoError(t, certmanagerv1.AddToScheme(t.Scheme()))
 
 	for i := range clusters {
 		wg.Add(1)
 		go func(i int32) {
 			defer wg.Done()
 
-			vClusterValues := vcluster.DefaultValues + networkingValues(i, clusters)
-			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(fmt.Sprintf("vc-%d", i)), vcluster.WithValues(helm.RawYAML(vClusterValues)))
+			logicalName := fmt.Sprintf("vc-%d", i)
+			// Prefix with "vc-" so the name is a valid DNS-1035 label (must start
+			// with a letter); apirand.String can return strings starting with digits.
+			actualName := fmt.Sprintf("vc-%s-%d", suffix, i)
+
+			vClusterValues := vcluster.DefaultValues + networkingValues(i, clusters, suffix)
+			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(actualName), vcluster.WithValues(helm.RawYAML(vClusterValues)))
 			require.NoError(t, err)
 			scheme := t.Scheme()
-			require.NoError(t, certmanagerv1.AddToScheme(scheme))
 			cluster.SetScheme(scheme)
 
-			t.Logf("finished creating vcluster %d (name: %q)", i+1, cluster.Name())
+			t.Logf("finished creating vcluster %d (logical: %q, actual: %q)", i+1, logicalName, cluster.Name())
 
 			cleanupWrapper(t, func(ctx context.Context) {
 				if err := cluster.Delete(); err != nil {
@@ -381,13 +441,18 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) 
 			c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
 			require.NoError(t, err)
 
-			var apiServer corev1.Service
-			require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "kubernetes", Namespace: metav1.NamespaceDefault}, &apiServer))
-
+			// Use the vCluster's host-namespace ClusterIP service as the API server
+			// address. This service ({actualName}/{actualName}) is replicated into peer
+			// vClusters via networkingValues, making it reachable from synced operator
+			// pods under https://{actualName}.default. Using the vcluster-internal
+			// "kubernetes" ClusterIP would be wrong — it routes to the LOCAL cluster's
+			// API server from any vcluster, so taking a remote vcluster down would
+			// never cause connection failures.
 			nodes[i] = &vclusterNode{
-				Client:    c,
-				Cluster:   cluster,
-				apiServer: fmt.Sprintf("https://%s", apiServer.Spec.ClusterIPs[0]),
+				Client:      c,
+				Cluster:     cluster,
+				apiServer:   fmt.Sprintf("https://%s", actualName),
+				logicalName: logicalName,
 			}
 		}(i)
 	}
@@ -396,18 +461,33 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) 
 	return nodes
 }
 
+// stretchClusterResourceName is the StretchCluster resource name used in all
+// multicluster acceptance tests. Per-pod service names are prefixed with this
+// value (e.g. "cluster-first-0").
+const stretchClusterResourceName = "cluster"
+
 // networkingValues generates the vCluster networking YAML for cross-cluster
 // service replication. Each vCluster needs services from all OTHER vClusters
-// replicated into it.
-func networkingValues(index, total int32) string {
+// replicated into it. This includes:
+//   - Per-pod broker services (for Redpanda seed server resolution)
+//   - The vCluster API server service (so operators can reach peer k8s API servers)
+func networkingValues(index, total int32, suffix string) string {
 	var entries []string
 	for j := range total {
 		if j == index {
 			continue
 		}
 		name := nameMap[fmt.Sprintf("vc-%d", j)]
-		vcName := fmt.Sprintf("vc-%d", j)
-		entries = append(entries, fmt.Sprintf("    - from: %s/%s-0-x-default-x-%s\n      to: default/%s-0", vcName, name, vcName, name))
+		vcName := fmt.Sprintf("vc-%s-%d", suffix, j)
+		// Per-pod services are named "{clusterName}-{poolName}-{ordinal}" after the
+		// cluster-prefixed naming convention; include the StretchCluster name prefix.
+		svcName := fmt.Sprintf("%s-%s-0", stretchClusterResourceName, name)
+		entries = append(entries, fmt.Sprintf("    - from: %s/%s-x-default-x-%s\n      to: default/%s", vcName, svcName, vcName, svcName))
+		// Replicate the peer vCluster's API server service (named the same as its
+		// release/namespace) so operators inside this vCluster can reach the peer's
+		// k8s API server at https://{vcName}.default rather than the vcluster-internal
+		// kubernetes ClusterIP which only routes to the local cluster's API server.
+		entries = append(entries, fmt.Sprintf("    - from: %s/%s\n      to: default/%s", vcName, vcName, vcName))
 	}
 	if len(entries) == 0 {
 		return ""
@@ -589,17 +669,30 @@ func deployOperators(ctx context.Context, t framework.TestingT, vclusters []*vcl
 		})
 		require.NoError(t, err)
 		cleanupWrapper(t, func(ctx context.Context) {
+			// The cluster may be offline if the test took it down and then
+			// failed before restoring it. Skip the uninstall in that case —
+			// the vcluster itself will be deleted, taking everything with it.
+			if cluster.offline {
+				t.Logf("skipping helm uninstall for offline cluster %s", cluster.Name())
+				return
+			}
 			require.NoError(t, cluster.HelmUninstall(ctx, rel))
 		})
 	}
 }
+
+const cleanupTimeout = 2 * time.Minute
 
 func cleanupWrapper(t framework.TestingT, f func(ctx context.Context)) {
 	if testutil.MultiClusterSetupOnly() {
 		// skip cleanup
 		return
 	}
-	t.Cleanup(f)
+	t.Cleanup(func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(ctx, cleanupTimeout)
+		defer cancel()
+		f(ctx)
+	})
 }
 
 // generateCASecret generates a self-signed CA certificate using bootstrap.GenerateCA
@@ -824,7 +917,7 @@ func expectSameBrokerList(ctx context.Context, t framework.TestingT) {
 // Example input:
 //
 //	ID    HOST              PORT   RACK  CORES  MEMBERSHIP  IS-ALIVE  VERSION  UUID
-//	0     first-0.default   33145  -     1      active      true      25.2.1   8a0511ca-...
+//	0     cluster-first-0.default   33145  -     1      active      true      25.2.1   8a0511ca-...
 func parseBrokerList(output string) map[string]string {
 	brokers := make(map[string]string)
 	lines := strings.Split(strings.TrimSpace(output), "\n")
