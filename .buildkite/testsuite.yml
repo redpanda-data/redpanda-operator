@@ -172,7 +172,7 @@ steps:
   key: multicluster
   steps:
   - agents:
-      queue: k8s-m6id12xlarge
+      queue: k8s-m6id12xlarge-test
     command: ./ci/scripts/run-in-nix-docker.sh task ci:configure ci:test:multicluster
     env:
       BUILD_GOARCH: amd64
