@@ -150,21 +150,20 @@ func TestHeartbeatCommitClamping(t *testing.T) {
 
 	ctx := context.Background()
 
-	// MsgHeartbeat with Commit > lastIndex is clamped (not rejected) so the
-	// raft node can generate a proper MsgHeartbeatResp, keeping the peer
-	// active in the leader's progress tracker.
+	// MsgHeartbeat with Commit > lastIndex returns Applied=false so the
+	// leader can send a snapshot to catch up the follower.
 	msgHB := raftpb.Message{
 		Type:   raftpb.MsgHeartbeat,
 		From:   2,
 		To:     1,
-		Commit: 5, // beyond our lastIndex(3), will be clamped to 3
+		Commit: 5, // beyond our lastIndex(3)
 	}
 	data, err := msgHB.Marshal()
 	require.NoError(t, err)
 
 	resp, err := transport.Send(ctx, &transportv1.SendRequest{Payload: data})
 	require.NoError(t, err)
-	require.True(t, resp.Applied, "MsgHeartbeat with Commit > lastIndex should be clamped and accepted")
+	require.False(t, resp.Applied, "MsgHeartbeat with Commit > lastIndex should be rejected")
 
 	// MsgHeartbeat with Commit <= lastIndex should be accepted unchanged.
 	msgHBOK := raftpb.Message{
@@ -179,6 +178,141 @@ func TestHeartbeatCommitClamping(t *testing.T) {
 	resp, err = transport.Send(ctx, &transportv1.SendRequest{Payload: data})
 	require.NoError(t, err)
 	require.True(t, resp.Applied, "MsgHeartbeat with Commit <= lastIndex should be accepted")
+}
+
+// TestMsgAppRejectedWhenBeyondLog verifies that the follower's Send handler
+// returns Applied=false when it receives a MsgApp whose prev log index is
+// beyond the follower's log. This prevents the infinite rejection loop
+// caused by the leader's stale progress tracker (match+1 floor in
+// MaybeDecrTo) and signals the leader to send a snapshot instead.
+func TestMsgAppRejectedWhenBeyondLog(t *testing.T) {
+	storage := raft.NewMemoryStorage()
+
+	// Simulate a fresh follower: 3 ConfChange entries from StartNode.
+	require.NoError(t, storage.Append([]raftpb.Entry{
+		{Index: 1, Term: 1},
+		{Index: 2, Term: 1},
+		{Index: 3, Term: 1},
+	}))
+
+	transport := &grpcTransport{}
+	transport.setStorage(storage)
+	transport.setNode(&stubNode{})
+
+	ctx := context.Background()
+
+	// MsgApp with Index > lastIndex(3): follower can't match, returns Applied=false.
+	msgApp := raftpb.Message{
+		Type:    raftpb.MsgApp,
+		From:    2,
+		To:      1,
+		Index:   5, // beyond our log
+		LogTerm: 2,
+	}
+	data, err := msgApp.Marshal()
+	require.NoError(t, err)
+
+	resp, err := transport.Send(ctx, &transportv1.SendRequest{Payload: data})
+	require.NoError(t, err)
+	require.False(t, resp.Applied, "MsgApp with Index > lastIndex should be rejected")
+
+	// MsgApp with Index <= lastIndex: accepted normally.
+	msgAppOK := raftpb.Message{
+		Type:    raftpb.MsgApp,
+		From:    2,
+		To:      1,
+		Index:   3,
+		LogTerm: 1,
+	}
+	data, err = msgAppOK.Marshal()
+	require.NoError(t, err)
+
+	resp, err = transport.Send(ctx, &transportv1.SendRequest{Payload: data})
+	require.NoError(t, err)
+	require.True(t, resp.Applied, "MsgApp with Index <= lastIndex should be accepted")
+}
+
+// TestSnapshotRecoveryAfterRestart validates the snapshot recovery path.
+// After a follower restarts with empty storage, the leader's progress tracker
+// has a stale match that prevents normal MsgApp catch-up (the match+1 floor
+// in MaybeDecrTo). The fix: the follower returns Applied=false for MsgApp it
+// can't match, the leader sends a snapshot, the follower applies it and its
+// committed index catches up to the leader's.
+func TestSnapshotRecoveryAfterRestart(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
+
+	// Attach TestHooks to all nodes so we can read committed indices.
+	hooks := make([]*TestHooks, 3)
+	for i := range hooks {
+		hooks[i] = &TestHooks{}
+	}
+
+	leaders := setupLockTestWithHooks(t, ctx, 3, hooks)
+
+	defer func() {
+		cancel()
+		for _, l := range leaders {
+			l.WaitForStopped(t, 10*time.Second)
+		}
+	}()
+
+	leader, followers := waitForAnyLeader(t, 30*time.Second, leaders...)
+
+	// Wait for the leader's committed index to advance past the initial
+	// ConfChange entries. The leader writes a no-op on election; once
+	// committed, followers must replicate to reach this index.
+	var leaderIdx int
+	for i, l := range leaders {
+		if l == leader {
+			leaderIdx = i
+			break
+		}
+	}
+	confChangeCount := uint64(len(leaders)) // one ConfChange per peer
+	require.Eventually(t, func() bool {
+		ci := hooks[leaderIdx].CommittedIndex()
+		return ci > confChangeCount
+	}, 10*time.Second, 50*time.Millisecond,
+		"leader committed index never advanced past ConfChange entries")
+	leaderCommit := hooks[leaderIdx].CommittedIndex()
+	t.Logf("leader %d committed index: %d (past %d ConfChanges)", leader.config.ID, leaderCommit, confChangeCount)
+
+	lagging := followers[0]
+	lagging.Stop()
+	lagging.WaitForStopped(t, 5*time.Second)
+
+	select {
+	case <-lagging.follower:
+	default:
+	}
+
+	t.Logf("restarting follower %d", lagging.config.ID)
+	lagging.Start(t, ctx)
+
+	// WaitForFollower only confirms the node initialized as a follower — it
+	// does NOT mean log replication succeeded. The real assertion is that the
+	// follower's committed index catches up to the leader's. Without the
+	// snapshot fix, committed stays at 3 (ConfChanges only) because the
+	// leader can't replicate past its stale match.
+	lagging.WaitForFollower(t, 30*time.Second)
+
+	// The follower's committed index must reach the leader's — this proves
+	// the snapshot was applied and replication succeeded. Without the fix,
+	// committed stays at the initial ConfChange count because the leader
+	// can't replicate past its stale match.
+	var laggingIdx int
+	for i, l := range leaders {
+		if l == lagging {
+			laggingIdx = i
+			break
+		}
+	}
+	require.Eventually(t, func() bool {
+		ci := hooks[laggingIdx].CommittedIndex()
+		t.Logf("follower %d committed index: %d (want >= %d)", lagging.config.ID, ci, leaderCommit)
+		return ci >= leaderCommit
+	}, 10*time.Second, 100*time.Millisecond,
+		"follower committed index never caught up to leader")
 }
 
 // stubNode is a minimal raft.Node implementation used by unit tests that
@@ -460,6 +594,10 @@ func waitForAnyLeader(t *testing.T, timeout time.Duration, leaders ...*testLeade
 }
 
 func setupLockTest(t *testing.T, ctx context.Context, n int) []*testLeader {
+	return setupLockTestWithHooks(t, ctx, n, nil)
+}
+
+func setupLockTestWithHooks(t *testing.T, ctx context.Context, n int, hooks []*TestHooks) []*testLeader {
 	if n <= 0 {
 		t.Fatalf("at least one lock configuration is required")
 	}
@@ -489,7 +627,7 @@ func setupLockTest(t *testing.T, ctx context.Context, n int) []*testLeader {
 		peers := []LockerNode{}
 		peers = append(peers, nodes...)
 
-		configs = append(configs, LockConfiguration{
+		cfg := LockConfiguration{
 			ID:                uint64(i + 1),
 			Address:           node.Address,
 			Peers:             peers,
@@ -499,7 +637,11 @@ func setupLockTest(t *testing.T, ctx context.Context, n int) []*testLeader {
 			ElectionTimeout:   1 * time.Second,
 			HeartbeatInterval: 100 * time.Millisecond,
 			Logger:            testLogger(t),
-		})
+		}
+		if hooks != nil && i < len(hooks) {
+			cfg.TestHooks = hooks[i]
+		}
+		configs = append(configs, cfg)
 	}
 
 	for _, config := range configs {

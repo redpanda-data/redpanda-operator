@@ -315,10 +315,25 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 		// raft node generates a proper MsgHeartbeatResp, keeping this
 		// peer active in the leader's progress tracker while normal
 		// MsgApp catch-up proceeds.
-		if msg.Type == raftpb.MsgHeartbeat {
+		// When a follower's log is behind the leader's commit (heartbeat) or
+		// prev entry (MsgApp), return Applied=false so the leader sends a
+		// snapshot instead. Without this, the follower either panics (heartbeat
+		// commitTo beyond lastIndex) or enters an infinite rejection loop
+		// (MsgApp rejection ignored due to stale match in the leader's progress
+		// tracker).
+		if msg.Type == raftpb.MsgHeartbeat || msg.Type == raftpb.MsgApp {
 			if s := t.getStorage(); s != nil {
-				if lastIdx, err := s.LastIndex(); err == nil && msg.Commit > lastIdx {
-					msg.Commit = lastIdx
+				lastIdx, err := s.LastIndex()
+				if err == nil {
+					reject := false
+					if msg.Type == raftpb.MsgHeartbeat && msg.Commit > lastIdx {
+						reject = true
+					} else if msg.Type == raftpb.MsgApp && msg.Index > lastIdx {
+						reject = true
+					}
+					if reject {
+						return &transportv1.SendResponse{Applied: false}, nil
+					}
 				}
 			}
 		}
