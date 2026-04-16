@@ -308,3 +308,74 @@ Each condition can have a `TerminalError` reason, which indicates a non-retryabl
 | Operational wait | 10 seconds | When a scaling operation, decommission, rolling restart, or spec drift blocks progress. |
 | Finalizer requeue | 1 second | After updating the finalizer or annotations, to avoid stale-cache issues. |
 | Error backoff | Exponential (controller-runtime default) | After any phase returns an error. |
+
+---
+
+## Reconciliation Flow
+
+```mermaid
+flowchart TD
+    start([Reconcile triggered]) --> fetch[Fetch StretchCluster]
+    fetch --> exists{Resource exists?}
+    exists -- No --> done([Exit])
+    exists -- Yes --> v2{V2 managed?}
+    v2 -- No --> rmfin[Remove finalizer] --> done
+    v2 -- Yes --> init[Fetch initial state from all clusters]
+    init --> deleting{Being deleted?}
+
+    %% Deletion path
+    deleting -- Yes --> alive{Any peer cluster<br/>has resource alive<br/>or is unknown?}
+    alive -- Yes --> blockdel[Set error condition] --> status
+    alive -- No --> cleanup[Delete owned resources<br/>on all clusters]
+    cleanup --> alldone{All resources<br/>deleted?}
+    alldone -- No --> status
+    alldone -- Yes --> rmfin2[Remove finalizer] --> done
+
+    %% Normal path
+    deleting -- No --> speccheck{Specs match on<br/>all reachable<br/>clusters?}
+    speccheck -- "Drift detected" --> blockdrift[Set DriftDetected condition] --> status
+    speccheck -- "Match (or peers unreachable)" --> finalizer{Finalizer /<br/>defaults need<br/>update?}
+    finalizer -- Yes --> persist[Update resource] --> requeue1s([Requeue 1s])
+    finalizer -- No --> secrets[Sync bootstrap secret + CA<br/>to all clusters]
+    secrets --> secok{Sync<br/>succeeded?}
+    secok -- No --> status
+    secok -- Yes --> resources[Sync K8s resources<br/>to all clusters]
+    resources --> resok{Sync<br/>succeeded?}
+    resok -- No --> status
+    resok -- Yes --> pools[Reconcile broker pools]
+
+    %% Pool management
+    pools --> scaling{Scaling<br/>in progress?}
+    scaling -- Yes --> requeue10([Requeue 10s])
+    scaling -- No --> applypools[Create / scale up /<br/>update StatefulSets]
+    applypools --> ready{Any pods<br/>ready?}
+    ready -- No --> requeue10
+    ready -- Yes --> adminapi[Connect to admin API]
+
+    %% Admin API phases
+    adminapi --> adminok{Connected?}
+    adminok -- No --> status
+    adminok -- Yes --> health[Fetch cluster health]
+
+    %% Decommission / rolling restart
+    health --> scaledown{Pools need<br/>scale-down?}
+    scaledown -- Yes --> decomm[Decommission last broker]
+    decomm --> decommok{Decommission<br/>complete?}
+    decommok -- No --> requeue10
+    decommok -- Yes --> shrink[Reduce StatefulSet replicas] --> requeue10
+    scaledown -- No --> deletepools[Delete zero-replica StatefulSets]
+    deletepools --> rollcheck{Pods need<br/>rolling restart?}
+    rollcheck -- No --> license[Reconcile license]
+    rollcheck -- Yes --> canroll{Cluster healthy<br/>and no recently<br/>replaced pods?}
+    canroll -- No --> requeue10
+    canroll -- Yes --> rollpod[Delete one out-of-date pod] --> requeue10
+
+    %% License and config
+    license --> config[Sync cluster configuration]
+    config --> configchange{Config changed<br/>and restart<br/>enabled?}
+    configchange -- Yes --> requeue10
+    configchange -- No --> status
+
+    %% Status propagation
+    status[Write status to all<br/>reachable clusters] --> requeue3m([Requeue 3m])
+```
