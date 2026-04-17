@@ -124,7 +124,11 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 	var routes []*TLSRoute
 
 	if host == "" {
-		return nil
+		panic(fmt.Sprintf("gateway listener %s/%s requires host", listenerTag, name))
+	}
+
+	if listenerTag == "kafka" && len(pods) > 1 && hostTemplate == "" {
+		panic(fmt.Sprintf("gateway listener %s/%s requires hostTemplate when replicas > 1", listenerTag, name))
 	}
 
 	bootstrapSvcName := fmt.Sprintf("%s-gateway-bootstrap", fullname)

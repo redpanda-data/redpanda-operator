@@ -83,9 +83,10 @@
 {{- $_is_returning := false -}}
 {{- $routes := (coalesce nil) -}}
 {{- if (eq $host "") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
-{{- break -}}
+{{- $_ := (fail (printf "gateway listener %s/%s requires host" $listenerTag $name)) -}}
+{{- end -}}
+{{- if (and (and (eq $listenerTag "kafka") (gt ((get (fromJson (include "_shims.len" (dict "a" (list $pods)))) "r") | int) (1 | int))) (eq $hostTemplate "")) -}}
+{{- $_ := (fail (printf "gateway listener %s/%s requires hostTemplate when replicas > 1" $listenerTag $name)) -}}
 {{- end -}}
 {{- $bootstrapSvcName := (printf "%s-gateway-bootstrap" $fullname) -}}
 {{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "parentRefs" (coalesce nil) "rules" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1alpha2" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-bootstrap" $fullname $listenerTag $name) "namespace" $namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict "parentRefs" (coalesce nil) "rules" (coalesce nil)) (dict "parentRefs" $parentRefs "hostnames" (list $host) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "" "port" 0) (dict "name" $bootstrapSvcName "port" $port)))))))))) -}}
