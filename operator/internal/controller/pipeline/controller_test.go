@@ -150,6 +150,102 @@ func TestReconcile_InvalidLicenseFile(t *testing.T) {
 	assert.Contains(t, pipeline.Status.Conditions[0].Message, "failed to read license")
 }
 
+func TestReconcile_InvalidLicenseCleansUpManagedResources(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-license-cleanup"},
+	})
+	require.NoError(t, err)
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cleanup-pipeline",
+			Namespace: ns.Name,
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	syncer := &kube.Syncer{
+		Ctl:       ctl,
+		Namespace: ns.Name,
+		Renderer: &render{
+			pipeline: pipeline,
+			labels:   Labels(pipeline),
+		},
+		Owner:           *metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
+		OwnershipLabels: Labels(pipeline),
+	}
+	_, err = syncer.Sync(t.Context())
+	require.NoError(t, err)
+	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
+
+	c := &Controller{
+		Ctl:             ctl,
+		LicenseFilePath: "",
+	}
+
+	result, err := c.Reconcile(t.Context(), ctrl.Request{
+		NamespacedName: kube.AsKey(pipeline),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, time.Minute, result.RequeueAfter)
+	require.Empty(t, scrapeControllerObjects(t, ctl, pipeline))
+}
+
+func TestReconcile_InvalidClusterRefCleansUpManagedResources(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-clusterref-cleanup"},
+	})
+	require.NoError(t, err)
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "clusterref-cleanup-pipeline",
+			Namespace: ns.Name,
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{Name: "missing-cluster"},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	syncer := &kube.Syncer{
+		Ctl:       ctl,
+		Namespace: ns.Name,
+		Renderer: &render{
+			pipeline: pipeline,
+			labels:   Labels(pipeline),
+		},
+		Owner:           *metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
+		OwnershipLabels: Labels(pipeline),
+	}
+	_, err = syncer.Sync(t.Context())
+	require.NoError(t, err)
+	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
+
+	c := &Controller{
+		Ctl: ctl,
+	}
+
+	result, err := c.Reconcile(t.Context(), ctrl.Request{
+		NamespacedName: kube.AsKey(pipeline),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 30*time.Second, result.RequeueAfter)
+	require.Empty(t, scrapeControllerObjects(t, ctl, pipeline))
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+	assert.Equal(t, redpandav1alpha2.PipelineReasonClusterRefInvalid, pipeline.Status.Conditions[0].Reason)
+}
+
 func TestReconcile_Deletion(t *testing.T) {
 	ctl := setupTestEnv(t)
 
@@ -634,6 +730,11 @@ func TestRender_Deployment_SecretRef(t *testing.T) {
 	require.Len(t, envFrom, 2)
 	assert.Equal(t, "my-creds", envFrom[0].SecretRef.Name)
 	assert.Equal(t, "other-creds", envFrom[1].SecretRef.Name)
+
+	initEnvFrom := dp.Spec.Template.Spec.InitContainers[0].EnvFrom
+	require.Len(t, initEnvFrom, 2)
+	assert.Equal(t, "my-creds", initEnvFrom[0].SecretRef.Name)
+	assert.Equal(t, "other-creds", initEnvFrom[1].SecretRef.Name)
 }
 
 func TestRender_Deployment_Zones(t *testing.T) {

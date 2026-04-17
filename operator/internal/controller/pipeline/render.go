@@ -172,6 +172,7 @@ func (r *render) deployment() *appsv1.Deployment {
 	}
 
 	env := append([]corev1.EnvVar{}, r.pipeline.Spec.Env...)
+	envFrom := buildEnvFrom(r.pipeline)
 	volumes := []corev1.Volume{
 		{
 			Name: "config",
@@ -231,6 +232,7 @@ func (r *render) deployment() *appsv1.Deployment {
 							Image:                    image,
 							Command:                  []string{"/redpanda-connect", "lint", "/config/connect.yaml"},
 							Env:                      env,
+							EnvFrom:                  envFrom,
 							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 							VolumeMounts:             volumeMounts,
 						},
@@ -244,7 +246,7 @@ func (r *render) deployment() *appsv1.Deployment {
 								{Name: "http", ContainerPort: 4195, Protocol: corev1.ProtocolTCP},
 							},
 							Env:       env,
-							EnvFrom:   buildEnvFrom(r.pipeline),
+							EnvFrom:   envFrom,
 							Resources: resources,
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{

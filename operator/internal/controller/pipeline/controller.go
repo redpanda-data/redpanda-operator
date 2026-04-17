@@ -192,6 +192,9 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
+		if err := c.deleteManagedResources(ctx, pipeline); err != nil {
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
@@ -205,6 +208,9 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Message: err.Error(),
 		}}); statusErr != nil {
 			return ctrl.Result{}, statusErr
+		}
+		if err := c.deleteManagedResources(ctx, pipeline); err != nil {
+			return ctrl.Result{}, err
 		}
 		// Requeue to retry license check periodically.
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
@@ -278,6 +284,16 @@ func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline, clusterConn 
 		Owner:           *metav1.NewControllerRef(pipeline, gvk),
 		OwnershipLabels: labels,
 	}, nil
+}
+
+func (c *Controller) deleteManagedResources(ctx context.Context, pipeline *redpandav1alpha2.Pipeline) error {
+	syncer, err := c.syncerFor(pipeline, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = syncer.DeleteAll(ctx)
+	return err
 }
 
 func (c *Controller) validateLicense() error {
