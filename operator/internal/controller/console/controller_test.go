@@ -120,6 +120,22 @@ func TestController(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "cross-namespace-cluster-ref",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-cross-namespace-cluster-ref",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ClusterSource: &redpandav1alpha2.ClusterSource{
+						ClusterRef: &redpandav1alpha2.ClusterRef{
+							Name:      "cross-namespace-redpanda",
+							Namespace: ptr.To("cluster-ns"),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	ctl := kubetest.NewEnv(t, kube.Options{
@@ -154,6 +170,20 @@ func TestController(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-redpanda",
 			Namespace: ns.Name,
+		},
+	}))
+
+	clusterNS, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster-ns",
+		},
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cross-namespace-redpanda",
+			Namespace: clusterNS.Name,
 		},
 	}))
 
@@ -221,6 +251,65 @@ func TestController(t *testing.T) {
 			require.Empty(t, scrapeControllerObjects(t, ctl, console))
 		})
 	}
+}
+
+func TestControllerRejectsCrossNamespaceClusterRefInNamespacedMode(t *testing.T) {
+	ctl := kubetest.NewEnv(t, kube.Options{
+		Options: client.Options{
+			Scheme: controller.UnifiedScheme,
+		},
+	})
+
+	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
+
+		for _, cond := range crd.Status.Conditions {
+			if cond.Type == apiextensionsv1.Established {
+				return cond.Status == apiextensionsv1.ConditionTrue, nil
+			}
+		}
+
+		return false, nil
+	}, crds.All()...))
+
+	consoleNS, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "console-ns",
+		},
+	})
+	require.NoError(t, err)
+
+	console := &redpandav1alpha2.Console{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "console",
+			Namespace: consoleNS.Name,
+		},
+		Spec: redpandav1alpha2.ConsoleSpec{
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{
+					Name:      "redpanda",
+					Namespace: ptr.To("cluster-ns"),
+				},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), console))
+
+	consoleCtrl := Controller{
+		Ctl:       ctl,
+		namespace: consoleNS.Name,
+		rng:       rand.New(rand.NewSource(0)),
+	}
+
+	_, err = consoleCtrl.Reconcile(t.Context(), mcreconcile.Request{
+		Request:     ctrl.Request{NamespacedName: kube.AsKey(console)},
+		ClusterName: mcmanager.LocalCluster,
+	})
+	require.ErrorContains(t, err, "cross-namespace clusterRef")
+	require.ErrorContains(t, err, "namespace-scoped mode")
+	require.Empty(t, scrapeControllerObjects(t, ctl, console))
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels
@@ -295,6 +384,17 @@ func cleanObjectForGolden(scheme *runtime.Scheme, obj client.Object) {
 	if svc, ok := obj.(*corev1.Service); ok {
 		svc.Spec.ClusterIP = ""
 		svc.Spec.ClusterIPs = nil
+	}
+
+	if secret, ok := obj.(*corev1.Secret); ok {
+		if secret.Data != nil {
+			if _, ok := secret.Data["authentication-jwt-signingkey"]; ok {
+				secret.Data["authentication-jwt-signingkey"] = []byte("redacted-jwt-signing-key")
+			}
+			if _, ok := secret.Data["key"]; ok {
+				secret.Data["key"] = []byte("redacted-jwt-signing-key")
+			}
+		}
 	}
 
 	// Clean deployment-specific dynamic fields

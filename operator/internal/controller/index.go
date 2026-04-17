@@ -77,7 +77,7 @@ func indexByClusterSource(checkRef func(*redpandav1alpha2.ClusterRef) bool) func
 
 		if remoteClusterReferencingObject, ok := o.(redpandav1alpha2.RemoteClusterReferencingObject); ok {
 			remoteSource := remoteClusterReferencingObject.GetRemoteClusterSource()
-			if remoteSource != nil && remoteSource.ClusterRef != nil && checkRef(source.ClusterRef) {
+			if remoteSource != nil && remoteSource.ClusterRef != nil && checkRef(remoteSource.ClusterRef) {
 				ns := remoteSource.ClusterRef.GetNamespace(clusterReferencingObject.GetNamespace())
 				cluster := types.NamespacedName{Namespace: ns, Name: remoteSource.ClusterRef.Name}
 				clusters = append(clusters, cluster.String())
