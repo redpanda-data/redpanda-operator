@@ -59,7 +59,7 @@ func newCrossNamespaceFactory(t *testing.T, objects ...client.Object) *Factory {
 
 	scheme := runtime.NewScheme()
 	require.NoError(t, redpandav1alpha2.Install(scheme))
-	require.NoError(t, vectorizedv1alpha1.AddToScheme(scheme))
+	require.NoError(t, vectorizedv1alpha1.Install(scheme))
 
 	cl := fake.NewClientBuilder().
 		WithScheme(scheme).
