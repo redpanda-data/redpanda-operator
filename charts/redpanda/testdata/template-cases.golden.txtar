@@ -108402,13 +108402,13 @@ stringData:
     ADVERTISED_HTTP_ADDRESSES=()
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-0-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-1-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
 
     PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-2-broker.example.com\",\"name\":\"default\",\"port\":9094}")
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}")
 
     rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
 type: Opaque
