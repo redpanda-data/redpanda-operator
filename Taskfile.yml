@@ -384,6 +384,11 @@ tasks:
       - quay.io/jetstack/cert-manager-controller:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-cainjector:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-webhook:{{.SECOND_TEST_CERTMANAGER_VERSION}}
+      # cert-manager v1.17.1 is used inside vclusters (pkg/testutil.CertManagerVersion).
+      - quay.io/jetstack/cert-manager-controller:v1.17.1
+      - quay.io/jetstack/cert-manager-cainjector:v1.17.1
+      - quay.io/jetstack/cert-manager-webhook:v1.17.1
+      - quay.io/jetstack/cert-manager-startupapicheck:v1.17.1
       - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
       - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
       - redpandadata/redpanda-operator:v25.1.3
@@ -391,6 +396,9 @@ tasks:
       - redpandadata/redpanda-operator:v25.3.1
       - redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
       - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}
+      # vcluster's embedded k8s distro — the tag is hardcoded in
+      # pkg/vcluster/vcluster.go's DefaultValues.
+      - ghcr.io/loft-sh/kubernetes:v1.33.4
       - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
       - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
       - coredns/coredns:{{.TEST_COREDNS_VERSION}}
@@ -408,6 +416,7 @@ tasks:
       - redpandadata/redpanda:v25.2.1
       - redpandadata/redpanda:v25.2.11
       - redpandadata/redpanda:v26.1.1
+      - redpandadata/redpanda:v26.1.5
 
     cmds:
       - |

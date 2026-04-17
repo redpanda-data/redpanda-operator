@@ -243,6 +243,10 @@ func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Con
 func (v vclusterNodes) DeleteNodepools(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
 	for _, node := range v {
+		if node.offline {
+			t.Logf("skipping NodePool cleanup for offline region %q", node.logicalName)
+			continue
+		}
 		fullManifest := nodepoolManifest(nameMap[node.logicalName], manifest)
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlDelete(ctx, fullManifest))
@@ -252,6 +256,10 @@ func (v vclusterNodes) DeleteNodepools(ctx context.Context, manifest *godog.DocS
 func (v vclusterNodes) DeleteAll(ctx context.Context, manifest []byte) {
 	t := framework.T(ctx)
 	for _, node := range v {
+		if node.offline {
+			t.Logf("skipping manifest cleanup for offline region %q", node.logicalName)
+			continue
+		}
 		require.NoError(t, node.KubectlDelete(ctx, manifest))
 	}
 }
@@ -300,6 +308,11 @@ type vclusterNode struct {
 	// offline is set to true when the region is intentionally taken offline for
 	// disaster-recovery tests. ApplyAll and similar helpers skip offline nodes.
 	offline bool
+	// k3dNodeName is the name of the k3d agent node this vcluster's workloads
+	// are pinned to via `sync.fromHost.nodes.selector.labels`. The
+	// ghost-node-ejection test deletes this node to simulate a regional
+	// outage; it's empty if pinning wasn't applied.
+	k3dNodeName string
 }
 
 func (n *vclusterNode) APIServer() string {
@@ -385,7 +398,8 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	redpandaLicense := os.Getenv(LicenseEnvVar)
 	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
 
-	vclusters := createVClusters(ctx, t, clusters)
+	k3dNodeNames := pickK3dAgentNodes(ctx, t, clusters)
+	vclusters := createVClusters(ctx, t, clusters, k3dNodeNames)
 	assignOperatorServiceIPs(ctx, t, vclusters, namespace)
 	peers := bootstrapTLS(ctx, t, vclusters, namespace)
 	deployOperators(ctx, t, vclusters, namespace, redpandaLicense, peers)
@@ -399,8 +413,8 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	return stashNodes(ctx, clusterName, vclusters)
 }
 
-func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) []*vclusterNode {
-	t.Logf("creating %d vclusters", clusters)
+func createVClusters(ctx context.Context, t framework.TestingT, clusters int32, k3dNodeNames []string) []*vclusterNode {
+	t.Logf("creating %d vclusters pinned to k3d nodes %v", clusters, k3dNodeNames)
 
 	// Generate a unique per-test suffix so that vcluster host namespaces never
 	// collide when tests run in parallel or back-to-back (a terminating namespace
@@ -425,13 +439,16 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) 
 			// with a letter); apirand.String can return strings starting with digits.
 			actualName := fmt.Sprintf("vc-%s-%d", suffix, i)
 
-			vClusterValues := vcluster.DefaultValues + networkingValues(i, clusters, suffix)
+			vClusterValues := vcluster.DefaultValues +
+				networkingValues(i, clusters, suffix) +
+				pinningValues(k3dNodeNames[i])
 			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(actualName), vcluster.WithValues(helm.RawYAML(vClusterValues)))
 			require.NoError(t, err)
 			scheme := t.Scheme()
 			cluster.SetScheme(scheme)
 
-			t.Logf("finished creating vcluster %d (logical: %q, actual: %q)", i+1, logicalName, cluster.Name())
+			t.Logf("finished creating vcluster %d (logical: %q, actual: %q, pinned to k3d node %q)",
+				i+1, logicalName, cluster.Name(), k3dNodeNames[i])
 
 			cleanupWrapper(t, func(ctx context.Context) {
 				if err := cluster.Delete(); err != nil {
@@ -453,12 +470,73 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32) 
 				Cluster:     cluster,
 				apiServer:   fmt.Sprintf("https://%s", actualName),
 				logicalName: logicalName,
+				k3dNodeName: k3dNodeNames[i],
 			}
 		}(i)
 	}
 
 	wg.Wait()
 	return nodes
+}
+
+// pickK3dAgentNodes returns `clusters` worker-node hostnames from the host
+// k3d cluster so each vcluster can be pinned to a distinct host node. Uses
+// the built-in `kubernetes.io/hostname` label — no extra labeling needed.
+// Skips the control-plane node and fails if there are not enough workers.
+func pickK3dAgentNodes(ctx context.Context, t framework.TestingT, clusters int32) []string {
+	hostClient, err := client.New(t.RestConfig(), client.Options{})
+	require.NoError(t, err)
+
+	var nodeList corev1.NodeList
+	require.NoError(t, hostClient.List(ctx, &nodeList))
+
+	var workerNodes []corev1.Node
+	for _, n := range nodeList.Items {
+		if _, isControlPlane := n.Labels["node-role.kubernetes.io/control-plane"]; isControlPlane {
+			continue
+		}
+		workerNodes = append(workerNodes, n)
+	}
+	require.GreaterOrEqual(t, int32(len(workerNodes)), clusters,
+		"need at least %d worker nodes in host cluster, got %d", clusters, len(workerNodes))
+
+	// Sort for deterministic assignment within a single test run.
+	slices.SortFunc(workerNodes, func(a, b corev1.Node) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	names := make([]string, clusters)
+	for i := int32(0); i < clusters; i++ {
+		names[i] = workerNodes[i].Name
+	}
+	return names
+}
+
+// pinningValues returns vcluster helm values that pin the control plane pod
+// to a specific k3d node via `kubernetes.io/hostname` and filter the nodes
+// visible inside the vcluster to just that same host node. Combined with the
+// virtual scheduler, this ensures all synced workloads (operator, Redpanda,
+// cert-manager) land on that single host node — so the ghost node ejection
+// test can take them all down at once via `k3d node delete`.
+func pinningValues(k3dNodeName string) string {
+	return fmt.Sprintf(`
+controlPlane:
+  statefulSet:
+    scheduling:
+      nodeSelector:
+        kubernetes.io/hostname: %s
+  advanced:
+    virtualScheduler:
+      enabled: true
+sync:
+  fromHost:
+    nodes:
+      enabled: true
+      selector:
+        all: false
+        labels:
+          kubernetes.io/hostname: %s
+`, k3dNodeName, k3dNodeName)
 }
 
 // stretchClusterResourceName is the StretchCluster resource name used in all
