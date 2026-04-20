@@ -1,0 +1,11 @@
+project: operator
+kind: Fixed
+body: |
+  Fixed a hot reconcile loop on healthy Redpanda clusters where the operator would
+  re-enqueue itself every ~2 seconds instead of settling into the 3-minute periodic
+  requeue interval. The setStatusCondition helper treated a zero rate limit as
+  "force an update" (because time.Since(anything) > 0 is always true), which bumped
+  lastTransitionTime on every pass and triggered a status write for conditions that
+  had not actually changed. Rate-limited heartbeats for License and Configuration
+  conditions are preserved.
+time: 2026-04-17T14:00:00.000000+00:00
