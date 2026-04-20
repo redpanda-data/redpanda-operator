@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -21,6 +22,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
+	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
@@ -40,6 +43,8 @@ func TestConfigWatcher(t *testing.T) {
 		ctx,
 		"redpandadata/redpanda:v24.2.4",
 		redpanda.WithSuperusers("user"),
+		redpanda.WithEnableSASL(),
+		redpanda.WithEnableKafkaAuthorization(),
 		testcontainers.WithEnv(map[string]string{
 			"RP_BOOTSTRAP_USER": fmt.Sprintf("%s:%s:%s", user, password, saslMechanism),
 		}),
@@ -116,6 +121,31 @@ func TestConfigWatcher(t *testing.T) {
 
 	require.ElementsMatch(t, superusers, clusterUsers)
 
+	// Simulate the bootstrap user Secret being rotated (the operator
+	// regenerating it after it was deleted). getInternalUser() reads the
+	// password out of RPK_PASS on every sync, so flipping the env var and
+	// re-running SyncUsers is enough to exercise the rotation path.
+	//
+	// Without the fix, SyncUsers would call CreateUser, see "already
+	// exists", and return — leaving Redpanda's SCRAM DB pointed at the
+	// original password forever. With the fix, it follows up with
+	// UpdateUser so the rotated password actually takes effect. We
+	// validate via a Kafka SASL handshake because admin-API basic auth
+	// is derivable from rpk-config (the only way the configwatcher
+	// authenticates) and therefore can't prove the SCRAM DB changed.
+	const rotatedPassword = "rotated-password-after-secret-regen"
+	t.Setenv("RPK_PASS", rotatedPassword)
+
+	watcher.SyncUsers(ctx, "/etc/secret/users/users.txt")
+
+	kafkaBroker, err := container.KafkaSeedBroker(ctx)
+	require.NoError(t, err)
+
+	require.Error(t, kafkaSASLHandshake(ctx, kafkaBroker, user, password),
+		"original password must no longer authenticate after rotation")
+	require.NoError(t, kafkaSASLHandshake(ctx, kafkaBroker, user, rotatedPassword),
+		"rotated password must authenticate after SyncUsers propagates it")
+
 	cancel()
 
 	select {
@@ -141,4 +171,23 @@ rpk:
 
 func createUserLine(user, password, mechanism string) string {
 	return user + ":" + password + ":" + mechanism
+}
+
+// kafkaSASLHandshake opens a short-lived kgo client against the Kafka listener
+// with SCRAM-SHA-512 credentials and issues a Metadata request. The SASL
+// handshake runs as part of broker connection setup, so a non-nil error means
+// the credentials were rejected (or the broker was unreachable).
+func kafkaSASLHandshake(ctx context.Context, broker, user, password string) error {
+	client, err := kgo.NewClient(
+		kgo.SeedBrokers(broker),
+		kgo.SASL((&scram.Auth{User: user, Pass: password}).AsSha512Mechanism()),
+	)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	pingCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	return client.Ping(pingCtx)
 }

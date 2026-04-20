@@ -200,11 +200,14 @@ func (w *ConfigWatcher) SyncUsers(ctx context.Context, path string) {
 
 	w.log.Info("synchronizing users in file", "file", path)
 
-	// sync our internal superuser first
+	// sync our internal superuser first. We mirror the Secret's password
+	// into Redpanda's SCRAM DB on every sync so that a rotated bootstrap
+	// user Secret (e.g. the operator regenerating it after it was deleted)
+	// actually propagates into the running cluster. syncInternalUser never
+	// falls back to delete-and-recreate — dropping the internal superuser
+	// even briefly could strand the operator.
 	internalSuperuser, password, mechanism := getInternalUser()
-	// the internal user should only ever be created once, so don't
-	// update its password ever.
-	w.syncUser(ctx, internalSuperuser, password, mechanism, false)
+	w.syncInternalUser(ctx, internalSuperuser, password, mechanism)
 
 	users := []string{internalSuperuser}
 
@@ -245,6 +248,28 @@ func (w *ConfigWatcher) setSuperusers(ctx context.Context, users []string) {
 		"superusers": users,
 	}, []string{}); err != nil {
 		w.log.Error(err, "could not set superusers")
+	}
+}
+
+// syncInternalUser ensures Redpanda's internal superuser record matches the
+// password currently mounted for the pod. Unlike syncUser, this path never
+// falls back to a delete/recreate: dropping the internal superuser — even
+// for the brief window between DeleteUser and CreateUser — could strand the
+// operator. Sending UpdateUser with the current password is idempotent on
+// the Redpanda side, so this is safe to invoke on every sync.
+func (w *ConfigWatcher) syncInternalUser(ctx context.Context, user, password, mechanism string) {
+	w.log.Info("synchronizing internal user", "user", user)
+
+	err := w.adminClient.CreateUser(ctx, user, password, mechanism)
+	if err == nil {
+		return
+	}
+	if !strings.Contains(err.Error(), "already exists") {
+		w.log.Error(err, "could not create internal user", "user", user)
+		return
+	}
+	if err := w.adminClient.UpdateUser(ctx, user, password, mechanism); err != nil {
+		w.log.Error(err, "could not update internal user password", "user", user)
 	}
 }
 
