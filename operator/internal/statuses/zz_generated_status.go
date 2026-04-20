@@ -1073,8 +1073,11 @@ func setStatusCondition(conditions *[]metav1.Condition, newCondition ratelimited
 		}
 	}
 
-	// we force an update of the transition time for the condition
-	if newCondition.rate >= 0 && (time.Since(existingCondition.LastTransitionTime.Time) > newCondition.rate) {
+	// we force an update of the transition time for the condition if an explicit
+	// rate limit is configured (rate > 0). A zero rate means "no rate-limited
+	// heartbeat" — without this guard, time.Since(anything) > 0 would mark the
+	// condition dirty on every reconcile, causing a hot reconcile loop.
+	if newCondition.rate > 0 && (time.Since(existingCondition.LastTransitionTime.Time) > newCondition.rate) {
 		setTransitionTime()
 		changed = true
 	}
