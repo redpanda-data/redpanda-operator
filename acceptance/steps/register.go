@@ -162,6 +162,11 @@ func init() {
 	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
 	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
 
+	// Bootstrap user lifecycle steps
+	framework.RegisterStep(`^I delete the bootstrap user secret for cluster "([^"]*)"$`, iDeleteTheBootstrapUserSecretForCluster)
+	framework.RegisterStep(`^the bootstrap user secret for cluster "([^"]*)" is regenerated with a new password$`, theBootstrapUserSecretForClusterIsRegenerated)
+	framework.RegisterStep(`^I restart all pods in cluster "([^"]*)"$`, iRestartAllPodsInCluster)
+
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 }
