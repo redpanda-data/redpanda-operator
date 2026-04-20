@@ -91,6 +91,10 @@ func CreateVind(name string, opts ...VindOpt) (*VindCluster, error) {
 		"--connect=false",
 		"--upgrade",
 	}
+	// this is required when running inside the docker container (Docker in Docker in the CI)
+	if vclusterVolDir := os.Getenv("VCLUSTER_STATE"); vclusterVolDir != "" {
+		args = append(args, "--config", vclusterVolDir+"/config.json")
+	}
 
 	valuesYAML := buildVindValues(cfg)
 	if valuesYAML != "" {
