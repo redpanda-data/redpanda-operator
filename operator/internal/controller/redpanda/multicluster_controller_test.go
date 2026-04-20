@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -302,7 +303,11 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 				},
 			},
 		}
-		require.NoError(t, cl.Create(ctx, issuer), "creating Issuer in cluster %d", i)
+		require.NoError(t, retry.OnError(retry.DefaultBackoff, func(err error) bool {
+			return strings.Contains(err.Error(), "failed to call webhook")
+		}, func() error {
+			return cl.Create(ctx, issuer)
+		}), "creating Issuer in cluster %d", i)
 	}
 
 	// Step 3: Create a StretchCluster with IssuerRef pointing to the user's Issuer.
