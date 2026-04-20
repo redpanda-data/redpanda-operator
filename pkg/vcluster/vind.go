@@ -109,10 +109,11 @@ func CreateVind(name string, opts ...VindOpt) (*VindCluster, error) {
 		f.Close()
 		args = append(args, "-f", f.Name())
 	}
+	cmd := exec.Command("vcluster", args...)
 
-	out, err := exec.Command("vcluster", args...).CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, errors.Wrapf(err, "vcluster create %s: %s", name, out)
+		return nil, errors.Wrapf(err, "command: %s failed with: %s", cmd.String(), out)
 	}
 
 	kubeconfigData, config, err := vindKubeconfig(name)

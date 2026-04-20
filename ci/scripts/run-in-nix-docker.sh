@@ -70,7 +70,7 @@ docker run --rm -it \
 	-e ACCEPTANCE_ARTIFACTS_DIR \
 	-e INTEGRATION_ARTIFACTS_DIR \
 	-e REDPANDA_SAMPLE_LICENSE \
-	-e VCLUSTER_STATE \
+	-e VCLUSTER_STATE="$VCLUSTER_STATE" \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \
