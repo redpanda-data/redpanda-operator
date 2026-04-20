@@ -1,13 +1,13 @@
 project: operator
 kind: Fixed
 body: |
-  Fixed a SASL bootstrap-user password drift that left clusters unauthenticated after the
-  bootstrap user Secret was rotated. When the Secret was deleted — for example, to migrate
-  from a Helm-era Secret to operator-managed ownership — the operator regenerated it with
-  a fresh random password, but the running Redpanda cluster retained the original password
-  in its internal SCRAM DB because the sidecar configwatcher explicitly created the
-  internal superuser only once. The configwatcher now mirrors the Secret's password into
-  Redpanda's SCRAM DB via AlterUserSCRAMs on every sync, so a rotated bootstrap user
-  Secret propagates into the running cluster and rpk keeps authenticating after the next
-  pod restart.
+  Fixed a SASL bootstrap-user password drift that left clusters unauthenticated after
+  the bootstrap user Secret was rotated. When the Secret was deleted — for example, to
+  migrate from a Helm-era Secret to operator-managed ownership — the operator
+  regenerated it with a fresh random password, but the running Redpanda cluster retained
+  the original password in its internal SCRAM DB because the sidecar configwatcher
+  explicitly created the internal superuser only once. The configwatcher now mirrors the
+  Secret's password into Redpanda's SCRAM DB on every sync via the admin API, so a
+  rotated bootstrap user Secret propagates into the running cluster and rpk keeps
+  authenticating after the next pod restart.
 time: 2026-04-20T15:00:00.000000+00:00

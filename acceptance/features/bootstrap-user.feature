@@ -20,7 +20,7 @@ Feature: SASL bootstrap user secret lifecycle
   #      `SASL_AUTHENTICATION_FAILED: Invalid credentials`.
   #
   # Fix: the configwatcher now mirrors the Secret's password into Redpanda's
-  # SCRAM DB on every sync via `UpdateUser` (AlterUserSCRAMs), so a rotated
+  # SCRAM DB on every sync via the admin API's `UpdateUser`, so a rotated
   # bootstrap user Secret propagates into the running cluster.
   @skip:gke @skip:aks @skip:eks
   Scenario: Bootstrap user secret deleted and regenerated; rpk still authenticates

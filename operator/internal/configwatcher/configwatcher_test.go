@@ -174,9 +174,9 @@ func createUserLine(user, password, mechanism string) string {
 }
 
 // kafkaSASLHandshake opens a short-lived kgo client against the Kafka listener
-// with SCRAM-SHA-512 credentials and issues a Metadata request. The SASL
-// handshake runs as part of broker connection setup, so a non-nil error means
-// the credentials were rejected (or the broker was unreachable).
+// with SCRAM-SHA-512 credentials and pings each seed broker. The SASL
+// handshake runs as part of broker connection setup, so a non-nil return
+// means the credentials were rejected (or the broker was unreachable).
 func kafkaSASLHandshake(ctx context.Context, broker, user, password string) error {
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(broker),
