@@ -117,6 +117,9 @@ func (s *MulticlusterControllerSuite) TestManagesFinalizers() {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: nn.Name,
 		},
+		Spec: redpandav1alpha2.StretchClusterSpec{
+			External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
+		},
 	})
 
 	for i, env := range s.mc.Envs {
@@ -157,6 +160,7 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 		},
 		Spec: redpandav1alpha2.StretchClusterSpec{
 			CommonLabels: map[string]string{"env": "prod"},
+			External:     &redpandav1alpha2.External{Enabled: ptr.To(false)},
 		},
 	})
 
@@ -318,6 +322,7 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 			Name: scName,
 		},
 		Spec: redpandav1alpha2.StretchClusterSpec{
+			External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
 			TLS: &redpandav1alpha2.TLS{
 				Enabled: ptr.To(true),
 				Certs: map[string]*redpandav1alpha2.Certificate{
@@ -467,6 +472,7 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 			Name: scName,
 		},
 		Spec: redpandav1alpha2.StretchClusterSpec{
+			External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
 			TLS: &redpandav1alpha2.TLS{
 				Enabled: ptr.To(true),
 				Certs: map[string]*redpandav1alpha2.Certificate{
