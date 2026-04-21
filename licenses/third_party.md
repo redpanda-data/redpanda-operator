@@ -58,7 +58,7 @@ run `task generate:third-party-licenses-list`
 | github.com/bahlo/generic-list-go | [BSD-3-Clause](https://github.com/bahlo/generic-list-go/blob/v0.2.0/LICENSE) |
 | github.com/beorn7/perks/quantile | [MIT](https://github.com/beorn7/perks/blob/v1.0.1/LICENSE) |
 | github.com/blang/semver/v4 | [MIT](https://github.com/blang/semver/blob/v4.0.0/v4/LICENSE) |
-| github.com/buger/jsonparser | [MIT](https://github.com/buger/jsonparser/blob/v1.1.1/LICENSE) |
+| github.com/buger/jsonparser | [MIT](https://github.com/buger/jsonparser/blob/v1.1.2/LICENSE) |
 | github.com/cenkalti/backoff/v5 | [MIT](https://github.com/cenkalti/backoff/blob/v5.0.3/LICENSE) |
 | github.com/cert-manager/cert-manager/pkg/apis | [Apache-2.0](https://github.com/cert-manager/cert-manager/blob/v1.14.5/LICENSE) |
 | github.com/cespare/xxhash/v2 | [MIT](https://github.com/cespare/xxhash/blob/v2.3.0/LICENSE.txt) |
@@ -240,14 +240,14 @@ run `task generate:third-party-licenses-list`
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.43.0/exporters/otlp/otlptrace/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.43.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.43.0/exporters/otlp/otlptrace/otlptracegrpc/LICENSE) |
-| go.opentelemetry.io/otel/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.16.0/log/LICENSE) |
-| go.opentelemetry.io/otel/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.16.0/log/LICENSE) |
+| go.opentelemetry.io/otel/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.19.0/log/LICENSE) |
+| go.opentelemetry.io/otel/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.19.0/log/LICENSE) |
 | go.opentelemetry.io/otel/metric | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.43.0/metric/LICENSE) |
 | go.opentelemetry.io/otel/metric | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.43.0/metric/LICENSE) |
 | go.opentelemetry.io/otel/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.43.0/sdk/LICENSE) |
 | go.opentelemetry.io/otel/sdk | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.43.0/sdk/LICENSE) |
-| go.opentelemetry.io/otel/sdk/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.16.0/sdk/log/LICENSE) |
-| go.opentelemetry.io/otel/sdk/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.16.0/sdk/log/LICENSE) |
+| go.opentelemetry.io/otel/sdk/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.19.0/sdk/log/LICENSE) |
+| go.opentelemetry.io/otel/sdk/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.19.0/sdk/log/LICENSE) |
 | go.opentelemetry.io/otel/trace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.43.0/trace/LICENSE) |
 | go.opentelemetry.io/otel/trace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.43.0/trace/LICENSE) |
 | go.opentelemetry.io/proto/otlp | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-proto-go/blob/otlp/v1.10.0/otlp/LICENSE) |
