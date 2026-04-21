@@ -12,8 +12,6 @@ package redpanda
 import (
 	"testing"
 
-	"github.com/redpanda-data/common-go/kube"
-	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -21,6 +19,8 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
 )
 
 func TestCertificates(t *testing.T) {
