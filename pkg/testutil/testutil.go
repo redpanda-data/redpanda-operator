@@ -28,7 +28,7 @@ var (
 )
 
 const (
-	CertManagerVersion = "v1.17.1"
+	CertManagerVersion = "v1.17.2"
 	VClusterVersion    = "v0.33.1"
 )
 

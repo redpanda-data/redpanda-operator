@@ -376,6 +376,7 @@ tasks:
       - redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
       - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}
       - ghcr.io/loft-sh/kubernetes:{{.TEST_VCLUSTER_KUBE_VERSION}}
+      - ghcr.io/loft-sh/vm-container:latest
       - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
       - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
       - coredns/coredns:{{.TEST_COREDNS_VERSION}}
