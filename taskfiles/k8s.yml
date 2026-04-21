@@ -164,9 +164,10 @@ tasks:
       REPO: '{{.REPO | default "docker.redpanda.com/redpandadata/redpanda"}}'
     cmds:
       - |
+        ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
         TAG=$(docker-tag-list -c "{{.CONSTRAINT}}" --latest -r "{{.REPO}}" | sed 's/-a..64$//')
-        docker pull "{{.REPO}}":"${TAG}"
-        docker tag "{{.REPO}}":"${TAG}" localhost/redpanda:dev
+        docker pull "{{.REPO}}":"${TAG}-${ARCH}"
+        docker tag  "{{.REPO}}":"${TAG}-${ARCH}" localhost/redpanda:dev
 
   run-kuttl-tests:
     desc: run kuttl tests
@@ -197,16 +198,4 @@ tasks:
       - task: :build:image
     cmds:
       - mkdir -p {{.KUTTL_ARTIFACTS_DIR}}
-      - |
-        set +e
-        echo "~~~ CI diagnostic: capture ctr import stderr (remove after diagnosis)"
-        kind delete cluster --name kuttl-diag >/dev/null 2>&1
-        kind create cluster --name kuttl-diag --image kindest/node:v1.29.8@sha256:d46b7aa29567e93b27f7531d258c372e829d7224b25e3fc6ffdefed12476d3aa
-        for img in localhost/redpanda:dev localhost/redpanda-operator:dev; do
-          echo "--- importing $img"
-          docker save "$img" | docker exec --privileged -i kuttl-diag-control-plane ctr --namespace=k8s.io images import --all-platforms --digests --snapshotter=overlayfs -
-          echo "EXIT: $?"
-        done
-        kind delete cluster --name kuttl-diag >/dev/null 2>&1
-        echo "~~~ end CI diagnostic"
       - kuttl test --config "{{.KUTTL_CONFIG_FILE}}" {{.CLI_ARGS}}
