@@ -56,11 +56,11 @@ type RenderState struct {
 // FetchBootstrapUser attempts to locate an existing bootstrap user secret in
 // the cluster. If found, it is stored in [RenderState.BootstrapUserSecret
 func (r *RenderState) FetchBootstrapUser() {
-	if r.Values.Auth.SASL == nil || !r.Values.Auth.SASL.Enabled || r.Values.Auth.SASL.BootstrapUser.SecretKeyRef != nil {
+	if r.Values.Auth.SASL == nil || !r.Values.Auth.SASL.Enabled {
 		return
 	}
 
-	secretName := fmt.Sprintf("%s-bootstrap-user", Fullname(r))
+	selector := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
 
 	// Some tools don't correctly set .Release.Upgrade (ArgoCD, gotohelm, helm
 	// template) which has lead us to incorrectly re-generate the bootstrap
@@ -70,11 +70,10 @@ func (r *RenderState) FetchBootstrapUser() {
 	// TODO: Should we try to detect invalid configurations, panic, and request
 	// that a password be explicitly set?
 	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
-	if existing, ok := helmette.Lookup[corev1.Secret](r.Dot, r.Release.Namespace, secretName); ok {
+	if existing, ok := helmette.Lookup[corev1.Secret](r.Dot, r.Release.Namespace, selector.Name); ok {
 		// make any existing secret immutable
 		existing.Immutable = ptr.To(true)
 		r.BootstrapUserSecret = existing
-		selector := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
 		if data, found := existing.Data[selector.Key]; found {
 			r.BootstrapUserPassword = string(data)
 		}
