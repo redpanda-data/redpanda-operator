@@ -129,6 +129,11 @@ func init() {
 	framework.RegisterStep(`^the "([^"]*)" region of "([^"]*)" should reflect the updated StretchCluster spec$`, regionReflectsUpdatedSpec)
 	framework.RegisterStep(`^the operator in the "([^"]*)" region of "([^"]*)" should eventually be running and reconciling$`, operatorInRegionRecovering)
 
+	// Ghost node ejection scenario steps
+	framework.RegisterStep(`^I take a non-controller region of "([^"]*)" offline$`, takeNonControllerRegionOffline)
+	framework.RegisterStep(`^the cluster health output should show (\d+) nodes across all clusters in "([^"]*)"$`, expectClusterHealthNodeCount)
+	framework.RegisterStep(`^the cluster health output should eventually show (\d+) nodes in the remaining clusters of "([^"]*)"$`, expectEventualNodeCountInRemainingClusters)
+
 	// Scaling scenario steps
 	framework.RegisterStep(`^cluster "([^"]*)" should be stable with (\d+) nodes$`, checkClusterStableWithCount)
 	framework.RegisterStep(`^cluster "([^"]*)" is stable with (\d+) nodes$`, checkClusterStableWithCount)
