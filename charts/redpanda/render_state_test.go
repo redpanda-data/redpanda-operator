@@ -15,9 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
 )
 
 func TestCertificates(t *testing.T) {
@@ -111,6 +114,108 @@ func TestCertificates(t *testing.T) {
 			require.Equal(t, c.ExpectedRootCertName, actualRootCertName)
 			require.Equal(t, c.ExpectedRootCertKey, actualRootCertKey)
 			require.Equal(t, c.ExpectedClientCertName, actualClientCertName)
+		})
+	}
+}
+
+func TestFetchBootstrapUser(t *testing.T) {
+	ctl := kubetest.NewEnv(t)
+	ctx := t.Context()
+
+	const namespace = "fetch-bootstrap-user"
+
+	_, err := kube.Create(ctx, ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: namespace},
+	})
+	require.NoError(t, err)
+
+	// The chart-managed secret uses the default name format `<release>-bootstrap-user`.
+	_, err = kube.Create(ctx, ctl, corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "redpanda-bootstrap-user", Namespace: namespace},
+		Data:       map[string][]byte{"password": []byte("chart-managed-password")},
+	})
+	require.NoError(t, err)
+
+	// An externally-managed secret with a non-default key name.
+	_, err = kube.Create(ctx, ctl, corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "user-secret", Namespace: namespace},
+		Data:       map[string][]byte{"custom-key": []byte("user-provided-password")},
+	})
+	require.NoError(t, err)
+
+	makeState := func(sasl *SASLAuth) *RenderState {
+		return &RenderState{
+			Release: &helmette.Release{Name: "redpanda", Namespace: namespace},
+			Values:  Values{Auth: Auth{SASL: sasl}},
+			Dot:     &helmette.Dot{KubeConfig: ctl.RestConfig()},
+		}
+	}
+
+	cases := map[string]struct {
+		sasl         *SASLAuth
+		wantPassword string
+		wantSecret   bool
+	}{
+		"sasl nil": {
+			sasl: nil,
+		},
+		"sasl disabled": {
+			sasl: &SASLAuth{Enabled: false},
+		},
+		"chart-managed secret present": {
+			sasl:         &SASLAuth{Enabled: true},
+			wantPassword: "chart-managed-password",
+			wantSecret:   true,
+		},
+		"user-provided secret present": {
+			sasl: &SASLAuth{
+				Enabled: true,
+				BootstrapUser: BootstrapUser{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "user-secret"},
+						Key:                  "custom-key",
+					},
+				},
+			},
+			wantPassword: "user-provided-password",
+			wantSecret:   true,
+		},
+		"user-provided secret missing": {
+			sasl: &SASLAuth{
+				Enabled: true,
+				BootstrapUser: BootstrapUser{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "does-not-exist"},
+						Key:                  "password",
+					},
+				},
+			},
+		},
+		"user-provided secret wrong key": {
+			sasl: &SASLAuth{
+				Enabled: true,
+				BootstrapUser: BootstrapUser{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "user-secret"},
+						Key:                  "missing-key",
+					},
+				},
+			},
+			wantSecret: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			state := makeState(tc.sasl)
+			state.FetchBootstrapUser()
+
+			require.Equal(t, tc.wantPassword, state.BootstrapUserPassword)
+			if tc.wantSecret {
+				require.NotNil(t, state.BootstrapUserSecret)
+			} else {
+				require.Nil(t, state.BootstrapUserSecret)
+			}
 		})
 	}
 }
