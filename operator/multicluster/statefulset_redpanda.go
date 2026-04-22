@@ -61,7 +61,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Nod
 	if state.Spec().Networking.IsMCS() {
 		addressDomain = state.namespace + ".svc.clusterset.local"
 	}
-	internalAdvertiseAddress := fmt.Sprintf("%s-%s.%s", pool.GetName(), "$(ORDINAL_NUMBER)", addressDomain)
+	internalAdvertiseAddress := fmt.Sprintf("%s-%s.%s", state.poolFullname(pool), "$(ORDINAL_NUMBER)", addressDomain)
 
 	terminationGracePeriod := defaultTerminationGracePeriod
 

@@ -888,9 +888,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.compat-test
+        - address: compat-test-basic-a-0.compat-test
           port: 9093
-        - address: basic-b-0.compat-test
+        - address: compat-test-basic-b-0.compat-test
           port: 9093
       redpanda:
         admin:
@@ -946,10 +946,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-a-0.
+            address: compat-test-basic-a-0.
             port: 33145
         - host:
-            address: basic-b-0.
+            address: compat-test-basic-b-0.
             port: 33145
       rpk:
         additional_start_flags:
@@ -959,22 +959,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - basic-a-0.compat-test:9644
-          - basic-b-0.compat-test:9644
+          - compat-test-basic-a-0.compat-test:9644
+          - compat-test-basic-b-0.compat-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - basic-a-0.compat-test:9093
-          - basic-b-0.compat-test:9093
+          - compat-test-basic-a-0.compat-test:9093
+          - compat-test-basic-b-0.compat-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - basic-a-0.compat-test:8081
-          - basic-b-0.compat-test:8081
+          - compat-test-basic-a-0.compat-test:8081
+          - compat-test-basic-b-0.compat-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1005,9 +1005,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.compat-test
+        - address: compat-test-basic-a-0.compat-test
           port: 9093
-        - address: basic-b-0.compat-test
+        - address: compat-test-basic-b-0.compat-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -1054,9 +1054,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.compat-test
+        - address: compat-test-basic-a-0.compat-test
           port: 9093
-        - address: basic-b-0.compat-test
+        - address: compat-test-basic-b-0.compat-test
           port: 9093
       redpanda:
         admin:
@@ -1112,10 +1112,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-a-0.
+            address: compat-test-basic-a-0.
             port: 33145
         - host:
-            address: basic-b-0.
+            address: compat-test-basic-b-0.
             port: 33145
       rpk:
         additional_start_flags:
@@ -1125,22 +1125,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - basic-a-0.compat-test:9644
-          - basic-b-0.compat-test:9644
+          - compat-test-basic-a-0.compat-test:9644
+          - compat-test-basic-b-0.compat-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - basic-a-0.compat-test:9093
-          - basic-b-0.compat-test:9093
+          - compat-test-basic-a-0.compat-test:9093
+          - compat-test-basic-b-0.compat-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - basic-a-0.compat-test:8081
-          - basic-b-0.compat-test:8081
+          - compat-test-basic-a-0.compat-test:8081
+          - compat-test-basic-b-0.compat-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1171,9 +1171,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.compat-test
+        - address: compat-test-basic-a-0.compat-test
           port: 9093
-        - address: basic-b-0.compat-test
+        - address: compat-test-basic-b-0.compat-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -1510,13 +1510,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"compat-test-basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"compat-test-basic-a-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -1547,13 +1547,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"compat-test-basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"compat-test-basic-b-${POD_ORDINAL}.compat-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -1571,7 +1571,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
       monitoring.redpanda.com/enabled: "false"
-    name: basic-a-0
+    name: compat-test-basic-a-0
     namespace: compat-test
   spec:
     ipFamilyPolicy: SingleStack
@@ -1618,7 +1618,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
       monitoring.redpanda.com/enabled: "false"
-    name: basic-b-0
+    name: compat-test-basic-b-0
     namespace: compat-test
   spec:
     ipFamilyPolicy: SingleStack
@@ -1817,7 +1817,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: pool-a-0.flat-network-test
+        - address: flat-network-test-pool-a-0.flat-network-test
           port: 9093
       redpanda:
         admin:
@@ -1873,7 +1873,7 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0.
+            address: flat-network-test-pool-a-0.
             port: 33145
       rpk:
         additional_start_flags:
@@ -1883,19 +1883,19 @@
         - --smp=1
         admin_api:
           addresses:
-          - pool-a-0.flat-network-test:9644
+          - flat-network-test-pool-a-0.flat-network-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - pool-a-0.flat-network-test:9093
+          - flat-network-test-pool-a-0.flat-network-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - pool-a-0.flat-network-test:8081
+          - flat-network-test-pool-a-0.flat-network-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -1926,7 +1926,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: pool-a-0.flat-network-test
+        - address: flat-network-test-pool-a-0.flat-network-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -2263,13 +2263,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"flat-network-test-pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"flat-network-test-pool-a-${POD_ORDINAL}.flat-network-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -2287,7 +2287,7 @@
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
       monitoring.redpanda.com/enabled: "false"
-    name: pool-a-0
+    name: flat-network-test-pool-a-0
     namespace: flat-network-test
   spec:
     clusterIP: None
@@ -2328,7 +2328,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: pool-a-0
+    name: flat-network-test-pool-a-0
     namespace: flat-network-test
   subsets:
   - addresses:
@@ -2366,8 +2366,8 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-      kubernetes.io/service-name: pool-a-0
-    name: pool-a-0-cross-cluster
+      kubernetes.io/service-name: flat-network-test-pool-a-0
+    name: flat-network-test-pool-a-0-cross-cluster
     namespace: flat-network-test
   ports:
   - name: admin
@@ -2549,7 +2549,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: pool-a-0.mcs-network-test.svc.clusterset.local
+        - address: mcs-network-test-pool-a-0.mcs-network-test.svc.clusterset.local
           port: 9093
       redpanda:
         admin:
@@ -2605,7 +2605,7 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: pool-a-0..svc.clusterset.local
+            address: mcs-network-test-pool-a-0..svc.clusterset.local
             port: 33145
       rpk:
         additional_start_flags:
@@ -2615,19 +2615,19 @@
         - --smp=1
         admin_api:
           addresses:
-          - pool-a-0.mcs-network-test.svc.clusterset.local:9644
+          - mcs-network-test-pool-a-0.mcs-network-test.svc.clusterset.local:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - pool-a-0.mcs-network-test.svc.clusterset.local:9093
+          - mcs-network-test-pool-a-0.mcs-network-test.svc.clusterset.local:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - pool-a-0.mcs-network-test.svc.clusterset.local:8081
+          - mcs-network-test-pool-a-0.mcs-network-test.svc.clusterset.local:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -2658,7 +2658,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: pool-a-0.mcs-network-test.svc.clusterset.local
+        - address: mcs-network-test-pool-a-0.mcs-network-test.svc.clusterset.local
           port: 9093
   kind: ConfigMap
   metadata:
@@ -3027,7 +3027,7 @@
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
       monitoring.redpanda.com/enabled: "false"
-    name: pool-a-0
+    name: mcs-network-test-pool-a-0
     namespace: mcs-network-test
   spec:
     ipFamilyPolicy: SingleStack
@@ -3073,7 +3073,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: pool-a-0
+    name: mcs-network-test-pool-a-0
     namespace: mcs-network-test
   spec: {}
   status: {}
@@ -3241,9 +3241,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test
           port: 9093
-        - address: basic-b-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test
           port: 9093
       redpanda:
         admin:
@@ -3299,10 +3299,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-a-0.
+            address: nodepool-basic-test-basic-a-0.
             port: 33145
         - host:
-            address: basic-b-0.
+            address: nodepool-basic-test-basic-b-0.
             port: 33145
       rpk:
         additional_start_flags:
@@ -3312,22 +3312,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - basic-a-0.nodepool-basic-test:9644
-          - basic-b-0.nodepool-basic-test:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - basic-a-0.nodepool-basic-test:9093
-          - basic-b-0.nodepool-basic-test:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - basic-a-0.nodepool-basic-test:8081
-          - basic-b-0.nodepool-basic-test:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -3358,9 +3358,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test
           port: 9093
-        - address: basic-b-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -3407,9 +3407,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test
           port: 9093
-        - address: basic-b-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test
           port: 9093
       redpanda:
         admin:
@@ -3465,10 +3465,10 @@
           truststore_file: /etc/tls/certs/default/ca.crt
         seed_servers:
         - host:
-            address: basic-a-0.
+            address: nodepool-basic-test-basic-a-0.
             port: 33145
         - host:
-            address: basic-b-0.
+            address: nodepool-basic-test-basic-b-0.
             port: 33145
       rpk:
         additional_start_flags:
@@ -3478,22 +3478,22 @@
         - --smp=1
         admin_api:
           addresses:
-          - basic-a-0.nodepool-basic-test:9644
-          - basic-b-0.nodepool-basic-test:9644
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test:9644
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         enable_memory_locking: false
         kafka_api:
           brokers:
-          - basic-a-0.nodepool-basic-test:9093
-          - basic-b-0.nodepool-basic-test:9093
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test:9093
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         overprovisioned: false
         schema_registry:
           addresses:
-          - basic-a-0.nodepool-basic-test:8081
-          - basic-b-0.nodepool-basic-test:8081
+          - nodepool-basic-test-basic-a-0.nodepool-basic-test:8081
+          - nodepool-basic-test-basic-b-0.nodepool-basic-test:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
         tune_aio_events: true
@@ -3524,9 +3524,9 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
-        - address: basic-a-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-a-0.nodepool-basic-test
           port: 9093
-        - address: basic-b-0.nodepool-basic-test
+        - address: nodepool-basic-test-basic-b-0.nodepool-basic-test
           port: 9093
   kind: ConfigMap
   metadata:
@@ -3863,13 +3863,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"nodepool-basic-test-basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"nodepool-basic-test-basic-a-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -3900,13 +3900,13 @@
       # Setup config files
       cp /tmp/base-config/redpanda.yaml "${CONFIG}"
 
-      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
+      LISTENER="{\"address\":\"nodepool-basic-test-basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":9093}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
       rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
 
-      LISTENER="{\"address\":\"basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
+      LISTENER="{\"address\":\"nodepool-basic-test-basic-b-${POD_ORDINAL}.nodepool-basic-test\",\"name\":\"internal\",\"port\":8082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
@@ -3924,7 +3924,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
       monitoring.redpanda.com/enabled: "false"
-    name: basic-a-0
+    name: nodepool-basic-test-basic-a-0
     namespace: nodepool-basic-test
   spec:
     ipFamilyPolicy: SingleStack
@@ -3971,7 +3971,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
       monitoring.redpanda.com/enabled: "false"
-    name: basic-b-0
+    name: nodepool-basic-test-basic-b-0
     namespace: nodepool-basic-test
   spec:
     ipFamilyPolicy: SingleStack

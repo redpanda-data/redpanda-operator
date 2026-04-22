@@ -55,7 +55,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=basic-a-$(ORDINAL_NUMBER).compat-test:33145
+          - --advertise-rpc-addr=compat-test-basic-a-$(ORDINAL_NUMBER).compat-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -430,7 +430,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=basic-b-$(ORDINAL_NUMBER).compat-test:33145
+          - --advertise-rpc-addr=compat-test-basic-b-$(ORDINAL_NUMBER).compat-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -806,7 +806,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).flat-network-test:33145
+          - --advertise-rpc-addr=flat-network-test-pool-a-$(ORDINAL_NUMBER).flat-network-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -1182,7 +1182,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=pool-a-$(ORDINAL_NUMBER).mcs-network-test.svc.clusterset.local:33145
+          - --advertise-rpc-addr=mcs-network-test-pool-a-$(ORDINAL_NUMBER).mcs-network-test.svc.clusterset.local:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -1558,7 +1558,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=basic-a-$(ORDINAL_NUMBER).nodepool-basic-test:33145
+          - --advertise-rpc-addr=nodepool-basic-test-basic-a-$(ORDINAL_NUMBER).nodepool-basic-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:
@@ -1933,7 +1933,7 @@
           - rpk
           - redpanda
           - start
-          - --advertise-rpc-addr=basic-b-$(ORDINAL_NUMBER).nodepool-basic-test:33145
+          - --advertise-rpc-addr=nodepool-basic-test-basic-b-$(ORDINAL_NUMBER).nodepool-basic-test:33145
           env:
           - name: SERVICE_NAME
             valueFrom:

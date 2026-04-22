@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.etcd.io/raft/v3"
+	"go.etcd.io/raft/v3/raftpb"
 
 	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
@@ -91,6 +92,37 @@ type LockConfiguration struct {
 	// IDsToNames maps raft node IDs to human-readable cluster names.
 	// Used by the Status RPC to return cluster names instead of IDs.
 	IDsToNames map[uint64]string
+
+	// TestHooks is nil in production. Tests can set it to observe and
+	// influence raft behavior for deterministic assertions.
+	TestHooks *TestHooks
+}
+
+// TestHooks provides optional callbacks for testing raft internals.
+type TestHooks struct {
+	// OnSnapshotSent is called on the leader when a snapshot is sent to a
+	// follower after a MsgApp rejection. The argument is the target peer ID.
+	OnSnapshotSent func(to uint64)
+
+	// transport is set by run() so tests can inspect storage state.
+	transport *grpcTransport
+}
+
+// CommittedIndex returns the raft HardState's committed index from this
+// node's storage. Returns 0 if the storage is not yet initialized.
+func (h *TestHooks) CommittedIndex() uint64 {
+	if h == nil || h.transport == nil {
+		return 0
+	}
+	s := h.transport.getStorage()
+	if s == nil {
+		return 0
+	}
+	hs, _, err := s.InitialState()
+	if err != nil {
+		return 0
+	}
+	return hs.Commit
 }
 
 func (c *LockConfiguration) validate() error {
@@ -131,6 +163,14 @@ func peersForNodes(nodes []LockerNode) map[uint64]string {
 		peers[node.ID] = node.Address
 	}
 	return peers
+}
+
+func confStateFromPeers(nodes []LockerNode) raftpb.ConfState {
+	cs := raftpb.ConfState{}
+	for _, node := range nodes {
+		cs.Voters = append(cs.Voters, node.ID)
+	}
+	return cs
 }
 
 func asPeers(nodes []LockerNode) []raft.Peer {
@@ -267,6 +307,9 @@ func run(ctx context.Context, config LockConfiguration, transportCallback func(t
 	transport.logger = config.Logger
 	transport.idsToNames = config.IDsToNames
 	transport.localID = config.ID
+	if config.TestHooks != nil {
+		config.TestHooks.transport = transport
+	}
 
 	for node, address := range nodes {
 		if config.Logger != nil {
@@ -414,7 +457,33 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 				}
 			}
 
-			_ = storage.Append(rd.Entries)
+			if !raft.IsEmptySnap(rd.Snapshot) {
+				if err := storage.ApplySnapshot(rd.Snapshot); err != nil {
+					config.Logger.Errorf("failed to apply snapshot: %v", err)
+				}
+			}
+			if !raft.IsEmptyHardState(rd.HardState) {
+				if err := storage.SetHardState(rd.HardState); err != nil {
+					config.Logger.Errorf("failed to set hard state: %v", err)
+				}
+			}
+			if err := storage.Append(rd.Entries); err != nil {
+				config.Logger.Errorf("failed to append entries: %v", err)
+			}
+
+			// Only the leader maintains a snapshot — it's used to catch up
+			// followers whose log is behind after a restart. ConfState is
+			// built from this node's peer list; restricting to the leader
+			// ensures only the authoritative config is ever sent.
+			if isLeader {
+				if hs, _, err := storage.InitialState(); err == nil && hs.Commit > 0 {
+					cs := confStateFromPeers(config.Peers)
+					if _, err := storage.CreateSnapshot(hs.Commit, &cs, nil); err != nil && err != raft.ErrSnapOutOfDate {
+						config.Logger.Errorf("failed to create snapshot at commit=%d: %v", hs.Commit, err)
+					}
+				}
+			}
+
 			for _, msg := range rd.Messages {
 				if msg.To == config.ID {
 					if err := node.Step(ctx, msg); err != nil {
@@ -426,6 +495,34 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 				if err != nil || !applied {
 					if err != nil {
 						config.Logger.Infof("unreachable %d: %v", msg.To, err)
+					}
+					// If a MsgApp was rejected by the follower (Applied=false,
+					// no network error), the follower's log might be behind our
+					// progress tracker's match. Send a snapshot to reset the
+					// follower's state — the snapshot carries our ConfState and
+					// committed index, letting the follower catch up in one step.
+					if (msg.Type == raftpb.MsgApp || msg.Type == raftpb.MsgHeartbeat) && !applied && err == nil {
+						snap, snapErr := storage.Snapshot()
+						if snapErr != nil {
+							config.Logger.Errorf("failed to get snapshot for peer %d: %v", msg.To, snapErr)
+						} else if !raft.IsEmptySnap(snap) {
+							if _, sendErr := transport.DoSend(ctx, raftpb.Message{
+								Type:     raftpb.MsgSnap,
+								To:       msg.To,
+								From:     config.ID,
+								Snapshot: &snap,
+							}); sendErr != nil {
+								config.Logger.Infof("failed to send snapshot to %d: %v", msg.To, sendErr)
+							} else {
+								// Snapshot was accepted — the follower will send
+								// a MsgAppResp that fixes the progress tracker.
+								// Don't report unreachable.
+								if config.TestHooks != nil && config.TestHooks.OnSnapshotSent != nil {
+									config.TestHooks.OnSnapshotSent(msg.To)
+								}
+								continue
+							}
+						}
 					}
 					node.ReportUnreachable(msg.To)
 				}

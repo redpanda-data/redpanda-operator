@@ -27,6 +27,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
+
+	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|(volume node affinity)`)
@@ -67,6 +71,55 @@ type Controller struct {
 	// Volume is assumed to exist. This can lead to Permission errors or
 	// referencing a directory that does not exist.
 	AllowRebinding bool
+}
+
+// MulticlusterController is a multicluster-aware version of Controller that
+// watches Pods across all clusters managed by a multicluster.Manager.
+type MulticlusterController struct {
+	Manager        multicluster.Manager
+	Timeout        time.Duration
+	Selector       labels.Selector
+	AllowRebinding bool
+}
+
+func (r *MulticlusterController) SetupWithMultiClusterManager() error {
+	selectorPredicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		if r.Selector == nil {
+			return true
+		}
+		lbls := object.GetLabels()
+		if lbls == nil {
+			lbls = map[string]string{}
+		}
+		return r.Selector.Matches(labels.Set(lbls))
+	})
+	unbinderPredicate := predicate.NewPredicateFuncs(pvcUnbinderPredicate)
+
+	return mcbuilder.ControllerManagedBy(r.Manager).
+		For(
+			&corev1.Pod{},
+			mcbuilder.WithEngageWithLocalCluster(true),
+			mcbuilder.WithEngageWithProviderClusters(true),
+		).
+		WithEventFilter(selectorPredicate).
+		WithEventFilter(unbinderPredicate).
+		Complete(r)
+}
+
+func (r *MulticlusterController) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
+	k8sCluster, err := r.Manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		log.FromContext(ctx).Error(err, "unable to fetch cluster, skipping reconciliation", "cluster", req.ClusterName)
+		return ctrl.Result{}, nil
+	}
+
+	c := &Controller{
+		Client:         k8sCluster.GetClient(),
+		Timeout:        r.Timeout,
+		Selector:       r.Selector,
+		AllowRebinding: r.AllowRebinding,
+	}
+	return c.Reconcile(ctx, req.Request)
 }
 
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;patch

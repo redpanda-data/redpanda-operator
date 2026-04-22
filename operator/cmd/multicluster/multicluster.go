@@ -29,11 +29,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/watcher"
+	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
 )
 
 // NB: these annotations are necessary because we want the ability to manager service accounts
@@ -77,6 +79,10 @@ type MulticlusterOptions struct {
 	peersStrings []string
 
 	LicenseFilePath string
+
+	UnbindPVCsAfter  time.Duration
+	AllowPVRebinding bool
+	UnbinderSelector pflagutil.LabelSelectorValue
 }
 
 func (o *MulticlusterOptions) validate() error {
@@ -165,6 +171,9 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.LeaderElectionLeaseDuration, "local-leader-election-lease-duration", 0, "Duration of the local leader election lease (0 uses controller-runtime default of 15s)")
 	cmd.Flags().DurationVar(&o.LeaderElectionRenewDeadline, "local-leader-election-renew-deadline", 0, "Renew deadline for the local leader election lease (0 uses controller-runtime default of 10s)")
 	cmd.Flags().DurationVar(&o.LeaderElectionRetryPeriod, "local-leader-election-retry-period", 0, "Retry period for the local leader election lease (0 uses controller-runtime default of 2s)")
+	cmd.Flags().DurationVar(&o.UnbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
+	cmd.Flags().BoolVar(&o.AllowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
+	cmd.Flags().Var(&o.UnbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 }
 
 func Command() *cobra.Command {
@@ -359,6 +368,21 @@ func Run(
 	if err := redpandacontrollers.SetupWithMultiClusterManager(manager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 		return err
+	}
+
+	if opts.UnbindPVCsAfter <= 0 {
+		setupLog.Info("PVCUnbinder controller not active", "unbind-after", opts.UnbindPVCsAfter, "selector", opts.UnbinderSelector, "allow-pv-rebinding", opts.AllowPVRebinding)
+	} else {
+		setupLog.Info("starting PVCUnbinder controller", "unbind-after", opts.UnbindPVCsAfter, "selector", opts.UnbinderSelector, "allow-pv-rebinding", opts.AllowPVRebinding)
+		if err := (&pvcunbinder.MulticlusterController{
+			Manager:        manager,
+			Timeout:        opts.UnbindPVCsAfter,
+			Selector:       opts.UnbinderSelector.Selector,
+			AllowRebinding: opts.AllowPVRebinding,
+		}).SetupWithMultiClusterManager(); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
+			return err
+		}
 	}
 
 	return manager.Start(ctrl.SetupSignalHandler())

@@ -35,4 +35,10 @@ type Manager interface {
 	AddOrReplaceCluster(ctx context.Context, clusterName string, cl cluster.Cluster) error
 	// Health reports whether the manager's raft group is healthy.
 	Health(req *http.Request) error
+	// IsClusterReachable reports whether the Kubernetes API server of the
+	// named cluster was recently reachable. The raft manager probes each
+	// engaged cluster's API server in the background; this method returns
+	// the cached result without making a network call. For single-cluster
+	// and static managers the local cluster is always considered reachable.
+	IsClusterReachable(clusterName string) bool
 }

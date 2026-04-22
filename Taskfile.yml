@@ -332,6 +332,24 @@ tasks:
         PKG: ./acceptance/
         CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 85m -tags acceptance'
 
+  test:acceptance-multicluster:
+    desc: "Run multicluster acceptance tests (~60m)"
+    deps:
+    - task: test:pull-images
+    - task: build:image
+      vars:
+        CLI_ARGS: '' # Don't forward CLI args to build:image
+    - task: build:charts
+    vars:
+      RUN: '{{ default `"^TestAcceptance"` .RUN }}'
+      GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+    cmds:
+    - task: test:unit
+      vars:
+        GO_TEST_RUNNER: 'HARPOON_GROUPS=multicluster {{.GO_TEST_RUNNER}}'
+        PKG: ./acceptance/
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 60m -tags acceptance'
+
   test:pull-images:
     vars:
       DEFAULT_TEST_CERTMANAGER_VERSION: v1.14.2
@@ -368,6 +386,11 @@ tasks:
       - quay.io/jetstack/cert-manager-controller:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-cainjector:{{.SECOND_TEST_CERTMANAGER_VERSION}}
       - quay.io/jetstack/cert-manager-webhook:{{.SECOND_TEST_CERTMANAGER_VERSION}}
+      # cert-manager v1.17.1 is used inside vclusters (pkg/testutil.CertManagerVersion).
+      - quay.io/jetstack/cert-manager-controller:v1.17.1
+      - quay.io/jetstack/cert-manager-cainjector:v1.17.1
+      - quay.io/jetstack/cert-manager-webhook:v1.17.1
+      - quay.io/jetstack/cert-manager-startupapicheck:v1.17.1
       - '{{.TEST_REDPANDA_REPO}}:{{.TEST_REDPANDA_VERSION}}'
       - '{{.DEFAULT_TEST_UPGRADE_REDPANDA_REPO}}:{{.TEST_UPGRADE_REDPANDA_VERSION}}'
       - redpandadata/redpanda-operator:v25.1.3
@@ -394,6 +417,7 @@ tasks:
       - redpandadata/redpanda:v25.2.1
       - redpandadata/redpanda:v25.2.11
       - redpandadata/redpanda:v26.1.1
+      - redpandadata/redpanda:v26.1.5
 
     cmds:
       - |

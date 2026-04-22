@@ -501,8 +501,9 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 				return false
 			}
 			for _, svc := range svcs.Items {
-				// Per-pod services are named after the pod (e.g. cleanup-pool-2-0).
-				if svc.Name == poolToDelete+"-0" {
+				// Per-pod services are named with the cluster prefix: {clusterName}-{poolName}-{ordinal}.
+				expectedSvcName := fmt.Sprintf("%s-%s-%d", nn.Name, poolToDelete, 0)
+				if svc.Name == expectedSvcName {
 					t.Logf("per-pod Service %s still exists on cluster 2", svc.Name)
 					return false
 				}

@@ -45,6 +45,10 @@ func (s *singleClusterManager) Health(req *http.Request) error {
 	return nil
 }
 
+func (s *singleClusterManager) IsClusterReachable(_ string) bool {
+	return true
+}
+
 // NewSingleClusterManager creates a Manager that operates against a single
 // K8s cluster without raft-based leader election.
 func NewSingleClusterManager(config *rest.Config, opts manager.Options) (Manager, error) {

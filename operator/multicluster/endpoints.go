@@ -10,8 +10,6 @@
 package multicluster
 
 import (
-	"strings"
-
 	"github.com/redpanda-data/common-go/kube"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
@@ -37,14 +35,12 @@ func perPodEndpoints(state *RenderState) []kube.Object {
 	var objects []kube.Object
 	for _, pool := range state.pools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
-			svcName := PerPodServiceName(pool, i)
+			svcName := PerPodServiceName(state.poolFullname(pool), i)
 
-			// Match service name to pod by suffix.
-			// TODO: should the per-pod service names match the pod names?
 			var ep PodEndpoint
 			found := false
 			for _, e := range state.podEndpoints {
-				if strings.HasSuffix(e.Name, svcName) {
+				if e.Name == svcName {
 					ep = e
 					found = true
 					break

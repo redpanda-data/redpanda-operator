@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"reflect"
 	"strings"
 	"time"
@@ -310,6 +311,16 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 		if clusterName == localClusterName {
 			continue
 		}
+
+		// Check the background health probe first — this avoids a direct
+		// API call on every reconcile. The probe runs independently in the
+		// manager and caches reachability per cluster.
+		if !r.Manager.IsClusterReachable(clusterName) {
+			l.Info("cluster unreachable (background probe), skipping", "cluster", clusterName)
+			unreachable = append(unreachable, clusterName)
+			continue
+		}
+
 		remote, err := r.Manager.GetCluster(ctx, clusterName)
 		if err != nil {
 			l.Info("cluster unreachable during spec consistency check, skipping", "cluster", clusterName, "error", err)
@@ -498,9 +509,15 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 
 	// Phase 3: ensure the secret exists in every cluster.
 	for _, clusterName := range clusterNames {
+		if !r.Manager.IsClusterReachable(clusterName) {
+			logger.Info("cluster unreachable, skipping bootstrap user sync", "cluster", clusterName)
+			continue
+		}
+
 		cl, err := r.Manager.GetCluster(ctx, clusterName)
 		if err != nil {
-			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+			logger.Info("cluster unreachable, skipping bootstrap user sync", "cluster", clusterName, "error", err)
+			continue
 		}
 
 		secretName := bootstrapSecretName(sc)
@@ -524,7 +541,8 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 				logger.V(log.TraceLevel).Info("StretchCluster not found on cluster, skipping bootstrap user sync", "cluster", clusterName)
 				continue
 			}
-			return ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %s for owner reference", clusterName)
+			logger.Info("could not fetch StretchCluster from cluster, skipping bootstrap user sync", "cluster", clusterName, "error", err)
+			continue
 		}
 		if !localSC.DeletionTimestamp.IsZero() {
 			logger.V(log.TraceLevel).Info("StretchCluster is being deleted on cluster, skipping bootstrap user sync", "cluster", clusterName)
@@ -637,9 +655,15 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 
 		// Phase 3: ensure the CA secret exists in every cluster.
 		for _, clusterName := range clusterNames {
+			if !r.Manager.IsClusterReachable(clusterName) {
+				logger.Info("cluster unreachable, skipping CA sync", "cluster", clusterName, "cert", certName)
+				continue
+			}
+
 			cl, err := r.Manager.GetCluster(ctx, clusterName)
 			if err != nil {
-				return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
+				logger.Info("cluster unreachable, skipping CA sync", "cluster", clusterName, "cert", certName, "error", err)
+				continue
 			}
 
 			k8sClient := cl.GetClient()
@@ -663,7 +687,8 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 					logger.V(log.TraceLevel).Info("StretchCluster not found on cluster, skipping CA sync", "cluster", clusterName)
 					continue
 				}
-				return ctrl.Result{}, errors.Wrapf(err, "fetching StretchCluster from cluster %s for CA owner reference", clusterName)
+				logger.Info("could not fetch StretchCluster from cluster, skipping CA sync", "cluster", clusterName, "error", err)
+				continue
 			}
 			if !localSC.DeletionTimestamp.IsZero() {
 				logger.V(log.TraceLevel).Info("StretchCluster is being deleted on cluster, skipping CA sync", "cluster", clusterName)
@@ -832,6 +857,9 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
 	}
 
+	// brokerMap keys brokers by the first DNS label of their internal RPC
+	// address (pod name for single-cluster) and also by the raw host (pod IP
+	// for stretch-cluster flat-network mode where InternalRPCAddress is an IP).
 	brokerMap := map[string]int{}
 	for _, brokerID := range health.AllNodes {
 		broker, err := state.admin.Broker(ctx, brokerID)
@@ -839,8 +867,15 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 			return ctrl.Result{}, errors.Wrap(err, "fetching broker")
 		}
 
-		brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
-		brokerMap[brokerTokens[0]] = brokerID
+		host := broker.InternalRPCAddress
+		// InternalRPCAddress may be "host:port" or just "host".
+		if h, _, err := net.SplitHostPort(broker.InternalRPCAddress); err == nil {
+			host = h
+		}
+		// Key by first DNS label (pod name for single-cluster FQDN).
+		brokerMap[strings.SplitN(host, ".", 2)[0]] = brokerID
+		// Also key by the full host (pod IP for stretch-cluster flat-network).
+		brokerMap[host] = brokerID
 	}
 
 	// next scale down any over-provisioned pools, patching them to use the new spec
@@ -873,11 +908,24 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 	// finally, we make sure we roll every pod that is not in-sync with its statefulset
 	rollSet := state.pools.PodsToRoll()
+	logger.V(log.DebugLevel).Info("rolling pods", "rollSet", len(rollSet), "brokerMap", brokerMap, "isHealthy", health.IsHealthy)
+
+	// Don't start rolling while a recently replaced pod is still coming up.
+	// The cluster health view (brokerMap, isHealthy) lags behind pod state,
+	// and rolling a second pod before the first one's replacement is ready
+	// would cause two pods to be unavailable simultaneously.
+	// Only check when there are actually pods to roll — otherwise we'd block
+	// normal reconciliation when a pod is unready for unrelated reasons.
+	if len(rollSet) > 0 && state.pools.HasRecentlyReplacedPods() {
+		logger.V(log.DebugLevel).Info("recently replaced pods not ready, deferring rolling restart")
+		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+	}
 	rolled := false
 	for _, pod := range rollSet {
 		shouldRoll, continueExecution := false, false
+		_, inBrokerMap := brokerMap[pod.GetName()]
 
-		if _, ok := brokerMap[pod.GetName()]; !ok {
+		if !inBrokerMap {
 			// we don't actually have this broker in the cluster
 			// anymore, which means it's always safe to delete
 			// the pod and continue with the next operations
@@ -892,6 +940,9 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 			// see if we can at least roll the next pods
 			shouldRoll, continueExecution = false, true
 		}
+
+		logger.V(log.DebugLevel).Info("pod roll decision", "pod", pod.GetName(), "cluster", pod.GetCluster(),
+			"inBrokerMap", inBrokerMap, "isHealthy", health.IsHealthy, "shouldRoll", shouldRoll, "continueExecution", continueExecution)
 
 		if shouldRoll {
 			rolled = true
@@ -1119,10 +1170,18 @@ func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Clust
 
 		// Update status on all clusters, not just the triggering one,
 		// since the StretchCluster CRD exists on every cluster.
+		// Unreachable clusters are skipped — status will be propagated
+		// once they reconnect.
+		logger := log.FromContext(ctx)
 		for _, clusterName := range r.Manager.GetClusterNames() {
+			if !r.Manager.IsClusterReachable(clusterName) {
+				logger.V(log.DebugLevel).Info("cluster unreachable, skipping status update", "cluster", clusterName)
+				continue
+			}
+
 			cl, clErr := r.Manager.GetCluster(ctx, clusterName)
 			if clErr != nil {
-				err = errors.Join(err, errors.Wrapf(clErr, "getting cluster %s for status update", clusterName))
+				logger.Info("cluster unreachable, skipping status update", "cluster", clusterName, "error", clErr)
 				continue
 			}
 
@@ -1131,7 +1190,7 @@ func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Clust
 			remoteSC := &redpandav1alpha2.StretchCluster{}
 			if clErr := cl.GetClient().Get(ctx, client.ObjectKeyFromObject(state.cluster.StretchCluster), remoteSC); clErr != nil {
 				if client.IgnoreNotFound(clErr) != nil {
-					err = errors.Join(err, errors.Wrapf(clErr, "fetching StretchCluster from cluster %s for status update", clusterName))
+					logger.Info("could not fetch StretchCluster for status update, skipping", "cluster", clusterName, "error", clErr)
 				}
 				continue
 			}

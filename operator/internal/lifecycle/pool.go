@@ -398,6 +398,52 @@ func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
 	return sortByNameAndCluster(sets)
 }
 
+// HasRecentlyReplacedPods returns true if any existing pod has the latest
+// revision (i.e., was recently recreated during a rolling restart) but is not
+// yet fully ready, or if any pod is still terminating. This is a narrower
+// check than "all pods ready" — it specifically targets the window between a
+// pod replacement and the new pod's readiness probe passing, during which the
+// Redpanda health API has not yet caught up.
+func (p *PoolTracker) HasRecentlyReplacedPods() bool {
+	for _, pool := range p.existingPools {
+		latestRevision := ""
+		if len(pool.revisions) > 0 {
+			latestRevision = pool.revisions[len(pool.revisions)-1].Name
+		}
+
+		for _, withOrdinals := range pool.pods {
+			pod := withOrdinals.pod
+
+			// A pod being deleted is always a reason to wait.
+			if pod.DeletionTimestamp != nil {
+				return true
+			}
+
+			// Only check pods that already have the latest revision — these
+			// are the ones that were just replaced by a prior roll pass.
+			if latestRevision == "" || pod.Labels[appsv1.StatefulSetRevisionLabel] != latestRevision {
+				continue
+			}
+
+			if pod.Status.Phase != corev1.PodRunning {
+				return true
+			}
+
+			ready := false
+			for _, cond := range pod.Status.Conditions {
+				if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+					ready = true
+					break
+				}
+			}
+			if !ready {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // PodsToRoll returns a list of pods that need to be rolled
 // because their association ControllerRevision does not match
 // the latest applied to the StatefulSet.

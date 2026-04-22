@@ -13,6 +13,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"hash/fnv"
 	"net/http"
 	"os"
@@ -287,6 +288,17 @@ func (r RaftConfiguration) validate() error {
 	}
 	if len(r.Peers) == 0 {
 		return errors.New("peers must be set")
+	}
+
+	found := false
+	for _, peer := range r.Peers {
+		if peer.Name == r.Name {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("node name %q not found in peers list", r.Name)
 	}
 
 	return nil
@@ -571,6 +583,7 @@ type raftManager struct {
 	getLeader           func() string
 	getClusters         func() map[string]cluster.Cluster
 	addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error
+	clusterHealth       *clusterHealthTracker
 }
 
 func (m *raftManager) AddOrReplaceCluster(ctx context.Context, clusterName string, cl cluster.Cluster) error {
@@ -605,6 +618,13 @@ func (m *raftManager) Health(req *http.Request) error {
 	return m.manager.Health(req)
 }
 
+func (m *raftManager) IsClusterReachable(clusterName string) bool {
+	if m.clusterHealth == nil {
+		return true
+	}
+	return m.clusterHealth.IsReachable(clusterName)
+}
+
 func newManager(localClusterName string, localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, broadcaster *restartBroadcaster, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
 	mgr, err := mcmanager.New(config, provider, opts)
 	if err != nil {
@@ -622,7 +642,11 @@ func newManager(localClusterName string, localLeaderElection bool, logger logr.L
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
-	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger.WithName("raft-manager"), localClusterName: localClusterName, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster}, nil
+
+	healthTracker := newClusterHealthTracker(logger, getClusters)
+	manager.RegisterRoutine(healthTracker.Start)
+
+	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger.WithName("raft-manager"), localClusterName: localClusterName, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster, clusterHealth: healthTracker}, nil
 }
 
 func (m *raftManager) Add(r mcmanager.Runnable) error {

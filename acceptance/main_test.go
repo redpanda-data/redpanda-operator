@@ -46,6 +46,13 @@ var (
 	imageTag  = "dev"
 )
 
+func init() {
+	// Register harpoon's CLI flags so they are available when the Go test
+	// framework calls flag.Parse() inside testing.M.Run(). SuiteBuilderFromFlags
+	// is called lazily inside setupSuite which runs after flag.Parse().
+	framework.RegisterFlags()
+}
+
 func getSuite(t *testing.T) *framework.Suite {
 	suite, err := setupSuite()
 	require.NoError(t, err)
@@ -75,6 +82,8 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"redpandadata/redpanda-operator:v25.3.1",
 			"redpandadata/redpanda:v25.1.1",
 			"redpandadata/redpanda:v25.2.1",
+			// Image used by ghost node ejection feature.
+			"redpandadata/redpanda:v26.1.5",
 			// Images used by upgrade and upgrade-regressions features.
 			"redpandadata/redpanda:v25.2.11",
 			"redpandadata/redpanda-unstable:v25.3.1-rc4",
@@ -127,6 +136,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			dumpSharedOperatorLogs(ctx, t)
 		}).
 		RegisterTag("cluster", 2, ClusterTag).
+		RegisterGroup("multicluster", "multicluster").
 		ExitOnCleanupFailures()
 
 	if testutil.MultiClusterSetupOnly() {
