@@ -72,6 +72,18 @@ const (
 	// for which there's no change event we can latch onto).
 	periodicRequeue = 3 * time.Minute
 
+	// defaultReconcileTimeout is a defense-in-depth ceiling on a single
+	// reconcile pass when the reconciler struct leaves ReconcileTimeout at
+	// zero. The preferred discipline is that every downstream call sets its
+	// own context timeout; this wrapper exists because the reconciler
+	// fans out to many external endpoints (peer K8s API, admin API,
+	// etc.) and we've found several sites that historically had no bound
+	// of their own. On deadline, the reconcile aborts with
+	// context.DeadlineExceeded and controller-runtime requeues with
+	// backoff. Sized to comfortably exceed a healthy p99 reconcile
+	// (sub-second today) so healthy passes never hit it.
+	defaultReconcileTimeout = 2 * time.Minute
+
 	// the message when a cluster has no desired brokers
 	messageNoBrokers = "Cluster has no desired brokers"
 )

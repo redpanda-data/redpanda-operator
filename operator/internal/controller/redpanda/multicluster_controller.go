@@ -70,6 +70,24 @@ type MulticlusterReconciler struct {
 	LifecycleClient *lifecycle.ResourceClient[lifecycle.StretchClusterWithPools, *lifecycle.StretchClusterWithPools]
 	ClientFactory   internalclient.ClientFactory
 	UseNodePools    bool
+
+	// ReconcileTimeout is a defense-in-depth ceiling on the wall time of a
+	// single reconcile pass — the primary mechanism is per-call timeouts
+	// on individual downstream clients. Zero (the default) applies
+	// defaultReconcileTimeout; ops may override via the operator's
+	// --reconcile-timeout flag, and tests may inject shorter values to
+	// exercise the deadline path without real latency.
+	ReconcileTimeout time.Duration
+}
+
+// reconcileDeadline returns the timeout to apply on the reconcile context.
+// Extracted from Reconcile so tests can cover the zero/override fallback
+// without standing up a full MulticlusterReconciler.
+func (r *MulticlusterReconciler) reconcileDeadline() time.Duration {
+	if r.ReconcileTimeout > 0 {
+		return r.ReconcileTimeout
+	}
+	return defaultReconcileTimeout
 }
 
 type stretchClusterReconciliationState struct {
@@ -93,6 +111,15 @@ type stretchClusterReconciliationFn func(ctx context.Context, state *stretchClus
 func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (result ctrl.Result, err error) {
 	start := time.Now()
 	l := log.FromContext(ctx).WithName("MulticlusterReconciler.Reconcile")
+
+	// Defense-in-depth ceiling on the reconcile pass. The primary line of
+	// defense is per-call timeouts on each downstream (admin API, peer K8s
+	// API, etc.); this wrapper catches anything we've missed. Healthy
+	// reconciles finish in well under a second, so the default 2-minute
+	// budget does not affect normal operation. See defaultReconcileTimeout
+	// for sizing rationale.
+	ctx, cancel := context.WithTimeout(ctx, r.reconcileDeadline())
+	defer cancel()
 
 	l.V(1).Info("Starting reconcile loop")
 	defer func() {
@@ -1338,7 +1365,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -1350,9 +1377,10 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		mcbuilder.WithEngageWithProviderClusters(true)).
 		Complete(
 			&MulticlusterReconciler{
-				Manager:         mgr,
-				LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
-				ClientFactory:   factory,
+				Manager:          mgr,
+				LifecycleClient:  lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+				ClientFactory:    factory,
+				ReconcileTimeout: reconcileTimeout,
 			},
 		)
 }
