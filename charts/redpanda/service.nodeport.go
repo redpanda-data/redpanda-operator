@@ -28,9 +28,15 @@ func NodePortService(state *RenderState) *corev1.Service {
 		return nil
 	}
 
+	gwEnabled := state.Values.External.IsGatewayEnabled()
+
 	var ports []corev1.ServicePort
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
 		if !listener.IsEnabled() {
+			continue
+		}
+		// Skip listeners that opted into Gateway API TLSRoute mode.
+		if gwEnabled && listener.IsGatewayListener() {
 			continue
 		}
 
@@ -51,6 +57,9 @@ func NodePortService(state *RenderState) *corev1.Service {
 		if !listener.IsEnabled() {
 			continue
 		}
+		if gwEnabled && listener.IsGatewayListener() {
+			continue
+		}
 
 		nodePort := listener.Port
 		if len(listener.AdvertisedPorts) > 0 {
@@ -67,6 +76,9 @@ func NodePortService(state *RenderState) *corev1.Service {
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
 		if !listener.IsEnabled() {
+			continue
+		}
+		if gwEnabled && listener.IsGatewayListener() {
 			continue
 		}
 
@@ -87,6 +99,9 @@ func NodePortService(state *RenderState) *corev1.Service {
 		if !listener.IsEnabled() {
 			continue
 		}
+		if gwEnabled && listener.IsGatewayListener() {
+			continue
+		}
 
 		nodePort := listener.Port
 		if len(listener.AdvertisedPorts) > 0 {
@@ -99,6 +114,11 @@ func NodePortService(state *RenderState) *corev1.Service {
 			Port:     listener.Port,
 			NodePort: nodePort,
 		})
+	}
+
+	// If all listeners opted into gateway mode, no NodePort service is needed.
+	if len(ports) == 0 {
+		return nil
 	}
 
 	annotations := state.Values.External.Annotations

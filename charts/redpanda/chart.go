@@ -24,6 +24,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
@@ -56,6 +57,7 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
+		&TLSRoute{},
 		&monitoringv1.PodMonitor{},
 		&monitoringv1.ServiceMonitor{},
 		&networkingv1.Ingress{},
@@ -72,6 +74,15 @@ func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
+	addTLSRouteToScheme(Scheme)
+}
+
+// addTLSRouteToScheme registers our lightweight TLSRoute type with a
+// runtime.Scheme so the test harness can decode it.
+// +gotohelm:ignore=true
+func addTLSRouteToScheme(s *runtime.Scheme) {
+	gv := schema.GroupVersion{Group: "gateway.networking.k8s.io", Version: "v1alpha2"}
+	s.AddKnownTypeWithName(gv.WithKind("TLSRoute"), &TLSRoute{})
 }
 
 // +gotohelm:ignore=true
@@ -164,6 +175,14 @@ func renderResources(state *RenderState) []kube.Object {
 	}
 
 	for _, obj := range LoadBalancerServices(state) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range GatewayServices(state) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range TLSRoutes(state) {
 		manifests = append(manifests, obj)
 	}
 

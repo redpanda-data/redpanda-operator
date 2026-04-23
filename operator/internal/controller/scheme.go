@@ -14,10 +14,12 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	mcsv1alpha1 "sigs.k8s.io/mcs-api/pkg/apis/v1alpha1"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -71,5 +73,12 @@ func init() {
 
 	for _, fn := range multiclusterSchemeFns {
 		utilruntime.Must(fn(MulticlusterScheme))
+	}
+
+	// Register the chart's lightweight TLSRoute type so the operator's
+	// scheme can decode TLSRoute objects rendered by the Helm chart.
+	tlsRouteGV := schema.GroupVersion{Group: "gateway.networking.k8s.io", Version: "v1alpha2"}
+	for _, s := range []*runtime.Scheme{V2Scheme, UnifiedScheme} {
+		s.AddKnownTypeWithName(tlsRouteGV.WithKind("TLSRoute"), &redpanda.TLSRoute{})
 	}
 }

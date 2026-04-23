@@ -230,7 +230,8 @@ echo "passed"`) -}}
 {{- $port = (index $externalVals.advertisedPorts $replicaIndex) -}}
 {{- end -}}
 {{- end -}}
-{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex)))) "r") -}}
+{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $port $replicaIndex (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.hostTemplate "")))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $externalVals)))) "r"))))) "r") -}}
+{{- $_ := (set $host "name" $externalName) -}}
 {{- $address := (toJson $host) -}}
 {{- $prefixTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.prefixTemplate "")))) "r") -}}
 {{- if (eq $prefixTemplate "") -}}
@@ -278,7 +279,8 @@ echo "passed"`) -}}
 {{- $port = (index $externalVals.advertisedPorts $replicaIndex) -}}
 {{- end -}}
 {{- end -}}
-{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex)))) "r") -}}
+{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $port $replicaIndex (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.hostTemplate "")))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $externalVals)))) "r"))))) "r") -}}
+{{- $_ := (set $host "name" $externalName) -}}
 {{- $address := (toJson $host) -}}
 {{- $prefixTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.prefixTemplate "")))) "r") -}}
 {{- if (eq $prefixTemplate "") -}}
@@ -341,12 +343,19 @@ echo "passed"`) -}}
 
 {{- define "redpanda.advertisedHostJSON" -}}
 {{- $state := (index .a 0) -}}
-{{- $externalName := (index .a 1) -}}
-{{- $port := (index .a 2) -}}
-{{- $replicaIndex := (index .a 3) -}}
+{{- $port := (index .a 1) -}}
+{{- $replicaIndex := (index .a 2) -}}
+{{- $host := (index .a 3) -}}
+{{- $hostTemplate := (index .a 4) -}}
+{{- $isGateway := (index .a 5) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $host := (dict "name" $externalName "address" (get (fromJson (include "redpanda.externalAdvertiseAddress" (dict "a" (list $state)))) "r") "port" $port) -}}
+{{- if (and (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r") $isGateway) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "redpanda.advertisedHostJSONGateway" (dict "a" (list $state $replicaIndex $host $hostTemplate)))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $hostMap := (dict "name" "" "address" (get (fromJson (include "redpanda.externalAdvertiseAddress" (dict "a" (list $state)))) "r") "port" $port) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.external.addresses)))) "r") | int) (0 | int)) -}}
 {{- $address := "" -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.external.addresses)))) "r") | int) (1 | int)) -}}
@@ -356,13 +365,43 @@ echo "passed"`) -}}
 {{- end -}}
 {{- $domain_5 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
 {{- if (ne $domain_5 "") -}}
-{{- $host = (dict "name" $externalName "address" (printf "%s.%s" $address (tpl $domain_5 $state.Dot)) "port" $port) -}}
+{{- $hostMap = (dict "name" "" "address" (printf "%s.%s" $address (tpl $domain_5 $state.Dot)) "port" $port) -}}
 {{- else -}}
-{{- $host = (dict "name" $externalName "address" $address "port" $port) -}}
+{{- $hostMap = (dict "name" "" "address" $address "port" $port) -}}
 {{- end -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $host) | toJson -}}
+{{- (dict "r" $hostMap) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.advertisedHostJSONGateway" -}}
+{{- $state := (index .a 0) -}}
+{{- $replicaIndex := (index .a 1) -}}
+{{- $host := (index .a 2) -}}
+{{- $hostTemplate := (index .a 3) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $gw := $state.Values.external.gateway -}}
+{{- $port := ((get (fromJson (include "redpanda.GatewayConfig.GatewayAdvertisedPort" (dict "a" (list $gw)))) "r") | int) -}}
+{{- if (eq $hostTemplate "") -}}
+{{- $hostTemplate = $host -}}
+{{- end -}}
+{{- $pods := (get (fromJson (include "redpanda.PodNames" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
+{{- range $_, $set := $state.Pools -}}
+{{- $pods = (concat (default (list) $pods) (default (list) (get (fromJson (include "redpanda.PodNames" (dict "a" (list $state $set)))) "r"))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $podName := "" -}}
+{{- if (lt $replicaIndex ((get (fromJson (include "_shims.len" (dict "a" (list $pods)))) "r") | int)) -}}
+{{- $podName = (index $pods $replicaIndex) -}}
+{{- end -}}
+{{- $address := (get (fromJson (include "redpanda.renderBrokerHost" (dict "a" (list $hostTemplate $replicaIndex $podName)))) "r") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (dict "name" "" "address" $address "port" $port)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
