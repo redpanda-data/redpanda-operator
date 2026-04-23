@@ -530,7 +530,8 @@ func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object, clusterNa
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV1() {
 			var cluster vectorizedv1alpha1.Cluster
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			ns := ref.GetNamespace(obj.GetNamespace())
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ns, Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -558,7 +559,8 @@ func (c *Factory) getRemoteV1Cluster(ctx context.Context, obj client.Object, clu
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			ns := ref.GetNamespace(obj.GetNamespace())
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ns, Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -587,7 +589,8 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			ns := ref.GetNamespace(obj.GetNamespace())
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ns, Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -616,7 +619,8 @@ func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object, clu
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			ns := ref.GetNamespace(obj.GetNamespace())
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ns, Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}

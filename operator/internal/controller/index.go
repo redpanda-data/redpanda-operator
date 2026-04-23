@@ -68,14 +68,18 @@ func indexByClusterSource(checkRef func(*redpandav1alpha2.ClusterRef) bool) func
 
 		clusters := []string{}
 		if source != nil && source.ClusterRef != nil && checkRef(source.ClusterRef) {
-			cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: source.ClusterRef.Name}
+			// Use the ClusterRef namespace if set, otherwise default to the
+			// referencing object's namespace.
+			ns := source.ClusterRef.GetNamespace(clusterReferencingObject.GetNamespace())
+			cluster := types.NamespacedName{Namespace: ns, Name: source.ClusterRef.Name}
 			clusters = append(clusters, cluster.String())
 		}
 
 		if remoteClusterReferencingObject, ok := o.(redpandav1alpha2.RemoteClusterReferencingObject); ok {
 			remoteSource := remoteClusterReferencingObject.GetRemoteClusterSource()
-			if remoteSource != nil && remoteSource.ClusterRef != nil && checkRef(source.ClusterRef) {
-				cluster := types.NamespacedName{Namespace: clusterReferencingObject.GetNamespace(), Name: remoteSource.ClusterRef.Name}
+			if remoteSource != nil && remoteSource.ClusterRef != nil && checkRef(remoteSource.ClusterRef) {
+				ns := remoteSource.ClusterRef.GetNamespace(clusterReferencingObject.GetNamespace())
+				cluster := types.NamespacedName{Namespace: ns, Name: remoteSource.ClusterRef.Name}
 				clusters = append(clusters, cluster.String())
 			}
 		}

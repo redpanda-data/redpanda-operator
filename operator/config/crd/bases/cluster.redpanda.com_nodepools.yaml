@@ -78,6 +78,13 @@ spec:
                   name:
                     description: Name specifies the name of the cluster being referenced.
                     type: string
+                  namespace:
+                    description: |-
+                      Namespace optionally specifies the namespace of the cluster being
+                      referenced. When set, allows referencing a cluster in a different
+                      namespace from the resource. Requires the operator to be running in
+                      global scope mode (without --namespace flag).
+                    type: string
                 required:
                 - name
                 type: object

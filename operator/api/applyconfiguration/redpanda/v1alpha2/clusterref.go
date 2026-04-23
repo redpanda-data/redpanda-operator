@@ -14,9 +14,10 @@ package v1alpha2
 // ClusterRefApplyConfiguration represents a declarative configuration of the ClusterRef type for use
 // with apply.
 type ClusterRefApplyConfiguration struct {
-	Group *string `json:"group,omitempty"`
-	Kind  *string `json:"kind,omitempty"`
-	Name  *string `json:"name,omitempty"`
+	Group     *string `json:"group,omitempty"`
+	Kind      *string `json:"kind,omitempty"`
+	Name      *string `json:"name,omitempty"`
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 // ClusterRefApplyConfiguration constructs a declarative configuration of the ClusterRef type for use with
@@ -46,5 +47,13 @@ func (b *ClusterRefApplyConfiguration) WithKind(value string) *ClusterRefApplyCo
 // If called multiple times, the Name field is set to the value of the last call.
 func (b *ClusterRefApplyConfiguration) WithName(value string) *ClusterRefApplyConfiguration {
 	b.Name = &value
+	return b
+}
+
+// WithNamespace sets the Namespace field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Namespace field is set to the value of the last call.
+func (b *ClusterRefApplyConfiguration) WithNamespace(value string) *ClusterRefApplyConfiguration {
+	b.Namespace = &value
 	return b
 }
