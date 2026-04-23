@@ -24,6 +24,7 @@ func Command() *cobra.Command {
 
 	cmd.AddCommand(
 		multicluster.Command(),
+		versionCommand(),
 	)
 
 	return cmd
