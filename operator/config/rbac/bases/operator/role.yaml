@@ -164,6 +164,7 @@ rules:
   - consoles/status
   - groups/status
   - nodepools/status
+  - pipelines/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -179,6 +180,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - groups
+  - pipelines
   - redpandaroles
   - schemas
   - shadowlinks
@@ -196,6 +198,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - pipelines/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers

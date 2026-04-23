@@ -22,6 +22,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
@@ -93,6 +94,8 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"quay.io/jetstack/cert-manager-webhook:" + testutil.CertManagerVersion,
 			"ghcr.io/loft-sh/kubernetes:v1.33.4",
 			"ghcr.io/loft-sh/vcluster-pro:" + testutil.GetVClusterImageTag(),
+			// Connect image used by pipeline-crds feature.
+			redpandav1alpha2.PipelineDefaultImage,
 		}...).
 		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install)
 
@@ -214,31 +217,68 @@ func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
 		return err
 	}
 
+	values := operatorchart.PartialValues{
+		LogLevel: ptr.To("trace"),
+		Image: &operatorchart.PartialImage{
+			Tag:        ptr.To(imageTag),
+			Repository: ptr.To(imageRepo),
+		},
+		CRDs: &operatorchart.PartialCRDs{
+			Enabled:      ptr.To(true),
+			Experimental: ptr.To(true),
+		},
+		VectorizedControllers: &operatorchart.PartialVectorizedControllers{
+			Enabled: ptr.To(true),
+		},
+		ConnectController: &operatorchart.PartialConnectController{
+			Enabled: ptr.To(true),
+		},
+		AdditionalCmdFlags: []string{
+			"--configurator-image-pull-policy=IfNotPresent",
+			"--additional-controllers=nodeWatcher,decommission",
+			"--unbind-pvcs-after=5s",
+			"--cluster-connection-timeout=500ms",
+			"--enable-shadowlinks",
+		},
+	}
+
+	// If an enterprise license is available, create a secret and configure
+	// the operator to use it. This is required for the Pipeline (Connect)
+	// controller which validates the license on every reconcile.
+	if license := os.Getenv(steps.LicenseEnvVar); license != "" {
+		c, err := client.New(restConfig, client.Options{})
+		if err != nil {
+			return err
+		}
+		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: sharedOperatorNamespace}}
+		if err := c.Create(ctx, ns); err != nil && !strings.Contains(err.Error(), "already exists") {
+			return err
+		}
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "redpanda-license",
+				Namespace: sharedOperatorNamespace,
+			},
+			Data: map[string][]byte{
+				"redpanda.license": []byte(license),
+			},
+		}
+		if err := c.Create(ctx, secret); err != nil && !strings.Contains(err.Error(), "already exists") {
+			return err
+		}
+		values.Enterprise = &operatorchart.PartialEnterprise{
+			LicenseSecretRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "redpanda-license"},
+				Key:                  "redpanda.license",
+			},
+		}
+	}
+
 	_, err = helmClient.Install(ctx, "../operator/chart", helm.InstallOptions{
 		Name:            "redpanda-operator",
 		Namespace:       sharedOperatorNamespace,
 		CreateNamespace: true,
-		Values: operatorchart.PartialValues{
-			LogLevel: ptr.To("trace"),
-			Image: &operatorchart.PartialImage{
-				Tag:        ptr.To(imageTag),
-				Repository: ptr.To(imageRepo),
-			},
-			CRDs: &operatorchart.PartialCRDs{
-				Enabled:      ptr.To(true),
-				Experimental: ptr.To(true),
-			},
-			VectorizedControllers: &operatorchart.PartialVectorizedControllers{
-				Enabled: ptr.To(true),
-			},
-			AdditionalCmdFlags: []string{
-				"--configurator-image-pull-policy=IfNotPresent",
-				"--additional-controllers=nodeWatcher,decommission",
-				"--unbind-pvcs-after=5s",
-				"--cluster-connection-timeout=500ms",
-				"--enable-shadowlinks",
-			},
-		},
+		Values:          values,
 	})
 	// Tolerate "already installed" errors from rerun-fails retries where
 	// the operator was installed in the first run.

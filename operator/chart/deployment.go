@@ -345,9 +345,38 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--configurator-tag":              containerTag(dot),
 		"--configurator-base-image":       values.Image.Repository,
 		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
+		"--enable-connect":                fmt.Sprintf("%t", values.ConnectController.Enabled),
+		"--connect-monitoring-enabled":    fmt.Sprintf("%t", values.ConnectController.Monitoring.Enabled),
+	}
+
+	if values.ConnectController.Monitoring.ScrapeInterval != "" {
+		defaults["--connect-monitoring-scrape-interval"] = values.ConnectController.Monitoring.ScrapeInterval
+	}
+
+	if len(values.ConnectController.Monitoring.Labels) > 0 {
+		labelArg := ""
+		for key, value := range helmette.SortedMap(values.ConnectController.Monitoring.Labels) {
+			if labelArg != "" {
+				labelArg = labelArg + ","
+			}
+			labelArg = labelArg + fmt.Sprintf("%s=%s", key, value)
+		}
+		defaults["--connect-monitoring-labels"] = labelArg
 	}
 
 	addLicenseFilePathArg(defaults, values)
+
+	if len(values.CommonAnnotations) > 0 {
+		// Build comma-separated key=value pairs for --common-annotations flag.
+		annotationArg := ""
+		for key, value := range helmette.SortedMap(values.CommonAnnotations) {
+			if annotationArg != "" {
+				annotationArg = annotationArg + ","
+			}
+			annotationArg = annotationArg + fmt.Sprintf("%s=%s", key, value)
+		}
+		defaults["--common-annotations"] = annotationArg
+	}
 
 	if values.Webhook.Enabled {
 		defaults["--webhook-cert-path"] = webhookCertificatePath

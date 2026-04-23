@@ -144,10 +144,29 @@ additionalCmdFlags: []
 # For example, `my.k8s.service: redpanda-operator`.
 commonLabels: {}
 
+# -- Additional annotations to add to all resources managed by the operator.
+# Useful for satisfying OPA Gatekeeper RequiredAnnotations constraints.
+# For example, `owner: "platform-team@example.com"`.
+commonAnnotations: {}
+
 # @ignored
 # Enables controllers for the Resources in the Vectorized group.
 vectorizedControllers:
   enabled: false
+
+# -- Enables the Redpanda Connect controller for managing Connect pipeline CRs.
+# Pipelines still require an enterprise license with the CONNECT product on each CR.
+connectController:
+  enabled: false
+  # -- Monitoring configuration for Connect pipeline pods.
+  monitoring:
+    # -- Enables PodMonitor creation for all Connect pipelines.
+    # Requires the Prometheus Operator CRDs (monitoring.coreos.com) to be installed.
+    enabled: false
+    # -- Prometheus scrape interval for pipeline PodMonitors.
+    # scrapeInterval: "30s"
+    # -- Additional labels to add to pipeline PodMonitors.
+    # labels: {}
 
 # -- Configuration for monitoring.
 monitoring:

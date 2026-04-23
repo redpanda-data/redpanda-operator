@@ -611,6 +611,12 @@
     "clusterDomain": {
       "type": "string"
     },
+    "commonAnnotations": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
     "commonLabels": {
       "additionalProperties": {
         "type": "string"
@@ -661,6 +667,33 @@
           "properties": {
             "port": {
               "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "connectController": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "monitoring": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "labels": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "scrapeInterval": {
+              "type": "string"
             }
           },
           "type": "object"

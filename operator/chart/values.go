@@ -67,6 +67,7 @@ type Values struct {
 	PodLabels             map[string]string             `json:"podLabels"`
 	AdditionalCmdFlags    []string                      `json:"additionalCmdFlags"`
 	CommonLabels          map[string]string             `json:"commonLabels"`
+	CommonAnnotations     map[string]string             `json:"commonAnnotations"`
 	Monitoring            MonitoringConfig              `json:"monitoring"`
 	WebhookSecretName     string                        `json:"webhookSecretName"`
 	PodTemplate           *PodTemplateSpec              `json:"podTemplate,omitempty"`
@@ -74,11 +75,23 @@ type Values struct {
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
+	ConnectController     ConnectController             `json:"connectController"`
 	Multicluster          Multicluster                  `json:"multicluster"`
 }
 
 type VectorizedControllers struct {
 	Enabled bool `json:"enabled"`
+}
+
+type ConnectMonitoringConfig struct {
+	Enabled        bool              `json:"enabled"`
+	ScrapeInterval string            `json:"scrapeInterval,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
+}
+
+type ConnectController struct {
+	Enabled    bool                    `json:"enabled"`
+	Monitoring ConnectMonitoringConfig `json:"monitoring"`
 }
 
 type CRDs struct {

@@ -167,6 +167,15 @@ func init() {
 	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
 	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
 
+	// Pipeline scenario steps
+	framework.RegisterStep(`^pipeline "([^"]*)" is successfully running$`, pipelineIsSuccessfullyRunning)
+	framework.RegisterStep(`^pipeline "([^"]*)" is stopped$`, pipelineIsStopped)
+	framework.RegisterStep(`^I delete the CRD pipeline "([^"]*)"$`, iDeleteTheCRDPipeline)
+	framework.RegisterStep(`^pipeline "([^"]*)" does not exist$`, pipelineDoesNotExist)
+	framework.RegisterStep(`^pipeline "([^"]*)" has invalid config$`, pipelineHasInvalidConfig)
+	framework.RegisterStep(`^topic "([^"]*)" has messages in cluster "([^"]*)"$`, topicHasMessagesInCluster)
+	framework.RegisterStep(`^I produce messages to "([^"]*)" in cluster "([^"]*)"$`, iProduceMessagesToTopicInCluster)
+
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 }

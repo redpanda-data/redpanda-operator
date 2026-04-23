@@ -136,3 +136,29 @@ multicluster:
 enterprise:
   licenseSecretRef:
     name: my-secret
+
+-- connect-controller-enabled --
+connectController:
+  enabled: true
+
+-- connect-controller-with-license --
+connectController:
+  enabled: true
+enterprise:
+  licenseSecretRef:
+    name: redpanda-license
+    key: license
+
+-- common-annotations --
+commonAnnotations:
+  owner: "platform-team@example.com"
+  environment: "production"
+
+-- connect-monitoring-enabled --
+connectController:
+  enabled: true
+  monitoring:
+    enabled: true
+    scrapeInterval: "30s"
+    labels:
+      team: platform
