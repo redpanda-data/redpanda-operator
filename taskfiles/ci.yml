@@ -141,6 +141,39 @@ tasks:
       - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR | base}}.tar.gz"
       - buildkite-agent artifact upload "{{.SRC_DIR}}/operator/{{.KUTTL_ARTIFACTS_DIR}}/kuttl-report.xml"
 
+  build:rpk-k8s:
+    desc: "Build the rpk-k8s plugin binary for multiple OS/arch combinations"
+    vars:
+      # Platforms to build the rpk-k8s binary for. Each entry must be in
+      # `<goos>/<goarch>` form. Callers can override by passing PLATFORMS as
+      # a task variable.
+      PLATFORMS: '{{ .PLATFORMS | default "linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64" }}'
+      # Bake OPERATOR_VERSION (not a git tag) into the binary so `rpk k8s version`
+      # reports the same version that stamps the operator image.
+      LD_FLAGS: >-
+        -X "google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=ignore"
+        -X "github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s.Version={{.OPERATOR_VERSION}}"
+        -X "github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s.commit={{.COMMIT}}"
+        -X "github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s.buildDate={{.TIMESTAMP}}"
+    cmds:
+      - |
+        set -euo pipefail
+        for platform in {{.PLATFORMS}}; do
+          goos="${platform%/*}"
+          goarch="${platform#*/}"
+          ext=""
+          if [ "$goos" = "windows" ]; then
+            ext=".exe"
+          fi
+          out="{{.BUILD_ROOT}}/rpk-k8s-${goos}-${goarch}${ext}"
+          echo "Building rpk-k8s for ${goos}/${goarch} -> ${out}"
+          CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+            go build -C ./operator \
+            -o "${out}" \
+            -ldflags='{{.LD_FLAGS}}' \
+            ./cmd/rpk-k8s
+        done
+
   publish-operator-image:
     deps:
       - :dev:create-buildx-builder

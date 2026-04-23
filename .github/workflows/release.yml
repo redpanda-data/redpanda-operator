@@ -85,6 +85,34 @@ jobs:
           echo "packaging chart at $chart_path"
           helm package -u --version "$version" "$(dirname "$chart_path")"
 
+      - name: build rpk-k8s binaries
+        continue-on-error: true
+        run: |
+          set -ex
+          tag="${{ steps.get_ref.outputs.ref_name }}"
+          # OPERATOR_VERSION — baked into the rpk-k8s binary via ldflags — is
+          # only meaningful for operator/v* tags, so skip for any other tag.
+          if [[ "$tag" != operator/v* ]]; then
+            echo "tag $tag is not an operator tag. skipping rpk-k8s build."
+            exit 0
+          fi
+
+          nix develop -c task ci:build:rpk-k8s
+
+          # Package each architecture's binary as its own tar.gz so the
+          # "create github release" step picks them up via the ./*.tar.gz glob.
+          version="$(basename "$tag")"
+          for bin in .build/rpk-k8s-*; do
+            [[ -f "$bin" ]] || continue
+            name="$(basename "$bin")"
+            # Use the binary's base name (without .exe) for the archive name
+            # so `rpk-k8s-windows-amd64.exe` becomes
+            # `rpk-k8s-windows-amd64-<version>.tar.gz` but still contains the
+            # .exe inside.
+            archive_base="${name%.exe}"
+            tar -czf "${archive_base}-${version}.tar.gz" -C .build "$name"
+          done
+
       - name: reformat change log
         run: |
           # Our CHANGE LOGS begin with '## VERSION - DATE', which is
@@ -105,6 +133,7 @@ jobs:
           # if a chart was packaged, we'll upload it to this release preserving helm's naming convention.
           files: |
             ./*.tgz
+            ./*.tar.gz
 
       # Trigger a workflow in the helm-charts repo to update the gh-pages index.yaml.
       # https://github.com/redpanda-data/helm-charts/blob/main/.github/workflows/release_from_operator.yaml
