@@ -83,6 +83,8 @@ type MulticlusterOptions struct {
 	UnbindPVCsAfter  time.Duration
 	AllowPVRebinding bool
 	UnbinderSelector pflagutil.LabelSelectorValue
+
+	ClusterConnectionTimeout time.Duration
 }
 
 func (o *MulticlusterOptions) validate() error {
@@ -174,6 +176,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.UnbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().BoolVar(&o.AllowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
 	cmd.Flags().Var(&o.UnbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
+	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
 }
 
 func Command() *cobra.Command {
@@ -341,7 +344,7 @@ func Run(
 		Tag:        opts.BaseTag,
 	}
 
-	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(10 * time.Second)
+	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
 	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
