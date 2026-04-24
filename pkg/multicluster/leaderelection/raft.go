@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 
 	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
@@ -36,11 +37,30 @@ type peer struct {
 	client transportv1.TransportServiceClient
 }
 
+// raftKeepaliveParams are baseline HTTP/2 keepalive settings applied to every
+// peer gRPC connection. Without these, a silently black-holed TCP link (no
+// RST, packets dropped) would keep the connection "open" until the Linux TCP
+// retransmit ceiling (tcp_retries2 ≈ 15 minutes by default) and every
+// subsequent DoSend from the raft Ready loop would block on that orphan
+// stream. The keepalive closes the stream within Time + Timeout of the first
+// missed pong and a fresh connection is dialed on the next send, so the raft
+// loop recovers quickly even when the peer's TCP stack never notifies us.
+var raftKeepaliveParams = keepalive.ClientParameters{
+	Time:                10 * time.Second, // send a ping every 10s on idle
+	Timeout:             3 * time.Second,  // close if no pong in 3s
+	PermitWithoutStream: true,             // ping even when no active streams
+}
+
 func newPeer(addr string, credentials credentials.TransportCredentials, extraOpts ...grpc.DialOption) (*peer, error) {
 	if credentials == nil {
 		credentials = insecure.NewCredentials()
 	}
-	opts := append([]grpc.DialOption{grpc.WithTransportCredentials(credentials)}, extraOpts...)
+	// Baseline options first; caller-supplied extraOpts can override.
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(credentials),
+		grpc.WithKeepaliveParams(raftKeepaliveParams),
+	}
+	opts = append(opts, extraOpts...)
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err
