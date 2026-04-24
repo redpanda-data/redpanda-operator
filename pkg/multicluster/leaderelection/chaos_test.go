@@ -144,9 +144,6 @@ ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 // in place so it will automatically start passing once the per-peer
 // fan-out work lands (see the fix PR for finding #1).
 func TestLeaderSurvives_AsymmetricSilentDropOnOnePeer(t *testing.T) {
-	t.Skip("known failure — see finding #1 in the resilience memo; " +
-		"expected to pass once the per-peer fan-out fix lands in the raft transport")
-
 // Wire a BlockIngress control into each node's TestHooks; we'll only
 	// flip the one on the isolated follower.
 	hooks := make([]*TestHooks, 3)
