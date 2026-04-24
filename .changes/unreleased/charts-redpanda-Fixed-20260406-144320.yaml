@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Fixed
-body: Fixed issue with ballast file tuning where the tuning container didn't mount the proper directory needed for propagating the ballast file to the main container.
-time: 2026-04-06T14:43:20.320504-04:00
