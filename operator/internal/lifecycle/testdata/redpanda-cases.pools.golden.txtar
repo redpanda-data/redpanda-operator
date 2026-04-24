@@ -10,7 +10,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.1.2
+      helm.sh/chart: redpanda-26.1.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -34,7 +34,7 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-26.1.2
+          helm.sh/chart: redpanda-26.1.3
           redpanda.com/poddisruptionbudget: basic-test
       spec:
         affinity:
@@ -71,7 +71,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.1.2
+            value: 26.1.3
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -165,7 +165,7 @@
           - basic-test
           - --redpanda-cluster-name
           - basic-test
-          - --selector=helm.sh/chart=redpanda-26.1.2,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=basic-test
+          - --selector=helm.sh/chart=redpanda-26.1.3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).basic-test.basic-test.svc.cluster.local.:9644
@@ -386,7 +386,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.1.2
+      helm.sh/chart: redpanda-26.1.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test
@@ -410,7 +410,7 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-26.1.2
+          helm.sh/chart: redpanda-26.1.3
           redpanda.com/poddisruptionbudget: compat-test
       spec:
         affinity:
@@ -447,7 +447,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.1.2
+            value: 26.1.3
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -541,7 +541,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-          - --selector=helm.sh/chart=redpanda-26.1.2,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
+          - --selector=helm.sh/chart=redpanda-26.1.3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -742,7 +742,7 @@
       cluster.redpanda.com/nodepool-name: pool
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.1.2
+      helm.sh/chart: redpanda-26.1.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-pool
@@ -768,7 +768,7 @@
           azure.workload.identity/use: "true"
           cloud.redpanda.com/network-loadbalancer-access: "true"
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-26.1.2
+          helm.sh/chart: redpanda-26.1.3
           redpanda.com/poddisruptionbudget: compat-test
       spec:
         affinity:
@@ -825,7 +825,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.1.2
+            value: 26.1.3
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -919,7 +919,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-          - --selector=helm.sh/chart=redpanda-26.1.2,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
+          - --selector=helm.sh/chart=redpanda-26.1.3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -1198,7 +1198,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.1.2
+      helm.sh/chart: redpanda-26.1.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled
@@ -1222,7 +1222,7 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-26.1.2
+          helm.sh/chart: redpanda-26.1.3
           redpanda.com/poddisruptionbudget: console-disabled
       spec:
         affinity:
@@ -1259,7 +1259,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.1.2
+            value: 26.1.3
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -1353,7 +1353,7 @@
           - console-disabled
           - --redpanda-cluster-name
           - console-disabled
-          - --selector=helm.sh/chart=redpanda-26.1.2,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=console-disabled
+          - --selector=helm.sh/chart=redpanda-26.1.3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=console-disabled
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).console-disabled.console-disabled.svc.cluster.local.:9644
@@ -1574,7 +1574,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.1.2
+      helm.sh/chart: redpanda-26.1.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test
@@ -1598,7 +1598,7 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-26.1.2
+          helm.sh/chart: redpanda-26.1.3
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -1635,7 +1635,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.1.2
+            value: 26.1.3
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -1729,7 +1729,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-          - --selector=helm.sh/chart=redpanda-26.1.2,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
+          - --selector=helm.sh/chart=redpanda-26.1.3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -1951,7 +1951,7 @@
       cluster.redpanda.com/nodepool-name: basic-a
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.1.2
+      helm.sh/chart: redpanda-26.1.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-basic-a
@@ -1975,7 +1975,7 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-26.1.2
+          helm.sh/chart: redpanda-26.1.3
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -2012,7 +2012,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.1.2
+            value: 26.1.3
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -2106,7 +2106,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-          - --selector=helm.sh/chart=redpanda-26.1.2,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
+          - --selector=helm.sh/chart=redpanda-26.1.3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -2327,7 +2327,7 @@
       cluster.redpanda.com/nodepool-name: basic-b
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.1.2
+      helm.sh/chart: redpanda-26.1.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-basic-b
@@ -2351,7 +2351,7 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-          helm.sh/chart: redpanda-26.1.2
+          helm.sh/chart: redpanda-26.1.3
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -2388,7 +2388,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.1.2
+            value: 26.1.3
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -2482,7 +2482,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-          - --selector=helm.sh/chart=redpanda-26.1.2,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
+          - --selector=helm.sh/chart=redpanda-26.1.3,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644

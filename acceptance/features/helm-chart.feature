@@ -22,18 +22,18 @@ Feature: Redpanda Helm Chart
     When I stop the Node running Pod "bazquux-2"
     And Pod "bazquux-2" is eventually Pending
     Then Pod "bazquux-2" will eventually be Running
-    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list | sed -E 's/\s+/ /gm' | cut -d ' ' -f 1,6" will eventually output:
+    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list | sed -E 's/\s+/ /gm' | cut -d ' ' -f 1,6" will eventually output (in any order):
     ```
     ID MEMBERSHIP
     0 active
     1 active
     3 active
     ```
-    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list --include-decommissioned | sed -E 's/\s+/ /gm' | cut -d ' ' -f 1,6" will eventually output:
+    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list --include-decommissioned | sed -E 's/\s+/ /gm' | cut -d ' ' -f 1,6" will eventually output (in any order):
     ```
     ID MEMBERSHIP
     0 active
     1 active
-    3 active
     2 -
+    3 active
     ```

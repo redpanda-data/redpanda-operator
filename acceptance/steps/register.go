@@ -17,6 +17,7 @@ func init() {
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
 	framework.RegisterStep(`^I exec "([^"]+)" in a Pod matching "([^"]+)", it will output:$`, execInPodMatchingEventuallyMatches)
 	framework.RegisterStep(`^kubectl exec -it "([^"]+)" "([^"]+)" will eventually output:$`, execInPodEventuallyMatches)
+	framework.RegisterStep(`^kubectl exec -it "([^"]+)" "([^"]+)" will eventually output \(in any order\):$`, execInPodEventuallyMatchesUnordered)
 	framework.RegisterStep(`Pod "([^"]+)" (?:will|is) eventually(?: be)? (Running|Pending)`, podWillEventuallyBeInPhase)
 
 	framework.RegisterStep(`^I store "([^"]*)" of Kubernetes object with type "([^"]*)" and name "([^"]*)" as "([^"]*)"$`, recordVariable)
