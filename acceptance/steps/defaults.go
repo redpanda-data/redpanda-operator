@@ -10,7 +10,7 @@
 package steps
 
 var (
-	DefaultRedpandaRepo = "redpandadata/redpanda-unstable"
+	DefaultRedpandaRepo = "redpandadata/redpanda"
 	DefaultRedpandaTag  = "v26.1.6"
 
 	// OperatorNamespace is the namespace where the shared operator is installed.
