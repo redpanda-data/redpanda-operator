@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fixed an issue where in-use features from an enterprise cluster did not have deterministic sort order and could cause reconciliation storms due to status changes.
+time: 2026-04-23T22:47:19.373877-04:00
