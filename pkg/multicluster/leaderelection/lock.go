@@ -16,6 +16,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.etcd.io/raft/v3"
@@ -103,6 +104,13 @@ type TestHooks struct {
 	// OnSnapshotSent is called on the leader when a snapshot is sent to a
 	// follower after a MsgApp rejection. The argument is the target peer ID.
 	OnSnapshotSent func(to uint64)
+
+	// BlockIngress, when non-nil and true at call time, causes incoming
+	// Send/Check RPCs on this node to block until the caller's context is
+	// cancelled. Chaos tests use this to simulate a silently unresponsive
+	// peer without tearing down the TCP listener (which would cause
+	// immediate connection-refused errors — a different failure mode).
+	BlockIngress *atomic.Bool
 
 	// transport is set by run() so tests can inspect storage state.
 	transport *grpcTransport
@@ -309,6 +317,7 @@ func run(ctx context.Context, config LockConfiguration, transportCallback func(t
 	transport.localID = config.ID
 	if config.TestHooks != nil {
 		config.TestHooks.transport = transport
+		transport.testHooks = config.TestHooks
 	}
 
 	for node, address := range nodes {

@@ -144,6 +144,11 @@ type grpcTransport struct {
 	clientCredentials credentials.TransportCredentials
 	extraDialOptions  []grpc.DialOption
 
+	// testHooks is nil in production. Chaos tests wire it in via the
+	// LockConfiguration so they can inject faults (currently
+	// BlockIngress) without touching the production code path.
+	testHooks *TestHooks
+
 	logger raft.Logger
 
 	transportv1.UnimplementedTransportServiceServer
@@ -301,6 +306,10 @@ func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, e
 }
 
 func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) (*transportv1.SendResponse, error) {
+	if t.testHooks != nil && t.testHooks.BlockIngress != nil && t.testHooks.BlockIngress.Load() {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
 	if node := t.getNode(); node != nil {
 		var msg raftpb.Message
 		if err := msg.Unmarshal(req.Payload); err != nil {
@@ -364,6 +373,10 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 }
 
 func (t *grpcTransport) Check(ctx context.Context, req *transportv1.CheckRequest) (*transportv1.CheckResponse, error) {
+	if t.testHooks != nil && t.testHooks.BlockIngress != nil && t.testHooks.BlockIngress.Load() {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
 	leader := t.leader.Load()
 	isLeader := t.isLeader.Load()
 	if leader != 0 {
