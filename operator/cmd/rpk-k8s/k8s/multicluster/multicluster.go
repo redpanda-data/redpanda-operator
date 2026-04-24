@@ -23,6 +23,7 @@ func Command() *cobra.Command {
 	cmd.AddCommand(
 		bootstrapCommand(),
 		statusCommand(),
+		checkCommand(),
 	)
 
 	return cmd
