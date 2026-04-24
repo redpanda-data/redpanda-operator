@@ -14,6 +14,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -219,11 +220,48 @@ func execInPod(
 ) {
 	require.EventuallyWithT(t, func(collect *assert.CollectT) {
 		var stdout bytes.Buffer
-		require.NoError(collect, ctl.Exec(ctx, pod, kube.ExecOptions{
+		if !assert.NoError(collect, ctl.Exec(ctx, pod, kube.ExecOptions{
 			Command: []string{"sh", "-c", cmd},
 			Stdout:  &stdout,
-		}))
+		})) {
+			return
+		}
 
 		assert.Equal(collect, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
 	}, 5*time.Minute, 5*time.Second)
+}
+
+func execInPodEventuallyMatchesUnordered(
+	ctx context.Context,
+	t framework.TestingT,
+	podName string,
+	cmd string,
+	expected *godog.DocString,
+) {
+	ctl, err := kube.FromRESTConfig(t.RestConfig())
+	require.NoError(t, err)
+
+	pod, err := kube.Get[corev1.Pod](ctx, ctl, kube.ObjectKey{Namespace: t.Namespace(), Name: podName})
+	require.NoErrorf(t, err, "Pod with name %q not found", podName)
+
+	require.EventuallyWithT(t, func(collect *assert.CollectT) {
+		var stdout bytes.Buffer
+		if !assert.NoError(collect, ctl.Exec(ctx, pod, kube.ExecOptions{
+			Command: []string{"sh", "-c", cmd},
+			Stdout:  &stdout,
+		})) {
+			return
+		}
+
+		assert.Equal(collect, sortedLines(expected.Content), sortedLines(stdout.String()))
+	}, 5*time.Minute, 5*time.Second)
+}
+
+// sortedLines returns the lines of s sorted, with leading/trailing whitespace
+// trimmed from the block. Used for order-agnostic output comparisons so the
+// assertion renders as a normal string diff on failure.
+func sortedLines(s string) string {
+	lines := strings.Split(strings.TrimSpace(s), "\n")
+	sort.Strings(lines)
+	return strings.Join(lines, "\n")
 }
