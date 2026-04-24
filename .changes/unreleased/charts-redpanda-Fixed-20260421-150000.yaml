@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Fixed
-body: Fixed an issue where the bootstrap user password was not loaded from an externally-managed secret referenced via `auth.sasl.bootstrapUser.secretKeyRef`, causing SCRAM authentication to fail from the operator and other chart-owned clients.
-time: 2026-04-21T15:00:00.000000-04:00
