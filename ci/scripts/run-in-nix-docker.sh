@@ -32,6 +32,9 @@ fi
 # Spray and pray work is done, now we want to fail on errors.
 set -e
 
+VCLUSTER_STATE="${VCLUSTER_STATE:-/tmp/vcluster-ctl-config-vol}"
+mkdir -p "$VCLUSTER_STATE"
+
 # BUILDKITE environment variables are used by `buildkite-agent` cli to upload artifact
 printenv | { grep '^BUILDKITE.*=' || true; } > env-file-for-buildkite
 
@@ -67,10 +70,12 @@ docker run --rm -it \
 	-e ACCEPTANCE_ARTIFACTS_DIR \
 	-e INTEGRATION_ARTIFACTS_DIR \
 	-e REDPANDA_SAMPLE_LICENSE \
+	-e VCLUSTER_STATE="$VCLUSTER_STATE" \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \
 	--ipc=host \
 	--volume ${DOCKER_SOCKET:7}:/var/run/docker.sock \
 	--volume $(pwd):/work \
+	--volume "$VCLUSTER_STATE:$VCLUSTER_STATE" \
 	$IMAGE_SHA "$@"

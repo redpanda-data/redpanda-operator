@@ -359,7 +359,8 @@ tasks:
       DEFAULT_TEST_UPGRADE_REDPANDA_REPO: redpandadata/redpanda
       DEFAULT_TEST_UPGRADE_REDPANDA_VERSION: v24.3.11
       DEFAULT_TEST_UPGRADE_OPERATOR_VERSION: v2.3.9-24.3.11
-      DEFAULT_TEST_VCLUSTER_VERSION: 0.31.2
+      DEFAULT_TEST_VCLUSTER_VERSION: 0.33.1
+      DEFAULT_TEST_VCLUSTER_KUBE_VERSION: v1.35.0
       DEFAULT_TEST_KUBE_VERSION: v1.32.13
       DEFAULT_TEST_COREDNS_VERSION: 1.11.1
       TEST_CERTMANAGER_VERSION: '{{ .TEST_CERTMANAGER_VERSION | default .DEFAULT_TEST_CERTMANAGER_VERSION }}'
@@ -370,6 +371,7 @@ tasks:
       TEST_UPGRADE_REDPANDA_VERSION: '{{ .TEST_UPGRADE_REDPANDA_VERSION | default .DEFAULT_TEST_UPGRADE_REDPANDA_VERSION }}'
       TEST_UPGRADE_OPERATOR_VERSION: '{{ .TEST_UPGRADE_OPERATOR_VERSION | default .DEFAULT_TEST_UPGRADE_OPERATOR_VERSION }}'
       TEST_VCLUSTER_VERSION: '{{ .TEST_VCLUSTER_VERSION | default .DEFAULT_TEST_VCLUSTER_VERSION }}'
+      TEST_VCLUSTER_KUBE_VERSION: '{{ .TEST_VCLUSTER_KUBE_VERSION | default .DEFAULT_TEST_VCLUSTER_KUBE_VERSION }}'
       TEST_KUBE_VERSION: '{{ .TEST_KUBE_VERSION | default .DEFAULT_TEST_KUBE_VERSION }}'
       TEST_COREDNS_VERSION: '{{ .TEST_COREDNS_VERSION | default .DEFAULT_TEST_COREDNS_VERSION }}'
       IMAGES:
@@ -396,9 +398,8 @@ tasks:
       - redpandadata/redpanda-operator:v25.3.1
       - redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
       - ghcr.io/loft-sh/vcluster-pro:{{.TEST_VCLUSTER_VERSION}}
-      # vcluster's embedded k8s distro — the tag is hardcoded in
-      # pkg/vcluster/vcluster.go's DefaultValues.
-      - ghcr.io/loft-sh/kubernetes:v1.33.4
+      - ghcr.io/loft-sh/kubernetes:{{.TEST_VCLUSTER_KUBE_VERSION}}
+      - ghcr.io/loft-sh/vm-container:latest
       - registry.k8s.io/kube-controller-manager:{{.TEST_KUBE_VERSION}}
       - registry.k8s.io/kube-apiserver:{{.TEST_KUBE_VERSION}}
       - coredns/coredns:{{.TEST_COREDNS_VERSION}}

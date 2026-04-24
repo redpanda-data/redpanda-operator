@@ -5,16 +5,16 @@
 }:
 let
   pname = "vcluster";
-  version = "0.23.0";
+  version = "0.33.1";
   src = {
     # Update hashes with: nix hash to-sri --type sha256 (nix-prefetch-url $URL)
     aarch64-darwin = fetchurl {
       url = "https://github.com/loft-sh/vcluster/releases/download/v${version}/vcluster-darwin-arm64";
-      hash = "sha256-3NWvQramcxvZaewc3hMvYGhSOIIsnWD3mqU/WNA723c=";
+      hash = "sha256-eWzsLSSUXwca3R/DAxqUz5nyL+ihwJdcO+2qg+2Lt8U=";
     };
     x86_64-linux = fetchurl {
       url = "https://github.com/loft-sh/vcluster/releases/download/v${version}/vcluster-linux-amd64";
-      hash = "sha256-4b/UKWj/1hef0A2tKlluiWVhi94FQL1qAmmTc5Q0DMc=";
+      hash = "sha256-vtDpEiOZbORptgGH2eyRkZh9K36kt4W7qfpqznYW3+g=";
     };
   }.${stdenv.system} or (throw "${pname}-${version}: ${stdenv.system} is unsupported.");
 in
