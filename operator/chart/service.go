@@ -86,9 +86,9 @@ func OperatorService(dot *helmette.Dot) *corev1.Service {
 	}
 }
 
-// OperatorPeerServices renders a placeholder Service for every peer
-// listed in multicluster.peers (excluding the local cluster itself).
-// Each placeholder has no selector (and therefore no local endpoints).
+// OperatorPeerServices renders a selectorless placeholder Service for
+// every remote peer listed in multicluster.peers (excluding the local
+// cluster itself). Rendered only when multicluster.service.mesh=true.
 //
 // Why: with Cilium ClusterMesh "global services", a Service named X
 // on cluster A merges its endpoints into a Service also named X on
@@ -99,28 +99,24 @@ func OperatorService(dot *helmette.Dot) *corev1.Service {
 // the OperatorService on the peer's own cluster; ClusterMesh merges
 // them in via the matching name.
 //
-// Annotations mirror the main service (same global/mesh settings).
-// Not rendered when service.mcs=true — MCS uses ServiceImport +
-// clusterset.local DNS instead, so placeholders aren't needed.
+// Placeholders are always ClusterIP — they carry no selector and
+// therefore no local endpoints, so a LoadBalancer type here would
+// provision a cloud LB with nothing behind it. Only the local
+// OperatorService respects Multicluster.Service.Type.
+//
+// Annotations are Multicluster.Service.Annotations merged with the
+// peer's own Peer.Annotations (peer wins on conflict), so a user can
+// set mesh-wide defaults and peer-specific overrides like Cilium
+// `service.cilium.io/affinity: <cluster-name>`.
 func OperatorPeerServices(dot *helmette.Dot) []corev1.Service {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.Multicluster.Enabled || !values.Multicluster.Service.Enabled {
 		return nil
 	}
-	if values.Multicluster.Service.MCS {
+	if !values.Multicluster.Service.Mesh {
 		return nil
 	}
-
-	svcType := values.Multicluster.Service.Type
-	if svcType == "" {
-		svcType = corev1.ServiceTypeClusterIP
-	}
-	annotations := helmette.Merge(
-		map[string]string{},
-		helmette.Default(map[string]string{}, values.Annotations),
-		helmette.Default(map[string]string{}, values.Multicluster.Service.Annotations),
-	)
 
 	self := values.Multicluster.Name
 	var svcs []corev1.Service
@@ -128,6 +124,12 @@ func OperatorPeerServices(dot *helmette.Dot) []corev1.Service {
 		if p.Name == self {
 			continue
 		}
+		annotations := helmette.Merge(
+			map[string]string{},
+			helmette.Default(map[string]string{}, values.Annotations),
+			helmette.Default(map[string]string{}, values.Multicluster.Service.Annotations),
+			helmette.Default(map[string]string{}, p.Annotations),
+		)
 		svcs = append(svcs, corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
@@ -140,7 +142,7 @@ func OperatorPeerServices(dot *helmette.Dot) []corev1.Service {
 				Annotations: annotations,
 			},
 			Spec: corev1.ServiceSpec{
-				Type: svcType,
+				Type: corev1.ServiceTypeClusterIP,
 				// No selector → no local endpoints. Cilium ClusterMesh
 				// merges in the remote peer's endpoints.
 				Ports: []corev1.ServicePort{
@@ -184,10 +186,16 @@ func OperatorServiceExport(dot *helmette.Dot) *mcsv1alpha1.ServiceExport {
 	}
 }
 
-// OperatorServiceImports renders one ServiceImport per peer when
-// multicluster.service.mcs is true. Each import gives this cluster a
-// local clusterset-scoped entry point for that peer's exported operator
-// Service, resolvable at `<peer>.<namespace>.svc.clusterset.local`.
+// OperatorServiceImports renders one ServiceImport per remote peer
+// when multicluster.service.mcs is true. Each import gives this
+// cluster a local clusterset-scoped entry point for that peer's
+// exported operator Service, resolvable at
+// `<peer>.<namespace>.svc.clusterset.local`.
+//
+// The local cluster is skipped: its own ServiceExport causes the MCS
+// controller to auto-create a matching ServiceImport on every cluster
+// in the clusterset including this one, so a chart-managed import for
+// self would collide with the controller-managed one.
 //
 // Peers are trusted to be named after each remote operator's helm
 // fullname — the same convention the chart uses elsewhere for matching
@@ -201,8 +209,12 @@ func OperatorServiceImports(dot *helmette.Dot) []mcsv1alpha1.ServiceImport {
 		return nil
 	}
 
+	self := values.Multicluster.Name
 	var imports []mcsv1alpha1.ServiceImport
 	for _, p := range values.Multicluster.Peers {
+		if p.Name == self {
+			continue
+		}
 		imports = append(imports, mcsv1alpha1.ServiceImport{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "multicluster.x-k8s.io/v1alpha1",
@@ -227,43 +239,6 @@ func OperatorServiceImports(dot *helmette.Dot) []mcsv1alpha1.ServiceImport {
 		})
 	}
 	return imports
-}
-
-func StretchClusterService(dot *helmette.Dot) []corev1.Service {
-	values := helmette.Unwrap[Values](dot.Values)
-
-	if !values.Multicluster.ServicePerOperatorDeployment {
-		return nil
-	}
-
-	var svcs []corev1.Service
-	annotations := helmette.Default(map[string]string{}, values.Annotations)
-
-	for _, p := range values.Multicluster.Peers {
-		svcs = append(svcs, corev1.Service{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Service",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        cleanForK8sWithSuffix(fmt.Sprintf("%s-%s", p.Name, helmette.Default(dot.Chart.Name, values.NameOverride)), "raft-service"),
-				Namespace:   dot.Release.Namespace,
-				Labels:      Labels(dot),
-				Annotations: helmette.Merge(annotations, helmette.Default(map[string]string{}, p.AdditionalAnnotation)),
-			},
-			Spec: corev1.ServiceSpec{
-				Selector: p.SelectorOverwrite,
-				Ports: []corev1.ServicePort{
-					{
-						Port:       int32(9443),
-						TargetPort: intstr.FromInt32(9443),
-					},
-				},
-				PublishNotReadyAddresses: true,
-			},
-		})
-	}
-	return svcs
 }
 
 func WebhookService(dot *helmette.Dot) *corev1.Service {

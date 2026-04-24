@@ -32,23 +32,19 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- if $values.multicluster.service.mcs -}}
+{{- if (not $values.multicluster.service.mesh) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $svcType := $values.multicluster.service.type -}}
-{{- if (eq $svcType "") -}}
-{{- $svcType = "ClusterIP" -}}
-{{- end -}}
-{{- $annotations := (merge (dict) (dict) (default (dict) $values.annotations) (default (dict) $values.multicluster.service.annotations)) -}}
 {{- $self := $values.multicluster.name -}}
 {{- $svcs := (coalesce nil) -}}
 {{- range $_, $p := $values.multicluster.peers -}}
 {{- if (eq $p.name $self) -}}
 {{- continue -}}
 {{- end -}}
-{{- $svcs = (concat (default (list) $svcs) (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $p.name "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "type" $svcType "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "raft" "port" ((9443 | int) | int) "targetPort" ((9443 | int) | int) "protocol" "TCP"))))))))) -}}
+{{- $annotations := (merge (dict) (dict) (default (dict) $values.annotations) (default (dict) $values.multicluster.service.annotations) (default (dict) $p.annotations)) -}}
+{{- $svcs = (concat (default (list) $svcs) (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $p.name "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "type" "ClusterIP" "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "raft" "port" ((9443 | int) | int) "targetPort" ((9443 | int) | int) "protocol" "TCP"))))))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -85,8 +81,12 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
+{{- $self := $values.multicluster.name -}}
 {{- $imports := (coalesce nil) -}}
 {{- range $_, $p := $values.multicluster.peers -}}
+{{- if (eq $p.name $self) -}}
+{{- continue -}}
+{{- end -}}
 {{- $imports = (concat (default (list) $imports) (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "ports" (coalesce nil) "type" "") "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "multicluster.x-k8s.io/v1alpha1" "kind" "ServiceImport")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $p.name "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" (default (dict) $values.annotations))) "spec" (mustMergeOverwrite (dict "ports" (coalesce nil) "type" "") (dict "type" "ClusterSetIP" "ports" (list (mustMergeOverwrite (dict "port" 0) (dict "name" "raft" "protocol" "TCP" "port" ((9443 | int) | int)))))))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -94,30 +94,6 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $imports) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "operator.StretchClusterService" -}}
-{{- $dot := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $values := $dot.Values.AsMap -}}
-{{- if (not $values.multicluster.servicePerOperatorDeployment) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- $svcs := (coalesce nil) -}}
-{{- $annotations := (default (dict) $values.annotations) -}}
-{{- range $_, $p := $values.multicluster.peers -}}
-{{- $svcs = (concat (default (list) $svcs) (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (printf "%s-%s" $p.name (default $dot.Chart.Name $values.nameOverride)) "raft-service")))) "r") "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" (merge (dict) $annotations (default (dict) $p.additionalAnnotation)))) "spec" (mustMergeOverwrite (dict) (dict "selector" $p.selectorOverwrite "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "port" ((9443 | int) | int) "targetPort" (9443 | int)))) "publishNotReadyAddresses" true)))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $svcs) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

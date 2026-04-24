@@ -67,10 +67,6 @@ func render(dot *helmette.Dot) []kube.Object {
 		MigrationJobServiceAccount(dot),
 	}
 
-	for _, svc := range StretchClusterService(dot) {
-		manifests = append(manifests, &svc)
-	}
-
 	for _, svc := range OperatorPeerServices(dot) {
 		manifests = append(manifests, &svc)
 	}
@@ -85,10 +81,6 @@ func render(dot *helmette.Dot) []kube.Object {
 
 	for _, crb := range ClusterRoleBindings(dot) {
 		manifests = append(manifests, &crb)
-	}
-
-	for _, svc := range StretchClusterService(dot) {
-		manifests = append(manifests, &svc)
 	}
 
 	// NB: This slice may contain nil interfaces!
