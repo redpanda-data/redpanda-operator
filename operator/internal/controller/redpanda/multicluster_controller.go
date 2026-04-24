@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -427,7 +428,7 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 
 	// Populate pod endpoints on the cluster struct so the renderer can
 	// produce Endpoints/EndpointSlices for flat network mode.
-	sccluster.PodEndpoints = pools.PodEndpoints()
+	sccluster.PodEndpoints = pools.PodEndpoints(ctx)
 
 	return &stretchClusterReconciliationState{
 		cluster:               sccluster,
@@ -1034,6 +1035,12 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 				inUseFeatures = append(inUseFeatures, feature.Name)
 			}
 		}
+		// features.Features iterates a map under the hood; sort the
+		// resulting slice so repeated reconciles produce byte-identical
+		// status. Without this, the slice order flips on every write,
+		// bumps resourceVersion, and triggers a watch-driven hot
+		// reconcile loop on the StretchCluster controller.
+		sort.Strings(inUseFeatures)
 
 		status := &redpandav1alpha2.RedpandaLicenseStatus{
 			InUseFeatures: inUseFeatures,

@@ -98,7 +98,7 @@
             This reason is used with the "Healthy" condition when it evaluates to False because
             a cluster's health endpoint says the cluster is not healthy.
     - name: LicenseValid
-      rateLimit: time.Minute
+      rateLimit: 5 * time.Minute
       printerColumns:
         - name: License
           message: true
@@ -146,7 +146,7 @@
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      rateLimit: time.Minute
+      rateLimit: 5 * time.Minute
       reasons:
         - name: Applied
           message: Cluster configuration successfully applied
@@ -272,7 +272,7 @@
             This reason is used with the "Healthy" condition when it evaluates to False because
             a cluster's health endpoint says the cluster is not healthy.
     - name: LicenseValid
-      rateLimit: time.Minute
+      rateLimit: 5 * time.Minute
       printerColumns:
         - name: License
           message: true
@@ -320,7 +320,7 @@
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a
         cluster.
-      rateLimit: time.Minute
+      rateLimit: 5 * time.Minute
       reasons:
         - name: Applied
           message: Cluster configuration successfully applied

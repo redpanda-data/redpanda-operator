@@ -32,12 +32,45 @@ type Peer struct {
 	SelectorOverwrite    map[string]string `json:"selectorOverwrite,omitempty"`
 }
 
+// MulticlusterService configures an optional peer-facing Service in
+// front of the operator Deployment. The chart does not attempt to
+// manage flat-network pod-IP endpoint syncing — that has a chicken-and-
+// egg problem where operators must be reachable before they can learn
+// peer addresses — so only Service-level exposure is supported here.
+type MulticlusterService struct {
+	// Enabled renders a per-operator Service alongside the Deployment.
+	// Defaults to false so existing installs that provision their own
+	// Service keep working unchanged.
+	Enabled bool `json:"enabled"`
+	// Type is the Kubernetes Service type. Only ClusterIP and
+	// LoadBalancer are supported — ClusterIP for in-cluster mesh routing
+	// (Cilium ClusterMesh, Submariner, Istio, MCS) and LoadBalancer for
+	// cross-cloud deployments without a service mesh. Headless
+	// (ClusterIP=None) is intentionally not offered: the operator runs
+	// as a single-replica Deployment, so per-pod DNS is useless and
+	// would actively misroute when multiple replicas exist.
+	Type corev1.ServiceType `json:"type" jsonschema:"pattern=^(ClusterIP|LoadBalancer)$"`
+	// Annotations are merged onto the generated Service metadata. Use
+	// them to inject mesh-specific hints or cloud LB tuning — for
+	// example, {"service.cilium.io/global":"true"} for Cilium ClusterMesh
+	// or {"service.beta.kubernetes.io/aws-load-balancer-type":"nlb"}
+	// for AWS NLB.
+	Annotations map[string]string `json:"annotations"`
+	// MCS additionally renders a Multi-Cluster Services ServiceExport
+	// for the local Service and one ServiceImport per peer, so the
+	// operator becomes reachable at
+	// `<peer>.<namespace>.svc.clusterset.local` via a compliant MCS
+	// controller (Submariner Lighthouse, GKE MCS, …).
+	MCS bool `json:"mcs"`
+}
+
 type Multicluster struct {
-	Enabled                      bool   `json:"enabled"`
-	ServicePerOperatorDeployment bool   `json:"servicePerOperatorDeployment"`
-	Name                         string `json:"name"`
-	KubernetesAPIExternalAddress string `json:"apiServerExternalAddress"`
-	Peers                        []Peer `json:"peers"`
+	Enabled                      bool                `json:"enabled"`
+	ServicePerOperatorDeployment bool                `json:"servicePerOperatorDeployment"`
+	Service                      MulticlusterService `json:"service"`
+	Name                         string              `json:"name"`
+	KubernetesAPIExternalAddress string              `json:"apiServerExternalAddress"`
+	Peers                        []Peer              `json:"peers"`
 }
 
 type Enterprise struct {

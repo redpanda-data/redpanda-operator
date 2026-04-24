@@ -929,6 +929,28 @@
             }
           ]
         },
+        "service": {
+          "additionalProperties": false,
+          "properties": {
+            "annotations": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "mcs": {
+              "type": "boolean"
+            },
+            "type": {
+              "pattern": "^(ClusterIP|LoadBalancer)$",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
         "servicePerOperatorDeployment": {
           "type": "boolean"
         }

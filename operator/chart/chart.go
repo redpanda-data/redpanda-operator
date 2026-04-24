@@ -54,6 +54,8 @@ func render(dot *helmette.Dot) []kube.Object {
 		ConfigMap(dot),
 		MetricsService(dot),
 		WebhookService(dot),
+		OperatorService(dot),
+		OperatorServiceExport(dot),
 		MutatingWebhookConfiguration(dot),
 		ValidatingWebhookConfiguration(dot),
 		ServiceAccount(dot),
@@ -67,6 +69,14 @@ func render(dot *helmette.Dot) []kube.Object {
 
 	for _, svc := range StretchClusterService(dot) {
 		manifests = append(manifests, &svc)
+	}
+
+	for _, svc := range OperatorPeerServices(dot) {
+		manifests = append(manifests, &svc)
+	}
+
+	for _, si := range OperatorServiceImports(dot) {
+		manifests = append(manifests, &si)
 	}
 
 	for _, cr := range ClusterRoles(dot) {

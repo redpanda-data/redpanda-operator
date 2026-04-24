@@ -51,10 +51,32 @@ type RenderState struct {
 
 	client *kube.Ctl
 
+	// ctx carries reconciliation-scoped values (logger, trace span) so that
+	// render helpers can emit structured logs bound to the reconcile that
+	// invoked them. Set via WithContext(); nil is fine for unit tests and
+	// yields a background-context logger.
+	ctx context.Context
+
 	seedServers          []string
 	bootstrapUserSecret  *corev1.Secret
 	statefulSetPodLabels map[string]string
 	statefulSetSelector  map[string]string
+}
+
+// WithContext stores the reconciliation context so render helpers can emit
+// contextual logs. Safe to call after NewRenderState.
+func (r *RenderState) WithContext(ctx context.Context) *RenderState {
+	r.ctx = ctx
+	return r
+}
+
+// Context returns the stored reconciliation context, falling back to a
+// background context if WithContext was never called (e.g. in tests).
+func (r *RenderState) Context() context.Context {
+	if r.ctx == nil {
+		return context.Background()
+	}
+	return r.ctx
 }
 
 func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.NodePool) []string {

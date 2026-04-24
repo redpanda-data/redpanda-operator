@@ -96,11 +96,12 @@ type PartialVectorizedControllers struct {
 }
 
 type PartialMulticluster struct {
-	Enabled                      *bool         "json:\"enabled,omitempty\""
-	ServicePerOperatorDeployment *bool         "json:\"servicePerOperatorDeployment,omitempty\""
-	Name                         *string       "json:\"name,omitempty\""
-	KubernetesAPIExternalAddress *string       "json:\"apiServerExternalAddress,omitempty\""
-	Peers                        []PartialPeer "json:\"peers,omitempty\""
+	Enabled                      *bool                       "json:\"enabled,omitempty\""
+	ServicePerOperatorDeployment *bool                       "json:\"servicePerOperatorDeployment,omitempty\""
+	Service                      *PartialMulticlusterService "json:\"service,omitempty\""
+	Name                         *string                     "json:\"name,omitempty\""
+	KubernetesAPIExternalAddress *string                     "json:\"apiServerExternalAddress,omitempty\""
+	Peers                        []PartialPeer               "json:\"peers,omitempty\""
 }
 
 type PartialEnterprise struct {
@@ -127,6 +128,13 @@ type PartialWebhookConfig struct {
 type PartialLeaderElectionConfig struct {
 	LeaderElect  *bool   "json:\"leaderElect,omitempty\""
 	ResourceName *string "json:\"resourceName,omitempty\""
+}
+
+type PartialMulticlusterService struct {
+	Enabled     *bool               "json:\"enabled,omitempty\""
+	Type        *corev1.ServiceType "json:\"type,omitempty\" jsonschema:\"pattern=^(ClusterIP|LoadBalancer)$\""
+	Annotations map[string]string   "json:\"annotations,omitempty\""
+	MCS         *bool               "json:\"mcs,omitempty\""
 }
 
 type PartialMetadata struct {
