@@ -136,3 +136,64 @@ multicluster:
 enterprise:
   licenseSecretRef:
     name: my-secret
+
+-- multicluster service mesh --
+crds:
+  enabled: true
+multicluster:
+  enabled: true
+  name: blue
+  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
+  peers:
+    - name: blue
+      address: blue.example.com
+    - name: west
+      address: west.example.com
+      annotations:
+        service.cilium.io/affinity: west
+    - name: east
+      address: east.example.com
+  service:
+    enabled: true
+    type: ClusterIP
+    mesh: true
+    annotations:
+      service.cilium.io/global: "true"
+      service.cilium.io/shared: "false"
+
+-- multicluster service mcs --
+crds:
+  enabled: true
+multicluster:
+  enabled: true
+  name: blue
+  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
+  peers:
+    - name: blue
+      address: blue.example.com
+    - name: west
+      address: west.example.com
+    - name: east
+      address: east.example.com
+  service:
+    enabled: true
+    type: ClusterIP
+    mcs: true
+
+-- multicluster service loadbalancer --
+crds:
+  enabled: true
+multicluster:
+  enabled: true
+  name: blue
+  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
+  peers:
+    - name: blue
+      address: blue.example.com
+    - name: west
+      address: west.example.com
+  service:
+    enabled: true
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb

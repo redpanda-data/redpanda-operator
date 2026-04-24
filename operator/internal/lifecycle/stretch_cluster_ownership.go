@@ -87,6 +87,15 @@ func (m *StretchClusterOwnershipResolver) ResolveOwnerReference(ctx context.Cont
 		newOwner := NewStretchClusterWithPools(sc.DeepCopy(), owner.clusters, owner.NodePools...)
 		newOwner.Kind = "StretchCluster"
 		newOwner.APIVersion = redpandav1alpha2.GroupVersion.String()
+		// Preserve the cross-cluster pod endpoint view computed by the
+		// caller. NewStretchClusterWithPools rebuilds the wrapper around
+		// the freshly-fetched StretchCluster CR and only carries forward
+		// NodePools; without re-plumbing PodEndpoints here, SyncAll
+		// iterations that target peer clusters would render flat-mode
+		// per-pod Endpoints with an empty IP list, causing the Syncer
+		// to garbage collect the cross-cluster Endpoints/EndpointSlices
+		// on every reconcile cycle.
+		newOwner.PodEndpoints = owner.PodEndpoints
 		return newOwner, nil
 	}
 	// Ensure GVK is set on the returned owner so that downstream callers

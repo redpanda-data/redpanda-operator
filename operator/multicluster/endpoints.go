@@ -11,6 +11,7 @@ package multicluster
 
 import (
 	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,12 +23,26 @@ import (
 // Endpoints object (for CoreDNS) and an EndpointSlice (for kube-proxy/mesh)
 // pointing to the actual pod IP.
 func perPodEndpoints(state *RenderState) []kube.Object {
+	logger := log.FromContext(state.Context()).WithName("perPodEndpoints")
 	if !state.Spec().Networking.IsFlatNetwork() {
+		logger.V(log.TraceLevel).Info("not flat-network, returning no endpoints")
 		return nil
 	}
 	if len(state.podEndpoints) == 0 {
+		// This is the failure mode that causes the cross-cluster
+		// Endpoints/EndpointSlices to be GC'd by the Syncer — the
+		// renderer produced nothing, so the Syncer sees existing objects
+		// as "not in desired state" and deletes them. If we see this log
+		// fire at reconcile boundaries, the upstream PoolTracker needs
+		// investigation.
+		logger.Info("flat-mode: podEndpoints is empty, rendering no per-pod Endpoints (Syncer will GC existing)")
 		return nil
 	}
+	logger.V(log.TraceLevel).Info(
+		"flat-mode: rendering per-pod Endpoints",
+		"podEndpointsCount", len(state.podEndpoints),
+		"pools", len(state.pools),
+	)
 
 	spec := state.Spec()
 	ports := perPodServicePorts(spec)
@@ -47,12 +62,17 @@ func perPodEndpoints(state *RenderState) []kube.Object {
 				}
 			}
 			if !found {
+				logger.V(log.TraceLevel).Info(
+					"no PodEndpoint entry for per-pod service, skipping (its Endpoints will be GC'd)",
+					"svcName", svcName,
+				)
 				continue
 			}
 
 			objects = append(objects, endpointsForService(state, svcName, ep, ports)...)
 		}
 	}
+	logger.V(log.TraceLevel).Info("rendered per-pod endpoints", "objectCount", len(objects))
 
 	return objects
 }

@@ -73,6 +73,9 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	// Thread the reconcile context so render helpers can emit contextual
+	// (trace/debug) logs tied to the invoking reconcile ID.
+	state.WithContext(ctx)
 
 	// Pass pod endpoints for flat network Endpoints/EndpointSlice rendering.
 	if len(cluster.PodEndpoints) > 0 {

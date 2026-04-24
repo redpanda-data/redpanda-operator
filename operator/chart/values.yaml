@@ -201,5 +201,50 @@ multicluster:
   # peers follows the form:
   #  - name: peer-1
   #    address: ip/dns of operator host
+  #    # annotations (optional) are merged on top of
+  #    # multicluster.service.annotations on the placeholder Service
+  #    # rendered for this peer — useful for per-peer hints like
+  #    # Cilium's service.cilium.io/affinity: <cluster-name>.
+  #    annotations: {}
   peers: []
-  servicePerOperatorDeployment: false
+  # service controls whether the chart renders a peer-facing Service in
+  # front of the operator Deployment. Headless isn't offered — the
+  # operator runs single-replica, so per-pod DNS has no value here.
+  service:
+    # enabled turns the feature on. Defaults to false so existing
+    # installs that provision their own Service keep working unchanged.
+    enabled: false
+    # type is the Kubernetes Service type for the local operator
+    # Service. ClusterIP for in-cluster mesh routing (Cilium
+    # ClusterMesh, Submariner, Istio, MCS). LoadBalancer for cross-
+    # cloud deployments without a service mesh. Peer placeholders (see
+    # mesh) are always ClusterIP — they have no endpoints so a
+    # LoadBalancer would allocate cloud LBs for nothing.
+    type: ClusterIP
+    # annotations are merged onto the local operator Service and, if
+    # mesh=true, onto each peer placeholder Service. Use them to inject
+    # mesh-specific hints or cloud LB tuning. Examples:
+    #
+    #   # Cilium ClusterMesh
+    #   annotations:
+    #     service.cilium.io/global: "true"
+    #     service.cilium.io/shared: "false"
+    #
+    #   # AWS NLB
+    #   annotations:
+    #     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    annotations: {}
+    # mesh renders a selectorless ClusterIP "placeholder" Service per
+    # remote peer so a mesh like Cilium ClusterMesh that merges
+    # Services by name has something to merge into on every cluster.
+    # Without the placeholder, local DNS lookups for
+    # <peer>.<ns>.svc.cluster.local return NXDOMAIN. Mutually exclusive
+    # with mcs.
+    mesh: false
+    # mcs additionally renders a Multi-Cluster Services ServiceExport
+    # for the local Service and one ServiceImport per remote peer, so
+    # the operator becomes reachable at
+    # <peer>.<namespace>.svc.clusterset.local via a compliant MCS
+    # controller (Submariner Lighthouse, GKE MCS, …). Mutually
+    # exclusive with mesh.
+    mcs: false

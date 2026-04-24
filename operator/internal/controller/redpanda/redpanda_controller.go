@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -696,6 +697,7 @@ func (r *RedpandaReconciler) reconcileLicense(ctx context.Context, state *cluste
 				inUseFeatures = append(inUseFeatures, feature.Name)
 			}
 		}
+		sort.Strings(inUseFeatures)
 
 		status := &redpandav1alpha2.RedpandaLicenseStatus{
 			InUseFeatures: inUseFeatures,

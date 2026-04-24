@@ -897,23 +897,17 @@
               "items": {
                 "additionalProperties": false,
                 "properties": {
-                  "additionalAnnotation": {
-                    "additionalProperties": {
-                      "type": "string"
-                    },
-                    "type": "object"
-                  },
                   "address": {
                     "type": "string"
                   },
-                  "name": {
-                    "type": "string"
-                  },
-                  "selectorOverwrite": {
+                  "annotations": {
                     "additionalProperties": {
                       "type": "string"
                     },
                     "type": "object"
+                  },
+                  "name": {
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -929,8 +923,44 @@
             }
           ]
         },
-        "servicePerOperatorDeployment": {
-          "type": "boolean"
+        "service": {
+          "additionalProperties": false,
+          "not": {
+            "properties": {
+              "mcs": {
+                "const": true
+              },
+              "mesh": {
+                "const": true
+              }
+            },
+            "required": [
+              "mesh",
+              "mcs"
+            ]
+          },
+          "properties": {
+            "annotations": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "mcs": {
+              "type": "boolean"
+            },
+            "mesh": {
+              "type": "boolean"
+            },
+            "type": {
+              "pattern": "^(ClusterIP|LoadBalancer)$",
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
       },
       "type": "object"

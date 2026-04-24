@@ -13,6 +13,8 @@ package operator
 import (
 	_ "embed"
 
+	"github.com/invopop/jsonschema"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -26,18 +28,72 @@ var (
 )
 
 type Peer struct {
-	Name                 string            `json:"name,omitempty" jsonschema:"required"`
-	Address              string            `json:"address,omitempty" jsonschema:"required"`
-	AdditionalAnnotation map[string]string `json:"additionalAnnotation,omitempty"`
-	SelectorOverwrite    map[string]string `json:"selectorOverwrite,omitempty"`
+	Name    string `json:"name,omitempty" jsonschema:"required"`
+	Address string `json:"address,omitempty" jsonschema:"required"`
+	// Annotations are merged on top of Multicluster.Service.Annotations
+	// on the peer placeholder Service rendered for this peer.
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+// MulticlusterService configures an optional peer-facing Service in
+// front of the operator Deployment. The chart does not attempt to
+// manage flat-network pod-IP endpoint syncing — that has a chicken-and-
+// egg problem where operators must be reachable before they can learn
+// peer addresses — so only Service-level exposure is supported here.
+type MulticlusterService struct {
+	// Enabled renders a per-operator Service alongside the Deployment.
+	// Defaults to false so existing installs that provision their own
+	// Service keep working unchanged.
+	Enabled bool `json:"enabled"`
+	// Type is the Kubernetes Service type for the local operator
+	// Service. Only ClusterIP and LoadBalancer are supported — ClusterIP
+	// for in-cluster mesh routing (Cilium ClusterMesh, Submariner,
+	// Istio, MCS) and LoadBalancer for cross-cloud deployments without
+	// a service mesh. Headless (ClusterIP=None) is intentionally not
+	// offered: the operator runs as a single-replica Deployment, so
+	// per-pod DNS is useless and would actively misroute when multiple
+	// replicas exist. Only the local Service is load-balanced; peer
+	// placeholders (see Mesh) are always ClusterIP since they carry no
+	// endpoints.
+	Type corev1.ServiceType `json:"type" jsonschema:"pattern=^(ClusterIP|LoadBalancer)$"`
+	// Annotations are merged onto the generated Service metadata. Use
+	// them to inject mesh-specific hints or cloud LB tuning — for
+	// example, {"service.cilium.io/global":"true"} for Cilium ClusterMesh
+	// or {"service.beta.kubernetes.io/aws-load-balancer-type":"nlb"}
+	// for AWS NLB.
+	Annotations map[string]string `json:"annotations"`
+	// Mesh renders one selectorless ClusterIP "placeholder" Service per
+	// remote peer so a mesh like Cilium ClusterMesh that merges Services
+	// by name has something to merge into on every cluster. Without the
+	// placeholder, DNS lookups for `<peer>.<ns>.svc.cluster.local` on
+	// the local cluster return NXDOMAIN. Mutually exclusive with MCS.
+	Mesh bool `json:"mesh"`
+	// MCS additionally renders a Multi-Cluster Services ServiceExport
+	// for the local Service and one ServiceImport per remote peer, so
+	// the operator becomes reachable at
+	// `<peer>.<namespace>.svc.clusterset.local` via a compliant MCS
+	// controller (Submariner Lighthouse, GKE MCS, …). Mutually
+	// exclusive with Mesh.
+	MCS bool `json:"mcs"`
+}
+
+// +gotohelm:ignore=true
+func (MulticlusterService) JSONSchemaExtend(schema *jsonschema.Schema) {
+	props := orderedmap.New[string, *jsonschema.Schema]()
+	props.Set("mesh", &jsonschema.Schema{Const: true})
+	props.Set("mcs", &jsonschema.Schema{Const: true})
+	schema.Not = &jsonschema.Schema{
+		Properties: props,
+		Required:   []string{"mesh", "mcs"},
+	}
 }
 
 type Multicluster struct {
-	Enabled                      bool   `json:"enabled"`
-	ServicePerOperatorDeployment bool   `json:"servicePerOperatorDeployment"`
-	Name                         string `json:"name"`
-	KubernetesAPIExternalAddress string `json:"apiServerExternalAddress"`
-	Peers                        []Peer `json:"peers"`
+	Enabled                      bool                `json:"enabled"`
+	Service                      MulticlusterService `json:"service"`
+	Name                         string              `json:"name"`
+	KubernetesAPIExternalAddress string              `json:"apiServerExternalAddress"`
+	Peers                        []Peer              `json:"peers"`
 }
 
 type Enterprise struct {

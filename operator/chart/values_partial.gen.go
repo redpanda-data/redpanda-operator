@@ -96,11 +96,11 @@ type PartialVectorizedControllers struct {
 }
 
 type PartialMulticluster struct {
-	Enabled                      *bool         "json:\"enabled,omitempty\""
-	ServicePerOperatorDeployment *bool         "json:\"servicePerOperatorDeployment,omitempty\""
-	Name                         *string       "json:\"name,omitempty\""
-	KubernetesAPIExternalAddress *string       "json:\"apiServerExternalAddress,omitempty\""
-	Peers                        []PartialPeer "json:\"peers,omitempty\""
+	Enabled                      *bool                       "json:\"enabled,omitempty\""
+	Service                      *PartialMulticlusterService "json:\"service,omitempty\""
+	Name                         *string                     "json:\"name,omitempty\""
+	KubernetesAPIExternalAddress *string                     "json:\"apiServerExternalAddress,omitempty\""
+	Peers                        []PartialPeer               "json:\"peers,omitempty\""
 }
 
 type PartialEnterprise struct {
@@ -129,14 +129,21 @@ type PartialLeaderElectionConfig struct {
 	ResourceName *string "json:\"resourceName,omitempty\""
 }
 
+type PartialMulticlusterService struct {
+	Enabled     *bool               "json:\"enabled,omitempty\""
+	Type        *corev1.ServiceType "json:\"type,omitempty\" jsonschema:\"pattern=^(ClusterIP|LoadBalancer)$\""
+	Annotations map[string]string   "json:\"annotations,omitempty\""
+	Mesh        *bool               "json:\"mesh,omitempty\""
+	MCS         *bool               "json:\"mcs,omitempty\""
+}
+
 type PartialMetadata struct {
 	Labels      map[string]string "json:\"labels,omitempty\""
 	Annotations map[string]string "json:\"annotations,omitempty\""
 }
 
 type PartialPeer struct {
-	Name                 *string           "json:\"name,omitempty\" jsonschema:\"required\""
-	Address              *string           "json:\"address,omitempty\" jsonschema:\"required\""
-	AdditionalAnnotation map[string]string "json:\"additionalAnnotation,omitempty\""
-	SelectorOverwrite    map[string]string "json:\"selectorOverwrite,omitempty\""
+	Name        *string           "json:\"name,omitempty\" jsonschema:\"required\""
+	Address     *string           "json:\"address,omitempty\" jsonschema:\"required\""
+	Annotations map[string]string "json:\"annotations,omitempty\""
 }

@@ -712,9 +712,9 @@ func (s *ClusterStatus) StatusConditionConfigs(o client.Object) []*applymetav1.C
 func (s *ClusterStatus) getRateLimit(conditionType string) time.Duration {
 	switch conditionType {
 	case ClusterLicenseValid:
-		return time.Minute
+		return 5 * time.Minute
 	case ClusterConfigurationApplied:
-		return time.Minute
+		return 5 * time.Minute
 	}
 	return 0
 }
@@ -1128,9 +1128,9 @@ func (s *StretchClusterStatus) StatusConditionConfigs(o client.Object) []*applym
 func (s *StretchClusterStatus) getRateLimit(conditionType string) time.Duration {
 	switch conditionType {
 	case StretchClusterLicenseValid:
-		return time.Minute
+		return 5 * time.Minute
 	case StretchClusterConfigurationApplied:
-		return time.Minute
+		return 5 * time.Minute
 	}
 	return 0
 }

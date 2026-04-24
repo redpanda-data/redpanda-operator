@@ -11,6 +11,7 @@ package bootstrap
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"k8s.io/client-go/rest"
@@ -74,12 +75,43 @@ type BootstrapClusterConfiguration struct {
 	BootstrapTLS         bool
 	BootstrapKubeconfigs bool
 	EnsureNamespace      bool
-	OperatorNamespace    string
-	ServiceName          string
-	RemoteClusters       []RemoteConfiguration
+	// ProvisionLoadBalancers, if true, creates a standalone
+	// LoadBalancer Service per cluster BEFORE TLS certificates are
+	// signed, waits for an external address, and uses that address as
+	// each cluster's ServiceAddress for cert signing. Solves the
+	// deploy/redeploy cycle that otherwise forces callers to install
+	// the operator twice: once to provision the LB, then again with
+	// the now-known peer addresses baked into --peer flags and
+	// cert SANs.
+	ProvisionLoadBalancers bool
+	// LoadBalancer tunes the LoadBalancer provisioning behavior when
+	// ProvisionLoadBalancers is true. Ignored otherwise.
+	LoadBalancer      PeerLoadBalancerConfig
+	OperatorNamespace string
+	ServiceName       string
+	RemoteClusters    []RemoteConfiguration
 }
 
 func BootstrapKubernetesClusters(ctx context.Context, organization string, configuration BootstrapClusterConfiguration) error {
+	if configuration.ProvisionLoadBalancers {
+		// Provision first and mutate in place so that downstream cert
+		// signing and the caller (which reads configuration back to
+		// emit the helm peers block) both see the resolved addresses.
+		for i := range configuration.RemoteClusters {
+			cluster := configuration.RemoteClusters[i]
+			if cluster.ServiceAddress != "" {
+				// Caller already supplied an address (e.g. via
+				// --dns-override) — trust it, don't reprovision.
+				continue
+			}
+			address, err := EnsurePeerLoadBalancer(ctx, cluster, configuration, configuration.LoadBalancer)
+			if err != nil {
+				return fmt.Errorf("provisioning peer LoadBalancer for %s: %w", cluster.ContextName, err)
+			}
+			configuration.RemoteClusters[i].ServiceAddress = address
+		}
+	}
+
 	caCertificate, err := GenerateCA(organization, "Root CA", nil)
 	if err != nil {
 		return err

@@ -378,19 +378,35 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 	pools := NewPoolTracker(cluster.GetGeneration())
 	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
+		canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
 		if err != nil {
 			return nil, fmt.Errorf("fetching existing pools: %w", err)
 		}
+		totalPods := 0
+		for _, ep := range existingPools {
+			totalPods += len(ep.pods)
+		}
+		logger.V(log.TraceLevel).Info(
+			"fetched existing pools",
+			"cluster", canonical,
+			"pools", len(existingPools),
+			"totalPods", totalPods,
+		)
 
 		desired, err := r.nodePoolRenderer.Render(ctx, cluster, clusterName)
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
-				logger.Info("remote cluster unreachable during pool render, skipping", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
+				logger.Info("remote cluster unreachable during pool render, skipping", "cluster", canonical, "error", err)
 				continue
 			}
 			return nil, fmt.Errorf("constructing desired pools: %w", err)
 		}
+		logger.V(log.TraceLevel).Info(
+			"rendered desired pools",
+			"cluster", canonical,
+			"desiredCount", len(desired),
+		)
 
 		wrapped := []*MulticlusterStatefulSet{}
 		for _, set := range desired {
@@ -624,33 +640,42 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 // reconciliation is not blocked by an unreachable peer.
 // Errors on the local cluster are always propagated.
 func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string) ([]*poolWithOrdinals, error) {
-	logger := log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithName("fetchExistingPools")
+	canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 	ctl, err := r.ctl(ctx, clusterName)
 	if err != nil {
 		if clusterName != mcmanager.LocalCluster {
-			logger.Info("remote cluster unreachable in fetchExistingPools, treating as empty", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
+			logger.Info("remote cluster unreachable in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	sets, err := kube.List[appsv1.StatefulSetList](ctx, ctl, cluster.GetNamespace(), client.MatchingLabels(r.ownershipResolver.GetOwnerLabels(cluster)))
+	ownerLabels := r.ownershipResolver.GetOwnerLabels(cluster)
+	sets, err := kube.List[appsv1.StatefulSetList](ctx, ctl, cluster.GetNamespace(), client.MatchingLabels(ownerLabels))
 	if err != nil {
 		if clusterName != mcmanager.LocalCluster {
-			logger.Info("could not list StatefulSets on remote cluster in fetchExistingPools, treating as empty", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
+			logger.Info("could not list StatefulSets on remote cluster in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "listing StatefulSets")
 	}
+	logger.V(log.TraceLevel).Info(
+		"listed StatefulSets",
+		"cluster", canonical,
+		"ownerLabels", ownerLabels,
+		"setsFound", len(sets.Items),
+	)
 	expectedOwner, err := r.ownershipResolver.ResolveOwnerReference(ctx, cluster, clusterName, ctl)
 	if err != nil {
 		// If the cluster object doesn't exist on this cluster yet (e.g. during
 		// initial rollout), there can't be any owned StatefulSets either.
 		if apierrors.IsNotFound(err) {
+			logger.V(log.TraceLevel).Info("owner reference not found, returning empty pool list", "cluster", canonical)
 			return nil, nil
 		}
 		if clusterName != mcmanager.LocalCluster {
-			logger.Info("could not resolve owner reference on remote cluster in fetchExistingPools, treating as empty", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
+			logger.Info("could not resolve owner reference on remote cluster in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
 			return nil, nil
 		}
 		return nil, errors.Wrapf(err, "resolving owner reference")
@@ -658,6 +683,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	// swap cluster to correct one
 	cluster = expectedOwner
 
+	totalBeforeFilter := len(sets.Items)
 	i := 0
 	for _, set := range sets.Items {
 		isOwned := slices.ContainsFunc(set.OwnerReferences, func(ref metav1.OwnerReference) bool {
@@ -669,6 +695,13 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 	}
 	sets.Items = sets.Items[:i]
+	logger.V(log.TraceLevel).Info(
+		"filtered StatefulSets by owner UID",
+		"cluster", canonical,
+		"expectedOwnerUID", cluster.GetUID(),
+		"beforeFilter", totalBeforeFilter,
+		"afterFilter", len(sets.Items),
+	)
 
 	existing := []*poolWithOrdinals{}
 	for _, statefulSet := range sets.Items {

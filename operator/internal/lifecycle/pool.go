@@ -484,11 +484,26 @@ type PodEndpoint struct {
 // PodEndpoints returns the IP and cluster information for all existing pods
 // across all clusters. This is used by the controller to manage EndpointSlices
 // for cross-cluster per-pod Services in flat network mode.
-func (p *PoolTracker) PodEndpoints() []PodEndpoint {
+func (p *PoolTracker) PodEndpoints(ctx context.Context) []PodEndpoint {
+	logger := log.FromContext(ctx).WithName("PoolTracker.PodEndpoints")
 	var endpoints []PodEndpoint
+	// Per-cluster tallies so we can tell at a glance which cluster is
+	// contributing zero pods to the rendered state — the usual cause of
+	// flat-mode cross-cluster Endpoints churn.
+	clusterPodCount := map[string]int{}
+	clusterReadyCount := map[string]int{}
+	clusterNoIPCount := map[string]int{}
 	for _, pool := range p.existingPools {
+		clusterPodCount[pool.set.clusterName] += len(pool.pods)
 		for _, pod := range pool.pods {
 			if pod.pod.Status.PodIP == "" {
+				clusterNoIPCount[pool.set.clusterName]++
+				logger.V(log.TraceLevel).Info(
+					"pod has no PodIP yet, skipping",
+					"cluster", pool.set.clusterName,
+					"pod", pod.pod.Name,
+					"phase", pod.pod.Status.Phase,
+				)
 				continue
 			}
 			ready := false
@@ -498,6 +513,9 @@ func (p *PoolTracker) PodEndpoints() []PodEndpoint {
 					break
 				}
 			}
+			if ready {
+				clusterReadyCount[pool.set.clusterName]++
+			}
 			endpoints = append(endpoints, PodEndpoint{
 				Name:    pod.pod.Name,
 				IP:      pod.pod.Status.PodIP,
@@ -506,6 +524,14 @@ func (p *PoolTracker) PodEndpoints() []PodEndpoint {
 			})
 		}
 	}
+	logger.V(log.TraceLevel).Info(
+		"gathered pod endpoints",
+		"total", len(endpoints),
+		"existingPools", len(p.existingPools),
+		"clusterPodCount", clusterPodCount,
+		"clusterReadyCount", clusterReadyCount,
+		"clusterNoIPCount", clusterNoIPCount,
+	)
 	return endpoints
 }
 
