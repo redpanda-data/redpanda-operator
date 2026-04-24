@@ -881,7 +881,7 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 
 ### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
 
-**Default:** `"v26.1.1"`
+**Default:** `"v26.2.1-beta.1"`
 
 ### [statefulset.sideCars.pvcUnbinder.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.enabled)
 

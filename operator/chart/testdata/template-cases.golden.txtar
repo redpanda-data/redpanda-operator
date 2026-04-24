@@ -28639,7 +28639,7 @@ spec:
             namespaceSelector:
               matchExpressions:
               - key: euqTvdPV
-                operator:  庪;r踍ȅɫ¦2ǔv穂ʒ凄Ƿ
+                operator: 庪;r踍ȅɫ¦2ǔv穂ʒ凄Ƿ
                 values:
                 - NjeEtl
                 - 5SOaiW
@@ -44651,7 +44651,7 @@ spec:
             nodeSelectorTerms:
             - matchExpressions:
               - key: usq
-                operator: 蕙=觀Ŏ朠蓗ę氣ø;蟵Ɨ,' 雍痏
+                operator: 蕙=觀Ŏ朠蓗ę氣ø;蟵Ɨ,' 雍痏
                 values:
                 - FXN
                 - viq
@@ -48222,7 +48222,7 @@ spec:
                 - iG3n7
                 - TrljmzhqWRL
               - key: 4M4Chmv
-                operator: P蹈 
+                operator: P蹈
               matchFields:
               - key: Ioyf
                 operator: 謳H瞋&鹜ǂȃ\襨椅ɻ
@@ -50314,7 +50314,7 @@ spec:
       nodeName: N3QlL
       nodeSelector:
         pTbC: MCE3kqTeYQ
-      preemptionPolicy: WɸĤz]85ŉ錳ʖŰK礠 ?萙
+      preemptionPolicy: WɸĤz]85ŉ錳ʖŰK礠 ?萙
       priority: -2046956516
       readinessGates:
       - conditionType: 从ɴǌ)h
@@ -53410,7 +53410,7 @@ spec:
           - labelSelector:
               matchExpressions:
               - key: J4uBQEBT
-                operator: 芤鏛ťU&KȤ介賙x-;-Ǵa囥 幇铱
+                operator: 芤鏛ťU&KȤ介賙x-;-Ǵa囥 幇铱
               - key: D1MI
                 operator: A7橨¾TGF 嫆茇
                 values:
@@ -64090,7 +64090,7 @@ spec:
                   - H1Qy
                   - kbMnrfY
                 - key: 2hp
-                  operator: lȎǼŨ( ʬ廚hÙ岉
+                  operator: lȎǼŨ( ʬ廚hÙ岉
                   values:
                   - wqhyHhoiDAKZ
                   - Y0qpyxEJ
@@ -64249,7 +64249,7 @@ spec:
         supplementalGroups:
         - 6867727856541061000
         - 7812830173329805000
-        supplementalGroupsPolicy: 4šƋ鼮]哪菉ɨɫ劙. 鯯4譀
+        supplementalGroupsPolicy: 4šƋ鼮]哪菉ɨɫ劙. 鯯4譀
         sysctls:
         - name: OPZ
           value: jju
@@ -65646,7 +65646,7 @@ spec:
         - -635741623131586300
         - 581600570652541400
         - 111100053482107660
-        supplementalGroupsPolicy: 畁 ƻ)éà¶ŉŕ嘝髲L
+        supplementalGroupsPolicy: 畁 ƻ)éà¶ŉŕ嘝髲L
         sysctls:
         - name: lw
           value: 25aA
@@ -67408,7 +67408,7 @@ spec:
                 values:
                 - kRy5R
               - key: zoxLfTne1
-                operator: DɊȜkİ致溢k脠ȭP櫰栮齑晈;Ʊ騏 
+                operator: DɊȜkİ致溢k脠ȭP櫰栮齑晈;Ʊ騏
                 values:
                 - swH0
               - key: LCgHw
@@ -84260,8 +84260,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 ---
@@ -84287,8 +84287,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-config
   namespace: default
 ---
@@ -84301,8 +84301,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default-metrics-reader
 rules:
 - nonResourceURLs:
@@ -84319,8 +84319,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default
 rules:
 - apiGroups:
@@ -84770,8 +84770,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-additional-controllers-default
 rules:
 - apiGroups:
@@ -84926,8 +84926,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -84947,8 +84947,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-additional-controllers-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -84968,8 +84968,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-metrics-service
   namespace: default
 spec:
@@ -84991,8 +84991,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 spec:
@@ -85016,8 +85016,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 spec:
@@ -85040,7 +85040,7 @@ spec:
       - args:
         - multicluster
         - --base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - --base-tag=v26.1.1
+        - --base-tag=v26.2.1-beta.1
         - --ca-file=/tls/ca.crt
         - --certificate-file=/tls/tls.crt
         - --health-probe-bind-address=:8081
@@ -85057,7 +85057,7 @@ spec:
         command:
         - /redpanda-operator
         env: []
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -85141,8 +85141,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job
   namespace: default
 ---
@@ -85159,8 +85159,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job
   namespace: default
 ---
@@ -85176,8 +85176,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job-default
 rules:
 - apiGroups:
@@ -85202,8 +85202,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job-default
 rules:
 - apiGroups:
@@ -85656,8 +85656,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -85680,8 +85680,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -85704,8 +85704,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crds
   namespace: default
 spec:
@@ -85723,7 +85723,7 @@ spec:
         - --multicluster
         command:
         - /redpanda-operator
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         name: crd-installation
         resources: {}
@@ -85771,8 +85771,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration
   namespace: default
 spec:
@@ -85789,7 +85789,7 @@ spec:
         - migration
         command:
         - /redpanda-operator
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         name: migration
         resources: {}
@@ -85836,8 +85836,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 ---
@@ -85863,8 +85863,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-config
   namespace: default
 ---
@@ -85877,8 +85877,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default-metrics-reader
 rules:
 - nonResourceURLs:
@@ -85895,8 +85895,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default
 rules:
 - apiGroups:
@@ -86346,8 +86346,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-additional-controllers-default
 rules:
 - apiGroups:
@@ -86502,8 +86502,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -86523,8 +86523,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-additional-controllers-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -86544,8 +86544,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-metrics-service
   namespace: default
 spec:
@@ -86566,8 +86566,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 spec:
@@ -86591,8 +86591,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 spec:
@@ -86615,7 +86615,7 @@ spec:
       - args:
         - multicluster
         - --base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - --base-tag=v26.1.1
+        - --base-tag=v26.2.1-beta.1
         - --ca-file=/tls/ca.crt
         - --certificate-file=/tls/tls.crt
         - --health-probe-bind-address=:8081
@@ -86633,7 +86633,7 @@ spec:
         command:
         - /redpanda-operator
         env: []
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -86713,8 +86713,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 spec: {}
@@ -86728,8 +86728,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: west
   namespace: default
 spec:
@@ -86748,8 +86748,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: east
   namespace: default
 spec:
@@ -86772,8 +86772,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job
   namespace: default
 ---
@@ -86790,8 +86790,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job
   namespace: default
 ---
@@ -86807,8 +86807,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job-default
 rules:
 - apiGroups:
@@ -86833,8 +86833,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job-default
 rules:
 - apiGroups:
@@ -87287,8 +87287,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -87311,8 +87311,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -87335,8 +87335,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crds
   namespace: default
 spec:
@@ -87354,7 +87354,7 @@ spec:
         - --multicluster
         command:
         - /redpanda-operator
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         name: crd-installation
         resources: {}
@@ -87402,8 +87402,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration
   namespace: default
 spec:
@@ -87420,7 +87420,7 @@ spec:
         - migration
         command:
         - /redpanda-operator
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         name: migration
         resources: {}
@@ -87467,8 +87467,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 ---
@@ -87494,8 +87494,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-config
   namespace: default
 ---
@@ -87508,8 +87508,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default-metrics-reader
 rules:
 - nonResourceURLs:
@@ -87526,8 +87526,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default
 rules:
 - apiGroups:
@@ -87977,8 +87977,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-additional-controllers-default
 rules:
 - apiGroups:
@@ -88133,8 +88133,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -88154,8 +88154,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-additional-controllers-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -88175,8 +88175,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-metrics-service
   namespace: default
 spec:
@@ -88199,8 +88199,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 spec:
@@ -88227,8 +88227,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: west
   namespace: default
 spec:
@@ -88250,8 +88250,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: east
   namespace: default
 spec:
@@ -88271,8 +88271,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator
   namespace: default
 spec:
@@ -88295,7 +88295,7 @@ spec:
       - args:
         - multicluster
         - --base-image=docker.redpanda.com/redpandadata/redpanda-operator
-        - --base-tag=v26.1.1
+        - --base-tag=v26.2.1-beta.1
         - --ca-file=/tls/ca.crt
         - --certificate-file=/tls/tls.crt
         - --health-probe-bind-address=:8081
@@ -88313,7 +88313,7 @@ spec:
         command:
         - /redpanda-operator
         env: []
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -88397,8 +88397,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job
   namespace: default
 ---
@@ -88415,8 +88415,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job
   namespace: default
 ---
@@ -88432,8 +88432,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job-default
 rules:
 - apiGroups:
@@ -88458,8 +88458,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job-default
 rules:
 - apiGroups:
@@ -88912,8 +88912,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crd-job-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -88936,8 +88936,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration-job-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -88960,8 +88960,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-crds
   namespace: default
 spec:
@@ -88979,7 +88979,7 @@ spec:
         - --multicluster
         command:
         - /redpanda-operator
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         name: crd-installation
         resources: {}
@@ -89027,8 +89027,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.1.1
-    helm.sh/chart: operator-26.1.1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: operator-migration
   namespace: default
 spec:
@@ -89045,7 +89045,7 @@ spec:
         - migration
         command:
         - /redpanda-operator
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         imagePullPolicy: IfNotPresent
         name: migration
         resources: {}

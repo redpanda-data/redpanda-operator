@@ -35408,7 +35408,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -36935,7 +36935,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -38462,7 +38462,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -39989,7 +39989,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -41469,7 +41469,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -42947,7 +42947,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -44388,7 +44388,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -45826,7 +45826,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         - name: EXTRA_ENV_VAR
@@ -47348,7 +47348,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -48802,7 +48802,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -50296,7 +50296,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -51777,7 +51777,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -53224,7 +53224,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -54702,7 +54702,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -56168,7 +56168,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -58999,7 +58999,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -60429,7 +60429,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -61972,7 +61972,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -63419,7 +63419,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.1
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.1
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
