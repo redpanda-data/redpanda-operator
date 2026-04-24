@@ -12,7 +12,7 @@ buildGo126Module rec {
     owner = "redpanda-data";
     repo = "common-go";
     rev = "${version}";
-    hash = "sha256-34oDV8HFbTd5w34Kf1bVVuRIo3nXnVJlkQnbwh9A5GQ=";
+    hash = "sha256-gcSvonPNqEKUqT+s7/a/KG7xqLhW8s9bj951w2x09rk=";
   };
 
   vendorHash = "sha256-PIKAvpLy0tTYkkzxg1UvHhDMhQGysPQ06k1J+5llN84=";
