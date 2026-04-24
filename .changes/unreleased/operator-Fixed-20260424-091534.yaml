@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: StretchCluster admin API client now honours the Factory.WithAdminClientTimeout setting on all code paths (previously silently dropped) and the multicluster binary exposes a --cluster-connection-timeout flag to configure it.
+time: 2026-04-24T09:15:34.075775705+02:00

@@ -71,7 +71,7 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 		return nil, errors.Wrap(err, "reading auth credentials")
 	}
 
-	adminClient, err := redpandaclient.AdminClientForStretch(c.dialer, endpoints, username, password, tlsConfig)
+	adminClient, err := redpandaclient.AdminClientForStretch(c.dialer, endpoints, username, password, tlsConfig, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating admin client")
 	}
