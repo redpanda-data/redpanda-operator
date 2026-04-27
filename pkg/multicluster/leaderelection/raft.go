@@ -41,6 +41,12 @@ type peer struct {
 	// tick anyway. Size chosen to comfortably absorb one burst of catch-
 	// up MsgApp entries for a fresh follower without dropping.
 	sendCh chan raftpb.Message
+
+	// dropCount is the cumulative number of messages dropped because
+	// sendCh was full. Exported via the periodic logger
+	// (runDropLogger) so a chronically saturated peer is observable
+	// instead of silently invisible.
+	dropCount atomic.Uint64
 }
 
 // peerSendQueueSize is the bounded capacity of each peer's send queue.
@@ -378,8 +384,49 @@ func (t *grpcTransport) EnqueueSend(msg raftpb.Message) {
 	select {
 	case peer.sendCh <- msg:
 	default:
-		// Queue full. Raft re-sends on next tick; silent drop is
-		// cheaper than logging on every miss.
+		// Queue full. Raft re-sends on next tick. Bump the counter so
+		// runDropLogger can surface chronic saturation; logging on
+		// every miss would be too noisy on the hot path.
+		peer.dropCount.Add(1)
+	}
+}
+
+// dropLogInterval is how often runDropLogger samples each peer's
+// dropCount and emits a log line if the delta is non-zero. Tuned to be
+// short enough to catch transient saturation but quiet enough not to
+// flood logs on a healthy cluster (which never drops anything).
+const dropLogInterval = 30 * time.Second
+
+// runDropLogger periodically logs the per-peer EnqueueSend drop deltas
+// so a chronically saturated peer is operationally visible instead of
+// silently invisible. Healthy clusters never drop, so the goroutine is
+// log-silent in the common case. Exits on ctx cancellation.
+func (t *grpcTransport) runDropLogger(ctx context.Context) {
+	if t.logger == nil {
+		return
+	}
+	ticker := time.NewTicker(dropLogInterval)
+	defer ticker.Stop()
+
+	last := make(map[uint64]uint64, len(t.peers))
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			for id, p := range t.peers {
+				cur := p.dropCount.Load()
+				delta := cur - last[id]
+				if delta == 0 {
+					continue
+				}
+				last[id] = cur
+				t.logger.Infof(
+					"peer %d (%s): dropped %d raft messages in last %s due to full send queue (cumulative %d)",
+					id, p.addr, delta, dropLogInterval, cur,
+				)
+			}
+		}
 	}
 }
 
@@ -397,7 +444,7 @@ func (t *grpcTransport) runPeerSender(ctx context.Context, id uint64, peer *peer
 			if !ok {
 				return
 			}
-			t.sendOneMessage(ctx, id, peer, msg)
+			t.sendOneMessage(ctx, id, msg)
 		}
 	}
 }
@@ -405,7 +452,7 @@ func (t *grpcTransport) runPeerSender(ctx context.Context, id uint64, peer *peer
 // sendOneMessage is the body of runPeerSender's loop. Split out so the
 // snapshot-on-reject path is easier to read without deeply-nested
 // control flow inside the select.
-func (t *grpcTransport) sendOneMessage(ctx context.Context, id uint64, peer *peer, msg raftpb.Message) {
+func (t *grpcTransport) sendOneMessage(ctx context.Context, id uint64, msg raftpb.Message) {
 	applied, err := t.DoSend(ctx, msg)
 	if err == nil && applied {
 		return
@@ -623,6 +670,9 @@ func (t *grpcTransport) Run(ctx context.Context) error {
 	for id, p := range t.peers {
 		go t.runPeerSender(ctx, id, p)
 	}
+	// Periodically surface per-peer EnqueueSend drops so chronic queue
+	// saturation is visible without logging on every dropped message.
+	go t.runDropLogger(ctx)
 
 	done := make(chan struct{})
 	errs := make(chan error, 1)
