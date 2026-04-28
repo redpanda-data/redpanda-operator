@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -237,6 +238,47 @@ var _ = Describe("Redpanda node pool scale", func() {
 
 			By("Deleting the cluster")
 			Expect(k8sClient.Delete(context.Background(), redpandaCluster)).Should(Succeed())
+		})
+	})
+
+	Context("When scaling up a cluster that is unhealthy", func() {
+		It("Should scale up a node pool even when cluster is unhealthy and in a restarting state", func() {
+			By("Creating a cluster with two node pools of 1 replica each")
+			key, cluster, adminAPI := getClusterWithNodePool("unhealthy-np-scaleup", 1, 1)
+			npFirstKey := types.NamespacedName{Name: "unhealthy-np-scaleup-first", Namespace: "default"}
+
+			Expect(k8sClient.Create(context.Background(), cluster)).Should(Succeed())
+
+			By("Waiting for the first node pool StatefulSet to appear at 1 replica")
+			adminAPI.AddBroker(rpadmin.Broker{NodeID: 0, MembershipStatus: rpadmin.MembershipStatusActive})
+			var sts appsv1.StatefulSet
+			Eventually(resourceDataGetter(npFirstKey, &sts, func() interface{} {
+				return *sts.Spec.Replicas
+			}), timeout, interval).Should(Equal(int32(1)))
+
+			By("Setting the cluster as unhealthy and in restarting state (simulating a stuck rolling update)")
+			adminAPI.SetClusterHealth(false)
+			Eventually(func() error {
+				if err := k8sClient.Get(context.Background(), key, cluster); err != nil {
+					return err
+				}
+				base := cluster.DeepCopy()
+				cluster.Status.SetRestarting(true)
+				return k8sClient.Status().Patch(context.Background(), cluster, client.MergeFrom(base))
+			}, timeout, interval).Should(Succeed())
+
+			By("Scaling up the first node pool to 3 replicas")
+			Eventually(clusterUpdater(key, func(c *vectorizedv1alpha1.Cluster) {
+				c.Spec.NodePools[0].Replicas = ptr.To(int32(3))
+			}), timeout, interval).Should(Succeed())
+
+			By("Verifying the first node pool StatefulSet scales up despite unhealthy cluster")
+			Eventually(resourceDataGetter(npFirstKey, &sts, func() interface{} {
+				return *sts.Spec.Replicas
+			}), timeout, interval).Should(Equal(int32(3)))
+
+			By("Deleting the cluster")
+			Expect(k8sClient.Delete(context.Background(), cluster)).Should(Succeed())
 		})
 	})
 })
