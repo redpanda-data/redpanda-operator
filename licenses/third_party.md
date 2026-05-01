@@ -184,7 +184,8 @@ run `task generate:third-party-licenses-list`
 | github.com/mitchellh/go-wordwrap | [MIT](https://github.com/mitchellh/go-wordwrap/blob/v1.0.1/LICENSE.md) |
 | github.com/mitchellh/hashstructure | [MIT](https://github.com/mitchellh/hashstructure/blob/v1.1.0/LICENSE) |
 | github.com/mitchellh/reflectwalk | [MIT](https://github.com/mitchellh/reflectwalk/blob/v1.0.2/LICENSE) |
-| github.com/moby/spdystream | [Apache-2.0](https://github.com/moby/spdystream/blob/v0.5.0/LICENSE) |
+| github.com/moby/spdystream | [Apache-2.0](https://github.com/moby/spdystream/blob/v0.5.1/LICENSE) |
+| github.com/moby/spdystream/spdy | [BSD-3-Clause](https://github.com/moby/spdystream/blob/v0.5.1/spdy/LICENSE) |
 | github.com/moby/sys/mountinfo | [Apache-2.0](https://github.com/moby/sys/blob/mountinfo/v0.7.2/mountinfo/LICENSE) |
 | github.com/moby/term | [Apache-2.0](https://github.com/moby/term/blob/v0.5.2/LICENSE) |
 | github.com/modern-go/concurrent | [Apache-2.0](https://github.com/modern-go/concurrent/blob/bacd9c7ef1dd/LICENSE) |
