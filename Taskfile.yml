@@ -142,9 +142,6 @@ tasks:
     # licensereport replaces go-licenses report. It resolves URLs via
     # proxy.golang.org (no vanity-URL meta-tag dependency, so no gopkg.in
     # flake) and classifies licenses with Google's licenseclassifier.
-    # Stdlib packages and "non-Go code" modules that broke go-licenses
-    # are handled automatically — no longer need the ~70-line ignore list
-    # of stdlib and binary-bearing modules.
     # Our own packages and pure-generated buf.build paths are ignored to
     # mirror prior behavior. example.com/example is the gotohelm test fake.
     # Write to a tmp file then mv: redirecting > directly to the target

@@ -392,8 +392,27 @@ func nearestLicenses(lics []classifyResult, pkgRel string) []classifyResult {
 }
 
 func buildURL(info *proxyInfo, licenseRelPath string, m module, name string, fallback map[string]string) string {
-	if info != nil && info.Origin != nil && info.Origin.URL != "" && info.Origin.Hash != "" {
-		return fmt.Sprintf("%s/blob/%s/%s", info.Origin.URL, info.Origin.Hash, licenseRelPath)
+	if info != nil && info.Origin != nil && info.Origin.URL != "" {
+		// Prefer the tag (refs/tags/...) when available — keeps URLs
+		// human-readable and matches how go-licenses generated them, so
+		// committed third_party.md doesn't churn on every release. Fall
+		// back to SHA for pseudo-versions where Ref is a branch/empty.
+		//
+		// Multi-module repos (e.g. cloud.google.com/go) tag submodules as
+		// `subdir/vX.Y.Z`. The subdir part is also where the LICENSE lives
+		// in the repo, so prepend it to the file path.
+		var ref, subdir string
+		if tag := strings.TrimPrefix(info.Origin.Ref, "refs/tags/"); tag != info.Origin.Ref && tag != "" {
+			ref = tag
+			if parts := strings.Split(tag, "/"); len(parts) > 1 && isVersionTag(parts[len(parts)-1]) {
+				subdir = strings.Join(parts[:len(parts)-1], "/") + "/"
+			}
+		} else if info.Origin.Hash != "" {
+			ref = info.Origin.Hash
+		}
+		if ref != "" {
+			return fmt.Sprintf("%s/blob/%s/%s%s", info.Origin.URL, ref, subdir, licenseRelPath)
+		}
 	}
 	// Try fallback by row name first (matches existing-file row exactly,
 	// including hardcoded buf.build/etc. overrides), then by module path.
@@ -407,6 +426,12 @@ func buildURL(info *proxyInfo, licenseRelPath string, m module, name string, fal
 	}
 	fmt.Fprintf(os.Stderr, "licensereport: no URL for %s@%s (proxy lacks Origin, no fallback)\n", m.Path, m.Version)
 	return ""
+}
+
+// isVersionTag returns true if s looks like a Go module version tag:
+// starts with "v" followed by a digit (v1, v2.3, v0.5.1, etc.).
+func isVersionTag(s string) bool {
+	return len(s) >= 2 && s[0] == 'v' && s[1] >= '0' && s[1] <= '9'
 }
 
 // longestCommonPath returns the longest path-component prefix shared by all
