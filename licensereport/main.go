@@ -61,8 +61,8 @@ type goListPackage struct {
 		Main     bool
 		Indirect bool
 	}
-	Imports     []string
-	TestImports []string
+	Imports      []string
+	TestImports  []string
 	XTestImports []string
 }
 
@@ -553,4 +553,3 @@ func die(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "licensereport: "+format+"\n", args...)
 	os.Exit(1)
 }
-
