@@ -60,6 +60,14 @@ type goListPackage struct {
 		Version  string
 		Main     bool
 		Indirect bool
+		// Replace, when set, indicates the module is being substituted via
+		// a replace directive in go.mod. The actual code shipped comes
+		// from Replace.Path@Replace.Version, so license URLs must point
+		// there even though the import path stays the original.
+		Replace *struct {
+			Path    string
+			Version string
+		}
 	}
 	Imports      []string
 	TestImports  []string
@@ -136,7 +144,15 @@ func main() {
 		if skip {
 			continue
 		}
-		m := module{Path: p.Module.Path, Version: p.Module.Version}
+		// Follow replace directives: the LICENSE we ship comes from the
+		// substituted module, not the original. The import path stays
+		// the original (what users `import`), but proxy lookups and
+		// LICENSE classification all use the replacement.
+		modPath, modVersion := p.Module.Path, p.Module.Version
+		if p.Module.Replace != nil && p.Module.Replace.Path != "" {
+			modPath, modVersion = p.Module.Replace.Path, p.Module.Replace.Version
+		}
+		m := module{Path: modPath, Version: modVersion}
 		kept = append(kept, pkgEntry{ImportPath: p.ImportPath, Module: m})
 		moduleSet[m] = struct{}{}
 	}
