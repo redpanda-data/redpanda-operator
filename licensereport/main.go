@@ -300,7 +300,7 @@ func classifyZipLicenses(z *zip.Reader, cls *classifier.Classifier, threshold fl
 			continue
 		}
 		buf, err := io.ReadAll(rc)
-		rc.Close()
+		_ = rc.Close()
 		if err != nil {
 			continue
 		}
@@ -462,7 +462,7 @@ func listPackages(dir string) ([]goListPackage, error) {
 
 func fetchInfo(m module) (*proxyInfo, error) {
 	url := fmt.Sprintf("%s/%s/@v/%s.info", proxyBase, escapePath(m.Path), m.Version)
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec // url is built from constant proxy base + sanitized module path
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +479,7 @@ func fetchInfo(m module) (*proxyInfo, error) {
 
 func fetchZip(m module) (*zip.Reader, error) {
 	url := fmt.Sprintf("%s/%s/@v/%s.zip", proxyBase, escapePath(m.Path), m.Version)
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec // url is built from constant proxy base + sanitized module path
 	if err != nil {
 		return nil, err
 	}
