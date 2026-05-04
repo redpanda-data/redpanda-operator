@@ -274,7 +274,17 @@ func resolveModules(set map[module]struct{}, concurrency int, threshold float64)
 }
 
 func classifyZipLicenses(z *zip.Reader, cls *classifier.Classifier, threshold float64) []classifyResult {
-	var out []classifyResult
+	// Pick the canonical LICENSE file per directory. A repo may ship
+	// COPYING.md plus LICENSE.BSD plus LICENSE.MPL-2.0 (cyphar/filepath-securejoin
+	// is the canonical example); go-licenses processes only the highest-
+	// priority one per directory, so we do the same. Otherwise we'd emit
+	// duplicate (module, license) rows for the same legal info.
+	type candidate struct {
+		base    string
+		rel     string
+		zipFile *zip.File
+	}
+	bestPerDir := map[string]candidate{}
 	for _, f := range z.File {
 		if f.FileInfo().IsDir() {
 			continue
@@ -294,6 +304,20 @@ func classifyZipLicenses(z *zip.Reader, cls *classifier.Classifier, threshold fl
 			continue
 		}
 		rel := f.Name[idx+slash+1:]
+		dir := path.Dir(rel)
+		if dir == "." {
+			dir = ""
+		}
+		c := candidate{base: base, rel: rel, zipFile: f}
+		if existing, ok := bestPerDir[dir]; !ok || licenseFilePriority(base) < licenseFilePriority(existing.base) {
+			bestPerDir[dir] = c
+		}
+	}
+
+	var out []classifyResult
+	for _, c := range bestPerDir {
+		f := c.zipFile
+		rel := c.rel
 
 		rc, err := f.Open()
 		if err != nil {
@@ -362,6 +386,24 @@ func isLicenseFile(upperBase string) bool {
 		}
 	}
 	return false
+}
+
+// licenseFilePriority orders candidate LICENSE filenames within one directory.
+// Lower number wins. The classifier reads one file per directory, so when a
+// repo ships several (LICENSE + LICENSE.BSD + LICENSE.MPL-2.0), we want the
+// most general one — typically the bare LICENSE / COPYING — since it usually
+// contains the full text of every license that applies.
+func licenseFilePriority(upperBase string) int {
+	switch upperBase {
+	case "LICENSE", "LICENCE", "COPYING", "COPYRIGHT":
+		return 0
+	case "LICENSE.TXT", "LICENSE.MD", "LICENCE.TXT", "LICENCE.MD",
+		"COPYING.TXT", "COPYING.MD", "COPYRIGHT.TXT":
+		return 1
+	}
+	// LICENSE.<SPDX> or LICENSE-<SPDX> variants — last resort, since any
+	// repo shipping these typically also has a more general file.
+	return 2
 }
 
 // nearestLicenses walks up the directory chain from pkgRel and returns ALL
