@@ -35,7 +35,7 @@ steps:
       (build.pull_request.id != null && !build.pull_request.repository.fork) ||
       ((build.source == "schedule" || build.source == "ui") && build.env("K8S_NIGHTLY") == "1") ||
       ((build.branch == "main" || build.branch =~ /^release\//) && build.source == "webhook")
-    command: buildkite-agent pipeline upload .buildkite/testsuite.yml
+    command: .buildkite/scripts/conditional_testsuite.sh
 
     # NOTE: This build IS NOT dependent on tests passing due to their current flakey state.
     # It's recommended to check that tests have passed for the given commit before using it.
