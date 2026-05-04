@@ -74,9 +74,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/coreos/go-semver/semver | [Apache-2.0](https://github.com/coreos/go-semver/blob/v0.3.1/LICENSE) |
 | github.com/coreos/go-systemd/v22 | [Apache-2.0](https://github.com/coreos/go-systemd/blob/v22.7.0/LICENSE) |
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/COPYING.md) |
-| github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/LICENSE.BSD) |
 | github.com/cyphar/filepath-securejoin | [MPL-2.0](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/COPYING.md) |
-| github.com/cyphar/filepath-securejoin | [MPL-2.0](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/LICENSE.MPL-2.0) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
 | github.com/emicklei/go-restful/v3 | [MIT](https://github.com/emicklei/go-restful/blob/v3.13.0/LICENSE) |
 | github.com/evanphx/json-patch | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.9.11/LICENSE) |
@@ -199,7 +197,6 @@ Run `task generate:third-party-licenses-list`.
 | github.com/mxk/go-flowrate/flowrate | [BSD-3-Clause](https://github.com/mxk/go-flowrate/blob/cca7078d478f/LICENSE) |
 | github.com/onsi/gomega | [MIT](https://github.com/onsi/gomega/blob/v1.38.2/LICENSE) |
 | github.com/opencontainers/go-digest | [Apache-2.0](https://github.com/opencontainers/go-digest/blob/d50d2fec9c98/LICENSE) |
-| github.com/opencontainers/go-digest | [CC-BY-SA-4.0](https://github.com/opencontainers/go-digest/blob/d50d2fec9c98/LICENSE.docs) |
 | github.com/opencontainers/image-spec/specs-go | [Apache-2.0](https://github.com/opencontainers/image-spec/blob/v1.1.1/LICENSE) |
 | github.com/peterbourgon/diskv | [MIT](https://github.com/peterbourgon/diskv/blob/v2.0.1/LICENSE) |
 | github.com/pierrec/lz4/v4 | [BSD-3-Clause](https://github.com/pierrec/lz4/blob/v4.1.25/LICENSE) |
@@ -273,7 +270,6 @@ Run `task generate:third-party-licenses-list`.
 | go.uber.org/multierr | [MIT](https://github.com/uber-go/multierr/blob/v1.11.0/LICENSE.txt) |
 | go.uber.org/zap | [MIT](https://github.com/uber-go/zap/blob/v1.27.1/LICENSE) |
 | go.yaml.in/yaml/v2 | [Apache-2.0](https://github.com/yaml/go-yaml/blob/v2.4.3/LICENSE) |
-| go.yaml.in/yaml/v2 | [MIT](https://github.com/yaml/go-yaml/blob/v2.4.3/LICENSE.libyaml) |
 | go.yaml.in/yaml/v3 | [MIT](https://github.com/yaml/go-yaml/blob/v3.0.4/LICENSE) |
 | golang.org/x/crypto | [BSD-3-Clause](https://go.googlesource.com/crypto/blob/v0.49.0/LICENSE) |
 | golang.org/x/exp | [BSD-3-Clause](https://go.googlesource.com/exp/blob/3dfff04db8fa/LICENSE) |
@@ -298,7 +294,6 @@ Run `task generate:third-party-licenses-list`.
 | gopkg.in/inf.v0 | [BSD-3-Clause](https://github.com/go-inf/inf/blob/v0.9.1/LICENSE) |
 | gopkg.in/natefinch/lumberjack.v2 | [MIT](https://gopkg.in/natefinch/lumberjack.v2/blob/v2.2.1/LICENSE) |
 | gopkg.in/yaml.v2 | [Apache-2.0](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE) |
-| gopkg.in/yaml.v2 | [MIT](https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE) |
 | gopkg.in/yaml.v3 | [MIT](https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE) |
 | helm.sh/helm/v3 | [Apache-2.0](https://github.com/helm/helm/blob/v3.18.5/LICENSE) |
 | k8s.io/api | [Apache-2.0](https://github.com/kubernetes/api/blob/v0.35.1/LICENSE) |
@@ -318,7 +313,6 @@ Run `task generate:third-party-licenses-list`.
 | k8s.io/kube-openapi/pkg/internal/third_party/govalidator | [MIT](https://github.com/kubernetes/kube-openapi/blob/a19766b6e2d4/pkg/internal/third_party/govalidator/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/errors | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/a19766b6e2d4/pkg/validation/errors/LICENSE) |
 | k8s.io/kube-openapi/pkg/validation/spec | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/a19766b6e2d4/pkg/validation/spec/LICENSE) |
-| k8s.io/kube-openapi/pkg/validation/spec | [Unknown](https://github.com/kubernetes/kube-openapi/blob/a19766b6e2d4/pkg/validation/spec/license.go) |
 | k8s.io/kube-openapi/pkg/validation/strfmt | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/a19766b6e2d4/pkg/validation/strfmt/LICENSE) |
 | k8s.io/kubectl/pkg | [Apache-2.0](https://github.com/kubernetes/kubectl/blob/v0.35.1/LICENSE) |
 | k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/b8788abfbbc2/LICENSE) |
