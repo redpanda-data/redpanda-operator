@@ -408,7 +408,13 @@ func buildURL(info *proxyInfo, licenseRelPath string, m module, name string, fal
 				subdir = strings.Join(parts[:len(parts)-1], "/") + "/"
 			}
 		} else if info.Origin.Hash != "" {
+			// Use 12-char short SHA — matches Go pseudo-version
+			// convention and what go-licenses emitted, so the file
+			// stays compact and consistent.
 			ref = info.Origin.Hash
+			if len(ref) > 12 {
+				ref = ref[:12]
+			}
 		}
 		if ref != "" {
 			return fmt.Sprintf("%s/blob/%s/%s%s", info.Origin.URL, ref, subdir, licenseRelPath)
