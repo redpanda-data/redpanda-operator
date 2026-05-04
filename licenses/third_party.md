@@ -187,7 +187,8 @@ Run `task generate:third-party-licenses-list`.
 | github.com/mitchellh/go-wordwrap | [MIT](https://github.com/mitchellh/go-wordwrap/blob/v1.0.1/LICENSE.md) |
 | github.com/mitchellh/hashstructure | [MIT](https://github.com/mitchellh/hashstructure/blob/v1.1.0/LICENSE) |
 | github.com/mitchellh/reflectwalk | [MIT](https://github.com/mitchellh/reflectwalk/blob/v1.0.2/LICENSE) |
-| github.com/moby/spdystream | [Apache-2.0](https://github.com/moby/spdystream/blob/v0.5.0/LICENSE) |
+| github.com/moby/spdystream | [Apache-2.0](https://github.com/moby/spdystream/blob/v0.5.1/LICENSE) |
+| github.com/moby/spdystream/spdy | [BSD-3-Clause](https://github.com/moby/spdystream/blob/v0.5.1/spdy/LICENSE) |
 | github.com/moby/sys/mountinfo | [Apache-2.0](https://github.com/moby/sys/blob/mountinfo/v0.7.2/mountinfo/LICENSE) |
 | github.com/moby/term | [Apache-2.0](https://github.com/moby/term/blob/v0.5.2/LICENSE) |
 | github.com/modern-go/concurrent | [Apache-2.0](https://github.com/modern-go/concurrent/blob/bacd9c7ef1dd/LICENSE) |
@@ -318,7 +319,7 @@ Run `task generate:third-party-licenses-list`.
 | k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/b8788abfbbc2/LICENSE) |
 | k8s.io/utils/internal/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/b8788abfbbc2/internal/third_party/forked/golang/LICENSE) |
 | oras.land/oras-go/v2 | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v2.6.0/LICENSE) |
-| pgregory.net/rapid | [MPL-2.0](https://github.com/flyingmutant/rapid/blob/v1.1.0/LICENSE) |
+| pgregory.net/rapid | [MPL-2.0](https://github.com/chrisseto/rapid/blob/cdeef406c65c/LICENSE) |
 | sigs.k8s.io/apiserver-network-proxy/konnectivity-client | [Apache-2.0](https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/konnectivity-client/v0.34.0/konnectivity-client/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.23.1/LICENSE) |
 | sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.4.1/LICENSE) |
