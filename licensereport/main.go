@@ -34,6 +34,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	classifier "github.com/google/licenseclassifier/v2"
 	"github.com/google/licenseclassifier/v2/assets"
@@ -45,10 +46,11 @@ type proxyInfo struct {
 	Version string
 	Time    string
 	Origin  *struct {
-		VCS  string
-		URL  string
-		Hash string
-		Ref  string
+		VCS    string
+		URL    string
+		Subdir string // path within the repo where the module lives, if not at root
+		Hash   string
+		Ref    string
 	}
 }
 
@@ -101,12 +103,14 @@ func main() {
 		dir          string
 		concurrency  int
 		threshold    float64
+		validateFull bool
 	)
 	flag.Var(&ignoreFlags, "ignore", "Module path prefix to omit (repeatable)")
 	flag.StringVar(&fallbackFile, "fallback-from", "", "Path to existing licenses/third_party.md to mine for URL fallbacks when proxy lacks Origin")
 	flag.StringVar(&dir, "dir", ".", "Directory to run `go list` in")
 	flag.IntVar(&concurrency, "concurrency", 16, "Parallel proxy fetches")
 	flag.Float64Var(&threshold, "confidence", 0.85, "Minimum classifier confidence; below this emit Unknown")
+	flag.BoolVar(&validateFull, "validate-full", false, "HEAD-check every URL even if it appeared in --fallback-from. Off by default: URLs already in the previously-committed file are assumed valid (trust the prior run). Turn on for a periodic full audit.")
 	flag.Parse()
 
 	fallback := map[string]string{} // module path -> URL
@@ -115,6 +119,16 @@ func main() {
 		fallback, err = parseFallback(fallbackFile)
 		if err != nil {
 			die("parse fallback: %v", err)
+		}
+		if !validateFull {
+			// Trust URLs from the prior committed file: if they're
+			// already in here, the previous run validated them. Skip
+			// the HEAD-check and just treat them as known-good.
+			urlExistsCacheMu.Lock()
+			for _, u := range fallback {
+				urlExistsCache[u] = true
+			}
+			urlExistsCacheMu.Unlock()
 		}
 	}
 
@@ -451,51 +465,205 @@ func nearestLicenses(lics []classifyResult, pkgRel string) []classifyResult {
 
 func buildURL(info *proxyInfo, licenseRelPath string, m module, name string, fallback map[string]string) string {
 	if info != nil && info.Origin != nil && info.Origin.URL != "" {
+		repoURL := rewriteRepoURL(info.Origin.URL)
 		// Prefer the tag (refs/tags/...) when available — keeps URLs
-		// human-readable and matches how go-licenses generated them, so
-		// committed third_party.md doesn't churn on every release. Fall
-		// back to SHA for pseudo-versions where Ref is a branch/empty.
-		//
-		// Multi-module repos (e.g. cloud.google.com/go) tag submodules as
-		// `subdir/vX.Y.Z`. The subdir part is also where the LICENSE lives
-		// in the repo, so prepend it to the file path.
-		var ref, subdir string
+		// human-readable and matches how go-licenses generated them.
+		// Fall back to SHA for pseudo-versions.
+		var ref string
 		if tag := strings.TrimPrefix(info.Origin.Ref, "refs/tags/"); tag != info.Origin.Ref && tag != "" {
 			ref = tag
-			if parts := strings.Split(tag, "/"); len(parts) > 1 && isVersionTag(parts[len(parts)-1]) {
-				subdir = strings.Join(parts[:len(parts)-1], "/") + "/"
-			}
 		} else if info.Origin.Hash != "" {
-			// Use 12-char short SHA — matches Go pseudo-version
-			// convention and what go-licenses emitted, so the file
-			// stays compact and consistent.
+			// 12-char short SHA — matches Go pseudo-version convention
+			// and keeps the file compact.
 			ref = info.Origin.Hash
 			if len(ref) > 12 {
 				ref = ref[:12]
 			}
 		}
 		if ref != "" {
-			return fmt.Sprintf("%s/blob/%s/%s%s", info.Origin.URL, ref, subdir, licenseRelPath)
+			// HEAD-check candidate paths from most-specific to root and
+			// pick the first that 200s. Different repos handle subdir
+			// modules differently:
+			//   - aws-sdk-go-v2/internal/endpoints/v2 has a physical
+			//     /v2 directory containing its own LICENSE.txt
+			//   - cloud.google.com/go/auth has Subdir=auth but the
+			//     LICENSE is inherited from the repo root
+			//   - evanphx/json-patch/v5 has no Subdir and /v5 is virtual
+			// Naively trusting Subdir or naively trusting /vN both
+			// produce 404s; the only reliable option is to ask the
+			// source-of-truth host (github, gitiles, gitlab, etc.).
+			candidates := candidateRepoPaths(info.Origin.Subdir, m.Path, licenseRelPath)
+			for _, p := range candidates {
+				url := blobURL(repoURL, ref, p)
+				if urlExists(url) {
+					return url
+				}
+			}
+			// All candidates 404'd — emit the LAST candidate (root) as
+			// the safest fallback (license inherited from root is the
+			// most common scenario when subdir lookups fail).
+			fmt.Fprintf(os.Stderr, "licensereport: no working URL for %s@%s (tried %d candidates)\n", m.Path, m.Version, len(candidates))
+			return blobURL(repoURL, ref, candidates[len(candidates)-1])
 		}
 	}
-	// Try fallback by row name first (matches existing-file row exactly,
-	// including hardcoded buf.build/etc. overrides), then by module path.
+	// No Origin — fall back to a previously-committed URL. Verify it works;
+	// if the fallback is itself broken (the file we copied from had bad
+	// URLs for some entries), try common rewrites: strip /v<N>/ for
+	// virtual major-version dirs, swap go.googlesource.com → github mirror.
+	rawFallback, fallbackKey := "", ""
 	if url, ok := fallback[name]; ok {
-		fmt.Fprintf(os.Stderr, "licensereport: fallback URL for %s (proxy lacks Origin)\n", name)
-		return url
+		rawFallback, fallbackKey = url, name
+	} else if url, ok := fallback[m.Path]; ok {
+		rawFallback, fallbackKey = url, m.Path
 	}
-	if url, ok := fallback[m.Path]; ok {
-		fmt.Fprintf(os.Stderr, "licensereport: fallback URL for %s via module path %s\n", name, m.Path)
-		return url
+	if rawFallback == "" {
+		fmt.Fprintf(os.Stderr, "licensereport: no URL for %s@%s (proxy lacks Origin, no fallback)\n", m.Path, m.Version)
+		return ""
 	}
-	fmt.Fprintf(os.Stderr, "licensereport: no URL for %s@%s (proxy lacks Origin, no fallback)\n", m.Path, m.Version)
-	return ""
+	for _, candidate := range fallbackCandidates(rawFallback, m.Path) {
+		if urlExists(candidate) {
+			if candidate != rawFallback {
+				fmt.Fprintf(os.Stderr, "licensereport: rewrote broken fallback URL for %s\n", fallbackKey)
+			}
+			return candidate
+		}
+	}
+	fmt.Fprintf(os.Stderr, "licensereport: keeping unverified fallback for %s (HEAD-check failed)\n", fallbackKey)
+	return rawFallback
 }
 
-// isVersionTag returns true if s looks like a Go module version tag:
-// starts with "v" followed by a digit (v1, v2.3, v0.5.1, etc.).
-func isVersionTag(s string) bool {
-	return len(s) >= 2 && s[0] == 'v' && s[1] >= '0' && s[1] <= '9'
+// rewriteRepoURL is a placeholder for any future host rewrites. Currently
+// returns the URL unchanged — go.googlesource.com URLs are handled via
+// blobURL, which uses Gitiles' /+/ syntax instead of /blob/.
+func rewriteRepoURL(u string) string {
+	return u
+}
+
+// blobURL constructs a viewable URL for a file at a given ref in a repo.
+// Uses /blob/<ref>/<path> for github-style hosts and /+/<ref>/<path> for
+// Gitiles hosts (go.googlesource.com).
+func blobURL(repo, ref, path string) string {
+	if strings.HasPrefix(repo, "https://go.googlesource.com/") {
+		return fmt.Sprintf("%s/+/%s/%s", repo, ref, path)
+	}
+	return fmt.Sprintf("%s/blob/%s/%s", repo, ref, path)
+}
+
+// fallbackCandidates derives alternative URLs to try when the prior
+// committed third_party.md row's URL doesn't resolve. Common transforms:
+//
+//   - strip a virtual /v<N>/ segment (modules whose path ends in /vN
+//     where the major-version dir doesn't physically exist in the repo)
+//   - rewrite go.googlesource.com hosts to the github mirror
+func fallbackCandidates(url, modulePath string) []string {
+	out := []string{url}
+	// go.googlesource.com uses Gitiles' /+/ URL syntax. The previously-
+	// committed file had /blob/ URLs (broken). Rewrite to Gitiles.
+	if strings.Contains(url, "go.googlesource.com/") && strings.Contains(url, "/blob/") {
+		out = append(out, strings.Replace(url, "/blob/", "/+/", 1))
+	}
+	if v := majorVersionSuffix(modulePath); v != "" {
+		// Strip "/vN/" before the file name. Pattern: /<ref>/vN/<file>
+		// → /<ref>/<file>. Only safe when the module path ends in /vN.
+		needle := "/" + v + "/"
+		if i := strings.LastIndex(url, needle); i >= 0 {
+			out = append(out, url[:i+1]+url[i+len(needle):])
+		}
+	}
+	return out
+}
+
+// majorVersionSuffix returns "vN" if the module path ends in a major-version
+// directory suffix (/v2, /v3, ...); empty otherwise. Major-version v0/v1
+// don't get a suffix in Go's semantic-import-versioning rules.
+func majorVersionSuffix(modulePath string) string {
+	idx := strings.LastIndex(modulePath, "/")
+	if idx < 0 {
+		return ""
+	}
+	last := modulePath[idx+1:]
+	if len(last) < 2 || last[0] != 'v' {
+		return ""
+	}
+	for _, r := range last[1:] {
+		if r < '0' || r > '9' {
+			return ""
+		}
+	}
+	if last == "v0" || last == "v1" {
+		return ""
+	}
+	return last
+}
+
+// candidateRepoPaths builds the ordered list of repo-relative file paths
+// where the LICENSE might live, from most-specific (Subdir + physical /vN)
+// to least-specific (repo root). The caller HEAD-checks them in order.
+func candidateRepoPaths(subdir, modulePath, licenseRelPath string) []string {
+	var out []string
+	majorV := majorVersionSuffix(modulePath)
+	if subdir != "" && majorV != "" {
+		out = append(out, joinPath(subdir, majorV, licenseRelPath))
+	}
+	if subdir != "" {
+		out = append(out, joinPath(subdir, licenseRelPath))
+	}
+	if majorV != "" && subdir == "" {
+		// modules like github.com/X/Y/v2 with no Subdir — try /vN as
+		// a physical dir before falling through to root.
+		out = append(out, joinPath(majorV, licenseRelPath))
+	}
+	out = append(out, licenseRelPath)
+	// Dedupe while preserving order.
+	seen := map[string]bool{}
+	uniq := out[:0]
+	for _, p := range out {
+		if !seen[p] {
+			seen[p] = true
+			uniq = append(uniq, p)
+		}
+	}
+	return uniq
+}
+
+func joinPath(parts ...string) string {
+	var nonEmpty []string
+	for _, p := range parts {
+		p = strings.Trim(p, "/")
+		if p != "" {
+			nonEmpty = append(nonEmpty, p)
+		}
+	}
+	return strings.Join(nonEmpty, "/")
+}
+
+// urlExists HEAD-checks a URL and reports 200. Used to pick among candidate
+// LICENSE blob paths. Caches by URL since many modules share repo structure.
+var (
+	urlExistsCache   = map[string]bool{}
+	urlExistsCacheMu sync.Mutex
+)
+
+func urlExists(url string) bool {
+	urlExistsCacheMu.Lock()
+	if v, ok := urlExistsCache[url]; ok {
+		urlExistsCacheMu.Unlock()
+		return v
+	}
+	urlExistsCacheMu.Unlock()
+
+	req, _ := http.NewRequest("HEAD", url, nil) //nolint:gosec // url is built from constant origin + sanitized path
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	ok := err == nil && resp != nil && resp.StatusCode == 200
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+
+	urlExistsCacheMu.Lock()
+	urlExistsCache[url] = ok
+	urlExistsCacheMu.Unlock()
+	return ok
 }
 
 // longestCommonPath returns the longest path-component prefix shared by all
