@@ -223,14 +223,23 @@ func (r *StatefulSetResource) Ensure(ctx context.Context) error {
 	}
 
 	log.Info("Running update")
-	err = r.runUpdate(ctx, &sts, obj.(*appsv1.StatefulSet))
-	if err != nil {
-		return err
+	runUpdateErr := r.runUpdate(ctx, &sts, obj.(*appsv1.StatefulSet))
+	// Always run handleScaling even when runUpdate returned a RequeueAfterError
+	// (e.g. the cluster health check blocking a rolling update). Scale-up must
+	// not be gated on cluster health — only decommission (scale-down) is gated
+	// inside handleScaling itself.
+	var requeueAfterErr *RequeueAfterError
+	if runUpdateErr != nil && !errors.As(runUpdateErr, &requeueAfterErr) {
+		return runUpdateErr
 	}
 
 	log.Info("Running scale handler")
 	if err := r.handleScaling(ctx); err != nil {
 		return err
+	}
+
+	if runUpdateErr != nil {
+		return runUpdateErr
 	}
 
 	// Delete StatefulSets of deleted NodePools if the conditions are met.
