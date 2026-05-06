@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 
 	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
@@ -34,13 +35,49 @@ import (
 type peer struct {
 	addr   string
 	client transportv1.TransportServiceClient
+
+	// sendCh feeds the per-peer worker goroutine. Bounded; full-queue
+	// drops are silently absorbed because raft re-sends every heartbeat
+	// tick anyway. Size chosen to comfortably absorb one burst of catch-
+	// up MsgApp entries for a fresh follower without dropping.
+	sendCh chan raftpb.Message
+
+	// dropCount is the cumulative number of messages dropped because
+	// sendCh was full. Exported via the periodic logger
+	// (runDropLogger) so a chronically saturated peer is observable
+	// instead of silently invisible.
+	dropCount atomic.Uint64
+}
+
+// peerSendQueueSize is the bounded capacity of each peer's send queue.
+// Sized to absorb one burst of catch-up entries for a fresh follower
+// (typical size: a few dozen) without dropping.
+const peerSendQueueSize = 256
+
+// raftKeepaliveParams are baseline HTTP/2 keepalive settings applied to every
+// peer gRPC connection. Without these, a silently black-holed TCP link (no
+// RST, packets dropped) would keep the connection "open" until the Linux TCP
+// retransmit ceiling (tcp_retries2 ≈ 15 minutes by default) and every
+// subsequent DoSend from the raft Ready loop would block on that orphan
+// stream. The keepalive closes the stream within Time + Timeout of the first
+// missed pong and a fresh connection is dialed on the next send, so the raft
+// loop recovers quickly even when the peer's TCP stack never notifies us.
+var raftKeepaliveParams = keepalive.ClientParameters{
+	Time:                10 * time.Second, // send a ping every 10s on idle
+	Timeout:             3 * time.Second,  // close if no pong in 3s
+	PermitWithoutStream: true,             // ping even when no active streams
 }
 
 func newPeer(addr string, credentials credentials.TransportCredentials, extraOpts ...grpc.DialOption) (*peer, error) {
 	if credentials == nil {
 		credentials = insecure.NewCredentials()
 	}
-	opts := append([]grpc.DialOption{grpc.WithTransportCredentials(credentials)}, extraOpts...)
+	// Baseline options first; caller-supplied extraOpts can override.
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(credentials),
+		grpc.WithKeepaliveParams(raftKeepaliveParams),
+	}
+	opts = append(opts, extraOpts...)
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err
@@ -49,6 +86,7 @@ func newPeer(addr string, credentials credentials.TransportCredentials, extraOpt
 	return &peer{
 		addr:   addr,
 		client: transportv1.NewTransportServiceClient(conn),
+		sendCh: make(chan raftpb.Message, peerSendQueueSize),
 	}, nil
 }
 
@@ -144,10 +182,27 @@ type grpcTransport struct {
 	clientCredentials credentials.TransportCredentials
 	extraDialOptions  []grpc.DialOption
 
+	// testHooks is nil in production. Chaos tests wire it in via the
+	// LockConfiguration so they can inject faults (currently
+	// BlockIngress) without touching the production code path.
+	testHooks *TestHooks
+
+	// sendTimeout bounds a single peer RPC issued by the per-peer worker
+	// goroutine. Without a ceiling, a silently black-holed TCP stream
+	// would block the worker until Linux TCP retransmit fires (~15 min).
+	// Zero applies defaultSendTimeout. Callers thread in the configured
+	// HeartbeatInterval so the worker can't sit on one send longer than
+	// one heartbeat tick.
+	sendTimeout time.Duration
+
 	logger raft.Logger
 
 	transportv1.UnimplementedTransportServiceServer
 }
+
+// defaultSendTimeout is the fallback ceiling for a single peer RPC when
+// the grpcTransport is constructed with sendTimeout=0.
+const defaultSendTimeout = 1 * time.Second
 
 // backoffDialOption returns a grpc.DialOption that caps the exponential
 // backoff between reconnection attempts at maxDelay. If maxDelay is zero
@@ -161,7 +216,7 @@ func backoffDialOption(maxDelay time.Duration) []grpc.DialOption {
 	return []grpc.DialOption{grpc.WithConnectParams(grpc.ConnectParams{Backoff: bc})}
 }
 
-func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff time.Duration) (*grpcTransport, error) {
+func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff, sendTimeout time.Duration) (*grpcTransport, error) {
 	serverCredentials, err := serverTLSConfig(certPEM, keyPEM, caPEM)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize server credentials: %w", err)
@@ -189,10 +244,11 @@ func newGRPCTransport(meta []byte, certPEM, keyPEM, caPEM []byte, addr string, p
 		clientCredentials: clientCredentials,
 		extraDialOptions:  extraOpts,
 		kubeconfigFetcher: fetcher,
+		sendTimeout:       sendTimeout,
 	}, nil
 }
 
-func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff time.Duration) (*grpcTransport, error) {
+func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []func(*tls.Config), addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff, sendTimeout time.Duration) (*grpcTransport, error) {
 	serverTLSConfig := &tls.Config{} // nolint:gosec // the tls version is configurable by calling code
 	for _, opt := range serverOptions {
 		opt(serverTLSConfig)
@@ -223,10 +279,11 @@ func newGRPCTransportWithOptions(meta []byte, serverOptions, clientOptions []fun
 		clientCredentials: clientCredentials,
 		extraDialOptions:  extraOpts,
 		kubeconfigFetcher: fetcher,
+		sendTimeout:       sendTimeout,
 	}, nil
 }
 
-func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff time.Duration) (*grpcTransport, error) {
+func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string, fetcher KubeconfigFetcher, grpcMaxBackoff, sendTimeout time.Duration) (*grpcTransport, error) {
 	extraOpts := backoffDialOption(grpcMaxBackoff)
 	initializedPeers := make(map[uint64]*peer, len(peers))
 	for id, peer := range peers {
@@ -243,6 +300,7 @@ func newInsecureGRPCTransport(meta []byte, addr string, peers map[uint64]string,
 		peers:             initializedPeers,
 		extraDialOptions:  extraOpts,
 		kubeconfigFetcher: fetcher,
+		sendTimeout:       sendTimeout,
 	}, nil
 }
 
@@ -279,6 +337,12 @@ func (t *grpcTransport) client() (transportv1.TransportServiceClient, error) {
 	return peer.client, nil
 }
 
+// DoSend issues one Send RPC synchronously and returns the applied flag
+// and any error. It is called from the per-peer worker goroutine
+// (runPeerSender) and — for MsgSnap fallbacks — directly by the worker's
+// snapshot path. The supplied ctx is wrapped with sendTimeout so a
+// silently black-holed stream can't stall longer than one heartbeat
+// tick regardless of the caller's ctx.
 func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, error) {
 	peer, ok := t.peers[msg.To]
 	if !ok {
@@ -290,7 +354,14 @@ func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, e
 		return false, fmt.Errorf("marshaling message for peer %q: %w", peer.addr, err)
 	}
 
-	resp, err := peer.client.Send(ctx, &transportv1.SendRequest{
+	timeout := t.sendTimeout
+	if timeout <= 0 {
+		timeout = defaultSendTimeout
+	}
+	sendCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	resp, err := peer.client.Send(sendCtx, &transportv1.SendRequest{
 		Payload: data,
 	})
 	if err != nil {
@@ -300,7 +371,140 @@ func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, e
 	return resp.Applied, nil
 }
 
+// EnqueueSend hands a raftpb.Message off to the destination peer's
+// worker goroutine. Non-blocking: if the peer's send queue is full, the
+// message is dropped and raft will retransmit on the next tick. This is
+// the only send path the raft Ready loop uses — decoupling the loop
+// from any single slow peer.
+func (t *grpcTransport) EnqueueSend(msg raftpb.Message) {
+	peer, ok := t.peers[msg.To]
+	if !ok {
+		return
+	}
+	select {
+	case peer.sendCh <- msg:
+	default:
+		// Queue full. Raft re-sends on next tick. Bump the counter so
+		// runDropLogger can surface chronic saturation; logging on
+		// every miss would be too noisy on the hot path.
+		peer.dropCount.Add(1)
+	}
+}
+
+// dropLogInterval is how often runDropLogger samples each peer's
+// dropCount and emits a log line if the delta is non-zero. Tuned to be
+// short enough to catch transient saturation but quiet enough not to
+// flood logs on a healthy cluster (which never drops anything).
+const dropLogInterval = 30 * time.Second
+
+// runDropLogger periodically logs the per-peer EnqueueSend drop deltas
+// so a chronically saturated peer is operationally visible instead of
+// silently invisible. Healthy clusters never drop, so the goroutine is
+// log-silent in the common case. Exits on ctx cancellation.
+func (t *grpcTransport) runDropLogger(ctx context.Context) {
+	if t.logger == nil {
+		return
+	}
+	ticker := time.NewTicker(dropLogInterval)
+	defer ticker.Stop()
+
+	last := make(map[uint64]uint64, len(t.peers))
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			for id, p := range t.peers {
+				cur := p.dropCount.Load()
+				delta := cur - last[id]
+				if delta == 0 {
+					continue
+				}
+				last[id] = cur
+				t.logger.Infof(
+					"peer %d (%s): dropped %d raft messages in last %s due to full send queue (cumulative %d)",
+					id, p.addr, delta, dropLogInterval, cur,
+				)
+			}
+		}
+	}
+}
+
+// runPeerSender is one worker goroutine per peer. It owns that peer's
+// send queue and calls DoSend sequentially. On failure it performs the
+// snapshot-on-reject fallback and reports the peer unreachable — all
+// work that used to happen inline in the raft Ready loop on the
+// caller's goroutine and blocked other peers' sends.
+func (t *grpcTransport) runPeerSender(ctx context.Context, id uint64, peer *peer) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case msg, ok := <-peer.sendCh:
+			if !ok {
+				return
+			}
+			t.sendOneMessage(ctx, id, msg)
+		}
+	}
+}
+
+// sendOneMessage is the body of runPeerSender's loop. Split out so the
+// snapshot-on-reject path is easier to read without deeply-nested
+// control flow inside the select.
+func (t *grpcTransport) sendOneMessage(ctx context.Context, id uint64, msg raftpb.Message) {
+	applied, err := t.DoSend(ctx, msg)
+	if err == nil && applied {
+		return
+	}
+
+	if err != nil && t.logger != nil {
+		t.logger.Infof("unreachable %d: %v", id, err)
+	}
+
+	// If a MsgApp / MsgHeartbeat was rejected (Applied=false, no
+	// network error), the follower's log might be behind the leader's
+	// progress tracker. Send a snapshot to reset its state — the
+	// snapshot carries our ConfState and committed index, letting the
+	// follower catch up in one step.
+	if (msg.Type == raftpb.MsgApp || msg.Type == raftpb.MsgHeartbeat) && !applied && err == nil {
+		storage := t.getStorage()
+		if storage != nil {
+			snap, snapErr := storage.Snapshot()
+			if snapErr != nil && t.logger != nil {
+				t.logger.Errorf("failed to get snapshot for peer %d: %v", id, snapErr)
+			} else if !raft.IsEmptySnap(snap) {
+				if _, sendErr := t.DoSend(ctx, raftpb.Message{
+					Type:     raftpb.MsgSnap,
+					To:       id,
+					From:     t.localID,
+					Snapshot: &snap,
+				}); sendErr != nil {
+					if t.logger != nil {
+						t.logger.Infof("failed to send snapshot to %d: %v", id, sendErr)
+					}
+				} else {
+					if t.testHooks != nil && t.testHooks.OnSnapshotSent != nil {
+						t.testHooks.OnSnapshotSent(id)
+					}
+					// Snapshot accepted — follower will send a
+					// MsgAppResp that fixes the progress tracker.
+					return
+				}
+			}
+		}
+	}
+
+	if node := t.getNode(); node != nil {
+		node.ReportUnreachable(id)
+	}
+}
+
 func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) (*transportv1.SendResponse, error) {
+	if t.testHooks != nil && t.testHooks.BlockIngress != nil && t.testHooks.BlockIngress.Load() {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
 	if node := t.getNode(); node != nil {
 		var msg raftpb.Message
 		if err := msg.Unmarshal(req.Payload); err != nil {
@@ -364,6 +568,10 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 }
 
 func (t *grpcTransport) Check(ctx context.Context, req *transportv1.CheckRequest) (*transportv1.CheckResponse, error) {
+	if t.testHooks != nil && t.testHooks.BlockIngress != nil && t.testHooks.BlockIngress.Load() {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
 	leader := t.leader.Load()
 	isLeader := t.isLeader.Load()
 	if leader != 0 {
@@ -456,6 +664,15 @@ func (t *grpcTransport) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to listen on %s: %w", t.addr, err)
 	}
 	defer lis.Close()
+
+	// One worker per peer. They drain per-peer send queues independently,
+	// so one slow/blackholed peer cannot delay sends to the others.
+	for id, p := range t.peers {
+		go t.runPeerSender(ctx, id, p)
+	}
+	// Periodically surface per-peer EnqueueSend drops so chronic queue
+	// saturation is visible without logging on every dropped message.
+	go t.runDropLogger(ctx)
 
 	done := make(chan struct{})
 	errs := make(chan error, 1)

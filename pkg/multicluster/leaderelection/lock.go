@@ -16,6 +16,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.etcd.io/raft/v3"
@@ -103,6 +104,13 @@ type TestHooks struct {
 	// OnSnapshotSent is called on the leader when a snapshot is sent to a
 	// follower after a MsgApp rejection. The argument is the target peer ID.
 	OnSnapshotSent func(to uint64)
+
+	// BlockIngress, when non-nil and true at call time, causes incoming
+	// Send/Check RPCs on this node to block until the caller's context is
+	// cancelled. Chaos tests use this to simulate a silently unresponsive
+	// peer without tearing down the TCP listener (which would cause
+	// immediate connection-refused errors — a different failure mode).
+	BlockIngress *atomic.Bool
 
 	// transport is set by run() so tests can inspect storage state.
 	transport *grpcTransport
@@ -286,12 +294,15 @@ func run(ctx context.Context, config LockConfiguration, transportCallback func(t
 	nodes := peersForNodes(config.Peers)
 	var transport *grpcTransport
 	var err error
+	// Bound each peer RPC to one heartbeat tick so a slow peer can't
+	// monopolise its worker goroutine past the expected cadence.
+	sendTimeout := config.HeartbeatInterval
 	if config.Insecure {
-		transport, err = newInsecureGRPCTransport(config.Meta, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff)
+		transport, err = newInsecureGRPCTransport(config.Meta, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff, sendTimeout)
 	} else if len(config.ServerTLSOptions) == 0 || len(config.ClientTLSOptions) == 0 {
-		transport, err = newGRPCTransport(config.Meta, config.Certificate, config.PrivateKey, config.CA, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff)
+		transport, err = newGRPCTransport(config.Meta, config.Certificate, config.PrivateKey, config.CA, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff, sendTimeout)
 	} else {
-		transport, err = newGRPCTransportWithOptions(config.Meta, config.ServerTLSOptions, config.ClientTLSOptions, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff)
+		transport, err = newGRPCTransportWithOptions(config.Meta, config.ServerTLSOptions, config.ClientTLSOptions, config.Address, nodes, config.Fetcher, config.GRPCMaxBackoff, sendTimeout)
 	}
 	if err != nil {
 		return err
@@ -309,6 +320,7 @@ func run(ctx context.Context, config LockConfiguration, transportCallback func(t
 	transport.localID = config.ID
 	if config.TestHooks != nil {
 		config.TestHooks.transport = transport
+		transport.testHooks = config.TestHooks
 	}
 
 	for node, address := range nodes {
@@ -484,6 +496,12 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 				}
 			}
 
+			// Hand each outbound message off to the destination peer's
+			// worker goroutine. EnqueueSend is non-blocking, so this loop
+			// finishes in microseconds regardless of peer health. The
+			// unreachable-report + snapshot-on-reject fallbacks that used
+			// to run inline now live in the worker (see runPeerSender /
+			// sendOneMessage in raft.go).
 			for _, msg := range rd.Messages {
 				if msg.To == config.ID {
 					if err := node.Step(ctx, msg); err != nil {
@@ -491,41 +509,7 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 					}
 					continue
 				}
-				applied, err := transport.DoSend(ctx, msg)
-				if err != nil || !applied {
-					if err != nil {
-						config.Logger.Infof("unreachable %d: %v", msg.To, err)
-					}
-					// If a MsgApp was rejected by the follower (Applied=false,
-					// no network error), the follower's log might be behind our
-					// progress tracker's match. Send a snapshot to reset the
-					// follower's state — the snapshot carries our ConfState and
-					// committed index, letting the follower catch up in one step.
-					if (msg.Type == raftpb.MsgApp || msg.Type == raftpb.MsgHeartbeat) && !applied && err == nil {
-						snap, snapErr := storage.Snapshot()
-						if snapErr != nil {
-							config.Logger.Errorf("failed to get snapshot for peer %d: %v", msg.To, snapErr)
-						} else if !raft.IsEmptySnap(snap) {
-							if _, sendErr := transport.DoSend(ctx, raftpb.Message{
-								Type:     raftpb.MsgSnap,
-								To:       msg.To,
-								From:     config.ID,
-								Snapshot: &snap,
-							}); sendErr != nil {
-								config.Logger.Infof("failed to send snapshot to %d: %v", msg.To, sendErr)
-							} else {
-								// Snapshot was accepted — the follower will send
-								// a MsgAppResp that fixes the progress tracker.
-								// Don't report unreachable.
-								if config.TestHooks != nil && config.TestHooks.OnSnapshotSent != nil {
-									config.TestHooks.OnSnapshotSent(msg.To)
-								}
-								continue
-							}
-						}
-					}
-					node.ReportUnreachable(msg.To)
-				}
+				transport.EnqueueSend(msg)
 			}
 
 			node.Advance()
