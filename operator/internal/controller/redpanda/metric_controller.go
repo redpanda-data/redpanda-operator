@@ -11,29 +11,26 @@ package redpanda
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redpanda-data/common-go/otelutil/log"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
-	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
-	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 var (
-	redpandasTotal = prometheus.NewGauge(
+	redpandas = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "redpandas_total",
+			Name: "redpandas",
 			Help: "Number of Redpanda clusters (cluster.redpanda.com/v1alpha2) managed by the operator",
 		},
 	)
@@ -59,7 +56,7 @@ var (
 
 func init() {
 	metrics.Registry.MustRegister(
-		redpandasTotal,
+		redpandas,
 		redpandaDesiredNodes,
 		redpandaReadyNodes,
 		redpandaMisconfiguredClusters,
@@ -80,13 +77,11 @@ type redpandaMetricKey struct {
 // recomputes the gauges from a fresh List so that values stay accurate even
 // when individual events are coalesced — matching the v1 pattern.
 //
-// Scope: only the Redpanda CRD, intentionally not StretchCluster. The
-// StretchCluster CRD is only installed in multicluster operator mode
-// (`cmd/multicluster`), which has its own setup path; watching that type
-// from `cmd/run` would fail to start the cache because the API resource
-// does not exist there.
+// The reconciler runs against the local cluster's manager (Redpanda CRs only
+// live there); operator-mode StretchCluster metrics are out of scope and
+// would be added in a separate reconciler wired into `cmd/multicluster`.
 type RedpandaMetricsReconciler struct {
-	Manager multicluster.Manager
+	Client client.Client
 
 	// Labels we previously emitted on the per-cluster gauges. Retained so we
 	// can DeleteLabelValues for Redpandas that have since been deleted —
@@ -98,71 +93,52 @@ type RedpandaMetricsReconciler struct {
 	currentConfigurationLabels collections.Set[string]
 }
 
-// NewRedpandaMetricsReconciler creates a RedpandaMetricsReconciler.
-func NewRedpandaMetricsReconciler(mgr multicluster.Manager) *RedpandaMetricsReconciler {
+// NewRedpandaMetricsReconciler creates a RedpandaMetricsReconciler bound to
+// the local manager's client. Pass `mcmgr.GetLocalManager()` from a multicluster
+// manager.
+func NewRedpandaMetricsReconciler(mgr ctrl.Manager) *RedpandaMetricsReconciler {
 	return &RedpandaMetricsReconciler{
-		Manager:                    mgr,
+		Client:                     mgr.GetClient(),
 		currentLabels:              collections.NewConcurrentSet[redpandaMetricKey](),
 		currentConfigurationLabels: collections.NewConcurrentSet[string](),
 	}
 }
 
-// Reconcile lists all Redpandas across every cluster known to the multicluster
-// Manager and updates the registered Prometheus gauges. The incoming request
-// is ignored: we always recompute totals from scratch.
-//
-// Per-cluster failures (unreachable, list error) are logged and skipped rather
-// than aborting the whole reconcile — partial metrics from healthy clusters
-// are more useful than no metrics at all.
-func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ mcreconcile.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithName("RedpandaMetricsReconciler.Reconcile")
+// Reconcile lists every Redpanda known to the local manager and updates the
+// registered Prometheus gauges. The incoming request is ignored: we always
+// recompute totals from scratch so coalesced events do not produce stale
+// values.
+func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+	var rps redpandav1alpha2.RedpandaList
+	if err := r.Client.List(ctx, &rps); err != nil {
+		return ctrl.Result{}, fmt.Errorf("listing Redpandas: %w", err)
+	}
 
 	seenLabels := collections.NewSet[redpandaMetricKey]()
 	misconfiguredCounts := map[string]int{}
 
-	var total int
+	for i := range rps.Items {
+		rp := &rps.Items[i]
+		key := redpandaMetricKey{namespace: rp.Namespace, name: rp.Name}
 
-	for _, clusterName := range r.Manager.GetClusterNames() {
-		if !r.Manager.IsClusterReachable(clusterName) {
-			logger.V(log.DebugLevel).Info("cluster unreachable, skipping for metrics", "cluster", clusterName)
-			continue
-		}
-		cl, err := r.Manager.GetCluster(ctx, clusterName)
-		if err != nil {
-			logger.Info("cannot get cluster for metrics, skipping", "cluster", clusterName, "error", err)
-			continue
+		var desired, ready int32
+		for _, pool := range rp.Status.NodePools {
+			desired += pool.DesiredReplicas
+			ready += pool.ReadyReplicas
 		}
 
-		var rps redpandav1alpha2.RedpandaList
-		if err := cl.GetClient().List(ctx, &rps); err != nil {
-			logger.Info("listing Redpandas failed, skipping cluster", "cluster", clusterName, "error", err)
-			continue
-		}
+		redpandaDesiredNodes.WithLabelValues(key.namespace, key.name).Set(float64(desired))
+		redpandaReadyNodes.WithLabelValues(key.namespace, key.name).Set(float64(ready))
 
-		total += len(rps.Items)
-		for i := range rps.Items {
-			rp := &rps.Items[i]
-			key := redpandaMetricKey{namespace: rp.Namespace, name: rp.Name}
+		seenLabels.Add(key)
+		r.currentLabels.Add(key)
 
-			var desired, ready int32
-			for _, pool := range rp.Status.NodePools {
-				desired += pool.DesiredReplicas
-				ready += pool.ReadyReplicas
-			}
-
-			redpandaDesiredNodes.WithLabelValues(key.namespace, key.name).Set(float64(desired))
-			redpandaReadyNodes.WithLabelValues(key.namespace, key.name).Set(float64(ready))
-
-			seenLabels.Add(key)
-			r.currentLabels.Add(key)
-
-			if cond := apimeta.FindStatusCondition(rp.Status.Conditions, statuses.ClusterConfigurationApplied); cond != nil && cond.Status != metav1.ConditionTrue {
-				misconfiguredCounts[cond.Reason]++
-			}
+		if cond := apimeta.FindStatusCondition(rp.Status.Conditions, statuses.ClusterConfigurationApplied); cond != nil && cond.Status != metav1.ConditionTrue {
+			misconfiguredCounts[cond.Reason]++
 		}
 	}
 
-	redpandasTotal.Set(float64(total))
+	redpandas.Set(float64(len(rps.Items)))
 
 	for _, key := range r.currentLabels.Values() {
 		if !seenLabels.HasAny(key) {
@@ -186,24 +162,19 @@ func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ mcreconcile
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager registers the metrics reconciler with the multicluster
-// manager. It engages with both local and provider clusters so that metrics
-// reflect Redpandas across every cluster the operator manages, and is wrapped
-// with FilterNamespaceReconciler to honor the operator's --namespace flag,
-// matching the convention used by the other v2 controllers in this package.
-func (r *RedpandaMetricsReconciler) SetupWithManager(_ context.Context, mgr multicluster.Manager, namespace string) error {
-	return mcbuilder.ControllerManagedBy(mgr).
+// SetupWithManager registers the metrics reconciler with the local manager.
+// The operator's `--namespace` flag is honored implicitly: when set, the
+// manager's cache is restricted to that namespace (see `cmd/run`), which
+// scopes both the watch and the List in Reconcile.
+func (r *RedpandaMetricsReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
 		Named("redpanda-metrics").
-		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+		For(&redpandav1alpha2.Redpanda{}).
+		WithOptions(ctrlcontroller.Options{
 			// Matches the convention used by other v2 controllers in this
-			// package; avoids a duplicate-name panic when the multicluster
-			// runtime reuses controller names across registrations during
-			// tests.
+			// package; avoids a duplicate-name panic when controller-runtime
+			// reuses controller names across registrations during tests.
 			SkipNameValidation: ptr.To(true),
 		}).
-		For(&redpandav1alpha2.Redpanda{},
-			mcbuilder.WithEngageWithLocalCluster(true),
-			mcbuilder.WithEngageWithProviderClusters(true),
-		).
-		Complete(controller.FilterNamespaceReconciler(namespace, r))
+		Complete(r)
 }

@@ -421,10 +421,11 @@ func Run(
 		}
 
 		// Metrics Reconciler — emits Prometheus gauges describing the v2
-		// Redpanda and StretchCluster CRs the operator is managing,
-		// mirroring the v1 ClusterMetricController for parity between
-		// operator versions.
-		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mcmanager).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+		// Redpanda CRs the operator is managing, mirroring the v1
+		// ClusterMetricController for parity between operator versions.
+		// Bound to the local manager because the Redpanda CRD only exists
+		// on the local cluster.
+		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "RedpandaMetrics")
 			return err
 		}
