@@ -78,9 +78,11 @@ const (
 	MulticlusterPeerLabel = "cluster.redpanda.com/multicluster-peer"
 )
 
-// kubeconfigCacheSecretName returns the name of the Secret used to cache a
-// peer's kubeconfig in the local cluster.
-func kubeconfigCacheSecretName(kubeconfigName, peerName string) string {
+// KubeconfigCacheSecretName returns the name of the Secret used to cache a
+// peer's kubeconfig in the local cluster. The format is
+// "<kubeconfigName>-<peerName>", where kubeconfigName is the operator's
+// configured prefix (RaftConfiguration.KubeconfigName / --kubeconfig-name).
+func KubeconfigCacheSecretName(kubeconfigName, peerName string) string {
 	return kubeconfigName + "-" + peerName
 }
 
@@ -164,7 +166,7 @@ func (s *startupKubeconfigFetcher) Start(ctx context.Context) error {
 		var failed []int
 		for _, i := range pending {
 			peer := s.config.Peers[i]
-			secretName := kubeconfigCacheSecretName(s.config.KubeconfigName, peer.Name)
+			secretName := KubeconfigCacheSecretName(s.config.KubeconfigName, peer.Name)
 			s.logger.Info("startup: fetching kubeconfig for peer", "peer", peer.Name)
 			grpcClient, err := leaderelection.ClientFor(s.raftConfig, s.raftConfig.Peers[i])
 			if err != nil {
@@ -392,7 +394,7 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 		}
 
 		if peer.KubeconfigFile != "" {
-			kubeConfig, err := loadKubeconfig(peer.KubeconfigFile)
+			kubeConfig, err := LoadKubeconfig(peer.KubeconfigFile)
 			if err != nil {
 				return nil, err
 			}
@@ -530,7 +532,7 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 			if peer.Name != config.Name && peer.KubeconfigFile == "" && peer.Kubeconfig == nil {
 				config.Logger.Info("registering leader routine", "peer", peer.Name)
 				lockManager.RegisterRoutine(func(ctx context.Context) error {
-					secretName := kubeconfigCacheSecretName(config.KubeconfigName, peer.Name)
+					secretName := KubeconfigCacheSecretName(config.KubeconfigName, peer.Name)
 
 					// Try the local secret cache first so that a new raft leader
 					// can reconnect to peers without requiring a live gRPC call.
@@ -558,7 +560,7 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 					}
 
 					config.Logger.Info("loading kubeconfig for peer", "peer", peer.Name)
-					kubeConfig, err := loadKubeconfigFromBytes(kubeconfigBytes)
+					kubeConfig, err := LoadKubeconfigFromBytes(kubeconfigBytes)
 					if err != nil {
 						config.Logger.Error(err, "loading kubeconfig for peer", "peer", peer.Name)
 						return err

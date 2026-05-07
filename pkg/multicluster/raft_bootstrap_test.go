@@ -58,7 +58,7 @@ func (n *bootstrapNode) stop(t *testing.T) {
 }
 
 // restConfigToKubeconfigBytes serialises a REST config into kubeconfig YAML
-// bytes that loadKubeconfigFromBytes can later parse back into a *rest.Config.
+// bytes that LoadKubeconfigFromBytes can later parse back into a *rest.Config.
 // Envtest uses client-cert auth, so we embed the cert/key/CA directly.
 func restConfigToKubeconfigBytes(name string, cfg *rest.Config) ([]byte, error) {
 	kc := clientcmdapi.NewConfig()
