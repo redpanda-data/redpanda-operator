@@ -564,6 +564,47 @@ func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container 
 		})
 	}
 
+	baseEnv := []corev1.EnvVar{
+		{
+			Name:  "CONFIGURATOR_SCRIPT",
+			Value: "/etc/secrets/configurator/scripts/configurator.sh",
+		},
+		{
+			Name: "SERVICE_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+				ResourceFieldRef: nil,
+				ConfigMapKeyRef:  nil,
+				SecretKeyRef:     nil,
+			},
+		},
+		{
+			Name: "KUBERNETES_NODE_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "spec.nodeName",
+				},
+			},
+		},
+		{
+			Name: "HOST_IP_ADDRESS",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "status.hostIP",
+				},
+			},
+		},
+	}
+
+	// Inject SASL secret env vars so the configurator can apply redpanda.yaml.fixups.
+	if state.Values.Auth.IsSASLEnabled() && state.Values.Config.SchemaRegistryClient != nil && state.Values.Config.SchemaRegistryClient.SASLSecretRef != nil {
+		_, envVars := SASLClientFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)
+		baseEnv = append(baseEnv, envVars...)
+	}
+
 	return &corev1.Container{
 		Name:  RedpandaConfiguratorContainerName,
 		Image: fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
@@ -572,40 +613,7 @@ func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container 
 			`-c`,
 			`trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!`,
 		},
-		Env: rpkEnvVars(state, []corev1.EnvVar{
-			{
-				Name:  "CONFIGURATOR_SCRIPT",
-				Value: "/etc/secrets/configurator/scripts/configurator.sh",
-			},
-			{
-				Name: "SERVICE_NAME",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.name",
-					},
-					ResourceFieldRef: nil,
-					ConfigMapKeyRef:  nil,
-					SecretKeyRef:     nil,
-				},
-			},
-			{
-				Name: "KUBERNETES_NODE_NAME",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "spec.nodeName",
-					},
-				},
-			},
-			{
-				Name: "HOST_IP_ADDRESS",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						APIVersion: "v1",
-						FieldPath:  "status.hostIP",
-					},
-				},
-			},
-		}),
+		Env:          rpkEnvVars(state, baseEnv),
 		VolumeMounts: volMounts,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsNonRoot:             ptr.To(true),

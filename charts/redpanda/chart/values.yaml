@@ -959,6 +959,13 @@ config:
     crash_loop_limit: 5
 
   # Reference schema registry client https://docs.redpanda.com/current/reference/node-configuration-sample/
+  # saslSecretRef (optional): references a Kubernetes Secret with keys "username" and "password"
+  # for the schema registry's internal Kafka client SASL authentication.
+  # Required when auth.sasl.enabled is true. The SASL mechanism is always SCRAM-SHA-512.
+  # Example:
+  #   schema_registry_client:
+  #     saslSecretRef:
+  #       name: sasl-secret
   schema_registry_client: {}
     #  # Override to use localhost instead of headless service FQDN.
     #  # Useful when DNS issues occur. Default: false (uses headless service)

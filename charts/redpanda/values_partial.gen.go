@@ -342,16 +342,17 @@ type PartialInternalTLS struct {
 }
 
 type PartialSchemaRegistryClient struct {
-	Retries                     *int "json:\"retries,omitempty\""
-	RetryBaseBackoffMS          *int "json:\"retry_base_backoff_ms,omitempty\""
-	ProduceBatchRecordCount     *int "json:\"produce_batch_record_count,omitempty\""
-	ProduceBatchSizeBytes       *int "json:\"produce_batch_size_bytes,omitempty\""
-	ProduceBatchDelayMS         *int "json:\"produce_batch_delay_ms,omitempty\""
-	ConsumerRequestTimeoutMS    *int "json:\"consumer_request_timeout_ms,omitempty\""
-	ConsumerRequestMaxBytes     *int "json:\"consumer_request_max_bytes,omitempty\""
-	ConsumerSessionTimeoutMS    *int "json:\"consumer_session_timeout_ms,omitempty\""
-	ConsumerRebalanceTimeoutMS  *int "json:\"consumer_rebalance_timeout_ms,omitempty\""
-	ConsumerHeartbeatIntervalMS *int "json:\"consumer_heartbeat_interval_ms,omitempty\""
+	Retries                     *int                         "json:\"retries,omitempty\""
+	RetryBaseBackoffMS          *int                         "json:\"retry_base_backoff_ms,omitempty\""
+	ProduceBatchRecordCount     *int                         "json:\"produce_batch_record_count,omitempty\""
+	ProduceBatchSizeBytes       *int                         "json:\"produce_batch_size_bytes,omitempty\""
+	ProduceBatchDelayMS         *int                         "json:\"produce_batch_delay_ms,omitempty\""
+	ConsumerRequestTimeoutMS    *int                         "json:\"consumer_request_timeout_ms,omitempty\""
+	ConsumerRequestMaxBytes     *int                         "json:\"consumer_request_max_bytes,omitempty\""
+	ConsumerSessionTimeoutMS    *int                         "json:\"consumer_session_timeout_ms,omitempty\""
+	ConsumerRebalanceTimeoutMS  *int                         "json:\"consumer_rebalance_timeout_ms,omitempty\""
+	ConsumerHeartbeatIntervalMS *int                         "json:\"consumer_heartbeat_interval_ms,omitempty\""
+	SASLSecretRef               *corev1.LocalObjectReference "json:\"saslSecretRef,omitempty\""
 }
 
 type PartialPandaProxyClient struct {
