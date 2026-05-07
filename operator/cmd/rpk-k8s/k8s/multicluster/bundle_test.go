@@ -110,6 +110,7 @@ func TestIntegrationBundleRun_RoundTrip(t *testing.T) {
 		LogsCollected      bool      `json:"logsCollected"`
 		LogsLimitBytes     int64     `json:"logsLimitBytes"`
 		LogsTailLines      int64     `json:"logsTailLines"`
+		MetricsCollected   bool      `json:"metricsCollected"`
 	}
 	require.NoError(t, json.Unmarshal(files["manifest.json"], &m))
 	assert.Equal(t, 1, m.SchemaVersion)
@@ -128,6 +129,13 @@ func TestIntegrationBundleRun_RoundTrip(t *testing.T) {
 	assert.Equal(t, int64(5000), m.LogsTailLines)
 	for fname := range files {
 		assert.NotContains(t, fname, "/logs/", "no log files when no pod was found")
+	}
+	// Phase 3: with default flags, metrics collection is enabled. As
+	// with logs, no actual scrape happens here because there is no pod
+	// — but the manifest records the policy.
+	assert.True(t, m.MetricsCollected)
+	for fname := range files {
+		assert.NotContains(t, fname, "/metrics/", "no metrics files when no pod was found")
 	}
 
 	// checks.json under clusters/<name>/ should be a JSON array (each entry

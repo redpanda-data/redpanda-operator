@@ -57,6 +57,9 @@ type BundleConfig struct {
 	// cap. Negative values are treated as 0.
 	LogsTailLines int64
 
+	// SkipMetrics disables operator metrics collection.
+	SkipMetrics bool
+
 	// ClusterChecks lets callers override the per-cluster check list. Nil
 	// means use defaultClusterChecks (the same set the `status` command
 	// runs). Tests can pass a smaller list to avoid checks whose timeouts
@@ -70,6 +73,12 @@ type BundleConfig struct {
 	// from the connection's REST config. Tests use this to inject a stub
 	// because envtest cannot return real container logs.
 	LogFetcherFor func(ClusterConnection) (logFetcher, error)
+	// MetricsFetcherFor returns the metrics fetcher used for a given
+	// cluster connection. Nil means build a kubernetes.Interface-backed
+	// fetcher (apiserver pod-proxy) from the connection's REST config.
+	// Tests inject a stub because envtest doesn't run a real metrics
+	// server.
+	MetricsFetcherFor func(ClusterConnection) (metricsFetcher, error)
 
 	// Now overrides the clock for deterministic output in tests. Defaults
 	// to time.Now.
@@ -106,6 +115,8 @@ func (c *BundleConfig) BindFlags(cmd *cobra.Command) {
 		`Per-container log byte cap (human-readable, e.g. "5M", "10MiB", "1G"; "0" disables the cap)`)
 	cmd.Flags().Int64Var(&c.LogsTailLines, "logs-tail-lines", 5000,
 		"Per-container log tail-line cap (0 disables the cap)")
+	cmd.Flags().BoolVar(&c.SkipMetrics, "skip-metrics", false,
+		"Skip operator /metrics scrape")
 }
 
 // Run executes the bundle pipeline and writes the resulting zip to w. Returns
@@ -205,6 +216,24 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 			}
 		}
 	}
+
+	// Phase 3: per-cluster operator /metrics scrape via the apiserver
+	// pod-proxy. Skipped when --skip-metrics is set, when PodCheck didn't
+	// find a pod, or when the operator was deployed without
+	// --metrics-bind-address. Scrape failures are recorded in errors.txt
+	// and don't fail the bundle.
+	if !c.SkipMetrics {
+		for i, conn := range roster {
+			fetcher, ferr := c.metricsFetcherFor(conn)
+			if ferr != nil {
+				errs = append(errs, fmt.Sprintf("cluster %s: building metrics fetcher: %v", conn.Name, ferr))
+				continue
+			}
+			for _, e := range collectClusterMetrics(ctx, bw, contexts[i], fetcher) {
+				errs = append(errs, fmt.Sprintf("cluster %s: %v", conn.Name, e))
+			}
+		}
+	}
 	if err := bw.writeCrossClusterArtifacts(crossResults); err != nil {
 		errs = append(errs, fmt.Sprintf("writing cross-cluster/checks.json: %v", err))
 	}
@@ -292,6 +321,20 @@ func (c *BundleConfig) logFetcherFor(conn ClusterConnection) (logFetcher, error)
 		return nil, fmt.Errorf("connection %q has no kube.Ctl", conn.Name)
 	}
 	return newKubeLogFetcher(conn.Ctl.RestConfig())
+}
+
+// metricsFetcherFor returns the metricsFetcher for a roster entry. When the
+// caller configured a custom factory (test injection), that factory is
+// used; the default builds an apiserver-pod-proxy-backed fetcher from the
+// connection's REST config.
+func (c *BundleConfig) metricsFetcherFor(conn ClusterConnection) (metricsFetcher, error) {
+	if c.MetricsFetcherFor != nil {
+		return c.MetricsFetcherFor(conn)
+	}
+	if conn.Ctl == nil {
+		return nil, fmt.Errorf("connection %q has no kube.Ctl", conn.Name)
+	}
+	return newKubeMetricsFetcher(conn.Ctl.RestConfig())
 }
 
 func bundleCommand() *cobra.Command {

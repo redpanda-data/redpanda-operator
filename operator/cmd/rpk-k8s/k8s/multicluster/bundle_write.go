@@ -99,6 +99,11 @@ type bundleManifest struct {
 	LogsCollected  bool  `json:"logsCollected"`
 	LogsLimitBytes int64 `json:"logsLimitBytes,omitempty"`
 	LogsTailLines  int64 `json:"logsTailLines,omitempty"`
+	// MetricsCollected reports whether operator /metrics scraping was
+	// attempted on this run. False when --skip-metrics was passed; true
+	// otherwise (the actual scrape may still no-op per cluster when the
+	// operator was deployed without --metrics-bind-address).
+	MetricsCollected bool `json:"metricsCollected"`
 }
 
 const bundleSchemaVersion = 1
@@ -117,6 +122,7 @@ func (b *bundleWriter) writeManifestFile(cfg *BundleConfig, contexts []*checks.C
 		IncludePrivateKeys: cfg.IncludePrivateKeys,
 		Clusters:           clusters,
 		LogsCollected:      !cfg.SkipLogs,
+		MetricsCollected:   !cfg.SkipMetrics,
 	}
 	if !cfg.SkipLogs {
 		m.LogsLimitBytes = logs.LimitBytes
