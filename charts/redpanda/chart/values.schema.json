@@ -317,6 +317,15 @@
             },
             "retry_base_backoff_ms": {
               "type": "integer"
+            },
+            "saslSecretRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"

@@ -1240,3 +1240,28 @@ statefulset:
       - name: "3rd-party-certs"
         secret:
           secretName: "redpanda-external-cert"
+
+-- sasl-schema-registry-client-secret-ref --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_USERNAME')].valueFrom.secretKeyRef.name}", "my-sasl-secret"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.name}", "my-sasl-secret"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_USERNAME')].valueFrom.secretKeyRef.key}", "username"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.key}", "password"]
+auth:
+  sasl:
+    enabled: true
+    secretRef: users
+    bootstrapUser:
+      password: changeme
+config:
+  schema_registry_client:
+    saslSecretRef:
+      name: my-sasl-secret
+
+-- sasl-disabled-secret-ref-ignored --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-NOT-CONTAINS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[*].name}", "SCHEMA_REGISTRY_CLIENT_USERNAME"]
+config:
+  schema_registry_client:
+    saslSecretRef:
+      name: my-sasl-secret

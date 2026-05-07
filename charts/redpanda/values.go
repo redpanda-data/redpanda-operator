@@ -1188,6 +1188,44 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 	return template, fixups, envVars
 }
 
+// SASLClientFixups returns the redpanda.yaml fixups and env vars needed to
+// inject SASL credentials into an internal Kafka client (schema_registry_client)
+// from a Kubernetes Secret. The Secret must have keys
+// "username" and "password" (corev1.BasicAuthUsernameKey / BasicAuthPasswordKey).
+func SASLClientFixups(clientField string, secretName string) ([]clusterconfiguration.Fixup, []corev1.EnvVar) {
+	usernameEnv := strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_USERNAME"
+	passwordEnv := strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_PASSWORD"
+
+	envVars := []corev1.EnvVar{
+		{
+			Name: usernameEnv,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+					Key:                  corev1.BasicAuthUsernameKey,
+				},
+			},
+		},
+		{
+			Name: passwordEnv,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+					Key:                  corev1.BasicAuthPasswordKey,
+				},
+			},
+		},
+	}
+
+	fixups := []clusterconfiguration.Fixup{
+		{Field: clientField + ".scram_username", CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, usernameEnv)},
+		{Field: clientField + ".scram_password", CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, passwordEnv)},
+		{Field: clientField + ".sasl_mechanism", CEL: fmt.Sprintf(`"%s"`, DefaultSASLMechanism)},
+	}
+
+	return fixups, envVars
+}
+
 func keyToEnvVar(k string) string {
 	return "REDPANDA_" + strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 }
@@ -1203,6 +1241,11 @@ type SchemaRegistryClient struct {
 	ConsumerSessionTimeoutMS    int `json:"consumer_session_timeout_ms"`
 	ConsumerRebalanceTimeoutMS  int `json:"consumer_rebalance_timeout_ms"`
 	ConsumerHeartbeatIntervalMS int `json:"consumer_heartbeat_interval_ms"`
+	// SASLSecretRef references a Kubernetes Secret containing the SASL
+	// credentials for the schema registry's internal Kafka client.
+	// The Secret must have keys "username" and "password".
+	// Required when auth.sasl.enabled is true.
+	SASLSecretRef *corev1.LocalObjectReference `json:"saslSecretRef,omitempty"`
 }
 
 type PandaProxyClient struct {
