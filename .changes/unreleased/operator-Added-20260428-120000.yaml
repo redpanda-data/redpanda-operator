@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: V2 (cluster.redpanda.com/v1alpha2 Redpanda) Prometheus metrics — `redpandas`, `redpanda_desired_nodes`, `redpanda_ready_nodes`, and `redpanda_misconfigured_clusters` — mirroring the existing v1 ClusterMetricController so observability is at parity between the two operator modes.
+time: 2026-04-28T12:00:00.000000000Z

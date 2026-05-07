@@ -420,6 +420,16 @@ func Run(
 			}
 		}
 
+		// Metrics Reconciler — emits Prometheus gauges describing the v2
+		// Redpanda CRs the operator is managing, mirroring the v1
+		// ClusterMetricController for parity between operator versions.
+		// Bound to the local manager because the Redpanda CRD only exists
+		// on the local cluster.
+		if err := redpandacontrollers.NewRedpandaMetricsReconciler(mgr).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "RedpandaMetrics")
+			return err
+		}
+
 		// Console Reconciler.
 		if opts.enableConsoleController {
 			ctl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
