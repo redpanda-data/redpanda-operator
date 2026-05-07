@@ -250,8 +250,8 @@ func TestIntegrationKubeconfigCaching(t *testing.T) {
 				continue
 			}
 			secretName := kubeconfigSecretName(kubeconfigName, peer.name)
+			var secret corev1.Secret
 			require.Eventually(t, func() bool {
-				var secret corev1.Secret
 				err := node.client.Get(ctx, types.NamespacedName{
 					Name:      secretName,
 					Namespace: kubeconfigNamespace,
@@ -264,6 +264,16 @@ func TestIntegrationKubeconfigCaching(t *testing.T) {
 				"node %s should have cached kubeconfig secret %s for peer %s",
 				node.name, secretName, peer.name)
 			t.Logf("node %s: kubeconfig secret %s/%s is present", node.name, kubeconfigNamespace, secretName)
+
+			// Cache secrets must carry the discovery labels so external tools
+			// (e.g. the operator-bundle subcommand) can find them by selector
+			// rather than by parsing the operator's --kubeconfig-name prefix.
+			require.Equal(t, multicluster.KubeconfigCacheComponentValue, secret.Labels[multicluster.KubeconfigCacheComponentLabel],
+				"cache secret %s missing %s label", secretName, multicluster.KubeconfigCacheComponentLabel)
+			require.Equal(t, multicluster.KubeconfigCacheManagedByValue, secret.Labels[multicluster.KubeconfigCacheManagedByLabel],
+				"cache secret %s missing %s label", secretName, multicluster.KubeconfigCacheManagedByLabel)
+			require.Equal(t, peer.name, secret.Labels[multicluster.MulticlusterPeerLabel],
+				"cache secret %s should record peer name in %s label", secretName, multicluster.MulticlusterPeerLabel)
 		}
 	}
 
