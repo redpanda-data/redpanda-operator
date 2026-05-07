@@ -107,6 +107,9 @@ func TestIntegrationBundleRun_RoundTrip(t *testing.T) {
 		ServiceName        string    `json:"serviceName"`
 		IncludePrivateKeys bool      `json:"includePrivateKeys"`
 		Clusters           []string  `json:"clusters"`
+		LogsCollected      bool      `json:"logsCollected"`
+		LogsLimitBytes     int64     `json:"logsLimitBytes"`
+		LogsTailLines      int64     `json:"logsTailLines"`
 	}
 	require.NoError(t, json.Unmarshal(files["manifest.json"], &m))
 	assert.Equal(t, 1, m.SchemaVersion)
@@ -115,6 +118,17 @@ func TestIntegrationBundleRun_RoundTrip(t *testing.T) {
 	assert.Equal(t, "operator", m.ServiceName)
 	assert.False(t, m.IncludePrivateKeys)
 	assert.Equal(t, []string{"self"}, m.Clusters)
+	// Phase 2: with default flags, logs collection is enabled and the
+	// default caps are recorded. The actual collection is a no-op here
+	// because PodCheck didn't find an operator pod (cc.Pod is nil), so
+	// no logs/ entries appear in the zip — but the manifest still
+	// records the policy that *would* have been applied.
+	assert.True(t, m.LogsCollected)
+	assert.Equal(t, int64(5*1024*1024), m.LogsLimitBytes)
+	assert.Equal(t, int64(5000), m.LogsTailLines)
+	for fname := range files {
+		assert.NotContains(t, fname, "/logs/", "no log files when no pod was found")
+	}
 
 	// checks.json under clusters/<name>/ should be a JSON array (each entry
 	// is a checks.Result). We don't assert on the exact contents because

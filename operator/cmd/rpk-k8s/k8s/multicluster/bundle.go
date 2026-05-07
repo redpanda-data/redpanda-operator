@@ -14,8 +14,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
@@ -45,6 +47,16 @@ type BundleConfig struct {
 	// because Support tickets often involve emailing the bundle around.
 	IncludePrivateKeys bool
 
+	// SkipLogs disables operator pod log collection.
+	SkipLogs bool
+	// LogsSizeLimit is a human-readable byte limit for per-container logs
+	// (e.g. "5M", "10MiB", "1G"). "0" disables the cap. Empty string means
+	// the default ("5M"). Parsed once in Run via go-units.
+	LogsSizeLimit string
+	// LogsTailLines is the per-container tail-line cap. 0 disables the
+	// cap. Negative values are treated as 0.
+	LogsTailLines int64
+
 	// ClusterChecks lets callers override the per-cluster check list. Nil
 	// means use defaultClusterChecks (the same set the `status` command
 	// runs). Tests can pass a smaller list to avoid checks whose timeouts
@@ -53,6 +65,11 @@ type BundleConfig struct {
 	// CrossClusterChecks lets callers override the cross-cluster check
 	// list. Nil means use defaultCrossClusterChecks.
 	CrossClusterChecks []checks.CrossClusterCheck
+	// LogFetcherFor returns the log fetcher used for a given cluster
+	// connection. Nil means build a kubernetes.Interface-backed fetcher
+	// from the connection's REST config. Tests use this to inject a stub
+	// because envtest cannot return real container logs.
+	LogFetcherFor func(ClusterConnection) (logFetcher, error)
 
 	// Now overrides the clock for deterministic output in tests. Defaults
 	// to time.Now.
@@ -83,6 +100,12 @@ func (c *BundleConfig) BindFlags(cmd *cobra.Command) {
 		"Path to write the bundle zip (default ./operator-bundle-<unix-ts>.zip)")
 	cmd.Flags().BoolVar(&c.IncludePrivateKeys, "include-private-keys", false,
 		"Include TLS private keys and cached peer kubeconfigs in serialised Secrets. Off by default.")
+	cmd.Flags().BoolVar(&c.SkipLogs, "skip-logs", false,
+		"Skip operator pod log collection")
+	cmd.Flags().StringVar(&c.LogsSizeLimit, "logs-size-limit", "5M",
+		`Per-container log byte cap (human-readable, e.g. "5M", "10MiB", "1G"; "0" disables the cap)`)
+	cmd.Flags().Int64Var(&c.LogsTailLines, "logs-tail-lines", 5000,
+		"Per-container log tail-line cap (0 disables the cap)")
 }
 
 // Run executes the bundle pipeline and writes the resulting zip to w. Returns
@@ -143,11 +166,18 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	}
 	crossResults := checks.RunCrossClusterChecks(contexts, crossClusterChecks)
 
+	logsOpts, lerr := c.resolveLogsOptions()
+	if lerr != nil {
+		// A bad --logs-size-limit value is a configuration error worth
+		// surfacing to the user before we produce a partial bundle.
+		return nil, lerr
+	}
+
 	now := time.Now
 	if c.Now != nil {
 		now = c.Now
 	}
-	if err := bw.writeManifestFile(c, contexts, now().UTC()); err != nil {
+	if err := bw.writeManifestFile(c, contexts, now().UTC(), logsOpts); err != nil {
 		errs = append(errs, fmt.Sprintf("writing manifest.json: %v", err))
 	}
 	if err := bw.writeStatusTable(contexts, clusterResults, crossResults); err != nil {
@@ -156,6 +186,23 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	for i, cc := range contexts {
 		for _, e := range bw.writeClusterArtifacts(cc, clusterResults[i], c.IncludePrivateKeys) {
 			errs = append(errs, fmt.Sprintf("cluster %s: %v", cc.Context, e))
+		}
+	}
+
+	// Phase 2: per-cluster operator pod logs. Skipped when --skip-logs is
+	// set or when the per-cluster PodCheck didn't find a pod (cc.Pod is
+	// nil). Per-container failures are recorded in errors.txt; the bundle
+	// still completes.
+	if !c.SkipLogs {
+		for i, conn := range roster {
+			fetcher, ferr := c.logFetcherFor(conn)
+			if ferr != nil {
+				errs = append(errs, fmt.Sprintf("cluster %s: building log fetcher: %v", conn.Name, ferr))
+				continue
+			}
+			for _, e := range collectClusterLogs(ctx, bw, contexts[i], fetcher, logsOpts) {
+				errs = append(errs, fmt.Sprintf("cluster %s: %v", conn.Name, e))
+			}
 		}
 	}
 	if err := bw.writeCrossClusterArtifacts(crossResults); err != nil {
@@ -187,6 +234,64 @@ func dedupeBySelf(peers []ClusterConnection, selfName string) []ClusterConnectio
 		out = append(out, p)
 	}
 	return out
+}
+
+// resolveLogsOptions parses LogsSizeLimit (a human-readable byte string) and
+// returns the LogsOptions used for log retrieval. Empty LogsSizeLimit yields
+// the package default (5 MiB / 5000 lines). Returns an error only when
+// LogsSizeLimit is set but unparseable — bad input deserves a clear failure
+// rather than a silently-large bundle.
+func (c *BundleConfig) resolveLogsOptions() (LogsOptions, error) {
+	defaults := defaultLogsOptions()
+	out := LogsOptions{TailLines: c.LogsTailLines}
+	if c.LogsTailLines == 0 {
+		out.TailLines = defaults.TailLines
+	} else if c.LogsTailLines < 0 {
+		out.TailLines = 0
+	}
+	switch c.LogsSizeLimit {
+	case "":
+		out.LimitBytes = defaults.LimitBytes
+	case "0":
+		out.LimitBytes = 0
+	default:
+		n, err := parseLogsSize(c.LogsSizeLimit)
+		if err != nil {
+			return LogsOptions{}, fmt.Errorf("--logs-size-limit %q: %w", c.LogsSizeLimit, err)
+		}
+		out.LimitBytes = n
+	}
+	return out, nil
+}
+
+// parseLogsSize accepts both decimal SI suffixes ("5M", "10MB" → power-of-10)
+// and binary IEC suffixes ("5Mi", "10MiB" → power-of-1024), matching the
+// dual conventions users see in Kubernetes resource limits and in
+// `rpk debug bundle --logs-size-limit`. Routes binary forms through
+// units.RAMInBytes (which uses 1024-based units) and decimal forms through
+// units.FromHumanSize (1000-based) — RAMInBytes is not used for decimal
+// inputs because it would silently treat "5M" as 5 MiB.
+func parseLogsSize(s string) (int64, error) {
+	trimmed := strings.TrimSpace(s)
+	// IEC suffixes: anything ending in "i" (e.g. "5Mi") or "iB" (e.g. "5MiB").
+	if strings.HasSuffix(trimmed, "i") || strings.HasSuffix(trimmed, "iB") {
+		return units.RAMInBytes(trimmed)
+	}
+	return units.FromHumanSize(trimmed)
+}
+
+// logFetcherFor returns the logFetcher for a roster entry. When the caller
+// configured a custom factory (test injection), that factory is used; the
+// default builds a kubernetes.Interface-backed fetcher from the connection's
+// REST config.
+func (c *BundleConfig) logFetcherFor(conn ClusterConnection) (logFetcher, error) {
+	if c.LogFetcherFor != nil {
+		return c.LogFetcherFor(conn)
+	}
+	if conn.Ctl == nil {
+		return nil, fmt.Errorf("connection %q has no kube.Ctl", conn.Name)
+	}
+	return newKubeLogFetcher(conn.Ctl.RestConfig())
 }
 
 func bundleCommand() *cobra.Command {

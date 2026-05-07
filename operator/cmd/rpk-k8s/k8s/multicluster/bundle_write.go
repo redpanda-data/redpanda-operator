@@ -93,24 +93,36 @@ type bundleManifest struct {
 	ServiceName        string    `json:"serviceName"`
 	IncludePrivateKeys bool      `json:"includePrivateKeys"`
 	Clusters           []string  `json:"clusters"`
+	// LogsCollected reports whether operator pod logs were collected on
+	// this run. When true, LogsLimitBytes / LogsTailLines record the caps
+	// applied (0 means no cap).
+	LogsCollected  bool  `json:"logsCollected"`
+	LogsLimitBytes int64 `json:"logsLimitBytes,omitempty"`
+	LogsTailLines  int64 `json:"logsTailLines,omitempty"`
 }
 
 const bundleSchemaVersion = 1
 
-func (b *bundleWriter) writeManifestFile(cfg *BundleConfig, contexts []*checks.CheckContext, generatedAt time.Time) error {
+func (b *bundleWriter) writeManifestFile(cfg *BundleConfig, contexts []*checks.CheckContext, generatedAt time.Time, logs LogsOptions) error {
 	clusters := make([]string, 0, len(contexts))
 	for _, cc := range contexts {
 		clusters = append(clusters, cc.Context)
 	}
 	sort.Strings(clusters)
-	return b.writeJSON("manifest.json", bundleManifest{
+	m := bundleManifest{
 		SchemaVersion:      bundleSchemaVersion,
 		GeneratedAt:        generatedAt,
 		Namespace:          cfg.Connection.Namespace,
 		ServiceName:        cfg.Connection.ServiceName,
 		IncludePrivateKeys: cfg.IncludePrivateKeys,
 		Clusters:           clusters,
-	})
+		LogsCollected:      !cfg.SkipLogs,
+	}
+	if !cfg.SkipLogs {
+		m.LogsLimitBytes = logs.LimitBytes
+		m.LogsTailLines = logs.TailLines
+	}
+	return b.writeJSON("manifest.json", m)
 }
 
 // writeStatusTable renders the same human-readable status table that the
