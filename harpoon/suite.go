@@ -96,6 +96,7 @@ type SuiteBuilder struct {
 	afterSetup            []func(ctx context.Context, restConfig *rest.Config) error
 	exitOnCleanupFailures bool
 	skipCleanup           bool
+	skipFeatures          bool
 	// registeredGroups maps group name to the feature tag that identifies it.
 	// The special "default" group represents features with none of the registered tags.
 	registeredGroups map[string]string
@@ -354,6 +355,15 @@ func (b *SuiteBuilder) SkipCleanup() *SuiteBuilder {
 	return b
 }
 
+// SkipFeatures causes RunT to run only the setup phase (provider creation,
+// helm charts, AfterSetup hooks) and skip executing feature scenarios. The
+// teardown phase still runs unless SkipCleanup is also set. This is intended
+// for "setup-only" entry points such as dev-environment bootstrappers.
+func (b *SuiteBuilder) SkipFeatures() *SuiteBuilder {
+	b.skipFeatures = true
+	return b
+}
+
 func (b *SuiteBuilder) WithCRDDirectory(directory string) *SuiteBuilder {
 	b.crdDirectories = append(b.crdDirectories, directory)
 	return b
@@ -457,6 +467,7 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 		images:                b.images,
 		exitOnCleanupFailures: b.exitOnCleanupFailures,
 		skipCleanup:           b.skipCleanup,
+		skipFeatures:          b.skipFeatures,
 	}, nil
 }
 
@@ -479,6 +490,7 @@ type Suite struct {
 	images                []string
 	exitOnCleanupFailures bool
 	skipCleanup           bool
+	skipFeatures          bool
 }
 
 // makeGodogSuite creates a godog.TestSuite for the given feature contents.
@@ -749,40 +761,42 @@ func (s *Suite) RunT(t *testing.T) {
 	// Track whether any feature suite reported a failure.
 	var suiteFailed bool
 
-	// Phase 2: Run parallel features concurrently.
-	// Wrapped in a non-parallel subtest so that Go waits for all parallel
-	// features to complete before Phase 3 (serial features) begins.
-	t.Run("parallel", func(t *testing.T) {
-		for _, f := range parallelFeatures {
-			t.Run(strings.ReplaceAll(f.name, "/", "_"), func(t *testing.T) {
-				t.Parallel()
+	if !s.skipFeatures {
+		// Phase 2: Run parallel features concurrently.
+		// Wrapped in a non-parallel subtest so that Go waits for all parallel
+		// features to complete before Phase 3 (serial features) begins.
+		t.Run("parallel", func(t *testing.T) {
+			for _, f := range parallelFeatures {
+				t.Run(strings.ReplaceAll(f.name, "/", "_"), func(t *testing.T) {
+					t.Parallel()
 
-				tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
-				gf := []godog.Feature{{Name: f.name, Contents: f.contents}}
-				suite := s.makeGodogSuite(f.name, tracker, gf, nil)
-				suite.Options.TestingT = t
-				suite.Run()
-				if tracker.SuiteFailed() {
-					termMu.Lock()
-					suiteFailed = true
-					termMu.Unlock()
-				}
-			})
-		}
-	})
+					tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
+					gf := []godog.Feature{{Name: f.name, Contents: f.contents}}
+					suite := s.makeGodogSuite(f.name, tracker, gf, nil)
+					suite.Options.TestingT = t
+					suite.Run()
+					if tracker.SuiteFailed() {
+						termMu.Lock()
+						suiteFailed = true
+						termMu.Unlock()
+					}
+				})
+			}
+		})
 
-	// Phase 3: Run serial features sequentially.
-	if len(serialFeatures) > 0 {
-		tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
-		var gf []godog.Feature
-		for _, f := range serialFeatures {
-			gf = append(gf, godog.Feature{Name: f.name, Contents: f.contents})
-		}
-		suite := s.makeGodogSuite("serial", tracker, gf, nil)
-		suite.Options.TestingT = t
-		suite.Run()
-		if tracker.SuiteFailed() {
-			suiteFailed = true
+		// Phase 3: Run serial features sequentially.
+		if len(serialFeatures) > 0 {
+			tracker := tracking.NewFeatureHookTracker(s.registry, s.testingOpts, s.onFeatures, s.onScenarios)
+			var gf []godog.Feature
+			for _, f := range serialFeatures {
+				gf = append(gf, godog.Feature{Name: f.name, Contents: f.contents})
+			}
+			suite := s.makeGodogSuite("serial", tracker, gf, nil)
+			suite.Options.TestingT = t
+			suite.Run()
+			if tracker.SuiteFailed() {
+				suiteFailed = true
+			}
 		}
 	}
 

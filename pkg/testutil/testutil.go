@@ -22,9 +22,11 @@ import (
 )
 
 var (
-	multiClusterSetupOnly = flag.Bool("multi-cluster-setup-only", false, "if true, only the multi-cluster setup will be performed.")
-	retain                = flag.Bool("retain", false, "if true, no clean up will be performed.")
-	update                = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
+	multiClusterSetupOnly    = flag.Bool("multi-cluster-setup-only", false, "if true, only the multi-cluster setup will be performed.")
+	acceptanceSetupOnly      = flag.Bool("acceptance-setup-only", false, "if true, the acceptance suite runs only setup (no scenarios) and skips cleanup; used by `task dev:setup-dev-env`.")
+	acceptanceSetupNodePools = flag.Int("acceptance-setup-nodepools", 0, "number of NodePool CRDs to deploy alongside the basic cluster when -acceptance-setup-only is used. Each pool has replicas=1 and points to the basic cluster.")
+	retain                   = flag.Bool("retain", false, "if true, no clean up will be performed.")
+	update                   = flag.Bool("update", false, "if true, golden assertions will update the expected file instead of performing an assertion")
 )
 
 const (
@@ -110,6 +112,20 @@ func Update() bool {
 
 func MultiClusterSetupOnly() bool {
 	return *multiClusterSetupOnly
+}
+
+// AcceptanceSetupOnly returns true when the acceptance suite should run only
+// the setup phase (provider, helm charts, AfterSetup hooks) and skip executing
+// feature scenarios. Used by `task dev:setup-dev-env` to bring up a k3s
+// cluster with a basic Redpanda deployment for local development.
+func AcceptanceSetupOnly() bool {
+	return *acceptanceSetupOnly
+}
+
+// AcceptanceSetupNodePools returns the number of NodePool CRDs to deploy
+// alongside the basic cluster in dev-env setup mode.
+func AcceptanceSetupNodePools() int {
+	return *acceptanceSetupNodePools
 }
 
 // TempDir is wrapper around [testing.T.TempDir] that respects [Retain].
