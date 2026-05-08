@@ -11,70 +11,183 @@ package multicluster
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"io"
+	"net/http"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/redpanda-data/common-go/kube"
+	authenticationv1 "k8s.io/api/authentication/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
 
-// metricsFetcher abstracts the apiserver-proxy GET against /metrics. The
-// production implementation goes through kubernetes.Interface; tests stub it
-// because envtest doesn't run kubelets and there is no real metrics server
-// to scrape.
+// metricsFetcher abstracts a GET against the operator's /metrics endpoint.
+// The production implementation port-forwards into the pod and authenticates
+// with a Bearer token minted via the TokenRequest API; tests stub it because
+// envtest doesn't run kubelets and there is no real metrics server to scrape.
 type metricsFetcher interface {
 	// Metrics returns the raw response body of GET /metrics on the named
 	// pod's container port. scheme is "http" or "https" depending on
-	// whether the metrics server is TLS-terminated (the apiserver proxy
-	// uses the prefix "<scheme>:<pod>:<port>" to pick).
+	// whether the metrics server is TLS-terminated.
 	Metrics(ctx context.Context, namespace, podName, scheme string, port int) ([]byte, error)
 }
 
-// kubeMetricsFetcher implements metricsFetcher via the apiserver pod-proxy
-// subresource. This works for both plain HTTP and TLS-terminated metrics
-// servers because the apiserver handles the TLS handshake on our behalf;
-// the bundle command only needs RBAC to "pods/proxy" in the operator's
-// namespace.
+// kubeMetricsFetcher implements metricsFetcher by port-forwarding to the
+// operator pod's metrics port and scraping /metrics with a Bearer token
+// minted via the TokenRequest API for the pod's ServiceAccount.
+//
+// Why not the apiserver pod-proxy: the operator wires its metrics server up
+// with controller-runtime's filters.WithAuthenticationAndAuthorization,
+// which expects either a Bearer token or a client cert that the metrics
+// server's authenticator can validate. The apiserver pod-proxy opens a new
+// HTTP connection to the pod and does NOT propagate the user's auth
+// headers — the metrics server sees an unauthenticated request and returns
+// 401, surfaced to client-go as "the server has asked for the client to
+// provide credentials". Port-forward sidesteps that: we present the SA's
+// minted token directly to the metrics filter, which TokenReview's it
+// against the apiserver and forwards the identity into the
+// SubjectAccessReview for /metrics.
+//
+// The scrape will still 403 if the SA doesn't have nonResourceURLs:
+// /metrics granted (the chart doesn't grant this by default — separate
+// follow-up). The error in that case is recorded in errors.txt and the
+// rest of the bundle still completes.
 type kubeMetricsFetcher struct {
-	cs kubernetes.Interface
+	ctl *kube.Ctl
+	cs  kubernetes.Interface
 }
 
-func newKubeMetricsFetcher(cfg *rest.Config) (*kubeMetricsFetcher, error) {
-	if cfg == nil {
-		return nil, fmt.Errorf("newKubeMetricsFetcher: nil rest.Config")
+func newKubeMetricsFetcher(ctl *kube.Ctl) (*kubeMetricsFetcher, error) {
+	if ctl == nil {
+		return nil, fmt.Errorf("newKubeMetricsFetcher: nil kube.Ctl")
 	}
-	cs, err := kubernetes.NewForConfig(cfg)
+	cs, err := kubernetes.NewForConfig(ctl.RestConfig())
 	if err != nil {
 		return nil, fmt.Errorf("building kubernetes clientset: %w", err)
 	}
-	return &kubeMetricsFetcher{cs: cs}, nil
+	return &kubeMetricsFetcher{ctl: ctl, cs: cs}, nil
 }
 
+// Metrics opens a port-forward to the metrics port on `podName`, mints a
+// Bearer token for the pod's ServiceAccount via the TokenRequest API, and
+// GETs /metrics over the forwarded port with that token.
 func (k *kubeMetricsFetcher) Metrics(ctx context.Context, namespace, podName, scheme string, port int) ([]byte, error) {
-	// The apiserver pod-proxy expects the resource name as
-	// "<scheme>:<pod>:<port>" for HTTPS and either "<pod>:<port>" or
-	// "http:<pod>:<port>" for HTTP. We pass the scheme explicitly to keep
-	// the call site obvious.
-	name := fmt.Sprintf("%s:%s:%d", scheme, podName, port)
-	if scheme == "" {
-		name = fmt.Sprintf("%s:%d", podName, port)
+	pod, err := k.cs.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("getting pod %s/%s: %w", namespace, podName, err)
 	}
-	return k.cs.CoreV1().RESTClient().Get().
-		Namespace(namespace).
-		Resource("pods").
-		Name(name).
-		SubResource("proxy").
-		Suffix("metrics").
-		DoRaw(ctx)
+
+	forwarded, stop, err := k.ctl.PortForward(ctx, pod, io.Discard, io.Discard)
+	if err != nil {
+		return nil, fmt.Errorf("port-forwarding to %s/%s: %w", namespace, podName, err)
+	}
+	defer stop()
+
+	localPort, ok := pickForwardedPort(forwarded, uint16(port))
+	if !ok {
+		return nil, fmt.Errorf("metrics port %d not declared as a containerPort on pod %s/%s — port-forward returned ports %v",
+			port, namespace, podName, forwardedSummary(forwarded))
+	}
+
+	saName := pod.Spec.ServiceAccountName
+	if saName == "" {
+		saName = "default"
+	}
+	tokenResp, err := k.cs.CoreV1().ServiceAccounts(namespace).CreateToken(ctx, saName,
+		&authenticationv1.TokenRequest{
+			Spec: authenticationv1.TokenRequestSpec{
+				ExpirationSeconds: ptr.To[int64](600),
+			},
+		},
+		metav1.CreateOptions{},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("requesting Bearer token for ServiceAccount %s/%s: %w", namespace, saName, err)
+	}
+
+	return scrapeMetrics(ctx, scheme, localPort, tokenResp.Status.Token)
 }
 
-// collectClusterMetrics scrapes the operator's /metrics endpoint via the
-// apiserver pod-proxy and writes the raw Prometheus exposition into the
-// bundle at clusters/<context>/metrics/metrics.txt.
+// pickForwardedPort returns the local port that PortForward mapped to the
+// given remote port, or false if the remote port wasn't forwarded.
+func pickForwardedPort(forwarded []portforward.ForwardedPort, remote uint16) (uint16, bool) {
+	for _, fp := range forwarded {
+		if fp.Remote == remote {
+			return fp.Local, true
+		}
+	}
+	return 0, false
+}
+
+// forwardedSummary renders a port-forward result as a compact debug string
+// for use in error messages.
+func forwardedSummary(forwarded []portforward.ForwardedPort) []string {
+	out := make([]string, 0, len(forwarded))
+	for _, fp := range forwarded {
+		out = append(out, fmt.Sprintf("%d->%d", fp.Local, fp.Remote))
+	}
+	return out
+}
+
+// scrapeMetrics performs the HTTP(S) GET /metrics with a Bearer token. The
+// scheme is "http" or "https" — for HTTPS we accept any server cert
+// because the metrics server typically uses self-signed certs and we're
+// connecting via 127.0.0.1 anyway.
+func scrapeMetrics(ctx context.Context, scheme string, localPort uint16, token string) ([]byte, error) {
+	url := fmt.Sprintf("%s://127.0.0.1:%d/metrics", scheme, localPort)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("building metrics request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			// Self-signed by default — and we're hitting 127.0.0.1
+			// over a port-forward, so MITM risk is moot.
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		},
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("scraping %s: %w", url, err)
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading %s body: %w", url, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("scraping %s: HTTP %d %s — body: %s",
+			url, resp.StatusCode, resp.Status, truncate(body, 512))
+	}
+	return body, nil
+}
+
+// truncate trims a byte slice to n bytes for use in error messages.
+func truncate(b []byte, n int) string {
+	if len(b) <= n {
+		return string(b)
+	}
+	return string(b[:n]) + "...(truncated)"
+}
+
+// collectClusterMetrics scrapes the operator's /metrics endpoint and writes
+// the raw Prometheus exposition into the bundle at
+// clusters/<context>/metrics/metrics.txt. The actual transport is an
+// implementation detail of the metricsFetcher; production goes through
+// port-forward + Bearer-token auth (see kubeMetricsFetcher).
 //
 // Returns nil (no work, no error) when:
 //

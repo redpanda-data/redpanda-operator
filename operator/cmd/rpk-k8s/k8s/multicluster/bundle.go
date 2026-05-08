@@ -334,7 +334,7 @@ func (c *BundleConfig) metricsFetcherFor(conn ClusterConnection) (metricsFetcher
 	if conn.Ctl == nil {
 		return nil, fmt.Errorf("connection %q has no kube.Ctl", conn.Name)
 	}
-	return newKubeMetricsFetcher(conn.Ctl.RestConfig())
+	return newKubeMetricsFetcher(conn.Ctl)
 }
 
 func bundleCommand() *cobra.Command {
