@@ -61,7 +61,8 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $bindings := (coalesce nil) -}}
+{{- $metricsRoleName := (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (printf "%s%s" (printf "%s%s" (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "-") $dot.Release.Namespace) "metrics-reader")))) "r") -}}
+{{- $bindings := (list (mustMergeOverwrite (dict "metadata" (dict) "roleRef" (dict "apiGroup" "" "kind" "" "name" "")) (mustMergeOverwrite (dict) (dict "apiVersion" "rbac.authorization.k8s.io/v1" "kind" "ClusterRoleBinding")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $metricsRoleName "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" $values.annotations)) "roleRef" (mustMergeOverwrite (dict "apiGroup" "" "kind" "" "name" "") (dict "apiGroup" "rbac.authorization.k8s.io" "kind" "ClusterRole" "name" $metricsRoleName)) "subjects" (list (mustMergeOverwrite (dict "kind" "" "name" "") (dict "kind" "ServiceAccount" "name" (get (fromJson (include "operator.ServiceAccountName" (dict "a" (list $dot)))) "r") "namespace" $dot.Release.Namespace)))))) -}}
 {{- range $_, $bundle := (get (fromJson (include "operator.rbacBundles" (dict "a" (list $dot)))) "r") -}}
 {{- if (not $bundle.Enabled) -}}
 {{- continue -}}

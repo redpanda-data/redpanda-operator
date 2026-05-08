@@ -661,6 +661,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -2032,6 +2053,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ctFdYbtL
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: XCatYW-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: XCatYW-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: XCatYW
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -3455,6 +3497,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 8zwp
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: do1u-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: do1u-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: do1u
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -5008,6 +5071,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: llRXnk1
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: zFkw3t-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: zFkw3t-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: zFkw3t
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -6710,6 +6794,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Od
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: 8-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 8-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: "8"
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -8099,6 +8204,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: bA9B
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: TODeGK-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: TODeGK-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: TODeGK
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -9619,6 +9745,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 9Fewiv
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: hzsFR-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hzsFR-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: hzsFR
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -11234,6 +11381,29 @@ metadata:
     app.kubernetes.io/name: HsM6
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
+  name: nwn-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nwn-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: EWzZWPEbF
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    7eZwch: p
+    v: fkhSZu
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: HsM6
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: nwn-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -12630,6 +12800,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: UMeCRE
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: 5rz4H-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 5rz4H-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: 5rz4H
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -14039,6 +14230,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: rrM2
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: EB-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: EB-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: 43f9qCQ
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -15313,6 +15525,29 @@ rules:
   - patch
   - update
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    k1: MeUXOg3
+    yXu: iPV0Z
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 2DsVHG
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: tP-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tP-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: xVPYSkZt2
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -16723,6 +16958,28 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    kbD: UEcwv0
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: D4Ec
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: PcH5-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: PcH5-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: PcH5
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -18314,6 +18571,30 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    B: grOgtF
+    Pr: RBVP
+    QVzkdX7Y1I2hjVAXY: h
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 6gRngW4
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-6gRngW4-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-6gRngW4-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator-6gRngW4
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     B: grOgtF
@@ -19777,6 +20058,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: au3C7-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: au3C7-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: 9lb
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -21217,6 +21519,28 @@ metadata:
     app.kubernetes.io/name: M
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
+  name: w4N-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: w4N-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: wZ2
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    1jQ9Wuut: FnhwzZlPE
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: M
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: w4N-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -22621,6 +22945,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: wDZRv
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: EW2WAAJK-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: EW2WAAJK-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: EW2WAAJK
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -24399,6 +24744,30 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    B6AmPaZ: Usluk
+    W7aCzkZu: pID
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: uRLJ1j
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+    tCcCCzCLW: D
+  name: YKWWF-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: YKWWF-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: YKWWF
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     B6AmPaZ: Usluk
@@ -26023,6 +26392,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 3RQJ3j
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: w-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: w-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: w
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -27618,6 +28008,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mBH
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: t-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: t-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: ""
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -29571,6 +29982,33 @@ metadata:
     helm.sh/chart: operator-26.2.1-beta.1
     nuj9z: 0teXTWiM
     t6G2ZvuAcFNG: Fe773
+  name: 3TCSa8p9-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 3TCSa8p9-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: qBAL
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    "": YQe
+    DT: TQ2bLJESBNS
+    JECbiE5z: 7GsL
+  labels:
+    "": 9e4vIgl
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: Keyw50T
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+    nuj9z: 0teXTWiM
+    t6G2ZvuAcFNG: Fe773
   name: 3TCSa8p9-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -31260,6 +31698,28 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    HB: 6Bh9uW
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: qV6xrD
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: 4Y-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 4Y-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: 9OwQUe
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -33070,6 +33530,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: QU1RdnSl5WDZjW
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: 6o-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 6o-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: I
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -34499,6 +34980,29 @@ rules:
   - patch
   - update
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    IH: S4ywxLg
+    SVbJKOD: M6NY
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: su3
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: ISOeWop-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ISOeWop-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: ISOeWop
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -36573,6 +37077,30 @@ rules:
   - patch
   - update
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    0qwEw: sSE57
+    PK22WJ: MB
+    ykqJNdBG: 8uR6z5RvKA
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: mXKX
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: J8-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: J8-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: ""
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -38765,6 +39293,28 @@ metadata:
     app.kubernetes.io/name: nfr7ZK
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
+  name: laYV0ze-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: laYV0ze-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: WGtRG
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    "": YeheDN
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: nfr7ZK
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: laYV0ze-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -40416,6 +40966,29 @@ metadata:
     app.kubernetes.io/name: TTQ
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
+  name: iYPCfHtZuTxx-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: iYPCfHtZuTxx-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: LTY4w
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    dj4k3Kh: OZtu
+    wy272: qoP
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: TTQ
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: iYPCfHtZuTxx-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -42027,6 +42600,27 @@ rules:
   - patch
   - update
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: HMyl
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: YGu-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: YGu-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: YGu
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -44533,6 +45127,29 @@ metadata:
     app.kubernetes.io/name: txo
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
+  name: Ipfd-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Ipfd-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: qYiN
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    "": f2I
+    b2WJ: b4O4Tjy
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: txo
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: Ipfd-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -46279,6 +46896,30 @@ rules:
   - patch
   - update
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    CxqPaEyk: fINHg
+    T5cgPilynoaoF: ""
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pcJ
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+    x: 6P
+  name: cwgT-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cwgT-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: PJFo
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -48033,6 +48674,29 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    G: 2P
+    btoGgD: 7n
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: xN
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: OpA-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: OpA-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: E9qW5z
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -51480,6 +52144,31 @@ metadata:
     app.kubernetes.io/name: tSP
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
+  name: w3Ea-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: w3Ea-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: CWrpD
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    lPyTQTQGT: n0PMo
+    xckN1ys: w
+  labels:
+    0KxBSMaPK4: m3uQe
+    UBlzk: ah7sm1KDTy5
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: tSP
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
   name: w3Ea-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -54397,6 +55086,27 @@ rules:
   - patch
   - update
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: TR7et
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: 04o0-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 04o0-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: uI
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -57957,6 +58667,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: XR3QTg
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: wE4Rkh-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: wE4Rkh-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: j7z
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -60018,6 +60749,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: KG9Ly
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: Tdd-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Tdd-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: X
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -62645,6 +63397,31 @@ metadata:
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
     nYQL: TIi
+  name: qGsQ1sX-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: qGsQ1sX-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: Q
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    1m7aEPW: AFIshsK4y
+    L5ZjzgQXy: mCwoDQVU
+  labels:
+    8WPzLP: t
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: R6F1vlUXkJ
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+    nYQL: TIi
   name: qGsQ1sX-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -65199,6 +65976,30 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    6t8EC: hh0EBBW0
+    40GBab: t0Z5V8Idb
+    "97": ysLUJXn4i
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: 2xmeT
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: 6z-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 6z-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: zMBGxjU
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     6t8EC: hh0EBBW0
@@ -67270,6 +68071,32 @@ rules:
   - patch
   - update
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    AkL: gYS24
+    S5EU2LQ: Khc
+    gbAz: a
+  labels:
+    1D2wB0v: vTS5
+    D1Nq: i8
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: VyRQrGp
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: Zl-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: Zl-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: Yv9IwD
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -69502,6 +70329,31 @@ metadata:
     djhp: dDxn5K
     helm.sh/chart: operator-26.2.1-beta.1
     j7k: M0STNp
+  name: X5ghd-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: X5ghd-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: gnFwZz3
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    VL: TMl
+    eGwp: ys7M
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: S
+    app.kubernetes.io/version: v26.2.1-beta.1
+    djhp: dDxn5K
+    helm.sh/chart: operator-26.2.1-beta.1
+    j7k: M0STNp
   name: X5ghd-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -71613,6 +72465,32 @@ metadata:
     app.kubernetes.io/version: v26.2.1-beta.1
     helm.sh/chart: operator-26.2.1-beta.1
     zrdLi6qjyStw: s6wqn
+  name: ZvF-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ZvF-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: ynJU
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    FS0CCFre54m: 58hk3
+    zeZ1yo: BlUU
+  labels:
+    "6": nwe
+    SNwt: nldfORk
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: bVx
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+    zrdLi6qjyStw: s6wqn
   name: ZvF-default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -73609,6 +74487,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -75114,6 +76013,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -76628,6 +77548,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -77998,6 +78939,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -79395,6 +80357,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -80770,6 +81753,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -82140,6 +83144,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -83523,6 +84548,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -84916,6 +85962,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -86492,6 +87559,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -88128,6 +89216,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -89753,6 +90862,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -91311,6 +92441,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -92851,6 +94002,27 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
   annotations: {}
   labels:
     app.kubernetes.io/instance: operator
@@ -94352,6 +95524,27 @@ rules:
   - get
   - list
   - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.1
+    helm.sh/chart: operator-26.2.1-beta.1
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1

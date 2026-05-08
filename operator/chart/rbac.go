@@ -166,8 +166,40 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 		return nil
 	}
 
-	// NB: We skip over making a binding for the metrics viewer role.
-	var bindings []rbacv1.ClusterRoleBinding
+	// Bind the operator's own ServiceAccount to the metrics-reader
+	// ClusterRole emitted in ClusterRoles. controller-runtime's metrics
+	// server enforces authentication + authorization by default, so
+	// anything authenticating as the operator SA — including the bundled
+	// ServiceMonitor scraping with the pod's projected token, and tools
+	// like `rpk k8s multicluster bundle` — needs `nonResourceURLs:
+	// /metrics get`. Other consumers (e.g. an external Prometheus running
+	// under its own SA) can bind to the same ClusterRole separately.
+	metricsRoleName := cleanForK8sWithSuffix(Fullname(dot)+"-"+dot.Release.Namespace, "metrics-reader")
+	bindings := []rbacv1.ClusterRoleBinding{
+		{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "rbac.authorization.k8s.io/v1",
+				Kind:       "ClusterRoleBinding",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        metricsRoleName,
+				Labels:      Labels(dot),
+				Annotations: values.Annotations,
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+				Name:     metricsRoleName,
+			},
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      ServiceAccountName(dot),
+					Namespace: dot.Release.Namespace,
+				},
+			},
+		},
+	}
 	for _, bundle := range rbacBundles(dot) {
 		if !bundle.Enabled {
 			continue
