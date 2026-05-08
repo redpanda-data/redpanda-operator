@@ -14,6 +14,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,6 +23,12 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
+
+// singleSampleOpts is the simplest opts that satisfies collectClusterMetrics
+// in the tests that only care about a single scrape. Two samples is the
+// command-line default; tests that exercise multi-sample behaviour use a
+// short interval to keep wall-clock time low.
+var singleSampleOpts = MetricsOptions{Samples: 1, Interval: time.Millisecond}
 
 // fakeMetricsFetcher records its scrape arguments and returns a canned
 // response. Tests assert on the recorded calls and on the bytes that ended
@@ -47,6 +54,17 @@ func (f *fakeMetricsFetcher) Metrics(_ context.Context, namespace, podName, sche
 	return f.body, nil
 }
 
+// fetcherWithCounter returns a different body (or error) on each call —
+// used by the multi-sample tests to verify per-sample distinct content
+// lands in distinct files.
+type fetcherWithCounter struct {
+	cb func() ([]byte, error)
+}
+
+func (f *fetcherWithCounter) Metrics(_ context.Context, _, _, _ string, _ int) ([]byte, error) {
+	return f.cb()
+}
+
 func TestCollectClusterMetrics_HappyPath(t *testing.T) {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: "operator-0", Namespace: "redpanda"},
@@ -63,7 +81,7 @@ func TestCollectClusterMetrics_HappyPath(t *testing.T) {
 
 	var buf bytes.Buffer
 	bw := newBundleWriter(&buf)
-	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher)
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, singleSampleOpts, nil)
 	require.NoError(t, bw.Close())
 	require.Empty(t, errs)
 
@@ -71,10 +89,83 @@ func TestCollectClusterMetrics_HappyPath(t *testing.T) {
 	require.Len(t, fetcher.calls, 1)
 	assert.Equal(t, metricsCall{Namespace: "redpanda", PodName: "operator-0", Scheme: "http", Port: 8443}, fetcher.calls[0])
 
-	// metrics.txt must contain the canned body verbatim.
+	// t0_metrics.txt must contain the canned body verbatim.
 	files := readZipFilesInternal(t, buf.Bytes())
-	require.Contains(t, files, "clusters/self/metrics/metrics.txt")
-	assert.Equal(t, string(body), string(files["clusters/self/metrics/metrics.txt"]))
+	require.Contains(t, files, "clusters/self/metrics/t0_metrics.txt")
+	assert.Equal(t, string(body), string(files["clusters/self/metrics/t0_metrics.txt"]))
+}
+
+func TestCollectClusterMetrics_MultipleSamples(t *testing.T) {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "operator-0", Namespace: "redpanda"},
+	}
+	cc := &checks.CheckContext{
+		Context:    "self",
+		Namespace:  "redpanda",
+		Pod:        pod,
+		DeployArgs: []string{"--metrics-bind-address=:8443"},
+	}
+
+	// Each call returns a different body so we can verify per-sample
+	// content lands in its own file.
+	var calls int
+	fetcher := &fetcherWithCounter{cb: func() ([]byte, error) {
+		calls++
+		return []byte(fmt.Sprintf("sample %d\n", calls)), nil
+	}}
+
+	var buf bytes.Buffer
+	bw := newBundleWriter(&buf)
+	opts := MetricsOptions{Samples: 3, Interval: time.Millisecond}
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, opts, nil)
+	require.NoError(t, bw.Close())
+	require.Empty(t, errs)
+	assert.Equal(t, 3, calls, "fetcher must be called once per sample")
+
+	files := readZipFilesInternal(t, buf.Bytes())
+	require.Contains(t, files, "clusters/self/metrics/t0_metrics.txt")
+	require.Contains(t, files, "clusters/self/metrics/t1_metrics.txt")
+	require.Contains(t, files, "clusters/self/metrics/t2_metrics.txt")
+	assert.Equal(t, "sample 1\n", string(files["clusters/self/metrics/t0_metrics.txt"]))
+	assert.Equal(t, "sample 2\n", string(files["clusters/self/metrics/t1_metrics.txt"]))
+	assert.Equal(t, "sample 3\n", string(files["clusters/self/metrics/t2_metrics.txt"]))
+}
+
+func TestCollectClusterMetrics_PartialFailureContinues(t *testing.T) {
+	// Sample 2 fails but sample 1 and 3 succeed. The error must be
+	// recorded and the surviving samples must be in the bundle.
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "operator-0", Namespace: "redpanda"},
+	}
+	cc := &checks.CheckContext{
+		Context:    "self",
+		Namespace:  "redpanda",
+		Pod:        pod,
+		DeployArgs: []string{"--metrics-bind-address=:8443"},
+	}
+
+	var calls int
+	fetcher := &fetcherWithCounter{cb: func() ([]byte, error) {
+		calls++
+		if calls == 2 {
+			return nil, fmt.Errorf("transient: connection reset")
+		}
+		return []byte(fmt.Sprintf("sample %d\n", calls)), nil
+	}}
+
+	var buf bytes.Buffer
+	bw := newBundleWriter(&buf)
+	opts := MetricsOptions{Samples: 3, Interval: time.Millisecond}
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, opts, nil)
+	require.NoError(t, bw.Close())
+	require.Len(t, errs, 1)
+	assert.Contains(t, errs[0].Error(), "sample 2/3")
+	assert.Contains(t, errs[0].Error(), "transient: connection reset")
+
+	files := readZipFilesInternal(t, buf.Bytes())
+	require.Contains(t, files, "clusters/self/metrics/t0_metrics.txt")
+	assert.NotContains(t, files, "clusters/self/metrics/t1_metrics.txt", "failed sample must not produce a file")
+	require.Contains(t, files, "clusters/self/metrics/t2_metrics.txt")
 }
 
 func TestCollectClusterMetrics_HTTPSWhenCertPathSet(t *testing.T) {
@@ -92,7 +183,7 @@ func TestCollectClusterMetrics_HTTPSWhenCertPathSet(t *testing.T) {
 
 	var buf bytes.Buffer
 	bw := newBundleWriter(&buf)
-	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher)
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, singleSampleOpts, nil)
 	require.NoError(t, bw.Close())
 	require.Empty(t, errs)
 	require.Len(t, fetcher.calls, 1)
@@ -114,7 +205,7 @@ func TestCollectClusterMetrics_MissingFlagSkipsCleanly(t *testing.T) {
 
 	var buf bytes.Buffer
 	bw := newBundleWriter(&buf)
-	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher)
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, singleSampleOpts, nil)
 	require.NoError(t, bw.Close())
 	assert.Empty(t, errs)
 	assert.Empty(t, fetcher.calls, "fetcher must not be called when --metrics-bind-address is unset")
@@ -131,16 +222,16 @@ func TestCollectClusterMetrics_ErrorIsRecorded(t *testing.T) {
 
 	var buf bytes.Buffer
 	bw := newBundleWriter(&buf)
-	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher)
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, singleSampleOpts, nil)
 	require.NoError(t, bw.Close())
 	require.Len(t, errs, 1)
 	assert.Contains(t, errs[0].Error(), "simulated 403 forbidden")
 	assert.Contains(t, errs[0].Error(), "operator-0")
 
-	// metrics.txt must NOT be present in the zip when the scrape failed.
+	// No t<i>_metrics.txt entry should exist when the only sample failed.
 	files := readZipFilesInternal(t, buf.Bytes())
 	for fname := range files {
-		assert.NotContains(t, fname, "/metrics/metrics.txt")
+		assert.NotContains(t, fname, "/metrics/t")
 	}
 }
 

@@ -101,16 +101,18 @@ func TestIntegrationBundleRun_RoundTrip(t *testing.T) {
 
 	// manifest.json should round-trip with the expected fields.
 	var m struct {
-		SchemaVersion      int       `json:"schemaVersion"`
-		GeneratedAt        time.Time `json:"generatedAt"`
-		Namespace          string    `json:"namespace"`
-		ServiceName        string    `json:"serviceName"`
-		IncludePrivateKeys bool      `json:"includePrivateKeys"`
-		Clusters           []string  `json:"clusters"`
-		LogsCollected      bool      `json:"logsCollected"`
-		LogsLimitBytes     int64     `json:"logsLimitBytes"`
-		LogsTailLines      int64     `json:"logsTailLines"`
-		MetricsCollected   bool      `json:"metricsCollected"`
+		SchemaVersion          int       `json:"schemaVersion"`
+		GeneratedAt            time.Time `json:"generatedAt"`
+		Namespace              string    `json:"namespace"`
+		ServiceName            string    `json:"serviceName"`
+		IncludePrivateKeys     bool      `json:"includePrivateKeys"`
+		Clusters               []string  `json:"clusters"`
+		LogsCollected          bool      `json:"logsCollected"`
+		LogsLimitBytes         int64     `json:"logsLimitBytes"`
+		LogsTailLines          int64     `json:"logsTailLines"`
+		MetricsCollected       bool      `json:"metricsCollected"`
+		MetricsSamples         int       `json:"metricsSamples"`
+		MetricsIntervalSeconds float64   `json:"metricsIntervalSeconds"`
 	}
 	require.NoError(t, json.Unmarshal(files["manifest.json"], &m))
 	assert.Equal(t, 1, m.SchemaVersion)
@@ -132,8 +134,11 @@ func TestIntegrationBundleRun_RoundTrip(t *testing.T) {
 	}
 	// Phase 3: with default flags, metrics collection is enabled. As
 	// with logs, no actual scrape happens here because there is no pod
-	// — but the manifest records the policy.
+	// — but the manifest records the policy (samples + interval) so a
+	// bundle reader can interpret t<i>_metrics.txt filenames.
 	assert.True(t, m.MetricsCollected)
+	assert.Equal(t, 2, m.MetricsSamples)
+	assert.Equal(t, float64(10), m.MetricsIntervalSeconds)
 	for fname := range files {
 		assert.NotContains(t, fname, "/metrics/", "no metrics files when no pod was found")
 	}

@@ -104,11 +104,19 @@ type bundleManifest struct {
 	// otherwise (the actual scrape may still no-op per cluster when the
 	// operator was deployed without --metrics-bind-address).
 	MetricsCollected bool `json:"metricsCollected"`
+	// MetricsSamples records the configured number of /metrics samples
+	// per cluster. 0 when MetricsCollected is false. Stored so a bundle
+	// reader can interpret t<i>_metrics.txt filenames.
+	MetricsSamples int `json:"metricsSamples,omitempty"`
+	// MetricsIntervalSeconds is the configured wall-clock interval
+	// between successive samples, in seconds. 0 when MetricsCollected is
+	// false.
+	MetricsIntervalSeconds float64 `json:"metricsIntervalSeconds,omitempty"`
 }
 
 const bundleSchemaVersion = 1
 
-func (b *bundleWriter) writeManifestFile(cfg *BundleConfig, contexts []*checks.CheckContext, generatedAt time.Time, logs LogsOptions) error {
+func (b *bundleWriter) writeManifestFile(cfg *BundleConfig, contexts []*checks.CheckContext, generatedAt time.Time, logs LogsOptions, metrics MetricsOptions) error {
 	clusters := make([]string, 0, len(contexts))
 	for _, cc := range contexts {
 		clusters = append(clusters, cc.Context)
@@ -127,6 +135,10 @@ func (b *bundleWriter) writeManifestFile(cfg *BundleConfig, contexts []*checks.C
 	if !cfg.SkipLogs {
 		m.LogsLimitBytes = logs.LimitBytes
 		m.LogsTailLines = logs.TailLines
+	}
+	if !cfg.SkipMetrics {
+		m.MetricsSamples = metrics.Samples
+		m.MetricsIntervalSeconds = metrics.Interval.Seconds()
 	}
 	return b.writeJSON("manifest.json", m)
 }

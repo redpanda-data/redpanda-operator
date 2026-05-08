@@ -30,6 +30,25 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
 
+// MetricsOptions controls how often /metrics is sampled per cluster. Two
+// samples (the default) at a 10s interval matches `rpk debug bundle`'s
+// behaviour and lets investigators compute counter rates post-hoc without a
+// live Prometheus.
+type MetricsOptions struct {
+	Samples  int
+	Interval time.Duration
+}
+
+const (
+	// defaultMetricsSamples is the default number of /metrics scrape
+	// samples per cluster. Mirrors rpk debug bundle's default of 2 — the
+	// minimum that lets you compute counter rate-of-change.
+	defaultMetricsSamples = 2
+	// defaultMetricsInterval is the default wall-clock interval between
+	// successive /metrics samples. Mirrors rpk debug bundle's default.
+	defaultMetricsInterval = 10 * time.Second
+)
+
 // metricsFetcher abstracts a GET against the operator's /metrics endpoint.
 // The production implementation port-forwards into the pod and authenticates
 // with a Bearer token minted via the TokenRequest API; tests stub it because
@@ -183,11 +202,14 @@ func truncate(b []byte, n int) string {
 	return string(b[:n]) + "...(truncated)"
 }
 
-// collectClusterMetrics scrapes the operator's /metrics endpoint and writes
-// the raw Prometheus exposition into the bundle at
-// clusters/<context>/metrics/metrics.txt. The actual transport is an
-// implementation detail of the metricsFetcher; production goes through
-// port-forward + Bearer-token auth (see kubeMetricsFetcher).
+// collectClusterMetrics scrapes the operator's /metrics endpoint
+// opts.Samples times at opts.Interval and writes each Prometheus exposition
+// into the bundle at clusters/<context>/metrics/t<i>_metrics.txt. Multiple
+// samples let investigators compute counter rate-of-change post-hoc without
+// needing a live Prometheus — matches `rpk debug bundle`'s behaviour.
+// The actual transport is an implementation detail of the metricsFetcher;
+// production goes through port-forward + Bearer-token auth (see
+// kubeMetricsFetcher).
 //
 // Returns nil (no work, no error) when:
 //
@@ -196,9 +218,21 @@ func truncate(b []byte, n int) string {
 //     (metrics server disabled)
 //   - the deploy args couldn't be parsed for a port
 //
-// Per-cluster scrape failures are returned as []error so the bundle can
-// continue and record them in errors.txt.
-func collectClusterMetrics(ctx context.Context, bw *bundleWriter, cc *checks.CheckContext, fetcher metricsFetcher) []error {
+// Per-sample scrape failures are recorded in the returned []error and the
+// next sample is still attempted. Context cancellation between samples
+// returns immediately with whatever has been collected so far.
+//
+// progress, when non-nil, is called once per sample with a stderr-style
+// "[<context>] sample i/N" message. Run wires this to the --verbose
+// progress logger.
+func collectClusterMetrics(
+	ctx context.Context,
+	bw *bundleWriter,
+	cc *checks.CheckContext,
+	fetcher metricsFetcher,
+	opts MetricsOptions,
+	progress func(format string, args ...any),
+) []error {
 	if cc == nil || cc.Pod == nil || fetcher == nil {
 		return nil
 	}
@@ -211,15 +245,38 @@ func collectClusterMetrics(ctx context.Context, bw *bundleWriter, cc *checks.Che
 	}
 	scheme := metricsScheme(cc.DeployArgs)
 
-	data, err := fetcher.Metrics(ctx, cc.Namespace, cc.Pod.Name, scheme, port)
-	if err != nil {
-		return []error{fmt.Errorf("scraping metrics from %s/%s (%s://:%d): %w",
-			cc.Pod.Namespace, cc.Pod.Name, scheme, port, err)}
+	if opts.Samples < 1 {
+		opts.Samples = 1
 	}
-	if werr := bw.writeBytes(path.Join("clusters", cc.Context, "metrics", "metrics.txt"), data); werr != nil {
-		return []error{werr}
+
+	var errs []error
+	for i := 0; i < opts.Samples; i++ {
+		if i > 0 {
+			// Wait between samples but respect cancellation so a
+			// long-running bundle can be aborted cleanly.
+			timer := time.NewTimer(opts.Interval)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return errs
+			case <-timer.C:
+			}
+		}
+		if progress != nil {
+			progress("[%s] /metrics sample %d/%d", cc.Context, i+1, opts.Samples)
+		}
+		data, err := fetcher.Metrics(ctx, cc.Namespace, cc.Pod.Name, scheme, port)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("scraping metrics from %s/%s sample %d/%d (%s://:%d): %w",
+				cc.Pod.Namespace, cc.Pod.Name, i+1, opts.Samples, scheme, port, err))
+			continue
+		}
+		entry := path.Join("clusters", cc.Context, "metrics", fmt.Sprintf("t%d_metrics.txt", i))
+		if werr := bw.writeBytes(entry, data); werr != nil {
+			errs = append(errs, werr)
+		}
 	}
-	return nil
+	return errs
 }
 
 // parseMetricsPort returns the port the operator's metrics server listens

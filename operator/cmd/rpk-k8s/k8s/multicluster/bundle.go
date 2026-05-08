@@ -59,6 +59,17 @@ type BundleConfig struct {
 
 	// SkipMetrics disables operator metrics collection.
 	SkipMetrics bool
+	// MetricsSamples is the number of /metrics scrape samples taken per
+	// cluster (>= 2). The first sample is taken immediately; subsequent
+	// samples are taken after MetricsInterval. Capturing multiple samples
+	// lets an investigator compute counter rates post-hoc without needing
+	// access to a live Prometheus. 0 means use the default (2). Mirrors
+	// `rpk debug bundle --metrics-samples`.
+	MetricsSamples int
+	// MetricsInterval is the wall-clock interval between successive
+	// /metrics samples. 0 means use the default (10s). Must be > 0 when
+	// MetricsSamples >= 2.
+	MetricsInterval time.Duration
 
 	// Verbose, when true, makes Run print a one-line progress message to
 	// ProgressOut (defaults to os.Stderr) at every major step:
@@ -127,6 +138,10 @@ func (c *BundleConfig) BindFlags(cmd *cobra.Command) {
 		"Per-container log tail-line cap (0 disables the cap)")
 	cmd.Flags().BoolVar(&c.SkipMetrics, "skip-metrics", false,
 		"Skip operator /metrics scrape")
+	cmd.Flags().IntVar(&c.MetricsSamples, "metrics-samples", defaultMetricsSamples,
+		"Number of /metrics samples taken per cluster (>= 2). Lets investigators compute counter rates post-hoc.")
+	cmd.Flags().DurationVar(&c.MetricsInterval, "metrics-interval", defaultMetricsInterval,
+		"Interval between successive /metrics samples (e.g. 10s, 1m). Must be > 0.")
 	cmd.Flags().BoolVarP(&c.Verbose, "verbose", "v", false,
 		"Print per-step progress to stderr (use to diagnose slow runs / hangs)")
 }
@@ -230,13 +245,17 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 		// surfacing to the user before we produce a partial bundle.
 		return nil, lerr
 	}
+	metricsOpts, merr := c.resolveMetricsOptions()
+	if merr != nil {
+		return nil, merr
+	}
 
 	now := time.Now
 	if c.Now != nil {
 		now = c.Now
 	}
 	logf("writing manifest.json and status.txt")
-	if err := bw.writeManifestFile(c, contexts, now().UTC(), logsOpts); err != nil {
+	if err := bw.writeManifestFile(c, contexts, now().UTC(), logsOpts, metricsOpts); err != nil {
 		errs = append(errs, fmt.Sprintf("writing manifest.json: %v", err))
 	}
 	if err := bw.writeStatusTable(contexts, clusterResults, crossResults); err != nil {
@@ -279,7 +298,8 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	// and don't fail the bundle.
 	if !c.SkipMetrics {
 		for i, conn := range roster {
-			logf("[%s] scraping /metrics", conn.Name)
+			logf("[%s] scraping /metrics (%d sample(s) at %s interval)",
+				conn.Name, metricsOpts.Samples, metricsOpts.Interval)
 			start := time.Now()
 			fetcher, ferr := c.metricsFetcherFor(conn)
 			if ferr != nil {
@@ -287,7 +307,7 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 				logf("[%s] metrics fetcher build failed: %v", conn.Name, ferr)
 				continue
 			}
-			for _, e := range collectClusterMetrics(ctx, bw, contexts[i], fetcher) {
+			for _, e := range collectClusterMetrics(ctx, bw, contexts[i], fetcher, metricsOpts, logf) {
 				errs = append(errs, fmt.Sprintf("cluster %s: %v", conn.Name, e))
 			}
 			logf("[%s] metrics scrape done in %s", conn.Name, time.Since(start).Round(time.Millisecond))
@@ -370,6 +390,29 @@ func (c *BundleConfig) resolveLogsOptions() (LogsOptions, error) {
 		out.LimitBytes = n
 	}
 	return out, nil
+}
+
+// resolveMetricsOptions validates --metrics-samples and --metrics-interval and
+// returns a MetricsOptions ready for use by collectClusterMetrics. Mirrors
+// rpk debug bundle's validation: samples must be >= 2 (a single sample
+// loses the rate-of-change information that's the whole point of multiple
+// samples) and interval must be > 0.
+func (c *BundleConfig) resolveMetricsOptions() (MetricsOptions, error) {
+	samples := c.MetricsSamples
+	if samples == 0 {
+		samples = defaultMetricsSamples
+	}
+	if samples < 2 {
+		return MetricsOptions{}, fmt.Errorf("--metrics-samples must be >= 2, got %d", samples)
+	}
+	interval := c.MetricsInterval
+	if interval == 0 {
+		interval = defaultMetricsInterval
+	}
+	if interval <= 0 {
+		return MetricsOptions{}, fmt.Errorf("--metrics-interval must be > 0, got %s", interval)
+	}
+	return MetricsOptions{Samples: samples, Interval: interval}, nil
 }
 
 // parseLogsSize accepts both decimal SI suffixes ("5M", "10MB" → power-of-10)
