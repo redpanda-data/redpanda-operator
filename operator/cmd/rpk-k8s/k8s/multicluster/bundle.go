@@ -60,6 +60,16 @@ type BundleConfig struct {
 	// SkipMetrics disables operator metrics collection.
 	SkipMetrics bool
 
+	// Verbose, when true, makes Run print a one-line progress message to
+	// ProgressOut (defaults to os.Stderr) at every major step:
+	// connection resolution, peer discovery, each cluster check, log
+	// collection, metrics scrape. Intended for diagnosing slow runs and
+	// hangs — leave off for clean machine-readable invocations.
+	Verbose bool
+	// ProgressOut is where Verbose progress lines go. Nil means
+	// os.Stderr; tests can capture by setting this to a buffer.
+	ProgressOut io.Writer
+
 	// ClusterChecks lets callers override the per-cluster check list. Nil
 	// means use defaultClusterChecks (the same set the `status` command
 	// runs). Tests can pass a smaller list to avoid checks whose timeouts
@@ -117,6 +127,8 @@ func (c *BundleConfig) BindFlags(cmd *cobra.Command) {
 		"Per-container log tail-line cap (0 disables the cap)")
 	cmd.Flags().BoolVar(&c.SkipMetrics, "skip-metrics", false,
 		"Skip operator /metrics scrape")
+	cmd.Flags().BoolVarP(&c.Verbose, "verbose", "v", false,
+		"Print per-step progress to stderr (use to diagnose slow runs / hangs)")
 }
 
 // Run executes the bundle pipeline and writes the resulting zip to w. Returns
@@ -126,6 +138,10 @@ func (c *BundleConfig) BindFlags(cmd *cobra.Command) {
 // bundle. Errors that prevent any output (e.g. resolving connections) are
 // returned.
 func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, error) {
+	logf := c.progressLogger()
+
+	logf("resolving starting connections (kubeconfig=%q, contexts=%v)",
+		c.Connection.Kubeconfig, c.Connection.Contexts)
 	starting, err := c.Connection.Resolve()
 	if err != nil {
 		return nil, fmt.Errorf("resolving starting connection: %w", err)
@@ -133,6 +149,7 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	if len(starting) == 0 {
 		return nil, fmt.Errorf("no starting connections resolved; pass --kubeconfig or --context")
 	}
+	logf("resolved %d starting connection(s)", len(starting))
 
 	roster := make([]ClusterConnection, 0, len(starting))
 	roster = append(roster, starting...)
@@ -142,13 +159,26 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	// the one cluster the user gave us. Multi-context mode bypasses
 	// discovery (the user is asserting the roster).
 	if len(starting) == 1 {
+		logf("discovering peers from labelled cache Secrets in namespace %q on %q",
+			c.Connection.Namespace, starting[0].Name)
 		discovery, derr := discoverPeers(ctx, starting[0].Ctl, c.Connection.Namespace)
 		if derr != nil {
 			errs = append(errs, fmt.Sprintf("peer discovery failed: %v. The bundle covers only the starting cluster.", derr))
+			logf("peer discovery failed: %v (continuing with starting cluster only)", derr)
 		}
 		errs = append(errs, discovery.Warnings...)
-		roster = append(roster, dedupeBySelf(discovery.Connections, starting[0].Name)...)
+		peers := dedupeBySelf(discovery.Connections, starting[0].Name)
+		for _, p := range peers {
+			logf("  discovered peer %q", p.Name)
+		}
+		for _, w := range discovery.Warnings {
+			logf("  discovery warning: %s", w)
+		}
+		roster = append(roster, peers...)
+	} else {
+		logf("multi-context mode: skipping discovery, using %d explicit cluster(s)", len(starting))
 	}
+	logf("roster has %d cluster(s) total", len(roster))
 
 	bw := newBundleWriter(w)
 	defer bw.Close()
@@ -173,9 +203,26 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 			Ctl:          conn.Ctl,
 		}
 		contexts[i] = cc
-		clusterResults[i] = checks.RunClusterChecks(ctx, cc, clusterChecks)
+		// Inline what RunClusterChecks does so we can log per-check
+		// timing — invaluable for diagnosing which check hung when an
+		// invocation appears stuck.
+		var results []checks.Result
+		for _, check := range clusterChecks {
+			logf("[%s] running check %q", cc.Context, check.Name())
+			start := time.Now()
+			results = append(results, check.Run(ctx, cc)...)
+			logf("[%s] check %q completed in %s", cc.Context, check.Name(), time.Since(start).Round(time.Millisecond))
+		}
+		clusterResults[i] = results
 	}
+	names := make([]string, 0, len(crossClusterChecks))
+	for _, cross := range crossClusterChecks {
+		names = append(names, cross.Name())
+	}
+	logf("running %d cross-cluster check(s): %v", len(crossClusterChecks), names)
+	crossStart := time.Now()
 	crossResults := checks.RunCrossClusterChecks(contexts, crossClusterChecks)
+	logf("cross-cluster checks completed in %s", time.Since(crossStart).Round(time.Millisecond))
 
 	logsOpts, lerr := c.resolveLogsOptions()
 	if lerr != nil {
@@ -188,6 +235,7 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	if c.Now != nil {
 		now = c.Now
 	}
+	logf("writing manifest.json and status.txt")
 	if err := bw.writeManifestFile(c, contexts, now().UTC(), logsOpts); err != nil {
 		errs = append(errs, fmt.Sprintf("writing manifest.json: %v", err))
 	}
@@ -195,6 +243,7 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 		errs = append(errs, fmt.Sprintf("writing status.txt: %v", err))
 	}
 	for i, cc := range contexts {
+		logf("[%s] serialising check artifacts (pod, deployment, TLS, raft-status)", cc.Context)
 		for _, e := range bw.writeClusterArtifacts(cc, clusterResults[i], c.IncludePrivateKeys) {
 			errs = append(errs, fmt.Sprintf("cluster %s: %v", cc.Context, e))
 		}
@@ -206,15 +255,21 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	// still completes.
 	if !c.SkipLogs {
 		for i, conn := range roster {
+			logf("[%s] collecting operator pod logs", conn.Name)
+			start := time.Now()
 			fetcher, ferr := c.logFetcherFor(conn)
 			if ferr != nil {
 				errs = append(errs, fmt.Sprintf("cluster %s: building log fetcher: %v", conn.Name, ferr))
+				logf("[%s] log fetcher build failed: %v", conn.Name, ferr)
 				continue
 			}
 			for _, e := range collectClusterLogs(ctx, bw, contexts[i], fetcher, logsOpts) {
 				errs = append(errs, fmt.Sprintf("cluster %s: %v", conn.Name, e))
 			}
+			logf("[%s] log collection done in %s", conn.Name, time.Since(start).Round(time.Millisecond))
 		}
+	} else {
+		logf("--skip-logs set, not collecting operator pod logs")
 	}
 
 	// Phase 3: per-cluster operator /metrics scrape via the apiserver
@@ -224,15 +279,21 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	// and don't fail the bundle.
 	if !c.SkipMetrics {
 		for i, conn := range roster {
+			logf("[%s] scraping /metrics", conn.Name)
+			start := time.Now()
 			fetcher, ferr := c.metricsFetcherFor(conn)
 			if ferr != nil {
 				errs = append(errs, fmt.Sprintf("cluster %s: building metrics fetcher: %v", conn.Name, ferr))
+				logf("[%s] metrics fetcher build failed: %v", conn.Name, ferr)
 				continue
 			}
 			for _, e := range collectClusterMetrics(ctx, bw, contexts[i], fetcher) {
 				errs = append(errs, fmt.Sprintf("cluster %s: %v", conn.Name, e))
 			}
+			logf("[%s] metrics scrape done in %s", conn.Name, time.Since(start).Round(time.Millisecond))
 		}
+	} else {
+		logf("--skip-metrics set, not scraping /metrics")
 	}
 	if err := bw.writeCrossClusterArtifacts(crossResults); err != nil {
 		errs = append(errs, fmt.Sprintf("writing cross-cluster/checks.json: %v", err))
@@ -248,6 +309,24 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 		CrossResults:   crossResults,
 		Errors:         errs,
 	}, nil
+}
+
+// progressLogger returns a printf-style function used by Run to report
+// per-step progress. When Verbose is false the returned closure is a no-op
+// (no allocation per call site beyond the format-string evaluation, which
+// would happen in either case).
+func (c *BundleConfig) progressLogger() func(format string, args ...any) {
+	if !c.Verbose {
+		return func(string, ...any) {}
+	}
+	out := c.ProgressOut
+	if out == nil {
+		out = os.Stderr
+	}
+	return func(format string, args ...any) {
+		fmt.Fprintf(out, "[bundle %s] "+format+"\n",
+			append([]any{time.Now().Format("15:04:05.000")}, args...)...)
+	}
 }
 
 // dedupeBySelf removes any peer connection that has the same name as the
