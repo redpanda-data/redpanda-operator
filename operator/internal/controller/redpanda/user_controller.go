@@ -92,10 +92,11 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer syncer.Close()
 
 	switch {
-	case shouldManageUser && !hasManagedUser:
+	case shouldManageUser && (!hasUser || !hasManagedUser):
 		// Create a new user or adopt an existing one. UpsertSCRAM is
 		// idempotent so this is safe regardless of whether the user
-		// already exists in Redpanda.
+		// already exists in Redpanda. We also recreate the user if a
+		// previously managed user was deleted out of band.
 		if err := usersClient.Create(ctx, user); err != nil {
 			return createPatch(err)
 		}
@@ -109,9 +110,11 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 			return createPatch(err)
 		}
 
-	case !shouldManageUser && hasUser && hasManagedUser:
-		if err := usersClient.Delete(ctx, user); err != nil {
-			return createPatch(err)
+	case !shouldManageUser && hasManagedUser:
+		if hasUser {
+			if err := usersClient.Delete(ctx, user); err != nil {
+				return createPatch(err)
+			}
 		}
 		hasManagedUser = false
 	}
@@ -224,7 +227,7 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 			if !ok {
 				return nil
 			}
-			if name := user.GetPasswordSecretName(); name != "" {
+			if name := user.GetPasswordSecretName(); user.ShouldSyncCredentials() && name != "" {
 				return []string{types.NamespacedName{Namespace: user.Namespace, Name: name}.String()}
 			}
 			return nil

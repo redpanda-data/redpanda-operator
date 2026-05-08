@@ -12,6 +12,7 @@ package users
 import (
 	"context"
 	"slices"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -92,13 +93,12 @@ func (c *Client) Create(ctx context.Context, user *redpandav1alpha2.User) error 
 	return c.create(ctx, user.Name, password, sasl)
 }
 
-// Update re-reads the password from the referenced Secret and upserts the
-// user's SCRAM credentials in Redpanda. Unlike Create, it never generates
-// or stores a new password — it only reads the current value from the
-// existing Secret. This is used for ongoing credential sync when
-// syncCredentials is enabled.
+// Update re-reads the configured password and upserts the user's SCRAM
+// credentials in Redpanda. Unlike Create, it never generates or stores a new
+// password. This is used for ongoing credential sync when syncCredentials is
+// enabled.
 func (c *Client) Update(ctx context.Context, user *redpandav1alpha2.User) error {
-	password, err := user.Spec.Authentication.Password.Fetch(ctx, c.client, user.Namespace)
+	password, err := c.getExistingPassword(ctx, user)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,44 @@ func (c *Client) create(ctx context.Context, username, password string, mechanis
 		return resp.Error()
 	}
 
-	return c.adminClient.CreateUser(ctx, username, password, mechanism.String())
+	mechanismName := mechanism.String()
+	if err := c.adminClient.CreateUser(ctx, username, password, mechanismName); err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			return c.adminClient.UpdateUser(ctx, username, password, mechanismName)
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *Client) getExistingPassword(ctx context.Context, user *redpandav1alpha2.User) (string, error) {
+	auth := user.Spec.Authentication
+	if auth == nil {
+		return "", nil
+	}
+
+	if auth.Password.ValueFrom == nil {
+		return auth.Password.Value, nil
+	}
+
+	secret := auth.Password.ValueFrom.SecretKeyRef.Name
+	key := auth.Password.ValueFrom.SecretKeyRef.Key
+	if key == "" {
+		key = "password"
+	}
+
+	var passwordSecret corev1.Secret
+	nn := types.NamespacedName{Namespace: user.Namespace, Name: secret}
+	if err := c.client.Get(ctx, nn, &passwordSecret); err != nil {
+		return "", err
+	}
+
+	data, ok := passwordSecret.Data[key]
+	if !ok {
+		return "", errors.Newf("key %q not found in Secret %s/%s", key, user.Namespace, secret)
+	}
+
+	return string(data), nil
 }
 
 func (c *Client) has(ctx context.Context, username string) (bool, error) {

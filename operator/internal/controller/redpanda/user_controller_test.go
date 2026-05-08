@@ -203,7 +203,7 @@ func TestUserCredentialSync(t *testing.T) {
 	passwordSecret.Data["password"] = []byte("rotated-password")
 	require.NoError(t, k8sClient.Update(ctx, passwordSecret))
 
-	// Step 4: Reconcile again — syncCredentials should push the new password.
+	// Step 4: Reconcile again; syncCredentials should push the new password.
 	require.NoError(t, k8sClient.Get(ctx, key, user))
 	_, err = environment.Reconciler.Reconcile(ctx, req)
 	require.NoError(t, err)
@@ -212,6 +212,85 @@ func TestUserCredentialSync(t *testing.T) {
 	verifyAuth("rotated-password")
 
 	// Cleanup.
+	require.NoError(t, k8sClient.Delete(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+}
+
+func TestUserManagedUserDrift(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "drift-user-" + strconv.Itoa(int(time.Now().UnixNano())),
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Password: redpandav1alpha2.Password{
+					Value: "password",
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "password",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(user)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, k8sClient.Create(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.True(t, user.Status.ManagedUser)
+
+	userClient, err := environment.Factory.Users(ctx, user, timeoutOption)
+	require.NoError(t, err)
+	defer userClient.Close()
+
+	require.NoError(t, userClient.Delete(ctx, user))
+	hasUser, err := userClient.Has(ctx, user)
+	require.NoError(t, err)
+	require.False(t, hasUser)
+
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	hasUser, err = userClient.Has(ctx, user)
+	require.NoError(t, err)
+	require.True(t, hasUser, "expected managed user to be recreated after out-of-band deletion")
+
+	require.NoError(t, userClient.Delete(ctx, user))
+	hasUser, err = userClient.Has(ctx, user)
+	require.NoError(t, err)
+	require.False(t, hasUser)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	user.Spec.Authentication = nil
+	require.NoError(t, k8sClient.Update(ctx, user))
+
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.False(t, user.Status.ManagedUser, "expected managedUser to clear when authentication is removed after out-of-band deletion")
+
 	require.NoError(t, k8sClient.Delete(ctx, user))
 	_, err = environment.Reconciler.Reconcile(ctx, req)
 	require.NoError(t, err)
