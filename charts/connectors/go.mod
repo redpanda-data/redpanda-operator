@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/charts/connectors
 
-go 1.25.7
+go 1.25.10
 
 require (
 	github.com/google/gofuzz v1.2.0

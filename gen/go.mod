@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/gen
 
-go 1.25.7
+go 1.25.10
 
 replace (
 	// As gen schema generates a schema for a chart via reflect, we
