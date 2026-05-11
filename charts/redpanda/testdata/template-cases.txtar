@@ -1247,6 +1247,9 @@ statefulset:
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.name}", "my-sasl-secret"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_USERNAME')].valueFrom.secretKeyRef.key}", "username"]
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.key}", "password"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client.scram_username"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client.scram_password"]
+# ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client.sasl_mechanism"]
 auth:
   sasl:
     enabled: true
@@ -1261,6 +1264,7 @@ config:
 -- sasl-disabled-secret-ref-ignored --
 # ASSERT-NO-ERROR
 # ASSERT-FIELD-NOT-CONTAINS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[*].name}", "SCHEMA_REGISTRY_CLIENT_USERNAME"]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client"]
 config:
   schema_registry_client:
     saslSecretRef:

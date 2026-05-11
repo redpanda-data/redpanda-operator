@@ -37,7 +37,8 @@ func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
 
 	redpandaYamlFixups := []clusterconfiguration.Fixup{}
 	if state.Values.Auth.IsSASLEnabled() && state.Values.Config.SchemaRegistryClient != nil && state.Values.Config.SchemaRegistryClient.SASLSecretRef != nil {
-		redpandaYamlFixups = append(redpandaYamlFixups, SASLFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)...)
+		fixups := SASLFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)
+		redpandaYamlFixups = append(redpandaYamlFixups, fixups...)
 	}
 	redpandaYamlFixupsStr := helmette.ToJSON(redpandaYamlFixups)
 	if len(redpandaYamlFixups) == 0 {
