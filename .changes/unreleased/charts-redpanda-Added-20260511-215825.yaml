@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Added
+body: Added `config.schema_registry_client.saslSecretRef` to source the schema registry's internal Kafka client SASL credentials from a Kubernetes Secret. Credentials are injected at pod start via a `redpanda.yaml.fixups` entry so they never appear in plaintext in the ConfigMap or Helm release history. The referenced Secret must expose `username` and `password` keys; the SASL mechanism is fixed at `SCRAM-SHA-512`.
+time: 2026-05-11T21:58:25Z

@@ -302,6 +302,7 @@
           port: 9093
         - address: basic-test-2.basic-test.basic-test.svc.cluster.local.
           port: 9093
+    redpanda.yaml.fixups: '[]'
   kind: ConfigMap
   metadata:
     labels:
@@ -1220,6 +1221,7 @@
           port: 9093
         - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
           port: 9093
+    redpanda.yaml.fixups: '[]'
   kind: ConfigMap
   metadata:
     labels:
@@ -1458,6 +1460,7 @@
           port: 9093
         - address: compat-test-pool-8.compat-test.compat-test.svc.cluster.local.
           port: 9093
+    redpanda.yaml.fixups: '[]'
   kind: ConfigMap
   metadata:
     labels:
@@ -2444,6 +2447,7 @@
           port: 9093
         - address: console-disabled-2.console-disabled.console-disabled.svc.cluster.local.
           port: 9093
+    redpanda.yaml.fixups: '[]'
   kind: ConfigMap
   metadata:
     labels:
@@ -3306,6 +3310,7 @@
           port: 9093
         - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+    redpanda.yaml.fixups: '[]'
   kind: ConfigMap
   metadata:
     labels:
@@ -3505,6 +3510,7 @@
           port: 9093
         - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+    redpanda.yaml.fixups: '[]'
   kind: ConfigMap
   metadata:
     labels:
@@ -3704,6 +3710,7 @@
           port: 9093
         - address: nodepool-basic-test-basic-b-0.nodepool-basic-test.nodepool-basic-test.svc.cluster.local.
           port: 9093
+    redpanda.yaml.fixups: '[]'
   kind: ConfigMap
   metadata:
     labels:
