@@ -1,4 +1,4 @@
-@multicluster
+@multicluster @dev-env
 Feature: Multicluster Operator
 
   @skip:gke @skip:aks @skip:eks
@@ -17,6 +17,7 @@ Feature: Multicluster Operator
         enabled: false
       rbac:
         enabled: true
+        rpkDebugBundle: true
       tls:
         enabled: true
         certs:

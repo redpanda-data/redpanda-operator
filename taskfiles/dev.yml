@@ -63,6 +63,21 @@ tasks:
 
   setup-multicluster-dev-env:
     - 'echo "--- Setting up multicluster dev env using k3s and vCluster(s)"'
+    # -groups dev-env narrows the multicluster suite to stretch-cluster-basics.feature
+    # (the only feature tagged @dev-env), so the rest of the multicluster features
+    # are skipped without having to delete the .feature files locally.
     - task: :test:acceptance-multicluster
       vars:
-        CLI_ARGS: '{{.CLI_ARGS}} -v -count=1 -multi-cluster-setup-only'
+        CLI_ARGS: '{{.CLI_ARGS}} -v -count=1 -multi-cluster-setup-only -groups dev-env'
+
+  setup-dev-env:
+    - 'echo "--- Setting up dev env using k3s with a basic Redpanda cluster"'
+    - task: :test:acceptance
+      vars:
+        CLI_ARGS: '{{.CLI_ARGS}} -v -count=1 -acceptance-setup-only'
+
+  setup-dev-env-with-nodepools:
+    - 'echo "--- Setting up dev env using k3s with a basic Redpanda cluster + 2 NodePools (3 brokers total)"'
+    - task: :test:acceptance
+      vars:
+        CLI_ARGS: '{{.CLI_ARGS}} -v -count=1 -acceptance-setup-only -acceptance-setup-nodepools=2'

@@ -11,15 +11,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -137,10 +140,18 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		}).
 		RegisterTag("cluster", 2, ClusterTag).
 		RegisterGroup("multicluster", "multicluster").
+		RegisterGroup("dev-env", "dev-env").
 		ExitOnCleanupFailures()
 
 	if testutil.MultiClusterSetupOnly() {
 		builder = builder.SkipCleanup()
+	}
+
+	if testutil.AcceptanceSetupOnly() {
+		builder = builder.
+			AfterSetup(applyBasicClusterForDevEnv).
+			SkipFeatures().
+			SkipCleanup()
 	}
 
 	return builder.Build()
@@ -231,13 +242,7 @@ func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
 			VectorizedControllers: &operatorchart.PartialVectorizedControllers{
 				Enabled: ptr.To(true),
 			},
-			AdditionalCmdFlags: []string{
-				"--configurator-image-pull-policy=IfNotPresent",
-				"--additional-controllers=nodeWatcher,decommission",
-				"--unbind-pvcs-after=5s",
-				"--cluster-connection-timeout=500ms",
-				"--enable-shadowlinks",
-			},
+			AdditionalCmdFlags: operatorCmdFlags(),
 		},
 	})
 	// Tolerate "already installed" errors from rerun-fails retries where
@@ -302,4 +307,107 @@ func waitForCertManagerWebhook(ctx context.Context, restConfig *rest.Config) err
 		return err
 	}
 	return testutil.WaitForCertManagerWebhook(ctx, c, 2*time.Minute)
+}
+
+// applyBasicClusterForDevEnv is registered as an AfterSetup hook when
+// `-acceptance-setup-only` is used. It applies acceptance/clusters/basic/cluster.yaml
+// against the suite's k3s cluster after the operator has been installed, giving
+// `task dev:setup-dev-env` a usable single-node Redpanda deployment. When
+// `-acceptance-setup-nodepools=N` is non-zero, N additional NodePool CRDs
+// pointing at the basic cluster are also applied.
+func applyBasicClusterForDevEnv(ctx context.Context, restConfig *rest.Config) error {
+	const manifestPath = "clusters/basic/cluster.yaml"
+
+	raw, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", manifestPath, err)
+	}
+
+	manifest := strings.NewReplacer(
+		"${DEFAULT_REDPANDA_REPO}", steps.DefaultRedpandaRepo,
+		"${DEFAULT_REDPANDA_TAG}", steps.DefaultRedpandaTag,
+	).Replace(string(raw))
+
+	if n := testutil.AcceptanceSetupNodePools(); n > 0 {
+		manifest += renderDevEnvNodePools(n)
+	}
+
+	manifestFile, err := os.CreateTemp("", "dev-env-basic-cluster-*.yaml")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(manifestFile.Name())
+	if _, err := manifestFile.WriteString(manifest); err != nil {
+		manifestFile.Close()
+		return err
+	}
+	if err := manifestFile.Close(); err != nil {
+		return err
+	}
+
+	kubeconfigFile, err := os.CreateTemp("", "dev-env-kubeconfig-*")
+	if err != nil {
+		return err
+	}
+	kubeconfigFile.Close()
+	defer os.Remove(kubeconfigFile.Name())
+	if err := kube.WriteToFile(kube.RestToConfig(restConfig), kubeconfigFile.Name()); err != nil {
+		return err
+	}
+
+	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFile.Name(), "apply", "--server-side", "-f", manifestFile.Name())
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("kubectl apply: %w: %s", err, out)
+	}
+	fmt.Printf("dev-env: applied basic Redpanda cluster\n%s", out)
+	return nil
+}
+
+// operatorCmdFlags returns the --additional-cmd-flags entries passed to the
+// shared operator's helm install. The v2 nodepool controller is opt-in
+// (false by default in the operator). It's enabled here only when the dev
+// env was started with -acceptance-setup-nodepools > 0 — i.e. when the user
+// invoked `task dev:setup-dev-env-with-nodepools` — because the dev-env
+// manifest applies NodePool CRDs in that mode and the controller has to be
+// running for them to reconcile.
+func operatorCmdFlags() []string {
+	flags := []string{
+		"--configurator-image-pull-policy=IfNotPresent",
+		"--additional-controllers=nodeWatcher,decommission",
+		"--unbind-pvcs-after=5s",
+		"--cluster-connection-timeout=500ms",
+		"--enable-shadowlinks",
+	}
+	if testutil.AcceptanceSetupNodePools() > 0 {
+		flags = append(flags, "--enable-v2-nodepools=true")
+	}
+	return flags
+}
+
+// renderDevEnvNodePools returns N NodePool manifests separated by YAML document
+// markers, each referencing the basic cluster and using the same Redpanda and
+// operator images as cluster.yaml.
+func renderDevEnvNodePools(n int) string {
+	var b strings.Builder
+	for i := 1; i <= n; i++ {
+		fmt.Fprintf(&b, `
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-%d
+spec:
+  clusterRef:
+    name: basic
+  replicas: 1
+  image:
+    repository: %s
+    tag: %s
+  sidecarImage:
+    repository: %s
+    tag: %s
+`, i, steps.DefaultRedpandaRepo, steps.DefaultRedpandaTag, imageRepo, imageTag)
+	}
+	return b.String()
 }
