@@ -55,7 +55,6 @@ steps:
     plugins:
       - seek-oss/aws-sm#v2.3.2: &aws-sm-plugin
           json-to-env:
-            - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
             - secret-id: sdlc/prod/buildkite/buildkite_api_token
             - secret-id: sdlc/prod/buildkite/dockerhub
             - secret-id: sdlc/prod/buildkite/gh_token
@@ -97,7 +96,6 @@ steps:
       - seek-oss/aws-sm#v2.3.2:
           json-to-env:
             - secret-id: sdlc/prod/buildkite/active_directory
-            - secret-id: sdlc/prod/buildkite/buildkite_analytics_token
             - secret-id: sdlc/prod/buildkite/buildkite_api_token
             - secret-id: sdlc/prod/buildkite/cdt_gcp
             - secret-id: sdlc/prod/buildkite/cdt_runner_aws
