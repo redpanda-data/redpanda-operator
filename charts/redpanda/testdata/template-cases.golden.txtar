@@ -365,6 +365,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -1713,6 +1714,7 @@ data:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -2881,6 +2883,7 @@ data:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -4252,6 +4255,7 @@ data:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -5524,6 +5528,7 @@ data:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -7040,6 +7045,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -8584,6 +8590,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -10169,6 +10176,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -11609,6 +11617,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -13094,6 +13103,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -14614,6 +14624,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -15963,6 +15974,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -17342,6 +17354,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -18564,6 +18577,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -20034,6 +20048,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -21474,6 +21489,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -22917,6 +22933,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -24394,6 +24411,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -25903,6 +25921,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -27412,6 +27431,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -28889,6 +28909,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -30381,6 +30402,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -31908,6 +31930,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -33435,6 +33458,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -34931,6 +34955,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -36442,6 +36467,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -37969,6 +37995,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -39496,6 +39523,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -40992,6 +41020,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -42470,6 +42499,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -43910,6 +43940,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -45351,6 +45382,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -46850,6 +46882,7 @@ data:
         port: 9093
       - address: redpanda-3.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -48319,6 +48352,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -49819,6 +49853,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -51300,6 +51335,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -52744,6 +52780,7 @@ data:
         port: 9093
       - address: redpanda-2.change-name.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -54216,6 +54253,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -55691,6 +55729,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -57103,6 +57142,7 @@ data:
         port: 9092
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9092
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -58522,6 +58562,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -59908,6 +59949,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -61479,6 +61521,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -62937,6 +62980,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -64387,6 +64431,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -65882,6 +65927,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -67454,6 +67500,7 @@ data:
         port: 9092
       - address: redpanda-2.redpanda.default.svc.cluster.local
         port: 9092
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -68713,6 +68760,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -70200,6 +70248,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -71744,6 +71793,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -73217,6 +73267,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -74681,6 +74732,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -76177,6 +76229,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -77650,6 +77703,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -79114,6 +79168,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -80598,6 +80653,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -82071,6 +82127,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -83535,6 +83592,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -85019,6 +85077,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -86492,6 +86551,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -87956,6 +88016,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -89440,6 +89501,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -90913,6 +90975,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -92377,6 +92440,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -93861,6 +93925,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -95334,6 +95399,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -96798,6 +96864,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -98282,6 +98349,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -99536,6 +99604,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -100791,6 +100860,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -102329,6 +102399,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -103835,6 +103906,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -105377,6 +105449,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -106981,6 +107054,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -108503,6 +108577,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -110113,6 +110188,7 @@ data:
         port: 9093
       - address: also-not-redpanda-2.also-not-redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -111553,6 +111629,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -112993,6 +113070,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -114460,6 +114538,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -115916,6 +115995,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -117364,6 +117444,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -118976,6 +119057,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -120449,6 +120531,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -121913,6 +121996,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -123397,6 +123481,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -124870,6 +124955,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -126334,6 +126420,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -127818,6 +127905,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -129303,6 +129391,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
@@ -130685,6 +130774,7 @@ data:
         port: 9093
       - address: redpanda-2.redpanda.default.svc.cluster.local.
         port: 9093
+  redpanda.yaml.fixups: '[]'
 kind: ConfigMap
 metadata:
   labels:
