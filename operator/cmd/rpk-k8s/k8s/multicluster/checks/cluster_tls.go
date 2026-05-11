@@ -30,22 +30,22 @@ type TLSCheck struct{}
 func (c *TLSCheck) Name() string { return "tls" }
 
 func (c *TLSCheck) Run(ctx context.Context, cc *CheckContext) []Result {
+	// Prefer matching the deployment's volume so we read the secret name the
+	// operator was actually configured with. Falls back to a scan-by-suffix
+	// listing — which is the correct last resort because synthesising a name
+	// from SecretPrefix has no relation to how the chart names the secret
+	// (and SecretPrefix may even be a kube context name like
+	// "vcluster_..._k3d-harpoon" with characters illegal in Secret names).
 	secretName := c.findSecretName(cc)
 	if secretName == "" {
-		// Fall back: if we know the expected secret name, try it directly.
-		if cc.SecretPrefix != "" {
-			secretName = cc.SecretPrefix + "-multicluster-certificates"
-		} else {
-			// Last resort: scan all secrets by suffix.
-			var secrets corev1.SecretList
-			if err := cc.Ctl.List(ctx, cc.Namespace, &secrets); err != nil {
-				return []Result{Fail(c.Name(), fmt.Sprintf("listing secrets: %v", err))}
-			}
-			for _, sec := range secrets.Items {
-				if strings.HasSuffix(sec.Name, "-multicluster-certificates") {
-					secretName = sec.Name
-					break
-				}
+		var secrets corev1.SecretList
+		if err := cc.Ctl.List(ctx, cc.Namespace, &secrets); err != nil {
+			return []Result{Fail(c.Name(), fmt.Sprintf("listing secrets: %v", err))}
+		}
+		for _, sec := range secrets.Items {
+			if strings.HasSuffix(sec.Name, "-multicluster-certificates") {
+				secretName = sec.Name
+				break
 			}
 		}
 	}
@@ -54,13 +54,11 @@ func (c *TLSCheck) Run(ctx context.Context, cc *CheckContext) []Result {
 		return []Result{Fail(c.Name(), fmt.Sprintf("no multicluster-certificates secret found in namespace %s", cc.Namespace))}
 	}
 
+	// Snapshot read — Get, not WaitFor. A debug bundle should never block on
+	// cert-manager finishing; if the secret is mid-rotation or missing, that
+	// is itself the diagnostic and Fail() carries it through to checks.json.
 	var secret corev1.Secret
-	secret.Name = secretName
-	secret.Namespace = cc.Namespace
-	err := cc.Ctl.WaitFor(ctx, &secret, func(_ kube.Object, err error) (bool, error) {
-		return err == nil, nil
-	})
-	if err != nil {
+	if err := cc.Ctl.Get(ctx, kube.ObjectKey{Namespace: cc.Namespace, Name: secretName}, &secret); err != nil {
 		return []Result{Fail(c.Name(), fmt.Sprintf("cannot read secret %s: %v", secretName, err))}
 	}
 	cc.TLSSecret = &secret

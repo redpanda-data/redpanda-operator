@@ -55,14 +55,55 @@ func stringToHash(s string) uint64 {
 	return h.Sum64()
 }
 
-// kubeconfigCacheSecretName returns the name of the Secret used to cache a
-// peer's kubeconfig in the local cluster.
-func kubeconfigCacheSecretName(kubeconfigName, peerName string) string {
+// Labels applied to peer-kubeconfig cache Secrets so external tools can
+// discover them by label selector instead of having to know the operator's
+// configured `--kubeconfig-name` prefix. The same label set is written by
+// every CreateOrUpdate of a cache Secret.
+const (
+	// KubeconfigCacheComponentLabel is the standard component label key used
+	// to select cache Secrets. Pair with KubeconfigCacheComponentValue.
+	KubeconfigCacheComponentLabel = "app.kubernetes.io/component"
+	// KubeconfigCacheComponentValue identifies a Secret as a peer-kubeconfig
+	// cache entry written by the multicluster operator.
+	KubeconfigCacheComponentValue = "multicluster-kubeconfig-cache"
+	// KubeconfigCacheManagedByLabel is the standard managed-by label key. Set
+	// to KubeconfigCacheManagedByValue so `kubectl get secret -L
+	// app.kubernetes.io/managed-by` shows ownership at a glance.
+	KubeconfigCacheManagedByLabel = "app.kubernetes.io/managed-by"
+	// KubeconfigCacheManagedByValue identifies the writer of cache Secrets.
+	KubeconfigCacheManagedByValue = "redpanda-multicluster-operator"
+	// MulticlusterPeerLabel records the raft peer name a cache Secret holds a
+	// kubeconfig for. Lets readers recover the peer name without parsing the
+	// Secret's name (which depends on the operator's --kubeconfig-name flag).
+	MulticlusterPeerLabel = "cluster.redpanda.com/multicluster-peer"
+)
+
+// KubeconfigCacheSecretName returns the name of the Secret used to cache a
+// peer's kubeconfig in the local cluster. The format is
+// "<kubeconfigName>-<peerName>", where kubeconfigName is the operator's
+// configured prefix (RaftConfiguration.KubeconfigName / --kubeconfig-name).
+func KubeconfigCacheSecretName(kubeconfigName, peerName string) string {
 	return kubeconfigName + "-" + peerName
 }
 
-// writeCachedKubeconfig writes kubeconfig bytes as a Secret in the local cluster.
-func writeCachedKubeconfig(ctx context.Context, cl client.Client, name, namespace string, data []byte) error {
+// kubeconfigCacheSecretLabels returns the label set applied to every peer
+// kubeconfig cache Secret. peerName is recorded in MulticlusterPeerLabel so
+// callers (e.g. the operator-bundle subcommand) can discover the secret by
+// component selector and recover the peer name without parsing the Secret's
+// name.
+func kubeconfigCacheSecretLabels(peerName string) map[string]string {
+	return map[string]string{
+		KubeconfigCacheComponentLabel: KubeconfigCacheComponentValue,
+		KubeconfigCacheManagedByLabel: KubeconfigCacheManagedByValue,
+		MulticlusterPeerLabel:         peerName,
+	}
+}
+
+// writeCachedKubeconfig writes kubeconfig bytes as a Secret in the local
+// cluster. The Secret is labelled so external tools can discover all peer
+// caches with a single label selector rather than having to know the
+// operator's --kubeconfig-name prefix.
+func writeCachedKubeconfig(ctx context.Context, cl client.Client, name, namespace, peerName string, data []byte) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -70,6 +111,15 @@ func writeCachedKubeconfig(ctx context.Context, cl client.Client, name, namespac
 		},
 	}
 	_, err := controllerutil.CreateOrUpdate(ctx, cl, secret, func() error {
+		// Re-apply on every reconcile so labels self-heal if a Secret was
+		// created by an older operator version, or if a user removed labels
+		// out of band.
+		if secret.Labels == nil {
+			secret.Labels = map[string]string{}
+		}
+		for k, v := range kubeconfigCacheSecretLabels(peerName) {
+			secret.Labels[k] = v
+		}
 		secret.Data = map[string][]byte{"kubeconfig.yaml": data}
 		return nil
 	})
@@ -116,7 +166,7 @@ func (s *startupKubeconfigFetcher) Start(ctx context.Context) error {
 		var failed []int
 		for _, i := range pending {
 			peer := s.config.Peers[i]
-			secretName := kubeconfigCacheSecretName(s.config.KubeconfigName, peer.Name)
+			secretName := KubeconfigCacheSecretName(s.config.KubeconfigName, peer.Name)
 			s.logger.Info("startup: fetching kubeconfig for peer", "peer", peer.Name)
 			grpcClient, err := leaderelection.ClientFor(s.raftConfig, s.raftConfig.Peers[i])
 			if err != nil {
@@ -130,7 +180,7 @@ func (s *startupKubeconfigFetcher) Start(ctx context.Context) error {
 				failed = append(failed, i)
 				continue
 			}
-			if err := writeCachedKubeconfig(ctx, s.client, secretName, s.config.KubeconfigNamespace, response.Payload); err != nil {
+			if err := writeCachedKubeconfig(ctx, s.client, secretName, s.config.KubeconfigNamespace, peer.Name, response.Payload); err != nil {
 				s.logger.Error(err, "startup: failed to cache kubeconfig", "peer", peer.Name)
 				failed = append(failed, i)
 				continue
@@ -344,7 +394,7 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 		}
 
 		if peer.KubeconfigFile != "" {
-			kubeConfig, err := loadKubeconfig(peer.KubeconfigFile)
+			kubeConfig, err := LoadKubeconfig(peer.KubeconfigFile)
 			if err != nil {
 				return nil, err
 			}
@@ -482,7 +532,7 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 			if peer.Name != config.Name && peer.KubeconfigFile == "" && peer.Kubeconfig == nil {
 				config.Logger.Info("registering leader routine", "peer", peer.Name)
 				lockManager.RegisterRoutine(func(ctx context.Context) error {
-					secretName := kubeconfigCacheSecretName(config.KubeconfigName, peer.Name)
+					secretName := KubeconfigCacheSecretName(config.KubeconfigName, peer.Name)
 
 					// Try the local secret cache first so that a new raft leader
 					// can reconnect to peers without requiring a live gRPC call.
@@ -504,13 +554,13 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 							return err
 						}
 						kubeconfigBytes = response.Payload
-						if cacheErr := writeCachedKubeconfig(ctx, localClient, secretName, config.KubeconfigNamespace, kubeconfigBytes); cacheErr != nil {
+						if cacheErr := writeCachedKubeconfig(ctx, localClient, secretName, config.KubeconfigNamespace, peer.Name, kubeconfigBytes); cacheErr != nil {
 							config.Logger.Error(cacheErr, "caching kubeconfig for peer", "peer", peer.Name)
 						}
 					}
 
 					config.Logger.Info("loading kubeconfig for peer", "peer", peer.Name)
-					kubeConfig, err := loadKubeconfigFromBytes(kubeconfigBytes)
+					kubeConfig, err := LoadKubeconfigFromBytes(kubeconfigBytes)
 					if err != nil {
 						config.Logger.Error(err, "loading kubeconfig for peer", "peer", peer.Name)
 						return err

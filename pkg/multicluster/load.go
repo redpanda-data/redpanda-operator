@@ -16,16 +16,22 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func loadKubeconfig(file string) (*rest.Config, error) {
+// LoadKubeconfig reads a kubeconfig file from disk and returns its
+// CurrentContext as a *rest.Config.
+func LoadKubeconfig(file string) (*rest.Config, error) {
 	kubeconfigYAML, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 
-	return loadKubeconfigFromBytes(kubeconfigYAML)
+	return LoadKubeconfigFromBytes(kubeconfigYAML)
 }
 
-func loadKubeconfigFromBytes(kubeconfigYAML []byte) (*rest.Config, error) {
+// LoadKubeconfigFromBytes parses kubeconfig YAML bytes and returns the
+// CurrentContext as a *rest.Config. Used both by the operator's own
+// raft-bootstrap flow (where the bytes come from a cached Secret) and by
+// external tools that read those Secrets directly.
+func LoadKubeconfigFromBytes(kubeconfigYAML []byte) (*rest.Config, error) {
 	kubeconfig, err := clientcmd.Load(kubeconfigYAML)
 	if err != nil {
 		return nil, err

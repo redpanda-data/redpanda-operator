@@ -468,6 +468,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: audit-logging
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: audit-logging-audit-logging-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -482,6 +497,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: audit-logging-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: audit-logging
+    namespace: audit-logging
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: audit-logging
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: audit-logging-audit-logging-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: audit-logging-audit-logging-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: audit-logging
@@ -1238,6 +1271,23 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: common-labels
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      env: staging
+      team: platform
+    name: common-labels-common-labels-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -1254,6 +1304,26 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: common-labels-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: common-labels
+    namespace: common-labels
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: common-labels
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      env: staging
+      team: platform
+    name: common-labels-common-labels-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: common-labels-common-labels-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: common-labels
@@ -1998,6 +2068,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-cluster-domain
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-cluster-domain-custom-cluster-domain-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -2012,6 +2097,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: custom-cluster-domain-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: custom-cluster-domain
+    namespace: custom-cluster-domain
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-cluster-domain
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-cluster-domain-custom-cluster-domain-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: custom-cluster-domain-custom-cluster-domain-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: custom-cluster-domain
@@ -2747,6 +2850,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-config
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-config-custom-config-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -2761,6 +2879,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: custom-config-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: custom-config
+    namespace: custom-config
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-config
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-config-custom-config-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: custom-config-custom-config-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: custom-config
@@ -3495,6 +3631,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-image
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-image-custom-image-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -3509,6 +3660,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: custom-image-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: custom-image
+    namespace: custom-image
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-image
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-image-custom-image-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: custom-image-custom-image-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: custom-image
@@ -4243,6 +4412,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-resources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-resources-custom-resources-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -4257,6 +4441,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: custom-resources-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: custom-resources
+    namespace: custom-resources
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-resources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-resources-custom-resources-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: custom-resources-custom-resources-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: custom-resources
@@ -4991,6 +5193,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-resources-explicit
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-resources-explicit-custom-resources-explicit-metrics-rea
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -5005,6 +5222,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: custom-resources-explicit-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: custom-resources-explicit
+    namespace: custom-resources-explicit
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: custom-resources-explicit
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: custom-resources-explicit-custom-resources-explicit-metrics-rea
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: custom-resources-explicit-custom-resources-explicit-metrics-rea
   subjects:
   - kind: ServiceAccount
     name: custom-resources-explicit
@@ -5739,6 +5974,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: enterprise
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: enterprise-enterprise-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -5753,6 +6003,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: enterprise-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: enterprise
+    namespace: enterprise
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: enterprise
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: enterprise-enterprise-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: enterprise-enterprise-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: enterprise
@@ -6369,6 +6637,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-loadbalancer-external-loadbalancer-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -6383,6 +6666,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: external-loadbalancer-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: external-loadbalancer
+    namespace: external-loadbalancer
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-loadbalancer-external-loadbalancer-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: external-loadbalancer-external-loadbalancer-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: external-loadbalancer
@@ -7232,6 +7533,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-nodeport
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-nodeport-external-nodeport-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -7246,6 +7562,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: external-nodeport-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: external-nodeport
+    namespace: external-nodeport
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-nodeport
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-nodeport-external-nodeport-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: external-nodeport-external-nodeport-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: external-nodeport
@@ -7886,6 +8220,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-tls-external-tls-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -7900,6 +8249,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: external-tls-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: external-tls
+    namespace: external-tls
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: external-tls-external-tls-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: external-tls-external-tls-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: external-tls
@@ -8747,6 +9114,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-flat-network-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -8761,6 +9143,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: flat-network-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: flat-network
+    namespace: flat-network
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-flat-network-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: flat-network-flat-network-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: flat-network
@@ -9775,6 +10175,22 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
+    name: full-featured-full-featured-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
     name: full-featured-full-featured-rack-awareness
   rules:
   - apiGroups:
@@ -9801,6 +10217,25 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: full-featured-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-full-featured-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-full-featured-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: full-featured
@@ -10983,6 +11418,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: init-containers
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: init-containers-init-containers-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -10997,6 +11447,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: init-containers-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: init-containers
+    namespace: init-containers
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: init-containers
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: init-containers-init-containers-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: init-containers-init-containers-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: init-containers
@@ -11781,6 +12249,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-mcs-network-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -11795,6 +12278,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: mcs-network-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: mcs-network
+    namespace: mcs-network
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-mcs-network-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: mcs-network-mcs-network-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: mcs-network
@@ -12511,6 +13012,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: memory-locking
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: memory-locking-memory-locking-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -12525,6 +13041,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: memory-locking-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: memory-locking
+    namespace: memory-locking
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: memory-locking
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: memory-locking-memory-locking-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: memory-locking-memory-locking-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: memory-locking
@@ -13259,6 +13793,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: minimal
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: minimal-minimal-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -13273,6 +13822,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: minimal-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: minimal
+    namespace: minimal
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: minimal
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: minimal-minimal-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: minimal-minimal-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: minimal
@@ -14033,6 +14600,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: monitoring
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: monitoring-monitoring-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -14047,6 +14629,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: monitoring-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: monitoring
+    namespace: monitoring
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: monitoring
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: monitoring-monitoring-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: monitoring-monitoring-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: monitoring
@@ -14996,6 +15596,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-multi-pool-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -15010,6 +15625,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: multi-pool-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool
+    namespace: multi-pool
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-multi-pool-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: multi-pool-multi-pool-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: multi-pool
@@ -15851,6 +16484,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-per-pod-service-overrides-metrics-rea
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -15865,6 +16513,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: per-pod-service-overrides-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: per-pod-service-overrides
+    namespace: per-pod-service-overrides
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-overrides
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-overrides-per-pod-service-overrides-metrics-rea
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: per-pod-service-overrides-per-pod-service-overrides-metrics-rea
   subjects:
   - kind: ServiceAccount
     name: per-pod-service-overrides
@@ -16493,6 +17159,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-per-pod-service-remote-disabled
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -16507,6 +17188,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: per-pod-service-remote-disabled-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: per-pod-service-remote-disabled
+    namespace: per-pod-service-remote-disabled
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pod-service-remote-disabled
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: per-pod-service-remote-disabled-per-pod-service-remote-disabled
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: per-pod-service-remote-disabled-per-pod-service-remote-disabled
   subjects:
   - kind: ServiceAccount
     name: per-pod-service-remote-disabled
@@ -17160,6 +17859,21 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
+    name: rack-awareness-rack-awareness-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: rack-awareness
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
     name: rack-awareness-rack-awareness-rack-awareness
   rules:
   - apiGroups:
@@ -17185,6 +17899,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: rack-awareness-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: rack-awareness
+    namespace: rack-awareness
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: rack-awareness
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: rack-awareness-rack-awareness-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: rack-awareness-rack-awareness-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: rack-awareness
@@ -17947,6 +18679,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: sasl-scram256
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: sasl-scram256-sasl-scram256-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -17961,6 +18708,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: sasl-scram256-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: sasl-scram256
+    namespace: sasl-scram256
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: sasl-scram256
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: sasl-scram256-sasl-scram256-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: sasl-scram256-sasl-scram256-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: sasl-scram256
@@ -18714,6 +19479,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: sasl-scram512-with-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: sasl-scram512-with-tls-sasl-scram512-with-tls-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -18728,6 +19508,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: sasl-scram512-with-tls-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: sasl-scram512-with-tls
+    namespace: sasl-scram512-with-tls
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: sasl-scram512-with-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: sasl-scram512-with-tls-sasl-scram512-with-tls-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: sasl-scram512-with-tls-sasl-scram512-with-tls-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: sasl-scram512-with-tls
@@ -19457,6 +20255,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: single-replica
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: single-replica-single-replica-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -19471,6 +20284,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: single-replica-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: single-replica
+    namespace: single-replica
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: single-replica
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: single-replica-single-replica-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: single-replica-single-replica-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: single-replica
@@ -20116,6 +20947,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: storage-hostpath
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: storage-hostpath-storage-hostpath-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -20130,6 +20976,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: storage-hostpath-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: storage-hostpath
+    namespace: storage-hostpath
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: storage-hostpath
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: storage-hostpath-storage-hostpath-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: storage-hostpath-storage-hostpath-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: storage-hostpath
@@ -20864,6 +21728,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: storage-pv-custom
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: storage-pv-custom-storage-pv-custom-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -20878,6 +21757,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: storage-pv-custom-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: storage-pv-custom
+    namespace: storage-pv-custom
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: storage-pv-custom
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: storage-pv-custom-storage-pv-custom-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: storage-pv-custom-storage-pv-custom-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: storage-pv-custom
@@ -21612,6 +22509,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-emptydir
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-emptydir-tiered-storage-emptydir-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -21626,6 +22538,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: tiered-storage-emptydir-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: tiered-storage-emptydir
+    namespace: tiered-storage-emptydir
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-emptydir
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-emptydir-tiered-storage-emptydir-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: tiered-storage-emptydir-tiered-storage-emptydir-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: tiered-storage-emptydir
@@ -22360,6 +23290,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-hostpath
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-hostpath-tiered-storage-hostpath-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -22374,6 +23319,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: tiered-storage-hostpath-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: tiered-storage-hostpath
+    namespace: tiered-storage-hostpath
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-hostpath
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-hostpath-tiered-storage-hostpath-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: tiered-storage-hostpath-tiered-storage-hostpath-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: tiered-storage-hostpath
@@ -23108,6 +24071,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-pv
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-pv-tiered-storage-pv-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -23122,6 +24100,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: tiered-storage-pv-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: tiered-storage-pv
+    namespace: tiered-storage-pv
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tiered-storage-pv
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tiered-storage-pv-tiered-storage-pv-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: tiered-storage-pv-tiered-storage-pv-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: tiered-storage-pv
@@ -23825,6 +24821,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-issuer-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-issuer-ref-tls-issuer-ref-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -23839,6 +24850,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: tls-issuer-ref-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: tls-issuer-ref
+    namespace: tls-issuer-ref
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-issuer-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-issuer-ref-tls-issuer-ref-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: tls-issuer-ref-tls-issuer-ref-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: tls-issuer-ref
@@ -24575,6 +25604,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-issuer-ref-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-issuer-ref-mtls-tls-issuer-ref-mtls-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -24589,6 +25633,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: tls-issuer-ref-mtls-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: tls-issuer-ref-mtls
+    namespace: tls-issuer-ref-mtls
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-issuer-ref-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-issuer-ref-mtls-tls-issuer-ref-mtls-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: tls-issuer-ref-mtls-tls-issuer-ref-mtls-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: tls-issuer-ref-mtls
@@ -25356,6 +26418,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-mtls-tls-mtls-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -25370,6 +26447,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: tls-mtls-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: tls-mtls
+    namespace: tls-mtls
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-mtls-tls-mtls-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: tls-mtls-tls-mtls-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: tls-mtls
@@ -26104,6 +27199,21 @@
     - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-self-signed
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-self-signed-tls-self-signed-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: RoleBinding
   metadata:
     labels:
@@ -26118,6 +27228,24 @@
     apiGroup: rbac.authorization.k8s.io
     kind: Role
     name: tls-self-signed-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: tls-self-signed
+    namespace: tls-self-signed
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-self-signed
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-self-signed-tls-self-signed-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: tls-self-signed-tls-self-signed-metrics-reader
   subjects:
   - kind: ServiceAccount
     name: tls-self-signed

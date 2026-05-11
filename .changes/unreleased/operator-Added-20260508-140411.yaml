@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Added `rpk-k8s multicluster bundle` for collecting cross-cluster operator diagnostics (per-peer pod, deployment, TLS, raft status, logs, multi-sample `/metrics`) into a single zip. Discovers peers from labelled kubeconfig cache Secrets given any one peer's kubeconfig. Includes a chart-level binding of the operator ServiceAccount to the `metrics-reader` ClusterRole so the bundle (and the existing ServiceMonitor) can scrape `/metrics` without 403.
+time: 2026-05-08T14:04:11.47156921+02:00

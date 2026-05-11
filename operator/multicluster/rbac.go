@@ -95,6 +95,31 @@ func clusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 
 	var clusterRoles []*rbacv1.ClusterRole
 
+	// Self-metrics ClusterRole: grants nonResourceURLs:["/metrics"] get.
+	// controller-runtime's metrics server enforces auth+authz on /metrics
+	// by default, so anything authenticating as the operator SA — the
+	// bundled ServiceMonitor scraping with the pod's projected token, and
+	// `rpk k8s multicluster bundle` scraping with a TokenRequest-minted
+	// SA token — needs this rule. The clusterRoleBindings function below
+	// binds every emitted ClusterRole to the operator SA, so this entry
+	// alone is enough to unblock both consumers.
+	clusterRoles = append(clusterRoles, &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   tplutil.CleanForK8s(fmt.Sprintf("%s-%s-metrics-reader", state.fullname(), state.namespace)),
+			Labels: state.commonLabels(),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				NonResourceURLs: []string{"/metrics"},
+				Verbs:           []string{"get"},
+			},
+		},
+	})
+
 	if state.Spec().RackAwareness.IsEnabled() {
 		clusterRoles = append(clusterRoles, &rbacv1.ClusterRole{
 			TypeMeta: metav1.TypeMeta{

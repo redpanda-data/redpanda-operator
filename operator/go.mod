@@ -10,6 +10,7 @@ require (
 	github.com/cert-manager/cert-manager v1.19.3
 	github.com/cisco-open/k8s-objectmatcher v1.9.0
 	github.com/cockroachdb/errors v1.12.0
+	github.com/docker/go-units v0.5.0
 	github.com/fluxcd/pkg/runtime v0.43.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-logr/logr v1.4.3
@@ -148,7 +149,6 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker v28.5.2+incompatible // indirect
 	github.com/docker/go-connections v0.6.0 // indirect
-	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ebitengine/purego v0.9.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/evanphx/json-patch v5.9.11+incompatible // indirect

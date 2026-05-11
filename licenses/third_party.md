@@ -76,6 +76,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/cyphar/filepath-securejoin | [BSD-3-Clause](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/COPYING.md) |
 | github.com/cyphar/filepath-securejoin | [MPL-2.0](https://github.com/cyphar/filepath-securejoin/blob/v0.6.1/COPYING.md) |
 | github.com/davecgh/go-spew/spew | [ISC](https://github.com/davecgh/go-spew/blob/d8f796af33cc/LICENSE) |
+| github.com/docker/go-units | [Apache-2.0](https://github.com/docker/go-units/blob/v0.5.0/LICENSE) |
 | github.com/emicklei/go-restful/v3 | [MIT](https://github.com/emicklei/go-restful/blob/v3.13.0/LICENSE) |
 | github.com/evanphx/json-patch | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.9.11/LICENSE) |
 | github.com/evanphx/json-patch/v5 | [BSD-3-Clause](https://github.com/evanphx/json-patch/blob/v5.9.11/LICENSE) |
