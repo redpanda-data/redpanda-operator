@@ -21,11 +21,16 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 	if !state.Values.Monitoring.Enabled {
 		return nil
 	}
+	// Render the scheme as lowercase. The prometheus-operator typed constants
+	// (monitoringv1.SchemeHTTP / SchemeHTTPS) resolve to "HTTP" / "HTTPS",
+	// which older prometheus-operator CRDs reject with
+	// `spec.endpoints[0].scheme: Unsupported value`. Lowercase works on every
+	// version. See redpanda-operator#1511.
 	endpoint := monitoringv1.Endpoint{
 		Interval: state.Values.Monitoring.ScrapeInterval,
 		Path:     "/admin/metrics",
 		Port:     servicePortName,
-		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
+		Scheme:   ptr.To(monitoringv1.Scheme("http")),
 	}
 	tlsCertFilepath := helmette.Dig(state.Values.Config, "", "server", "tls", "certFilepath")
 	tlsKeyFilepath := helmette.Dig(state.Values.Config, "", "server", "tls", "keyFilepath")
@@ -38,7 +43,7 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 			},
 		}
 		endpoint.TLSConfig = tlsConfig
-		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
+		endpoint.Scheme = ptr.To(monitoringv1.Scheme("https"))
 	}
 
 	return &monitoringv1.ServiceMonitor{
