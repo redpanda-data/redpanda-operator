@@ -1188,17 +1188,28 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 	return template, fixups, envVars
 }
 
-// SASLClientFixups returns the redpanda.yaml fixups and env vars needed to
-// inject SASL credentials into an internal Kafka client (schema_registry_client)
-// from a Kubernetes Secret. The Secret must have keys
-// "username" and "password" (corev1.BasicAuthUsernameKey / BasicAuthPasswordKey).
-func SASLClientFixups(clientField string, secretName string) ([]clusterconfiguration.Fixup, []corev1.EnvVar) {
-	usernameEnv := strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_USERNAME"
-	passwordEnv := strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_PASSWORD"
+// SASLFixups returns the configuration fixups needed to inject SASL credentials
+// for clientField from the Kubernetes Secret named secretName.
+// The Secret must have keys "username" and "password"
+// (corev1.BasicAuthUsernameKey / BasicAuthPasswordKey).
+func SASLFixups(clientField string, secretName string) []clusterconfiguration.Fixup {
+	usernameEnv := saslUsernameEnv(clientField)
+	passwordEnv := saslPasswordEnv(clientField)
+	return []clusterconfiguration.Fixup{
+		{Field: clientField + ".scram_username", CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, usernameEnv)},
+		{Field: clientField + ".scram_password", CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, passwordEnv)},
+		{Field: clientField + ".sasl_mechanism", CEL: fmt.Sprintf(`"%s"`, DefaultSASLMechanism)},
+	}
+}
 
-	envVars := []corev1.EnvVar{
+// SASLEnvVars returns the environment variables that expose the SASL credentials
+// for clientField from the Kubernetes Secret named secretName.
+// The Secret must have keys "username" and "password"
+// (corev1.BasicAuthUsernameKey / BasicAuthPasswordKey).
+func SASLEnvVars(clientField string, secretName string) []corev1.EnvVar {
+	return []corev1.EnvVar{
 		{
-			Name: usernameEnv,
+			Name: saslUsernameEnv(clientField),
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
@@ -1207,7 +1218,7 @@ func SASLClientFixups(clientField string, secretName string) ([]clusterconfigura
 			},
 		},
 		{
-			Name: passwordEnv,
+			Name: saslPasswordEnv(clientField),
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
@@ -1216,14 +1227,14 @@ func SASLClientFixups(clientField string, secretName string) ([]clusterconfigura
 			},
 		},
 	}
+}
 
-	fixups := []clusterconfiguration.Fixup{
-		{Field: clientField + ".scram_username", CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, usernameEnv)},
-		{Field: clientField + ".scram_password", CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, passwordEnv)},
-		{Field: clientField + ".sasl_mechanism", CEL: fmt.Sprintf(`"%s"`, DefaultSASLMechanism)},
-	}
+func saslUsernameEnv(clientField string) string {
+	return strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_USERNAME"
+}
 
-	return fixups, envVars
+func saslPasswordEnv(clientField string) string {
+	return strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_PASSWORD"
 }
 
 func keyToEnvVar(k string) string {

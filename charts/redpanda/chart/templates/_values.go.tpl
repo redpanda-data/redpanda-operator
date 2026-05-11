@@ -725,17 +725,46 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.SASLClientFixups" -}}
+{{- define "redpanda.SASLFixups" -}}
 {{- $clientField := (index .a 0) -}}
 {{- $secretName := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $usernameEnv := (printf "%s%s" (upper (replace "." "_" $clientField)) "_USERNAME") -}}
-{{- $passwordEnv := (printf "%s%s" (upper (replace "." "_" $clientField)) "_PASSWORD") -}}
-{{- $envVars := (list (mustMergeOverwrite (dict "name" "") (dict "name" $usernameEnv "valueFrom" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $secretName)) (dict "key" "username")))))) (mustMergeOverwrite (dict "name" "") (dict "name" $passwordEnv "valueFrom" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $secretName)) (dict "key" "password"))))))) -}}
-{{- $fixups := (list (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" (printf "%s%s" $clientField ".scram_username") "cel" (printf `%s("%s")` "envString" $usernameEnv))) (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" (printf "%s%s" $clientField ".scram_password") "cel" (printf `%s("%s")` "envString" $passwordEnv))) (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" (printf "%s%s" $clientField ".sasl_mechanism") "cel" (printf `"%s"` "SCRAM-SHA-512")))) -}}
+{{- $usernameEnv := (get (fromJson (include "redpanda.saslUsernameEnv" (dict "a" (list $clientField)))) "r") -}}
+{{- $passwordEnv := (get (fromJson (include "redpanda.saslPasswordEnv" (dict "a" (list $clientField)))) "r") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list $fixups $envVars)) | toJson -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" (printf "%s%s" $clientField ".scram_username") "cel" (printf `%s("%s")` "envString" $usernameEnv))) (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" (printf "%s%s" $clientField ".scram_password") "cel" (printf `%s("%s")` "envString" $passwordEnv))) (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" (printf "%s%s" $clientField ".sasl_mechanism") "cel" (printf `"%s"` "SCRAM-SHA-512"))))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.SASLEnvVars" -}}
+{{- $clientField := (index .a 0) -}}
+{{- $secretName := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "name" "") (dict "name" (get (fromJson (include "redpanda.saslUsernameEnv" (dict "a" (list $clientField)))) "r") "valueFrom" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $secretName)) (dict "key" "username")))))) (mustMergeOverwrite (dict "name" "") (dict "name" (get (fromJson (include "redpanda.saslPasswordEnv" (dict "a" (list $clientField)))) "r") "valueFrom" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $secretName)) (dict "key" "password")))))))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.saslUsernameEnv" -}}
+{{- $clientField := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf "%s%s" (upper (replace "." "_" $clientField)) "_USERNAME")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.saslPasswordEnv" -}}
+{{- $clientField := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf "%s%s" (upper (replace "." "_" $clientField)) "_PASSWORD")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -866,9 +895,9 @@
 {{- $name := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1358_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)))))) "r") -}}
-{{- $cert := (index $_1358_cert_ok 0) -}}
-{{- $ok := (index $_1358_cert_ok 1) -}}
+{{- $_1369_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)))))) "r") -}}
+{{- $cert := (index $_1369_cert_ok 0) -}}
+{{- $ok := (index $_1369_cert_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_ := (fail (printf "Certificate %q referenced, but not found in the tls.certs map" $name)) -}}
 {{- end -}}
@@ -1347,9 +1376,9 @@
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
 {{- if (not (empty $v)) -}}
-{{- $_1888___ok_15 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
-{{- $_ := ((index $_1888___ok_15 0) | float64) -}}
-{{- $ok_15 := (index $_1888___ok_15 1) -}}
+{{- $_1899___ok_15 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
+{{- $_ := ((index $_1899___ok_15 0) | float64) -}}
+{{- $ok_15 := (index $_1899___ok_15 1) -}}
 {{- if $ok_15 -}}
 {{- $_ := (set $result $k $v) -}}
 {{- else -}}{{- if (kindIs "bool" $v) -}}
@@ -1375,9 +1404,9 @@
 {{- $_is_returning := false -}}
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
-{{- $_1908_b_16_ok_17 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
-{{- $b_16 := (index $_1908_b_16_ok_17 0) -}}
-{{- $ok_17 := (index $_1908_b_16_ok_17 1) -}}
+{{- $_1919_b_16_ok_17 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
+{{- $b_16 := (index $_1919_b_16_ok_17 0) -}}
+{{- $ok_17 := (index $_1919_b_16_ok_17 1) -}}
 {{- if $ok_17 -}}
 {{- $_ := (set $result $k $b_16) -}}
 {{- continue -}}
@@ -1420,15 +1449,15 @@
 {{- $config := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1953___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1953___hasAccessKey 0) -}}
-{{- $hasAccessKey := (index $_1953___hasAccessKey 1) -}}
-{{- $_1954___hasSecretKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_secret_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1954___hasSecretKey 0) -}}
-{{- $hasSecretKey := (index $_1954___hasSecretKey 1) -}}
-{{- $_1955___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1955___hasSharedKey 0) -}}
-{{- $hasSharedKey := (index $_1955___hasSharedKey 1) -}}
+{{- $_1964___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1964___hasAccessKey 0) -}}
+{{- $hasAccessKey := (index $_1964___hasAccessKey 1) -}}
+{{- $_1965___hasSecretKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_secret_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1965___hasSecretKey 0) -}}
+{{- $hasSecretKey := (index $_1965___hasSecretKey 1) -}}
+{{- $_1966___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1966___hasSharedKey 0) -}}
+{{- $hasSharedKey := (index $_1966___hasSharedKey 1) -}}
 {{- $envvars := (coalesce nil) -}}
 {{- if (and (not $hasAccessKey) (get (fromJson (include "redpanda.SecretRef.IsValid" (dict "a" (list $tsc.accessKey)))) "r")) -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_CLOUD_STORAGE_ACCESS_KEY" "valueFrom" (get (fromJson (include "redpanda.SecretRef.AsSource" (dict "a" (list $tsc.accessKey)))) "r"))))) -}}
@@ -1451,12 +1480,12 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1991___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1991___containerExists 0) -}}
-{{- $containerExists := (index $_1991___containerExists 1) -}}
-{{- $_1992___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1992___accountExists 0) -}}
-{{- $accountExists := (index $_1992___accountExists 1) -}}
+{{- $_2002___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_2002___containerExists 0) -}}
+{{- $containerExists := (index $_2002___containerExists 1) -}}
+{{- $_2003___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_2003___accountExists 0) -}}
+{{- $accountExists := (index $_2003___accountExists 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (and $containerExists $accountExists)) | toJson -}}
 {{- break -}}
@@ -1467,9 +1496,9 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1997_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
-{{- $value := (index $_1997_value_ok 0) -}}
-{{- $ok := (index $_1997_value_ok 1) -}}
+{{- $_2008_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
+{{- $value := (index $_2008_value_ok 0) -}}
+{{- $ok := (index $_2008_value_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}

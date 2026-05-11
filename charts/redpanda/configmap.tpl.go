@@ -41,12 +41,9 @@ func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
 		clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, true /* includeSeedServer */, pool),
 	}
 
-	// When SASL is enabled and a secret ref is provided for schema_registry_client,
-	// write redpanda.yaml.fixups so the configurator init container can inject the
-	// credentials at pod start without storing plaintext passwords in the ConfigMap.
 	if state.Values.Auth.IsSASLEnabled() && state.Values.Config.SchemaRegistryClient != nil && state.Values.Config.SchemaRegistryClient.SASLSecretRef != nil {
-		f, _ := SASLClientFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)
-		data[clusterconfiguration.RedpandaYamlFixupFile] = helmette.ToJSON(f)
+		fixups := SASLFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)
+		data[clusterconfiguration.RedpandaYamlFixupFile] = helmette.ToJSON(fixups)
 	}
 
 	return &corev1.ConfigMap{
