@@ -342,9 +342,7 @@
 {{- end -}}
 {{- $baseEnv := (list (mustMergeOverwrite (dict "name" "") (dict "name" "CONFIGURATOR_SCRIPT" "value" "/etc/secrets/configurator/scripts/configurator.sh")) (mustMergeOverwrite (dict "name" "") (dict "name" "SERVICE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "metadata.name")) "resourceFieldRef" (coalesce nil) "configMapKeyRef" (coalesce nil) "secretKeyRef" (coalesce nil))))) (mustMergeOverwrite (dict "name" "") (dict "name" "KUBERNETES_NODE_NAME" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "fieldPath" "spec.nodeName")))))) (mustMergeOverwrite (dict "name" "") (dict "name" "HOST_IP_ADDRESS" "valueFrom" (mustMergeOverwrite (dict) (dict "fieldRef" (mustMergeOverwrite (dict "fieldPath" "") (dict "apiVersion" "v1" "fieldPath" "status.hostIP"))))))) -}}
 {{- if (and (and (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r") (ne (toJson $state.Values.config.schema_registry_client) "null")) (ne (toJson $state.Values.config.schema_registry_client.saslSecretRef) "null")) -}}
-{{- $_608___envVars := (get (fromJson (include "redpanda.SASLClientFixups" (dict "a" (list "schema_registry_client" $state.Values.config.schema_registry_client.saslSecretRef.name)))) "r") -}}
-{{- $_ := (index $_608___envVars 0) -}}
-{{- $envVars := (index $_608___envVars 1) -}}
+{{- $envVars := (get (fromJson (include "redpanda.SASLEnvVars" (dict "a" (list "schema_registry_client" $state.Values.config.schema_registry_client.saslSecretRef.name)))) "r") -}}
 {{- $baseEnv = (concat (default (list) $baseEnv) (default (list) $envVars)) -}}
 {{- end -}}
 {{- $_is_returning = true -}}

@@ -599,9 +599,8 @@ func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container 
 		},
 	}
 
-	// Inject SASL secret env vars so the configurator can apply redpanda.yaml.fixups.
 	if state.Values.Auth.IsSASLEnabled() && state.Values.Config.SchemaRegistryClient != nil && state.Values.Config.SchemaRegistryClient.SASLSecretRef != nil {
-		_, envVars := SASLClientFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)
+		envVars := SASLEnvVars("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)
 		baseEnv = append(baseEnv, envVars...)
 	}
 

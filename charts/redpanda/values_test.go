@@ -1040,24 +1040,44 @@ func TestRedpandaResources_RedpandaFlags(t *testing.T) {
 	}
 }
 
-func TestSASLClientFixups(t *testing.T) {
+func TestSASLFixups(t *testing.T) {
 	cases := []struct {
 		name        string
 		clientField string
 		secretName  string
-		wantFixups  []clusterconfiguration.Fixup
-		wantEnvVars []corev1.EnvVar
+		want        []clusterconfiguration.Fixup
 	}{
 		{
 			name:        "schema_registry_client",
 			clientField: "schema_registry_client",
 			secretName:  "my-sasl-secret",
-			wantFixups: []clusterconfiguration.Fixup{
+			want: []clusterconfiguration.Fixup{
 				{Field: "schema_registry_client.scram_username", CEL: `envString("SCHEMA_REGISTRY_CLIENT_USERNAME")`},
 				{Field: "schema_registry_client.scram_password", CEL: `envString("SCHEMA_REGISTRY_CLIENT_PASSWORD")`},
 				{Field: "schema_registry_client.sasl_mechanism", CEL: fmt.Sprintf(`"%s"`, DefaultSASLMechanism)},
 			},
-			wantEnvVars: []corev1.EnvVar{
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, SASLFixups(tc.clientField, tc.secretName))
+		})
+	}
+}
+
+func TestSASLEnvVars(t *testing.T) {
+	cases := []struct {
+		name        string
+		clientField string
+		secretName  string
+		want        []corev1.EnvVar
+	}{
+		{
+			name:        "schema_registry_client",
+			clientField: "schema_registry_client",
+			secretName:  "my-sasl-secret",
+			want: []corev1.EnvVar{
 				{
 					Name: "SCHEMA_REGISTRY_CLIENT_USERNAME",
 					ValueFrom: &corev1.EnvVarSource{
@@ -1082,9 +1102,7 @@ func TestSASLClientFixups(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			fixups, envVars := SASLClientFixups(tc.clientField, tc.secretName)
-			require.Equal(t, tc.wantFixups, fixups)
-			require.Equal(t, tc.wantEnvVars, envVars)
+			require.Equal(t, tc.want, SASLEnvVars(tc.clientField, tc.secretName))
 		})
 	}
 }
