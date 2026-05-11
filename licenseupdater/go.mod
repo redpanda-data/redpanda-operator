@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/licenseupdater
 
-go 1.25.7
+go 1.25.10
 
 require (
 	github.com/cockroachdb/errors v1.11.3
@@ -25,6 +25,6 @@ require (
 	github.com/stretchr/testify v1.11.1 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 )
