@@ -18100,7 +18100,7 @@ spec:
   - interval: 30s
     path: /public_metrics
     port: admin
-    scheme: HTTP
+    scheme: http
   namespaceSelector: {}
   selector:
     matchLabels:
@@ -19554,7 +19554,7 @@ spec:
   - interval: 30s
     path: /public_metrics
     port: admin
-    scheme: HTTPS
+    scheme: https
     tlsConfig:
       ca: {}
       cert: {}
@@ -53736,7 +53736,7 @@ spec:
   - interval: 2m
     path: /public_metrics
     port: admin
-    scheme: HTTPS
+    scheme: https
     tlsConfig:
       ca: {}
       cert: {}
@@ -68204,7 +68204,7 @@ spec:
   - interval: 30s
     path: /public_metrics
     port: admin
-    scheme: HTTPS
+    scheme: https
     tlsConfig:
       ca: {}
       cert: {}
@@ -113982,7 +113982,7 @@ spec:
   - interval: 1m
     path: /admin/metrics
     port: http
-    scheme: HTTP
+    scheme: http
   namespaceSelector: {}
   selector:
     matchLabels:
@@ -115449,7 +115449,7 @@ spec:
   - interval: 30s
     path: /public_metrics
     port: admin
-    scheme: HTTPS
+    scheme: https
     tlsConfig:
       ca: {}
       cert: {}
@@ -116901,7 +116901,7 @@ spec:
   - interval: 30s
     path: /public_metrics
     port: admin
-    scheme: HTTP
+    scheme: http
   namespaceSelector: {}
   selector:
     matchLabels:
@@ -118474,7 +118474,7 @@ spec:
   - interval: 30s
     path: /public_metrics
     port: admin
-    scheme: HTTPS
+    scheme: https
     tlsConfig:
       ca: {}
       cert: {}
