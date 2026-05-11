@@ -155,6 +155,19 @@ func (c *BundleConfig) BindFlags(cmd *cobra.Command) {
 func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, error) {
 	logf := c.progressLogger()
 
+	// Validate flag-derived options up front so a bad --logs-size-limit /
+	// --metrics-samples / --metrics-interval fails before any cluster
+	// discovery or remote calls happen — saves the user a minute of
+	// connection work to find out they typo'd a flag.
+	logsOpts, lerr := c.resolveLogsOptions()
+	if lerr != nil {
+		return nil, lerr
+	}
+	metricsOpts, merr := c.resolveMetricsOptions()
+	if merr != nil {
+		return nil, merr
+	}
+
 	logf("resolving starting connections (kubeconfig=%q, contexts=%v)",
 		c.Connection.Kubeconfig, c.Connection.Contexts)
 	starting, err := c.Connection.Resolve()
@@ -238,17 +251,6 @@ func (c *BundleConfig) Run(ctx context.Context, w io.Writer) (*BundleResult, err
 	crossStart := time.Now()
 	crossResults := checks.RunCrossClusterChecks(contexts, crossClusterChecks)
 	logf("cross-cluster checks completed in %s", time.Since(crossStart).Round(time.Millisecond))
-
-	logsOpts, lerr := c.resolveLogsOptions()
-	if lerr != nil {
-		// A bad --logs-size-limit value is a configuration error worth
-		// surfacing to the user before we produce a partial bundle.
-		return nil, lerr
-	}
-	metricsOpts, merr := c.resolveMetricsOptions()
-	if merr != nil {
-		return nil, merr
-	}
 
 	now := time.Now
 	if c.Now != nil {
