@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: Fixed `ServiceMonitor` rendering to emit `scheme: http` / `scheme: https` (lowercase) instead of the uppercase Go constant values that older `prometheus-operator` CRDs rejected with `spec.endpoints[0].scheme: Unsupported value`. Restores the case that chart 25.3.x and earlier produced. Fixes #1511.
+time: 2026-05-11T10:00:00.000000-07:00

@@ -23,15 +23,22 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 		return nil
 	}
 
+	// Render the scheme as lowercase. The prometheus-operator typed constants
+	// (monitoringv1.SchemeHTTP / SchemeHTTPS) resolve to "HTTP" / "HTTPS" —
+	// gotohelm faithfully emits those values, but older prometheus-operator
+	// CRDs only accept "http" / "https" in the Scheme enum and reject the
+	// rendered ServiceMonitor at apply time. Lowercase is accepted by every
+	// CRD version we support, so produce it explicitly via a string-typed
+	// conversion rather than the upstream constants. See #1511.
 	endpoint := monitoringv1.Endpoint{
 		Interval: state.Values.Monitoring.ScrapeInterval,
 		Path:     "/public_metrics",
 		Port:     "admin",
-		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
+		Scheme:   ptr.To(monitoringv1.Scheme("http")),
 	}
 
 	if state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) || state.Values.Monitoring.TLSConfig != nil {
-		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
+		endpoint.Scheme = ptr.To(monitoringv1.Scheme("https"))
 		endpoint.TLSConfig = state.Values.Monitoring.TLSConfig
 
 		if endpoint.TLSConfig == nil {
