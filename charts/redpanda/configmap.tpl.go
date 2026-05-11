@@ -33,17 +33,22 @@ func ConfigMaps(state *RenderState) []*corev1.ConfigMap {
 }
 
 func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
-	bootstrap, fixups := BootstrapFile(state, pool)
+	bootstrap, bootstrapFixups := BootstrapFile(state, pool)
+
+	redpandaYamlFixups := []clusterconfiguration.Fixup{}
+	if state.Values.Auth.IsSASLEnabled() && state.Values.Config.SchemaRegistryClient != nil && state.Values.Config.SchemaRegistryClient.SASLSecretRef != nil {
+		redpandaYamlFixups = append(redpandaYamlFixups, SASLFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)...)
+	}
+	redpandaYamlFixupsStr := helmette.ToJSON(redpandaYamlFixups)
+	if len(redpandaYamlFixups) == 0 {
+		redpandaYamlFixupsStr = `[]`
+	}
 
 	data := map[string]string{
 		clusterconfiguration.BootstrapTemplateFile:    bootstrap,
-		clusterconfiguration.BootstrapFixupFile:       fixups,
+		clusterconfiguration.BootstrapFixupFile:       bootstrapFixups,
 		clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, true /* includeSeedServer */, pool),
-	}
-
-	if state.Values.Auth.IsSASLEnabled() && state.Values.Config.SchemaRegistryClient != nil && state.Values.Config.SchemaRegistryClient.SASLSecretRef != nil {
-		fixups := SASLFixups("schema_registry_client", state.Values.Config.SchemaRegistryClient.SASLSecretRef.Name)
-		data[clusterconfiguration.RedpandaYamlFixupFile] = helmette.ToJSON(fixups)
+		clusterconfiguration.RedpandaYamlFixupFile:    redpandaYamlFixupsStr,
 	}
 
 	return &corev1.ConfigMap{
