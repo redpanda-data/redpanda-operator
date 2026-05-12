@@ -121,6 +121,22 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.S
 		if err != nil {
 			return nil, fmt.Errorf("applying pod template overrides: %w", err)
 		}
+		// When the user supplied an .affinity block, fully replace ours rather
+		// than relying on strategic-merge to handle it. SMP can't honor an
+		// explicit `null` on slice subfields (e.g.
+		// requiredDuringSchedulingIgnoredDuringExecution: null) because
+		// corev1.PodAntiAffinity tags those slices `omitempty` — the user's
+		// null is silently dropped on the JSON round-trip and the base
+		// affinity leaks through. The chart's gotohelm rendering path has the
+		// same patch utility but is locked to its own semantics, so this
+		// override is applied here in the multicluster renderer only.
+		if expanded.Spec != nil && expanded.Spec.Affinity != nil {
+			affinity, err := tplutil.MergeTo[corev1.Affinity](expanded.Spec.Affinity)
+			if err != nil {
+				return nil, fmt.Errorf("rendering affinity override: %w", err)
+			}
+			merged.Spec.Affinity = &affinity
+		}
 		podTemplate = merged
 	}
 

@@ -688,12 +688,20 @@ func newManager(localClusterName string, localLeaderElection bool, logger logr.L
 		return nil
 	})
 
-	runnable := &leaderRunnable{manager: manager, logger: logger.WithName("leader-runnable"), broadcaster: broadcaster, getClusters: getClusters, needsLocalLeaderElection: localLeaderElection}
+	healthTracker := newClusterHealthTracker(logger, getClusters)
+
+	runnable := &leaderRunnable{manager: manager, logger: logger.WithName("leader-runnable"), broadcaster: broadcaster, getClusters: getClusters, needsLocalLeaderElection: localLeaderElection, isClusterReachable: healthTracker.IsReachable}
 	if err := mgr.Add(runnable); err != nil {
 		return nil, err
 	}
 
-	healthTracker := newClusterHealthTracker(logger, getClusters)
+	// On unreachable→reachable transitions the tracker pokes the broadcaster,
+	// which triggers a fresh doEngage cycle so a healed peer is engaged without
+	// waiting for the next periodic retry.
+	healthTracker.SetOnReachable(func(clusterName string) {
+		logger.Info("cluster became reachable, requesting engage cycle", "cluster", clusterName)
+		broadcaster.notify()
+	})
 	manager.RegisterRoutine(healthTracker.Start)
 
 	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger.WithName("raft-manager"), localClusterName: localClusterName, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster, clusterHealth: healthTracker}, nil
@@ -726,6 +734,12 @@ type leaderRunnable struct {
 	broadcaster              *restartBroadcaster
 	getClusters              func() map[string]cluster.Cluster
 	needsLocalLeaderElection bool
+	// isClusterReachable, when non-nil, lets doEngage skip clusters that the
+	// health probe has classified as unreachable. Unknown clusters are reported
+	// as reachable, so first-time engages still run; once the probe has marked
+	// a peer down we stop retrying it every 10s and let the
+	// unreachable→reachable transition callback re-trigger doEngage.
+	isClusterReachable func(string) bool
 }
 
 func (l *leaderRunnable) NeedLeaderElection() bool {
@@ -736,6 +750,17 @@ func (l *leaderRunnable) Add(r mcmanager.Runnable) {
 	doEngage := func(ctx context.Context) {
 		for name, cluster := range l.getClusters() {
 			name, cluster := name, cluster
+			// Skip clusters the probe has classified as unreachable. The
+			// engage call against an unreachable apiserver costs ~30–90s on
+			// the dial timeout and re-fires every 10s, which floods
+			// client-go workqueues with pending requests and starves
+			// reconciles on healthy clusters. The unreachable→reachable
+			// transition callback re-pokes the broadcaster so we re-engage
+			// on heal.
+			if l.isClusterReachable != nil && !l.isClusterReachable(name) {
+				l.logger.V(1).Info("skipping engage for unreachable cluster", "cluster", name)
+				continue
+			}
 			// Run each cluster's Engage concurrently so that a blocked or
 			// slow Engage (e.g. WaitForCacheSync on an unreachable cluster)
 			// does not prevent other clusters from being engaged or the
@@ -745,6 +770,8 @@ func (l *leaderRunnable) Add(r mcmanager.Runnable) {
 				if err := r.Engage(ctx, name, cluster); err != nil {
 					l.logger.Error(err, "error engaging cluster", "cluster", name)
 					// Schedule a retry so transient failures are recovered.
+					// Once the probe marks this cluster unreachable the
+					// skip above kicks in and stops the retry storm.
 					go func() {
 						select {
 						case <-ctx.Done():

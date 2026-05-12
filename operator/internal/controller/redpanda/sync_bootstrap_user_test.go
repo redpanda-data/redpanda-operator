@@ -321,8 +321,18 @@ func TestSyncBootstrapUser_ClusterUnreachable(t *testing.T) {
 	mgr := newMockManager(clusterNames, clients)
 	state := newTestState(sc, clusterNames)
 
-	r := &MulticlusterReconciler{Manager: mgr}
+	r := &MulticlusterReconciler{
+		Manager:         mgr,
+		LifecycleClient: lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(lifecycle.Image{}, lifecycle.Image{}, lifecycle.CloudSecretsFlags{})),
+	}
 	_, err := r.syncBootstrapUser(ctx, state, nil)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "cluster-b")
+	require.NoError(t, err)
+
+	// cluster-a is reachable: secret should be created.
+	var secret corev1.Secret
+	require.NoError(t, clients["cluster-a"].Get(ctx, types.NamespacedName{
+		Namespace: sc.Namespace,
+		Name:      bootstrapSecretName(sc),
+	}, &secret))
+	require.NotEmpty(t, secret.Data[bootstrapUserPasswordKey])
 }

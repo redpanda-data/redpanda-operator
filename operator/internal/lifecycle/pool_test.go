@@ -802,6 +802,7 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 			tracker := NewPoolTracker(1)
 			tracker.addExisting(tt.existingPools...)
 			tracker.addDesired(tt.desiredPools...)
+			tracker.MarkClusterObserved(mcmanager.LocalCluster)
 
 			toIDs := func(list []*ScaleDownSet) []string {
 				ids := []string{}
@@ -945,6 +946,7 @@ func TestPoolTrackerToDelete(t *testing.T) {
 
 			tracker.addExisting(pools...)
 			tracker.addDesired(tt.desiredPools...)
+			tracker.MarkClusterObserved(mcmanager.LocalCluster)
 
 			actual := objectNames(tracker.ToDelete())
 			require.ElementsMatch(t, tt.expectedSetsToDelete, actual)

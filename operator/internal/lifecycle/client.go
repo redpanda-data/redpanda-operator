@@ -15,6 +15,7 @@ import (
 	"maps"
 	"reflect"
 	"slices"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -132,6 +133,10 @@ func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
 // cluster's own operator will clean up when it reconnects.
 func (r *ResourceClient[T, U]) DeleteStatefulSetForNodePool(ctx context.Context, set *MulticlusterStatefulSet) error {
 	logger := log.FromContext(ctx)
+	if set.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(set.clusterName) {
+		logger.Info("remote cluster unreachable (probe) in DeleteStatefulSetForNodePool, skipping", "cluster", set.canonicalClusterName)
+		return nil
+	}
 	ctl, err := r.ctl(ctx, set.clusterName)
 	if err != nil {
 		if set.clusterName != mcmanager.LocalCluster {
@@ -148,6 +153,10 @@ func (r *ResourceClient[T, U]) DeleteStatefulSetForNodePool(ctx context.Context,
 // cluster's own operator will clean up when it reconnects.
 func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterPod) error {
 	logger := log.FromContext(ctx)
+	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {
+		logger.Info("remote cluster unreachable (probe) in DeletePod, skipping", "cluster", pod.GetCanonicalClusterName())
+		return nil
+	}
 	ctl, err := r.ctl(ctx, pod.clusterName)
 	if err != nil {
 		if pod.clusterName != mcmanager.LocalCluster {
@@ -164,6 +173,10 @@ func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterP
 // cluster's own operator will apply the patch when it reconnects.
 func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *MulticlusterStatefulSet) error {
 	logger := log.FromContext(ctx)
+	if set.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(set.clusterName) {
+		logger.Info("remote cluster unreachable (probe) in PatchNodePoolSet, skipping", "cluster", set.canonicalClusterName)
+		return nil
+	}
 	ctl, err := r.ctl(ctx, set.clusterName)
 	if err != nil {
 		if set.clusterName != mcmanager.LocalCluster {
@@ -316,6 +329,15 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 			"ownerUID", owner.GetUID(),
 			"ownerGroupVersionKind", owner.GetObjectKind().GroupVersionKind().String())
 
+		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
+			logger.Info("remote cluster unreachable (probe) in SyncAll, skipping", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName))
+			continue
+		}
+		logger.V(log.TraceLevel).Info("reachability probe passed in SyncAll, proceeding",
+			"cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName),
+			"rawClusterName", clusterName,
+			"isLocal", clusterName == mcmanager.LocalCluster)
+
 		// Skip clusters where the owner is being deleted — the deletion
 		// reconciler handles cleanup there independently.
 		if deleting, err := r.isOwnerDeleting(ctx, owner, clusterName); err != nil {
@@ -342,6 +364,34 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 	return syncErr
 }
 
+// RemoteCallTimeout bounds a single network call to a peer cluster's
+// API server. It's intentionally tight (5s) so a probe-race miss — where
+// IsReachable still returns true for a peer that's actually unreachable —
+// fails fast enough to keep the overall reconcile under the partition-SLA
+// target instead of stalling on the kernel TCP dial timeout (~30–90s).
+// Exported so other packages that issue cross-cluster API calls (render
+// state, etc.) can match the budget.
+const RemoteCallTimeout = 5 * time.Second
+
+// LocalCallTimeout bounds a single network call to the local cluster's
+// API server. The local apiserver is normally sub-ms; the bound exists
+// only to keep a pathological case (e.g. workqueue/rate-limiter
+// starvation, an unsynced informer cache) from consuming the entire
+// reconcile budget on one Get.
+const LocalCallTimeout = 10 * time.Second
+
+// CallTimeoutFor returns the per-call timeout for the given cluster — short
+// for remote peers, more generous for the local apiserver. Use it to wrap a
+// reconcile context before issuing a kube call so a hung peer doesn't drain
+// the reconcile deadline. Sites in this package use the lowercase
+// callTimeoutFor; the exported variant is for callers outside the package.
+func CallTimeoutFor(clusterName string) time.Duration {
+	if clusterName == mcmanager.LocalCluster {
+		return LocalCallTimeout
+	}
+	return RemoteCallTimeout
+}
+
 // isOwnerDeleting checks if the owner resource is being deleted on a given cluster.
 // Returns true if the owner is being deleted or does not exist.
 // For remote peer clusters (stretch setup), if the cluster is unreachable, returns
@@ -350,35 +400,77 @@ func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
 // Errors on the local cluster are always propagated.
 func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clusterName string) (bool, error) {
 	logger := log.FromContext(ctx)
+	// Short-circuit the local cluster: the owner argument IS the local
+	// StretchCluster (it's what triggered this reconcile), so its
+	// DeletionTimestamp is already authoritative. Round-tripping through
+	// kube.Get would re-fetch the same object via the controller-runtime
+	// cache, which can stall for the entire LocalCallTimeout if the local
+	// informer hasn't completed its initial sync yet (e.g. shortly after
+	// a leader transition). The cache-sync wait is fundamental to
+	// controller-runtime's cached client and we have no control over it
+	// here — but we don't need the Get at all for the local case.
+	if clusterName == mcmanager.LocalCluster {
+		return !owner.GetDeletionTimestamp().IsZero(), nil
+	}
+	if !r.manager.IsClusterReachable(clusterName) {
+		logger.Info("remote cluster unreachable (probe) in isOwnerDeleting, skipping sync to cluster", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName))
+		return true, nil
+	}
+	logger.V(log.TraceLevel).Info("reachability probe passed in isOwnerDeleting, proceeding to remote Get",
+		"cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName),
+		"rawClusterName", clusterName)
 	ctl, err := r.ctl(ctx, clusterName)
 	if err != nil {
-		if clusterName != mcmanager.LocalCluster {
-			logger.Info("remote cluster unreachable in isOwnerDeleting, skipping sync to cluster", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
-			return true, nil
-		}
-		return false, err
+		logger.Info("remote cluster unreachable in isOwnerDeleting, skipping sync to cluster", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
+		return true, nil
 	}
-	resolved, err := r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
+	resolveCtx, cancel := context.WithTimeout(ctx, RemoteCallTimeout)
+	defer cancel()
+	resolved, err := r.ownershipResolver.ResolveOwnerReference(resolveCtx, owner, clusterName, ctl)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return true, nil
 		}
-		if clusterName != mcmanager.LocalCluster {
-			logger.Info("could not resolve owner reference on remote cluster in isOwnerDeleting, skipping sync to cluster", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
-			return true, nil
-		}
-		return false, err
+		logger.Info("could not resolve owner reference on remote cluster in isOwnerDeleting, skipping sync to cluster", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName), "error", err)
+		return true, nil
 	}
 	return !resolved.GetDeletionTimestamp().IsZero(), nil
 }
 
 // FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
 // a tracker that can be used for determining necessary operations on the pools.
-func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string) (*PoolTracker, error) {
+// FetchExistingAndDesiredPools fetches the existing and desired node pools
+// for a given cluster, returning a tracker that can be used for determining
+// necessary operations on the pools.
+//
+// nodePoolsObserved is the observation set returned by
+// FetchExistingNodePoolsFromAllClusters — clusters whose NodePool list was
+// successfully fetched earlier in the same reconcile. A cluster is only
+// marked fully observed on the PoolTracker when ALL of:
+//   - its NodePool list was already observed (passed in), AND
+//   - fetchExistingPools here didn't probe-skip, AND
+//   - Render here didn't error
+//
+// hold. ToScaleDown / ToDelete gate "no desired counterpart" decisions on
+// this combined observation so a partial-visibility reconcile can never
+// trigger an unintended decommission.
+func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
 	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
 		canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
+
+		// Probe-check up front. We do BOTH the existing-fetch and the
+		// render under the same reachability decision so a probe flip
+		// mid-iteration can't leave us with a partial view (existing
+		// populated, desired empty) that ToScaleDown would misread as
+		// "user removed all pools in this cluster". Local cluster is
+		// always considered reachable.
+		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
+			logger.Info("remote cluster unreachable (probe), skipping pool fetch+render", "cluster", canonical)
+			continue
+		}
+
 		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
 		if err != nil {
 			return nil, fmt.Errorf("fetching existing pools: %w", err)
@@ -427,6 +519,18 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 		}
 		pools.addExisting(existingPools...)
 		pools.addDesired(wrapped...)
+
+		// Mark this cluster fully observed ONLY if every upstream fetch
+		// for it also succeeded. The local cluster is unconditionally
+		// observed (its NodePool list was either observed too, or it's
+		// the only place we could see anything anyway). Remote clusters
+		// require the NodePool-list observation from the earlier call.
+		if clusterName == mcmanager.LocalCluster || nodePoolsObserved[clusterName] {
+			pools.MarkClusterObserved(clusterName)
+		} else {
+			logger.Info("pool data fetched but NodePool list was not observed for cluster, not marking fully observed (no-desired-counterpart scale-down disabled for it)",
+				"cluster", canonical)
+		}
 	}
 
 	return pools, nil
@@ -575,6 +679,11 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 
 	var deleteErr error
 	for _, clusterName := range r.clusterList(owner) {
+		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
+			logger.Info("remote cluster unreachable (probe) in DeleteAll, skipping", "cluster", CanonicalClusterName(clusterName, r.manager.GetLocalClusterName))
+			allDeleted = false
+			continue
+		}
 		ctl, err := r.ctl(ctx, clusterName)
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
@@ -642,6 +751,10 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string) ([]*poolWithOrdinals, error) {
 	logger := log.FromContext(ctx).WithName("fetchExistingPools")
 	canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
+	if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
+		logger.Info("remote cluster unreachable (probe) in fetchExistingPools, treating as empty", "cluster", canonical)
+		return nil, nil
+	}
 	ctl, err := r.ctl(ctx, clusterName)
 	if err != nil {
 		if clusterName != mcmanager.LocalCluster {
@@ -652,7 +765,9 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	}
 
 	ownerLabels := r.ownershipResolver.GetOwnerLabels(cluster)
-	sets, err := kube.List[appsv1.StatefulSetList](ctx, ctl, cluster.GetNamespace(), client.MatchingLabels(ownerLabels))
+	listCtx, listCancel := context.WithTimeout(ctx, CallTimeoutFor(clusterName))
+	sets, err := kube.List[appsv1.StatefulSetList](listCtx, ctl, cluster.GetNamespace(), client.MatchingLabels(ownerLabels))
+	listCancel()
 	if err != nil {
 		if clusterName != mcmanager.LocalCluster {
 			logger.Info("could not list StatefulSets on remote cluster in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
@@ -666,7 +781,9 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		"ownerLabels", ownerLabels,
 		"setsFound", len(sets.Items),
 	)
-	expectedOwner, err := r.ownershipResolver.ResolveOwnerReference(ctx, cluster, clusterName, ctl)
+	ownerCtx, ownerCancel := context.WithTimeout(ctx, CallTimeoutFor(clusterName))
+	expectedOwner, err := r.ownershipResolver.ResolveOwnerReference(ownerCtx, cluster, clusterName, ctl)
+	ownerCancel()
 	if err != nil {
 		// If the cluster object doesn't exist on this cluster yet (e.g. during
 		// initial rollout), there can't be any owned StatefulSets either.
@@ -761,27 +878,45 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	return existing, nil
 }
 
-func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context.Context, cluster U) ([]*NodePoolInCluster, error) {
+// FetchExistingNodePoolsFromAllClusters returns the union of NodePools
+// referencing the given cluster across every engaged cluster, plus the set of
+// cluster names whose List actually succeeded (vs. being probe-skipped or
+// failing the call). The observed set is load-bearing for downstream
+// scale-down safety: when a cluster's NodePool list wasn't observed, the
+// renderer downstream can produce a desiredCount=0 for that cluster purely
+// because we never saw its NodePools — indistinguishable from a real
+// deletion. Callers must gate any "no desired counterpart → drain"
+// decision on the observed set so a transient fetch failure on a
+// partitioned peer can't be misread as user intent to remove all pools.
+func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context.Context, cluster U) ([]*NodePoolInCluster, map[string]bool, error) {
 	logger := log.FromContext(ctx)
 	var nodePools []*NodePoolInCluster
+	observed := map[string]bool{}
 	for _, clusterName := range r.clusterList(cluster) {
 		canonicalName := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
+		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
+			logger.Info("remote cluster unreachable (probe) in FetchExistingNodePoolsFromAllClusters, skipping", "cluster", canonicalName)
+			continue
+		}
 		ctl, err := r.ctl(ctx, clusterName)
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
 				logger.Info("remote cluster unreachable in FetchExistingNodePoolsFromAllClusters, skipping", "cluster", canonicalName, "error", err)
 				continue
 			}
-			return nil, err
+			return nil, nil, err
 		}
-		allNodePools, err := kube.List[redpandav1alpha2.NodePoolList](ctx, ctl, cluster.GetNamespace())
+		listCtx, listCancel := context.WithTimeout(ctx, CallTimeoutFor(clusterName))
+		allNodePools, err := kube.List[redpandav1alpha2.NodePoolList](listCtx, ctl, cluster.GetNamespace())
+		listCancel()
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
 				logger.Info("could not list NodePools on remote cluster, skipping", "cluster", canonicalName, "error", err)
 				continue
 			}
-			return nil, err
+			return nil, nil, err
 		}
+		observed[clusterName] = true
 		for _, pool := range allNodePools.Items {
 			clusterRef := pool.Spec.ClusterRef
 			if clusterRef.IsStretchCluster() && clusterRef.Name == cluster.GetName() {
@@ -792,7 +927,7 @@ func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context
 			}
 		}
 	}
-	return nodePools, nil
+	return nodePools, observed, nil
 }
 
 func setConfigVersionLabels(labels map[string]string, configVersion string) map[string]string {

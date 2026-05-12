@@ -482,7 +482,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 			ctx, cancel := setupContext()
 			defer cancel()
 
-			tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version")
+			tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil)
 			if tt.nodePoolsRenderError != nil {
 				require.Error(t, err)
 				require.ErrorIs(t, err, tt.nodePoolsRenderError)
@@ -503,7 +503,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 				require.NoError(t, instances.checkObject(ctx, t, pool.StatefulSet))
 			}
 
-			tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version")
+			tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil)
 			require.NoError(t, err)
 			require.ElementsMatch(t, pools, tracker.ExistingStatefulSets())
 			require.ElementsMatch(t, pools, tracker.DesiredStatefulSets())

@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
@@ -303,8 +304,17 @@ func (r *RenderState) fetchBootstrapUser() error {
 
 	secretName := fmt.Sprintf("%s-bootstrap-user", r.fullname())
 
+	// Bound the Get explicitly. fetchBootstrapUser runs inside NewRenderState
+	// per cluster the renderer iterates; without a deadline a partitioned peer's
+	// apiserver dial would hang the kernel TCP retry (~30–90s) and serialize
+	// across every render call in the reconcile, blowing the partition-detect
+	// SLA. Kept in sync with lifecycle.LocalCallTimeout — duplicated rather
+	// than imported to avoid an operator/multicluster → operator/internal/lifecycle
+	// import cycle (lifecycle already imports this package).
+	getCtx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
 	var existing corev1.Secret
-	if err := r.client.Get(context.Background(), kube.ObjectKey{Namespace: r.namespace, Name: secretName}, &existing); err != nil {
+	if err := r.client.Get(getCtx, kube.ObjectKey{Namespace: r.namespace, Name: secretName}, &existing); err != nil {
 		if k8sapierrors.IsNotFound(err) {
 			return nil
 		}
