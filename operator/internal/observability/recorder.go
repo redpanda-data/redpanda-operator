@@ -48,16 +48,18 @@ const (
 
 var (
 	// ReconcileSteadyStateTotal increments when a controller's Reconcile
-	// returns (Result{}, nil) — i.e. it observed the object, found nothing
-	// to do, and is not asking to be re-queued. Healthy controllers see this
-	// counter dominate over time once the system is converged. A controller
-	// whose `reconcile_total` rate is high but whose `steady_state_total`
-	// rate stays flat is spinning without making progress.
+	// returns "no work to do" — either (Result{}, nil) or a
+	// (Result{RequeueAfter: defaultRequeueTimeout}, nil) matching the
+	// controller's configured periodic-requeue interval. Healthy
+	// controllers see this counter dominate over time once the system
+	// is converged. A controller whose `reconcile_total` rate is high
+	// but whose `steady_state_total` rate stays flat is spinning
+	// without making progress.
 	ReconcileSteadyStateTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
 		Name:      "reconcile_steady_state_total",
-		Help:      "Reconciles that returned (Result{}, nil) — no work to do, no re-queue requested.",
+		Help:      "Reconciles that returned no-work — either (Result{}, nil) or the configured periodic-requeue shape.",
 	}, []string{"controller"})
 
 	// ReconcileRequeueAfterSeconds observes the duration carried by a
@@ -113,9 +115,11 @@ var (
 	}, []string{"controller", "kind"})
 
 	// ReconcileLastSuccessTimestampSeconds is the Unix timestamp of the
-	// most recent reconcile that returned (Result{}, nil) for a given
-	// controller. Prometheus computes "seconds since last success" at
-	// query time as `time() - operator_controller_reconcile_last_success_timestamp_seconds`,
+	// most recent steady-state reconcile for a given controller (see
+	// ReconcileSteadyStateTotal for the definition of steady state —
+	// both (Result{}, nil) and the periodic-requeue shape qualify).
+	// Prometheus computes "seconds since last success" at query time
+	// as `time() - operator_controller_reconcile_last_success_timestamp_seconds`,
 	// avoiding the goroutine / oldest-unfinished tracking that an
 	// imperative "seconds elapsed" gauge would need.
 	//

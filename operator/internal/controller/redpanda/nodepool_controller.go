@@ -152,7 +152,7 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster, controller.WatchOptions(clusterName)...)
 	}
 
-	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "NodePool")))
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "NodePool", periodicRequeue)))
 }
 
 // Reconcile reconciles NodePool objects

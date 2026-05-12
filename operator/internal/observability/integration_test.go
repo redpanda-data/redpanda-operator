@@ -112,7 +112,7 @@ func TestIntegrationObservabilityInfiniteReconcile(t *testing.T) {
 		callCount:  calls,
 		controller: controllerName,
 	}
-	wrapped := observability.Wrap[reconcile.Request](reconciler, controllerName)
+	wrapped := observability.Wrap[reconcile.Request](reconciler, controllerName, 0)
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		Named(controllerName).

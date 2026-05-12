@@ -1548,6 +1548,6 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 				LifecycleClient:  lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 				ClientFactory:    factory,
 				ReconcileTimeout: reconcileTimeout,
-			}, "StretchCluster"),
+			}, "StretchCluster", defaultReconcileTimeout),
 		)
 }

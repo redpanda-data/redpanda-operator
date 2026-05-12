@@ -154,7 +154,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		}
 	}
 
-	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "Redpanda")))
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "Redpanda", periodicRequeue)))
 }
 
 type clusterReconciliationState struct {

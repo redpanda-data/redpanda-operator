@@ -40,7 +40,7 @@ func (s *stubReconciler) Reconcile(_ context.Context, _ reconcile.Request) (reco
 
 func TestWrap_SteadyState_CountsZeroResultNoError(t *testing.T) {
 	stub := &stubReconciler{result: reconcile.Result{}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_Steady")
+	w := Wrap[reconcile.Request](stub, "TestController_Steady", 0)
 
 	before := readCounter(t, "operator_controller_reconcile_steady_state_total", map[string]string{"controller": "TestController_Steady"})
 	_, err := w.Reconcile(context.Background(), reconcile.Request{NamespacedName: ctrl.ObjectKey{Name: "x"}})
@@ -53,7 +53,7 @@ func TestWrap_SteadyState_CountsZeroResultNoError(t *testing.T) {
 
 func TestWrap_SteadyState_DoesNotCountErrorReturn(t *testing.T) {
 	stub := &stubReconciler{result: reconcile.Result{}, err: errors.New("boom")}
-	w := Wrap[reconcile.Request](stub, "TestController_Error")
+	w := Wrap[reconcile.Request](stub, "TestController_Error", 0)
 
 	before := readCounter(t, "operator_controller_reconcile_steady_state_total", map[string]string{"controller": "TestController_Error"})
 	_, err := w.Reconcile(context.Background(), reconcile.Request{})
@@ -68,7 +68,7 @@ func TestWrap_SteadyState_DoesNotCountRequeueReturn(t *testing.T) {
 	// a RequeueAfter > 0) is *not* steady state. The controller is
 	// explicitly saying "come back."
 	stub := &stubReconciler{result: reconcile.Result{RequeueAfter: 5 * time.Second}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_RequeueAfter")
+	w := Wrap[reconcile.Request](stub, "TestController_RequeueAfter", 0)
 
 	before := readCounter(t, "operator_controller_reconcile_steady_state_total", map[string]string{"controller": "TestController_RequeueAfter"})
 	_, err := w.Reconcile(context.Background(), reconcile.Request{})
@@ -80,7 +80,7 @@ func TestWrap_SteadyState_DoesNotCountRequeueReturn(t *testing.T) {
 
 func TestWrap_RequeueAfter_ObservesHistogram(t *testing.T) {
 	stub := &stubReconciler{result: reconcile.Result{RequeueAfter: 30 * time.Second}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_Histogram")
+	w := Wrap[reconcile.Request](stub, "TestController_Histogram", 0)
 
 	before := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds", map[string]string{"controller": "TestController_Histogram"})
 	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
@@ -91,12 +91,70 @@ func TestWrap_RequeueAfter_ObservesHistogram(t *testing.T) {
 	assert.Equal(t, before+3, after, "histogram must record one observation per RequeueAfter-returning reconcile")
 }
 
+func TestWrap_PeriodicRequeue_CountsAsSteadyState(t *testing.T) {
+	// A controller that returns Result{RequeueAfter: periodicRequeue}
+	// (the MulticlusterReconciler's defer-set pattern) is "I have
+	// nothing to do, wake me periodically" — semantically steady
+	// state. The wrapper counts it as such when the RequeueAfter
+	// matches the controller's configured defaultRequeueTimeout.
+	const periodic = 5 * time.Minute
+	stub := &stubReconciler{result: reconcile.Result{RequeueAfter: periodic}, err: nil}
+	w := Wrap[reconcile.Request](stub, "TestController_PeriodicSteady", periodic)
+
+	before := readCounter(t, "operator_controller_reconcile_steady_state_total",
+		map[string]string{"controller": "TestController_PeriodicSteady"})
+	_, err := w.Reconcile(context.Background(), reconcile.Request{})
+	require.NoError(t, err)
+	after := readCounter(t, "operator_controller_reconcile_steady_state_total",
+		map[string]string{"controller": "TestController_PeriodicSteady"})
+
+	assert.InDelta(t, before+1, after, 0.0001,
+		"a RequeueAfter matching defaultRequeueTimeout must count as steady state")
+}
+
+func TestWrap_PeriodicRequeue_SkippedFromHistogram(t *testing.T) {
+	// The periodic-requeue value would otherwise dominate the
+	// histogram and bury the tight-retry-loop signal it exists to
+	// surface. Filter it out.
+	const periodic = 5 * time.Minute
+	stub := &stubReconciler{result: reconcile.Result{RequeueAfter: periodic}, err: nil}
+	w := Wrap[reconcile.Request](stub, "TestController_PeriodicHistogram", periodic)
+
+	before := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds",
+		map[string]string{"controller": "TestController_PeriodicHistogram"})
+	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
+	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
+	after := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds",
+		map[string]string{"controller": "TestController_PeriodicHistogram"})
+
+	assert.Equal(t, before, after,
+		"periodic-requeue results must not be observed in the requeue-after histogram")
+}
+
+func TestWrap_NonPeriodicRequeue_NotSteadyState(t *testing.T) {
+	// A RequeueAfter that doesn't match the periodic value is an
+	// "I have real work pending" requeue and must stay out of the
+	// steady-state count even when defaultRequeueTimeout is set.
+	const periodic = 5 * time.Minute
+	stub := &stubReconciler{result: reconcile.Result{RequeueAfter: 100 * time.Millisecond}, err: nil}
+	w := Wrap[reconcile.Request](stub, "TestController_NonPeriodicRequeue", periodic)
+
+	before := readCounter(t, "operator_controller_reconcile_steady_state_total",
+		map[string]string{"controller": "TestController_NonPeriodicRequeue"})
+	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
+	after := readCounter(t, "operator_controller_reconcile_steady_state_total",
+		map[string]string{"controller": "TestController_NonPeriodicRequeue"})
+
+	assert.InDelta(t, before, after, 0.0001,
+		"a non-periodic RequeueAfter must not be counted as steady state")
+}
+
 func TestWrap_RequeueAfter_SkipsZeroDuration(t *testing.T) {
 	// Result{Requeue: true, RequeueAfter: 0} means "re-queue immediately."
 	// We don't observe the histogram for it — the histogram is keyed on
 	// the *delay*, and zero isn't a meaningful delay.
 	stub := &stubReconciler{result: reconcile.Result{Requeue: true}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_ImmediateRequeue")
+	w := Wrap[reconcile.Request](stub, "TestController_ImmediateRequeue", 0)
 
 	before := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds", map[string]string{"controller": "TestController_ImmediateRequeue"})
 	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
@@ -109,7 +167,7 @@ func TestWrap_PreservesInnerResultAndError(t *testing.T) {
 	wantResult := reconcile.Result{RequeueAfter: 7 * time.Second}
 	wantErr := errors.New("inner error")
 	stub := &stubReconciler{result: wantResult, err: wantErr}
-	w := Wrap[reconcile.Request](stub, "TestController_Passthrough")
+	w := Wrap[reconcile.Request](stub, "TestController_Passthrough", 0)
 
 	gotResult, gotErr := w.Reconcile(context.Background(), reconcile.Request{})
 	assert.Equal(t, wantResult, gotResult, "wrapper must return the inner reconciler's Result verbatim")
@@ -165,7 +223,7 @@ func TestWrap_LastSuccessTimestamp_SetOnSteadyState(t *testing.T) {
 	nowUnix = func() float64 { return 1700000000 }
 
 	stub := &stubReconciler{result: reconcile.Result{}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_LastSuccess")
+	w := Wrap[reconcile.Request](stub, "TestController_LastSuccess", 0)
 
 	_, err := w.Reconcile(context.Background(), reconcile.Request{})
 	require.NoError(t, err)
@@ -190,14 +248,14 @@ func TestWrap_LastSuccessTimestamp_NotUpdatedOnError(t *testing.T) {
 	// First write a known value via a successful reconcile.
 	nowUnix = func() float64 { return 1700000000 }
 	steady := &stubReconciler{result: reconcile.Result{}, err: nil}
-	wSteady := Wrap[reconcile.Request](steady, "TestController_NoAdvanceOnError")
+	wSteady := Wrap[reconcile.Request](steady, "TestController_NoAdvanceOnError", 0)
 	_, _ = wSteady.Reconcile(context.Background(), reconcile.Request{})
 
 	// Now move the clock and run an erroring reconcile — the gauge must
 	// keep the earlier value.
 	nowUnix = func() float64 { return 1700000060 }
 	failing := &stubReconciler{result: reconcile.Result{}, err: errors.New("boom")}
-	wFail := Wrap[reconcile.Request](failing, "TestController_NoAdvanceOnError")
+	wFail := Wrap[reconcile.Request](failing, "TestController_NoAdvanceOnError", 0)
 	_, _ = wFail.Reconcile(context.Background(), reconcile.Request{})
 
 	got := readGauge(t, "operator_controller_reconcile_last_success_timestamp_seconds",
@@ -213,12 +271,12 @@ func TestWrap_LastSuccessTimestamp_NotUpdatedOnRequeue(t *testing.T) {
 
 	nowUnix = func() float64 { return 1700000000 }
 	steady := &stubReconciler{result: reconcile.Result{}, err: nil}
-	wSteady := Wrap[reconcile.Request](steady, "TestController_NoAdvanceOnRequeue")
+	wSteady := Wrap[reconcile.Request](steady, "TestController_NoAdvanceOnRequeue", 0)
 	_, _ = wSteady.Reconcile(context.Background(), reconcile.Request{})
 
 	nowUnix = func() float64 { return 1700000060 }
 	spinning := &stubReconciler{result: reconcile.Result{RequeueAfter: 100 * time.Millisecond}, err: nil}
-	wSpin := Wrap[reconcile.Request](spinning, "TestController_NoAdvanceOnRequeue")
+	wSpin := Wrap[reconcile.Request](spinning, "TestController_NoAdvanceOnRequeue", 0)
 	_, _ = wSpin.Reconcile(context.Background(), reconcile.Request{})
 
 	got := readGauge(t, "operator_controller_reconcile_last_success_timestamp_seconds",
