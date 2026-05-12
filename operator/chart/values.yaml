@@ -153,6 +153,9 @@ vectorizedControllers:
 monitoring:
   # -- Creates a ServiceMonitor that can be used by Prometheus-Operator or VictoriaMetrics-Operator to scrape the metrics.
   enabled: false
+  # -- Creates a PrometheusRule with the recommended recording rules and alerts for the operator's reconcile health.
+  # Independent of `monitoring.enabled` so consumers can opt into rules without also wanting the ServiceMonitor (e.g. if Prometheus is configured to scrape another way).
+  rulesEnabled: false
   # -- Sets the scrape interval for the ServiceMonitor endpoint. Leave empty to use the Prometheus global default.
   scrapeInterval: ""
   # -- Additional labels to add to the ServiceMonitor metadata.

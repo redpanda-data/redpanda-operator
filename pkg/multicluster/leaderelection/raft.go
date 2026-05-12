@@ -41,12 +41,6 @@ type peer struct {
 	// tick anyway. Size chosen to comfortably absorb one burst of catch-
 	// up MsgApp entries for a fresh follower without dropping.
 	sendCh chan raftpb.Message
-
-	// dropCount is the cumulative number of messages dropped because
-	// sendCh was full. Exported via the periodic logger
-	// (runDropLogger) so a chronically saturated peer is observable
-	// instead of silently invisible.
-	dropCount atomic.Uint64
 }
 
 // peerSendQueueSize is the bounded capacity of each peer's send queue.
@@ -349,8 +343,21 @@ func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, e
 		return false, fmt.Errorf("unknown peer %d", msg.To)
 	}
 
+	label := peerLabel(t, msg.To)
+
+	// Track concurrent sends per peer; the histogram captures wall-clock
+	// duration of one DoSend call so cross-region RTT dispersion is
+	// visible to investigators.
+	inflightRPCs.WithLabelValues(label).Inc()
+	start := time.Now()
+	defer func() {
+		inflightRPCs.WithLabelValues(label).Dec()
+	}()
+
 	data, err := msg.Marshal()
 	if err != nil {
+		sendErrorsTotal.WithLabelValues(label, "marshal").Inc()
+		sendDurationSeconds.WithLabelValues(label, "error").Observe(time.Since(start).Seconds())
 		return false, fmt.Errorf("marshaling message for peer %q: %w", peer.addr, err)
 	}
 
@@ -365,68 +372,66 @@ func (t *grpcTransport) DoSend(ctx context.Context, msg raftpb.Message) (bool, e
 		Payload: data,
 	})
 	if err != nil {
+		sendErrorsTotal.WithLabelValues(label, sendErrorClass(err)).Inc()
+		sendDurationSeconds.WithLabelValues(label, "error").Observe(time.Since(start).Seconds())
 		return false, fmt.Errorf("sending to peer %q: %w", peer.addr, err)
 	}
 
+	sendDurationSeconds.WithLabelValues(label, "ok").Observe(time.Since(start).Seconds())
 	return resp.Applied, nil
+}
+
+// sendErrorClass maps a DoSend error to one of a fixed six-value
+// vocabulary for the `error_type` label, so cardinality stays small and
+// each bucket maps to a different on-call story:
+//
+//   - timeout:     DeadlineExceeded — peer silent or slow.
+//   - canceled:    Canceled — usually graceful shutdown.
+//   - unavailable: Unavailable — connection refused / dial failure / peer down.
+//   - auth:        Unauthenticated, PermissionDenied — TLS or RBAC misconfig.
+//   - marshal:     Local serialisation failure (raftpb.Message.Marshal).
+//   - other:       Anything else (rare — e.g. an unforeseen gRPC code).
+//
+// Callers that detect a marshal failure pass "marshal" directly without
+// going through this function. Everything else flows here.
+func sendErrorClass(err error) string {
+	if err == nil {
+		return "other"
+	}
+	if s, ok := status.FromError(err); ok {
+		switch s.Code() {
+		case codes.DeadlineExceeded:
+			return "timeout"
+		case codes.Canceled:
+			return "canceled"
+		case codes.Unavailable:
+			return "unavailable"
+		case codes.Unauthenticated, codes.PermissionDenied:
+			return "auth"
+		}
+	}
+	return "other"
 }
 
 // EnqueueSend hands a raftpb.Message off to the destination peer's
 // worker goroutine. Non-blocking: if the peer's send queue is full, the
 // message is dropped and raft will retransmit on the next tick. This is
 // the only send path the raft Ready loop uses — decoupling the loop
-// from any single slow peer.
+// from any single slow peer. Drops are counted by the
+// `raft_messages_dropped_total{peer}` metric so chronic saturation is
+// observable via standard alerting (`rate(... > X)`).
 func (t *grpcTransport) EnqueueSend(msg raftpb.Message) {
 	peer, ok := t.peers[msg.To]
 	if !ok {
 		return
 	}
+	label := peerLabel(t, msg.To)
 	select {
 	case peer.sendCh <- msg:
+		messagesSentTotal.WithLabelValues(msgTypeLabel(msg.Type), label).Inc()
 	default:
-		// Queue full. Raft re-sends on next tick. Bump the counter so
-		// runDropLogger can surface chronic saturation; logging on
-		// every miss would be too noisy on the hot path.
-		peer.dropCount.Add(1)
-	}
-}
-
-// dropLogInterval is how often runDropLogger samples each peer's
-// dropCount and emits a log line if the delta is non-zero. Tuned to be
-// short enough to catch transient saturation but quiet enough not to
-// flood logs on a healthy cluster (which never drops anything).
-const dropLogInterval = 30 * time.Second
-
-// runDropLogger periodically logs the per-peer EnqueueSend drop deltas
-// so a chronically saturated peer is operationally visible instead of
-// silently invisible. Healthy clusters never drop, so the goroutine is
-// log-silent in the common case. Exits on ctx cancellation.
-func (t *grpcTransport) runDropLogger(ctx context.Context) {
-	if t.logger == nil {
-		return
-	}
-	ticker := time.NewTicker(dropLogInterval)
-	defer ticker.Stop()
-
-	last := make(map[uint64]uint64, len(t.peers))
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			for id, p := range t.peers {
-				cur := p.dropCount.Load()
-				delta := cur - last[id]
-				if delta == 0 {
-					continue
-				}
-				last[id] = cur
-				t.logger.Infof(
-					"peer %d (%s): dropped %d raft messages in last %s due to full send queue (cumulative %d)",
-					id, p.addr, delta, dropLogInterval, cur,
-				)
-			}
-		}
+		// Queue full. Raft re-sends on next tick.
+		messagesDroppedTotal.WithLabelValues(label).Inc()
 	}
 }
 
@@ -453,8 +458,11 @@ func (t *grpcTransport) runPeerSender(ctx context.Context, id uint64, peer *peer
 // snapshot-on-reject path is easier to read without deeply-nested
 // control flow inside the select.
 func (t *grpcTransport) sendOneMessage(ctx context.Context, id uint64, msg raftpb.Message) {
+	label := peerLabel(t, id)
+
 	applied, err := t.DoSend(ctx, msg)
 	if err == nil && applied {
+		peerReachable.WithLabelValues(label).Set(1)
 		return
 	}
 
@@ -474,16 +482,19 @@ func (t *grpcTransport) sendOneMessage(ctx context.Context, id uint64, msg raftp
 			if snapErr != nil && t.logger != nil {
 				t.logger.Errorf("failed to get snapshot for peer %d: %v", id, snapErr)
 			} else if !raft.IsEmptySnap(snap) {
+				snapshotsSentTotal.WithLabelValues(label).Inc()
 				if _, sendErr := t.DoSend(ctx, raftpb.Message{
 					Type:     raftpb.MsgSnap,
 					To:       id,
 					From:     t.localID,
 					Snapshot: &snap,
 				}); sendErr != nil {
+					snapshotSendErrorsTotal.WithLabelValues(label).Inc()
 					if t.logger != nil {
 						t.logger.Infof("failed to send snapshot to %d: %v", id, sendErr)
 					}
 				} else {
+					peerReachable.WithLabelValues(label).Set(1)
 					if t.testHooks != nil && t.testHooks.OnSnapshotSent != nil {
 						t.testHooks.OnSnapshotSent(id)
 					}
@@ -495,6 +506,8 @@ func (t *grpcTransport) sendOneMessage(ctx context.Context, id uint64, msg raftp
 		}
 	}
 
+	peerReachable.WithLabelValues(label).Set(0)
+	unreachableReportsTotal.WithLabelValues(label).Inc()
 	if node := t.getNode(); node != nil {
 		node.ReportUnreachable(id)
 	}
@@ -557,6 +570,19 @@ func (t *grpcTransport) Send(ctx context.Context, req *transportv1.SendRequest) 
 				From: msg.From,
 			})
 		}
+
+		// Record the inbound message after the unmarshal-and-clamp gate
+		// so we don't count messages that arrive corrupted (those return
+		// before reaching here). msg.From is 0 for messages that carry
+		// no peer identity (rare, e.g. internal proposals); fall back to
+		// "unknown" so the metric label is stable.
+		var fromLabel string
+		if msg.From != 0 {
+			fromLabel = peerLabel(t, msg.From)
+		} else {
+			fromLabel = "unknown"
+		}
+		messagesReceivedTotal.WithLabelValues(msgTypeLabel(msg.Type), fromLabel).Inc()
 
 		err := node.Step(ctx, msg)
 		if err == nil {
@@ -670,9 +696,6 @@ func (t *grpcTransport) Run(ctx context.Context) error {
 	for id, p := range t.peers {
 		go t.runPeerSender(ctx, id, p)
 	}
-	// Periodically surface per-peer EnqueueSend drops so chronic queue
-	// saturation is visible without logging on every dropped message.
-	go t.runDropLogger(ctx)
 
 	done := make(chan struct{})
 	errs := make(chan error, 1)

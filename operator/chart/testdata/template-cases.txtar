@@ -220,3 +220,7 @@ multicluster:
     type: LoadBalancer
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+-- monitoring-rules-enabled --
+monitoring:
+  rulesEnabled: true

@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Added operator reconcile-health metrics under the `operator_controller_*` family: `reconcile_steady_state_total` (counter) and `reconcile_requeue_after_seconds` (histogram) emitted automatically for every controller via a wrapping `Reconciler` middleware, plus opt-in `reconcile_observed_generation_drift` (gauge) and `reconcile_spec_hash_changed_without_generation_total` (counter) that controllers can populate via `observability.RecordObservedGeneration` / `RecordSpecHashChangedWithoutGeneration`. New `monitoring.rulesEnabled` chart value ships a starter PrometheusRule with recording rules and alerts (runaway reconcile rate, sustained errors, stalled controller, generation drift, non-deterministic specs). Metric inventory at `docs/operator-metrics.md`; starter Grafana dashboard at `docs/operator-grafana-dashboard.json`.'
+time: 2026-05-11T15:08:35.59118667+02:00

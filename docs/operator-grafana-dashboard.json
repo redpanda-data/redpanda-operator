@@ -1,0 +1,884 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "Prometheus datasource scraping the redpanda-operator /metrics endpoint.",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Redpanda operator full-stack observability — multicluster raft, StretchCluster member status, and operator reconcile health. Each panel description ends with a How-to-read hint summarising the healthy state and what spikes / drops mean. See docs/operator-metrics.md for the metric inventory.",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "type": "row",
+      "title": "Multicluster raft (cross-cluster leader election)",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "id": 100,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "stat",
+      "title": "Current leader",
+      "description": "last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1, evaluated as an instant query so the panel shows the leader at \"now\" rather than every peer that was ever leader during the dashboard time range. The 1-minute window drops stale series from killed peers.\n\nHow to read: one peer name = healthy. Empty = no leader right now (cluster is mid-election or wedged). Two or more would mean two peers were leader within the last minute — only realistic during a fresh transition.",
+      "id": 40,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 8,
+        "h": 6
+      },
+      "targets": [
+        {
+          "expr": "last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1",
+          "legendFormat": "{{vcluster}} / {{pod}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "no leader / not multicluster operator"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "stat",
+      "title": "Raft term",
+      "description": "operator_multicluster_raft_term. Monotonic counter that ticks every election (successful or not). After steady state, all peers agree on the same value.\n\nHow to read: stable value = healthy. Rapid jumps = leader churn / election storms.",
+      "id": 41,
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 8,
+        "h": 6
+      },
+      "targets": [
+        {
+          "expr": "max(operator_multicluster_raft_term)",
+          "legendFormat": "term",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Leader changes (last 10m)",
+      "description": "increase(operator_multicluster_raft_leader_changes_total[10m]) — total leader transitions observed over a rolling 10-minute window. A single transition (e.g. after killing the leader pod) lands as 1 and decays back to 0 after ~10m.\n\nHow to read: 0 = healthy. 1–2 = normal pod restart / rolling upgrade. Sustained ≥ 3 = flapping (network instability or load on the leader).",
+      "id": 42,
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 8,
+        "h": 6
+      },
+      "targets": [
+        {
+          "expr": "max(increase(operator_multicluster_raft_leader_changes_total[10m]))",
+          "legendFormat": "changes / 10m",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Send latency p99 (per peer, leader's view)",
+      "description": "histogram_quantile(0.99, ...) of operator_multicluster_raft_send_duration_seconds, filtered to the current leader (so only one perspective is shown). Cross-region RTT dispersion is the headline cross-cluster perf signal.\n\nHow to read: p99 < ~100ms is great for cross-region. < 500ms is acceptable. > 1s sustained means the cross-cluster network is degraded.",
+      "id": 43,
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, peer) (rate(operator_multicluster_raft_send_duration_seconds_bucket[5m])) * on(instance) group_left() (operator_multicluster_raft_state{state=\"leader\"} == 1))",
+          "legendFormat": "{{peer}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Send queue length (per sender → destination)",
+      "description": "operator_multicluster_raft_send_queue_length — every peer emits its own view of every destination peer (including itself, queue length 0), so each (sender, destination) pair gets its own series. Legend reads sender → destination.\n\nHow to read: 0 is good. Sustained > 0 on a (sender → destination) means that sender's queue to that destination is filling up — the destination peer can't drain at the rate raft is producing, usually because the cross-cluster link is slow or the destination is GC-thrashing.",
+      "id": 44,
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "operator_multicluster_raft_send_queue_length",
+          "legendFormat": "{{vcluster}} → {{peer}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Messages sent / received rate (heartbeats, append)",
+      "description": "rate of operator_multicluster_raft_messages_{sent,received}_total restricted to msg_type=heartbeat|append. Steady-state cluster shows a regular cadence (~10 heartbeats/s per peer pair by default).\n\nHow to read: regular flat lines for heartbeats = healthy. Append spikes during config writes are normal. Sudden flat-line on heartbeats = peer disconnected.",
+      "id": 45,
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (msg_type, peer) (rate(operator_multicluster_raft_messages_sent_total{msg_type=~\"heartbeat|append\"}[5m]))",
+          "legendFormat": "sent — {{peer}}/{{msg_type}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (msg_type, peer) (rate(operator_multicluster_raft_messages_received_total{msg_type=~\"heartbeat|append\"}[5m]))",
+          "legendFormat": "recv — {{peer}}/{{msg_type}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Send errors (last 5m, by class)",
+      "description": "increase(operator_multicluster_raft_send_errors_total[5m]) by peer and error class — total errors of each class accumulated in a rolling 5-minute window. Reported as a count rather than ops/s because errors are typically rare events; the rolling count reads more naturally (e.g. \"25 errors\" rather than \"0.083 ops/s\"). Classes: timeout (DeadlineExceeded — peer silent / slow), canceled (Canceled — graceful shutdown), unavailable (peer down / dial failure), auth (TLS / RBAC misconfig), marshal (local serialisation bug), other (anything else).\n\nHow to read: 0 is healthy. Any sustained non-zero count points at the matching root cause — timeout = network or slow peer, unavailable = peer dead, auth = TLS rotation / RBAC misconfig.",
+      "id": 46,
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (peer, error_type) (increase(operator_multicluster_raft_send_errors_total[5m]))",
+          "legendFormat": "{{peer}}/{{error_type}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Follower match-lag entries (leader's view)",
+      "description": "operator_multicluster_raft_follower_match_lag_entries × leader marker, aggregated to one series per peer. Leader's last log index minus each follower's matched index. last_over_time(...[1m]) on the leader filter drops the stale series after a leader pod is killed.\n\nHow to read: 0 on every peer = healthy. Climbing on a peer = that follower is falling behind the leader's log. A few entries of lag are fine during a write burst; thousands and growing = problem.",
+      "id": 47,
+      "gridPos": {
+        "x": 0,
+        "y": 29,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (peer) (operator_multicluster_raft_follower_match_lag_entries * on(instance) group_left() (last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1))",
+          "legendFormat": "{{peer}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Peer reachability + dropped messages",
+      "description": "operator_multicluster_raft_peer_reachable (0/1) overlaid with rate(operator_multicluster_raft_messages_dropped_total[5m]). Each peer emits its own view of every other peer, so the legend reads sender → destination.\n\nHow to read: reachable=1 always + dropped=0 always = healthy. reachable=0 means that sender's last attempt to that destination failed (transient or sustained). Drops correlate with reachable=0 windows — when a peer is unreachable, EnqueueSend can't fit messages into the per-peer queue and they're dropped (raft retransmits on the next tick, so isolated drops are harmless; sustained drops mean a peer is chronically unreachable).",
+      "id": 48,
+      "gridPos": {
+        "x": 12,
+        "y": 29,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "operator_multicluster_raft_peer_reachable",
+          "legendFormat": "reachable — {{vcluster}} → {{peer}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(operator_multicluster_raft_messages_dropped_total[5m])",
+          "legendFormat": "dropped/s — {{vcluster}} → {{peer}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "state-timeline",
+      "title": "Leadership history",
+      "description": "Status timeline of which peer was the raft leader over time. Each row is one vCluster peer; coloured segments mark the windows where that peer reported state=leader=1. Aggregated with max by (vcluster) so pod restarts (which create new instance/pod label sets while reusing the vcluster external label) appear on a single row.\n\nHow to read: a single long green bar on one peer = stable leadership. Stripes across multiple peers = leader flapping (correlate with the Send latency / Send errors panels to find the cause).",
+      "id": 49,
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 24,
+        "h": 6
+      },
+      "targets": [
+        {
+          "expr": "max by (vcluster) (operator_multicluster_raft_state{state=\"leader\"})",
+          "legendFormat": "{{vcluster}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 70,
+            "lineWidth": 0
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "follower",
+                  "color": "transparent"
+                },
+                "1": {
+                  "text": "LEADER",
+                  "color": "green"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "unit": "short"
+        }
+      },
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "alignValue": "left"
+      }
+    },
+    {
+      "type": "row",
+      "title": "StretchCluster member status",
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 24,
+        "h": 1
+      },
+      "id": 101,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Member reachability (per StretchCluster, per member)",
+      "description": "max by (stretchcluster, member) (operator_stretchcluster_member_reachable). Aggregated so the panel shows one line per (stretchcluster, member) — each peer emits its own view of every member, the aggregation dedupes them.\n\nHow to read: 1 on every member = healthy. 0 on a member = that peer's apiserver is unreachable from this operator (real outage or transient hiccup). Brief dips are normal; sustained 0 means a peer is genuinely down.",
+      "id": 30,
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (stretchcluster, member) (operator_stretchcluster_member_reachable)",
+          "legendFormat": "{{stretchcluster}} / {{member}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Broker shortfall (desired − ready, per member)",
+      "description": "max by (stretchcluster, member) (operator_stretchcluster_brokers − operator_stretchcluster_brokers_ready). The gap between desired and ready broker counts per member.\n\nHow to read: 0 on every member = healthy. A spike > 0 means brokers on that member are unscheduled, crashlooping, or failing readiness. Expected briefly during scale-up or rolling restarts; sustained > 0 means a pod won't come up.",
+      "id": 31,
+      "gridPos": {
+        "x": 12,
+        "y": 38,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (stretchcluster, member) (operator_stretchcluster_brokers - operator_stretchcluster_brokers_ready)",
+          "legendFormat": "{{stretchcluster}} / {{member}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Spec drift (per member)",
+      "description": "max by (stretchcluster, member) (operator_stretchcluster_spec_drift). 1 means that member's local StretchCluster.spec differs from the operator's view; 0 means they match.\n\nHow to read: 0 on every member = healthy. A 1 on any member means someone applied a stale manifest to that peer and reconciliation is blocked across all peers until the spec is realigned. Re-apply the canonical manifest to clear.",
+      "id": 32,
+      "gridPos": {
+        "x": 0,
+        "y": 46,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (stretchcluster, member) (operator_stretchcluster_spec_drift)",
+          "legendFormat": "{{stretchcluster}} / {{member}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Replication health (per StretchCluster)",
+      "description": "max by (stretchcluster) (operator_stretchcluster_replication_health). Cluster-wide replication health from the admin API.\n\nHow to read: 1 = healthy (all brokers up, no under-replicated partitions). 0 = unhealthy; check broker readiness and the admin API directly (rpk cluster health) for the specific cause.",
+      "id": 33,
+      "gridPos": {
+        "x": 12,
+        "y": 46,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (stretchcluster) (operator_stretchcluster_replication_health)",
+          "legendFormat": "{{stretchcluster}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "type": "row",
+      "title": "Reconcile activity",
+      "gridPos": {
+        "x": 0,
+        "y": 54,
+        "w": 24,
+        "h": 1
+      },
+      "id": 102,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Reconcile rate (per controller)",
+      "description": "controller_runtime_reconcile_total / sec, summed by controller.\n\nHow to read: low and steady (typically under 1/s per controller once the system has converged) = healthy. Sustained high rate on a stable cluster = controller is churning (often a self-triggered loop) — cross-check the Steady-state-vs-total panel to confirm.",
+      "id": 1,
+      "gridPos": {
+        "x": 0,
+        "y": 55,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (controller) (rate(controller_runtime_reconcile_total[5m]))",
+          "legendFormat": "{{controller}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Reconcile error rate (per controller)",
+      "description": "controller_runtime_reconcile_errors_total / sec, summed by controller.\n\nHow to read: 0 = healthy. Sustained > 0.1/s on any controller = that controller is failing reconciles consistently; check the operator pod logs and the relevant resource's status conditions.",
+      "id": 2,
+      "gridPos": {
+        "x": 12,
+        "y": 55,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m]))",
+          "legendFormat": "{{controller}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Reconcile duration p99 (per controller)",
+      "description": "histogram_quantile(0.99, ...) of controller_runtime_reconcile_time_seconds.\n\nHow to read: sub-second is healthy for most controllers. Climbing p99 = controller is slowing down (admin API call, large resource list, slow apiserver, etc.). Sustained > a few seconds = something is wrong.",
+      "id": 3,
+      "gridPos": {
+        "x": 0,
+        "y": 63,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, controller) (rate(controller_runtime_reconcile_time_seconds_bucket[5m])))",
+          "legendFormat": "{{controller}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Steady-state vs total reconciles",
+      "description": "Two rates per controller: total reconciles vs reconciles that returned (Result{}, nil) — i.e. no work to do, no re-queue requested.\n\nHow to read: lines should track each other after the initial convergence. A persistent gap (total > steady) means reconciles are repeatedly returning Result{RequeueAfter: ...}, i.e. work-in-progress. If total stays high while steady stays flat, the controller is spinning without making progress.",
+      "id": 4,
+      "gridPos": {
+        "x": 12,
+        "y": 63,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (controller) (rate(operator_controller_reconcile_steady_state_total[5m]))",
+          "legendFormat": "steady — {{controller}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (controller) (rate(controller_runtime_reconcile_total[5m]))",
+          "legendFormat": "total — {{controller}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "type": "row",
+      "title": "Queues & workers",
+      "gridPos": {
+        "x": 0,
+        "y": 71,
+        "w": 24,
+        "h": 1
+      },
+      "id": 103,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Workqueue depth (per controller)",
+      "description": "workqueue_depth — items waiting to be reconciled per controller.\n\nHow to read: oscillates near 0 = healthy. Sustained growth = controller can't keep up; increase MaxConcurrentReconciles or investigate per-reconcile latency.",
+      "id": 10,
+      "gridPos": {
+        "x": 0,
+        "y": 72,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (name) (workqueue_depth)",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Active workers / max workers",
+      "description": "controller_runtime_active_workers ÷ controller_runtime_max_concurrent_reconciles per controller.\n\nHow to read: < 1.0 most of the time = pool has headroom. Pegged at 1.0 sustained = saturation; per-reconcile latency is the bottleneck.",
+      "id": 11,
+      "gridPos": {
+        "x": 8,
+        "y": 72,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "controller_runtime_active_workers / on(controller) controller_runtime_max_concurrent_reconciles",
+          "legendFormat": "{{controller}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Workqueue retries rate (per controller)",
+      "description": "workqueue_retries_total / sec per controller — controller-runtime re-queues an item every time Reconcile returns an error or Result.Requeue=true.\n\nHow to read: 0 or near-0 = healthy. Sustained non-zero = controller can't make progress on something; correlate with the Reconcile error rate panel to confirm.",
+      "id": 12,
+      "gridPos": {
+        "x": 16,
+        "y": 72,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (name) (rate(workqueue_retries_total[5m]))",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "type": "row",
+      "title": "Reconcile-health signals (operator-specific)",
+      "gridPos": {
+        "x": 0,
+        "y": 80,
+        "w": 24,
+        "h": 1
+      },
+      "id": 104,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Requeue-after duration distribution (p99)",
+      "description": "histogram_quantile(0.99, ...) of operator_controller_reconcile_requeue_after_seconds. Distribution of Result.RequeueAfter durations returned by each controller.\n\nHow to read: minutes-to-hours = normal long-poll waits (reconcilers backing off until they expect change). A tight cluster of sub-second values means a tight retry loop — controller is asking to be re-invoked every fraction of a second.",
+      "id": 20,
+      "gridPos": {
+        "x": 0,
+        "y": 81,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, controller) (rate(operator_controller_reconcile_requeue_after_seconds_bucket[5m])))",
+          "legendFormat": "{{controller}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Observed-generation drift (per controller, per kind)",
+      "description": "operator_controller_reconcile_observed_generation_drift — metadata.generation minus status.observedGeneration at the end of the most recent reconcile. Only populated by controllers that opt into observability.RecordObservedGeneration.\n\nHow to read: 0 = healthy. Sustained non-zero on a (controller, kind) means the controller has seen newer specs than its last successful reconciliation produced status for — it's behind.",
+      "id": 21,
+      "gridPos": {
+        "x": 12,
+        "y": 81,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "operator_controller_reconcile_observed_generation_drift",
+          "legendFormat": "{{controller}}/{{kind}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Non-deterministic spec writes (last 10m, per controller / kind)",
+      "description": "increase(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m]) — total non-deterministic writes accumulated in a rolling 10-minute window. Reported as a count rather than ops/s because non-determinism is rare in healthy code; a 5–10m count is more readable than a sub-ops/s rate. Increments when a spec update was a no-op from the API server's perspective (generation didn't advance) but the rendered spec hash differed run-to-run.\n\nHow to read: 0 = healthy. Any sustained count is a bug in spec-rendering code (timestamps, map iteration order, similar non-determinism) — track down which controller / kind, then look for non-deterministic inputs.",
+      "id": 22,
+      "gridPos": {
+        "x": 0,
+        "y": 89,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (controller, kind) (increase(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m]))",
+          "legendFormat": "{{controller}}/{{kind}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "stat",
+      "title": "Self-triggered reconciles",
+      "description": "operator_controller_reconcile_self_triggered_total — reconciles whose only effect was a write that re-enqueued the same object. Sustained non-zero would be a strong signal of a self-triggering loop. The metric is reserved for a future controller-side opt-in helper; this panel renders 'N/A' until then.\n\nHow to read: N/A while not emitted. Once wired, expect 0 in healthy state and treat any non-zero rate as a self-loop bug.",
+      "id": 23,
+      "gridPos": {
+        "x": 12,
+        "y": 89,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (controller) (rate(operator_controller_reconcile_self_triggered_total[5m]))",
+          "legendFormat": "{{controller}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "N/A — metric not yet emitted"
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "redpanda",
+    "operator",
+    "raft",
+    "stretchcluster",
+    "reconcile-health"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Redpanda Operator — Full Observability",
+  "uid": "redpanda-operator-observability",
+  "version": 3,
+  "weekStart": ""
+}

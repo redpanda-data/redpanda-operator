@@ -323,6 +323,23 @@ func run(ctx context.Context, config LockConfiguration, transportCallback func(t
 		transport.testHooks = config.TestHooks
 	}
 
+	// Register the gauge-style metrics whose source-of-truth lives on
+	// the transport (is_leader / state / term / send_queue_length). The
+	// registry rejects duplicate Collectors, which would fire if the
+	// same process called Run twice — call sites that exercise multiple
+	// raft instances in the same test binary should clear the registry
+	// between runs (see metrics_test.go for how the integration tests
+	// handle this). Production has exactly one transport per process.
+	if err := RegisterTransport(transport); err != nil {
+		// Treat double-registration as non-fatal — already-registered
+		// means the previous transport's collector is still bound to a
+		// stale grpcTransport. That's a programmer error to flag, not
+		// a reason to abort startup.
+		if config.Logger != nil {
+			config.Logger.Errorf("registering raft metrics collector: %v", err)
+		}
+	}
+
 	for node, address := range nodes {
 		if config.Logger != nil {
 			config.Logger.Infof("node: %d, address: %s", node, address)
@@ -412,6 +429,7 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 
 	isLeader := false
 	initialized := false
+	var prevLeader uint64
 	for {
 		select {
 		case <-ctx.Done():
@@ -445,6 +463,37 @@ func runRaft(ctx context.Context, transport *grpcTransport, config LockConfigura
 			transport.raftState.Store(raftState.String())
 			if rd.HardState.Term != 0 {
 				transport.term.Store(rd.HardState.Term)
+			}
+
+			// Cluster-wide leader change counter. Increment on every observed
+			// transition to a new non-zero leader (zero == no leader, e.g.
+			// during election). Scraped from the leader, this answers
+			// "how many leader changes has the cluster seen."
+			if leader != prevLeader && leader != 0 {
+				leaderChangesTotal.Inc()
+			}
+			prevLeader = leader
+
+			// On the leader, populate the per-follower lag gauge from
+			// node.Status().Progress. Progress is leader-only — on followers
+			// we leave the gauge untouched (it reads as the last value, or
+			// zero before any observation, which is fine because consumers
+			// federate from the leader).
+			if isLeader {
+				if last, err := storage.LastIndex(); err == nil {
+					st := node.Status()
+					for id, prog := range st.Progress {
+						if id == config.ID {
+							followerMatchLagEntries.WithLabelValues(peerLabel(transport, id)).Set(0)
+							continue
+						}
+						lag := int64(last) - int64(prog.Match)
+						if lag < 0 {
+							lag = 0
+						}
+						followerMatchLagEntries.WithLabelValues(peerLabel(transport, id)).Set(float64(lag))
+					}
+				}
 			}
 
 			if callbacks != nil && callbacks.SetLeader != nil {

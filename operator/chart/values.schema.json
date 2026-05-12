@@ -876,14 +876,8 @@
         "enabled": {
           "type": "boolean"
         },
-        "labels": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "scrapeInterval": {
-          "type": "string"
+        "rulesEnabled": {
+          "type": "boolean"
         }
       },
       "type": "object"
