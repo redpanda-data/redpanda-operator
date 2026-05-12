@@ -198,6 +198,9 @@ echo "passed"`) -}}
 {{- if (and (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r") $state.Values.rackAwareness.enabled) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure Rack Awareness` `set +x` (printf `RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')` (squote (quote $state.Values.rackAwareness.nodeAnnotation))) `set -x` `rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`)) -}}
 {{- end -}}
+{{- if (and (and (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r") (ne (toJson $state.Values.config.schema_registry_client) "null")) (ne (toJson $state.Values.config.schema_registry_client.saslSecretRef) "null")) -}}
+{{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Inject schema_registry_client SCRAM credentials from saslSecretRef` `# (env vars are projected from the named Secret in the StatefulSet).` `set +x` `rpk --config "$CONFIG" redpanda config set schema_registry_client.scram_username "${SCHEMA_REGISTRY_CLIENT_USERNAME}"` `rpk --config "$CONFIG" redpanda config set schema_registry_client.scram_password "${SCHEMA_REGISTRY_CLIENT_PASSWORD}"` (printf `rpk --config "$CONFIG" redpanda config set schema_registry_client.sasl_mechanism %s` (quote (toString "SCRAM-SHA-512"))) `set -x`)) -}}
+{{- end -}}
 {{- $_ := (set $secret.stringData "configurator.sh" (join "\n" $configuratorSh)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $secret) | toJson -}}

@@ -1250,6 +1250,11 @@ statefulset:
 # ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client.scram_username"]
 # ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client.scram_password"]
 # ASSERT-FIELD-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client.sasl_mechanism"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.scram_username"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.scram_password"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.sasl_mechanism"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "SCHEMA_REGISTRY_CLIENT_USERNAME"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "SCHEMA_REGISTRY_CLIENT_PASSWORD"]
 auth:
   sasl:
     enabled: true
@@ -1265,6 +1270,7 @@ config:
 # ASSERT-NO-ERROR
 # ASSERT-FIELD-NOT-CONTAINS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[*].name}", "SCHEMA_REGISTRY_CLIENT_USERNAME"]
 # ASSERT-FIELD-NOT-CONTAINS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml\\.fixups}", "schema_registry_client"]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.scram_username"]
 config:
   schema_registry_client:
     saslSecretRef:
