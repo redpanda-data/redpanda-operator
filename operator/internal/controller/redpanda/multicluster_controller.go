@@ -1366,18 +1366,9 @@ func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Clust
 				continue
 			}
 
-			// Detect self-triggering: if the status we're about to write
-			// is semantically identical to what's already on the remote,
-			// the Update would still bump resourceVersion and re-enqueue
-			// the StretchCluster reconciler on that peer — a canonical
-			// self-trigger loop. Recorded before the write so we measure
-			// "we knew it was a no-op and wrote anyway."
-			selfTrigger := apiequality.Semantic.DeepEqual(remoteSC.Status, state.cluster.StretchCluster.Status)
 			remoteSC.Status = *state.cluster.StretchCluster.Status.DeepCopy()
 			if syncErr := cl.GetClient().Status().Update(ctx, remoteSC); syncErr != nil {
 				err = errors.Join(err, errors.Wrapf(syncErr, "updating status on cluster %s", clusterName))
-			} else if selfTrigger {
-				observability.RecordSelfTriggered("StretchCluster", "StretchCluster")
 			}
 		}
 	}
@@ -1548,6 +1539,6 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 				LifecycleClient:  lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 				ClientFactory:    factory,
 				ReconcileTimeout: reconcileTimeout,
-			}, "StretchCluster", defaultReconcileTimeout),
+			}, "StretchCluster", periodicRequeue),
 		)
 }

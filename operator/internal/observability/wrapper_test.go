@@ -174,46 +174,6 @@ func TestWrap_PreservesInnerResultAndError(t *testing.T) {
 	assert.Equal(t, wantErr, gotErr, "wrapper must return the inner reconciler's error verbatim")
 }
 
-func TestRecordObservedGeneration_PositiveDrift(t *testing.T) {
-	// Object spec has advanced (generation=5) but status hasn't caught up
-	// (observedGeneration=3) — drift is 2.
-	RecordObservedGeneration("TestController_Drift", "MyKind", 5, 3)
-	got := readGauge(t, "operator_controller_reconcile_observed_generation_drift",
-		map[string]string{"controller": "TestController_Drift", "kind": "MyKind"})
-	assert.InDelta(t, 2, got, 0.0001)
-}
-
-func TestRecordObservedGeneration_ClampsNegativeToZero(t *testing.T) {
-	// observedGeneration > generation can happen briefly during a
-	// generation bump race. Clamp to 0 so the gauge stays semantically
-	// "how far behind."
-	RecordObservedGeneration("TestController_ClampNegative", "MyKind", 3, 5)
-	got := readGauge(t, "operator_controller_reconcile_observed_generation_drift",
-		map[string]string{"controller": "TestController_ClampNegative", "kind": "MyKind"})
-	assert.InDelta(t, 0, got, 0.0001)
-}
-
-func TestRecordSpecHashChangedWithoutGeneration_Increments(t *testing.T) {
-	before := readCounter(t, "operator_controller_reconcile_spec_hash_changed_without_generation_total",
-		map[string]string{"controller": "TestController_NonDet", "kind": "MyKind"})
-	RecordSpecHashChangedWithoutGeneration("TestController_NonDet", "MyKind")
-	RecordSpecHashChangedWithoutGeneration("TestController_NonDet", "MyKind")
-	after := readCounter(t, "operator_controller_reconcile_spec_hash_changed_without_generation_total",
-		map[string]string{"controller": "TestController_NonDet", "kind": "MyKind"})
-	assert.InDelta(t, before+2, after, 0.0001)
-}
-
-func TestRecordSelfTriggered_Increments(t *testing.T) {
-	before := readCounter(t, "operator_controller_reconcile_self_triggered_total",
-		map[string]string{"controller": "TestController_SelfTrig", "kind": "MyKind"})
-	RecordSelfTriggered("TestController_SelfTrig", "MyKind")
-	RecordSelfTriggered("TestController_SelfTrig", "MyKind")
-	RecordSelfTriggered("TestController_SelfTrig", "MyKind")
-	after := readCounter(t, "operator_controller_reconcile_self_triggered_total",
-		map[string]string{"controller": "TestController_SelfTrig", "kind": "MyKind"})
-	assert.InDelta(t, before+3, after, 0.0001)
-}
-
 func TestWrap_LastSuccessTimestamp_SetOnSteadyState(t *testing.T) {
 	// The gauge holds the unix timestamp of the most recent (Result{}, nil)
 	// return. We override nowUnix to a fixed value so the test is

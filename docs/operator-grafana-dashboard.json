@@ -522,7 +522,7 @@
       },
       "type": "timeseries",
       "title": "Reconcile rate (per controller)",
-      "description": "controller_runtime_reconcile_total / sec, summed by controller.\n\nHow to read: low and steady (typically under 1/s per controller once the system has converged) = healthy. Sustained high rate on a stable cluster = controller is churning (often a self-triggered loop) — cross-check the Steady-state-vs-total panel to confirm.",
+      "description": "controller_runtime_reconcile_total / sec, summed by controller.\n\nHow to read: low and steady (typically under 1/s per controller once the system has converged) = healthy. Sustained high rate on a stable cluster = controller is spinning — cross-check the Steady-state-vs-total panel to confirm.",
       "id": 1,
       "gridPos": {
         "x": 0,
@@ -756,7 +756,7 @@
       "gridPos": {
         "x": 0,
         "y": 81,
-        "w": 12,
+        "w": 24,
         "h": 8
       },
       "targets": [
@@ -778,97 +778,12 @@
         "uid": "${DS_PROMETHEUS}"
       },
       "type": "timeseries",
-      "title": "Observed-generation drift (per controller, per kind)",
-      "description": "operator_controller_reconcile_observed_generation_drift — metadata.generation minus status.observedGeneration at the end of the most recent reconcile. Only populated by controllers that opt into observability.RecordObservedGeneration.\n\nHow to read: 0 = healthy. Sustained non-zero on a (controller, kind) means the controller has seen newer specs than its last successful reconciliation produced status for — it's behind.",
-      "id": 21,
-      "gridPos": {
-        "x": 12,
-        "y": 81,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "expr": "operator_controller_reconcile_observed_generation_drift",
-          "legendFormat": "{{controller}}/{{kind}}",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short"
-        }
-      }
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "type": "timeseries",
-      "title": "Non-deterministic spec writes (last 10m, per controller / kind)",
-      "description": "increase(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m]) — total non-deterministic writes accumulated in a rolling 10-minute window. Reported as a count rather than ops/s because non-determinism is rare in healthy code; a 5–10m count is more readable than a sub-ops/s rate. Increments when a spec update was a no-op from the API server's perspective (generation didn't advance) but the rendered spec hash differed run-to-run.\n\nHow to read: 0 = healthy. Any sustained count is a bug in spec-rendering code (timestamps, map iteration order, similar non-determinism) — track down which controller / kind, then look for non-deterministic inputs.",
-      "id": 22,
-      "gridPos": {
-        "x": 0,
-        "y": 89,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "expr": "sum by (controller, kind) (increase(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m]))",
-          "legendFormat": "{{controller}}/{{kind}}",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "decimals": 0
-        }
-      }
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "type": "stat",
-      "title": "Self-triggered reconciles",
-      "description": "operator_controller_reconcile_self_triggered_total — reconciles whose only effect was a write that re-enqueued the same object. Populated by controllers that opt into observability.RecordSelfTriggered from their write helpers.\n\nHow to read: 0 ops/s = healthy. Any sustained non-zero rate on a controller is a self-loop bug — the controller is writing to its own resource in a way that re-enqueues the same reconcile without changing observable state.",
-      "id": 23,
-      "gridPos": {
-        "x": 12,
-        "y": 89,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "expr": "sum by (controller) (rate(operator_controller_reconcile_self_triggered_total[5m]))",
-          "legendFormat": "{{controller}}",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ops"
-        }
-      }
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "type": "timeseries",
       "title": "Seconds since last steady-state reconcile (per controller)",
-      "description": "time() - operator_controller_reconcile_last_success_timestamp_seconds — how long ago each controller last returned (Result{}, nil). The underlying gauge is set by the observability wrapper inside the steady-state branch; subtracting from time() at query time gives 'seconds since last success' without any goroutine bookkeeping.\n\nHow to read: bounded (rising then dropping back to ~0) = healthy reconcile cadence. Monotonically climbing past the controller's natural re-queue interval = the controller is failing every reconcile or spinning without reaching steady state. The companion alerts in monitoring.rulesEnabled fire on this signal.",
+      "description": "time() - operator_controller_reconcile_last_success_timestamp_seconds — how long ago each controller last reached steady state (either a (Result{}, nil) return or a periodic-requeue matching the controller's configured defaultRequeueTimeout). The underlying gauge is set by the observability wrapper inside the steady-state branch; subtracting from time() at query time gives 'seconds since last success' without any goroutine bookkeeping.\n\nHow to read: bounded (rising then dropping back to ~0) = healthy reconcile cadence. Monotonically climbing past the controller's natural re-queue interval = the controller is failing every reconcile or spinning without reaching steady state. The companion alerts in monitoring.rulesEnabled fire on this signal.",
       "id": 24,
       "gridPos": {
         "x": 0,
-        "y": 97,
+        "y": 89,
         "w": 24,
         "h": 8
       },
@@ -906,6 +821,6 @@
   "timezone": "",
   "title": "Redpanda Operator — Full Observability",
   "uid": "redpanda-operator-observability",
-  "version": 4,
+  "version": 6,
   "weekStart": ""
 }

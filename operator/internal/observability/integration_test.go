@@ -74,8 +74,6 @@ func (r *testReconciler) Reconcile(ctx context.Context, req reconcile.Request) (
 //   - Recovery phase: switching the reconciler to (Result{}, nil) must
 //     start accruing steady_state_total and must advance
 //     last_success_timestamp_seconds to a current timestamp.
-//   - Self-triggered: an explicit RecordSelfTriggered call must
-//     increment reconcile_self_triggered_total.
 //
 // The test exercises the wrapper inside a real controller-runtime
 // Manager driven by a real envtest apiserver — this catches breakage
@@ -184,16 +182,6 @@ func TestIntegrationObservabilityInfiniteReconcile(t *testing.T) {
 		"last_success_timestamp_seconds must hold a recent timestamp after recovery")
 
 	assert.Greater(t, calls.Load(), preSwitchCalls, "reconciler must be invoked again after the recovery write")
-
-	// -- Self-triggered counter --
-	beforeSelf := readCounter(t, "operator_controller_reconcile_self_triggered_total",
-		map[string]string{"controller": controllerName, "kind": "ConfigMap"})
-	observability.RecordSelfTriggered(controllerName, "ConfigMap")
-	observability.RecordSelfTriggered(controllerName, "ConfigMap")
-	afterSelf := readCounter(t, "operator_controller_reconcile_self_triggered_total",
-		map[string]string{"controller": controllerName, "kind": "ConfigMap"})
-	assert.InDelta(t, beforeSelf+2, afterSelf, 0.0001,
-		"RecordSelfTriggered must increment reconcile_self_triggered_total")
 }
 
 // readCounter / readGauge / readHistogramCount / labelsContain are

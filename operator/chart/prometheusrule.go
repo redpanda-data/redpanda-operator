@@ -114,7 +114,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							},
 							Annotations: map[string]string{
 								"summary":     "Redpanda operator controller {{ $labels.controller }} is reconciling at a high rate",
-								"description": "Controller {{ $labels.controller }} has been reconciling at >5/s for 5+ minutes. On a stable cluster this is usually a self-triggered reconcile loop. Cross-check operator_controller_reconcile_steady_state_total — if it is flat while the reconcile rate is high, the controller is spinning.",
+								"description": "Controller {{ $labels.controller }} has been reconciling at >5/s for 5+ minutes. On a stable cluster this means the controller is spinning. Cross-check operator_controller_reconcile_steady_state_total — if it is flat while the reconcile rate is high, the controller is making no progress.",
 							},
 						},
 						{
@@ -154,50 +154,6 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							Annotations: map[string]string{
 								"summary":     "Redpanda operator controller {{ $labels.controller }} worker pool saturated",
 								"description": "Controller {{ $labels.controller }} has all reconcile workers busy for 10+ minutes. Reconciles may be queueing. Consider increasing MaxConcurrentReconciles or investigating per-reconcile latency.",
-							},
-						},
-						{
-							// Generation drift. The controller has seen a
-							// newer spec than its last successful
-							// reconciliation reflected in status. Brief
-							// drift is normal during reconciles; sustained
-							// drift > 60s usually means the controller is
-							// failing to make progress on that resource.
-							//
-							// Fires only when controllers opt into
-							// observability.RecordObservedGeneration —
-							// the metric is silent on controllers that
-							// don't record it.
-							Alert: "OperatorObservedGenerationDrift",
-							Expr:  intstr.FromString(`operator_controller_reconcile_observed_generation_drift > 0`),
-							For:   ptrDuration("5m"),
-							Labels: map[string]string{
-								"severity": "warning",
-							},
-							Annotations: map[string]string{
-								"summary":     "Redpanda operator controller {{ $labels.controller }} is behind on resource generation",
-								"description": "Controller {{ $labels.controller }} on kind {{ $labels.kind }} has had observedGeneration < generation for 5+ minutes. The controller has seen newer specs than its last successful reconciliation.",
-							},
-						},
-						{
-							// Non-determinism detector. Increments mean the
-							// controller wrote a spec whose hash differed
-							// from the previous render but the API server
-							// found no meaningful change. Almost always a
-							// timestamp, map iteration order, or similar
-							// instability in the operator's spec-rendering
-							// code.
-							Alert: "OperatorNonDeterministicSpec",
-							Expr: intstr.FromString(
-								`rate(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m]) > 0`,
-							),
-							For: ptrDuration("10m"),
-							Labels: map[string]string{
-								"severity": "warning",
-							},
-							Annotations: map[string]string{
-								"summary":     "Redpanda operator controller {{ $labels.controller }} is rendering non-deterministic specs",
-								"description": "Controller {{ $labels.controller }} on kind {{ $labels.kind }} has been writing spec updates that the API server treats as no-ops (generation does not advance) but whose rendered hash differs run-to-run. This is a strong signal of non-determinism in the spec-rendering code.",
 							},
 						},
 					},

@@ -86180,9 +86180,9 @@ spec:
     - alert: OperatorReconcileRunaway
       annotations:
         description: Controller {{ $labels.controller }} has been reconciling at >5/s
-          for 5+ minutes. On a stable cluster this is usually a self-triggered reconcile
-          loop. Cross-check operator_controller_reconcile_steady_state_total — if
-          it is flat while the reconcile rate is high, the controller is spinning.
+          for 5+ minutes. On a stable cluster this means the controller is spinning.
+          Cross-check operator_controller_reconcile_steady_state_total — if it is
+          flat while the reconcile rate is high, the controller is making no progress.
         summary: Redpanda operator controller {{ $labels.controller }} is reconciling
           at a high rate
       expr: operator:reconcile_rate:5m > 5
@@ -86209,30 +86209,6 @@ spec:
         summary: Redpanda operator controller {{ $labels.controller }} worker pool
           saturated
       expr: controller_runtime_active_workers >= controller_runtime_max_concurrent_reconciles
-      for: 10m
-      labels:
-        severity: warning
-    - alert: OperatorObservedGenerationDrift
-      annotations:
-        description: Controller {{ $labels.controller }} on kind {{ $labels.kind }}
-          has had observedGeneration < generation for 5+ minutes. The controller has
-          seen newer specs than its last successful reconciliation.
-        summary: Redpanda operator controller {{ $labels.controller }} is behind on
-          resource generation
-      expr: operator_controller_reconcile_observed_generation_drift > 0
-      for: 5m
-      labels:
-        severity: warning
-    - alert: OperatorNonDeterministicSpec
-      annotations:
-        description: Controller {{ $labels.controller }} on kind {{ $labels.kind }}
-          has been writing spec updates that the API server treats as no-ops (generation
-          does not advance) but whose rendered hash differs run-to-run. This is a
-          strong signal of non-determinism in the spec-rendering code.
-        summary: Redpanda operator controller {{ $labels.controller }} is rendering
-          non-deterministic specs
-      expr: rate(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m])
-        > 0
       for: 10m
       labels:
         severity: warning

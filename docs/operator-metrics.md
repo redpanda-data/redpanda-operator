@@ -13,7 +13,7 @@ It covers four groups:
    controller registered through `ctrl.NewControllerManagedBy(mgr)`. Useful
    for reconcile rate, errors, queue depth, and worker pool saturation.
 2. **operator reconcile-health metrics** — added by the operator on top of
-   the built-ins to surface self-triggered loops, generation drift, and
+   the built-ins to surface generation drift, spinning controllers, and
    non-determinism in spec-rendering.
 3. **resource-state metrics** — per-CR gauges describing what the operator
    is managing (counts of Redpanda CRs, desired vs ready broker counts,
@@ -69,7 +69,7 @@ unbounded. The labels you will see:
 | Label | Cardinality | Source |
 |-------|-------------|--------|
 | `controller` | Small (one per registered controller, ~5-10) | The wrap-time identifier passed to `observability.Wrap(...)` |
-| `kind` | Small (one per kind a controller manages) | The string passed to `RecordObservedGeneration` |
+| `kind` | Small (one per kind a controller manages) | controller-supplied label on resource-state metrics |
 | `result` | Closed (`success` / `error` / `requeue` / `requeue_after`) | controller-runtime built-in |
 | `name` | Small (one per workqueue, == one per controller) | controller-runtime built-in |
 | `state` | Closed (`leader` / `follower` / `candidate` / `pre_candidate` / `unknown`) | multicluster raft |
@@ -121,25 +121,12 @@ that opt into the `Record*` helpers.
 | `operator_controller_reconcile_requeue_after_seconds` | Histogram | `controller` | Distribution of `Result.RequeueAfter` durations. A tight cluster of sub-second values is a strong signal of a tight retry loop. |
 | `operator_controller_reconcile_last_success_timestamp_seconds` | Gauge | `controller` | Unix timestamp of the most recent steady-state reconcile per controller. Query as `time() - operator_controller_reconcile_last_success_timestamp_seconds` for seconds-since-last-success — a flat value while `reconcile_total` is climbing means the controller is failing or spinning. |
 
-### Recorder-emitted (opt-in per controller)
-
-| Metric | Type | Labels | Recorded via | What it tells you |
-|--------|------|--------|--------------|-------------------|
-| `operator_controller_reconcile_observed_generation_drift` | Gauge | `controller`, `kind` | `observability.RecordObservedGeneration(controller, kind, gen, observedGen)` | `metadata.generation` minus `status.observedGeneration` at the end of a reconcile. Sustained non-zero = controller is behind on the resource's spec. |
-| `operator_controller_reconcile_spec_hash_changed_without_generation_total` | Counter | `controller`, `kind` | `observability.RecordSpecHashChangedWithoutGeneration(controller, kind)` | Increments when a spec update was a no-op from the API server's perspective but its rendered hash differed from the previous run. Almost always non-determinism in the reconciler. |
-| `operator_controller_reconcile_self_triggered_total` | Counter | `controller`, `kind` | `observability.RecordSelfTriggered(controller, kind)` | Increments when a controller has detected that its own write to an object will re-enqueue the same reconcile with no other observable effect — the canonical infinite-reconcile shape. Detection lives in the controller's write helpers; the wrapper does not increment this to avoid a redundant Get per reconcile. |
-
-The opt-in helpers are intentionally **passive** — they don't fetch
-anything; the caller passes the values it already has. This keeps the
-observability layer free of redundant API calls and lets each controller
-decide whether it cares enough to record.
-
 **Suggested alerts** (all shipped in the chart's PrometheusRule):
 
+- **Errored reconciles**: `operator:reconcile_error_rate:5m > 0.1` for 5m → warning.
 - **Runaway reconcile rate**: `operator:reconcile_rate:5m > 5` for 5m → warning. Cross-check `operator_controller_reconcile_steady_state_total` — if it is flat while the rate is high, the controller is spinning.
 - **Reconcile stalled**: a controller that was active in the last hour but has reconciled zero times in the past 10 minutes → warning.
-- **Observed-generation drift**: `operator_controller_reconcile_observed_generation_drift > 0` for 5m → warning.
-- **Non-deterministic spec**: `rate(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m]) > 0` for 10m → warning.
+- **Worker pool saturated**: `controller_runtime_active_workers >= controller_runtime_max_concurrent_reconciles` for 10m → warning.
 
 ## Group 3: resource-state metrics
 
