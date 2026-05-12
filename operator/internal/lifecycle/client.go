@@ -450,6 +450,7 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 //   - its NodePool list was already observed (passed in), AND
 //   - fetchExistingPools here didn't probe-skip, AND
 //   - Render here didn't error
+//
 // hold. ToScaleDown / ToDelete gate "no desired counterpart" decisions on
 // this combined observation so a partial-visibility reconcile can never
 // trigger an unintended decommission.

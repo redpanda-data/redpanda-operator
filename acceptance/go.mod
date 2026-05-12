@@ -220,6 +220,7 @@ require (
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260413160920-df1679f86269 // indirect
+	github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
 	github.com/redpanda-data/console/backend v0.0.0-20260330203659-9db13eb40ef4 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.7.0 // indirect
