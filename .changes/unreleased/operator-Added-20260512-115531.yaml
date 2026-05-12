@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Added two follow-up operator reconcile-health metrics: `operator_controller_reconcile_last_success_timestamp_seconds` (gauge, wrapper-emitted) holds the Unix timestamp of each controller''s most recent steady-state reconcile — query as `time() - last_success_timestamp_seconds` for seconds-since-last-success — and `operator_controller_reconcile_self_triggered_total` (counter, opt-in via `observability.RecordSelfTriggered`) counts reconciles whose only effect was a write to the same object that re-enqueued the reconcile. The metric inventory at `docs/operator-metrics.md` moves both metrics out of the "Reserved" section.'
+time: 2026-05-12T11:55:31.000000000+02:00

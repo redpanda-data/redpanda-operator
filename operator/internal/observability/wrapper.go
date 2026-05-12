@@ -11,9 +11,13 @@ package observability
 
 import (
 	"context"
+	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// nowUnix is overridable in tests. The default reads wall-clock time.
+var nowUnix = func() float64 { return float64(time.Now().Unix()) }
 
 // Wrap returns a reconcile.Reconciler that delegates to inner while
 // recording the result-driven Group B metrics (steady_state_total,
@@ -52,6 +56,7 @@ func (w *wrapped[R]) Reconcile(ctx context.Context, req R) (reconcile.Result, er
 func (w *wrapped[R]) record(result reconcile.Result, err error) {
 	if err == nil && result.IsZero() {
 		ReconcileSteadyStateTotal.WithLabelValues(w.controller).Inc()
+		ReconcileLastSuccessTimestampSeconds.WithLabelValues(w.controller).Set(nowUnix())
 	}
 	if result.RequeueAfter > 0 {
 		ReconcileRequeueAfterSeconds.WithLabelValues(w.controller).Observe(result.RequeueAfter.Seconds())

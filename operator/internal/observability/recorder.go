@@ -111,6 +111,43 @@ var (
 		Name:      "reconcile_spec_hash_changed_without_generation_total",
 		Help:      "Reconciles where the rendered spec hash differed from the previous run but metadata.generation did not advance.",
 	}, []string{"controller", "kind"})
+
+	// ReconcileLastSuccessTimestampSeconds is the Unix timestamp of the
+	// most recent reconcile that returned (Result{}, nil) for a given
+	// controller. Prometheus computes "seconds since last success" at
+	// query time as `time() - operator_controller_reconcile_last_success_timestamp_seconds`,
+	// avoiding the goroutine / oldest-unfinished tracking that an
+	// imperative "seconds elapsed" gauge would need.
+	//
+	// Updated by the wrapper inside the steady-state branch — no
+	// controller-side wiring is required. Bounded cardinality (controller
+	// label only). A flat value while reconcile_total is climbing means
+	// the controller is failing or spinning.
+	ReconcileLastSuccessTimestampSeconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "reconcile_last_success_timestamp_seconds",
+		Help:      "Unix timestamp of the most recent steady-state reconcile per controller. Use time() - this for seconds-since-last-success.",
+	}, []string{"controller"})
+
+	// ReconcileSelfTriggeredTotal counts reconciles whose only observable
+	// effect was a write to the same object that re-enqueued the
+	// reconcile — a self-triggering loop. Distinct from
+	// SpecHashChangedWithoutGenerationTotal (which is about spec
+	// non-determinism with an unchanged generation); self-triggering can
+	// happen on either spec or status writes.
+	//
+	// Recorded by controllers (passive recorder pattern). The wrapper
+	// deliberately does not increment this — detection requires knowing
+	// "the write came from us and re-enqueued us", which only the
+	// controller's own write helpers can determine without redundant
+	// Gets.
+	ReconcileSelfTriggeredTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "reconcile_self_triggered_total",
+		Help:      "Reconciles whose only effect was a write to the same object that re-enqueued the reconcile.",
+	}, []string{"controller", "kind"})
 )
 
 func init() {
@@ -119,6 +156,8 @@ func init() {
 		ReconcileRequeueAfterSeconds,
 		ReconcileObservedGenerationDrift,
 		SpecHashChangedWithoutGenerationTotal,
+		ReconcileLastSuccessTimestampSeconds,
+		ReconcileSelfTriggeredTotal,
 	)
 }
 
@@ -151,4 +190,16 @@ func RecordObservedGeneration(controller, kind string, generation, observedGener
 // rendered output.
 func RecordSpecHashChangedWithoutGeneration(controller, kind string) {
 	SpecHashChangedWithoutGenerationTotal.WithLabelValues(controller, kind).Inc()
+}
+
+// RecordSelfTriggered increments the self-triggered-reconcile counter.
+// Call from a controller's write helpers when the controller has detected
+// that its own write to the object will re-enqueue the same reconcile
+// without any other observable effect — the canonical infinite-reconcile
+// shape. Detection requires comparing pre- and post-write state, which
+// the controller already does inside its own write path; the wrapper
+// does not increment this counter because that would require a redundant
+// Get.
+func RecordSelfTriggered(controller, kind string) {
+	ReconcileSelfTriggeredTotal.WithLabelValues(controller, kind).Inc()
 }

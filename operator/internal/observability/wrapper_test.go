@@ -145,6 +145,87 @@ func TestRecordSpecHashChangedWithoutGeneration_Increments(t *testing.T) {
 	assert.InDelta(t, before+2, after, 0.0001)
 }
 
+func TestRecordSelfTriggered_Increments(t *testing.T) {
+	before := readCounter(t, "operator_controller_reconcile_self_triggered_total",
+		map[string]string{"controller": "TestController_SelfTrig", "kind": "MyKind"})
+	RecordSelfTriggered("TestController_SelfTrig", "MyKind")
+	RecordSelfTriggered("TestController_SelfTrig", "MyKind")
+	RecordSelfTriggered("TestController_SelfTrig", "MyKind")
+	after := readCounter(t, "operator_controller_reconcile_self_triggered_total",
+		map[string]string{"controller": "TestController_SelfTrig", "kind": "MyKind"})
+	assert.InDelta(t, before+3, after, 0.0001)
+}
+
+func TestWrap_LastSuccessTimestamp_SetOnSteadyState(t *testing.T) {
+	// The gauge holds the unix timestamp of the most recent (Result{}, nil)
+	// return. We override nowUnix to a fixed value so the test is
+	// deterministic across machines and clock skew.
+	original := nowUnix
+	defer func() { nowUnix = original }()
+	nowUnix = func() float64 { return 1700000000 }
+
+	stub := &stubReconciler{result: reconcile.Result{}, err: nil}
+	w := Wrap[reconcile.Request](stub, "TestController_LastSuccess")
+
+	_, err := w.Reconcile(context.Background(), reconcile.Request{})
+	require.NoError(t, err)
+	got := readGauge(t, "operator_controller_reconcile_last_success_timestamp_seconds",
+		map[string]string{"controller": "TestController_LastSuccess"})
+	assert.InDelta(t, 1700000000, got, 0.0001, "gauge must hold the timestamp written during the steady-state branch")
+
+	// Advance the clock and reconcile again — the gauge should overwrite.
+	nowUnix = func() float64 { return 1700000060 }
+	_, err = w.Reconcile(context.Background(), reconcile.Request{})
+	require.NoError(t, err)
+	got = readGauge(t, "operator_controller_reconcile_last_success_timestamp_seconds",
+		map[string]string{"controller": "TestController_LastSuccess"})
+	assert.InDelta(t, 1700000060, got, 0.0001, "gauge must overwrite with the latest steady-state timestamp")
+}
+
+func TestWrap_LastSuccessTimestamp_NotUpdatedOnError(t *testing.T) {
+	// An error return is not steady state — the gauge must not advance.
+	original := nowUnix
+	defer func() { nowUnix = original }()
+
+	// First write a known value via a successful reconcile.
+	nowUnix = func() float64 { return 1700000000 }
+	steady := &stubReconciler{result: reconcile.Result{}, err: nil}
+	wSteady := Wrap[reconcile.Request](steady, "TestController_NoAdvanceOnError")
+	_, _ = wSteady.Reconcile(context.Background(), reconcile.Request{})
+
+	// Now move the clock and run an erroring reconcile — the gauge must
+	// keep the earlier value.
+	nowUnix = func() float64 { return 1700000060 }
+	failing := &stubReconciler{result: reconcile.Result{}, err: errors.New("boom")}
+	wFail := Wrap[reconcile.Request](failing, "TestController_NoAdvanceOnError")
+	_, _ = wFail.Reconcile(context.Background(), reconcile.Request{})
+
+	got := readGauge(t, "operator_controller_reconcile_last_success_timestamp_seconds",
+		map[string]string{"controller": "TestController_NoAdvanceOnError"})
+	assert.InDelta(t, 1700000000, got, 0.0001, "error returns must not advance the last-success timestamp")
+}
+
+func TestWrap_LastSuccessTimestamp_NotUpdatedOnRequeue(t *testing.T) {
+	// A RequeueAfter return is not steady state — the gauge must not
+	// advance. This is the canonical "spinning" pathology.
+	original := nowUnix
+	defer func() { nowUnix = original }()
+
+	nowUnix = func() float64 { return 1700000000 }
+	steady := &stubReconciler{result: reconcile.Result{}, err: nil}
+	wSteady := Wrap[reconcile.Request](steady, "TestController_NoAdvanceOnRequeue")
+	_, _ = wSteady.Reconcile(context.Background(), reconcile.Request{})
+
+	nowUnix = func() float64 { return 1700000060 }
+	spinning := &stubReconciler{result: reconcile.Result{RequeueAfter: 100 * time.Millisecond}, err: nil}
+	wSpin := Wrap[reconcile.Request](spinning, "TestController_NoAdvanceOnRequeue")
+	_, _ = wSpin.Reconcile(context.Background(), reconcile.Request{})
+
+	got := readGauge(t, "operator_controller_reconcile_last_success_timestamp_seconds",
+		map[string]string{"controller": "TestController_NoAdvanceOnRequeue"})
+	assert.InDelta(t, 1700000000, got, 0.0001, "spinning (RequeueAfter) returns must not advance the last-success timestamp")
+}
+
 // readCounter scrapes controller-runtime's metrics registry and returns the
 // current value of the named counter for the given label set. Returns 0
 // when the family or labelled series is absent (i.e. before the first

@@ -836,7 +836,7 @@
       },
       "type": "stat",
       "title": "Self-triggered reconciles",
-      "description": "operator_controller_reconcile_self_triggered_total — reconciles whose only effect was a write that re-enqueued the same object. Sustained non-zero would be a strong signal of a self-triggering loop. The metric is reserved for a future controller-side opt-in helper; this panel renders 'N/A' until then.\n\nHow to read: N/A while not emitted. Once wired, expect 0 in healthy state and treat any non-zero rate as a self-loop bug.",
+      "description": "operator_controller_reconcile_self_triggered_total — reconciles whose only effect was a write that re-enqueued the same object. Populated by controllers that opt into observability.RecordSelfTriggered from their write helpers.\n\nHow to read: 0 ops/s = healthy. Any sustained non-zero rate on a controller is a self-loop bug — the controller is writing to its own resource in a way that re-enqueues the same reconcile without changing observable state.",
       "id": 23,
       "gridPos": {
         "x": 12,
@@ -853,8 +853,35 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "ops",
-          "noValue": "N/A — metric not yet emitted"
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "type": "timeseries",
+      "title": "Seconds since last steady-state reconcile (per controller)",
+      "description": "time() - operator_controller_reconcile_last_success_timestamp_seconds — how long ago each controller last returned (Result{}, nil). The underlying gauge is set by the observability wrapper inside the steady-state branch; subtracting from time() at query time gives 'seconds since last success' without any goroutine bookkeeping.\n\nHow to read: bounded (rising then dropping back to ~0) = healthy reconcile cadence. Monotonically climbing past the controller's natural re-queue interval = the controller is failing every reconcile or spinning without reaching steady state. The companion alerts in monitoring.rulesEnabled fire on this signal.",
+      "id": 24,
+      "gridPos": {
+        "x": 0,
+        "y": 97,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "time() - operator_controller_reconcile_last_success_timestamp_seconds",
+          "legendFormat": "{{controller}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
         }
       }
     }
@@ -879,6 +906,6 @@
   "timezone": "",
   "title": "Redpanda Operator — Full Observability",
   "uid": "redpanda-operator-observability",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }

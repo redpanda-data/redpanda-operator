@@ -119,6 +119,7 @@ that opt into the `Record*` helpers.
 |--------|------|--------|-------------------|
 | `operator_controller_reconcile_steady_state_total` | Counter | `controller` | Reconciles that returned `(Result{}, nil)` — no work to do, no re-queue requested. Healthy controllers see this dominate once the system is converged. A controller whose `reconcile_total` rate is high while `steady_state_total` rate is flat is spinning. |
 | `operator_controller_reconcile_requeue_after_seconds` | Histogram | `controller` | Distribution of `Result.RequeueAfter` durations. A tight cluster of sub-second values is a strong signal of a tight retry loop. |
+| `operator_controller_reconcile_last_success_timestamp_seconds` | Gauge | `controller` | Unix timestamp of the most recent steady-state reconcile per controller. Query as `time() - operator_controller_reconcile_last_success_timestamp_seconds` for seconds-since-last-success — a flat value while `reconcile_total` is climbing means the controller is failing or spinning. |
 
 ### Recorder-emitted (opt-in per controller)
 
@@ -126,6 +127,7 @@ that opt into the `Record*` helpers.
 |--------|------|--------|--------------|-------------------|
 | `operator_controller_reconcile_observed_generation_drift` | Gauge | `controller`, `kind` | `observability.RecordObservedGeneration(controller, kind, gen, observedGen)` | `metadata.generation` minus `status.observedGeneration` at the end of a reconcile. Sustained non-zero = controller is behind on the resource's spec. |
 | `operator_controller_reconcile_spec_hash_changed_without_generation_total` | Counter | `controller`, `kind` | `observability.RecordSpecHashChangedWithoutGeneration(controller, kind)` | Increments when a spec update was a no-op from the API server's perspective but its rendered hash differed from the previous run. Almost always non-determinism in the reconciler. |
+| `operator_controller_reconcile_self_triggered_total` | Counter | `controller`, `kind` | `observability.RecordSelfTriggered(controller, kind)` | Increments when a controller has detected that its own write to an object will re-enqueue the same reconcile with no other observable effect — the canonical infinite-reconcile shape. Detection lives in the controller's write helpers; the wrapper does not increment this to avoid a redundant Get per reconcile. |
 
 The opt-in helpers are intentionally **passive** — they don't fetch
 anything; the caller passes the values it already has. This keeps the
@@ -138,17 +140,6 @@ decide whether it cares enough to record.
 - **Reconcile stalled**: a controller that was active in the last hour but has reconciled zero times in the past 10 minutes → warning.
 - **Observed-generation drift**: `operator_controller_reconcile_observed_generation_drift > 0` for 5m → warning.
 - **Non-deterministic spec**: `rate(operator_controller_reconcile_spec_hash_changed_without_generation_total[10m]) > 0` for 10m → warning.
-
-### Reserved (currently silent)
-
-These metric names are reserved for diagnostics that are not yet wired
-up. They appear in the inventory so dashboards and alerts that reference
-them won't break once they start emitting samples.
-
-| Metric | Description |
-|--------|-------------|
-| `operator_controller_reconcile_self_triggered_total` | Reconciles whose only effect was a write to the same object that re-enqueued the reconcile. A signal of self-triggering loops; requires a per-reconcile hash comparison the wrapper doesn't yet perform. |
-| `operator_controller_reconcile_time_since_last_success_seconds` | Time since the last successful reconcile for a given resource. Pending a decision on label cardinality (per-request would be unbounded; aggregating to `oldest_unfinished_seconds{controller}` is the likely shape). |
 
 ## Group 3: resource-state metrics
 
