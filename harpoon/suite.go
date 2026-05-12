@@ -182,6 +182,13 @@ func (b *SuiteBuilder) RegisterGroup(name, tag string) *SuiteBuilder {
 
 // buildTagExpression constructs the godog tag expression that selects which
 // scenarios to run based on the provider filter and the requested groups.
+//
+// godog v0.14.1's tag-filter grammar is a flat AND-of-ORs: it splits the
+// expression on "&&" (top-level AND) and then each AND clause on "," (OR).
+// It does NOT support parentheses or boolean keywords — anything more
+// nested than that silently fails to match (every feature is excluded).
+// All output here is therefore composed as `clause && clause && ...` where
+// each clause is a comma-separated OR list of `@tag` or `~@tag` atoms.
 func (b *SuiteBuilder) buildTagExpression() string {
 	providerFilter := fmt.Sprintf("~@skip:%s", b.testingOpts.Provider)
 
@@ -200,59 +207,49 @@ func (b *SuiteBuilder) buildTagExpression() string {
 		requestedSet[g] = true
 	}
 
-	// If both "default" and all registered groups are requested, no group
-	// filtering is needed.
-	if requestedSet["default"] {
-		allIncluded := true
-		for name := range b.registeredGroups {
-			if !requestedSet[name] {
-				allIncluded = false
-				break
-			}
+	// Partition registered groups into requested vs not-requested, using
+	// sorted slices for deterministic output.
+	var requestedTags []string
+	var notRequestedTags []string
+	for name, tag := range b.registeredGroups {
+		if requestedSet[name] {
+			requestedTags = append(requestedTags, "@"+tag)
+		} else {
+			notRequestedTags = append(notRequestedTags, "~@"+tag)
 		}
-		if allIncluded {
+	}
+	sort.Strings(requestedTags)
+	sort.Strings(notRequestedTags)
+
+	if requestedSet["default"] {
+		// "default" means "features tagged with none of the registered
+		// group tags". Combined with explicitly-requested groups the
+		// match condition is:
+		//   (untagged) OR (has @reqN)
+		// which expands to the AND of, for every not-requested group g,
+		//   (~@g OR @req1 OR @req2 ...)
+		// — each not-requested group must be absent, unless the feature
+		// is tagged with one of the requested groups.
+		if len(notRequestedTags) == 0 {
 			return providerFilter
 		}
-	}
-
-	// Collect sorted group tags for deterministic output.
-	var allGroupTags []string
-	for _, tag := range b.registeredGroups {
-		allGroupTags = append(allGroupTags, tag)
-	}
-	sort.Strings(allGroupTags)
-
-	var parts []string
-
-	if requestedSet["default"] {
-		// "default" = features not tagged with any registered group tag.
-		var notParts []string
-		for _, tag := range allGroupTags {
-			notParts = append(notParts, "~@"+tag)
+		clauses := make([]string, 0, len(notRequestedTags))
+		for _, notTag := range notRequestedTags {
+			atoms := append([]string{}, requestedTags...)
+			atoms = append(atoms, notTag)
+			clauses = append(clauses, strings.Join(atoms, ","))
 		}
-		if len(notParts) == 1 {
-			parts = append(parts, notParts[0])
-		} else {
-			parts = append(parts, "("+strings.Join(notParts, " && ")+")")
-		}
+		return providerFilter + " && " + strings.Join(clauses, " && ")
 	}
 
-	for _, g := range requestedGroups {
-		if g == "default" {
-			continue
-		}
-		if tag, ok := b.registeredGroups[g]; ok {
-			parts = append(parts, "@"+tag)
-		}
+	// Only non-default groups requested: feature must carry at least one of
+	// the requested group tags. If none of the requested names match a
+	// registered group, nothing should run — emit an impossible tag so
+	// godog's filter rejects every feature.
+	if len(requestedTags) == 0 {
+		return providerFilter + " && @__no_matching_group__"
 	}
-
-	if len(parts) == 0 {
-		return providerFilter
-	}
-	if len(parts) == 1 {
-		return providerFilter + " && " + parts[0]
-	}
-	return providerFilter + " && (" + strings.Join(parts, " || ") + ")"
+	return providerFilter + " && " + strings.Join(requestedTags, ",")
 }
 
 func (b *SuiteBuilder) RegisterTag(tag string, priority int, handler TagHandler) *SuiteBuilder {
