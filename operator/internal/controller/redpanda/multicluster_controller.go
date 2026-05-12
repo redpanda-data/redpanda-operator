@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -56,6 +57,16 @@ const (
 	bootstrapUserPasswordKey  = "password"
 	defaultBootstrapUsername  = "kubernetes-controller"
 	caOrganization            = "Redpanda"
+
+	// brokerFetchTimeout bounds a single state.admin.Broker(brokerID) call
+	// in reconcileDecommission. The admin client's default ClientTimeout is
+	// generous (10s) so a partitioned broker would otherwise hold up the
+	// per-broker iteration for that long each. Decommission safety still
+	// relies on scaleDown's len(downNodes) > 0 deferral when a pod is
+	// missing from brokerMap, so a transient timeout here can only defer
+	// pod deletion to the next reconcile — it cannot cause an unsafe
+	// decommission.
+	brokerFetchTimeout = 2 * time.Second
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch;update;patch
@@ -420,7 +431,7 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames())
 
 	// grab NodePools from all connected clusters
-	nodePools, err := r.LifecycleClient.FetchExistingNodePoolsFromAllClusters(ctx, sccluster)
+	nodePools, nodePoolsObserved, err := r.LifecycleClient.FetchExistingNodePoolsFromAllClusters(ctx, sccluster)
 	if err != nil {
 		logger.Error(err, "fetching nodepools")
 		return nil, err
@@ -436,7 +447,7 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	if restartOnConfigChange {
 		injectedConfigVersion = sc.Status.ConfigVersion
 	}
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion)
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, nodePoolsObserved)
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return nil, err
@@ -495,35 +506,64 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 
 	// Phase 1: scan all clusters for existing bootstrap user secrets.
 	// If multiple secrets exist, verify they all have the same password.
+	//
+	// Both the probe check and the per-call timeout are required here. The
+	// probe is the fast path: a peer known unreachable is skipped without a
+	// dial attempt. The timeout is the backstop: when the controller-runtime
+	// cached client is asked to Get from a cluster whose informer cache
+	// hasn't synced (typical right after leader transition, before the
+	// engage cycle has run for that peer), the Get blocks waiting for cache
+	// sync — *not* on a network call, so net.Dialer.Timeout doesn't help.
+	// The parent reconcile context's 2-minute ceiling is the only thing that
+	// would otherwise stop it, and we'd burn the whole reconcile budget on
+	// one Get. Same pattern as Phase 3 below.
 	var canonicalPassword string
 	var canonicalCluster string
 	for _, clusterName := range clusterNames {
+		if clusterName != mcmanager.LocalCluster && !r.Manager.IsClusterReachable(clusterName) {
+			logger.V(log.TraceLevel).Info("cluster unreachable, skipping bootstrap user scan", "cluster", clusterName)
+			continue
+		}
 		cl, err := r.Manager.GetCluster(ctx, clusterName)
 		if err != nil {
+			if clusterName != mcmanager.LocalCluster {
+				logger.Info("could not get cluster, skipping bootstrap user scan", "cluster", clusterName, "error", err)
+				continue
+			}
 			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
 		}
 
 		secretName := bootstrapSecretName(sc)
 		var existing corev1.Secret
-		if err := cl.GetClient().Get(ctx, client.ObjectKey{
+		getCtx, getCancel := context.WithTimeout(ctx, lifecycle.CallTimeoutFor(clusterName))
+		err = cl.GetClient().Get(getCtx, client.ObjectKey{
 			Namespace: sc.Namespace,
 			Name:      secretName,
-		}, &existing); err == nil {
-			if pw, ok := existing.Data[bootstrapUserPasswordKey]; ok && len(pw) > 0 {
-				password := string(pw)
-				if canonicalPassword == "" {
-					canonicalPassword = password
-					canonicalCluster = clusterName
-					logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
-				} else if canonicalPassword != password {
-					msg := fmt.Sprintf(
-						"bootstrap user password mismatch: secret %q in cluster %q differs from cluster %q; "+
-							"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
-						secretName, clusterName, canonicalCluster,
-					)
-					state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonPasswordMismatch, msg)
-					return ctrl.Result{}, errors.New(msg)
-				}
+		}, &existing)
+		getCancel()
+		if err != nil {
+			if clusterName != mcmanager.LocalCluster {
+				logger.Info("could not Get bootstrap user secret on cluster, skipping scan", "cluster", clusterName, "error", err)
+				continue
+			}
+			// Local Get error other than NotFound: log and continue scanning;
+			// Phase 3 will recreate the secret if missing.
+			continue
+		}
+		if pw, ok := existing.Data[bootstrapUserPasswordKey]; ok && len(pw) > 0 {
+			password := string(pw)
+			if canonicalPassword == "" {
+				canonicalPassword = password
+				canonicalCluster = clusterName
+				logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
+			} else if canonicalPassword != password {
+				msg := fmt.Sprintf(
+					"bootstrap user password mismatch: secret %q in cluster %q differs from cluster %q; "+
+						"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
+					secretName, clusterName, canonicalCluster,
+				)
+				state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonPasswordMismatch, msg)
+				return ctrl.Result{}, errors.New(msg)
 			}
 		}
 	}
@@ -885,14 +925,37 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
 	}
 
+	// health.NodesDown is treated as an advisory hint, not authority.
+	// The cluster health overview is the controller broker's consensus view of
+	// who has missed heartbeats. Right after a partition (or controller
+	// re-election) it can transiently list brokers that are actually alive —
+	// observed in the lab as cluster three's brokers being flagged "down"
+	// alongside the genuinely-partitioned cluster two brokers. The per-broker
+	// gossip endpoint (/v1/brokers) doesn't help here because it's
+	// broker-local: each broker reports its own opinion, not consensus.
+	// Skipping a wrongly-reported "down" broker would leave it out of the
+	// brokerMap used by scaleDown for decommission pod-lookup, breaking
+	// decommission safety.
+	//
+	// Instead, attempt the Broker fetch for every node with a tight per-call
+	// timeout. Truly unreachable brokers fail fast (or hit the timeout);
+	// brokers wrongly listed in NodesDown succeed and end up in the map. The
+	// timeout keeps reconcileClusterConfig and later phases from being
+	// gated on a 10s (or whatever the admin-client default is) hang per
+	// down broker.
 	// brokerMap keys brokers by the first DNS label of their internal RPC
 	// address (pod name for single-cluster) and also by the raw host (pod IP
 	// for stretch-cluster flat-network mode where InternalRPCAddress is an IP).
 	brokerMap := map[string]int{}
+	downNodes := map[int]bool{}
 	for _, brokerID := range health.AllNodes {
-		broker, err := state.admin.Broker(ctx, brokerID)
+		brokerCtx, brokerCancel := context.WithTimeout(ctx, brokerFetchTimeout)
+		broker, err := state.admin.Broker(brokerCtx, brokerID)
+		brokerCancel()
 		if err != nil {
-			return ctrl.Result{}, errors.Wrap(err, "fetching broker")
+			logger.Info("broker unreachable, omitting from brokerMap (will be treated as down for decommission)", "brokerID", brokerID, "error", err)
+			downNodes[brokerID] = true
+			continue
 		}
 
 		host := broker.InternalRPCAddress
@@ -909,7 +972,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// next scale down any over-provisioned pools, patching them to use the new spec
 	// and decommissioning any nodes as needed
 	for _, set := range state.pools.ToScaleDown() {
-		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap)
+		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap, downNodes)
 		result := ctrl.Result{}
 		if requeue {
 			result.RequeueAfter = requeueTimeout
@@ -1265,7 +1328,7 @@ func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *
 // scaleDown contains the majority of the logic for scaling down a statefulset incrementally, first
 // decommissioning the broker with the last pod ordinal and then patching the statefulset with
 // a single less replica.
-func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
+func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int, downNodes map[int]bool) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
 	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
@@ -1282,6 +1345,20 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 		}
 
 		if requeue {
+			return true, nil
+		}
+	} else {
+		// The pod isn't in brokerMap. Two cases:
+		//   1. The broker was fully removed from the cluster — safe to delete
+		//      the pod (the brokerMap absence reflects ground truth).
+		//   2. The broker sits on a partitioned peer and was skipped earlier
+		//      to keep reconcileDecommission from hanging. Deleting the pod
+		//      now would orphan the broker on heal. Requeue and wait.
+		// Distinguish by checking whether ANY known broker for this pool sits
+		// in downNodes — if so, treat the absence as transient and requeue.
+		if len(downNodes) > 0 {
+			logger.Info("pod missing from brokerMap while peer brokers are down, requeueing scale-down to avoid orphaning a partitioned broker",
+				"pod", set.LastPod.GetName(), "downNodes", downNodes)
 			return true, nil
 		}
 	}

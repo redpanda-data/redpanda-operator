@@ -23,9 +23,11 @@ import (
 	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
@@ -188,13 +190,32 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 	var endpoints []string
 
 	for _, clusterName := range c.mgr.GetClusterNames() {
+		// Skip peers the probe has marked unreachable. Without this the List
+		// below blocks at the kernel TCP dial budget (~30s) on every reconcile
+		// that reaches the admin-client init phase, which is plenty to chain
+		// reconciles past the 30s partition-handling SLA. The admin client
+		// only needs reachable brokers; pods on a partitioned peer cluster
+		// can't be reached anyway, so dropping them from the endpoint list
+		// is the right behavior.
+		if clusterName != mcmanager.LocalCluster && !c.mgr.IsClusterReachable(clusterName) {
+			continue
+		}
 		k8sClient, err := c.GetClient(ctx, clusterName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "getting client for cluster %s", clusterName)
 		}
 
+		listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
 		var nodePoolList redpandav1alpha2.NodePoolList
-		if err := k8sClient.List(ctx, &nodePoolList, client.InNamespace(sc.Namespace)); err != nil {
+		err = k8sClient.List(listCtx, &nodePoolList, client.InNamespace(sc.Namespace))
+		listCancel()
+		if err != nil {
+			if clusterName != mcmanager.LocalCluster {
+				// Treat a transient peer error the same as the probe
+				// having flagged it: drop the peer's endpoints from this
+				// reconcile and let the next round pick them up.
+				continue
+			}
 			return nil, errors.Wrapf(err, "listing NodePools in cluster %s", clusterName)
 		}
 

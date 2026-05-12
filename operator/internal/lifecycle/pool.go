@@ -116,6 +116,17 @@ type PoolTracker struct {
 	latestGeneration int64
 	existingPools    map[ClusterNamespacedName]*poolWithOrdinals
 	desiredPools     map[ClusterNamespacedName]*poolWithOrdinals
+	// observedClusters records which cluster contexts the operator had
+	// full visibility into for this reconcile — i.e. it successfully
+	// fetched both the NodePool list AND the StatefulSet list for that
+	// cluster without falling back to the probe-unreachable skip.
+	// ToScaleDown's "existing pool with no desired counterpart" branch
+	// requires the owning cluster to be observed before treating absence
+	// as intent to drain — otherwise a transient fetch failure (or a
+	// probe-state flip mid-reconcile) on a partitioned peer would be
+	// indistinguishable from a real NodePool deletion and would trigger
+	// an unintended decommission.
+	observedClusters map[string]bool
 }
 
 // NewPoolTracker creates a new PoolTracker with the given cluster generation.
@@ -124,7 +135,22 @@ func NewPoolTracker(generation int64) *PoolTracker {
 		latestGeneration: generation,
 		existingPools:    make(map[ClusterNamespacedName]*poolWithOrdinals),
 		desiredPools:     make(map[ClusterNamespacedName]*poolWithOrdinals),
+		observedClusters: make(map[string]bool),
 	}
+}
+
+// MarkClusterObserved records that the operator had complete visibility into
+// the named cluster's NodePool and StatefulSet state during this reconcile.
+// "no desired counterpart" decisions in ToScaleDown / ToDelete are gated on
+// this — see the comment on PoolTracker.observedClusters.
+func (p *PoolTracker) MarkClusterObserved(clusterName string) {
+	p.observedClusters[clusterName] = true
+}
+
+// IsClusterObserved returns whether the cluster's pool state was fully fetched
+// during this reconcile.
+func (p *PoolTracker) IsClusterObserved(clusterName string) bool {
+	return p.observedClusters[clusterName]
 }
 
 // ExistingStatefulSets returns a list of the names of the existing StatefulSets tracked by the PoolTracker.
@@ -333,6 +359,21 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 	for nn := range p.existingPools {
 		if _, ok := p.desiredPools[nn]; !ok {
 			existing := p.existingPools[nn]
+
+			// Refuse to interpret "no desired counterpart" as user intent to
+			// drain unless we *actually saw* the owning cluster's NodePool
+			// list in this reconcile. Without this guard, a probe flip /
+			// transient fetch failure on a partitioned peer makes "we
+			// couldn't see your NodePool" look identical to "the user
+			// removed your NodePool" — and the operator happily decommissions
+			// healthy brokers. The user-facing rule we honor: decommission
+			// only on explicit scale-down (the else branch below) or when
+			// we've confirmed the pool is genuinely gone from a cluster we
+			// could observe.
+			if !p.observedClusters[nn.Cluster] {
+				continue
+			}
+
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 
 			if existingReplicas != 0 && len(existing.pods) != 0 {
@@ -381,6 +422,15 @@ func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
 
 	for nn, existing := range p.existingPools {
 		if _, ok := p.desiredPools[nn]; !ok {
+			// Same observation guard as ToScaleDown: never delete a
+			// StatefulSet for a cluster we didn't observe — "no desired
+			// counterpart" might mean the NodePool was removed (delete
+			// is correct) or it might mean we couldn't see the cluster
+			// (delete is wrong and irrecoverable). Only act when sure.
+			if !p.observedClusters[nn.Cluster] {
+				continue
+			}
+
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 			// extra guard to make sure we don't accidentally delete a
 			// statefulset whose pods still need to be decommissioned
