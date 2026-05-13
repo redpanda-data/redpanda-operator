@@ -173,6 +173,37 @@ func (c *Client) GetSuperusers(ctx context.Context) ([]string, error) {
 	return superusers, nil
 }
 
+func (c *Client) CreateSASLUser(ctx context.Context, saslUsername, saslPassword string) error {
+	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
+
+	adminClient, err := client.AdminClient(c.state, dialer.DialContext)
+	if err != nil {
+		return err
+	}
+
+	defer adminClient.Close()
+	return adminClient.CreateUser(ctx, saslUsername, saslPassword, string(redpanda.DefaultSASLMechanism))
+}
+
+func (c *Client) CreateACL(ctx context.Context, rpkOptions string) error {
+	pod, err := c.getStsPod(ctx, 0)
+	if err != nil {
+		return err
+	}
+
+	var stderr bytes.Buffer
+	var stdout bytes.Buffer
+	if err = c.Ctl.Exec(ctx, pod, kube.ExecOptions{
+		Command: []string{"bash", "-c", fmt.Sprintf(`rpk security acl create %s`, rpkOptions)},
+		Stdout:  &stdout,
+		Stderr:  &stderr,
+	}); err != nil || stderr.Len() > 0 {
+		return errors.Wrapf(err, "STDOUT:\n%s\n\nSTDERR:\n%s\n", stdout.String(), stderr.String())
+	}
+
+	return nil
+}
+
 func (c *Client) QuerySupportedFormats(ctx context.Context) ([]string, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 

@@ -521,6 +521,75 @@ func TestIntegrationChart(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("schema registry client - pre-existing secret", func(t *testing.T) {
+		t.Parallel()
+		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
+
+		schemaRegistrySecretName := "schema-registry-secret"
+		usersSecretName := "users"
+		schemaRegistryClientSASLUsername := "schema-user"
+		schemaRegistryClientSASLPassword := "schema-user-password"
+		err := env.Ctl().Create(ctx, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      schemaRegistrySecretName,
+				Namespace: env.Namespace(),
+			},
+			StringData: map[string]string{
+				corev1.BasicAuthUsernameKey: schemaRegistryClientSASLUsername,
+				corev1.BasicAuthPasswordKey: schemaRegistryClientSASLPassword,
+			},
+		})
+		require.NoError(t, err)
+
+		err = env.Ctl().Create(ctx, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      usersSecretName,
+				Namespace: env.Namespace(),
+			},
+			StringData: map[string]string{
+				"users.txt": "superuser:superpassword:SCRAM-SHA-512",
+			},
+		})
+		require.NoError(t, err)
+
+		partial := minimalValues(&redpanda.PartialValues{
+			Config: &redpanda.PartialConfig{
+				SchemaRegistryClient: &redpanda.PartialSchemaRegistryClient{
+					SASLSecretRef: &corev1.LocalObjectReference{Name: schemaRegistrySecretName},
+				},
+			},
+			Auth: &redpanda.PartialAuth{
+				SASL: &redpanda.PartialSASLAuth{
+					Enabled:   ptr.To(true),
+					SecretRef: &usersSecretName,
+				},
+			},
+		})
+
+		partial.Statefulset.Replicas = ptr.To[int32](3)
+
+		rpRelease := env.Install(ctx, redpandaChart, helm.InstallOptions{
+			Values: partial,
+		})
+
+		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
+
+		cleanup, err := rpk.ExposeRedpandaCluster(ctx, w, wErr)
+		if cleanup != nil {
+			t.Cleanup(cleanup)
+		}
+		require.NoError(t, err)
+
+		require.NoError(t, rpk.CreateSASLUser(ctx, schemaRegistryClientSASLUsername, schemaRegistryClientSASLPassword))
+		require.NoError(t, rpk.CreateACL(ctx, fmt.Sprintf("--allow-principal User:%s --operation all --topic _schemas --resource-pattern-type literal", schemaRegistryClientSASLUsername)))
+		require.NoError(t, rpk.CreateACL(ctx, fmt.Sprintf("--allow-principal User:%s --operation all --group schema-registry --resource-pattern-type prefixed", schemaRegistryClientSASLUsername)))
+
+		schemaBytes, retrievedSchema, err := schemaRegistryListenerTest(ctx, rpk)
+		assert.NoErrorf(t, err, "Schema Registry listener sub test failed")
+		assert.JSONEq(t, string(schemaBytes), retrievedSchema)
+	})
 }
 
 func TieredStorageStatic(t *testing.T) redpanda.PartialValues {
