@@ -1240,3 +1240,12 @@ statefulset:
       - name: "3rd-party-certs"
         secret:
           secretName: "redpanda-external-cert"
+
+-- tuning-host-mode --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# Verifies that tuning.apply_host_tuners=true produces the chroot-based
+# tuning init container with host bind mounts. See K8S-101 / CORE-13685.
+tuning:
+  tune_aio_events: true
+  apply_host_tuners: true

@@ -826,6 +826,25 @@ type Tuning struct {
 	BallastFilePath string `json:"ballast_file_path,omitempty"`
 	BallastFileSize string `json:"ballast_file_size,omitempty"`
 	WellKnownIO     string `json:"well_known_io,omitempty"`
+	// ApplyHostTuners enables the chroot-based tuning path. When true, the
+	// tuning init container builds a chroot to the host filesystem and runs
+	// `rpk redpanda tune all` in the host's network namespace, so tuners
+	// that need /sys, /proc, host NICs, or host block devices can actually
+	// apply (disk_irq, disk_scheduler, disk_nomerges, net, ...). When false
+	// (the default), only the small set of tuners that can run inside a
+	// container are applied (aio_events, swappiness, THP, etc.).
+	//
+	// Enabling this requires the same security posture as TuneAIOEvents
+	// (privileged container, hostPath volumes). On OpenShift, the pod's
+	// ServiceAccount must be bound to a SCC that allows `hostPath` volumes
+	// and `privileged: true` (the built-in `privileged` SCC works). On
+	// Pod Security Admission clusters, the namespace must be labeled
+	// `privileged`.
+	//
+	// This setting must NOT be combined with running multiple Redpanda
+	// pods per node — concurrent tuners will race on the same kernel
+	// parameters. Use a pod anti-affinity rule that disallows co-location.
+	ApplyHostTuners bool `json:"apply_host_tuners,omitempty"`
 }
 
 func (t *Tuning) Translate() map[string]any {
