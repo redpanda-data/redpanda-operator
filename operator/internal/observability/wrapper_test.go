@@ -78,19 +78,6 @@ func TestWrap_SteadyState_DoesNotCountRequeueReturn(t *testing.T) {
 	assert.InDelta(t, before, after, 0.0001, "RequeueAfter-returning reconciles must not be counted as steady-state")
 }
 
-func TestWrap_RequeueAfter_ObservesHistogram(t *testing.T) {
-	stub := &stubReconciler{result: reconcile.Result{RequeueAfter: 30 * time.Second}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_Histogram", 0)
-
-	before := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds", map[string]string{"controller": "TestController_Histogram"})
-	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
-	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
-	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
-	after := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds", map[string]string{"controller": "TestController_Histogram"})
-
-	assert.Equal(t, before+3, after, "histogram must record one observation per RequeueAfter-returning reconcile")
-}
-
 func TestWrap_PeriodicRequeue_CountsAsSteadyState(t *testing.T) {
 	// A controller that returns Result{RequeueAfter: periodicRequeue}
 	// (the MulticlusterReconciler's defer-set pattern) is "I have
@@ -112,25 +99,6 @@ func TestWrap_PeriodicRequeue_CountsAsSteadyState(t *testing.T) {
 		"a RequeueAfter matching defaultRequeueTimeout must count as steady state")
 }
 
-func TestWrap_PeriodicRequeue_SkippedFromHistogram(t *testing.T) {
-	// The periodic-requeue value would otherwise dominate the
-	// histogram and bury the tight-retry-loop signal it exists to
-	// surface. Filter it out.
-	const periodic = 5 * time.Minute
-	stub := &stubReconciler{result: reconcile.Result{RequeueAfter: periodic}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_PeriodicHistogram", periodic)
-
-	before := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds",
-		map[string]string{"controller": "TestController_PeriodicHistogram"})
-	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
-	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
-	after := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds",
-		map[string]string{"controller": "TestController_PeriodicHistogram"})
-
-	assert.Equal(t, before, after,
-		"periodic-requeue results must not be observed in the requeue-after histogram")
-}
-
 func TestWrap_NonPeriodicRequeue_NotSteadyState(t *testing.T) {
 	// A RequeueAfter that doesn't match the periodic value is an
 	// "I have real work pending" requeue and must stay out of the
@@ -147,20 +115,6 @@ func TestWrap_NonPeriodicRequeue_NotSteadyState(t *testing.T) {
 
 	assert.InDelta(t, before, after, 0.0001,
 		"a non-periodic RequeueAfter must not be counted as steady state")
-}
-
-func TestWrap_RequeueAfter_SkipsZeroDuration(t *testing.T) {
-	// Result{Requeue: true, RequeueAfter: 0} means "re-queue immediately."
-	// We don't observe the histogram for it — the histogram is keyed on
-	// the *delay*, and zero isn't a meaningful delay.
-	stub := &stubReconciler{result: reconcile.Result{Requeue: true}, err: nil}
-	w := Wrap[reconcile.Request](stub, "TestController_ImmediateRequeue", 0)
-
-	before := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds", map[string]string{"controller": "TestController_ImmediateRequeue"})
-	_, _ = w.Reconcile(context.Background(), reconcile.Request{})
-	after := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds", map[string]string{"controller": "TestController_ImmediateRequeue"})
-
-	assert.Equal(t, before, after, "immediate-requeue must not produce a histogram observation")
 }
 
 func TestWrap_PreservesInnerResultAndError(t *testing.T) {
@@ -277,24 +231,6 @@ func readGauge(t *testing.T, name string, labels map[string]string) float64 {
 			if labelsContain(m.GetLabel(), labels) {
 				if g := m.GetGauge(); g != nil {
 					return g.GetValue()
-				}
-			}
-		}
-	}
-	return 0
-}
-
-func readHistogramCount(t *testing.T, name string, labels map[string]string) uint64 {
-	t.Helper()
-	families := gather(t)
-	for _, fam := range families {
-		if fam.GetName() != name {
-			continue
-		}
-		for _, m := range fam.GetMetric() {
-			if labelsContain(m.GetLabel(), labels) {
-				if h := m.GetHistogram(); h != nil {
-					return h.GetSampleCount()
 				}
 			}
 		}

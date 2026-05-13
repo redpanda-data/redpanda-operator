@@ -68,9 +68,8 @@ func (r *testReconciler) Reconcile(ctx context.Context, req reconcile.Request) (
 // observability wrapper end-to-end:
 //
 //   - Spinning phase: a reconciler that always returns RequeueAfter <1s
-//     must produce a requeue_after_seconds histogram populated in the
-//     low buckets, must NOT advance steady_state_total, and must NOT
-//     advance last_success_timestamp_seconds.
+//     must NOT advance steady_state_total and must NOT advance
+//     last_success_timestamp_seconds.
 //   - Recovery phase: switching the reconciler to (Result{}, nil) must
 //     start accruing steady_state_total and must advance
 //     last_success_timestamp_seconds to a current timestamp.
@@ -148,11 +147,6 @@ func TestIntegrationObservabilityInfiniteReconcile(t *testing.T) {
 		map[string]string{"controller": controllerName})
 	assert.InDelta(t, 0, steady, 0.0001, "steady_state_total must stay at 0 while reconciler is spinning")
 
-	requeueCount := readHistogramCount(t, "operator_controller_reconcile_requeue_after_seconds",
-		map[string]string{"controller": controllerName})
-	assert.GreaterOrEqual(t, requeueCount, uint64(3),
-		"requeue_after_seconds histogram must record one observation per spinning reconcile")
-
 	lastSuccess := readGauge(t, "operator_controller_reconcile_last_success_timestamp_seconds",
 		map[string]string{"controller": controllerName})
 	assert.InDelta(t, 0, lastSuccess, 0.0001,
@@ -184,10 +178,10 @@ func TestIntegrationObservabilityInfiniteReconcile(t *testing.T) {
 	assert.Greater(t, calls.Load(), preSwitchCalls, "reconciler must be invoked again after the recovery write")
 }
 
-// readCounter / readGauge / readHistogramCount / labelsContain are
-// duplicated here from wrapper_test.go because that file is in the
-// internal `observability` package and this test runs in the external
-// `observability_test` package to exercise the public Wrap API.
+// readCounter / readGauge / labelsContain are duplicated here from
+// wrapper_test.go because that file is in the internal `observability`
+// package and this test runs in the external `observability_test`
+// package to exercise the public Wrap API.
 
 func readCounter(t *testing.T, name string, labels map[string]string) float64 {
 	t.Helper()
@@ -216,23 +210,6 @@ func readGauge(t *testing.T, name string, labels map[string]string) float64 {
 			if labelsContain(m.GetLabel(), labels) {
 				if g := m.GetGauge(); g != nil {
 					return g.GetValue()
-				}
-			}
-		}
-	}
-	return 0
-}
-
-func readHistogramCount(t *testing.T, name string, labels map[string]string) uint64 {
-	t.Helper()
-	for _, fam := range gather(t) {
-		if fam.GetName() != name {
-			continue
-		}
-		for _, m := range fam.GetMetric() {
-			if labelsContain(m.GetLabel(), labels) {
-				if h := m.GetHistogram(); h != nil {
-					return h.GetSampleCount()
 				}
 			}
 		}

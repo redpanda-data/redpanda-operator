@@ -118,7 +118,6 @@ that opt into the `Record*` helpers.
 | Metric | Type | Labels | What it tells you |
 |--------|------|--------|-------------------|
 | `operator_controller_reconcile_steady_state_total` | Counter | `controller` | Reconciles that returned "no work to do" — either `(Result{}, nil)` *or* `(Result{RequeueAfter: defaultRequeueTimeout}, nil)` matching the controller's configured periodic-requeue interval (the wrapper accepts both shapes so controllers using a periodic-wake pattern still register as steady). Healthy controllers see this dominate once the system is converged. A controller whose `reconcile_total` rate is high while `steady_state_total` rate is flat is spinning. |
-| `operator_controller_reconcile_requeue_after_seconds` | Histogram | `controller` | Distribution of `Result.RequeueAfter` durations. A tight cluster of sub-second values is a strong signal of a tight retry loop. |
 | `operator_controller_reconcile_last_success_timestamp_seconds` | Gauge | `controller` | Unix timestamp of the most recent steady-state reconcile per controller. Query as `time() - operator_controller_reconcile_last_success_timestamp_seconds` for seconds-since-last-success — a flat value while `reconcile_total` is climbing means the controller is failing or spinning. |
 
 **Suggested alerts** (all shipped in the chart's PrometheusRule):

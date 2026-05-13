@@ -750,40 +750,12 @@
         "uid": "${DS_PROMETHEUS}"
       },
       "type": "timeseries",
-      "title": "Requeue-after duration distribution (p99)",
-      "description": "histogram_quantile(0.99, ...) of operator_controller_reconcile_requeue_after_seconds. Distribution of Result.RequeueAfter durations returned by each controller.\n\nHow to read: minutes-to-hours = normal long-poll waits (reconcilers backing off until they expect change). A tight cluster of sub-second values means a tight retry loop — controller is asking to be re-invoked every fraction of a second.",
-      "id": 20,
-      "gridPos": {
-        "x": 0,
-        "y": 81,
-        "w": 24,
-        "h": 8
-      },
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.99, sum by (le, controller) (rate(operator_controller_reconcile_requeue_after_seconds_bucket[5m])))",
-          "legendFormat": "{{controller}}",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s"
-        }
-      }
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "type": "timeseries",
       "title": "Seconds since last steady-state reconcile (per controller)",
       "description": "time() - operator_controller_reconcile_last_success_timestamp_seconds — how long ago each controller last reached steady state (either a (Result{}, nil) return or a periodic-requeue matching the controller's configured defaultRequeueTimeout). The underlying gauge is set by the observability wrapper inside the steady-state branch; subtracting from time() at query time gives 'seconds since last success' without any goroutine bookkeeping.\n\nHow to read: bounded (rising then dropping back to ~0) = healthy reconcile cadence. Monotonically climbing past the controller's natural re-queue interval = the controller is failing every reconcile or spinning without reaching steady state. The companion alerts in monitoring.rulesEnabled fire on this signal.",
       "id": 24,
       "gridPos": {
         "x": 0,
-        "y": 89,
+        "y": 81,
         "w": 24,
         "h": 8
       },
@@ -821,6 +793,6 @@
   "timezone": "",
   "title": "Redpanda Operator — Full Observability",
   "uid": "redpanda-operator-observability",
-  "version": 6,
+  "version": 7,
   "weekStart": ""
 }

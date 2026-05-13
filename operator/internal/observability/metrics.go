@@ -59,23 +59,6 @@ var (
 		Help:      "Reconciles that returned no-work — either (Result{}, nil) or the configured periodic-requeue shape.",
 	}, []string{"controller"})
 
-	// ReconcileRequeueAfterSeconds observes the duration carried by a
-	// non-zero Result.RequeueAfter return — excluding the per-controller
-	// configured periodic-requeue value, which is filtered out so the
-	// histogram surfaces unusual requeues (tight retry loops, finalizer
-	// requeues) instead of being dominated by the periodic-wake signal.
-	ReconcileRequeueAfterSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "reconcile_requeue_after_seconds",
-		Help:      "Distribution of Result.RequeueAfter durations across reconciles that requested a non-periodic delayed re-queue.",
-		// Cover sub-second loops (spinning detection) through ~1h
-		// (long-poll style re-queues).
-		Buckets: []float64{
-			0.1, 0.5, 1, 2.5, 5, 10, 30, 60, 300, 1800, 3600,
-		},
-	}, []string{"controller"})
-
 	// ReconcileLastSuccessTimestampSeconds is the Unix timestamp of the
 	// most recent steady-state reconcile for a given controller (see
 	// ReconcileSteadyStateTotal for the definition of steady state).
@@ -190,7 +173,6 @@ func init() {
 	ctrlmetrics.Registry.MustRegister(
 		// Group 1 — reconcile-health (wrapper-emitted).
 		ReconcileSteadyStateTotal,
-		ReconcileRequeueAfterSeconds,
 		ReconcileLastSuccessTimestampSeconds,
 
 		// Group 2 — StretchCluster member status.
