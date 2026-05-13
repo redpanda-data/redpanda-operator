@@ -152,6 +152,13 @@ type transportCollector struct {
 	queueDesc *prometheus.Desc
 }
 
+// Compile-time assertion: transportCollector must implement
+// prometheus.Collector. RegisterTransport wires it into
+// controller-runtime's metrics registry as one, so a missing or
+// signature-drifted Describe / Collect method should fail to build
+// instead of failing at runtime registration.
+var _ prometheus.Collector = &transportCollector{}
+
 func newTransportCollector(t *grpcTransport) *transportCollector {
 	fqName := func(name string) string {
 		return prometheus.BuildFQName(metricsNamespace, metricsSubsystem, name)

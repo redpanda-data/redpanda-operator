@@ -211,7 +211,7 @@ Configuration for monitoring.
 **Default:**
 
 ```
-{"enabled":false,"rulesEnabled":false}
+{"enabled":false,"labels":{},"rulesEnabled":false,"scrapeInterval":""}
 ```
 
 ### [monitoring.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.enabled)
@@ -220,11 +220,23 @@ Creates a ServiceMonitor that can be used by Prometheus-Operator or VictoriaMetr
 
 **Default:** `false`
 
+### [monitoring.labels](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.labels)
+
+Additional labels to add to the ServiceMonitor metadata.
+
+**Default:** `{}`
+
 ### [monitoring.rulesEnabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.rulesEnabled)
 
 Creates a PrometheusRule with the recommended recording rules and alerts for the operator's reconcile health. Independent of `monitoring.enabled` so consumers can opt into rules without also wanting the ServiceMonitor (e.g. if Prometheus is configured to scrape another way).
 
 **Default:** `false`
+
+### [monitoring.scrapeInterval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.scrapeInterval)
+
+Sets the scrape interval for the ServiceMonitor endpoint. Leave empty to use the Prometheus global default.
+
+**Default:** `""`
 
 ### [nameOverride](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=nameOverride)
 

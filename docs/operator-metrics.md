@@ -13,8 +13,7 @@ It covers four groups:
    controller registered through `ctrl.NewControllerManagedBy(mgr)`. Useful
    for reconcile rate, errors, queue depth, and worker pool saturation.
 2. **operator reconcile-health metrics** — added by the operator on top of
-   the built-ins to surface generation drift, spinning controllers, and
-   non-determinism in spec-rendering.
+   the built-ins to surface spinning controllers and time-since-success.
 3. **resource-state metrics** — per-CR gauges describing what the operator
    is managing (counts of Redpanda CRs, desired vs ready broker counts,
    misconfiguration reasons). Mirrors the v1 cluster metrics for the v2
@@ -69,7 +68,6 @@ unbounded. The labels you will see:
 | Label | Cardinality | Source |
 |-------|-------------|--------|
 | `controller` | Small (one per registered controller, ~5-10) | The wrap-time identifier passed to `observability.Wrap(...)` |
-| `kind` | Small (one per kind a controller manages) | controller-supplied label on resource-state metrics |
 | `result` | Closed (`success` / `error` / `requeue` / `requeue_after`) | controller-runtime built-in |
 | `name` | Small (one per workqueue, == one per controller) | controller-runtime built-in |
 | `state` | Closed (`leader` / `follower` / `candidate` / `pre_candidate` / `unknown`) | multicluster raft |
@@ -109,11 +107,8 @@ Both are emitted by the PrometheusRule when `monitoring.rulesEnabled=true`.
 ## Group 2: operator reconcile-health metrics
 
 These are added by `operator/internal/observability/`. The wrapping
-middleware (`observability.Wrap(...)`) emits the result-driven ones for
-every controller; per-object metrics are recorded by individual controllers
-that opt into the `Record*` helpers.
-
-### Wrapper-emitted (free for every controller)
+middleware (`observability.Wrap(controller, defaultRequeueTimeout)`) emits
+them for every controller — no per-controller wiring required.
 
 | Metric | Type | Labels | What it tells you |
 |--------|------|--------|-------------------|
@@ -229,5 +224,8 @@ join.
 The chart ships a starter Grafana dashboard JSON at
 `docs/operator-grafana-dashboard.json`. Import it into Grafana with a
 Prometheus datasource pointed at whatever scrapes the operator's `/metrics`.
-The dashboard has panels for every metric in Groups 1 and 2 plus a
-cross-link to the multicluster raft dashboard.
+The dashboard is a single comprehensive view covering Group 1
+(controller-runtime built-ins), Group 2 (reconcile-health), the
+StretchCluster portion of Group 3, and Group 4 (multicluster raft).
+The v1 / v2 Redpanda CR resource-state metrics in Group 3 are not yet
+paneled — query them directly in Prometheus or add panels as needed.

@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: 'Added the operator reconcile-health metric `operator_controller_reconcile_steady_state_total` (counter) emitted automatically for every controller via a wrapping `Reconciler` middleware. New `monitoring.rulesEnabled` chart value ships a starter PrometheusRule with recording rules and alerts (runaway reconcile rate, sustained errors, stalled controller, worker pool saturation). Metric inventory at `docs/operator-metrics.md`; starter Grafana dashboard at `docs/operator-grafana-dashboard.json`.'
-time: 2026-05-11T15:08:35.59118667+02:00

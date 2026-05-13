@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: 'Added a follow-up operator reconcile-health metric: `operator_controller_reconcile_last_success_timestamp_seconds` (gauge, wrapper-emitted) holds the Unix timestamp of each controller''s most recent steady-state reconcile — query as `time() - last_success_timestamp_seconds` for seconds-since-last-success. The metric inventory at `docs/operator-metrics.md` is updated accordingly.'
-time: 2026-05-12T11:55:31.000000000+02:00

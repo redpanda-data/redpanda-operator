@@ -101,9 +101,11 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 			})
 		}).
 		Complete(
-			&NodePoolReconciler{
-				Manager: mgr,
-			},
+			observability.Wrap[mcreconcile.Request](
+				&NodePoolReconciler{Manager: mgr},
+				"NodePool",
+				periodicRequeue,
+			),
 		)
 }
 

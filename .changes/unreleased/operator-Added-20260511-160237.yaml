@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: 'Added StretchCluster-level resource-state metrics under the `operator_stretchcluster_*` family: `member_reachable` (per-member 0/1), `brokers` / `brokers_ready` (desired vs ready broker count per member), `replication_health` (0/1 cluster-wide), `spec_drift` (0/1 per member — detects stale manifests applied to a single peer). Recorded by the multicluster operator alongside the data it already computes (background reachability probe, NodePool fetch, checkSpecConsistency, admin API health check) — no new RPCs. Comprehensive Grafana dashboard at docs/operator-grafana-dashboard.json now covers reconcile health + StretchCluster + multicluster raft in one view. PrometheusRule extends with StretchClusterMemberUnreachable / BrokerCountSkew / SpecDrift / ReplicationUnhealthy alerts.'
-time: 2026-05-11T16:02:37.1602009+02:00

@@ -155,7 +155,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum by (le, peer) (rate(operator_multicluster_raft_send_duration_seconds_bucket[5m])) * on(instance) group_left() (operator_multicluster_raft_state{state=\"leader\"} == 1))",
+          "expr": "histogram_quantile(0.99, sum by (le, peer) (rate(operator_multicluster_raft_send_duration_seconds_bucket[5m]) and ignoring(le, peer, result, state) (operator_multicluster_raft_state{state=\"leader\"} == 1)))",
           "legendFormat": "{{peer}}",
           "refId": "A"
         }
@@ -273,7 +273,7 @@
       },
       "targets": [
         {
-          "expr": "max by (peer) (operator_multicluster_raft_follower_match_lag_entries * on(instance) group_left() (last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1))",
+          "expr": "max by (peer) (operator_multicluster_raft_follower_match_lag_entries and ignoring(peer, state) (last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1))",
           "legendFormat": "{{peer}}",
           "refId": "A"
         }
@@ -679,8 +679,8 @@
         "uid": "${DS_PROMETHEUS}"
       },
       "type": "timeseries",
-      "title": "Active workers / max workers",
-      "description": "controller_runtime_active_workers ÷ controller_runtime_max_concurrent_reconciles per controller.\n\nHow to read: < 1.0 most of the time = pool has headroom. Pegged at 1.0 sustained = saturation; per-reconcile latency is the bottleneck.",
+      "title": "Active workers / max workers (worst per controller)",
+      "description": "controller_runtime_active_workers ÷ controller_runtime_max_concurrent_reconciles, default vector-matched per operator pod (joins on every shared identity label) and aggregated as max per controller — surfaces whichever operator is most saturated, matching the OperatorWorkerPoolSaturated alert's 'any pod pegged' semantic.\n\nHow to read: < 1.0 most of the time = pool has headroom. Pegged at 1.0 sustained = saturation; per-reconcile latency is the bottleneck.",
       "id": 11,
       "gridPos": {
         "x": 8,
@@ -690,7 +690,7 @@
       },
       "targets": [
         {
-          "expr": "controller_runtime_active_workers / on(controller) controller_runtime_max_concurrent_reconciles",
+          "expr": "max by (controller) (controller_runtime_active_workers / controller_runtime_max_concurrent_reconciles)",
           "legendFormat": "{{controller}}",
           "refId": "A"
         }
@@ -750,8 +750,8 @@
         "uid": "${DS_PROMETHEUS}"
       },
       "type": "timeseries",
-      "title": "Seconds since last steady-state reconcile (per controller)",
-      "description": "time() - operator_controller_reconcile_last_success_timestamp_seconds — how long ago each controller last reached steady state (either a (Result{}, nil) return or a periodic-requeue matching the controller's configured defaultRequeueTimeout). The underlying gauge is set by the observability wrapper inside the steady-state branch; subtracting from time() at query time gives 'seconds since last success' without any goroutine bookkeeping.\n\nHow to read: bounded (rising then dropping back to ~0) = healthy reconcile cadence. Monotonically climbing past the controller's natural re-queue interval = the controller is failing every reconcile or spinning without reaching steady state. The companion alerts in monitoring.rulesEnabled fire on this signal.",
+      "title": "Seconds since last steady-state reconcile (per controller, leader's view)",
+      "description": "time() - operator_controller_reconcile_last_success_timestamp_seconds, filtered to the current leader so a leader change doesn't leave a climbing series from the previous leader on the chart. How long ago each controller last reached steady state (either a (Result{}, nil) return or a periodic-requeue matching the controller's configured defaultRequeueTimeout). The underlying gauge is set by the observability wrapper inside the steady-state branch; subtracting from time() at query time gives 'seconds since last success' without any goroutine bookkeeping.\n\nHow to read: bounded (rising then dropping back to ~0) = healthy reconcile cadence. Monotonically climbing past the controller's natural re-queue interval = the controller is failing every reconcile or spinning without reaching steady state. The companion alerts in monitoring.rulesEnabled fire on this signal.",
       "id": 24,
       "gridPos": {
         "x": 0,
@@ -761,7 +761,7 @@
       },
       "targets": [
         {
-          "expr": "time() - operator_controller_reconcile_last_success_timestamp_seconds",
+          "expr": "time() - (operator_controller_reconcile_last_success_timestamp_seconds and ignoring(controller, state) (operator_multicluster_raft_state{state=\"leader\"} == 1))",
           "legendFormat": "{{controller}}",
           "refId": "A"
         }
@@ -793,6 +793,6 @@
   "timezone": "",
   "title": "Redpanda Operator — Full Observability",
   "uid": "redpanda-operator-observability",
-  "version": 7,
+  "version": 10,
   "weekStart": ""
 }
