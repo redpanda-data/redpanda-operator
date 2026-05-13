@@ -13,55 +13,18 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/collections"
 )
-
-var (
-	redpandas = prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Name: "redpandas",
-			Help: "Number of Redpanda clusters (cluster.redpanda.com/v1alpha2) managed by the operator",
-		},
-	)
-	redpandaDesiredNodes = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "redpanda_desired_nodes",
-			Help: "Desired number of broker pods per Redpanda cluster, summed across all node pools",
-		}, []string{"namespace", "name"},
-	)
-	redpandaReadyNodes = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "redpanda_ready_nodes",
-			Help: "Number of broker pods reporting Ready per Redpanda cluster, summed across all node pools",
-		}, []string{"namespace", "name"},
-	)
-	redpandaMisconfiguredClusters = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "redpanda_misconfigured_clusters",
-			Help: "Number of Redpanda clusters whose ConfigurationApplied condition is not True, labeled by reason",
-		}, []string{"reason"},
-	)
-)
-
-func init() {
-	metrics.Registry.MustRegister(
-		redpandas,
-		redpandaDesiredNodes,
-		redpandaReadyNodes,
-		redpandaMisconfiguredClusters,
-	)
-}
 
 // redpandaMetricKey identifies a Redpanda CR for the purpose of tracking
 // previously-emitted Prometheus label values across reconciles. The namespace
@@ -127,8 +90,8 @@ func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ ctrl.Reques
 			ready += pool.ReadyReplicas
 		}
 
-		redpandaDesiredNodes.WithLabelValues(key.namespace, key.name).Set(float64(desired))
-		redpandaReadyNodes.WithLabelValues(key.namespace, key.name).Set(float64(ready))
+		observability.RedpandaDesiredNodes.WithLabelValues(key.namespace, key.name).Set(float64(desired))
+		observability.RedpandaReadyNodes.WithLabelValues(key.namespace, key.name).Set(float64(ready))
 
 		seenLabels.Add(key)
 		r.currentLabels.Add(key)
@@ -138,23 +101,23 @@ func (r *RedpandaMetricsReconciler) Reconcile(ctx context.Context, _ ctrl.Reques
 		}
 	}
 
-	redpandas.Set(float64(len(rps.Items)))
+	observability.Redpandas.Set(float64(len(rps.Items)))
 
 	for _, key := range r.currentLabels.Values() {
 		if !seenLabels.HasAny(key) {
-			redpandaDesiredNodes.DeleteLabelValues(key.namespace, key.name)
-			redpandaReadyNodes.DeleteLabelValues(key.namespace, key.name)
+			observability.RedpandaDesiredNodes.DeleteLabelValues(key.namespace, key.name)
+			observability.RedpandaReadyNodes.DeleteLabelValues(key.namespace, key.name)
 			r.currentLabels.Delete(key)
 		}
 	}
 
 	for reason, count := range misconfiguredCounts {
-		redpandaMisconfiguredClusters.WithLabelValues(reason).Set(float64(count))
+		observability.RedpandaMisconfiguredClusters.WithLabelValues(reason).Set(float64(count))
 		r.currentConfigurationLabels.Add(reason)
 	}
 	for _, reason := range r.currentConfigurationLabels.Values() {
 		if _, exists := misconfiguredCounts[reason]; !exists {
-			redpandaMisconfiguredClusters.DeleteLabelValues(reason)
+			observability.RedpandaMisconfiguredClusters.DeleteLabelValues(reason)
 			r.currentConfigurationLabels.Delete(reason)
 		}
 	}
