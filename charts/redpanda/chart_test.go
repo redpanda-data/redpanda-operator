@@ -225,9 +225,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("mtls-using-cert-manager", func(t *testing.T) {
 		t.Parallel()
-		ctx := testutil.Context(t)
-
 		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
 
 		partial := mTLSValuesUsingCertManager()
 
@@ -254,9 +253,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("mtls-using-self-created-certificates", func(t *testing.T) {
 		t.Parallel()
-		ctx := testutil.Context(t)
-
 		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
 
 		serverTLSSecretName := "server-tls-secret"
 		clientTLSSecretName := "client-tls-secret"
@@ -299,9 +297,8 @@ func TestIntegrationChart(t *testing.T) {
 		partial := mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName)
 
 		rpRelease := env.Install(ctx, redpandaChart, helm.InstallOptions{
-			Values:    partial,
-			Name:      chartReleaseName,
-			Namespace: env.Namespace(),
+			Values: partial,
+			Name:   chartReleaseName,
 		})
 
 		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
@@ -322,9 +319,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("admin api auth required", func(t *testing.T) {
 		t.Parallel()
-		ctx := testutil.Context(t)
-
 		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
 
 		partial := minimalValues(&redpanda.PartialValues{
 			External:      &redpanda.PartialExternalConfig{Enabled: ptr.To(false)},
@@ -351,9 +347,8 @@ func TestIntegrationChart(t *testing.T) {
 
 		chartReleaseName := fmt.Sprintf("chart-%d", r.Int64())
 		rpRelease := env.Install(ctx, redpandaChart, helm.InstallOptions{
-			Values:    partial,
-			Name:      chartReleaseName,
-			Namespace: env.Namespace(),
+			Values: partial,
+			Name:   chartReleaseName,
 		})
 
 		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
@@ -371,9 +366,8 @@ func TestIntegrationChart(t *testing.T) {
 
 	t.Run("admin api auth required - pre-existing secret", func(t *testing.T) {
 		t.Parallel()
-		ctx := testutil.Context(t)
-
 		env := h.Namespaced(t)
+		ctx := testutil.Context(t)
 
 		err := env.Ctl().Create(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -407,9 +401,8 @@ func TestIntegrationChart(t *testing.T) {
 
 		chartReleaseName := fmt.Sprintf("chart-%d", r.Int64())
 		rpRelease := env.Install(ctx, redpandaChart, helm.InstallOptions{
-			Values:    partial,
-			Name:      chartReleaseName,
-			Namespace: env.Namespace(),
+			Values: partial,
+			Name:   chartReleaseName,
 		})
 
 		rpk := newClient(t, env.Ctl(), &rpRelease, partial)
