@@ -4643,6 +4643,13 @@ Tuning configures settings for the autotuner tool in Redpanda. The autotuner ide
 | *`tune_ballast_file`* __boolean__ | Specifies whether to create the ballast file. + |  | 
 | *`tune_clocksource`* __boolean__ | Specifies whether to synchronize NTP. + |  | 
 | *`well_known_io`* __string__ | Specifies the vendor, VM type, and storage device type that Redpanda runs on, in the format <vendor>:<vm>:<storage>. This hints to Redpanda which configuration values it should use for the Redpanda IO scheduler. + |  | 
+| *`apply_host_tuners`* __boolean__ | ApplyHostTuners enables a chroot-based tuning init container that +
+gives `rpk redpanda tune all` access to the host's /sys, /proc, +
+NICs and block devices so tuners like disk_irq, disk_scheduler, +
+disk_nomerges and net actually apply. Requires `tune_aio_events`. +
+Opt-in: defaults to false. Enabling requires a privileged SCC/PSA +
+on the namespace and MUST be combined with one-pod-per-node +
+anti-affinity to avoid kernel-parameter races. + |  | 
 |===
 
 
