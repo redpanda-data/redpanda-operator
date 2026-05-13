@@ -834,6 +834,20 @@ type Tuning struct {
 	// (the default), only the small set of tuners that can run inside a
 	// container are applied (aio_events, swappiness, THP, etc.).
 	//
+	// To save users from a two-step config (set ApplyHostTuners AND remember
+	// to flip each of the host-mode tune flags via config.rpk.tune_*),
+	// turning this on default-enables the four tuners the chroot path
+	// exists to fix:
+	//   - tune_disk_irq
+	//   - tune_disk_scheduler
+	//   - tune_disk_nomerges
+	//   - tune_network
+	// The set is unconditional — the chart's RPK config merge is first-arg-
+	// wins, so a user setting `config.rpk.tune_disk_irq: false` alongside
+	// `apply_host_tuners: true` will see the chart's `true` win. Users who
+	// want apply_host_tuners off for any of those tuners should leave
+	// ApplyHostTuners false and wire host tuning via their own DaemonSet.
+	//
 	// Enabling this requires the same security posture as TuneAIOEvents
 	// (privileged container, hostPath volumes). On OpenShift, the pod's
 	// ServiceAccount must be bound to a SCC that allows `hostPath` volumes
@@ -859,6 +873,25 @@ func (t *Tuning) Translate() map[string]any {
 
 	for k, v := range m {
 		result[k] = v
+	}
+
+	// Whole point of ApplyHostTuners is to make the rpk tuners that need
+	// host /sys, /proc, NICs and block devices actually fire. Those tuners
+	// are gated by per-tuner flags in the rpk section of redpanda.yaml, not
+	// by ApplyHostTuners itself — so flipping just ApplyHostTuners renders
+	// the chroot init container but `rpk redpanda tune all` runs it against
+	// a config where only tune_aio_events is true (the only host-mode-
+	// relevant flag exposed at the top level). Default-enable the four
+	// tuners that motivate this feature.
+	if t.ApplyHostTuners {
+		for _, k := range []string{
+			"tune_disk_irq",
+			"tune_disk_scheduler",
+			"tune_disk_nomerges",
+			"tune_network",
+		} {
+			result[k] = true
+		}
 	}
 
 	return result
