@@ -6527,6 +6527,9 @@
         }
       ]
     },
+    "topicSyncInterval": {
+      "type": "string"
+    },
     "vectorizedControllers": {
       "additionalProperties": false,
       "properties": {

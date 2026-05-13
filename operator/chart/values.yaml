@@ -66,6 +66,13 @@ imagePullSecrets: []
 # Valid values (from least to most verbose) are: `warn`, `info`, `debug`, and `trace`.
 logLevel: "info"
 
+# -- Default reconciliation interval for Topic resources.
+# Controls how often the operator opens a Kafka connection per topic to check for drift
+# between a Topic CR and the actual Kafka topic config. Lower values detect config drift
+# faster but generate more connections (one per topic per interval)
+# If unset, the operator built-in default of 3s is used.
+# topicSyncInterval: "30s"
+
 # -- Role-based Access Control (RBAC) configuration for the Redpanda Operator.
 rbac:
   # -- Enables the creation of additional RBAC roles.

@@ -113,6 +113,7 @@ type RunOptions struct {
 	metricsCertKey                      string
 	enableGhostBrokerDecommissioner     bool
 	ghostBrokerDecommissionerSyncPeriod time.Duration
+	topicSyncInterval                   time.Duration
 	cloudSecretsEnabled                 bool
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
@@ -162,6 +163,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
+	cmd.Flags().DurationVar(&o.topicSyncInterval, "topic-sync-interval", 3*time.Second, "Default reconciliation interval for Topic resources. Controls how often the operator checks for drift between a Topic CR and the actual Kafka topic config. Per-resource overrides via spec.synchronizationInterval take precedence. Lower values detect drift faster but open more Kafka connections (one per topic per interval).")
 
 	// Secret store related flags.
 	cmd.Flags().BoolVar(&o.cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
@@ -459,7 +461,7 @@ func Run(
 		return err
 	}
 
-	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.topicSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}

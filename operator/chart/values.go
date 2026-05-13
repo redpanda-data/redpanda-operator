@@ -110,6 +110,7 @@ type Values struct {
 	Config                Config                        `json:"config"`
 	ImagePullSecrets      []corev1.LocalObjectReference `json:"imagePullSecrets"`
 	LogLevel              string                        `json:"logLevel"`
+	TopicSyncInterval     string                        `json:"topicSyncInterval,omitempty"`
 	RBAC                  RBAC                          `json:"rbac"`
 	Webhook               Webhook                       `json:"webhook"`
 	ServiceAccount        ServiceAccountConfig          `json:"serviceAccount"`

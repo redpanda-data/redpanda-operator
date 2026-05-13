@@ -59,6 +59,9 @@ type TopicReconciler struct {
 	Manager      multicluster.Manager
 	Factory      internalclient.ClientFactory
 	RecordEvents bool
+	// SynchronizationInterval is the reconcile interval used when a Topic CR does not
+	// set spec.synchronizationInterval. Defaults to 3s if zero.
+	SynchronizationInterval time.Duration
 }
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=topics,verbs=get;list;watch;update;patch
@@ -140,10 +143,11 @@ func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
 	return nil
 }
 
-func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, defaultSyncInterval time.Duration) error {
 	r := &TopicReconciler{
-		Manager: mgr,
-		Factory: internalclient.NewFactory(mgr, expander),
+		Manager:                 mgr,
+		Factory:                 internalclient.NewFactory(mgr, expander),
+		SynchronizationInterval: defaultSyncInterval,
 	}
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -173,7 +177,10 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
 	l = l.WithName("reconcile")
 
-	interval := metav1.Duration{Duration: time.Second * 3}
+	interval := metav1.Duration{Duration: r.SynchronizationInterval}
+	if interval.Duration == 0 {
+		interval.Duration = 3 * time.Second
+	}
 	if topic.Spec.SynchronizationInterval != nil {
 		interval = *topic.Spec.SynchronizationInterval
 	}

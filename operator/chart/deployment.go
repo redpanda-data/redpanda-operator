@@ -347,6 +347,10 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
 	}
 
+	if !helmette.Empty(values.TopicSyncInterval) {
+		defaults["--topic-sync-interval"] = values.TopicSyncInterval
+	}
+
 	addLicenseFilePathArg(defaults, values)
 
 	if values.Webhook.Enabled {

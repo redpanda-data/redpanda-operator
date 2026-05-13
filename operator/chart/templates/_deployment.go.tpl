@@ -174,6 +174,9 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
+{{- if (not (empty $values.topicSyncInterval)) -}}
+{{- $_ := (set $defaults "--topic-sync-interval" $values.topicSyncInterval) -}}
+{{- end -}}
 {{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}

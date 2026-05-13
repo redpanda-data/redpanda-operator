@@ -180,6 +180,9 @@ multicluster:
     type: ClusterIP
     mcs: true
 
+-- topic-sync-interval --
+topicSyncInterval: "30s"
+
 -- multicluster service loadbalancer --
 crds:
   enabled: true

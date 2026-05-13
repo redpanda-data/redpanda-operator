@@ -193,6 +193,10 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 		"--kubeconfig-name":           ServiceAccountName(dot),
 	}
 
+	if !helmette.Empty(values.TopicSyncInterval) {
+		defaults["--topic-sync-interval"] = values.TopicSyncInterval
+	}
+
 	if values.Webhook.Enabled {
 		defaults["--webhook-cert-path"] = webhookCertificatePath + "/tls.crt"
 		defaults["--webhook-key-path"] = webhookCertificatePath + "/tls.key"

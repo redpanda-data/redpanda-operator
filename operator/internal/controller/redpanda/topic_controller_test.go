@@ -912,6 +912,78 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 		err = c.Get(ctx, key, &topic)
 		assert.True(t, apierrors.IsNotFound(err), "topic should be deleted after finalizer removal")
 	})
+	t.Run("reconciler_sync_interval_used_when_topic_does_not_override", func(t *testing.T) {
+		// Verify that TopicReconciler.SynchronizationInterval is used as the requeue
+		// interval when the Topic CR does not set spec.synchronizationInterval.
+		topicName := "reconciler-sync-interval-topic"
+
+		trCustomInterval := TopicReconciler{
+			Manager:                 mgr,
+			Factory:                 factory,
+			SynchronizationInterval: 45 * time.Second,
+		}
+
+		topic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:        ptr.To(1),
+				ReplicationFactor: ptr.To(1),
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+				// SynchronizationInterval intentionally not set — reconciler default should apply.
+			},
+		}
+
+		err := c.Create(ctx, &topic)
+		require.NoError(t, err)
+
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+		result, err := trCustomInterval.Reconcile(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 45*time.Second, result.RequeueAfter)
+	})
+	t.Run("topic_spec_sync_interval_overrides_reconciler_default", func(t *testing.T) {
+		// Verify that spec.synchronizationInterval on the Topic CR takes precedence
+		// over TopicReconciler.SynchronizationInterval.
+		topicName := "topic-spec-interval-override"
+
+		trCustomInterval := TopicReconciler{
+			Manager:                 mgr,
+			Factory:                 factory,
+			SynchronizationInterval: 45 * time.Second,
+		}
+
+		topic := redpandav1alpha2.Topic{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      topicName,
+				Namespace: testNamespace,
+			},
+			Spec: redpandav1alpha2.TopicSpec{
+				Partitions:              ptr.To(1),
+				ReplicationFactor:       ptr.To(1),
+				SynchronizationInterval: &metav1.Duration{Duration: 10 * time.Second},
+				KafkaAPISpec: &redpandav1alpha2.KafkaAPISpec{
+					Brokers: []string{seedBroker},
+				},
+			},
+		}
+
+		err := c.Create(ctx, &topic)
+		require.NoError(t, err)
+
+		key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+		result, err := trCustomInterval.Reconcile(ctx, req)
+		require.NoError(t, err)
+		assert.Equal(t, 10*time.Second, result.RequeueAfter)
+	})
 }
 
 func TestUnsetStorageMode(t *testing.T) {

@@ -28,6 +28,7 @@ type PartialValues struct {
 	Config                *PartialConfig                "json:\"config,omitempty\""
 	ImagePullSecrets      []corev1.LocalObjectReference "json:\"imagePullSecrets,omitempty\""
 	LogLevel              *string                       "json:\"logLevel,omitempty\""
+	TopicSyncInterval     *string                       "json:\"topicSyncInterval,omitempty\""
 	RBAC                  *PartialRBAC                  "json:\"rbac,omitempty\""
 	Webhook               *PartialWebhook               "json:\"webhook,omitempty\""
 	ServiceAccount        *PartialServiceAccountConfig  "json:\"serviceAccount,omitempty\""
