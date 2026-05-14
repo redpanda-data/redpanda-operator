@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Register the Redpanda Console controller in multicluster operator mode and teach `Console.spec.cluster.clusterRef` to resolve `kind: StretchCluster` so operator-managed Console deployments work in StretchCluster setups. The Console controller previously did not run when the operator was started via `multicluster`, which silently dropped any `cluster.redpanda.com/v1alpha2 Console` CR applied alongside a `StretchCluster`.'
+time: 2026-05-14T14:56:53.835448357+02:00

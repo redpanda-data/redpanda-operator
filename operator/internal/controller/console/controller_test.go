@@ -120,6 +120,22 @@ func TestController(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "stretch-cluster-ref",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-stretch-cluster-ref",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ClusterSource: &redpandav1alpha2.ClusterSource{
+						ClusterRef: &redpandav1alpha2.ClusterRef{
+							Name: "test-stretch",
+							Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	ctl := kubetest.NewEnv(t, kube.Options{
@@ -153,6 +169,13 @@ func TestController(t *testing.T) {
 	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-redpanda",
+			Namespace: ns.Name,
+		},
+	}))
+
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-stretch",
 			Namespace: ns.Name,
 		},
 	}))

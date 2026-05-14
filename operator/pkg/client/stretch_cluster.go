@@ -304,16 +304,16 @@ func (c *Factory) stretchClusterAuth(ctx context.Context, sc *redpandav1alpha2.S
 		return "", "", nil
 	}
 
-	secretName := fmt.Sprintf("%s-bootstrap-user", sc.Name)
+	secretName := sc.BootstrapUserSecretName()
 	var secret corev1.Secret
 	if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: secretName}, &secret); err != nil {
 		return "", "", errors.Wrapf(err, "reading bootstrap user secret %q", secretName)
 	}
 
-	pw, ok := secret.Data["password"]
+	pw, ok := secret.Data[redpandav1alpha2.StretchClusterBootstrapPasswordKey]
 	if !ok || len(pw) == 0 {
 		return "", "", fmt.Errorf("bootstrap user secret %q has no password", secretName)
 	}
 
-	return "kubernetes-controller", string(pw), nil
+	return redpandav1alpha2.StretchClusterBootstrapUsername, string(pw), nil
 }

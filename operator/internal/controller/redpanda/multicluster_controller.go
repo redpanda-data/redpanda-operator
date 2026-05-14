@@ -53,10 +53,14 @@ import (
 )
 
 const (
-	bootstrapUserSecretSuffix = "-bootstrap-user"
-	bootstrapUserPasswordKey  = "password"
-	defaultBootstrapUsername  = "kubernetes-controller"
-	caOrganization            = "Redpanda"
+	// Aliases for the canonical constants in v1alpha2 so this package's
+	// existing call sites read clean. Single source of truth lives in
+	// redpandav1alpha2.{StretchClusterBootstrapUsername,
+	// StretchClusterBootstrapPasswordKey} and
+	// (*StretchCluster).BootstrapUserSecretName().
+	bootstrapUserPasswordKey = redpandav1alpha2.StretchClusterBootstrapPasswordKey
+	defaultBootstrapUsername = redpandav1alpha2.StretchClusterBootstrapUsername
+	caOrganization           = "Redpanda"
 
 	// brokerFetchTimeout bounds a single state.admin.Broker(brokerID) call
 	// in reconcileDecommission. The admin client's default ClientTimeout is
@@ -477,12 +481,14 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 }
 
 // bootstrapSecretName returns the name of the bootstrap user secret for a given
-// stretch cluster, matching the convention used by the render path:
-// <stretchcluster-name>-bootstrap-user. The same name is used in every k8s
-// cluster so the StatefulSet env var can reference it without knowing the
-// cluster name.
+// stretch cluster. The same name is used in every k8s cluster so the
+// StatefulSet env var can reference it without knowing the cluster name.
+//
+// Deprecated: thin wrapper around [redpandav1alpha2.StretchCluster.BootstrapUserSecretName]
+// for back-compat with this package's call sites; prefer the method directly
+// in new code.
 func bootstrapSecretName(sc *redpandav1alpha2.StretchCluster) string {
-	return fmt.Sprintf("%s%s", sc.Name, bootstrapUserSecretSuffix)
+	return sc.BootstrapUserSecretName()
 }
 
 func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (_ ctrl.Result, err error) {

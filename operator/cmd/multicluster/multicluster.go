@@ -17,18 +17,21 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/license"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
@@ -86,6 +89,8 @@ type MulticlusterOptions struct {
 
 	ClusterConnectionTimeout time.Duration
 	ReconcileTimeout         time.Duration
+
+	EnableConsoleController bool
 }
 
 func (o *MulticlusterOptions) validate() error {
@@ -179,6 +184,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().Var(&o.UnbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
 	cmd.Flags().DurationVar(&o.ReconcileTimeout, "reconcile-timeout", 2*time.Minute, "Defense-in-depth ceiling on a single reconcile pass; on deadline the reconcile aborts with context.DeadlineExceeded and is requeued with backoff. Primary bounding should still come from per-call timeouts on downstream clients")
+	cmd.Flags().BoolVar(&o.EnableConsoleController, "enable-console", true, "Specifies whether or not to enable the Redpanda Console controller")
 }
 
 func Command() *cobra.Command {
@@ -373,6 +379,27 @@ func Run(
 	if err := redpandacontrollers.SetupWithMultiClusterManager(manager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 		return err
+	}
+
+	if opts.EnableConsoleController {
+		localMgr := manager.GetLocalManager()
+		ctl, err := kube.FromRESTConfig(localMgr.GetConfig(), kube.Options{
+			Options: client.Options{
+				Scheme: localMgr.GetScheme(),
+				Cache: &client.CacheOptions{
+					Reader: localMgr.GetCache(),
+				},
+			},
+			FieldManager: string(lifecycle.DefaultFieldOwner),
+		})
+		if err != nil {
+			return err
+		}
+
+		if err := (&consolecontroller.Controller{Ctl: ctl, Config: localMgr.GetConfig()}).SetupWithMulticlusterManager(ctx, manager); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Console")
+			return err
+		}
 	}
 
 	if opts.UnbindPVCsAfter <= 0 {

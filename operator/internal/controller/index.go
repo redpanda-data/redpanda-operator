@@ -61,6 +61,25 @@ func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U
 	return enqueueFromSourceCluster(mgr, name, clusterName, l), nil
 }
 
+// RegisterStretchClusterSourceIndex mirrors [RegisterClusterSourceIndex] but
+// indexes CRs whose clusterRef points at a StretchCluster (kind=StretchCluster
+// in the cluster.redpanda.com group). Pass a `name` that is disjoint from any
+// other indexes registered on the same object kind so the per-name indexer
+// entries don't collide.
+func RegisterStretchClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr multicluster.Manager, name, clusterName string, o T, l U) (mchandler.EventHandlerFunc, error) {
+	indexName := clusterReferenceIndexName(name)
+	cluster, err := mgr.GetCluster(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	if err := cluster.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
+		return cr.IsStretchCluster()
+	})); err != nil {
+		return nil, err
+	}
+	return enqueueFromSourceCluster(mgr, name, clusterName, l), nil
+}
+
 func indexByClusterSource(checkRef func(*redpandav1alpha2.ClusterRef) bool) func(o client.Object) []string {
 	return func(o client.Object) []string {
 		clusterReferencingObject := o.(redpandav1alpha2.ClusterReferencingObject)

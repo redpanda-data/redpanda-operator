@@ -141,14 +141,14 @@ func secretBootstrapUser(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-bootstrap-user", state.fullname()),
+			Name:      state.cluster.BootstrapUserSecretName(),
 			Namespace: state.namespace,
 			Labels:    state.commonLabels(),
 		},
 		Immutable: ptr.To(true),
 		Type:      corev1.SecretTypeOpaque,
 		StringData: map[string]string{
-			"password": password,
+			redpandav1alpha2.StretchClusterBootstrapPasswordKey: password,
 		},
 	}
 }

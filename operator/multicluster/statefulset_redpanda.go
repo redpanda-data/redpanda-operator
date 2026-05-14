@@ -147,7 +147,7 @@ func bootstrapUserEnvVars(state *RenderState) []corev1.EnvVar {
 	}
 
 	mechanism := state.Spec().Auth.SASL.GetMechanism()
-	secretName := fmt.Sprintf("%s-bootstrap-user", state.fullname())
+	secretName := state.cluster.BootstrapUserSecretName()
 
 	return []corev1.EnvVar{
 		{
@@ -161,7 +161,7 @@ func bootstrapUserEnvVars(state *RenderState) []corev1.EnvVar {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: secretName,
 					},
-					Key: "password",
+					Key: redpandav1alpha2.StretchClusterBootstrapPasswordKey,
 				},
 			},
 		},
