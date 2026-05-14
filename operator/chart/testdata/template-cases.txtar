@@ -96,3 +96,26 @@ additionalCmdFlags:
 - --configurator-base-image=my.repo.com/configurator
 - --configurator-tag=XYZ
 - --configurator-image-pull-policy=IfNotPresent
+
+-- monitoring-enabled --
+monitoring:
+  enabled: true
+
+-- monitoring-with-scrape-interval --
+monitoring:
+  enabled: true
+  scrapeInterval: 60s
+
+-- monitoring-with-labels --
+monitoring:
+  enabled: true
+  labels:
+    team: platform
+    env: production
+
+-- monitoring-with-labels-and-interval --
+monitoring:
+  enabled: true
+  scrapeInterval: 15s
+  labels:
+    prometheus.io/scrape: "true"
