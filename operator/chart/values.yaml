@@ -153,6 +153,10 @@ vectorizedControllers:
 monitoring:
   # -- Creates a ServiceMonitor that can be used by Prometheus-Operator or VictoriaMetrics-Operator to scrape the metrics.
   enabled: false
+  # -- Sets the scrape interval for the ServiceMonitor endpoint. Leave empty to use the Prometheus global default.
+  scrapeInterval: ""
+  # -- Additional labels to add to the ServiceMonitor metadata.
+  labels: {}
 
 # Sets the name of the Secret in which to store the self-signed TLS certificate for the Webhooks when `webhook.enabled` is `true`.
 webhookSecretName: webhook-server-cert
