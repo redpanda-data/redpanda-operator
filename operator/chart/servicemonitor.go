@@ -25,6 +25,26 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 		return nil
 	}
 
+	endpoint := monitoringv1.Endpoint{
+		Port:   "https",
+		Path:   "/metrics",
+		Scheme: ptr.To(monitoringv1.SchemeHTTPS),
+		HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
+			HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
+				TLSConfig: &monitoringv1.TLSConfig{
+					SafeTLSConfig: monitoringv1.SafeTLSConfig{
+						InsecureSkipVerify: ptr.To(true),
+					},
+				},
+			},
+		},
+		BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+	}
+
+	if values.Monitoring.ScrapeInterval != "" {
+		endpoint.Interval = monitoringv1.Duration(values.Monitoring.ScrapeInterval)
+	}
+
 	return &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceMonitor",
@@ -32,28 +52,12 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        cleanForK8sWithSuffix(Fullname(dot), "metrics-monitor"),
-			Labels:      Labels(dot),
+			Labels:      helmette.Merge(Labels(dot), values.Monitoring.Labels),
 			Namespace:   dot.Release.Namespace,
 			Annotations: values.Annotations,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
-			Endpoints: []monitoringv1.Endpoint{
-				{
-					Port:   "https",
-					Path:   "/metrics",
-					Scheme: ptr.To(monitoringv1.SchemeHTTPS),
-					HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
-						HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
-							TLSConfig: &monitoringv1.TLSConfig{
-								SafeTLSConfig: monitoringv1.SafeTLSConfig{
-									InsecureSkipVerify: ptr.To(true),
-								},
-							},
-						},
-					},
-					BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
-				},
-			},
+			Endpoints: []monitoringv1.Endpoint{endpoint},
 			NamespaceSelector: monitoringv1.NamespaceSelector{
 				MatchNames: []string{dot.Release.Namespace},
 			},
