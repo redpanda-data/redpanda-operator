@@ -180,6 +180,29 @@ multicluster:
     type: ClusterIP
     mcs: true
 
+-- monitoring-enabled --
+monitoring:
+  enabled: true
+
+-- monitoring-with-scrape-interval --
+monitoring:
+  enabled: true
+  scrapeInterval: 60s
+
+-- monitoring-with-labels --
+monitoring:
+  enabled: true
+  labels:
+    team: platform
+    env: production
+
+-- monitoring-with-labels-and-interval --
+monitoring:
+  enabled: true
+  scrapeInterval: 15s
+  labels:
+    prometheus.io/scrape: "true"
+
 -- multicluster service loadbalancer --
 crds:
   enabled: true
