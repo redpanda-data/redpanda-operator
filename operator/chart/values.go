@@ -130,5 +130,7 @@ type ServiceAccountConfig struct {
 }
 
 type MonitoringConfig struct {
-	Enabled bool `json:"enabled"`
+	Enabled        bool              `json:"enabled"`
+	Labels         map[string]string `json:"labels"`
+	ScrapeInterval string            `json:"scrapeInterval"`
 }
