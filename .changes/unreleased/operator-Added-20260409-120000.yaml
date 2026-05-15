@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Support importing existing Redpanda users into operator management and ongoing credential sync via spec.authentication.syncCredentials for external secret rotation (e.g. ESO).
+time: 2026-04-09T12:00:00.000000-04:00

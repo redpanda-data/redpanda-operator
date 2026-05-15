@@ -12,6 +12,7 @@ package redpanda
 import (
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -29,6 +30,347 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
+
+// TestUserAdoptExisting verifies that a User CR applied for an already-existing
+// Redpanda user is adopted (managedUser becomes true) instead of being left
+// unmanaged. This is the fix for
+// https://github.com/redpanda-data/redpanda-operator/issues/1354.
+func TestUserAdoptExisting(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	userName := "adopt-user-" + strconv.Itoa(int(time.Now().UnixNano()))
+
+	// Step 1: Pre-create the user directly in Redpanda via the Kafka admin
+	// API, simulating a user that existed before the operator was deployed.
+	kafkaClient, err := kgo.NewClient(kgo.SeedBrokers(environment.KafkaURL), timeoutOption, kgo.SASL(scram.Auth{
+		User: "superuser",
+		Pass: "password",
+	}.AsSha256Mechanism()))
+	require.NoError(t, err)
+	defer kafkaClient.Close()
+
+	adminClient := kadm.NewClient(kafkaClient)
+	_, err = adminClient.AlterUserSCRAMs(ctx, nil, []kadm.UpsertSCRAM{{
+		User:       userName,
+		Password:   "original-password",
+		Mechanism:  kadm.ScramSha512,
+		Iterations: 4096,
+	}})
+	require.NoError(t, err)
+
+	// Step 2: Apply a User CR for this pre-existing user.
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Password: redpandav1alpha2.Password{
+					Value: "adopted-password",
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: userName + "-password",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(user)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, k8sClient.Create(ctx, user))
+
+	// Reconcile twice: first adds finalizer, second does sync.
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.True(t, user.Status.ManagedUser, "expected managedUser=true after adopting existing user")
+	require.Equal(t, metav1.ConditionTrue, user.Status.Conditions[0].Status)
+
+	// Verify we can authenticate with the new password.
+	verifyClient, err := kgo.NewClient(kgo.SeedBrokers(environment.KafkaURL), timeoutOption, kgo.SASL(scram.Auth{
+		User: userName,
+		Pass: "adopted-password",
+	}.AsSha512Mechanism()))
+	require.NoError(t, err)
+	defer verifyClient.Close()
+	verifyAdmin := kadm.NewClient(verifyClient)
+	_, err = verifyAdmin.BrokerMetadata(ctx)
+	require.NoError(t, err)
+
+	// Cleanup.
+	require.NoError(t, k8sClient.Delete(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+}
+
+// TestUserNoGenerateMissingSecret verifies that when Password.NoGenerate=true
+// is set and the referenced Secret does not exist, the controller does NOT
+// auto-create the Secret (the default behavior in TestUserAdoptExisting) but
+// instead fails reconciliation. This documents the explicit opt-out path for
+// the auto-create-Secret-on-missing behavior in Client.getPassword.
+func TestUserNoGenerateMissingSecret(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	userName := "nogen-user-" + strconv.Itoa(int(time.Now().UnixNano()))
+	secretName := userName + "-password"
+
+	// User CR with NoGenerate=true and a SecretKeyRef pointing at a Secret
+	// that doesn't exist. Without NoGenerate, the controller would auto-
+	// create the Secret with the inline Value as the password. With
+	// NoGenerate, that fallback is disabled.
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Password: redpandav1alpha2.Password{
+					NoGenerate: true,
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: secretName,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(user)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, k8sClient.Create(ctx, user))
+
+	// Reconcile attempts user creation. With NoGenerate=true and the
+	// referenced Secret missing, getPassword propagates the NotFound error
+	// instead of synthesizing a Secret. The finalizer patch and sync run
+	// in the same reconcile pass, so we expect a single failing call.
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.Error(t, err, "expected reconcile to fail when NoGenerate=true and Secret is missing")
+	require.True(t, apierrors.IsNotFound(err) ||
+		strings.Contains(err.Error(), "not found") ||
+		strings.Contains(err.Error(), secretName),
+		"expected NotFound-shaped error, got: %v", err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.False(t, user.Status.ManagedUser, "expected managedUser=false when password lookup failed")
+
+	// Verify no Secret was created out of band.
+	var maybeSecret corev1.Secret
+	getErr := k8sClient.Get(ctx, client.ObjectKey{Namespace: metav1.NamespaceDefault, Name: secretName}, &maybeSecret)
+	require.True(t, apierrors.IsNotFound(getErr), "controller must not auto-create the Secret when NoGenerate=true; got: %v", getErr)
+
+	// Cleanup.
+	require.NoError(t, k8sClient.Delete(ctx, user))
+	_, _ = environment.Reconciler.Reconcile(ctx, req)
+}
+
+// TestUserCredentialSync verifies that when syncCredentials is enabled, updating
+// the password Secret causes the operator to push the new password to Redpanda
+// on the next reconciliation cycle.
+func TestUserCredentialSync(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	userName := "sync-user-" + strconv.Itoa(int(time.Now().UnixNano()))
+	secretName := userName + "-password"
+
+	// Step 1: Create the password Secret (simulating ESO-managed secret).
+	passwordSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Data: map[string][]byte{
+			"password": []byte("initial-password"),
+		},
+	}
+	require.NoError(t, k8sClient.Create(ctx, passwordSecret))
+
+	// Step 2: Create User CR with syncCredentials enabled.
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Password: redpandav1alpha2.Password{
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: secretName,
+							},
+							Key: "password",
+						},
+					},
+					NoGenerate: true,
+				},
+				SyncCredentials: true,
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(user)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, k8sClient.Create(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.True(t, user.Status.ManagedUser)
+
+	// Verify initial password works.
+	verifyAuth := func(password string) {
+		t.Helper()
+		c, err := kgo.NewClient(kgo.SeedBrokers(environment.KafkaURL), timeoutOption, kgo.SASL(scram.Auth{
+			User: userName,
+			Pass: password,
+		}.AsSha512Mechanism()))
+		require.NoError(t, err)
+		defer c.Close()
+		_, err = kadm.NewClient(c).BrokerMetadata(ctx)
+		require.NoError(t, err)
+	}
+	verifyAuth("initial-password")
+
+	// Step 3: Simulate ESO rotating the password.
+	require.NoError(t, k8sClient.Get(ctx, client.ObjectKeyFromObject(passwordSecret), passwordSecret))
+	passwordSecret.Data["password"] = []byte("rotated-password")
+	require.NoError(t, k8sClient.Update(ctx, passwordSecret))
+
+	// Step 4: Reconcile again; syncCredentials should push the new password.
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	// Verify rotated password now works.
+	verifyAuth("rotated-password")
+
+	// Cleanup.
+	require.NoError(t, k8sClient.Delete(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+}
+
+func TestUserManagedUserDrift(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "drift-user-" + strconv.Itoa(int(time.Now().UnixNano())),
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Password: redpandav1alpha2.Password{
+					Value: "password",
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "password",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(user)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, k8sClient.Create(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.True(t, user.Status.ManagedUser)
+
+	userClient, err := environment.Factory.Users(ctx, user, timeoutOption)
+	require.NoError(t, err)
+	defer userClient.Close()
+
+	require.NoError(t, userClient.Delete(ctx, user))
+	hasUser, err := userClient.Has(ctx, user)
+	require.NoError(t, err)
+	require.False(t, hasUser)
+
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	hasUser, err = userClient.Has(ctx, user)
+	require.NoError(t, err)
+	require.True(t, hasUser, "expected managed user to be recreated after out-of-band deletion")
+
+	require.NoError(t, userClient.Delete(ctx, user))
+	hasUser, err = userClient.Has(ctx, user)
+	require.NoError(t, err)
+	require.False(t, hasUser)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	user.Spec.Authentication = nil
+	require.NoError(t, k8sClient.Update(ctx, user))
+
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.False(t, user.Status.ManagedUser, "expected managedUser to clear when authentication is removed after out-of-band deletion")
+
+	require.NoError(t, k8sClient.Delete(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+}
 
 func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
@@ -114,6 +456,14 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			},
 			expectedCondition: environment.SyncedCondition,
 			onlyCheckDeletion: true,
+		},
+		"success - adopt existing user": {
+			mutate: func(user *redpandav1alpha2.User) {
+				// Authorization is left nil so we only check user
+				// management, not ACLs.
+				user.Spec.Authorization = nil
+			},
+			expectedCondition: environment.SyncedCondition,
 		},
 		"error - invalid cluster ref": {
 			mutate: func(user *redpandav1alpha2.User) {
