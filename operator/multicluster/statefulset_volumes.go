@@ -32,13 +32,13 @@ func (r *RenderState) commonMounts() []corev1.VolumeMount {
 			})
 		}
 	}
-	for _, name := range r.Spec().InUseServerCerts() {
+	for _, name := range r.PoolSpec().InUseServerCerts() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      certServerVolumeName(name),
 			MountPath: certServerMountPoint(name),
 		})
 	}
-	for _, name := range r.Spec().InUseClientCerts() {
+	for _, name := range r.PoolSpec().InUseClientCerts() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      certClientVolumeName(name),
 			MountPath: certClientMountPoint(name),
@@ -50,23 +50,23 @@ func (r *RenderState) commonMounts() []corev1.VolumeMount {
 // commonVolumes returns the Volumes shared across all containers (TLS + SASL).
 func (r *RenderState) commonVolumes() []corev1.Volume {
 	var volumes []corev1.Volume
-	for _, name := range r.Spec().InUseServerCerts() {
+	for _, name := range r.PoolSpec().InUseServerCerts() {
 		volumes = append(volumes, corev1.Volume{
 			Name: certServerVolumeName(name),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  r.Spec().TLS.CertServerSecretName(r.fullname(), name),
+					SecretName:  r.PoolSpec().TLS.CertServerSecretName(r.fullname(), name),
 					DefaultMode: ptr.To[int32](0o440),
 				},
 			},
 		})
 	}
-	for _, name := range r.Spec().InUseClientCerts() {
+	for _, name := range r.PoolSpec().InUseClientCerts() {
 		volumes = append(volumes, corev1.Volume{
 			Name: certClientVolumeName(name),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  r.Spec().TLS.CertClientSecretName(r.fullname(), name),
+					SecretName:  r.PoolSpec().TLS.CertClientSecretName(r.fullname(), name),
 					DefaultMode: ptr.To[int32](0o440),
 				},
 			},
@@ -150,7 +150,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.NodePool) []c
 	}
 
 	// Truststore volume (projected from ConfigMaps/Secrets).
-	if vol := state.Spec().Listeners.TrustStoreVolume(state.Spec().TLS); vol != nil {
+	if vol := state.PoolSpec().Listeners.TrustStoreVolume(state.PoolSpec().TLS); vol != nil {
 		volumes = append(volumes, *vol)
 	}
 
@@ -208,7 +208,7 @@ func kubeTokenAPIVolume(name string) corev1.Volume {
 }
 
 func statefulSetVolumeDataDir(state *RenderState) corev1.Volume {
-	storage := state.Spec().Storage
+	storage := state.PoolSpec().Storage
 
 	var source corev1.VolumeSource
 	switch {
@@ -249,7 +249,7 @@ func statefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 	)
 
 	// Truststore mount.
-	if len(state.Spec().Listeners.TrustStores(state.Spec().TLS)) > 0 {
+	if len(state.PoolSpec().Listeners.TrustStores(state.PoolSpec().TLS)) > 0 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "truststores",
 			MountPath: redpandav1alpha2.TrustStoreMountPath,
@@ -258,11 +258,11 @@ func statefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 	}
 
 	// Tiered storage cache directory mount.
-	mountType := state.Spec().TieredMountType()
+	mountType := state.PoolSpec().TieredMountType()
 	if mountType != "none" {
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      state.Spec().TieredStorageVolumeName(),
-			MountPath: state.Spec().TieredCacheDirectory(),
+			Name:      state.PoolSpec().TieredStorageVolumeName(),
+			MountPath: state.PoolSpec().TieredCacheDirectory(),
 		})
 	}
 
@@ -272,12 +272,12 @@ func statefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 // statefulSetVolumeTieredStorageDir returns the tiered storage volume, or nil if
 // the mount type is "none" or "persistentVolume" (PVC is handled via VolumeClaimTemplates).
 func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
-	mountType := state.Spec().TieredMountType()
-	volName := state.Spec().TieredStorageVolumeName()
+	mountType := state.PoolSpec().TieredMountType()
+	volName := state.PoolSpec().TieredStorageVolumeName()
 
 	switch mountType {
 	case "hostPath":
-		hostPath := state.Spec().TieredStorageHostPath()
+		hostPath := state.PoolSpec().TieredStorageHostPath()
 		return &corev1.Volume{
 			Name: volName,
 			VolumeSource: corev1.VolumeSource{
@@ -287,7 +287,7 @@ func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
 			},
 		}
 	case "emptyDir":
-		sizeLimit := state.Spec().GetTieredStorageCacheSize()
+		sizeLimit := state.PoolSpec().GetTieredStorageCacheSize()
 		return &corev1.Volume{
 			Name: volName,
 			VolumeSource: corev1.VolumeSource{
@@ -303,7 +303,7 @@ func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
 }
 
 func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClaim {
-	storage := state.Spec().Storage
+	storage := state.PoolSpec().Storage
 	if storage == nil || !storage.PersistentVolume.IsEnabled() {
 		return nil
 	}
@@ -340,16 +340,16 @@ func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClai
 // volumeClaimTemplateTieredStorageDir returns a PVC template for the tiered storage
 // cache directory when mount type is "persistentVolume", or nil otherwise.
 func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentVolumeClaim {
-	if state.Spec().TieredMountType() != "persistentVolume" {
+	if state.PoolSpec().TieredMountType() != "persistentVolume" {
 		return nil
 	}
 
-	storage := state.Spec().Storage
+	storage := state.PoolSpec().Storage
 	if storage == nil || storage.Tiered == nil {
 		return nil
 	}
 
-	volName := state.Spec().TieredStorageVolumeName()
+	volName := state.PoolSpec().TieredStorageVolumeName()
 
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -366,7 +366,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 	}
 
 	// Size from cloud_storage_cache_size config.
-	if q := state.Spec().GetTieredStorageCacheSize(); q != nil {
+	if q := state.PoolSpec().GetTieredStorageCacheSize(); q != nil {
 		pvc.Spec.Resources = corev1.VolumeResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceStorage: *q,

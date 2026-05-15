@@ -35,7 +35,7 @@ func statefulSetInitContainers(state *RenderState, pool *redpandav1alpha2.NodePo
 		containers = append(containers, statefulSetInitContainerFSValidator(state, pool))
 	}
 
-	if state.Spec().TieredMountType() != "none" {
+	if state.PoolSpec().TieredMountType() != "none" {
 		containers = append(containers, statefulSetInitContainerSetTieredStorageCacheDirOwnership(state, pool))
 	}
 
@@ -202,16 +202,16 @@ func bootstrapYamlTemplater(pool *redpandav1alpha2.NodePool, envVars []corev1.En
 // statefulSetInitContainerSetTieredStorageCacheDirOwnership returns an init container
 // that creates and chowns the tiered storage cache directory.
 func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
-	cacheDir := state.Spec().TieredCacheDirectory()
+	cacheDir := state.PoolSpec().TieredCacheDirectory()
 
 	volMounts := state.commonMounts()
 	volMounts = append(volMounts,
 		corev1.VolumeMount{Name: datadirVolumeName, MountPath: datadirMountPath},
 	)
-	mountType := state.Spec().TieredMountType()
+	mountType := state.PoolSpec().TieredMountType()
 	if mountType != "none" {
 		volMounts = append(volMounts, corev1.VolumeMount{
-			Name:      state.Spec().TieredStorageVolumeName(),
+			Name:      state.PoolSpec().TieredStorageVolumeName(),
 			MountPath: cacheDir,
 		})
 	}

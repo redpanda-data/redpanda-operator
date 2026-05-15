@@ -16,7 +16,7 @@ import (
 )
 
 func serviceAccount(state *RenderState) *corev1.ServiceAccount {
-	sa := state.Spec().ServiceAccount
+	sa := state.PoolSpec().ServiceAccount
 	if !sa.ShouldCreate() {
 		return nil
 	}
@@ -27,7 +27,7 @@ func serviceAccount(state *RenderState) *corev1.ServiceAccount {
 			Kind:       "ServiceAccount",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        state.Spec().GetServiceAccountName(state.fullname()),
+			Name:        state.PoolSpec().GetServiceAccountName(state.fullname()),
 			Namespace:   state.namespace,
 			Labels:      state.commonLabels(),
 			Annotations: sa.Annotations,

@@ -22,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"pgregory.net/rapid"
 )
@@ -56,13 +57,14 @@ var (
 
 	KubernetesTypes = rapid.MakeConfig{
 		Types: map[reflect.Type]*rapid.Generator[any]{
-			reflect.TypeFor[int64]():              rapid.Int64Range(-99999, 99999).AsAny(),
-			reflect.TypeFor[any]():                rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
-			reflect.TypeFor[*metav1.FieldsV1]():   rapid.Just[any](nil), // Return nil for K8s accounting fields.
-			reflect.TypeFor[*resource.Quantity](): Quantity.AsAny(),
-			reflect.TypeFor[metav1.Duration]():    Duration.AsAny(),
-			reflect.TypeFor[intstr.IntOrString](): IntOrString.AsAny(),
-			reflect.TypeFor[corev1.Probe]():       Probe.AsAny(),
+			reflect.TypeFor[int64]():                 rapid.Int64Range(-99999, 99999).AsAny(),
+			reflect.TypeFor[any]():                   rapid.Just[any](nil),                          // Return nil for all untyped (any, interface{}) fields.
+			reflect.TypeFor[*metav1.FieldsV1]():      rapid.Just[any](nil),                          // Return nil for K8s accounting fields.
+			reflect.TypeFor[*runtime.RawExtension](): rapid.Just[any]((*runtime.RawExtension)(nil)), // RawExtension wraps a runtime.Object interface that rapid can't synthesize.
+			reflect.TypeFor[*resource.Quantity]():    Quantity.AsAny(),
+			reflect.TypeFor[metav1.Duration]():       Duration.AsAny(),
+			reflect.TypeFor[intstr.IntOrString]():    IntOrString.AsAny(),
+			reflect.TypeFor[corev1.Probe]():          Probe.AsAny(),
 		},
 	}
 )

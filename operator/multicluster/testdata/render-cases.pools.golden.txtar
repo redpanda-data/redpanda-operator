@@ -849,7 +849,7 @@
               - /bin/sh
               - -c
               - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt
-                "https://${SERVICE_NAME}.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9644/v1/status/ready"
+                "https://${SERVICE_NAME}.custom-cluster-domain.custom-cluster-domain.svc.cluster.local.:9644/v1/status/ready"
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -884,7 +884,7 @@
               - -c
               - |
                 set -e
-                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt "https://${SERVICE_NAME}.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9644/v1/status/ready")
+                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt "https://${SERVICE_NAME}.custom-cluster-domain.custom-cluster-domain.svc.cluster.local.:9644/v1/status/ready")
                 echo $RESULT
                 echo $RESULT | grep ready
             failureThreshold: 120
@@ -920,7 +920,7 @@
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=custom-cluster-domain
           - --run-broker-probe
           - --broker-probe-broker-url
-          - $(SERVICE_NAME).custom-cluster-domain.custom-cluster-domain.svc.custom.local:9644
+          - $(SERVICE_NAME).custom-cluster-domain.custom-cluster-domain.svc.cluster.local.:9644
           command:
           - /redpanda-operator
           env:
@@ -3026,7 +3026,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: 6b75a3b044743b3d7c588d59ac3a6e32af736a3f690c711bd1adfd16e9d970b2
+          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
           app.kubernetes.io/cluster-name: test
           app.kubernetes.io/component: redpanda-pool-a-statefulset
@@ -3106,21 +3106,21 @@
           ports:
           - containerPort: 9644
             name: admin
-          - containerPort: 30644
+          - containerPort: 9645
             name: admin-default
           - containerPort: 8082
             name: http
-          - containerPort: 30082
+          - containerPort: 8083
             name: http-default
           - containerPort: 9093
             name: kafka
-          - containerPort: 30092
+          - containerPort: 9094
             name: kafka-default
           - containerPort: 33145
             name: rpc
           - containerPort: 8081
             name: schemaregistry
-          - containerPort: 30081
+          - containerPort: 8084
             name: schema-default
           resources:
             limits:
@@ -3142,6 +3142,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -3201,6 +3203,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -3225,6 +3229,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
           - mountPath: /var/lib/redpanda/data
@@ -3256,6 +3262,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -3308,6 +3316,10 @@
           secret:
             defaultMode: 288
             secretName: external-loadbalancer-default-cert
+        - name: redpanda-external-cert
+          secret:
+            defaultMode: 288
+            secretName: external-loadbalancer-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
@@ -3388,7 +3400,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: b150b8294c144a808614e5a5697f52a9ac58f6358a6b8fc194f9896062d4064a
+          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
           app.kubernetes.io/cluster-name: test
           app.kubernetes.io/component: redpanda-pool-a-statefulset
@@ -3468,7 +3480,7 @@
           ports:
           - containerPort: 9644
             name: admin
-          - containerPort: 31644
+          - containerPort: 9645
             name: admin-default
           - containerPort: 8082
             name: http
@@ -3476,7 +3488,7 @@
             name: http-default
           - containerPort: 9093
             name: kafka
-          - containerPort: 31092
+          - containerPort: 9094
             name: kafka-default
           - containerPort: 33145
             name: rpc
@@ -3762,7 +3774,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: 47eac106a7064a92dc868c1f45fd518e605004c1e0cb257fe7dfda9cddc65719
+          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
           app.kubernetes.io/cluster-name: test
           app.kubernetes.io/component: redpanda-pool-a-statefulset
@@ -3842,21 +3854,21 @@
           ports:
           - containerPort: 9644
             name: admin
-          - containerPort: 30644
+          - containerPort: 9645
             name: admin-default
           - containerPort: 8082
             name: http
-          - containerPort: 30082
+          - containerPort: 8083
             name: http-default
           - containerPort: 9093
             name: kafka
-          - containerPort: 30092
+          - containerPort: 9094
             name: kafka-default
           - containerPort: 33145
             name: rpc
           - containerPort: 8081
             name: schemaregistry
-          - containerPort: 30081
+          - containerPort: 8084
             name: schema-default
           resources:
             limits:
@@ -3878,6 +3890,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -3937,6 +3951,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -3961,6 +3977,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
           - mountPath: /var/lib/redpanda/data
@@ -3992,6 +4010,8 @@
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -4044,6 +4064,10 @@
           secret:
             defaultMode: 288
             secretName: external-tls-default-cert
+        - name: redpanda-external-cert
+          secret:
+            defaultMode: 288
+            secretName: external-tls-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
@@ -4500,7 +4524,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: 087e00eae7054984bc2d23b7669521bf620651e34cd8065c174d285c96af1851
+          config.redpanda.com/checksum: aa39a27780f052f325cc8380a54fbcc1579cb147c42865a9be31cc30790e7911
         labels:
           app.kubernetes.io/cluster-name: test
           app.kubernetes.io/component: redpanda-pool-cold-statefulset
@@ -4594,21 +4618,21 @@
           ports:
           - containerPort: 9644
             name: admin
-          - containerPort: 30644
+          - containerPort: 9645
             name: admin-default
           - containerPort: 8082
             name: http
-          - containerPort: 30082
+          - containerPort: 8083
             name: http-default
           - containerPort: 9093
             name: kafka
-          - containerPort: 30092
+          - containerPort: 9094
             name: kafka-default
           - containerPort: 33145
             name: rpc
           - containerPort: 8081
             name: schemaregistry
-          - containerPort: 30081
+          - containerPort: 8084
             name: schema-default
           resources:
             limits:
@@ -4633,6 +4657,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -4697,6 +4723,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -4724,6 +4752,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
           - mountPath: /var/lib/redpanda/data
@@ -4745,6 +4775,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /var/lib/redpanda/data
             name: datadir
           - mountPath: /var/lib/redpanda/data/cloud_storage_cache
@@ -4779,6 +4811,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -4835,6 +4869,10 @@
           secret:
             defaultMode: 288
             secretName: full-featured-default-cert
+        - name: redpanda-external-cert
+          secret:
+            defaultMode: 288
+            secretName: full-featured-external-cert
         - name: users
           secret:
             secretName: users-secret
@@ -4934,7 +4972,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: 087e00eae7054984bc2d23b7669521bf620651e34cd8065c174d285c96af1851
+          config.redpanda.com/checksum: aa39a27780f052f325cc8380a54fbcc1579cb147c42865a9be31cc30790e7911
         labels:
           app.kubernetes.io/cluster-name: test
           app.kubernetes.io/component: redpanda-pool-hot-statefulset
@@ -5028,21 +5066,21 @@
           ports:
           - containerPort: 9644
             name: admin
-          - containerPort: 30644
+          - containerPort: 9645
             name: admin-default
           - containerPort: 8082
             name: http
-          - containerPort: 30082
+          - containerPort: 8083
             name: http-default
           - containerPort: 9093
             name: kafka
-          - containerPort: 30092
+          - containerPort: 9094
             name: kafka-default
           - containerPort: 33145
             name: rpc
           - containerPort: 8081
             name: schemaregistry
-          - containerPort: 30081
+          - containerPort: 8084
             name: schema-default
           resources:
             limits:
@@ -5067,6 +5105,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -5131,6 +5171,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -5158,6 +5200,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: base-config
           - mountPath: /var/lib/redpanda/data
@@ -5177,6 +5221,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/secrets/fs-validator/scripts/
             name: full-featured-fs-validator
           - mountPath: /var/lib/redpanda/data
@@ -5198,6 +5244,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /var/lib/redpanda/data
             name: datadir
           - mountPath: /var/lib/redpanda/data/cloud_storage_cache
@@ -5232,6 +5280,8 @@
             readOnly: true
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -5288,6 +5338,10 @@
           secret:
             defaultMode: 288
             secretName: full-featured-default-cert
+        - name: redpanda-external-cert
+          secret:
+            defaultMode: 288
+            secretName: full-featured-external-cert
         - name: users
           secret:
             secretName: users-secret
@@ -12666,7 +12720,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: d2caedc46eb3f595b07b2ff350b3b7afb4bc3fa426b4228f25009abb60c34837
+          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
           app.kubernetes.io/cluster-name: test
           app.kubernetes.io/component: redpanda-pool-a-statefulset
@@ -12737,8 +12791,7 @@
               command:
               - /bin/sh
               - -c
-              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default-client/ca.crt
-                --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key
+              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt
                 "https://${SERVICE_NAME}.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9644/v1/status/ready"
             failureThreshold: 3
             initialDelaySeconds: 10
@@ -12774,7 +12827,7 @@
               - -c
               - |
                 set -e
-                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key "https://${SERVICE_NAME}.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9644/v1/status/ready")
+                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt "https://${SERVICE_NAME}.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local.:9644/v1/status/ready")
                 echo $RESULT
                 echo $RESULT | grep ready
             failureThreshold: 120
@@ -12785,8 +12838,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -12848,8 +12899,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -12876,8 +12925,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: base-config
           - mountPath: /var/lib/redpanda/data
@@ -12911,8 +12958,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -12969,10 +13014,6 @@
           secret:
             defaultMode: 288
             secretName: tls-issuer-ref-mtls-external-cert
-        - name: redpanda-default-client-cert
-          secret:
-            defaultMode: 288
-            secretName: tls-issuer-ref-mtls-default-client-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
@@ -13053,7 +13094,7 @@
     template:
       metadata:
         annotations:
-          config.redpanda.com/checksum: d2caedc46eb3f595b07b2ff350b3b7afb4bc3fa426b4228f25009abb60c34837
+          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
         labels:
           app.kubernetes.io/cluster-name: test
           app.kubernetes.io/component: redpanda-pool-a-statefulset
@@ -13124,8 +13165,7 @@
               command:
               - /bin/sh
               - -c
-              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default-client/ca.crt
-                --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key
+              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt
                 "https://${SERVICE_NAME}.tls-mtls.tls-mtls.svc.cluster.local.:9644/v1/status/ready"
             failureThreshold: 3
             initialDelaySeconds: 10
@@ -13161,7 +13201,7 @@
               - -c
               - |
                 set -e
-                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key "https://${SERVICE_NAME}.tls-mtls.tls-mtls.svc.cluster.local.:9644/v1/status/ready")
+                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt "https://${SERVICE_NAME}.tls-mtls.tls-mtls.svc.cluster.local.:9644/v1/status/ready")
                 echo $RESULT
                 echo $RESULT | grep ready
             failureThreshold: 120
@@ -13172,8 +13212,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -13235,8 +13273,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -13263,8 +13299,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: base-config
           - mountPath: /var/lib/redpanda/data
@@ -13298,8 +13332,6 @@
             name: redpanda-default-cert
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
-          - mountPath: /etc/tls/certs/default-client
-            name: redpanda-default-client-cert
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
@@ -13356,10 +13388,6 @@
           secret:
             defaultMode: 288
             secretName: tls-mtls-external-cert
-        - name: redpanda-default-client-cert
-          secret:
-            defaultMode: 288
-            secretName: tls-mtls-default-client-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509

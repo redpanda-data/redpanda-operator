@@ -30,7 +30,7 @@ func statefulSetContainerSidecar(state *RenderState, pool *redpandav1alpha2.Node
 		fmt.Sprintf("--selector=%s=%s,%s=%s", labelNameKey, labelNameValue, labelInstanceKey, state.releaseName),
 		`--run-broker-probe`,
 		`--broker-probe-broker-url`,
-		fmt.Sprintf("$(SERVICE_NAME).%s:%d", state.Spec().InternalDomain(state.fullname(), state.namespace), state.Spec().AdminPort()),
+		fmt.Sprintf("$(SERVICE_NAME).%s:%d", state.PoolSpec().InternalDomain(state.fullname(), state.namespace), state.PoolSpec().AdminPort()),
 	}
 
 	volumeMounts := append(

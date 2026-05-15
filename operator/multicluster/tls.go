@@ -28,9 +28,9 @@ func (r *RenderState) TLSConfig(certName string) (*tls.Config, error) {
 	}
 
 	namespace := r.namespace
-	serverName := r.Spec().InternalDomain(r.fullname(), r.namespace)
+	serverName := r.PoolSpec().InternalDomain(r.fullname(), r.namespace)
 
-	rootCertName, rootCertKey, clientCertName := r.Spec().TLS.CertificatesFor(r.fullname(), certName)
+	rootCertName, rootCertKey, clientCertName := r.PoolSpec().TLS.CertificatesFor(r.fullname(), certName)
 
 	serverTLSError := func(err error) error {
 		return fmt.Errorf("error fetching server root CA %s/%s: %w", namespace, rootCertName, err)
@@ -68,7 +68,7 @@ func (r *RenderState) TLSConfig(certName string) (*tls.Config, error) {
 
 	tlsConfig.RootCAs = pool
 
-	if r.Spec().Listeners.CertRequiresClientAuth(certName) {
+	if r.PoolSpec().Listeners.CertRequiresClientAuth(certName) {
 		var clientCert corev1.Secret
 		lookupErr := r.client.Get(context.TODO(), kube.ObjectKey{Name: clientCertName, Namespace: namespace}, &clientCert)
 		if lookupErr != nil {

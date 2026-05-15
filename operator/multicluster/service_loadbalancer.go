@@ -20,7 +20,7 @@ import (
 
 // loadBalancerServices returns per-pod LoadBalancer Services for external access.
 func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
-	ext := state.Spec().External
+	ext := state.PoolSpec().External
 	if ext == nil || !ext.IsEnabled() {
 		return nil, nil
 	}
@@ -101,5 +101,5 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 }
 
 func lbExternalPorts(state *RenderState) []corev1.ServicePort {
-	return externalServicePorts(state.Spec().Listeners, false)
+	return externalServicePorts(state.PoolSpec().Listeners, false)
 }

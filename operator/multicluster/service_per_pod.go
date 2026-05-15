@@ -44,18 +44,18 @@ func perPodServices(state *RenderState) ([]*corev1.Service, error) {
 }
 
 func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32, _ bool, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
-	spec := state.Spec()
+	poolSpec := state.PoolSpec()
 
 	labels := state.commonLabels()
-	labels[labelMonitorKey] = fmt.Sprintf("%t", spec.Monitoring.IsEnabled())
+	labels[labelMonitorKey] = fmt.Sprintf("%t", poolSpec.Monitoring.IsEnabled())
 
-	ports := perPodServicePorts(spec)
+	ports := perPodServicePorts(poolSpec)
 
 	name := PerPodServiceName(state.poolFullname(pool), ordinal)
 	annotations := make(map[string]string)
-	if spec.Service != nil && spec.Service.Internal != nil {
+	if poolSpec.Service != nil && poolSpec.Service.Internal != nil {
 		// TODO: consider a special field for per pod service annotation, either in nodepool or stretchcluster spec.
-		annotations = spec.Service.Internal.Annotations
+		annotations = poolSpec.Service.Internal.Annotations
 	}
 
 	// In flat network mode, ALL per-pod Services are rendered as headless
@@ -63,7 +63,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 	// pod IPs for both local and remote pods.
 	var selector map[string]string
 	clusterIP := ""
-	if spec.Networking.IsFlatNetwork() {
+	if state.Spec().Networking.IsFlatNetwork() {
 		clusterIP = corev1.ClusterIPNone
 	} else {
 		selector = perPodServiceSelector(state, pool, ordinal)
@@ -122,7 +122,7 @@ func PerPodServiceName(poolFullname string, ordinal int32) string {
 	return fmt.Sprintf("%s-%d", poolFullname, ordinal)
 }
 
-func perPodServicePorts(spec *redpandav1alpha2.StretchClusterSpec) []corev1.ServicePort {
+func perPodServicePorts(spec *redpandav1alpha2.EmbeddedNodePoolSpec) []corev1.ServicePort {
 	var ports []corev1.ServicePort
 
 	adminPort := spec.AdminPort()

@@ -364,7 +364,87 @@ inClusterPools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: NodePool
@@ -375,10 +455,90 @@ inClusterPools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
@@ -390,7 +550,87 @@ pools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: NodePool
@@ -401,94 +641,104 @@ pools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 spec:
-  external:
-    enabled: true
-    service:
-      enabled: true
-    type: NodePort
-  listeners:
-    admin:
-      external:
-        default:
-          advertisedPorts:
-          - 31644
-          port: 9645
-          tls:
-            cert: external
-      port: 9644
-      tls:
-        cert: default
-        requireClientAuth: false
-    http:
-      external:
-        default:
-          advertisedPorts:
-          - 30082
-          port: 8083
-          tls:
-            cert: external
-      port: 8082
-      tls:
-        cert: default
-        requireClientAuth: false
-    kafka:
-      external:
-        default:
-          advertisedPorts:
-          - 31092
-          port: 9094
-          tls:
-            cert: external
-      port: 9093
-      tls:
-        cert: default
-        requireClientAuth: false
-    rpc:
-      port: 33145
-      tls:
-        cert: default
-        requireClientAuth: false
-    schemaRegistry:
-      external:
-        default:
-          advertisedPorts:
-          - 30081
-          port: 8084
-          tls:
-            cert: external
-      port: 8081
-      tls:
-        cert: default
-        requireClientAuth: false
   logging:
     logLevel: info
-  rbac:
-    enabled: true
   resources:
     cpu:
       cores: "1"
     memory:
       container:
         max: 2560Mi
-  serviceAccount:
-    create: true
   storage:
     persistentVolume:
       enabled: true
       size: 20Gi
-  tls:
-    certs:
-      default:
-        caEnabled: true
-      external:
-        caEnabled: true
-    enabled: true
   tuning:
     tune_aio_events: true
 -- flat-network-test --
@@ -502,7 +752,87 @@ inClusterPools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
@@ -514,93 +844,103 @@ pools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 spec:
-  external:
-    enabled: true
-    service:
-      enabled: true
-    type: NodePort
-  listeners:
-    admin:
-      external:
-        default:
-          advertisedPorts:
-          - 31644
-          port: 9645
-          tls:
-            cert: external
-      port: 9644
-      tls:
-        cert: default
-        requireClientAuth: false
-    http:
-      external:
-        default:
-          advertisedPorts:
-          - 30082
-          port: 8083
-          tls:
-            cert: external
-      port: 8082
-      tls:
-        cert: default
-        requireClientAuth: false
-    kafka:
-      external:
-        default:
-          advertisedPorts:
-          - 31092
-          port: 9094
-          tls:
-            cert: external
-      port: 9093
-      tls:
-        cert: default
-        requireClientAuth: false
-    rpc:
-      port: 33145
-      tls:
-        cert: default
-        requireClientAuth: false
-    schemaRegistry:
-      external:
-        default:
-          advertisedPorts:
-          - 30081
-          port: 8084
-          tls:
-            cert: external
-      port: 8081
-      tls:
-        cert: default
-        requireClientAuth: false
   logging:
     logLevel: info
   networking:
     crossClusterMode: flat
-  rbac:
-    enabled: true
   resources:
     cpu:
       cores: "1"
     memory:
       container:
         max: 2560Mi
-  serviceAccount:
-    create: true
   storage:
     persistentVolume:
       enabled: true
       size: 20Gi
-  tls:
-    certs:
-      default:
-        caEnabled: true
-      external:
-        caEnabled: true
-    enabled: true
   tuning:
     tune_aio_events: true
 -- mcs-network-test --
@@ -614,7 +954,87 @@ inClusterPools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
@@ -626,93 +1046,103 @@ pools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 spec:
-  external:
-    enabled: true
-    service:
-      enabled: true
-    type: NodePort
-  listeners:
-    admin:
-      external:
-        default:
-          advertisedPorts:
-          - 31644
-          port: 9645
-          tls:
-            cert: external
-      port: 9644
-      tls:
-        cert: default
-        requireClientAuth: false
-    http:
-      external:
-        default:
-          advertisedPorts:
-          - 30082
-          port: 8083
-          tls:
-            cert: external
-      port: 8082
-      tls:
-        cert: default
-        requireClientAuth: false
-    kafka:
-      external:
-        default:
-          advertisedPorts:
-          - 31092
-          port: 9094
-          tls:
-            cert: external
-      port: 9093
-      tls:
-        cert: default
-        requireClientAuth: false
-    rpc:
-      port: 33145
-      tls:
-        cert: default
-        requireClientAuth: false
-    schemaRegistry:
-      external:
-        default:
-          advertisedPorts:
-          - 30081
-          port: 8084
-          tls:
-            cert: external
-      port: 8081
-      tls:
-        cert: default
-        requireClientAuth: false
   logging:
     logLevel: info
   networking:
     crossClusterMode: mcs
-  rbac:
-    enabled: true
   resources:
     cpu:
       cores: "1"
     memory:
       container:
         max: 2560Mi
-  serviceAccount:
-    create: true
   storage:
     persistentVolume:
       enabled: true
       size: 20Gi
-  tls:
-    certs:
-      default:
-        caEnabled: true
-      external:
-        caEnabled: true
-    enabled: true
   tuning:
     tune_aio_events: true
 -- nodepool-basic-test --
@@ -726,7 +1156,87 @@ inClusterPools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: NodePool
@@ -737,10 +1247,90 @@ inClusterPools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
@@ -752,7 +1342,87 @@ pools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
   kind: NodePool
@@ -763,93 +1433,103 @@ pools:
       group: cluster.redpanda.com/v1alpha2
       kind: StretchCluster
       name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    rbac:
+      enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
+    serviceAccount:
+      create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: true
   status: {}
 spec:
-  external:
-    enabled: true
-    service:
-      enabled: true
-    type: NodePort
-  listeners:
-    admin:
-      external:
-        default:
-          advertisedPorts:
-          - 31644
-          port: 9645
-          tls:
-            cert: external
-      port: 9644
-      tls:
-        cert: default
-        requireClientAuth: false
-    http:
-      external:
-        default:
-          advertisedPorts:
-          - 30082
-          port: 8083
-          tls:
-            cert: external
-      port: 8082
-      tls:
-        cert: default
-        requireClientAuth: false
-    kafka:
-      external:
-        default:
-          advertisedPorts:
-          - 31092
-          port: 9094
-          tls:
-            cert: external
-      port: 9093
-      tls:
-        cert: default
-        requireClientAuth: false
-    rpc:
-      port: 33145
-      tls:
-        cert: default
-        requireClientAuth: false
-    schemaRegistry:
-      external:
-        default:
-          advertisedPorts:
-          - 30081
-          port: 8084
-          tls:
-            cert: external
-      port: 8081
-      tls:
-        cert: default
-        requireClientAuth: false
   logging:
     logLevel: info
-  rbac:
-    enabled: true
   resources:
     cpu:
       cores: "1"
     memory:
       container:
         max: 2560Mi
-  serviceAccount:
-    create: true
   storage:
     persistentVolume:
       enabled: true
       size: 20Gi
-  tls:
-    certs:
-      default:
-        caEnabled: true
-      external:
-        caEnabled: true
-    enabled: true
   tuning:
     tune_aio_events: true

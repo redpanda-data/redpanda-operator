@@ -25,12 +25,12 @@ import (
 // certificates returns all cert-manager Certificates (server + client) for the given RenderState.
 func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 	fullname := state.fullname()
-	service := state.Spec().GetServiceName(state.fullname())
+	service := state.PoolSpec().GetServiceName(state.fullname())
 	ns := state.namespace
 	// Trailing dots don't play nice with TLS/SNI.
-	domain := strings.TrimSuffix(state.Spec().GetClusterDomain(), ".")
+	domain := strings.TrimSuffix(state.PoolSpec().GetClusterDomain(), ".")
 
-	tlsCfg := state.Spec().TLS
+	tlsCfg := state.PoolSpec().TLS
 	if tlsCfg == nil {
 		return nil, nil
 	}
@@ -38,7 +38,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 	var certs []*certmanagerv1.Certificate
 
 	// Server certificates.
-	for _, name := range state.Spec().InUseServerCerts() {
+	for _, name := range state.PoolSpec().InUseServerCerts() {
 		cert := tlsCfg.Certs[name]
 
 		// Don't generate server certs if a secret is provided.
@@ -81,7 +81,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 			)
 		}
 
-		if ext := state.Spec().External; ext != nil && ext.Domain != nil {
+		if ext := state.PoolSpec().External; ext != nil && ext.Domain != nil {
 			expandedDomain, err := tplutil.Tpl(*ext.Domain, state.tplData())
 			if err != nil {
 				return nil, fmt.Errorf("expanding external domain template: %w", err)
@@ -105,7 +105,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
 				IssuerRef:  certIssuerRef(fullname, name, cert),
-				SecretName: state.Spec().TLS.CertServerSecretName(state.fullname(), name),
+				SecretName: state.PoolSpec().TLS.CertServerSecretName(state.fullname(), name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
@@ -115,7 +115,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 	}
 
 	// Client certificates.
-	for _, name := range state.Spec().InUseClientCerts() {
+	for _, name := range state.PoolSpec().InUseClientCerts() {
 		cert := tlsCfg.Certs[name]
 
 		if cert != nil {
@@ -141,7 +141,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),
 				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
-				SecretName: state.Spec().TLS.CertClientSecretName(state.fullname(), name),
+				SecretName: state.PoolSpec().TLS.CertClientSecretName(state.fullname(), name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,

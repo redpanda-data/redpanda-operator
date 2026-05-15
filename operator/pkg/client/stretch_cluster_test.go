@@ -116,7 +116,9 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 	s.factory = internalclient.NewFactory(mgr, nil).WithDialer(s.mc.DialContext)
 }
 
-// applyNodePools creates one NodePool per cluster referencing the given StretchCluster.
+// applyNodePools creates one NodePool per cluster referencing the given
+// StretchCluster. External is disabled and RBAC is enabled on every pool to
+// match the test scenarios (avoid NodePort collisions, exercise RBAC).
 func (s *StretchClusterFactorySuite) applyNodePools(t *testing.T, ctx context.Context, scName, ns, poolPrefix string) {
 	t.Helper()
 	for i, env := range s.mc.Envs {
@@ -128,6 +130,12 @@ func (s *StretchClusterFactorySuite) applyNodePools(t *testing.T, ctx context.Co
 			Spec: redpandav1alpha2.NodePoolSpec{
 				EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 					Replicas: ptr.To(int32(1)),
+					External: &redpandav1alpha2.External{
+						Enabled: ptr.To(false),
+					},
+					RBAC: &redpandav1alpha2.RBAC{
+						Enabled: ptr.To(true),
+					},
 				},
 				ClusterRef: redpandav1alpha2.ClusterRef{
 					Name:  scName,
@@ -287,12 +295,6 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 			Networking: &redpandav1alpha2.Networking{
 				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
 			},
-			External: &redpandav1alpha2.External{
-				Enabled: ptr.To(false),
-			},
-			RBAC: &redpandav1alpha2.RBAC{
-				Enabled: ptr.To(true),
-			},
 			Auth: &redpandav1alpha2.Auth{
 				SASL: &redpandav1alpha2.SASL{
 					Enabled:   ptr.To(true),
@@ -358,12 +360,6 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 			Networking: &redpandav1alpha2.Networking{
 				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
 			},
-			External: &redpandav1alpha2.External{
-				Enabled: ptr.To(false),
-			},
-			RBAC: &redpandav1alpha2.RBAC{
-				Enabled: ptr.To(true),
-			},
 			Auth: &redpandav1alpha2.Auth{
 				SASL: &redpandav1alpha2.SASL{
 					Enabled:   ptr.To(true),
@@ -424,9 +420,6 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 		Spec: redpandav1alpha2.StretchClusterSpec{
 			Networking: &redpandav1alpha2.Networking{
 				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
-			},
-			External: &redpandav1alpha2.External{
-				Enabled: ptr.To(false),
 			},
 		},
 	}

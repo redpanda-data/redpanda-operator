@@ -19,11 +19,11 @@ import (
 
 // serviceMonitor returns a ServiceMonitor for the Redpanda cluster.
 func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
-	if !state.Spec().Monitoring.IsEnabled() {
+	if !state.PoolSpec().Monitoring.IsEnabled() {
 		return nil
 	}
 
-	mon := state.Spec().Monitoring
+	mon := state.PoolSpec().Monitoring
 
 	var interval monitoringv1.Duration
 	if mon.ScrapeInterval != nil {
@@ -37,7 +37,7 @@ func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
 	}
 
-	if state.Spec().IsAdminTLSEnabled() || mon.TLSConfig != nil {
+	if state.PoolSpec().IsAdminTLSEnabled() || mon.TLSConfig != nil {
 		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
 
 		// Use custom TLS config if provided, otherwise fall back to insecure skip verify.

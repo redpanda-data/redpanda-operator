@@ -18,12 +18,12 @@ func schemaRegistryConfig(state *RenderState) map[string]any {
 	cfg := map[string]any{}
 
 	var sr *redpandav1alpha2.StretchAPIListener
-	if l := state.Spec().Listeners; l != nil {
+	if l := state.PoolSpec().Listeners; l != nil {
 		sr = l.SchemaRegistry
 	}
 
 	configureAPIListener(cfg, state, sr, "schema_registry_api", "schema_registry_api_tls",
-		state.Spec().SchemaRegistryPort(), redpandav1alpha2.DefaultExternalSchemaRegistryPort, "")
+		state.PoolSpec().SchemaRegistryPort(), redpandav1alpha2.DefaultExternalSchemaRegistryPort, "")
 
 	return cfg
 }

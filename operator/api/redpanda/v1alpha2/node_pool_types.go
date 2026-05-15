@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"maps"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
@@ -24,7 +25,6 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=nodepools
-// +kubebuilder:resource:shortName=np
 // +kubebuilder:printcolumn:name="Bound",type="string",JSONPath=".status.conditions[?(@.type==\"Bound\")].status",description=""
 // +kubebuilder:printcolumn:name="Deployed",type="string",JSONPath=".status.conditions[?(@.type==\"Deployed\")].status",description=""
 type NodePool struct {
@@ -177,6 +177,57 @@ type EmbeddedNodePoolSpec struct {
 	//     repository: busybox
 	//     tag: latest
 	InitContainerImage *InitContainerImage `json:"initContainerImage,omitempty"`
+
+	// Fields below apply when this NodePool is owned by a StretchCluster.
+	// They configure per-K8s-cluster infrastructure that varies between
+	// clusters and therefore cannot live on the federated StretchCluster spec.
+
+	// ClusterDomain customizes the K8s cluster's DNS suffix used to generate
+	// internal pod domains (e.g. "cluster.local"). Defaults to "cluster.local".
+	ClusterDomain *string `json:"clusterDomain,omitempty"`
+
+	// TLS configures TLS settings for listeners on this NodePool's pods.
+	// Secret references resolve in the K8s cluster where this NodePool runs.
+	TLS *TLS `json:"tls,omitempty"`
+
+	// External configures external access (NodePort, LoadBalancer, advertised
+	// addresses) for this NodePool's pods.
+	External *External `json:"external,omitempty"`
+
+	// Listeners configures listener settings (admin, kafka, http proxy, schema
+	// registry, rpc) for this NodePool's pods.
+	Listeners *StretchListeners `json:"listeners,omitempty"`
+
+	// RBAC configures Role Based Access Control resources created in the
+	// K8s cluster where this NodePool runs.
+	RBAC *RBAC `json:"rbac,omitempty"`
+
+	// ServiceAccount configures the K8s ServiceAccount used by pods in this
+	// NodePool. Cloud workload-identity annotations belong here.
+	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
+
+	// Monitoring configures the ServiceMonitor created in the K8s cluster
+	// where this NodePool runs.
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
+
+	// Fields below override defaults inherited from the parent StretchCluster.
+	// When set, the NodePool value replaces the StretchCluster value entirely
+	// (no deep merge). When nil, the StretchCluster value applies.
+
+	// Storage overrides StretchCluster.Spec.Storage for this NodePool.
+	// Useful when clusters expose different StorageClasses or mount types.
+	Storage *StretchStorage `json:"storage,omitempty"`
+
+	// Resources overrides StretchCluster.Spec.Resources for this NodePool.
+	// Useful when clusters run on different node SKUs.
+	Resources *StretchResources `json:"resources,omitempty"`
+
+	// Service overrides StretchCluster.Spec.Service for this NodePool.
+	Service *Service `json:"service,omitempty"`
+
+	// ImagePullSecrets overrides StretchCluster.Spec.ImagePullSecrets for
+	// this NodePool. Useful for per-cluster registry mirrors.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
 // NodePoolServices configures overrides for Services created by the operator

@@ -93,7 +93,7 @@ func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []
 		for i := int32(0); i < pool.GetReplicas(); i++ {
 			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.Suffix()
 			name := PerPodServiceName(poolFullname, i)
-			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), cluster.Spec.RPCPort()))
+			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), pool.Spec.RPCPort()))
 		}
 	}
 	return seedServers
@@ -132,8 +132,17 @@ func NewRenderState(
 		return copiedPools[i].Name < copiedPools[j].Name
 	})
 
-	// Apply Helm-equivalent defaults to nil fields.
+	// Apply Helm-equivalent defaults. Cluster-wide defaults run first so that
+	// NodePools inheriting defaultable fields pick up the defaulted values.
+	// inClusterPools and pools are deep-copied separately above, so each slice
+	// needs its own defaults pass.
 	cluster.Spec.MergeDefaults()
+	for _, pool := range copiedPools {
+		pool.Spec.MergeDefaultsFrom(&cluster.Spec)
+	}
+	for _, pool := range copiedInClusterPools {
+		pool.Spec.MergeDefaultsFrom(&cluster.Spec)
+	}
 
 	releaseName := cluster.Name
 
@@ -197,6 +206,21 @@ func (r *RenderState) tplData() map[string]any {
 // Spec returns the StretchClusterSpec. Exported for test/debugging access.
 func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
 	return &r.cluster.Spec
+}
+
+// PoolSpec returns the EmbeddedNodePoolSpec of the representative local
+// NodePool — the source of per-K8s-cluster configuration (TLS, Listeners,
+// ClusterDomain, ServiceAccount, RBAC, ...) used for rendering local
+// resources. Per-K8s-cluster fields are expected to be identical across all
+// NodePools in the same K8s cluster, so any in-cluster pool serves as the
+// canonical source.
+//
+// Returns nil if there are no NodePools in the local cluster.
+func (r *RenderState) PoolSpec() *redpandav1alpha2.EmbeddedNodePoolSpec {
+	if len(r.inClusterPools) == 0 {
+		return nil
+	}
+	return &r.inClusterPools[0].Spec.EmbeddedNodePoolSpec
 }
 
 // Pools returns the list of NodePools across K8S clusters. Exported for test/debugging access.

@@ -18,7 +18,7 @@ import (
 
 // nodePortService returns a NodePort Service for external access.
 func nodePortService(state *RenderState) *corev1.Service {
-	ext := state.Spec().External
+	ext := state.PoolSpec().External
 	if ext == nil || !ext.IsEnabled() {
 		return nil
 	}
@@ -29,7 +29,7 @@ func nodePortService(state *RenderState) *corev1.Service {
 		return nil
 	}
 
-	ports := externalServicePorts(state.Spec().Listeners, true)
+	ports := externalServicePorts(state.PoolSpec().Listeners, true)
 	if len(ports) == 0 {
 		return nil
 	}
@@ -45,7 +45,7 @@ func nodePortService(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-external", state.Spec().GetServiceName(state.fullname())),
+			Name:        fmt.Sprintf("%s-external", state.PoolSpec().GetServiceName(state.fullname())),
 			Namespace:   state.namespace,
 			Labels:      state.commonLabels(),
 			Annotations: annotations,

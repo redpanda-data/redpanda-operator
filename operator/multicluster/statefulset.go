@@ -67,9 +67,9 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.S
 			},
 		},
 		Spec: corev1.PodSpec{
-			ImagePullSecrets:              state.Spec().ImagePullSecrets,
+			ImagePullSecrets:              state.PoolSpec().ImagePullSecrets,
 			AutomountServiceAccountToken:  ptr.To(false),
-			ServiceAccountName:            state.Spec().GetServiceAccountName(state.fullname()),
+			ServiceAccountName:            state.PoolSpec().GetServiceAccountName(state.fullname()),
 			TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
 			SecurityContext: &corev1.PodSecurityContext{
 				FSGroup:             ptr.To(redpandaUserID),
@@ -154,7 +154,7 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.S
 			Selector: &metav1.LabelSelector{
 				MatchLabels: statefulSetPodLabelsSelector(state, pool),
 			},
-			ServiceName:         state.Spec().GetServiceName(state.fullname()),
+			ServiceName:         state.PoolSpec().GetServiceName(state.fullname()),
 			Replicas:            ptr.To(pool.GetReplicas()),
 			PodManagementPolicy: appsv1.ParallelPodManagement,
 			// OnDelete lets the operator control rollout ordering (e.g.
@@ -168,7 +168,7 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.S
 	}
 
 	// VolumeClaimTemplates for persistent storage.
-	if storage := state.Spec().Storage; storage != nil && storage.PersistentVolume.IsEnabled() {
+	if storage := state.PoolSpec().Storage; storage != nil && storage.PersistentVolume.IsEnabled() {
 		if t := volumeClaimTemplateDatadir(state); t != nil {
 			set.Spec.VolumeClaimTemplates = append(set.Spec.VolumeClaimTemplates, *t)
 		}
@@ -248,12 +248,12 @@ func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.No
 		return "", err
 	}
 	dependencies = append(dependencies, redpanda)
-	if state.Spec().External.IsEnabled() {
-		dependencies = append(dependencies, ptr.Deref(state.Spec().External.Domain, ""))
-		if state.Spec().External.Addresses == nil || len(state.Spec().External.Addresses) == 0 {
+	if state.PoolSpec().External.IsEnabled() {
+		dependencies = append(dependencies, ptr.Deref(state.PoolSpec().External.Domain, ""))
+		if state.PoolSpec().External.Addresses == nil || len(state.PoolSpec().External.Addresses) == 0 {
 			dependencies = append(dependencies, "")
 		} else {
-			dependencies = append(dependencies, state.Spec().External.Addresses)
+			dependencies = append(dependencies, state.PoolSpec().External.Addresses)
 		}
 	}
 	data, _ := json.Marshal(dependencies)

@@ -111,7 +111,7 @@ func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *Str
 		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
 			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.nodePool.Suffix()
 			name := multiclusterRenderer.PerPodServiceName(poolFullname, i)
-			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), cluster.Spec.AdminPort()))
+			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), pool.nodePool.Spec.AdminPort()))
 		}
 	}
 	return adminAPIEndpoints

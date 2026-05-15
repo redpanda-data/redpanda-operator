@@ -19,25 +19,18 @@ import (
 // with apply.
 type StretchClusterSpecApplyConfiguration struct {
 	CommonLabels     map[string]string                   `json:"commonLabels,omitempty"`
-	ClusterDomain    *string                             `json:"clusterDomain,omitempty"`
 	Image            *RedpandaImageApplyConfiguration    `json:"image,omitempty"`
 	ImagePullSecrets []v1.LocalObjectReference           `json:"imagePullSecrets,omitempty"`
 	Enterprise       *EnterpriseApplyConfiguration       `json:"enterprise,omitempty"`
 	RackAwareness    *RackAwarenessApplyConfiguration    `json:"rackAwareness,omitempty"`
 	Auth             *AuthApplyConfiguration             `json:"auth,omitempty"`
-	TLS              *TLSApplyConfiguration              `json:"tls,omitempty"`
-	External         *ExternalApplyConfiguration         `json:"external,omitempty"`
 	Logging          *StretchLoggingApplyConfiguration   `json:"logging,omitempty"`
 	AuditLogging     *AuditLoggingApplyConfiguration     `json:"auditLogging,omitempty"`
 	Resources        *StretchResourcesApplyConfiguration `json:"resources,omitempty"`
 	Service          *ServiceApplyConfiguration          `json:"service,omitempty"`
 	Storage          *StretchStorageApplyConfiguration   `json:"storage,omitempty"`
 	Tuning           *StretchTuningApplyConfiguration    `json:"tuning,omitempty"`
-	Listeners        *StretchListenersApplyConfiguration `json:"listeners,omitempty"`
 	Config           *ConfigApplyConfiguration           `json:"config,omitempty"`
-	RBAC             *RBACApplyConfiguration             `json:"rbac,omitempty"`
-	ServiceAccount   *ServiceAccountApplyConfiguration   `json:"serviceAccount,omitempty"`
-	Monitoring       *MonitoringApplyConfiguration       `json:"monitoring,omitempty"`
 	Networking       *NetworkingApplyConfiguration       `json:"networking,omitempty"`
 }
 
@@ -58,14 +51,6 @@ func (b *StretchClusterSpecApplyConfiguration) WithCommonLabels(entries map[stri
 	for k, v := range entries {
 		b.CommonLabels[k] = v
 	}
-	return b
-}
-
-// WithClusterDomain sets the ClusterDomain field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ClusterDomain field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithClusterDomain(value string) *StretchClusterSpecApplyConfiguration {
-	b.ClusterDomain = &value
 	return b
 }
 
@@ -108,22 +93,6 @@ func (b *StretchClusterSpecApplyConfiguration) WithRackAwareness(value *RackAwar
 // If called multiple times, the Auth field is set to the value of the last call.
 func (b *StretchClusterSpecApplyConfiguration) WithAuth(value *AuthApplyConfiguration) *StretchClusterSpecApplyConfiguration {
 	b.Auth = value
-	return b
-}
-
-// WithTLS sets the TLS field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the TLS field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithTLS(value *TLSApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.TLS = value
-	return b
-}
-
-// WithExternal sets the External field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the External field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithExternal(value *ExternalApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.External = value
 	return b
 }
 
@@ -175,43 +144,11 @@ func (b *StretchClusterSpecApplyConfiguration) WithTuning(value *StretchTuningAp
 	return b
 }
 
-// WithListeners sets the Listeners field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Listeners field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithListeners(value *StretchListenersApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.Listeners = value
-	return b
-}
-
 // WithConfig sets the Config field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Config field is set to the value of the last call.
 func (b *StretchClusterSpecApplyConfiguration) WithConfig(value *ConfigApplyConfiguration) *StretchClusterSpecApplyConfiguration {
 	b.Config = value
-	return b
-}
-
-// WithRBAC sets the RBAC field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RBAC field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithRBAC(value *RBACApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.RBAC = value
-	return b
-}
-
-// WithServiceAccount sets the ServiceAccount field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ServiceAccount field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithServiceAccount(value *ServiceAccountApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.ServiceAccount = value
-	return b
-}
-
-// WithMonitoring sets the Monitoring field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Monitoring field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithMonitoring(value *MonitoringApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.Monitoring = value
 	return b
 }
 

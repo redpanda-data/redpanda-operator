@@ -32,12 +32,32 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// defaultedSpec returns a copy of the StretchCluster spec with defaults applied,
-// matching what the renderer sees.
-func defaultedSpec(sc *redpandav1alpha2.StretchCluster) *redpandav1alpha2.StretchClusterSpec {
-	spec := sc.Spec.DeepCopy()
-	spec.MergeDefaults()
-	return spec
+// defaultedPoolSpec fetches a NodePool belonging to the StretchCluster from
+// the given Kubernetes client, applies cluster and pool defaults, and returns
+// its EmbeddedNodePoolSpec. Per-K8s-cluster fields (TLS, Listeners, ports) live
+// on the NodePool spec, so building API clients requires the merged pool view.
+func (c *Factory) defaultedPoolSpec(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client) (*redpandav1alpha2.EmbeddedNodePoolSpec, error) {
+	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
+	defer listCancel()
+
+	var nodePoolList redpandav1alpha2.NodePoolList
+	if err := k8sClient.List(listCtx, &nodePoolList, client.InNamespace(sc.Namespace)); err != nil {
+		return nil, errors.Wrap(err, "listing NodePools")
+	}
+
+	defaultedClusterSpec := *sc.Spec.DeepCopy()
+	defaultedClusterSpec.MergeDefaults()
+	for i := range nodePoolList.Items {
+		pool := &nodePoolList.Items[i]
+		ref := pool.Spec.ClusterRef
+		if !ref.IsStretchCluster() || ref.Name != sc.Name {
+			continue
+		}
+		poolSpec := pool.Spec.EmbeddedNodePoolSpec.DeepCopy()
+		poolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
+		return poolSpec, nil
+	}
+	return nil, fmt.Errorf("no NodePools found for StretchCluster %s/%s", sc.Namespace, sc.Name)
 }
 
 // redpandaAdminForStretchCluster builds an admin API client for a StretchCluster
@@ -49,9 +69,12 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 		return nil, errors.Wrap(err, "getting k8s client")
 	}
 
-	spec := defaultedSpec(sc)
+	poolSpec, err := c.defaultedPoolSpec(ctx, sc, k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolving NodePool spec")
+	}
 
-	endpoints, err := c.stretchClusterEndpoints(ctx, sc, spec.AdminPort())
+	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.AdminPort())
 	if err != nil {
 		return nil, errors.Wrap(err, "discovering admin endpoints")
 	}
@@ -60,10 +83,10 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 	}
 
 	var listener *redpandav1alpha2.StretchAPIListener
-	if spec.Listeners != nil {
-		listener = spec.Listeners.Admin
+	if poolSpec.Listeners != nil {
+		listener = poolSpec.Listeners.Admin
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, spec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -88,9 +111,12 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 		return nil, errors.Wrap(err, "getting k8s client")
 	}
 
-	spec := defaultedSpec(sc)
+	poolSpec, err := c.defaultedPoolSpec(ctx, sc, k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolving NodePool spec")
+	}
 
-	brokers, err := c.stretchClusterEndpoints(ctx, sc, spec.KafkaPort())
+	brokers, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.KafkaPort())
 	if err != nil {
 		return nil, errors.Wrap(err, "discovering kafka endpoints")
 	}
@@ -99,10 +125,10 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 	}
 
 	var listener *redpandav1alpha2.StretchAPIListener
-	if spec.Listeners != nil {
-		listener = spec.Listeners.Kafka
+	if poolSpec.Listeners != nil {
+		listener = poolSpec.Listeners.Kafka
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, spec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -137,9 +163,12 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 		return nil, errors.Wrap(err, "getting k8s client")
 	}
 
-	spec := defaultedSpec(sc)
+	poolSpec, err := c.defaultedPoolSpec(ctx, sc, k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolving NodePool spec")
+	}
 
-	endpoints, err := c.stretchClusterEndpoints(ctx, sc, spec.SchemaRegistryPort())
+	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.SchemaRegistryPort())
 	if err != nil {
 		return nil, errors.Wrap(err, "discovering schema registry endpoints")
 	}
@@ -148,10 +177,10 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 	}
 
 	var listener *redpandav1alpha2.StretchAPIListener
-	if spec.Listeners != nil {
-		listener = spec.Listeners.SchemaRegistry
+	if poolSpec.Listeners != nil {
+		listener = poolSpec.Listeners.SchemaRegistry
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, spec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -237,7 +266,7 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 
 // stretchClusterListenerTLSConfig builds a *tls.Config for a listener if TLS is
 // enabled, reading the CA certificate from the shared root CA secret.
-func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
+func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.EmbeddedNodePoolSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
 	tlsEnabled := false
 	if listener != nil {
 		tlsEnabled = listener.IsTLSEnabled(spec.TLS)

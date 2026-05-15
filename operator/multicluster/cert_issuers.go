@@ -30,7 +30,7 @@ type bootstrappedCert struct {
 
 // bootstrappedCerts returns the set of in-use cert names (with durations) that
 // require self-signed issuer and root CA bootstrapping.
-func bootstrappedCerts(spec *redpandav1alpha2.StretchClusterSpec) []bootstrappedCert {
+func bootstrappedCerts(spec *redpandav1alpha2.EmbeddedNodePoolSpec) []bootstrappedCert {
 	var result []bootstrappedCert
 	for _, name := range BootstrappedCertNames(spec) {
 		duration := defaultCertDuration
@@ -48,8 +48,8 @@ func bootstrappedCerts(spec *redpandav1alpha2.StretchClusterSpec) []bootstrapped
 //   - it's explicitly disabled
 //   - it has a user-provided SecretRef (externally managed cert)
 //   - it has an external IssuerRef (user manages their own cert-manager issuer)
-func BootstrappedCertNames(spec *redpandav1alpha2.StretchClusterSpec) []string {
-	if spec.TLS == nil || !spec.TLS.IsEnabled() {
+func BootstrappedCertNames(spec *redpandav1alpha2.EmbeddedNodePoolSpec) []string {
+	if spec == nil || spec.TLS == nil || !spec.TLS.IsEnabled() {
 		return nil
 	}
 
@@ -95,7 +95,7 @@ func certIssuers(state *RenderState) []*certmanagerv1.Issuer {
 	fullname := state.fullname()
 	var issuers []*certmanagerv1.Issuer
 
-	for _, bc := range bootstrappedCerts(state.Spec()) {
+	for _, bc := range bootstrappedCerts(state.PoolSpec()) {
 		issuers = append(issuers, &certmanagerv1.Issuer{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "cert-manager.io/v1",

@@ -21,7 +21,7 @@ import (
 
 // roles returns all Roles for the given RenderState.
 func roles(state *RenderState) []*rbacv1.Role {
-	if !state.Spec().RBAC.IsEnabled() {
+	if !state.PoolSpec().RBAC.IsEnabled() {
 		return nil
 	}
 
@@ -58,7 +58,7 @@ func roles(state *RenderState) []*rbacv1.Role {
 	})
 
 	// RPK debug bundle role: allows rpk debug bundle to collect cluster diagnostics.
-	if ptr.Deref(state.Spec().RBAC.RPKDebugBundle, false) {
+	if ptr.Deref(state.PoolSpec().RBAC.RPKDebugBundle, false) {
 		roles = append(roles, &rbacv1.Role{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -89,7 +89,7 @@ func roles(state *RenderState) []*rbacv1.Role {
 
 // clusterRoles returns all ClusterRoles for the given RenderState.
 func clusterRoles(state *RenderState) []*rbacv1.ClusterRole {
-	if !state.Spec().RBAC.IsEnabled() {
+	if !state.PoolSpec().RBAC.IsEnabled() {
 		return nil
 	}
 
@@ -165,7 +165,7 @@ func roleBindings(state *RenderState) []*rbacv1.RoleBinding {
 			Subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      state.Spec().GetServiceAccountName(state.fullname()),
+					Name:      state.PoolSpec().GetServiceAccountName(state.fullname()),
 					Namespace: state.namespace,
 				},
 			},
@@ -195,7 +195,7 @@ func clusterRoleBindings(state *RenderState) []*rbacv1.ClusterRoleBinding {
 			Subjects: []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      state.Spec().GetServiceAccountName(state.fullname()),
+					Name:      state.PoolSpec().GetServiceAccountName(state.fullname()),
 					Namespace: state.namespace,
 				},
 			},

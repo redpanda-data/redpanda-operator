@@ -808,10 +808,15 @@ func (sc *StretchCluster) BootstrapUserSecretName() string {
 	return fmt.Sprintf("%s-bootstrap-user", sc.Name)
 }
 
-// --- StretchClusterSpec convenience methods ---
+// --- EmbeddedNodePoolSpec convenience methods ---
+//
+// These methods read per-K8s-cluster fields (TLS, Listeners, ClusterDomain,
+// ServiceAccount, ...) and per-NodePool overrides of cluster defaults
+// (Resources, Storage). They expect MergeDefaultsFrom to have been called on
+// the receiver so that values are fully populated.
 
 // IsAdminTLSEnabled returns whether TLS is enabled on the admin listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsAdminTLSEnabled() bool {
+func (s *EmbeddedNodePoolSpec) IsAdminTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -819,7 +824,7 @@ func (s *StretchClusterSpec) IsAdminTLSEnabled() bool {
 }
 
 // IsKafkaTLSEnabled returns whether TLS is enabled on the Kafka listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsKafkaTLSEnabled() bool {
+func (s *EmbeddedNodePoolSpec) IsKafkaTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -827,7 +832,7 @@ func (s *StretchClusterSpec) IsKafkaTLSEnabled() bool {
 }
 
 // IsHTTPTLSEnabled returns whether TLS is enabled on the HTTP listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsHTTPTLSEnabled() bool {
+func (s *EmbeddedNodePoolSpec) IsHTTPTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -835,7 +840,7 @@ func (s *StretchClusterSpec) IsHTTPTLSEnabled() bool {
 }
 
 // IsSchemaRegistryTLSEnabled returns whether TLS is enabled on the Schema Registry listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsSchemaRegistryTLSEnabled() bool {
+func (s *EmbeddedNodePoolSpec) IsSchemaRegistryTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -843,7 +848,7 @@ func (s *StretchClusterSpec) IsSchemaRegistryTLSEnabled() bool {
 }
 
 // IsRPCTLSEnabled returns whether TLS is enabled on the RPC listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsRPCTLSEnabled() bool {
+func (s *EmbeddedNodePoolSpec) IsRPCTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -851,7 +856,7 @@ func (s *StretchClusterSpec) IsRPCTLSEnabled() bool {
 }
 
 // listeners returns a non-nil StretchListeners, defaulting to an empty value.
-func (s *StretchClusterSpec) listeners() StretchListeners {
+func (s *EmbeddedNodePoolSpec) listeners() StretchListeners {
 	if s.Listeners == nil {
 		return StretchListeners{}
 	}
@@ -859,7 +864,7 @@ func (s *StretchClusterSpec) listeners() StretchListeners {
 }
 
 // GetClusterDomain returns the cluster domain, defaulting to "cluster.local". Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetClusterDomain() string {
+func (s *EmbeddedNodePoolSpec) GetClusterDomain() string {
 	if s != nil && s.ClusterDomain != nil {
 		return *s.ClusterDomain
 	}
@@ -867,7 +872,7 @@ func (s *StretchClusterSpec) GetClusterDomain() string {
 }
 
 // GetServiceName returns the headless service name, falling back to fullname. Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetServiceName(fullname string) string {
+func (s *EmbeddedNodePoolSpec) GetServiceName(fullname string) string {
 	if s != nil && s.Service != nil && s.Service.Name != nil && *s.Service.Name != "" {
 		return *s.Service.Name
 	}
@@ -876,12 +881,12 @@ func (s *StretchClusterSpec) GetServiceName(fullname string) string {
 
 // InternalDomain returns the fully qualified internal DNS domain for the headless service.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) InternalDomain(fullname, namespace string) string {
+func (s *EmbeddedNodePoolSpec) InternalDomain(fullname, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.%s", s.GetServiceName(fullname), namespace, s.GetClusterDomain())
 }
 
 // GetServiceAccountName returns the effective service account name for the spec. Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetServiceAccountName(fullname string) string {
+func (s *EmbeddedNodePoolSpec) GetServiceAccountName(fullname string) string {
 	if s == nil {
 		return fullname
 	}
@@ -891,7 +896,7 @@ func (s *StretchClusterSpec) GetServiceAccountName(fullname string) string {
 // GetResourceRequirements returns the Kubernetes resource requirements from the spec.
 // Supports both new-style (Limits/Requests) and legacy (CPU.Cores + Memory.Container.Max) modes.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetResourceRequirements() corev1.ResourceRequirements {
+func (s *EmbeddedNodePoolSpec) GetResourceRequirements() corev1.ResourceRequirements {
 	if s == nil || s.Resources == nil {
 		return corev1.ResourceRequirements{}
 	}
@@ -921,7 +926,7 @@ func (s *StretchClusterSpec) GetResourceRequirements() corev1.ResourceRequiremen
 
 // InUseServerCerts returns the cert names for all listeners with TLS enabled.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) InUseServerCerts() []string {
+func (s *EmbeddedNodePoolSpec) InUseServerCerts() []string {
 	if s == nil || !s.TLS.IsEnabled() {
 		return nil
 	}
@@ -930,7 +935,7 @@ func (s *StretchClusterSpec) InUseServerCerts() []string {
 
 // InUseClientCerts returns the cert names for listeners requiring client auth (mTLS).
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) InUseClientCerts() []string {
+func (s *EmbeddedNodePoolSpec) InUseClientCerts() []string {
 	if s == nil || !s.TLS.IsEnabled() {
 		return nil
 	}
@@ -951,7 +956,7 @@ const (
 
 // IsTieredStorageEnabled returns whether tiered storage is enabled.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsTieredStorageEnabled() bool {
+func (s *EmbeddedNodePoolSpec) IsTieredStorageEnabled() bool {
 	if s == nil || s.Storage == nil || s.Storage.Tiered == nil || s.Storage.Tiered.Config == nil {
 		return false
 	}
@@ -961,7 +966,7 @@ func (s *StretchClusterSpec) IsTieredStorageEnabled() bool {
 
 // TieredMountType returns the tiered storage mount type. Defaults to "none" if not set.
 // Valid values: "none", "hostPath", "emptyDir", "persistentVolume".
-func (s *StretchClusterSpec) TieredMountType() string {
+func (s *EmbeddedNodePoolSpec) TieredMountType() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.MountType != nil {
 		return *s.Storage.Tiered.MountType
 	}
@@ -969,7 +974,7 @@ func (s *StretchClusterSpec) TieredMountType() string {
 }
 
 // TieredCacheDirectory returns the cloud storage cache directory path.
-func (s *StretchClusterSpec) TieredCacheDirectory() string {
+func (s *EmbeddedNodePoolSpec) TieredCacheDirectory() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.Config != nil {
 		if s.Storage.Tiered.Config.CloudStorageCacheDirectory != nil {
 			return *s.Storage.Tiered.Config.CloudStorageCacheDirectory
@@ -980,7 +985,7 @@ func (s *StretchClusterSpec) TieredCacheDirectory() string {
 
 // TieredStorageVolumeName returns the volume name for tiered storage,
 // using NameOverwrite from the PersistentVolume if set.
-func (s *StretchClusterSpec) TieredStorageVolumeName() string {
+func (s *EmbeddedNodePoolSpec) TieredStorageVolumeName() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil &&
 		s.Storage.Tiered.PersistentVolume != nil &&
 		s.Storage.Tiered.PersistentVolume.NameOverwrite != nil &&
@@ -991,7 +996,7 @@ func (s *StretchClusterSpec) TieredStorageVolumeName() string {
 }
 
 // TieredStorageHostPath returns the host path for tiered storage.
-func (s *StretchClusterSpec) TieredStorageHostPath() string {
+func (s *EmbeddedNodePoolSpec) TieredStorageHostPath() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.HostPath != nil {
 		return *s.Storage.Tiered.HostPath
 	}
@@ -1099,7 +1104,7 @@ func (s *StretchClusterSpec) IsMetricsReporterEnabled() bool {
 // GetStorageMinFreeBytes computes storage_min_free_bytes as min(5GiB, 5% of PV size).
 // Returns 5GiB if PV is disabled or has no size set.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetStorageMinFreeBytes() int64 {
+func (s *EmbeddedNodePoolSpec) GetStorageMinFreeBytes() int64 {
 	if s == nil || s.Storage == nil || s.Storage.PersistentVolume == nil ||
 		!s.Storage.PersistentVolume.IsEnabled() || s.Storage.PersistentVolume.Size == nil {
 		return 5 * GiB
@@ -1114,7 +1119,7 @@ func (s *StretchClusterSpec) GetStorageMinFreeBytes() int64 {
 // GetTieredStorageCacheSize returns the parsed cloud storage cache size quantity,
 // or nil if not set or unparseable.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetTieredStorageCacheSize() *resource.Quantity {
+func (s *EmbeddedNodePoolSpec) GetTieredStorageCacheSize() *resource.Quantity {
 	if s == nil || s.Storage == nil || s.Storage.Tiered == nil ||
 		s.Storage.Tiered.Config == nil || s.Storage.Tiered.Config.CloudStorageCacheSize == nil {
 		return nil
@@ -1129,7 +1134,7 @@ func (s *StretchClusterSpec) GetTieredStorageCacheSize() *resource.Quantity {
 // --- NodePool helpers ---
 
 // AdminPort returns the admin API port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminPort() int32 {
+func (s *EmbeddedNodePoolSpec) AdminPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.Admin != nil {
 		return s.Listeners.Admin.GetPort(DefaultAdminPort)
 	}
@@ -1137,7 +1142,7 @@ func (s *StretchClusterSpec) AdminPort() int32 {
 }
 
 // KafkaPort returns the Kafka API port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) KafkaPort() int32 {
+func (s *EmbeddedNodePoolSpec) KafkaPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.Kafka != nil {
 		return s.Listeners.Kafka.GetPort(DefaultKafkaPort)
 	}
@@ -1145,7 +1150,7 @@ func (s *StretchClusterSpec) KafkaPort() int32 {
 }
 
 // HTTPPort returns the HTTP Proxy port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) HTTPPort() int32 {
+func (s *EmbeddedNodePoolSpec) HTTPPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.HTTP != nil {
 		return s.Listeners.HTTP.GetPort(DefaultHTTPPort)
 	}
@@ -1153,7 +1158,7 @@ func (s *StretchClusterSpec) HTTPPort() int32 {
 }
 
 // RPCPort returns the RPC port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) RPCPort() int32 {
+func (s *EmbeddedNodePoolSpec) RPCPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.RPC != nil && s.Listeners.RPC.Port != nil {
 		return int32(*s.Listeners.RPC.Port)
 	}
@@ -1161,7 +1166,7 @@ func (s *StretchClusterSpec) RPCPort() int32 {
 }
 
 // SchemaRegistryPort returns the Schema Registry port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) SchemaRegistryPort() int32 {
+func (s *EmbeddedNodePoolSpec) SchemaRegistryPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.SchemaRegistry != nil {
 		return s.Listeners.SchemaRegistry.GetPort(DefaultSchemaRegistryPort)
 	}
@@ -1170,7 +1175,7 @@ func (s *StretchClusterSpec) SchemaRegistryPort() int32 {
 
 // AdminInternalHTTPProtocol returns "https" if admin TLS is enabled, "http" otherwise.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminInternalHTTPProtocol() string {
+func (s *EmbeddedNodePoolSpec) AdminInternalHTTPProtocol() string {
 	if s.IsAdminTLSEnabled() {
 		return "https"
 	}
@@ -1179,7 +1184,7 @@ func (s *StretchClusterSpec) AdminInternalHTTPProtocol() string {
 
 // AdminInternalURL returns the internal admin API URL template.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminInternalURL(fullname, namespace string) string {
+func (s *EmbeddedNodePoolSpec) AdminInternalURL(fullname, namespace string) string {
 	return fmt.Sprintf("%s://%s.%s:%d",
 		s.AdminInternalHTTPProtocol(),
 		"${SERVICE_NAME}",
@@ -1190,7 +1195,7 @@ func (s *StretchClusterSpec) AdminInternalURL(fullname, namespace string) string
 
 // AdminAPIURLs returns the admin API URL for probes.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminAPIURLs(fullname, namespace string) string {
+func (s *EmbeddedNodePoolSpec) AdminAPIURLs(fullname, namespace string) string {
 	return fmt.Sprintf("${SERVICE_NAME}.%s:%d", s.InternalDomain(fullname, namespace), s.AdminPort())
 }
 
@@ -1239,23 +1244,64 @@ func (n *NodePool) InitImage() string {
 
 // --- Defaults merging ---
 //
-// MergeDefaults fills in Helm-equivalent default values for fields that are nil
-// on the StretchClusterSpec. This replaces the defaults that were previously
-// provided by the Helm chart's values.yaml during the old rendering path.
+// Defaulting is split across the StretchCluster and NodePool specs to match
+// where the data now lives. Call ordering:
+//
+//   1. cluster.Spec.MergeDefaults() — populates cluster-wide fields that may
+//      act as defaults for NodePools (Storage, Resources, Service-shaped fields)
+//      and pure cluster-wide fields (Tuning, Logging).
+//   2. for each pool: pool.Spec.MergeDefaultsFrom(&cluster.Spec) — inherits the
+//      defaulted cluster fields where the NodePool didn't override, then
+//      populates per-K8s-cluster fields (TLS, External, Listeners, ServiceAccount,
+//      RBAC).
+//
+// Both stages should run on deep-copied objects so the original CRDs are not
+// mutated.
 
-// MergeDefaults populates nil fields of the spec with defaults matching the
-// Helm chart's values.yaml. It is intended to be called on a deep-copied spec
-// so that the original CRD object is not mutated.
+// MergeDefaults populates nil fields on the cluster-wide spec with defaults
+// matching the Helm chart's values.yaml.
 func (s *StretchClusterSpec) MergeDefaults() {
+	s.mergeDefaultStorage()
+	s.mergeDefaultTuning()
+	s.mergeDefaultResources()
+	s.mergeDefaultLogging()
+}
+
+// MergeDefaultsFrom populates nil fields on the NodePool spec. Per-K8s-cluster
+// fields are defaulted directly; defaultable fields (Storage, Resources,
+// Service, ImagePullSecrets) are inherited from the supplied cluster spec when
+// the NodePool didn't set them.
+//
+// The caller is expected to have already invoked cluster.MergeDefaults() so
+// that inherited values are themselves defaulted.
+func (s *EmbeddedNodePoolSpec) MergeDefaultsFrom(cluster *StretchClusterSpec) {
+	s.inheritFromCluster(cluster)
 	s.mergeDefaultTLS()
 	s.mergeDefaultExternal()
 	s.mergeDefaultListeners()
 	s.mergeDefaultServiceAccount()
 	s.mergeDefaultRBAC()
-	s.mergeDefaultStorage()
-	s.mergeDefaultTuning()
-	s.mergeDefaultResources()
-	s.mergeDefaultLogging()
+}
+
+// inheritFromCluster copies defaultable cluster-wide values onto the NodePool
+// when the NodePool did not provide its own. Existing NodePool values win
+// (top-level replace; no deep merge).
+func (s *EmbeddedNodePoolSpec) inheritFromCluster(cluster *StretchClusterSpec) {
+	if cluster == nil {
+		return
+	}
+	if s.Storage == nil && cluster.Storage != nil {
+		s.Storage = cluster.Storage.DeepCopy()
+	}
+	if s.Resources == nil && cluster.Resources != nil {
+		s.Resources = cluster.Resources.DeepCopy()
+	}
+	if s.Service == nil && cluster.Service != nil {
+		s.Service = cluster.Service.DeepCopy()
+	}
+	if len(s.ImagePullSecrets) == 0 && len(cluster.ImagePullSecrets) > 0 {
+		s.ImagePullSecrets = append([]corev1.LocalObjectReference(nil), cluster.ImagePullSecrets...)
+	}
 }
 
 func (s *StretchClusterSpec) mergeDefaultStorage() {
@@ -1321,7 +1367,7 @@ func (s *StretchClusterSpec) mergeDefaultLogging() {
 
 // GetRedpandaStartFlags computes the --memory, --reserve-memory, and --smp flags
 // from the Resources configuration, mirroring the Helm chart logic.
-func (s *StretchClusterSpec) GetRedpandaStartFlags() map[string]string {
+func (s *EmbeddedNodePoolSpec) GetRedpandaStartFlags() map[string]string {
 	if s == nil || s.Resources == nil {
 		return nil
 	}
@@ -1395,7 +1441,7 @@ func (s *StretchClusterSpec) GetRedpandaStartFlags() map[string]string {
 }
 
 // GetOverProvisionValue returns whether Redpanda should run in overprovisioned mode.
-func (s *StretchClusterSpec) GetOverProvisionValue() bool {
+func (s *EmbeddedNodePoolSpec) GetOverProvisionValue() bool {
 	if s == nil || s.Resources == nil {
 		return false
 	}
@@ -1416,14 +1462,14 @@ func (s *StretchClusterSpec) GetOverProvisionValue() bool {
 }
 
 // GetEnableMemoryLocking returns whether memory locking should be enabled.
-func (s *StretchClusterSpec) GetEnableMemoryLocking() bool {
+func (s *EmbeddedNodePoolSpec) GetEnableMemoryLocking() bool {
 	if s == nil || s.Resources == nil || s.Resources.Memory == nil {
 		return false
 	}
 	return ptr.Deref(s.Resources.Memory.EnableMemoryLocking, false)
 }
 
-func (s *StretchClusterSpec) mergeDefaultServiceAccount() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultServiceAccount() {
 	if s.ServiceAccount == nil {
 		s.ServiceAccount = &ServiceAccount{
 			Create: ptr.To(true),
@@ -1431,7 +1477,7 @@ func (s *StretchClusterSpec) mergeDefaultServiceAccount() {
 	}
 }
 
-func (s *StretchClusterSpec) mergeDefaultRBAC() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultRBAC() {
 	if s.RBAC == nil {
 		s.RBAC = &RBAC{
 			Enabled: ptr.To(true),
@@ -1439,7 +1485,7 @@ func (s *StretchClusterSpec) mergeDefaultRBAC() {
 	}
 }
 
-func (s *StretchClusterSpec) mergeDefaultTLS() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultTLS() {
 	if s.TLS == nil {
 		s.TLS = &TLS{}
 	}
@@ -1461,7 +1507,7 @@ func (s *StretchClusterSpec) mergeDefaultTLS() {
 	}
 }
 
-func (s *StretchClusterSpec) mergeDefaultExternal() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultExternal() {
 	if s.External == nil {
 		s.External = &External{}
 	}
@@ -1480,7 +1526,7 @@ func (s *StretchClusterSpec) mergeDefaultExternal() {
 	}
 }
 
-func (s *StretchClusterSpec) mergeDefaultListeners() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultListeners() {
 	if s.Listeners == nil {
 		s.Listeners = &StretchListeners{}
 	}
@@ -1509,23 +1555,23 @@ func mergeDefaultAPIListener(listener **StretchAPIListener, defaultPort, extPort
 	mergeDefaultExternalListener(l.External, extPort, extAdvertisedPort, &l.External)
 }
 
-func (s *StretchClusterSpec) mergeDefaultAdminListener() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultAdminListener() {
 	mergeDefaultAPIListener(&s.Listeners.Admin, DefaultAdminPort, DefaultExternalAdminPort, DefaultExternalAdminAdvertisedPort)
 }
 
-func (s *StretchClusterSpec) mergeDefaultKafkaListener() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultKafkaListener() {
 	mergeDefaultAPIListener(&s.Listeners.Kafka, DefaultKafkaPort, DefaultExternalKafkaPort, DefaultExternalKafkaAdvertisedPort)
 }
 
-func (s *StretchClusterSpec) mergeDefaultHTTPListener() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultHTTPListener() {
 	mergeDefaultAPIListener(&s.Listeners.HTTP, DefaultHTTPPort, DefaultExternalHTTPPort, DefaultExternalHTTPAdvertisedPort)
 }
 
-func (s *StretchClusterSpec) mergeDefaultSchemaRegistryListener() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultSchemaRegistryListener() {
 	mergeDefaultAPIListener(&s.Listeners.SchemaRegistry, DefaultSchemaRegistryPort, DefaultExternalSchemaRegistryPort, DefaultExternalSchemaRegistryAdvertisedPort)
 }
 
-func (s *StretchClusterSpec) mergeDefaultRPCListener() {
+func (s *EmbeddedNodePoolSpec) mergeDefaultRPCListener() {
 	if s.Listeners.RPC == nil {
 		s.Listeners.RPC = &StretchRPC{}
 	}

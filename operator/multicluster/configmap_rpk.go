@@ -24,22 +24,22 @@ import (
 func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]any {
 	flags := redpandaAdditionalStartFlags(state, pool)
 
-	l := state.Spec().Listeners
+	l := state.PoolSpec().Listeners
 
 	result := map[string]any{
 		"additional_start_flags": flags,
-		"overprovisioned":        state.Spec().GetOverProvisionValue(),
-		"enable_memory_locking":  state.Spec().GetEnableMemoryLocking(),
+		"overprovisioned":        state.PoolSpec().GetOverProvisionValue(),
+		"enable_memory_locking":  state.PoolSpec().GetEnableMemoryLocking(),
 		"kafka_api": map[string]any{
-			"brokers": state.BrokerList(state.Spec().KafkaPort()),
+			"brokers": state.BrokerList(state.PoolSpec().KafkaPort()),
 			"tls":     rpkListenerTLS(state, l.Kafka),
 		},
 		"admin_api": map[string]any{
-			"addresses": state.BrokerList(state.Spec().AdminPort()),
+			"addresses": state.BrokerList(state.PoolSpec().AdminPort()),
 			"tls":       rpkListenerTLS(state, l.Admin),
 		},
 		"schema_registry": map[string]any{
-			"addresses": state.BrokerList(state.Spec().SchemaRegistryPort()),
+			"addresses": state.BrokerList(state.PoolSpec().SchemaRegistryPort()),
 			"tls":       rpkListenerTLS(state, l.SchemaRegistry),
 		},
 	}
@@ -60,7 +60,7 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[stri
 // rpkListenerTLS returns the rpk client TLS config for a listener, or nil if
 // TLS is not enabled or no cert is configured.
 func rpkListenerTLS(state *RenderState, listener *redpandav1alpha2.StretchAPIListener) map[string]any {
-	if listener == nil || !listener.IsTLSEnabled(state.Spec().TLS) || listener.TLS.GetCert() == "" {
+	if listener == nil || !listener.IsTLSEnabled(state.PoolSpec().TLS) || listener.TLS.GetCert() == "" {
 		return nil
 	}
 	return rpkClientTLSConfig(state, listener.TLS)
@@ -70,9 +70,9 @@ func rpkListenerTLS(state *RenderState, listener *redpandav1alpha2.StretchAPILis
 func rpkClientTLSConfig(state *RenderState, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
 	certName := tls.GetCert()
 	result := map[string]any{
-		"ca_file": tls.ServerCAPath(state.Spec().TLS),
+		"ca_file": tls.ServerCAPath(state.PoolSpec().TLS),
 	}
-	if state.Spec().Listeners.CertRequiresClientAuth(certName) {
+	if state.PoolSpec().Listeners.CertRequiresClientAuth(certName) {
 		clientPath := certClientMountPoint(certName)
 		result["cert_file"] = fmt.Sprintf("%s/tls.crt", clientPath)
 		result["key_file"] = fmt.Sprintf("%s/tls.key", clientPath)
@@ -91,14 +91,14 @@ func kafkaClientConfig(state *RenderState, clientType string) map[string]any {
 	if useLocalhost {
 		brokerList = append(brokerList, map[string]any{
 			"address": "localhost",
-			"port":    state.Spec().KafkaPort(),
+			"port":    state.PoolSpec().KafkaPort(),
 		})
 	} else {
-		for _, addr := range state.BrokerList(state.Spec().KafkaPort()) {
+		for _, addr := range state.BrokerList(state.PoolSpec().KafkaPort()) {
 			// BrokerList returns "host:port" strings; split for the map format.
 			brokerList = append(brokerList, map[string]any{
 				"address": addr[:strings.LastIndex(addr, ":")],
-				"port":    state.Spec().KafkaPort(),
+				"port":    state.PoolSpec().KafkaPort(),
 			})
 		}
 	}
@@ -108,16 +108,16 @@ func kafkaClientConfig(state *RenderState, clientType string) map[string]any {
 	}
 
 	// Kafka broker TLS for internal client connections (pandaproxy_client, etc.).
-	l := state.Spec().Listeners
-	if kafka := l.Kafka; kafka != nil && kafka.IsTLSEnabled(state.Spec().TLS) && kafka.TLS.GetCert() != "" {
+	l := state.PoolSpec().Listeners
+	if kafka := l.Kafka; kafka != nil && kafka.IsTLSEnabled(state.PoolSpec().TLS) && kafka.TLS.GetCert() != "" {
 		tls := kafka.TLS
 		certName := tls.GetCert()
 		brokerTLS := map[string]any{
 			"enabled":             true,
-			"require_client_auth": state.Spec().Listeners.CertRequiresClientAuth(certName),
-			"truststore_file":     tls.ServerCAPath(state.Spec().TLS),
+			"require_client_auth": state.PoolSpec().Listeners.CertRequiresClientAuth(certName),
+			"truststore_file":     tls.ServerCAPath(state.PoolSpec().TLS),
 		}
-		if state.Spec().Listeners.CertRequiresClientAuth(certName) {
+		if state.PoolSpec().Listeners.CertRequiresClientAuth(certName) {
 			clientPath := certClientMountPoint(certName)
 			brokerTLS["cert_file"] = fmt.Sprintf("%s/tls.crt", clientPath)
 			brokerTLS["key_file"] = fmt.Sprintf("%s/tls.key", clientPath)
@@ -138,7 +138,7 @@ func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.Nod
 	}
 
 	// Add resource-derived flags in deterministic order.
-	redpandaFlags := state.Spec().GetRedpandaStartFlags()
+	redpandaFlags := state.PoolSpec().GetRedpandaStartFlags()
 	for _, key := range []string{"--memory", "--reserve-memory", "--smp"} {
 		if v, ok := redpandaFlags[key]; ok {
 			flags = append(flags, fmt.Sprintf("%s=%s", key, v))
@@ -158,7 +158,7 @@ func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.Nod
 // rpkProfileConfigMap returns a ConfigMap containing an RPK profile for external
 // client connections. Returns nil if external access is not enabled.
 func rpkProfileConfigMap(state *RenderState) *corev1.ConfigMap {
-	if !state.Spec().External.IsEnabled() {
+	if !state.PoolSpec().External.IsEnabled() {
 		return nil
 	}
 
@@ -191,19 +191,19 @@ func rpkProfile(state *RenderState) map[string]any {
 
 	// Use the first external kafka listener name (sorted) for the profile name.
 	profileName := "default"
-	if l := state.Spec().Listeners; l != nil && l.Kafka != nil {
+	if l := state.PoolSpec().Listeners; l != nil && l.Kafka != nil {
 		if names := sortedMapKeys(l.Kafka.External); len(names) > 0 {
 			profileName = names[0]
 		}
 	}
 
-	l := state.Spec().Listeners
+	l := state.PoolSpec().Listeners
 
 	return map[string]any{
 		"name":            profileName,
-		"kafka_api":       rpkProfileEntry("brokers", brokerList, state.Spec().TLS, l.Kafka),
-		"admin_api":       rpkProfileEntry("addresses", adminList, state.Spec().TLS, l.Admin),
-		"schema_registry": rpkProfileEntry("addresses", schemaList, state.Spec().TLS, l.SchemaRegistry),
+		"kafka_api":       rpkProfileEntry("brokers", brokerList, state.PoolSpec().TLS, l.Kafka),
+		"admin_api":       rpkProfileEntry("addresses", adminList, state.PoolSpec().TLS, l.Admin),
+		"schema_registry": rpkProfileEntry("addresses", schemaList, state.PoolSpec().TLS, l.SchemaRegistry),
 	}
 }
 

@@ -90,7 +90,7 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 
 // configureListeners populates the listener entries in the redpanda config section.
 func configureListeners(redpanda map[string]any, state *RenderState) {
-	l := state.Spec().Listeners
+	l := state.PoolSpec().Listeners
 
 	var admin, kafka *redpandav1alpha2.StretchAPIListener
 	if l != nil {
@@ -99,28 +99,28 @@ func configureListeners(redpanda map[string]any, state *RenderState) {
 	}
 
 	// Admin listener.
-	configureAPIListener(redpanda, state, admin, "admin", "admin_api_tls", state.Spec().AdminPort(), redpandav1alpha2.DefaultExternalAdminPort, "")
+	configureAPIListener(redpanda, state, admin, "admin", "admin_api_tls", state.PoolSpec().AdminPort(), redpandav1alpha2.DefaultExternalAdminPort, "")
 
 	// Kafka listener.
 	authMethod := ""
 	if state.Spec().Auth.IsSASLEnabled() {
 		authMethod = "sasl"
 	}
-	configureAPIListener(redpanda, state, kafka, "kafka_api", "kafka_api_tls", state.Spec().KafkaPort(), redpandav1alpha2.DefaultExternalKafkaPort, authMethod)
+	configureAPIListener(redpanda, state, kafka, "kafka_api", "kafka_api_tls", state.PoolSpec().KafkaPort(), redpandav1alpha2.DefaultExternalKafkaPort, authMethod)
 
 	// RPC listener.
 	redpanda["rpc_server"] = map[string]any{
 		"address": "0.0.0.0",
-		"port":    state.Spec().RPCPort(),
+		"port":    state.PoolSpec().RPCPort(),
 	}
-	if l != nil && l.RPC.IsTLSEnabled(state.Spec().TLS) && l.RPC.TLS != nil && l.RPC.TLS.GetCert() != "" {
+	if l != nil && l.RPC.IsTLSEnabled(state.PoolSpec().TLS) && l.RPC.TLS != nil && l.RPC.TLS.GetCert() != "" {
 		certName := l.RPC.TLS.GetCert()
 		redpanda["rpc_server_tls"] = map[string]any{
 			"enabled":             true,
 			"cert_file":           fmt.Sprintf("%s/tls.crt", certServerMountPoint(certName)),
 			"key_file":            fmt.Sprintf("%s/tls.key", certServerMountPoint(certName)),
 			"require_client_auth": l.RPC.TLS.RequiresClientAuth(),
-			"truststore_file":     l.RPC.TLS.ServerCAPath(state.Spec().TLS),
+			"truststore_file":     l.RPC.TLS.ServerCAPath(state.PoolSpec().TLS),
 		}
 	}
 }
@@ -147,7 +147,7 @@ func configureAPIListener(
 	var tlsEntries []map[string]any
 
 	if listener != nil {
-		if listener.IsTLSEnabled(state.Spec().TLS) && listener.TLS.GetCert() != "" {
+		if listener.IsTLSEnabled(state.PoolSpec().TLS) && listener.TLS.GetCert() != "" {
 			tlsEntries = append(tlsEntries, listenerTLSEntry(state, internalListenerName, listener.TLS))
 		}
 		forEachEnabledExternal(listener.External, func(name string, ext *redpandav1alpha2.StretchExternalListener) {
@@ -178,7 +178,7 @@ func listenerTLSEntry(state *RenderState, name string, tls *redpandav1alpha2.Str
 		"enabled":             true,
 		"cert_file":           fmt.Sprintf("%s/tls.crt", certServerMountPoint(certName)),
 		"key_file":            fmt.Sprintf("%s/tls.key", certServerMountPoint(certName)),
-		"require_client_auth": state.Spec().Listeners.CertRequiresClientAuth(certName),
-		"truststore_file":     tls.ServerCAPath(state.Spec().TLS),
+		"require_client_auth": state.PoolSpec().Listeners.CertRequiresClientAuth(certName),
+		"truststore_file":     tls.ServerCAPath(state.PoolSpec().TLS),
 	}
 }

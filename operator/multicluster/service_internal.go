@@ -23,11 +23,11 @@ func serviceInternal(state *RenderState) *corev1.Service {
 	// This service should not be used by any client application.
 	var ports []corev1.ServicePort
 
-	l := state.Spec().Listeners
+	l := state.PoolSpec().Listeners
 
 	// Admin listener.
 	if l == nil || l.Admin == nil || l.Admin.IsEnabled() {
-		adminPort := state.Spec().AdminPort()
+		adminPort := state.PoolSpec().AdminPort()
 		adminServicePort := corev1.ServicePort{
 			Name:       internalAdminAPIPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -42,7 +42,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// HTTP proxy listener.
 	if l != nil && l.HTTP != nil && l.HTTP.IsEnabled() {
-		httpPort := state.Spec().HTTPPort()
+		httpPort := state.PoolSpec().HTTPPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalPandaProxyPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -53,7 +53,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// Kafka listener.
 	if l == nil || l.Kafka == nil || l.Kafka.IsEnabled() {
-		kafkaPort := state.Spec().KafkaPort()
+		kafkaPort := state.PoolSpec().KafkaPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalKafkaPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -63,7 +63,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 	}
 
 	// RPC listener (always required for inter-broker communication).
-	rpcPort := state.Spec().RPCPort()
+	rpcPort := state.PoolSpec().RPCPort()
 	ports = append(ports, corev1.ServicePort{
 		Name:       internalRPCPortName,
 		Protocol:   corev1.ProtocolTCP,
@@ -73,7 +73,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// Schema Registry listener.
 	if l != nil && l.SchemaRegistry != nil && l.SchemaRegistry.IsEnabled() {
-		srPort := state.Spec().SchemaRegistryPort()
+		srPort := state.PoolSpec().SchemaRegistryPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalSchemaRegistryPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -83,12 +83,12 @@ func serviceInternal(state *RenderState) *corev1.Service {
 	}
 
 	annotations := map[string]string{}
-	if svc := state.Spec().Service; svc != nil && svc.Internal != nil {
+	if svc := state.PoolSpec().Service; svc != nil && svc.Internal != nil {
 		annotations = svc.Internal.Annotations
 	}
 
 	labels := state.commonLabels()
-	labels[labelMonitorKey] = fmt.Sprintf("%t", state.Spec().Monitoring.IsEnabled())
+	labels[labelMonitorKey] = fmt.Sprintf("%t", state.PoolSpec().Monitoring.IsEnabled())
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -96,7 +96,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        state.Spec().GetServiceName(state.fullname()),
+			Name:        state.PoolSpec().GetServiceName(state.fullname()),
 			Namespace:   state.namespace,
 			Labels:      labels,
 			Annotations: annotations,
