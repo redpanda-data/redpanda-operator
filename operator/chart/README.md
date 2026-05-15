@@ -208,13 +208,29 @@ Log level Valid values (from least to most verbose) are: `warn`, `info`, `debug`
 
 Configuration for monitoring.
 
-**Default:** `{"enabled":false}`
+**Default:**
+
+```
+{"enabled":false,"labels":{},"scrapeInterval":""}
+```
 
 ### [monitoring.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.enabled)
 
 Creates a ServiceMonitor that can be used by Prometheus-Operator or VictoriaMetrics-Operator to scrape the metrics.
 
 **Default:** `false`
+
+### [monitoring.labels](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.labels)
+
+Additional labels to add to the ServiceMonitor metadata.
+
+**Default:** `{}`
+
+### [monitoring.scrapeInterval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.scrapeInterval)
+
+Sets the scrape interval for the ServiceMonitor endpoint. Leave empty to use the Prometheus global default.
+
+**Default:** `""`
 
 ### [nameOverride](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=nameOverride)
 
