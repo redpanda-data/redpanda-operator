@@ -875,6 +875,15 @@
       "properties": {
         "enabled": {
           "type": "boolean"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "scrapeInterval": {
+          "type": "string"
         }
       },
       "type": "object"

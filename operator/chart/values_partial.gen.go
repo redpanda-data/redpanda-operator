@@ -83,7 +83,9 @@ type PartialServiceAccountConfig struct {
 }
 
 type PartialMonitoringConfig struct {
-	Enabled *bool "json:\"enabled,omitempty\""
+	Enabled        *bool             "json:\"enabled,omitempty\""
+	Labels         map[string]string "json:\"labels,omitempty\""
+	ScrapeInterval *string           "json:\"scrapeInterval,omitempty\""
 }
 
 type PartialCRDs struct {
