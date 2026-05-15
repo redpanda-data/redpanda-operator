@@ -84,6 +84,7 @@ type PartialServiceAccountConfig struct {
 
 type PartialMonitoringConfig struct {
 	Enabled        *bool             "json:\"enabled,omitempty\""
+	RulesEnabled   *bool             "json:\"rulesEnabled,omitempty\""
 	Labels         map[string]string "json:\"labels,omitempty\""
 	ScrapeInterval *string           "json:\"scrapeInterval,omitempty\""
 }

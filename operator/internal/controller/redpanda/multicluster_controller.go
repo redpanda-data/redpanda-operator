@@ -44,6 +44,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	syncclusterconfig "github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -192,6 +193,12 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	}
 	defer state.cleanup()
 
+	// Update the per-member broker count gauges from the freshly-fetched
+	// NodePool state. Recording here rather than later means the dashboard
+	// reflects what's deployed even on reconcile paths that abort early
+	// (deletion, finalizer-only updates, etc.).
+	r.recordBrokerCountMetrics(state)
+
 	// Examine if the object is under deletion
 	if !stretchCluster.ObjectMeta.DeletionTimestamp.IsZero() {
 		l.V(log.TraceLevel).Info("deletion timestamp is not zero. Resources cleanup and remove finalizer")
@@ -338,12 +345,28 @@ func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpa
 // rather than being blocked by a transient outage. If drift is detected on a
 // reachable cluster it sets SpecSynced=False and returns drifted=true so the
 // caller can abort. When all reachable specs are aligned it sets SpecSynced=True.
+//
+// Records observability gauges as a side effect — `member_reachable` for every
+// member cluster, and `spec_drift` for reachable members (left untouched for
+// unreachable ones because we genuinely don't know).
 func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state *stretchClusterReconciliationState, sc *redpandav1alpha2.StretchCluster, localClusterName string) (drifted bool, _ ctrl.Result) {
 	l := log.FromContext(ctx).WithName("checkSpecConsistency")
 
 	localSpec := sc.Spec
 	var driftDetails []string
 	var unreachable []string
+
+	// The local cluster is always reachable from this operator and is
+	// (by definition) aligned with itself. Record both gauges so the
+	// local member's series is present.
+	//
+	// req.ClusterName is the multicluster-runtime's internal local-cluster
+	// sentinel (empty string in practice). Convert to the canonical
+	// cluster name so the prometheus `member` label is a stable peer
+	// name rather than an empty string.
+	localCanonical := lifecycle.CanonicalClusterName(localClusterName, r.Manager.GetLocalClusterName)
+	observability.RecordStretchClusterMemberReachable(sc.Name, localCanonical, true)
+	observability.RecordStretchClusterSpecDrift(sc.Name, localCanonical, false)
 
 	for _, clusterName := range r.Manager.GetClusterNames() {
 		// Skip the local cluster — we already have its spec.
@@ -354,9 +377,15 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 		// Check the background health probe first — this avoids a direct
 		// API call on every reconcile. The probe runs independently in the
 		// manager and caches reachability per cluster.
+		// Canonicalise once per loop iteration so all record calls use a
+		// stable `member` label (peer names that the user knows, not the
+		// multicluster-runtime's internal sentinels).
+		canonical := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+
 		if !r.Manager.IsClusterReachable(clusterName) {
 			l.Info("cluster unreachable (background probe), skipping", "cluster", clusterName)
 			unreachable = append(unreachable, clusterName)
+			observability.RecordStretchClusterMemberReachable(sc.Name, canonical, false)
 			continue
 		}
 
@@ -364,6 +393,7 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 		if err != nil {
 			l.Info("cluster unreachable during spec consistency check, skipping", "cluster", clusterName, "error", err)
 			unreachable = append(unreachable, clusterName)
+			observability.RecordStretchClusterMemberReachable(sc.Name, canonical, false)
 			continue
 		}
 
@@ -371,10 +401,16 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
 			l.Info("could not fetch StretchCluster from cluster, skipping", "cluster", clusterName, "error", err)
 			unreachable = append(unreachable, clusterName)
+			observability.RecordStretchClusterMemberReachable(sc.Name, canonical, false)
 			continue
 		}
 
-		if !apiequality.Semantic.DeepEqual(localSpec, remoteSC.Spec) {
+		// Member is reachable and the SC fetch succeeded — record both
+		// reachability and the drift outcome so the gauges stay in sync.
+		observability.RecordStretchClusterMemberReachable(sc.Name, canonical, true)
+		isDrifted := !apiequality.Semantic.DeepEqual(localSpec, remoteSC.Spec)
+		observability.RecordStretchClusterSpecDrift(sc.Name, canonical, isDrifted)
+		if isDrifted {
 			fields := specDiffFields(localSpec, remoteSC.Spec)
 			driftDetails = append(driftDetails, fmt.Sprintf("%s (fields: %s)", clusterName, strings.Join(fields, ", ")))
 		}
@@ -474,6 +510,36 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 		status:                status,
 		restartOnConfigChange: restartOnConfigChange,
 	}, nil
+}
+
+// recordBrokerCountMetrics walks every member cluster's NodePools and emits
+// the per-member `brokers` / `brokers_ready` gauges. Done as a side effect
+// of fetchInitialState rather than inside the lifecycle package because
+// the metric label set (stretchcluster, member) is observability-specific
+// and the lifecycle types don't otherwise need to know about it.
+//
+// Members with no NodePools still emit zero values so dashboards can show
+// "this peer is configured but has no pools yet" instead of an absent
+// series.
+func (r *MulticlusterReconciler) recordBrokerCountMetrics(state *stretchClusterReconciliationState) {
+	sc := state.cluster.StretchCluster
+	for _, clusterName := range r.Manager.GetClusterNames() {
+		var desired, ready int32
+		for _, pool := range state.cluster.GetNodePoolsForCluster(clusterName) {
+			if pool == nil {
+				continue
+			}
+			if pool.Spec.Replicas != nil {
+				desired += *pool.Spec.Replicas
+			}
+			ready += pool.Status.ReadyReplicas
+		}
+		// Canonicalise so the `member` label always carries a stable
+		// peer name, even when the manager exposes the local cluster as
+		// "" (the multicluster-runtime convention for "this cluster").
+		canonical := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+		observability.RecordStretchClusterBrokers(sc.Name, canonical, desired, ready)
+	}
 }
 
 // bootstrapSecretName returns the name of the bootstrap user secret for a given
@@ -925,6 +991,13 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
 	}
 
+	// Record the cluster-wide replication health gauge alongside the existing
+	// condition write. Done here (rather than in the defer above) because we
+	// only have an authoritative answer once the admin API call has returned;
+	// the defer fires on every code path including errors where `health` is
+	// the zero value.
+	observability.RecordStretchClusterReplicationHealth(state.cluster.Name, health.IsHealthy)
+
 	// health.NodesDown is treated as an advisory hint, not authority.
 	// The cluster health overview is the controller broker's consensus view of
 	// who has missed heartbeats. Right after a partition (or controller
@@ -943,6 +1016,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// timeout keeps reconcileClusterConfig and later phases from being
 	// gated on a 10s (or whatever the admin-client default is) hang per
 	// down broker.
+	//
 	// brokerMap keys brokers by the first DNS label of their internal RPC
 	// address (pod name for single-cluster) and also by the raw host (pod IP
 	// for stretch-cluster flat-network mode where InternalRPCAddress is an IP).
@@ -1460,11 +1534,11 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		mcbuilder.WithEngageWithLocalCluster(true),
 		mcbuilder.WithEngageWithProviderClusters(true)).
 		Complete(
-			&MulticlusterReconciler{
+			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
 				Manager:          mgr,
 				LifecycleClient:  lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
 				ClientFactory:    factory,
 				ReconcileTimeout: reconcileTimeout,
-			},
+			}, "StretchCluster", periodicRequeue),
 		)
 }

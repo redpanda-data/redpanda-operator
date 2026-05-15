@@ -60,6 +60,7 @@ func render(dot *helmette.Dot) []kube.Object {
 		ValidatingWebhookConfiguration(dot),
 		ServiceAccount(dot),
 		ServiceMonitor(dot),
+		PrometheusRule(dot),
 		Deployment(dot),
 		PreInstallCRDJob(dot),
 		CRDJobServiceAccount(dot),

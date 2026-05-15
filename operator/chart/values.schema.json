@@ -882,6 +882,9 @@
           },
           "type": "object"
         },
+        "rulesEnabled": {
+          "type": "boolean"
+        },
         "scrapeInterval": {
           "type": "string"
         }

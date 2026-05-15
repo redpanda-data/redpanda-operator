@@ -36,6 +36,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -100,9 +101,11 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 			})
 		}).
 		Complete(
-			&NodePoolReconciler{
-				Manager: mgr,
-			},
+			observability.Wrap[mcreconcile.Request](
+				&NodePoolReconciler{Manager: mgr},
+				"NodePool",
+				periodicRequeue,
+			),
 		)
 }
 
@@ -151,7 +154,7 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster, controller.WatchOptions(clusterName)...)
 	}
 
-	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "NodePool", periodicRequeue)))
 }
 
 // Reconcile reconciles NodePool objects

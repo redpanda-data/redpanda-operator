@@ -43,6 +43,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
@@ -153,7 +154,7 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		}
 	}
 
-	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "Redpanda", periodicRequeue)))
 }
 
 type clusterReconciliationState struct {
