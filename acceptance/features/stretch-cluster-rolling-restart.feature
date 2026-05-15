@@ -12,11 +12,7 @@ Feature: Stretch Cluster Rolling Restart
     metadata:
       name: cluster
       namespace: default
-    spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
+    spec: {}
     """
     And I apply a NodePool Kubernetes manifest to "rolling":
     """
@@ -36,6 +32,10 @@ Feature: Stretch Cluster Rolling Restart
         perPod:
           remote:
             enabled: false
+      external:
+        enabled: false
+      rbac:
+        enabled: true
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
     And I expect all 3 NodePools in "rolling" to be eventually bound and deployed

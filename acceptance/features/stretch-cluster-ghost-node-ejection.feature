@@ -25,10 +25,6 @@ Feature: StretchCluster ghost node ejection
       name: cluster
       namespace: default
     spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
       config:
         cluster:
           partition_autobalancing_mode: continuous
@@ -56,6 +52,10 @@ Feature: StretchCluster ghost node ejection
         perPod:
           remote:
             enabled: false
+      external:
+        enabled: false
+      rbac:
+        enabled: true
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
     And I expect all 3 NodePools in "ghost" to be eventually bound and deployed

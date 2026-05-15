@@ -215,10 +215,14 @@ func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
 // NodePools in the same K8s cluster, so any in-cluster pool serves as the
 // canonical source.
 //
-// Returns nil if there are no NodePools in the local cluster.
+// Returns an empty (but non-nil) spec when there are no NodePools in the
+// local cluster, so direct field access (state.PoolSpec().TLS) is always
+// safe. Reconciliation passes that fire before any NodePool exists see an
+// unconfigured spec — helpers fall back to their defaults and resources
+// that depend on per-pool config skip.
 func (r *RenderState) PoolSpec() *redpandav1alpha2.EmbeddedNodePoolSpec {
 	if len(r.inClusterPools) == 0 {
-		return nil
+		return &redpandav1alpha2.EmbeddedNodePoolSpec{}
 	}
 	return &r.inClusterPools[0].Spec.EmbeddedNodePoolSpec
 }

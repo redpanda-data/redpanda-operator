@@ -17,11 +17,7 @@ Feature: Stretch Cluster Regional Outage
     metadata:
       name: cluster
       namespace: default
-    spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
+    spec: {}
     """
     And I apply a NodePool Kubernetes manifest to "outage":
     """
@@ -41,6 +37,10 @@ Feature: Stretch Cluster Regional Outage
         perPod:
           remote:
             enabled: false
+      external:
+        enabled: false
+      rbac:
+        enabled: true
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
     And I expect all 3 NodePools in "outage" to be eventually bound and deployed
@@ -61,10 +61,6 @@ Feature: Stretch Cluster Regional Outage
       name: cluster
       namespace: default
     spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
       config:
         cluster:
           log_segment_size_min: "16777216"
@@ -85,10 +81,6 @@ Feature: Stretch Cluster Regional Outage
       name: cluster
       namespace: default
     spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
       config:
         cluster:
           log_segment_size_min: "16777216"
