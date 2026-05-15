@@ -12,6 +12,7 @@ package redpanda
 import (
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -117,6 +118,84 @@ func TestUserAdoptExisting(t *testing.T) {
 	require.NoError(t, k8sClient.Delete(ctx, user))
 	_, err = environment.Reconciler.Reconcile(ctx, req)
 	require.NoError(t, err)
+}
+
+// TestUserNoGenerateMissingSecret verifies that when Password.NoGenerate=true
+// is set and the referenced Secret does not exist, the controller does NOT
+// auto-create the Secret (the default behavior in TestUserAdoptExisting) but
+// instead fails reconciliation. This documents the explicit opt-out path for
+// the auto-create-Secret-on-missing behavior in Client.getPassword.
+func TestUserNoGenerateMissingSecret(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	userName := "nogen-user-" + strconv.Itoa(int(time.Now().UnixNano()))
+	secretName := userName + "-password"
+
+	// User CR with NoGenerate=true and a SecretKeyRef pointing at a Secret
+	// that doesn't exist. Without NoGenerate, the controller would auto-
+	// create the Secret with the inline Value as the password. With
+	// NoGenerate, that fallback is disabled.
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Password: redpandav1alpha2.Password{
+					NoGenerate: true,
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: secretName,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(user)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, k8sClient.Create(ctx, user))
+
+	// First reconcile adds the finalizer.
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	// Second reconcile attempts user creation. With NoGenerate=true and the
+	// referenced Secret missing, getPassword propagates the NotFound error
+	// instead of synthesizing a Secret.
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.Error(t, err, "expected reconcile to fail when NoGenerate=true and Secret is missing")
+	require.True(t, apierrors.IsNotFound(err) ||
+		strings.Contains(err.Error(), "not found") ||
+		strings.Contains(err.Error(), secretName),
+		"expected NotFound-shaped error, got: %v", err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.False(t, user.Status.ManagedUser, "expected managedUser=false when password lookup failed")
+
+	// Verify no Secret was created out of band.
+	var maybeSecret corev1.Secret
+	getErr := k8sClient.Get(ctx, client.ObjectKey{Namespace: metav1.NamespaceDefault, Name: secretName}, &maybeSecret)
+	require.True(t, apierrors.IsNotFound(getErr), "controller must not auto-create the Secret when NoGenerate=true; got: %v", getErr)
+
+	// Cleanup.
+	require.NoError(t, k8sClient.Delete(ctx, user))
+	_, _ = environment.Reconciler.Reconcile(ctx, req)
 }
 
 // TestUserCredentialSync verifies that when syncCredentials is enabled, updating
