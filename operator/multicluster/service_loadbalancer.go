@@ -15,12 +15,27 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// loadBalancerServices returns per-pod LoadBalancer Services for external access.
+// loadBalancerServices returns per-pod LoadBalancer Services for external
+// access. External config is per-pool, so each pool drives its own pods'
+// LB services.
 func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
-	ext := state.PoolSpec().External
+	var out []*corev1.Service
+	for _, pool := range state.inClusterPools {
+		svcs, err := loadBalancerServicesForPool(state, pool)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, svcs...)
+	}
+	return out, nil
+}
+
+func loadBalancerServicesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) ([]*corev1.Service, error) {
+	ext := state.PoolSpec(pool).External
 	if ext == nil || !ext.IsEnabled() {
 		return nil, nil
 	}
@@ -36,11 +51,16 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 	labels["repdanda.com/type"] = "loadbalancer"
 
 	selector := state.clusterPodLabelsSelector()
+	selector[labelComponentKey] = "redpanda" + pool.Suffix()
 
 	var services []*corev1.Service
-	podNames := state.allPodNames()
+	poolFullname := state.poolFullname(pool)
+	replicas := pool.GetReplicas()
+	ports := externalServicePorts(state.PoolSpec(pool).Listeners, false)
 
-	for i, podname := range podNames {
+	for i := int32(0); i < replicas; i++ {
+		podname := fmt.Sprintf("%s-%d", poolFullname, i)
+
 		annotations := map[string]string{}
 		for k, v := range ext.Annotations {
 			annotations[k] = v
@@ -51,7 +71,7 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 			// single shared address, or fall back to the pod name.
 			prefix := podname
 			switch {
-			case len(ext.Addresses) > 1 && i < len(ext.Addresses):
+			case len(ext.Addresses) > 1 && int(i) < len(ext.Addresses):
 				prefix = ext.Addresses[i]
 			case len(ext.Addresses) == 1:
 				prefix = ext.Addresses[0]
@@ -69,8 +89,6 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 			podSelector[k] = v
 		}
 		podSelector["statefulset.kubernetes.io/pod-name"] = podname
-
-		ports := lbExternalPorts(state)
 
 		svc := &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
@@ -98,8 +116,4 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 	}
 
 	return services, nil
-}
-
-func lbExternalPorts(state *RenderState) []corev1.ServicePort {
-	return externalServicePorts(state.PoolSpec().Listeners, false)
 }

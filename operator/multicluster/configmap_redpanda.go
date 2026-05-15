@@ -53,12 +53,12 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 	}
 
 	// Configure listeners.
-	configureListeners(redpanda, state)
+	configureListeners(redpanda, state, pool)
 
 	redpandaYaml := map[string]any{
 		"redpanda":        redpanda,
-		"schema_registry": schemaRegistryConfig(state),
-		"pandaproxy":      pandaProxyConfig(state),
+		"schema_registry": schemaRegistryConfig(state, pool),
+		"pandaproxy":      pandaProxyConfig(state, pool),
 		"config_file":     redpandaConfigMountPath + "/redpanda.yaml",
 	}
 
@@ -68,8 +68,8 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 	if includeSeedServers {
 		redpandaYaml["rpk"] = rpkNodeConfig(state, pool)
 
-		pandaproxyClient := kafkaClientConfig(state, "pandaproxy")
-		schemaRegistryClient := kafkaClientConfig(state, "schema_registry")
+		pandaproxyClient := kafkaClientConfig(state, pool, "pandaproxy")
+		schemaRegistryClient := kafkaClientConfig(state, pool, "schema_registry")
 
 		// Merge user-provided client configuration overrides.
 		if cfg := state.Spec().Config; cfg != nil {
@@ -81,7 +81,7 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 		redpandaYaml["schema_registry_client"] = schemaRegistryClient
 
 		if state.Spec().IsAuditLoggingEnabled() {
-			redpandaYaml["audit_log_client"] = kafkaClientConfig(state, "audit_log")
+			redpandaYaml["audit_log_client"] = kafkaClientConfig(state, pool, "audit_log")
 		}
 	}
 
@@ -89,8 +89,8 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 }
 
 // configureListeners populates the listener entries in the redpanda config section.
-func configureListeners(redpanda map[string]any, state *RenderState) {
-	l := state.PoolSpec().Listeners
+func configureListeners(redpanda map[string]any, state *RenderState, pool *redpandav1alpha2.NodePool) {
+	l := state.PoolSpec(pool).Listeners
 
 	var admin, kafka *redpandav1alpha2.StretchAPIListener
 	if l != nil {
@@ -99,28 +99,28 @@ func configureListeners(redpanda map[string]any, state *RenderState) {
 	}
 
 	// Admin listener.
-	configureAPIListener(redpanda, state, admin, "admin", "admin_api_tls", state.PoolSpec().AdminPort(), redpandav1alpha2.DefaultExternalAdminPort, "")
+	configureAPIListener(redpanda, state, pool, admin, "admin", "admin_api_tls", state.PoolSpec(pool).AdminPort(), redpandav1alpha2.DefaultExternalAdminPort, "")
 
 	// Kafka listener.
 	authMethod := ""
 	if state.Spec().Auth.IsSASLEnabled() {
 		authMethod = "sasl"
 	}
-	configureAPIListener(redpanda, state, kafka, "kafka_api", "kafka_api_tls", state.PoolSpec().KafkaPort(), redpandav1alpha2.DefaultExternalKafkaPort, authMethod)
+	configureAPIListener(redpanda, state, pool, kafka, "kafka_api", "kafka_api_tls", state.PoolSpec(pool).KafkaPort(), redpandav1alpha2.DefaultExternalKafkaPort, authMethod)
 
 	// RPC listener.
 	redpanda["rpc_server"] = map[string]any{
 		"address": "0.0.0.0",
-		"port":    state.PoolSpec().RPCPort(),
+		"port":    state.PoolSpec(pool).RPCPort(),
 	}
-	if l != nil && l.RPC.IsTLSEnabled(state.PoolSpec().TLS) && l.RPC.TLS != nil && l.RPC.TLS.GetCert() != "" {
+	if l != nil && l.RPC.IsTLSEnabled(state.PoolSpec(pool).TLS) && l.RPC.TLS != nil && l.RPC.TLS.GetCert() != "" {
 		certName := l.RPC.TLS.GetCert()
 		redpanda["rpc_server_tls"] = map[string]any{
 			"enabled":             true,
 			"cert_file":           fmt.Sprintf("%s/tls.crt", certServerMountPoint(certName)),
 			"key_file":            fmt.Sprintf("%s/tls.key", certServerMountPoint(certName)),
 			"require_client_auth": l.RPC.TLS.RequiresClientAuth(),
-			"truststore_file":     l.RPC.TLS.ServerCAPath(state.PoolSpec().TLS),
+			"truststore_file":     l.RPC.TLS.ServerCAPath(state.PoolSpec(pool).TLS),
 		}
 	}
 }
@@ -131,6 +131,7 @@ func configureListeners(redpanda map[string]any, state *RenderState) {
 func configureAPIListener(
 	redpanda map[string]any,
 	state *RenderState,
+	pool *redpandav1alpha2.NodePool,
 	listener *redpandav1alpha2.StretchAPIListener,
 	listenerKey, tlsKey string,
 	internalPort, defaultExtPort int32,
@@ -147,8 +148,8 @@ func configureAPIListener(
 	var tlsEntries []map[string]any
 
 	if listener != nil {
-		if listener.IsTLSEnabled(state.PoolSpec().TLS) && listener.TLS.GetCert() != "" {
-			tlsEntries = append(tlsEntries, listenerTLSEntry(state, internalListenerName, listener.TLS))
+		if listener.IsTLSEnabled(state.PoolSpec(pool).TLS) && listener.TLS.GetCert() != "" {
+			tlsEntries = append(tlsEntries, listenerTLSEntry(state, pool, internalListenerName, listener.TLS))
 		}
 		forEachEnabledExternal(listener.External, func(name string, ext *redpandav1alpha2.StretchExternalListener) {
 			entry := map[string]any{
@@ -159,7 +160,7 @@ func configureAPIListener(
 			}
 			listeners = append(listeners, entry)
 			if ext.TLS.GetCert() != "" {
-				tlsEntries = append(tlsEntries, listenerTLSEntry(state, name, ext.TLS))
+				tlsEntries = append(tlsEntries, listenerTLSEntry(state, pool, name, ext.TLS))
 			}
 		})
 	}
@@ -171,14 +172,14 @@ func configureAPIListener(
 }
 
 // listenerTLSEntry returns the TLS config map for a named listener.
-func listenerTLSEntry(state *RenderState, name string, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
+func listenerTLSEntry(state *RenderState, pool *redpandav1alpha2.NodePool, name string, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
 	certName := tls.GetCert()
 	return map[string]any{
 		"name":                name,
 		"enabled":             true,
 		"cert_file":           fmt.Sprintf("%s/tls.crt", certServerMountPoint(certName)),
 		"key_file":            fmt.Sprintf("%s/tls.key", certServerMountPoint(certName)),
-		"require_client_auth": state.PoolSpec().Listeners.CertRequiresClientAuth(certName),
-		"truststore_file":     tls.ServerCAPath(state.PoolSpec().TLS),
+		"require_client_auth": state.PoolSpec(pool).Listeners.CertRequiresClientAuth(certName),
+		"truststore_file":     tls.ServerCAPath(state.PoolSpec(pool).TLS),
 	}
 }

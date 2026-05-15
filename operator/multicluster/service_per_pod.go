@@ -44,7 +44,7 @@ func perPodServices(state *RenderState) ([]*corev1.Service, error) {
 }
 
 func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32, _ bool, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
-	poolSpec := state.PoolSpec()
+	poolSpec := state.PoolSpec(pool)
 
 	labels := state.commonLabels()
 	labels[labelMonitorKey] = fmt.Sprintf("%t", poolSpec.Monitoring.IsEnabled())
@@ -52,11 +52,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 	ports := perPodServicePorts(poolSpec)
 
 	name := PerPodServiceName(state.poolFullname(pool), ordinal)
-	annotations := make(map[string]string)
-	if poolSpec.Service != nil && poolSpec.Service.Internal != nil {
-		// TODO: consider a special field for per pod service annotation, either in nodepool or stretchcluster spec.
-		annotations = poolSpec.Service.Internal.Annotations
-	}
+	annotations := map[string]string{}
 
 	// In flat network mode, ALL per-pod Services are rendered as headless
 	// without selectors. The controller manages EndpointSlices with actual

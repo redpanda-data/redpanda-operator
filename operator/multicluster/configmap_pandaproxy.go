@@ -14,11 +14,11 @@ import (
 )
 
 // pandaProxyConfig generates the pandaproxy section of the redpanda.yaml template.
-func pandaProxyConfig(state *RenderState) map[string]any {
+func pandaProxyConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]any {
 	cfg := map[string]any{}
 
 	var http *redpandav1alpha2.StretchAPIListener
-	if l := state.PoolSpec().Listeners; l != nil {
+	if l := state.PoolSpec(pool).Listeners; l != nil {
 		http = l.HTTP
 	}
 
@@ -27,8 +27,8 @@ func pandaProxyConfig(state *RenderState) map[string]any {
 		authMethod = "http_basic"
 	}
 
-	configureAPIListener(cfg, state, http, "pandaproxy_api", "pandaproxy_api_tls",
-		state.PoolSpec().HTTPPort(), redpandav1alpha2.DefaultExternalHTTPPort, authMethod)
+	configureAPIListener(cfg, state, pool, http, "pandaproxy_api", "pandaproxy_api_tls",
+		state.PoolSpec(pool).HTTPPort(), redpandav1alpha2.DefaultExternalHTTPPort, authMethod)
 
 	return cfg
 }

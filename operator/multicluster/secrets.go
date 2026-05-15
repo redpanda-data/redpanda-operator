@@ -21,10 +21,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// secrets returns all Secrets for the given RenderState.
+// secrets returns all Secrets for the given RenderState. Per-pool Secrets
+// (lifecycle scripts, configurator, fs-validator) fan out per local NodePool;
+// cluster-wide Secrets (SASL users, bootstrap user) stay single.
 func secrets(state *RenderState) ([]*corev1.Secret, error) {
 	var secrets []*corev1.Secret
-	secrets = append(secrets, secretSTSLifecycle(state))
 	saslUsers, err := secretSASLUsers(state)
 	if err != nil {
 		return nil, err
@@ -33,6 +34,7 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 		secrets = append(secrets, saslUsers)
 	}
 	for _, pool := range state.inClusterPools {
+		secrets = append(secrets, secretSTSLifecycle(state, pool))
 		secrets = append(secrets, secretConfigurator(state, pool))
 		if fsValidator := secretFSValidator(state, pool); fsValidator != nil {
 			secrets = append(secrets, fsValidator)
@@ -44,9 +46,11 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 	return secrets, nil
 }
 
-// secretSTSLifecycle returns the lifecycle scripts Secret for the StatefulSet.
-func secretSTSLifecycle(state *RenderState) *corev1.Secret {
-	p := scriptParamsForLifecycle(state)
+// secretSTSLifecycle returns the lifecycle scripts Secret for the StatefulSet
+// of the given pool. Lifecycle scripts embed pool-specific TLS/listener
+// settings (admin URLs, curl flags) so each pool gets its own copy.
+func secretSTSLifecycle(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Secret {
+	p := scriptParamsForLifecycle(state, pool)
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -54,7 +58,7 @@ func secretSTSLifecycle(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-sts-lifecycle", state.fullname()),
+			Name:      fmt.Sprintf("%s-sts-lifecycle", state.poolFullname(pool)),
 			Namespace: state.namespace,
 			Labels:    state.commonLabels(),
 		},

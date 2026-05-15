@@ -14,11 +14,25 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// nodePortService returns a NodePort Service for external access.
-func nodePortService(state *RenderState) *corev1.Service {
-	ext := state.PoolSpec().External
+// nodePortService returns NodePort Services for external access, one per
+// local NodePool. External config (enabled, type, advertised ports) is
+// per-pool, so each pool gets its own NodePort Service tied to its own pods.
+func nodePortService(state *RenderState) []*corev1.Service {
+	var out []*corev1.Service
+	for _, pool := range state.inClusterPools {
+		if svc := nodePortServiceForPool(state, pool); svc != nil {
+			out = append(out, svc)
+		}
+	}
+	return out
+}
+
+func nodePortServiceForPool(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Service {
+	ext := state.PoolSpec(pool).External
 	if ext == nil || !ext.IsEnabled() {
 		return nil
 	}
@@ -29,7 +43,7 @@ func nodePortService(state *RenderState) *corev1.Service {
 		return nil
 	}
 
-	ports := externalServicePorts(state.PoolSpec().Listeners, true)
+	ports := externalServicePorts(state.PoolSpec(pool).Listeners, true)
 	if len(ports) == 0 {
 		return nil
 	}
@@ -45,7 +59,7 @@ func nodePortService(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-external", state.PoolSpec().GetServiceName(state.fullname())),
+			Name:        fmt.Sprintf("%s-external", state.poolFullname(pool)),
 			Namespace:   state.namespace,
 			Labels:      state.commonLabels(),
 			Annotations: annotations,
@@ -54,9 +68,15 @@ func nodePortService(state *RenderState) *corev1.Service {
 			ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
 			Ports:                    ports,
 			PublishNotReadyAddresses: true,
-			Selector:                 state.clusterPodLabelsSelector(),
+			Selector:                 nodePortSelector(state, pool),
 			SessionAffinity:          corev1.ServiceAffinityNone,
 			Type:                     corev1.ServiceTypeNodePort,
 		},
 	}
+}
+
+func nodePortSelector(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]string {
+	sel := state.clusterPodLabelsSelector()
+	sel[labelComponentKey] = "redpanda" + pool.Suffix()
+	return sel
 }

@@ -208,23 +208,60 @@ func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
 	return &r.cluster.Spec
 }
 
-// PoolSpec returns the EmbeddedNodePoolSpec of the representative local
-// NodePool — the source of per-K8s-cluster configuration (TLS, Listeners,
-// ClusterDomain, ServiceAccount, RBAC, ...) used for rendering local
-// resources. Per-K8s-cluster fields are expected to be identical across all
-// NodePools in the same K8s cluster, so any in-cluster pool serves as the
-// canonical source.
+// PoolSpec returns the EmbeddedNodePoolSpec of the supplied NodePool. Every
+// moved-from-StretchCluster field (TLS, Listeners, ClusterDomain, External,
+// RBAC, ServiceAccount, Monitoring, plus the defaultable overrides Storage,
+// Resources, ImagePullSecrets) reads through this method so each rendered
+// resource picks up the spec of the pool it belongs to.
 //
-// Returns an empty (but non-nil) spec when there are no NodePools in the
-// local cluster, so direct field access (state.PoolSpec().TLS) is always
-// safe. Reconciliation passes that fire before any NodePool exists see an
-// unconfigured spec — helpers fall back to their defaults and resources
-// that depend on per-pool config skip.
-func (r *RenderState) PoolSpec() *redpandav1alpha2.EmbeddedNodePoolSpec {
-	if len(r.inClusterPools) == 0 {
+// Returns an empty (but non-nil) spec when pool is nil — keeps direct field
+// access safe for renderers that legitimately have no pool in scope (e.g.
+// before any NodePool exists).
+func (r *RenderState) PoolSpec(pool *redpandav1alpha2.NodePool) *redpandav1alpha2.EmbeddedNodePoolSpec {
+	if pool == nil {
 		return &redpandav1alpha2.EmbeddedNodePoolSpec{}
 	}
-	return &r.inClusterPools[0].Spec.EmbeddedNodePoolSpec
+	return &pool.Spec.EmbeddedNodePoolSpec
+}
+
+// representativePool returns the first in-cluster NodePool, or nil when no
+// local pools exist. Used by the few resources that remain cluster-wide and
+// need *some* pool's view to populate (e.g. the headless ClusterIP Service's
+// port list, which assumes all in-cluster pools agree on listener port
+// numbers — TLS / auth content may still differ per pool).
+func (r *RenderState) representativePool() *redpandav1alpha2.NodePool {
+	if len(r.inClusterPools) == 0 {
+		return nil
+	}
+	return r.inClusterPools[0]
+}
+
+// ServiceName returns the headless ClusterIP Service name. The headless
+// service is cluster-wide (one per StretchCluster name in each K8s cluster)
+// so this is derived from the cluster fullname, not any individual pool.
+func (r *RenderState) ServiceName() string {
+	return r.fullname()
+}
+
+// InternalDomain returns the fully qualified internal DNS suffix that the
+// headless ClusterIP Service exposes for the supplied pool's pods. The
+// ClusterDomain comes from the pool spec; the service name is cluster-wide.
+func (r *RenderState) InternalDomain(pool *redpandav1alpha2.NodePool) string {
+	return r.PoolSpec(pool).InternalDomain(r.ServiceName(), r.namespace)
+}
+
+// AdminInternalURL returns the admin API URL template used inside the
+// supplied pool's pods (probes, post-install scripts). Wraps
+// EmbeddedNodePoolSpec.AdminInternalURL with the cluster-wide service name.
+func (r *RenderState) AdminInternalURL(pool *redpandav1alpha2.NodePool) string {
+	return r.PoolSpec(pool).AdminInternalURL(r.ServiceName(), r.namespace)
+}
+
+// AdminAPIURLs returns the admin API host:port template used in probes for
+// the supplied pool. Wraps EmbeddedNodePoolSpec.AdminAPIURLs with the
+// cluster-wide service name.
+func (r *RenderState) AdminAPIURLs(pool *redpandav1alpha2.NodePool) string {
+	return r.PoolSpec(pool).AdminAPIURLs(r.ServiceName(), r.namespace)
 }
 
 // Pools returns the list of NodePools across K8S clusters. Exported for test/debugging access.

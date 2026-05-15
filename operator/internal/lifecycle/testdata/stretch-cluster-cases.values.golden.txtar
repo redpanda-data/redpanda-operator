@@ -1533,3 +1533,407 @@ spec:
       size: 20Gi
   tuning:
     tune_aio_events: true
+-- per-pool-variation-test --
+inClusterPools:
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: pool-lax
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    monitoring:
+      enabled: false
+    rbac:
+      enabled: false
+    replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2Gi
+    serviceAccount:
+      create: false
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: false
+  status: {}
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: pool-strict
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: strict-default
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: strict-default
+          requireClientAuth: true
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    monitoring:
+      enabled: true
+      scrapeInterval: 15s
+    rbac:
+      enabled: true
+      rpkDebugBundle: true
+    replicas: 1
+    resources:
+      cpu:
+        cores: "4"
+      memory:
+        container:
+          max: 16Gi
+    serviceAccount:
+      annotations:
+        iam.gke.io/gcp-service-account: strict@example.iam.gserviceaccount.com
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 100Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+        strict-default:
+          caEnabled: true
+        strict-external:
+          caEnabled: true
+      enabled: true
+  status: {}
+pools:
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: pool-lax
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: default
+          requireClientAuth: false
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: default
+          requireClientAuth: false
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    monitoring:
+      enabled: false
+    rbac:
+      enabled: false
+    replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2Gi
+    serviceAccount:
+      create: false
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+      enabled: false
+  status: {}
+- apiVersion: cluster.redpanda.com/v1alpha2
+  kind: NodePool
+  metadata:
+    name: pool-strict
+  spec:
+    clusterRef:
+      group: cluster.redpanda.com/v1alpha2
+      kind: StretchCluster
+      name: cluster
+    external:
+      enabled: true
+      service:
+        enabled: true
+      type: NodePort
+    listeners:
+      admin:
+        external:
+          default:
+            advertisedPorts:
+            - 31644
+            port: 9645
+            tls:
+              cert: external
+        port: 9644
+        tls:
+          cert: strict-default
+      http:
+        external:
+          default:
+            advertisedPorts:
+            - 30082
+            port: 8083
+            tls:
+              cert: external
+        port: 8082
+        tls:
+          cert: default
+          requireClientAuth: false
+      kafka:
+        external:
+          default:
+            advertisedPorts:
+            - 31092
+            port: 9094
+            tls:
+              cert: external
+        port: 9093
+        tls:
+          cert: strict-default
+          requireClientAuth: true
+      rpc:
+        port: 33145
+        tls:
+          cert: default
+          requireClientAuth: false
+      schemaRegistry:
+        external:
+          default:
+            advertisedPorts:
+            - 30081
+            port: 8084
+            tls:
+              cert: external
+        port: 8081
+        tls:
+          cert: default
+          requireClientAuth: false
+    monitoring:
+      enabled: true
+      scrapeInterval: 15s
+    rbac:
+      enabled: true
+      rpkDebugBundle: true
+    replicas: 1
+    resources:
+      cpu:
+        cores: "4"
+      memory:
+        container:
+          max: 16Gi
+    serviceAccount:
+      annotations:
+        iam.gke.io/gcp-service-account: strict@example.iam.gserviceaccount.com
+      create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 100Gi
+    tls:
+      certs:
+        default:
+          caEnabled: true
+        external:
+          caEnabled: true
+        strict-default:
+          caEnabled: true
+        strict-external:
+          caEnabled: true
+      enabled: true
+  status: {}
+spec:
+  logging:
+    logLevel: info
+  resources:
+    cpu:
+      cores: "1"
+    memory:
+      container:
+        max: 2560Mi
+  storage:
+    persistentVolume:
+      enabled: true
+      size: 20Gi
+  tuning:
+    tune_aio_events: true

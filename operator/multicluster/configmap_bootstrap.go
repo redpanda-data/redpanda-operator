@@ -37,7 +37,7 @@ type bootstrapResult struct {
 //  4. ClusterConfig — user-specified cluster-level config overrides
 //  5. TunableConfig — user-specified tunable config overrides
 //  6. ExtraClusterConfiguration — escape hatch for arbitrary key/value pairs
-func bootstrapContents(state *RenderState) bootstrapResult {
+func bootstrapContents(state *RenderState, pool *redpandav1alpha2.NodePool) bootstrapResult {
 	fixups := []clusterconfiguration.Fixup{}
 	var envVars []corev1.EnvVar
 
@@ -56,7 +56,7 @@ func bootstrapContents(state *RenderState) bootstrapResult {
 	bootstrap["audit_enabled"] = state.Spec().IsAuditLoggingEnabled()
 
 	// storage_min_free_bytes: min(5GiB, 5% of PV size).
-	bootstrap["storage_min_free_bytes"] = state.PoolSpec().GetStorageMinFreeBytes()
+	bootstrap["storage_min_free_bytes"] = state.PoolSpec(pool).GetStorageMinFreeBytes()
 
 	// If total cluster replicas >= 3, set default_topic_replications to 3 for HA.
 	if state.totalReplicas() >= 3 {
@@ -64,7 +64,7 @@ func bootstrapContents(state *RenderState) bootstrapResult {
 	}
 
 	// Merge in tiered storage config from CRD (overrides defaults above).
-	tieredAttrs, tieredFixups, tieredEnvVars := tieredStorageToConfiguration(state.PoolSpec().Storage)
+	tieredAttrs, tieredFixups, tieredEnvVars := tieredStorageToConfiguration(state.PoolSpec(pool).Storage)
 	for k, v := range tieredAttrs {
 		bootstrap[k] = v
 	}

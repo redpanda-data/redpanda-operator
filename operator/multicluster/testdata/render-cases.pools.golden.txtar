@@ -298,7 +298,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: audit-logging
+        serviceAccountName: audit-logging-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -314,21 +314,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: audit-logging-default-cert
+            secretName: audit-logging-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: audit-logging-external-cert
+            secretName: audit-logging-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: audit-logging-sts-lifecycle
+            secretName: audit-logging-pool-a-sts-lifecycle
         - configMap:
             name: audit-logging-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: audit-logging-configurator
+        - name: audit-logging-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: audit-logging-pool-a-configurator
@@ -676,7 +676,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: common-labels
+        serviceAccountName: common-labels-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -692,21 +692,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: common-labels-default-cert
+            secretName: common-labels-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: common-labels-external-cert
+            secretName: common-labels-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: common-labels-sts-lifecycle
+            secretName: common-labels-pool-a-sts-lifecycle
         - configMap:
             name: common-labels-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: common-labels-configurator
+        - name: common-labels-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: common-labels-pool-a-configurator
@@ -1050,7 +1050,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: custom-cluster-domain
+        serviceAccountName: custom-cluster-domain-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -1066,21 +1066,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: custom-cluster-domain-default-cert
+            secretName: custom-cluster-domain-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: custom-cluster-domain-external-cert
+            secretName: custom-cluster-domain-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: custom-cluster-domain-sts-lifecycle
+            secretName: custom-cluster-domain-pool-a-sts-lifecycle
         - configMap:
             name: custom-cluster-domain-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-cluster-domain-configurator
+        - name: custom-cluster-domain-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: custom-cluster-domain-pool-a-configurator
@@ -1424,7 +1424,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: custom-config
+        serviceAccountName: custom-config-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -1440,21 +1440,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: custom-config-default-cert
+            secretName: custom-config-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: custom-config-external-cert
+            secretName: custom-config-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: custom-config-sts-lifecycle
+            secretName: custom-config-pool-a-sts-lifecycle
         - configMap:
             name: custom-config-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-config-configurator
+        - name: custom-config-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: custom-config-pool-a-configurator
@@ -1800,7 +1800,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: custom-image
+        serviceAccountName: custom-image-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -1816,21 +1816,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: custom-image-default-cert
+            secretName: custom-image-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: custom-image-external-cert
+            secretName: custom-image-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: custom-image-sts-lifecycle
+            secretName: custom-image-pool-a-sts-lifecycle
         - configMap:
             name: custom-image-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-image-configurator
+        - name: custom-image-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: custom-image-pool-a-configurator
@@ -2174,7 +2174,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: custom-resources
+        serviceAccountName: custom-resources-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -2190,21 +2190,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: custom-resources-default-cert
+            secretName: custom-resources-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: custom-resources-external-cert
+            secretName: custom-resources-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: custom-resources-sts-lifecycle
+            secretName: custom-resources-pool-a-sts-lifecycle
         - configMap:
             name: custom-resources-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-resources-configurator
+        - name: custom-resources-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: custom-resources-pool-a-configurator
@@ -2551,7 +2551,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: custom-resources-explicit
+        serviceAccountName: custom-resources-explicit-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -2567,21 +2567,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: custom-resources-explicit-default-cert
+            secretName: custom-resources-explicit-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: custom-resources-explicit-external-cert
+            secretName: custom-resources-explicit-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: custom-resources-explicit-sts-lifecycle
+            secretName: custom-resources-explicit-pool-a-sts-lifecycle
         - configMap:
             name: custom-resources-explicit-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-resources-explicit-configurator
+        - name: custom-resources-explicit-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: custom-resources-explicit-pool-a-configurator
@@ -2925,7 +2925,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: enterprise
+        serviceAccountName: enterprise-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -2941,21 +2941,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: enterprise-default-cert
+            secretName: enterprise-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: enterprise-external-cert
+            secretName: enterprise-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: enterprise-sts-lifecycle
+            secretName: enterprise-pool-a-sts-lifecycle
         - configMap:
             name: enterprise-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: enterprise-configurator
+        - name: enterprise-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: enterprise-pool-a-configurator
@@ -3299,7 +3299,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: external-loadbalancer
+        serviceAccountName: external-loadbalancer-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -3315,21 +3315,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: external-loadbalancer-default-cert
+            secretName: external-loadbalancer-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: external-loadbalancer-external-cert
+            secretName: external-loadbalancer-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: external-loadbalancer-sts-lifecycle
+            secretName: external-loadbalancer-pool-a-sts-lifecycle
         - configMap:
             name: external-loadbalancer-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: external-loadbalancer-configurator
+        - name: external-loadbalancer-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: external-loadbalancer-pool-a-configurator
@@ -3673,7 +3673,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: external-nodeport
+        serviceAccountName: external-nodeport-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -3689,21 +3689,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: external-nodeport-default-cert
+            secretName: external-nodeport-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: external-nodeport-external-cert
+            secretName: external-nodeport-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: external-nodeport-sts-lifecycle
+            secretName: external-nodeport-pool-a-sts-lifecycle
         - configMap:
             name: external-nodeport-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: external-nodeport-configurator
+        - name: external-nodeport-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: external-nodeport-pool-a-configurator
@@ -4047,7 +4047,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: external-tls
+        serviceAccountName: external-tls-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -4063,21 +4063,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: external-tls-default-cert
+            secretName: external-tls-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: external-tls-external-cert
+            secretName: external-tls-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: external-tls-sts-lifecycle
+            secretName: external-tls-pool-a-sts-lifecycle
         - configMap:
             name: external-tls-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: external-tls-configurator
+        - name: external-tls-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: external-tls-pool-a-configurator
@@ -4421,7 +4421,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: flat-network
+        serviceAccountName: flat-network-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -4437,21 +4437,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: flat-network-default-cert
+            secretName: flat-network-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: flat-network-external-cert
+            secretName: flat-network-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: flat-network-sts-lifecycle
+            secretName: flat-network-pool-a-sts-lifecycle
         - configMap:
             name: flat-network-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: flat-network-configurator
+        - name: flat-network-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: flat-network-pool-a-configurator
@@ -4851,7 +4851,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: full-featured
+        serviceAccountName: full-featured-pool-cold
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -4868,24 +4868,24 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: full-featured-default-cert
+            secretName: full-featured-pool-cold-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: full-featured-external-cert
+            secretName: full-featured-pool-cold-external-cert
         - name: users
           secret:
             secretName: users-secret
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: full-featured-sts-lifecycle
+            secretName: full-featured-pool-cold-sts-lifecycle
         - configMap:
             name: full-featured-pool-cold
           name: base-config
         - emptyDir: {}
           name: config
-        - name: full-featured-configurator
+        - name: full-featured-pool-cold-configurator
           secret:
             defaultMode: 509
             secretName: full-featured-pool-cold-configurator
@@ -5320,7 +5320,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: full-featured
+        serviceAccountName: full-featured-pool-hot
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -5337,28 +5337,28 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: full-featured-default-cert
+            secretName: full-featured-pool-hot-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: full-featured-external-cert
+            secretName: full-featured-pool-hot-external-cert
         - name: users
           secret:
             secretName: users-secret
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: full-featured-sts-lifecycle
+            secretName: full-featured-pool-hot-sts-lifecycle
         - configMap:
             name: full-featured-pool-hot
           name: base-config
         - emptyDir: {}
           name: config
-        - name: full-featured-configurator
+        - name: full-featured-pool-hot-configurator
           secret:
             defaultMode: 509
             secretName: full-featured-pool-hot-configurator
-        - name: full-featured-fs-validator
+        - name: full-featured-pool-hot-fs-validator
           secret:
             defaultMode: 509
             secretName: full-featured-pool-hot-fs-validator
@@ -5752,7 +5752,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: init-containers
+        serviceAccountName: init-containers-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -5768,25 +5768,25 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: init-containers-default-cert
+            secretName: init-containers-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: init-containers-external-cert
+            secretName: init-containers-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: init-containers-sts-lifecycle
+            secretName: init-containers-pool-a-sts-lifecycle
         - configMap:
             name: init-containers-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: init-containers-configurator
+        - name: init-containers-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: init-containers-pool-a-configurator
-        - name: init-containers-fs-validator
+        - name: init-containers-pool-a-fs-validator
           secret:
             defaultMode: 509
             secretName: init-containers-pool-a-fs-validator
@@ -6130,7 +6130,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: mcs-network
+        serviceAccountName: mcs-network-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -6146,21 +6146,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: mcs-network-default-cert
+            secretName: mcs-network-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: mcs-network-external-cert
+            secretName: mcs-network-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: mcs-network-sts-lifecycle
+            secretName: mcs-network-pool-a-sts-lifecycle
         - configMap:
             name: mcs-network-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: mcs-network-configurator
+        - name: mcs-network-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: mcs-network-pool-a-configurator
@@ -6504,7 +6504,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: memory-locking
+        serviceAccountName: memory-locking-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -6520,21 +6520,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: memory-locking-default-cert
+            secretName: memory-locking-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: memory-locking-external-cert
+            secretName: memory-locking-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: memory-locking-sts-lifecycle
+            secretName: memory-locking-pool-a-sts-lifecycle
         - configMap:
             name: memory-locking-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: memory-locking-configurator
+        - name: memory-locking-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: memory-locking-pool-a-configurator
@@ -6878,7 +6878,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: minimal
+        serviceAccountName: minimal-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -6894,21 +6894,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: minimal-default-cert
+            secretName: minimal-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: minimal-external-cert
+            secretName: minimal-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: minimal-sts-lifecycle
+            secretName: minimal-pool-a-sts-lifecycle
         - configMap:
             name: minimal-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: minimal-configurator
+        - name: minimal-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: minimal-pool-a-configurator
@@ -7252,7 +7252,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: monitoring
+        serviceAccountName: monitoring-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -7268,21 +7268,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: monitoring-default-cert
+            secretName: monitoring-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: monitoring-external-cert
+            secretName: monitoring-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: monitoring-sts-lifecycle
+            secretName: monitoring-pool-a-sts-lifecycle
         - configMap:
             name: monitoring-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: monitoring-configurator
+        - name: monitoring-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: monitoring-pool-a-configurator
@@ -7626,7 +7626,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: multi-pool
+        serviceAccountName: multi-pool-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -7642,21 +7642,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: multi-pool-default-cert
+            secretName: multi-pool-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: multi-pool-external-cert
+            secretName: multi-pool-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: multi-pool-sts-lifecycle
+            secretName: multi-pool-pool-a-sts-lifecycle
         - configMap:
             name: multi-pool-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: multi-pool-configurator
+        - name: multi-pool-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: multi-pool-pool-a-configurator
@@ -8002,7 +8002,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: multi-pool
+        serviceAccountName: multi-pool-pool-b
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -8019,21 +8019,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: multi-pool-default-cert
+            secretName: multi-pool-pool-b-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: multi-pool-external-cert
+            secretName: multi-pool-pool-b-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: multi-pool-sts-lifecycle
+            secretName: multi-pool-pool-b-sts-lifecycle
         - configMap:
             name: multi-pool-pool-b
           name: base-config
         - emptyDir: {}
           name: config
-        - name: multi-pool-configurator
+        - name: multi-pool-pool-b-configurator
           secret:
             defaultMode: 509
             secretName: multi-pool-pool-b-configurator
@@ -8377,7 +8377,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: per-pod-service-overrides
+        serviceAccountName: per-pod-service-overrides-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -8393,21 +8393,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: per-pod-service-overrides-default-cert
+            secretName: per-pod-service-overrides-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: per-pod-service-overrides-external-cert
+            secretName: per-pod-service-overrides-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: per-pod-service-overrides-sts-lifecycle
+            secretName: per-pod-service-overrides-pool-a-sts-lifecycle
         - configMap:
             name: per-pod-service-overrides-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: per-pod-service-overrides-configurator
+        - name: per-pod-service-overrides-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: per-pod-service-overrides-pool-a-configurator
@@ -8751,7 +8751,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: per-pod-service-remote-disabled
+        serviceAccountName: per-pod-service-remote-disabled-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -8767,21 +8767,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: per-pod-service-remote-disabled-default-cert
+            secretName: per-pod-service-remote-disabled-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: per-pod-service-remote-disabled-external-cert
+            secretName: per-pod-service-remote-disabled-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: per-pod-service-remote-disabled-sts-lifecycle
+            secretName: per-pod-service-remote-disabled-pool-a-sts-lifecycle
         - configMap:
             name: per-pod-service-remote-disabled-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: per-pod-service-remote-disabled-configurator
+        - name: per-pod-service-remote-disabled-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: per-pod-service-remote-disabled-pool-a-configurator
@@ -9128,7 +9128,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: rack-awareness
+        serviceAccountName: rack-awareness-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -9144,21 +9144,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: rack-awareness-default-cert
+            secretName: rack-awareness-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: rack-awareness-external-cert
+            secretName: rack-awareness-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: rack-awareness-sts-lifecycle
+            secretName: rack-awareness-pool-a-sts-lifecycle
         - configMap:
             name: rack-awareness-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: rack-awareness-configurator
+        - name: rack-awareness-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: rack-awareness-pool-a-configurator
@@ -9525,7 +9525,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: sasl-scram256
+        serviceAccountName: sasl-scram256-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -9541,24 +9541,24 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: sasl-scram256-default-cert
+            secretName: sasl-scram256-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: sasl-scram256-external-cert
+            secretName: sasl-scram256-pool-a-external-cert
         - name: users
           secret:
             secretName: users-secret
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: sasl-scram256-sts-lifecycle
+            secretName: sasl-scram256-pool-a-sts-lifecycle
         - configMap:
             name: sasl-scram256-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: sasl-scram256-configurator
+        - name: sasl-scram256-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: sasl-scram256-pool-a-configurator
@@ -9925,7 +9925,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: sasl-scram512-with-tls
+        serviceAccountName: sasl-scram512-with-tls-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -9941,24 +9941,24 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: sasl-scram512-with-tls-default-cert
+            secretName: sasl-scram512-with-tls-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: sasl-scram512-with-tls-external-cert
+            secretName: sasl-scram512-with-tls-pool-a-external-cert
         - name: users
           secret:
             secretName: users-secret
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: sasl-scram512-with-tls-sts-lifecycle
+            secretName: sasl-scram512-with-tls-pool-a-sts-lifecycle
         - configMap:
             name: sasl-scram512-with-tls-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: sasl-scram512-with-tls-configurator
+        - name: sasl-scram512-with-tls-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: sasl-scram512-with-tls-pool-a-configurator
@@ -10302,7 +10302,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: single-replica
+        serviceAccountName: single-replica-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -10318,21 +10318,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: single-replica-default-cert
+            secretName: single-replica-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: single-replica-external-cert
+            secretName: single-replica-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: single-replica-sts-lifecycle
+            secretName: single-replica-pool-a-sts-lifecycle
         - configMap:
             name: single-replica-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: single-replica-configurator
+        - name: single-replica-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: single-replica-pool-a-configurator
@@ -10676,7 +10676,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: storage-hostpath
+        serviceAccountName: storage-hostpath-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -10692,21 +10692,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: storage-hostpath-default-cert
+            secretName: storage-hostpath-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: storage-hostpath-external-cert
+            secretName: storage-hostpath-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: storage-hostpath-sts-lifecycle
+            secretName: storage-hostpath-pool-a-sts-lifecycle
         - configMap:
             name: storage-hostpath-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: storage-hostpath-configurator
+        - name: storage-hostpath-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: storage-hostpath-pool-a-configurator
@@ -11036,7 +11036,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: storage-pv-custom
+        serviceAccountName: storage-pv-custom-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -11052,21 +11052,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: storage-pv-custom-default-cert
+            secretName: storage-pv-custom-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: storage-pv-custom-external-cert
+            secretName: storage-pv-custom-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: storage-pv-custom-sts-lifecycle
+            secretName: storage-pv-custom-pool-a-sts-lifecycle
         - configMap:
             name: storage-pv-custom-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: storage-pv-custom-configurator
+        - name: storage-pv-custom-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: storage-pv-custom-pool-a-configurator
@@ -11433,7 +11433,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: tiered-storage-emptydir
+        serviceAccountName: tiered-storage-emptydir-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -11449,21 +11449,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: tiered-storage-emptydir-default-cert
+            secretName: tiered-storage-emptydir-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: tiered-storage-emptydir-external-cert
+            secretName: tiered-storage-emptydir-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: tiered-storage-emptydir-sts-lifecycle
+            secretName: tiered-storage-emptydir-pool-a-sts-lifecycle
         - configMap:
             name: tiered-storage-emptydir-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tiered-storage-emptydir-configurator
+        - name: tiered-storage-emptydir-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: tiered-storage-emptydir-pool-a-configurator
@@ -11832,7 +11832,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: tiered-storage-hostpath
+        serviceAccountName: tiered-storage-hostpath-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -11848,21 +11848,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: tiered-storage-hostpath-default-cert
+            secretName: tiered-storage-hostpath-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: tiered-storage-hostpath-external-cert
+            secretName: tiered-storage-hostpath-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: tiered-storage-hostpath-sts-lifecycle
+            secretName: tiered-storage-hostpath-pool-a-sts-lifecycle
         - configMap:
             name: tiered-storage-hostpath-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tiered-storage-hostpath-configurator
+        - name: tiered-storage-hostpath-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: tiered-storage-hostpath-pool-a-configurator
@@ -12231,7 +12231,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: tiered-storage-pv
+        serviceAccountName: tiered-storage-pv-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -12247,21 +12247,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: tiered-storage-pv-default-cert
+            secretName: tiered-storage-pv-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: tiered-storage-pv-external-cert
+            secretName: tiered-storage-pv-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: tiered-storage-pv-sts-lifecycle
+            secretName: tiered-storage-pv-pool-a-sts-lifecycle
         - configMap:
             name: tiered-storage-pv-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tiered-storage-pv-configurator
+        - name: tiered-storage-pv-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: tiered-storage-pv-pool-a-configurator
@@ -12619,7 +12619,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: tls-issuer-ref
+        serviceAccountName: tls-issuer-ref-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -12635,21 +12635,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: tls-issuer-ref-default-cert
+            secretName: tls-issuer-ref-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: tls-issuer-ref-external-cert
+            secretName: tls-issuer-ref-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: tls-issuer-ref-sts-lifecycle
+            secretName: tls-issuer-ref-pool-a-sts-lifecycle
         - configMap:
             name: tls-issuer-ref-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-issuer-ref-configurator
+        - name: tls-issuer-ref-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: tls-issuer-ref-pool-a-configurator
@@ -12993,7 +12993,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: tls-issuer-ref-mtls
+        serviceAccountName: tls-issuer-ref-mtls-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -13009,21 +13009,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: tls-issuer-ref-mtls-default-cert
+            secretName: tls-issuer-ref-mtls-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: tls-issuer-ref-mtls-external-cert
+            secretName: tls-issuer-ref-mtls-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: tls-issuer-ref-mtls-sts-lifecycle
+            secretName: tls-issuer-ref-mtls-pool-a-sts-lifecycle
         - configMap:
             name: tls-issuer-ref-mtls-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-issuer-ref-mtls-configurator
+        - name: tls-issuer-ref-mtls-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: tls-issuer-ref-mtls-pool-a-configurator
@@ -13367,7 +13367,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: tls-mtls
+        serviceAccountName: tls-mtls-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -13383,21 +13383,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: tls-mtls-default-cert
+            secretName: tls-mtls-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: tls-mtls-external-cert
+            secretName: tls-mtls-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: tls-mtls-sts-lifecycle
+            secretName: tls-mtls-pool-a-sts-lifecycle
         - configMap:
             name: tls-mtls-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-mtls-configurator
+        - name: tls-mtls-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: tls-mtls-pool-a-configurator
@@ -13741,7 +13741,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: tls-self-signed
+        serviceAccountName: tls-self-signed-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -13757,21 +13757,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: tls-self-signed-default-cert
+            secretName: tls-self-signed-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: tls-self-signed-external-cert
+            secretName: tls-self-signed-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: tls-self-signed-sts-lifecycle
+            secretName: tls-self-signed-pool-a-sts-lifecycle
         - configMap:
             name: tls-self-signed-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-self-signed-configurator
+        - name: tls-self-signed-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: tls-self-signed-pool-a-configurator

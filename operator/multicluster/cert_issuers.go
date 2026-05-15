@@ -87,33 +87,40 @@ func CASecretName(stretchClusterName, certName string) string {
 }
 
 // certIssuers returns all cert-manager CA Issuers for the given RenderState.
-// Each bootstrapped cert gets a single CA Issuer backed by the shared root CA
-// Secret that the multicluster reconciler distributes to all clusters. The Issuer is
-// per-k8s-cluster (namespaced), but references the shared CA Secret whose name
-// is scoped to the StretchCluster (not the per-cluster fullname).
+// Issuers stay per-cluster (one per cert name across all pools) because they
+// reference the shared root-CA Secret synced across member clusters. The set
+// of cert names is collected as the union of bootstrappable cert names from
+// every local NodePool, deduplicated.
 func certIssuers(state *RenderState) []*certmanagerv1.Issuer {
 	fullname := state.fullname()
+	seen := map[string]bool{}
 	var issuers []*certmanagerv1.Issuer
 
-	for _, bc := range bootstrappedCerts(state.PoolSpec()) {
-		issuers = append(issuers, &certmanagerv1.Issuer{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "cert-manager.io/v1",
-				Kind:       "Issuer",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-root-issuer", fullname, bc.name),
-				Namespace: state.namespace,
-				Labels:    state.commonLabels(),
-			},
-			Spec: certmanagerv1.IssuerSpec{
-				IssuerConfig: certmanagerv1.IssuerConfig{
-					CA: &certmanagerv1.CAIssuer{
-						SecretName: CASecretName(state.cluster.Name, bc.name),
+	for _, pool := range state.inClusterPools {
+		for _, bc := range bootstrappedCerts(state.PoolSpec(pool)) {
+			if seen[bc.name] {
+				continue
+			}
+			seen[bc.name] = true
+			issuers = append(issuers, &certmanagerv1.Issuer{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "cert-manager.io/v1",
+					Kind:       "Issuer",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("%s-%s-root-issuer", fullname, bc.name),
+					Namespace: state.namespace,
+					Labels:    state.commonLabels(),
+				},
+				Spec: certmanagerv1.IssuerSpec{
+					IssuerConfig: certmanagerv1.IssuerConfig{
+						CA: &certmanagerv1.CAIssuer{
+							SecretName: CASecretName(state.cluster.Name, bc.name),
+						},
 					},
 				},
-			},
-		})
+			})
+		}
 	}
 
 	return issuers

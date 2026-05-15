@@ -16,7 +16,9 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// configMaps returns all ConfigMaps for the given RenderState.
+// configMaps returns all ConfigMaps for the given RenderState. ConfigMaps fan
+// out per local NodePool — each pool gets its own redpanda + bootstrap CM,
+// and (when external access is enabled on that pool) its own rpk-profile CM.
 func configMaps(state *RenderState) ([]*corev1.ConfigMap, error) {
 	var cms []*corev1.ConfigMap
 	for _, pool := range state.inClusterPools {
@@ -25,16 +27,16 @@ func configMaps(state *RenderState) ([]*corev1.ConfigMap, error) {
 			return nil, err
 		}
 		cms = append(cms, cm)
-	}
-	if cm := rpkProfileConfigMap(state); cm != nil {
-		cms = append(cms, cm)
+		if rpk := rpkProfileConfigMap(state, pool); rpk != nil {
+			cms = append(cms, rpk)
+		}
 	}
 	return cms, nil
 }
 
 // redpandaConfigMap returns the ConfigMap for a specific pool.
 func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.NodePool) (*corev1.ConfigMap, error) {
-	bootstrap := bootstrapContents(state)
+	bootstrap := bootstrapContents(state, pool)
 	redpanda, err := redpandaConfigFile(state, true, pool)
 	if err != nil {
 		return nil, err

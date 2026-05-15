@@ -44,10 +44,9 @@ func perPodEndpoints(state *RenderState) []kube.Object {
 		"pools", len(state.pools),
 	)
 
-	ports := perPodServicePorts(state.PoolSpec())
-
 	var objects []kube.Object
 	for _, pool := range state.pools {
+		ports := perPodServicePorts(state.PoolSpec(pool))
 		for i := int32(0); i < pool.GetReplicas(); i++ {
 			svcName := PerPodServiceName(state.poolFullname(pool), i)
 

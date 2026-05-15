@@ -871,18 +871,13 @@ func (s *EmbeddedNodePoolSpec) GetClusterDomain() string {
 	return DefaultClusterDomain
 }
 
-// GetServiceName returns the headless service name, falling back to fullname. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) GetServiceName(fullname string) string {
-	if s != nil && s.Service != nil && s.Service.Name != nil && *s.Service.Name != "" {
-		return *s.Service.Name
-	}
-	return fullname
-}
-
-// InternalDomain returns the fully qualified internal DNS domain for the headless service.
-// Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) InternalDomain(fullname, namespace string) string {
-	return fmt.Sprintf("%s.%s.svc.%s", s.GetServiceName(fullname), namespace, s.GetClusterDomain())
+// InternalDomain returns the fully qualified internal DNS domain that the
+// headless ClusterIP Service exposes. The headless service is cluster-wide
+// (named after the StretchCluster) while ClusterDomain is per-K8s-cluster,
+// so the caller supplies the service name and we use this NodePool's
+// ClusterDomain. Safe to call on nil receiver.
+func (s *EmbeddedNodePoolSpec) InternalDomain(serviceName, namespace string) string {
+	return fmt.Sprintf("%s.%s.svc.%s", serviceName, namespace, s.GetClusterDomain())
 }
 
 // GetServiceAccountName returns the effective service account name for the spec. Safe to call on nil receiver.
@@ -1182,21 +1177,21 @@ func (s *EmbeddedNodePoolSpec) AdminInternalHTTPProtocol() string {
 	return "http"
 }
 
-// AdminInternalURL returns the internal admin API URL template.
-// Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) AdminInternalURL(fullname, namespace string) string {
+// AdminInternalURL returns the internal admin API URL template. The caller
+// supplies the headless service name (cluster-wide). Safe to call on nil receiver.
+func (s *EmbeddedNodePoolSpec) AdminInternalURL(serviceName, namespace string) string {
 	return fmt.Sprintf("%s://%s.%s:%d",
 		s.AdminInternalHTTPProtocol(),
 		"${SERVICE_NAME}",
-		strings.TrimSuffix(s.InternalDomain(fullname, namespace), "."),
+		strings.TrimSuffix(s.InternalDomain(serviceName, namespace), "."),
 		s.AdminPort(),
 	)
 }
 
-// AdminAPIURLs returns the admin API URL for probes.
-// Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) AdminAPIURLs(fullname, namespace string) string {
-	return fmt.Sprintf("${SERVICE_NAME}.%s:%d", s.InternalDomain(fullname, namespace), s.AdminPort())
+// AdminAPIURLs returns the admin API URL for probes. The caller supplies the
+// headless service name (cluster-wide). Safe to call on nil receiver.
+func (s *EmbeddedNodePoolSpec) AdminAPIURLs(serviceName, namespace string) string {
+	return fmt.Sprintf("${SERVICE_NAME}.%s:%d", s.InternalDomain(serviceName, namespace), s.AdminPort())
 }
 
 // GetReplicas returns the replica count for a node pool, defaulting to 1.
@@ -1295,9 +1290,6 @@ func (s *EmbeddedNodePoolSpec) inheritFromCluster(cluster *StretchClusterSpec) {
 	}
 	if s.Resources == nil && cluster.Resources != nil {
 		s.Resources = cluster.Resources.DeepCopy()
-	}
-	if s.Service == nil && cluster.Service != nil {
-		s.Service = cluster.Service.DeepCopy()
 	}
 	if len(s.ImagePullSecrets) == 0 && len(cluster.ImagePullSecrets) > 0 {
 		s.ImagePullSecrets = append([]corev1.LocalObjectReference(nil), cluster.ImagePullSecrets...)

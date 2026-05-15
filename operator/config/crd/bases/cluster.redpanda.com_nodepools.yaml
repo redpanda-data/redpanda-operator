@@ -9479,20 +9479,6 @@ spec:
                     description: Standard K8s resource requests.
                     type: object
                 type: object
-              service:
-                description: Service overrides StretchCluster.Spec.Service for this
-                  NodePool.
-                properties:
-                  internal:
-                    properties:
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        type: object
-                    type: object
-                  name:
-                    type: string
-                type: object
               serviceAccount:
                 description: |-
                   ServiceAccount configures the K8s ServiceAccount used by pods in this

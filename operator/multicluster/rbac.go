@@ -16,25 +16,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// roles returns all Roles for the given RenderState.
+// roles returns Roles for every local NodePool that has RBAC enabled.
+// RBAC config (enabled, RPKDebugBundle) is per-pool, so each pool gets its
+// own Role objects and bindings.
 func roles(state *RenderState) []*rbacv1.Role {
-	if !state.PoolSpec().RBAC.IsEnabled() {
+	var out []*rbacv1.Role
+	for _, pool := range state.inClusterPools {
+		out = append(out, rolesForPool(state, pool)...)
+	}
+	return out
+}
+
+func rolesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) []*rbacv1.Role {
+	if !state.PoolSpec(pool).RBAC.IsEnabled() {
 		return nil
 	}
 
-	var roles []*rbacv1.Role
+	poolFullname := state.poolFullname(pool)
+	var out []*rbacv1.Role
 
 	// Sidecar role: allows the sidecar to manage leases, get/list/watch pods and statefulsets.
-	roles = append(roles, &rbacv1.Role{
+	out = append(out, &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-sidecar", state.fullname()),
+			Name:      fmt.Sprintf("%s-sidecar", poolFullname),
 			Namespace: state.namespace,
 			Labels:    state.commonLabels(),
 		},
@@ -58,14 +70,14 @@ func roles(state *RenderState) []*rbacv1.Role {
 	})
 
 	// RPK debug bundle role: allows rpk debug bundle to collect cluster diagnostics.
-	if ptr.Deref(state.PoolSpec().RBAC.RPKDebugBundle, false) {
-		roles = append(roles, &rbacv1.Role{
+	if ptr.Deref(state.PoolSpec(pool).RBAC.RPKDebugBundle, false) {
+		out = append(out, &rbacv1.Role{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "Role",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-rpk-debug-bundle", state.fullname()),
+				Name:      fmt.Sprintf("%s-rpk-debug-bundle", poolFullname),
 				Namespace: state.namespace,
 				Labels:    state.commonLabels(),
 			},
@@ -84,32 +96,40 @@ func roles(state *RenderState) []*rbacv1.Role {
 		})
 	}
 
-	return roles
+	return out
 }
 
-// clusterRoles returns all ClusterRoles for the given RenderState.
+// clusterRoles returns ClusterRoles for every local NodePool that has RBAC enabled.
 func clusterRoles(state *RenderState) []*rbacv1.ClusterRole {
-	if !state.PoolSpec().RBAC.IsEnabled() {
+	var out []*rbacv1.ClusterRole
+	for _, pool := range state.inClusterPools {
+		out = append(out, clusterRolesForPool(state, pool)...)
+	}
+	return out
+}
+
+func clusterRolesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) []*rbacv1.ClusterRole {
+	if !state.PoolSpec(pool).RBAC.IsEnabled() {
 		return nil
 	}
 
-	var clusterRoles []*rbacv1.ClusterRole
+	poolFullname := state.poolFullname(pool)
+	var out []*rbacv1.ClusterRole
 
 	// Self-metrics ClusterRole: grants nonResourceURLs:["/metrics"] get.
 	// controller-runtime's metrics server enforces auth+authz on /metrics
 	// by default, so anything authenticating as the operator SA — the
 	// bundled ServiceMonitor scraping with the pod's projected token, and
 	// `rpk k8s multicluster bundle` scraping with a TokenRequest-minted
-	// SA token — needs this rule. The clusterRoleBindings function below
-	// binds every emitted ClusterRole to the operator SA, so this entry
-	// alone is enough to unblock both consumers.
-	clusterRoles = append(clusterRoles, &rbacv1.ClusterRole{
+	// SA token — needs this rule. clusterRoleBindings binds the matching
+	// pool's SA to this role.
+	out = append(out, &rbacv1.ClusterRole{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "ClusterRole",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   tplutil.CleanForK8s(fmt.Sprintf("%s-%s-metrics-reader", state.fullname(), state.namespace)),
+			Name:   tplutil.CleanForK8s(fmt.Sprintf("%s-%s-metrics-reader", poolFullname, state.namespace)),
 			Labels: state.commonLabels(),
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -121,13 +141,13 @@ func clusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 	})
 
 	if state.Spec().RackAwareness.IsEnabled() {
-		clusterRoles = append(clusterRoles, &rbacv1.ClusterRole{
+		out = append(out, &rbacv1.ClusterRole{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
 				Kind:       "ClusterRole",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   tplutil.CleanForK8s(fmt.Sprintf("%s-%s-rack-awareness", state.fullname(), state.namespace)),
+				Name:   tplutil.CleanForK8s(fmt.Sprintf("%s-%s-rack-awareness", poolFullname, state.namespace)),
 				Labels: state.commonLabels(),
 			},
 			Rules: []rbacv1.PolicyRule{
@@ -140,66 +160,74 @@ func clusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 		})
 	}
 
-	return clusterRoles
+	return out
 }
 
-// roleBindings returns all RoleBindings for the given RenderState.
+// roleBindings returns RoleBindings binding each pool's Roles to that pool's
+// ServiceAccount.
 func roleBindings(state *RenderState) []*rbacv1.RoleBinding {
-	var roleBindings []*rbacv1.RoleBinding
-	for _, role := range roles(state) {
-		roleBindings = append(roleBindings, &rbacv1.RoleBinding{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "RoleBinding",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      role.ObjectMeta.Name,
-				Labels:    state.commonLabels(),
-				Namespace: state.namespace,
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "Role",
-				Name:     role.ObjectMeta.Name,
-			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      state.PoolSpec().GetServiceAccountName(state.fullname()),
+	var out []*rbacv1.RoleBinding
+	for _, pool := range state.inClusterPools {
+		saName := state.PoolSpec(pool).GetServiceAccountName(state.poolFullname(pool))
+		for _, role := range rolesForPool(state, pool) {
+			out = append(out, &rbacv1.RoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "rbac.authorization.k8s.io/v1",
+					Kind:       "RoleBinding",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      role.ObjectMeta.Name,
+					Labels:    state.commonLabels(),
 					Namespace: state.namespace,
 				},
-			},
-		})
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: "rbac.authorization.k8s.io",
+					Kind:     "Role",
+					Name:     role.ObjectMeta.Name,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						Kind:      "ServiceAccount",
+						Name:      saName,
+						Namespace: state.namespace,
+					},
+				},
+			})
+		}
 	}
-	return roleBindings
+	return out
 }
 
-// clusterRoleBindings returns all ClusterRoleBindings for the given RenderState.
+// clusterRoleBindings binds each pool's ClusterRoles to that pool's
+// ServiceAccount.
 func clusterRoleBindings(state *RenderState) []*rbacv1.ClusterRoleBinding {
-	var crbs []*rbacv1.ClusterRoleBinding
-	for _, clusterRole := range clusterRoles(state) {
-		crbs = append(crbs, &rbacv1.ClusterRoleBinding{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "ClusterRoleBinding",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   clusterRole.ObjectMeta.Name,
-				Labels: state.commonLabels(),
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     clusterRole.ObjectMeta.Name,
-			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      state.PoolSpec().GetServiceAccountName(state.fullname()),
-					Namespace: state.namespace,
+	var out []*rbacv1.ClusterRoleBinding
+	for _, pool := range state.inClusterPools {
+		saName := state.PoolSpec(pool).GetServiceAccountName(state.poolFullname(pool))
+		for _, cr := range clusterRolesForPool(state, pool) {
+			out = append(out, &rbacv1.ClusterRoleBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "rbac.authorization.k8s.io/v1",
+					Kind:       "ClusterRoleBinding",
 				},
-			},
-		})
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   cr.ObjectMeta.Name,
+					Labels: state.commonLabels(),
+				},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: "rbac.authorization.k8s.io",
+					Kind:     "ClusterRole",
+					Name:     cr.ObjectMeta.Name,
+				},
+				Subjects: []rbacv1.Subject{
+					{
+						Kind:      "ServiceAccount",
+						Name:      saName,
+						Namespace: state.namespace,
+					},
+				},
+			})
+		}
 	}
-	return crbs
+	return out
 }

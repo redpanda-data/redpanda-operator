@@ -19,18 +19,23 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// TLSConfig constructs a tls.Config for the given TLS certificate name.
-func (r *RenderState) TLSConfig(certName string) (*tls.Config, error) {
+// TLSConfig constructs a tls.Config for the given TLS certificate name. The
+// pool supplies the per-K8s-cluster TLS settings (cert source, client auth
+// requirement); cert resources are per-pool (see certs.go) so the secret
+// names use the pool's fullname.
+func (r *RenderState) TLSConfig(pool *redpandav1alpha2.NodePool, certName string) (*tls.Config, error) {
 	if r.client == nil {
 		return nil, fmt.Errorf("no kubernetes client available for TLS config lookup")
 	}
 
 	namespace := r.namespace
-	serverName := r.PoolSpec().InternalDomain(r.fullname(), r.namespace)
+	serverName := r.InternalDomain(pool)
 
-	rootCertName, rootCertKey, clientCertName := r.PoolSpec().TLS.CertificatesFor(r.fullname(), certName)
+	rootCertName, rootCertKey, clientCertName := r.PoolSpec(pool).TLS.CertificatesFor(r.poolFullname(pool), certName)
 
 	serverTLSError := func(err error) error {
 		return fmt.Errorf("error fetching server root CA %s/%s: %w", namespace, rootCertName, err)
@@ -63,12 +68,12 @@ func (r *RenderState) TLSConfig(certName string) (*tls.Config, error) {
 	if err != nil {
 		return nil, serverTLSError(fmt.Errorf("unable to parse public key %w", err))
 	}
-	pool := x509.NewCertPool()
-	pool.AddCert(serverParsedCertificate)
+	certPool := x509.NewCertPool()
+	certPool.AddCert(serverParsedCertificate)
 
-	tlsConfig.RootCAs = pool
+	tlsConfig.RootCAs = certPool
 
-	if r.PoolSpec().Listeners.CertRequiresClientAuth(certName) {
+	if r.PoolSpec(pool).Listeners.CertRequiresClientAuth(certName) {
 		var clientCert corev1.Secret
 		lookupErr := r.client.Get(context.TODO(), kube.ObjectKey{Name: clientCertName, Namespace: namespace}, &clientCert)
 		if lookupErr != nil {

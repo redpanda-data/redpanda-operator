@@ -22,15 +22,32 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// certificates returns all cert-manager Certificates (server + client) for the given RenderState.
+// certificates returns cert-manager Certificate resources for every local
+// NodePool. TLS / listener config is per-pool, so each pool gets its own
+// Certificates keyed off its in-use cert names and SAN list. Issuers (see
+// cert_issuers.go) stay per-cluster because they reference the synced CA
+// Secret which is shared across the StretchCluster.
 func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
+	var out []*certmanagerv1.Certificate
+	for _, pool := range state.inClusterPools {
+		certs, err := certificatesForPool(state, pool)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, certs...)
+	}
+	return out, nil
+}
+
+func certificatesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) ([]*certmanagerv1.Certificate, error) {
 	fullname := state.fullname()
-	service := state.PoolSpec().GetServiceName(state.fullname())
+	poolFullname := state.poolFullname(pool)
+	service := state.ServiceName()
 	ns := state.namespace
 	// Trailing dots don't play nice with TLS/SNI.
-	domain := strings.TrimSuffix(state.PoolSpec().GetClusterDomain(), ".")
+	domain := strings.TrimSuffix(state.PoolSpec(pool).GetClusterDomain(), ".")
 
-	tlsCfg := state.PoolSpec().TLS
+	tlsCfg := state.PoolSpec(pool).TLS
 	if tlsCfg == nil {
 		return nil, nil
 	}
@@ -38,7 +55,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 	var certs []*certmanagerv1.Certificate
 
 	// Server certificates.
-	for _, name := range state.PoolSpec().InUseServerCerts() {
+	for _, name := range state.PoolSpec(pool).InUseServerCerts() {
 		cert := tlsCfg.Certs[name]
 
 		// Don't generate server certs if a secret is provided.
@@ -81,7 +98,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 			)
 		}
 
-		if ext := state.PoolSpec().External; ext != nil && ext.Domain != nil {
+		if ext := state.PoolSpec(pool).External; ext != nil && ext.Domain != nil {
 			expandedDomain, err := tplutil.Tpl(*ext.Domain, state.tplData())
 			if err != nil {
 				return nil, fmt.Errorf("expanding external domain template: %w", err)
@@ -96,7 +113,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-cert", fullname, name),
+				Name:      fmt.Sprintf("%s-%s-cert", poolFullname, name),
 				Labels:    state.commonLabels(),
 				Namespace: state.namespace,
 			},
@@ -105,7 +122,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
 				IssuerRef:  certIssuerRef(fullname, name, cert),
-				SecretName: state.PoolSpec().TLS.CertServerSecretName(state.fullname(), name),
+				SecretName: state.PoolSpec(pool).TLS.CertServerSecretName(poolFullname, name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
@@ -115,7 +132,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 	}
 
 	// Client certificates.
-	for _, name := range state.PoolSpec().InUseClientCerts() {
+	for _, name := range state.PoolSpec(pool).InUseClientCerts() {
 		cert := tlsCfg.Certs[name]
 
 		if cert != nil {
@@ -133,15 +150,15 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-client", fullname, name),
+				Name:      fmt.Sprintf("%s-%s-client", poolFullname, name),
 				Namespace: state.namespace,
 				Labels:    state.commonLabels(),
 			},
 			Spec: certmanagerv1.CertificateSpec{
-				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),
+				CommonName: fmt.Sprintf("%s--%s-client", poolFullname, name),
 				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
-				SecretName: state.PoolSpec().TLS.CertClientSecretName(state.fullname(), name),
+				SecretName: state.PoolSpec(pool).TLS.CertClientSecretName(poolFullname, name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
@@ -164,6 +181,9 @@ func certDuration(cert *redpandav1alpha2.Certificate) time.Duration {
 
 // certIssuerRef returns the issuer reference for a certificate. If the cert has
 // an explicit IssuerRef, it is used; otherwise a default root-issuer is generated.
+// Operator-managed Issuers stay per-cluster (see cert_issuers.go) and back the
+// shared root-CA Secret that the multicluster reconciler distributes across
+// member clusters.
 func certIssuerRef(fullname, certName string, cert *redpandav1alpha2.Certificate) cmmetav1.ObjectReference {
 	if cert != nil && cert.IssuerRef != nil {
 		return cmmetav1.ObjectReference{

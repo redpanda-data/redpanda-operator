@@ -94,3 +94,90 @@ metadata:
 spec:
   networking:
     crossClusterMode: mcs
+-- per-pool-variation-test --
+# Two pools in the same K8s cluster whose moved-to-NodePool fields differ on
+# purpose, to assert that each per-pool resource (ConfigMaps, ServiceAccount,
+# RBAC, ServiceMonitor, Certificates) reflects its own pool's spec.
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-strict
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  # Pool A: TLS on, dedicated cert name, RBAC + RPK debug bundle, monitoring on,
+  # larger PV.
+  tls:
+    enabled: true
+    certs:
+      strict-default:
+        caEnabled: true
+      strict-external:
+        caEnabled: true
+  listeners:
+    admin:
+      tls:
+        cert: strict-default
+    kafka:
+      tls:
+        cert: strict-default
+        requireClientAuth: true
+  rbac:
+    enabled: true
+    rpkDebugBundle: true
+  serviceAccount:
+    create: true
+    annotations:
+      iam.gke.io/gcp-service-account: strict@example.iam.gserviceaccount.com
+  monitoring:
+    enabled: true
+    scrapeInterval: 15s
+  storage:
+    persistentVolume:
+      enabled: true
+      size: 100Gi
+  resources:
+    cpu:
+      cores: 4
+    memory:
+      container:
+        max: 16Gi
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-lax
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  # Pool B: TLS off, no RBAC, no monitoring, default PV, smaller resources.
+  tls:
+    enabled: false
+  rbac:
+    enabled: false
+  serviceAccount:
+    create: false
+  monitoring:
+    enabled: false
+  storage:
+    persistentVolume:
+      enabled: true
+      size: 20Gi
+  resources:
+    cpu:
+      cores: 1
+    memory:
+      container:
+        max: 2Gi
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default

@@ -222,9 +222,6 @@ type EmbeddedNodePoolSpec struct {
 	// Useful when clusters run on different node SKUs.
 	Resources *StretchResources `json:"resources,omitempty"`
 
-	// Service overrides StretchCluster.Spec.Service for this NodePool.
-	Service *Service `json:"service,omitempty"`
-
 	// ImagePullSecrets overrides StretchCluster.Spec.ImagePullSecrets for
 	// this NodePool. Useful for per-cluster registry mirrors.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`

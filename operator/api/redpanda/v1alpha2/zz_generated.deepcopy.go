@@ -1442,11 +1442,6 @@ func (in *EmbeddedNodePoolSpec) DeepCopyInto(out *EmbeddedNodePoolSpec) {
 		*out = new(StretchResources)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Service != nil {
-		in, out := &in.Service, &out.Service
-		*out = new(Service)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
 		*out = make([]v1.LocalObjectReference, len(*in))
@@ -5875,11 +5870,6 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = new(StretchResources)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Service != nil {
-		in, out := &in.Service, &out.Service
-		*out = new(Service)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Storage != nil {

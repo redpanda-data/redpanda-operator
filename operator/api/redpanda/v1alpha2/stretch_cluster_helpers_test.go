@@ -927,22 +927,6 @@ func TestStretchClusterSpec(t *testing.T) {
 		}
 	})
 
-	t.Run("GetServiceName", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			input    *redpandav1alpha2.EmbeddedNodePoolSpec
-			expected string
-		}{
-			{"default", &redpandav1alpha2.EmbeddedNodePoolSpec{}, "my-release"},
-			{"custom", &redpandav1alpha2.EmbeddedNodePoolSpec{Service: &redpandav1alpha2.Service{Name: ptr.To("custom-svc")}}, "custom-svc"},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, tt.input.GetServiceName("my-release"))
-			})
-		}
-	})
-
 	t.Run("InternalDomain", func(t *testing.T) {
 		tests := []struct {
 			name     string

@@ -15,15 +15,29 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// serviceMonitor returns a ServiceMonitor for the Redpanda cluster.
-func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
-	if !state.PoolSpec().Monitoring.IsEnabled() {
+// serviceMonitors returns one ServiceMonitor per local NodePool. The
+// Monitoring config (enable flag, scrape interval, labels, TLS) is per-pool;
+// each monitor selects its own pool's pods via the labelComponentKey.
+func serviceMonitors(state *RenderState) []*monitoringv1.ServiceMonitor {
+	var out []*monitoringv1.ServiceMonitor
+	for _, pool := range state.inClusterPools {
+		if sm := serviceMonitorForPool(state, pool); sm != nil {
+			out = append(out, sm)
+		}
+	}
+	return out
+}
+
+func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.NodePool) *monitoringv1.ServiceMonitor {
+	if !state.PoolSpec(pool).Monitoring.IsEnabled() {
 		return nil
 	}
 
-	mon := state.PoolSpec().Monitoring
+	mon := state.PoolSpec(pool).Monitoring
 
 	var interval monitoringv1.Duration
 	if mon.ScrapeInterval != nil {
@@ -37,7 +51,7 @@ func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
 	}
 
-	if state.PoolSpec().IsAdminTLSEnabled() || mon.TLSConfig != nil {
+	if state.PoolSpec(pool).IsAdminTLSEnabled() || mon.TLSConfig != nil {
 		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
 
 		// Use custom TLS config if provided, otherwise fall back to insecure skip verify.
@@ -67,7 +81,7 @@ func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 			Kind:       monitoringv1.ServiceMonitorsKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      state.fullname(),
+			Name:      state.poolFullname(pool),
 			Namespace: state.namespace,
 			Labels:    labels,
 		},
@@ -75,9 +89,10 @@ func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 			Endpoints: []monitoringv1.Endpoint{endpoint},
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					labelMonitorKey:  "true",
-					labelNameKey:     labelNameValue,
-					labelInstanceKey: state.releaseName,
+					labelMonitorKey:   "true",
+					labelNameKey:      labelNameValue,
+					labelInstanceKey:  state.releaseName,
+					labelComponentKey: "redpanda" + pool.Suffix(),
 				},
 			},
 		},

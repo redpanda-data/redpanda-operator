@@ -8,7 +8,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-external
+    name: audit-logging-pool-a-external
     namespace: audit-logging
   spec:
     externalTrafficPolicy: Local
@@ -36,6 +36,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -76,7 +77,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging
+    name: audit-logging-pool-a
     namespace: audit-logging
 - apiVersion: v1
   kind: Service
@@ -319,7 +320,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-rpk
+    name: audit-logging-pool-a-rpk
     namespace: audit-logging
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -360,7 +361,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-default-cert
+    name: audit-logging-pool-a-default-cert
     namespace: audit-logging
   spec:
     dnsNames:
@@ -387,7 +388,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: audit-logging-default-cert
+    secretName: audit-logging-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -398,7 +399,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-external-cert
+    name: audit-logging-pool-a-external-cert
     namespace: audit-logging
   spec:
     dnsNames:
@@ -425,7 +426,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: audit-logging-external-cert
+    secretName: audit-logging-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -436,7 +437,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-sidecar
+    name: audit-logging-pool-a-sidecar
     namespace: audit-logging
   rules:
   - apiGroups:
@@ -476,7 +477,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-audit-logging-metrics-reader
+    name: audit-logging-pool-a-audit-logging-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -491,15 +492,15 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-sidecar
+    name: audit-logging-pool-a-sidecar
     namespace: audit-logging
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: audit-logging-sidecar
+    name: audit-logging-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: audit-logging
+    name: audit-logging-pool-a
     namespace: audit-logging
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -510,14 +511,14 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-audit-logging-metrics-reader
+    name: audit-logging-pool-a-audit-logging-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: audit-logging-audit-logging-metrics-reader
+    name: audit-logging-pool-a-audit-logging-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: audit-logging
+    name: audit-logging-pool-a
     namespace: audit-logging
 - apiVersion: v1
   kind: Secret
@@ -528,7 +529,7 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: audit-logging-sts-lifecycle
+    name: audit-logging-pool-a-sts-lifecycle
     namespace: audit-logging
   stringData:
     common.sh: |-
@@ -791,7 +792,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-external
+    name: common-labels-pool-a-external
     namespace: common-labels
   spec:
     externalTrafficPolicy: Local
@@ -819,6 +820,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: common-labels
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -863,7 +865,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels
+    name: common-labels-pool-a
     namespace: common-labels
 - apiVersion: v1
   kind: Service
@@ -1112,7 +1114,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-rpk
+    name: common-labels-pool-a-rpk
     namespace: common-labels
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -1159,7 +1161,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-default-cert
+    name: common-labels-pool-a-default-cert
     namespace: common-labels
   spec:
     dnsNames:
@@ -1186,7 +1188,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: common-labels-default-cert
+    secretName: common-labels-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -1199,7 +1201,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-external-cert
+    name: common-labels-pool-a-external-cert
     namespace: common-labels
   spec:
     dnsNames:
@@ -1226,7 +1228,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: common-labels-external-cert
+    secretName: common-labels-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -1239,7 +1241,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-sidecar
+    name: common-labels-pool-a-sidecar
     namespace: common-labels
   rules:
   - apiGroups:
@@ -1281,7 +1283,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-common-labels-metrics-reader
+    name: common-labels-pool-a-common-labels-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -1298,15 +1300,15 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-sidecar
+    name: common-labels-pool-a-sidecar
     namespace: common-labels
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: common-labels-sidecar
+    name: common-labels-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: common-labels
+    name: common-labels-pool-a
     namespace: common-labels
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -1319,14 +1321,14 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-common-labels-metrics-reader
+    name: common-labels-pool-a-common-labels-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: common-labels-common-labels-metrics-reader
+    name: common-labels-pool-a-common-labels-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: common-labels
+    name: common-labels-pool-a
     namespace: common-labels
 - apiVersion: v1
   kind: Secret
@@ -1339,7 +1341,7 @@
       app.kubernetes.io/name: redpanda
       env: staging
       team: platform
-    name: common-labels-sts-lifecycle
+    name: common-labels-pool-a-sts-lifecycle
     namespace: common-labels
   stringData:
     common.sh: |-
@@ -1608,7 +1610,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-external
+    name: custom-cluster-domain-pool-a-external
     namespace: custom-cluster-domain
   spec:
     externalTrafficPolicy: Local
@@ -1636,6 +1638,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -1676,7 +1679,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain
+    name: custom-cluster-domain-pool-a
     namespace: custom-cluster-domain
 - apiVersion: v1
   kind: Service
@@ -1919,7 +1922,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-rpk
+    name: custom-cluster-domain-pool-a-rpk
     namespace: custom-cluster-domain
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -1960,7 +1963,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-default-cert
+    name: custom-cluster-domain-pool-a-default-cert
     namespace: custom-cluster-domain
   spec:
     dnsNames:
@@ -1987,7 +1990,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-cluster-domain-default-cert
+    secretName: custom-cluster-domain-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -1998,7 +2001,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-external-cert
+    name: custom-cluster-domain-pool-a-external-cert
     namespace: custom-cluster-domain
   spec:
     dnsNames:
@@ -2025,7 +2028,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-cluster-domain-external-cert
+    secretName: custom-cluster-domain-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -2036,7 +2039,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-sidecar
+    name: custom-cluster-domain-pool-a-sidecar
     namespace: custom-cluster-domain
   rules:
   - apiGroups:
@@ -2076,7 +2079,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-custom-cluster-domain-metrics-reader
+    name: custom-cluster-domain-pool-a-custom-cluster-domain-metrics-read
   rules:
   - nonResourceURLs:
     - /metrics
@@ -2091,15 +2094,15 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-sidecar
+    name: custom-cluster-domain-pool-a-sidecar
     namespace: custom-cluster-domain
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: custom-cluster-domain-sidecar
+    name: custom-cluster-domain-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: custom-cluster-domain
+    name: custom-cluster-domain-pool-a
     namespace: custom-cluster-domain
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -2110,14 +2113,14 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-custom-cluster-domain-metrics-reader
+    name: custom-cluster-domain-pool-a-custom-cluster-domain-metrics-read
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: custom-cluster-domain-custom-cluster-domain-metrics-reader
+    name: custom-cluster-domain-pool-a-custom-cluster-domain-metrics-read
   subjects:
   - kind: ServiceAccount
-    name: custom-cluster-domain
+    name: custom-cluster-domain-pool-a
     namespace: custom-cluster-domain
 - apiVersion: v1
   kind: Secret
@@ -2128,7 +2131,7 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-cluster-domain-sts-lifecycle
+    name: custom-cluster-domain-pool-a-sts-lifecycle
     namespace: custom-cluster-domain
   stringData:
     common.sh: |-
@@ -2389,7 +2392,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-external
+    name: custom-config-pool-a-external
     namespace: custom-config
   spec:
     externalTrafficPolicy: Local
@@ -2417,6 +2420,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -2457,7 +2461,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config
+    name: custom-config-pool-a
     namespace: custom-config
 - apiVersion: v1
   kind: Service
@@ -2701,7 +2705,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-rpk
+    name: custom-config-pool-a-rpk
     namespace: custom-config
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -2742,7 +2746,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-default-cert
+    name: custom-config-pool-a-default-cert
     namespace: custom-config
   spec:
     dnsNames:
@@ -2769,7 +2773,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-config-default-cert
+    secretName: custom-config-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -2780,7 +2784,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-external-cert
+    name: custom-config-pool-a-external-cert
     namespace: custom-config
   spec:
     dnsNames:
@@ -2807,7 +2811,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-config-external-cert
+    secretName: custom-config-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -2818,7 +2822,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-sidecar
+    name: custom-config-pool-a-sidecar
     namespace: custom-config
   rules:
   - apiGroups:
@@ -2858,7 +2862,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-custom-config-metrics-reader
+    name: custom-config-pool-a-custom-config-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -2873,15 +2877,15 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-sidecar
+    name: custom-config-pool-a-sidecar
     namespace: custom-config
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: custom-config-sidecar
+    name: custom-config-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: custom-config
+    name: custom-config-pool-a
     namespace: custom-config
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -2892,14 +2896,14 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-custom-config-metrics-reader
+    name: custom-config-pool-a-custom-config-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: custom-config-custom-config-metrics-reader
+    name: custom-config-pool-a-custom-config-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: custom-config
+    name: custom-config-pool-a
     namespace: custom-config
 - apiVersion: v1
   kind: Secret
@@ -2910,7 +2914,7 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-config-sts-lifecycle
+    name: custom-config-pool-a-sts-lifecycle
     namespace: custom-config
   stringData:
     common.sh: |-
@@ -3171,7 +3175,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-external
+    name: custom-image-pool-a-external
     namespace: custom-image
   spec:
     externalTrafficPolicy: Local
@@ -3199,6 +3203,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -3239,7 +3244,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image
+    name: custom-image-pool-a
     namespace: custom-image
 - apiVersion: v1
   kind: Service
@@ -3482,7 +3487,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-rpk
+    name: custom-image-pool-a-rpk
     namespace: custom-image
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -3523,7 +3528,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-default-cert
+    name: custom-image-pool-a-default-cert
     namespace: custom-image
   spec:
     dnsNames:
@@ -3550,7 +3555,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-image-default-cert
+    secretName: custom-image-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -3561,7 +3566,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-external-cert
+    name: custom-image-pool-a-external-cert
     namespace: custom-image
   spec:
     dnsNames:
@@ -3588,7 +3593,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-image-external-cert
+    secretName: custom-image-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -3599,7 +3604,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-sidecar
+    name: custom-image-pool-a-sidecar
     namespace: custom-image
   rules:
   - apiGroups:
@@ -3639,7 +3644,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-custom-image-metrics-reader
+    name: custom-image-pool-a-custom-image-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -3654,15 +3659,15 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-sidecar
+    name: custom-image-pool-a-sidecar
     namespace: custom-image
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: custom-image-sidecar
+    name: custom-image-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: custom-image
+    name: custom-image-pool-a
     namespace: custom-image
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -3673,14 +3678,14 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-custom-image-metrics-reader
+    name: custom-image-pool-a-custom-image-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: custom-image-custom-image-metrics-reader
+    name: custom-image-pool-a-custom-image-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: custom-image
+    name: custom-image-pool-a
     namespace: custom-image
 - apiVersion: v1
   kind: Secret
@@ -3691,7 +3696,7 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-image-sts-lifecycle
+    name: custom-image-pool-a-sts-lifecycle
     namespace: custom-image
   stringData:
     common.sh: |-
@@ -3952,7 +3957,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-external
+    name: custom-resources-pool-a-external
     namespace: custom-resources
   spec:
     externalTrafficPolicy: Local
@@ -3980,6 +3985,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -4020,7 +4026,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources
+    name: custom-resources-pool-a
     namespace: custom-resources
 - apiVersion: v1
   kind: Service
@@ -4263,7 +4269,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-rpk
+    name: custom-resources-pool-a-rpk
     namespace: custom-resources
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -4304,7 +4310,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-default-cert
+    name: custom-resources-pool-a-default-cert
     namespace: custom-resources
   spec:
     dnsNames:
@@ -4331,7 +4337,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-resources-default-cert
+    secretName: custom-resources-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -4342,7 +4348,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-external-cert
+    name: custom-resources-pool-a-external-cert
     namespace: custom-resources
   spec:
     dnsNames:
@@ -4369,7 +4375,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-resources-external-cert
+    secretName: custom-resources-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -4380,7 +4386,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-sidecar
+    name: custom-resources-pool-a-sidecar
     namespace: custom-resources
   rules:
   - apiGroups:
@@ -4420,7 +4426,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-custom-resources-metrics-reader
+    name: custom-resources-pool-a-custom-resources-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -4435,15 +4441,15 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-sidecar
+    name: custom-resources-pool-a-sidecar
     namespace: custom-resources
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: custom-resources-sidecar
+    name: custom-resources-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: custom-resources
+    name: custom-resources-pool-a
     namespace: custom-resources
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -4454,14 +4460,14 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-custom-resources-metrics-reader
+    name: custom-resources-pool-a-custom-resources-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: custom-resources-custom-resources-metrics-reader
+    name: custom-resources-pool-a-custom-resources-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: custom-resources
+    name: custom-resources-pool-a
     namespace: custom-resources
 - apiVersion: v1
   kind: Secret
@@ -4472,7 +4478,7 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-sts-lifecycle
+    name: custom-resources-pool-a-sts-lifecycle
     namespace: custom-resources
   stringData:
     common.sh: |-
@@ -4733,7 +4739,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-external
+    name: custom-resources-explicit-pool-a-external
     namespace: custom-resources-explicit
   spec:
     externalTrafficPolicy: Local
@@ -4761,6 +4767,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -4801,7 +4808,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit
+    name: custom-resources-explicit-pool-a
     namespace: custom-resources-explicit
 - apiVersion: v1
   kind: Service
@@ -5044,7 +5051,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-rpk
+    name: custom-resources-explicit-pool-a-rpk
     namespace: custom-resources-explicit
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -5085,7 +5092,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-default-cert
+    name: custom-resources-explicit-pool-a-default-cert
     namespace: custom-resources-explicit
   spec:
     dnsNames:
@@ -5112,7 +5119,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-resources-explicit-default-cert
+    secretName: custom-resources-explicit-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -5123,7 +5130,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-external-cert
+    name: custom-resources-explicit-pool-a-external-cert
     namespace: custom-resources-explicit
   spec:
     dnsNames:
@@ -5150,7 +5157,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: custom-resources-explicit-external-cert
+    secretName: custom-resources-explicit-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -5161,7 +5168,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-sidecar
+    name: custom-resources-explicit-pool-a-sidecar
     namespace: custom-resources-explicit
   rules:
   - apiGroups:
@@ -5201,7 +5208,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-custom-resources-explicit-metrics-rea
+    name: custom-resources-explicit-pool-a-custom-resources-explicit-metr
   rules:
   - nonResourceURLs:
     - /metrics
@@ -5216,15 +5223,15 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-sidecar
+    name: custom-resources-explicit-pool-a-sidecar
     namespace: custom-resources-explicit
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: custom-resources-explicit-sidecar
+    name: custom-resources-explicit-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: custom-resources-explicit
+    name: custom-resources-explicit-pool-a
     namespace: custom-resources-explicit
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -5235,14 +5242,14 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-custom-resources-explicit-metrics-rea
+    name: custom-resources-explicit-pool-a-custom-resources-explicit-metr
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: custom-resources-explicit-custom-resources-explicit-metrics-rea
+    name: custom-resources-explicit-pool-a-custom-resources-explicit-metr
   subjects:
   - kind: ServiceAccount
-    name: custom-resources-explicit
+    name: custom-resources-explicit-pool-a
     namespace: custom-resources-explicit
 - apiVersion: v1
   kind: Secret
@@ -5253,7 +5260,7 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: custom-resources-explicit-sts-lifecycle
+    name: custom-resources-explicit-pool-a-sts-lifecycle
     namespace: custom-resources-explicit
   stringData:
     common.sh: |-
@@ -5514,7 +5521,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-external
+    name: enterprise-pool-a-external
     namespace: enterprise
   spec:
     externalTrafficPolicy: Local
@@ -5542,6 +5549,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -5582,7 +5590,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise
+    name: enterprise-pool-a
     namespace: enterprise
 - apiVersion: v1
   kind: Service
@@ -5825,7 +5833,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-rpk
+    name: enterprise-pool-a-rpk
     namespace: enterprise
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -5866,7 +5874,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-default-cert
+    name: enterprise-pool-a-default-cert
     namespace: enterprise
   spec:
     dnsNames:
@@ -5893,7 +5901,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: enterprise-default-cert
+    secretName: enterprise-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -5904,7 +5912,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-external-cert
+    name: enterprise-pool-a-external-cert
     namespace: enterprise
   spec:
     dnsNames:
@@ -5931,7 +5939,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: enterprise-external-cert
+    secretName: enterprise-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -5942,7 +5950,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-sidecar
+    name: enterprise-pool-a-sidecar
     namespace: enterprise
   rules:
   - apiGroups:
@@ -5982,7 +5990,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-enterprise-metrics-reader
+    name: enterprise-pool-a-enterprise-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -5997,15 +6005,15 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-sidecar
+    name: enterprise-pool-a-sidecar
     namespace: enterprise
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: enterprise-sidecar
+    name: enterprise-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: enterprise
+    name: enterprise-pool-a
     namespace: enterprise
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -6016,14 +6024,14 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-enterprise-metrics-reader
+    name: enterprise-pool-a-enterprise-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: enterprise-enterprise-metrics-reader
+    name: enterprise-pool-a-enterprise-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: enterprise
+    name: enterprise-pool-a
     namespace: enterprise
 - apiVersion: v1
   kind: Secret
@@ -6034,7 +6042,7 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: enterprise-sts-lifecycle
+    name: enterprise-pool-a-sts-lifecycle
     namespace: enterprise
   stringData:
     common.sh: |-
@@ -6295,7 +6303,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-external
+    name: external-loadbalancer-pool-a-external
     namespace: external-loadbalancer
   spec:
     externalTrafficPolicy: Local
@@ -6323,6 +6331,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -6363,7 +6372,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer
+    name: external-loadbalancer-pool-a
     namespace: external-loadbalancer
 - apiVersion: v1
   kind: Service
@@ -6606,7 +6615,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-rpk
+    name: external-loadbalancer-pool-a-rpk
     namespace: external-loadbalancer
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -6647,7 +6656,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-default-cert
+    name: external-loadbalancer-pool-a-default-cert
     namespace: external-loadbalancer
   spec:
     dnsNames:
@@ -6674,7 +6683,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: external-loadbalancer-default-cert
+    secretName: external-loadbalancer-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -6685,7 +6694,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-external-cert
+    name: external-loadbalancer-pool-a-external-cert
     namespace: external-loadbalancer
   spec:
     dnsNames:
@@ -6712,7 +6721,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: external-loadbalancer-external-cert
+    secretName: external-loadbalancer-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -6723,7 +6732,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-sidecar
+    name: external-loadbalancer-pool-a-sidecar
     namespace: external-loadbalancer
   rules:
   - apiGroups:
@@ -6763,7 +6772,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-external-loadbalancer-metrics-reader
+    name: external-loadbalancer-pool-a-external-loadbalancer-metrics-read
   rules:
   - nonResourceURLs:
     - /metrics
@@ -6778,15 +6787,15 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-sidecar
+    name: external-loadbalancer-pool-a-sidecar
     namespace: external-loadbalancer
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: external-loadbalancer-sidecar
+    name: external-loadbalancer-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: external-loadbalancer
+    name: external-loadbalancer-pool-a
     namespace: external-loadbalancer
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -6797,14 +6806,14 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-external-loadbalancer-metrics-reader
+    name: external-loadbalancer-pool-a-external-loadbalancer-metrics-read
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: external-loadbalancer-external-loadbalancer-metrics-reader
+    name: external-loadbalancer-pool-a-external-loadbalancer-metrics-read
   subjects:
   - kind: ServiceAccount
-    name: external-loadbalancer
+    name: external-loadbalancer-pool-a
     namespace: external-loadbalancer
 - apiVersion: v1
   kind: Secret
@@ -6815,7 +6824,7 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-sts-lifecycle
+    name: external-loadbalancer-pool-a-sts-lifecycle
     namespace: external-loadbalancer
   stringData:
     common.sh: |-
@@ -7076,7 +7085,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-external
+    name: external-nodeport-pool-a-external
     namespace: external-nodeport
   spec:
     externalTrafficPolicy: Local
@@ -7104,6 +7113,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -7144,7 +7154,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport
+    name: external-nodeport-pool-a
     namespace: external-nodeport
 - apiVersion: v1
   kind: Service
@@ -7387,7 +7397,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-rpk
+    name: external-nodeport-pool-a-rpk
     namespace: external-nodeport
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -7428,7 +7438,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-default-cert
+    name: external-nodeport-pool-a-default-cert
     namespace: external-nodeport
   spec:
     dnsNames:
@@ -7455,7 +7465,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: external-nodeport-default-cert
+    secretName: external-nodeport-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -7466,7 +7476,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-external-cert
+    name: external-nodeport-pool-a-external-cert
     namespace: external-nodeport
   spec:
     dnsNames:
@@ -7493,7 +7503,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: external-nodeport-external-cert
+    secretName: external-nodeport-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -7504,7 +7514,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-sidecar
+    name: external-nodeport-pool-a-sidecar
     namespace: external-nodeport
   rules:
   - apiGroups:
@@ -7544,7 +7554,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-external-nodeport-metrics-reader
+    name: external-nodeport-pool-a-external-nodeport-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -7559,15 +7569,15 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-sidecar
+    name: external-nodeport-pool-a-sidecar
     namespace: external-nodeport
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: external-nodeport-sidecar
+    name: external-nodeport-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: external-nodeport
+    name: external-nodeport-pool-a
     namespace: external-nodeport
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -7578,14 +7588,14 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-external-nodeport-metrics-reader
+    name: external-nodeport-pool-a-external-nodeport-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: external-nodeport-external-nodeport-metrics-reader
+    name: external-nodeport-pool-a-external-nodeport-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: external-nodeport
+    name: external-nodeport-pool-a
     namespace: external-nodeport
 - apiVersion: v1
   kind: Secret
@@ -7596,7 +7606,7 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-nodeport-sts-lifecycle
+    name: external-nodeport-pool-a-sts-lifecycle
     namespace: external-nodeport
   stringData:
     common.sh: |-
@@ -7857,7 +7867,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-external
+    name: external-tls-pool-a-external
     namespace: external-tls
   spec:
     externalTrafficPolicy: Local
@@ -7885,6 +7895,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -7925,7 +7936,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls
+    name: external-tls-pool-a
     namespace: external-tls
 - apiVersion: v1
   kind: Service
@@ -8168,7 +8179,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-rpk
+    name: external-tls-pool-a-rpk
     namespace: external-tls
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -8209,7 +8220,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-default-cert
+    name: external-tls-pool-a-default-cert
     namespace: external-tls
   spec:
     dnsNames:
@@ -8236,7 +8247,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: external-tls-default-cert
+    secretName: external-tls-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -8247,7 +8258,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-external-cert
+    name: external-tls-pool-a-external-cert
     namespace: external-tls
   spec:
     dnsNames:
@@ -8274,7 +8285,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: external-tls-external-cert
+    secretName: external-tls-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -8285,7 +8296,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-sidecar
+    name: external-tls-pool-a-sidecar
     namespace: external-tls
   rules:
   - apiGroups:
@@ -8325,7 +8336,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-external-tls-metrics-reader
+    name: external-tls-pool-a-external-tls-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -8340,15 +8351,15 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-sidecar
+    name: external-tls-pool-a-sidecar
     namespace: external-tls
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: external-tls-sidecar
+    name: external-tls-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: external-tls
+    name: external-tls-pool-a
     namespace: external-tls
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -8359,14 +8370,14 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-external-tls-metrics-reader
+    name: external-tls-pool-a-external-tls-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: external-tls-external-tls-metrics-reader
+    name: external-tls-pool-a-external-tls-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: external-tls
+    name: external-tls-pool-a
     namespace: external-tls
 - apiVersion: v1
   kind: Secret
@@ -8377,7 +8388,7 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: external-tls-sts-lifecycle
+    name: external-tls-pool-a-sts-lifecycle
     namespace: external-tls
   stringData:
     common.sh: |-
@@ -8638,7 +8649,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-external
+    name: flat-network-pool-a-external
     namespace: flat-network
   spec:
     externalTrafficPolicy: Local
@@ -8666,6 +8677,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -8706,7 +8718,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network
+    name: flat-network-pool-a
     namespace: flat-network
 - apiVersion: v1
   kind: Service
@@ -8939,7 +8951,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-rpk
+    name: flat-network-pool-a-rpk
     namespace: flat-network
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -8980,7 +8992,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-default-cert
+    name: flat-network-pool-a-default-cert
     namespace: flat-network
   spec:
     dnsNames:
@@ -9007,7 +9019,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: flat-network-default-cert
+    secretName: flat-network-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -9018,7 +9030,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-external-cert
+    name: flat-network-pool-a-external-cert
     namespace: flat-network
   spec:
     dnsNames:
@@ -9045,7 +9057,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: flat-network-external-cert
+    secretName: flat-network-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -9056,7 +9068,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-sidecar
+    name: flat-network-pool-a-sidecar
     namespace: flat-network
   rules:
   - apiGroups:
@@ -9096,7 +9108,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-flat-network-metrics-reader
+    name: flat-network-pool-a-flat-network-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -9111,15 +9123,15 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-sidecar
+    name: flat-network-pool-a-sidecar
     namespace: flat-network
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: flat-network-sidecar
+    name: flat-network-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: flat-network
+    name: flat-network-pool-a
     namespace: flat-network
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -9130,14 +9142,14 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-flat-network-metrics-reader
+    name: flat-network-pool-a-flat-network-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: flat-network-flat-network-metrics-reader
+    name: flat-network-pool-a-flat-network-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: flat-network
+    name: flat-network-pool-a
     namespace: flat-network
 - apiVersion: v1
   kind: Secret
@@ -9148,7 +9160,7 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: flat-network-sts-lifecycle
+    name: flat-network-pool-a-sts-lifecycle
     namespace: flat-network
   stringData:
     common.sh: |-
@@ -9484,7 +9496,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-external
+    name: full-featured-pool-cold-external
     namespace: full-featured
   spec:
     externalTrafficPolicy: Local
@@ -9512,6 +9524,52 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-cold
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-external
+    namespace: full-featured
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-hot
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -9554,7 +9612,20 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured
+    name: full-featured-pool-cold
+    namespace: full-featured
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot
     namespace: full-featured
 - apiVersion: v1
   kind: Service
@@ -9817,6 +9888,33 @@
     namespace: full-featured
 - apiVersion: v1
   data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-rpk
+    namespace: full-featured
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"true","cloud_storage_bucket":"\"prod-tiered\"","cloud_storage_cache_size":"21474836480","cloud_storage_credentials_source":"\"aws_instance_metadata\"","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"true","cloud_storage_region":"\"us-east-1\"","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"true","enable_sasl":"true","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"true","log_segment_size":"134217728","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"5368709120","superusers":"[\"kubernetes-controller\"]"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -10056,7 +10154,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-rpk
+    name: full-featured-pool-hot-rpk
     namespace: full-featured
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -10100,7 +10198,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-default-cert
+    name: full-featured-pool-cold-default-cert
     namespace: full-featured
   spec:
     dnsNames:
@@ -10127,7 +10225,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: full-featured-default-cert
+    secretName: full-featured-pool-cold-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -10139,7 +10237,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-external-cert
+    name: full-featured-pool-cold-external-cert
     namespace: full-featured
   spec:
     dnsNames:
@@ -10166,7 +10264,85 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: full-featured-external-cert
+    secretName: full-featured-pool-cold-external-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-default-cert
+    namespace: full-featured
+  spec:
+    dnsNames:
+    - full-featured-cluster.full-featured.full-featured.svc.cluster.local
+    - full-featured-cluster.full-featured.full-featured.svc
+    - full-featured-cluster.full-featured.full-featured
+    - '*.full-featured-cluster.full-featured.full-featured.svc.cluster.local'
+    - '*.full-featured-cluster.full-featured.full-featured.svc'
+    - '*.full-featured-cluster.full-featured.full-featured'
+    - full-featured.full-featured.svc.cluster.local
+    - full-featured.full-featured.svc
+    - full-featured.full-featured
+    - '*.full-featured.full-featured.svc.cluster.local'
+    - '*.full-featured.full-featured.svc'
+    - '*.full-featured.full-featured'
+    - '*.full-featured.svc.cluster.local'
+    - '*.full-featured.svc'
+    - '*.full-featured'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: full-featured-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: full-featured-pool-hot-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-external-cert
+    namespace: full-featured
+  spec:
+    dnsNames:
+    - full-featured-cluster.full-featured.full-featured.svc.cluster.local
+    - full-featured-cluster.full-featured.full-featured.svc
+    - full-featured-cluster.full-featured.full-featured
+    - '*.full-featured-cluster.full-featured.full-featured.svc.cluster.local'
+    - '*.full-featured-cluster.full-featured.full-featured.svc'
+    - '*.full-featured-cluster.full-featured.full-featured'
+    - full-featured.full-featured.svc.cluster.local
+    - full-featured.full-featured.svc
+    - full-featured.full-featured
+    - '*.full-featured.full-featured.svc.cluster.local'
+    - '*.full-featured.full-featured.svc'
+    - '*.full-featured.full-featured'
+    - '*.full-featured.svc.cluster.local'
+    - '*.full-featured.svc'
+    - '*.full-featured'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: full-featured-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: full-featured-pool-hot-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -10178,7 +10354,48 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-sidecar
+    name: full-featured-pool-cold-sidecar
+    namespace: full-featured
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-sidecar
     namespace: full-featured
   rules:
   - apiGroups:
@@ -10219,7 +10436,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-full-featured-metrics-reader
+    name: full-featured-pool-cold-full-featured-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -10235,7 +10452,43 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-full-featured-rack-awareness
+    name: full-featured-pool-cold-full-featured-rack-awareness
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-rack-awareness
   rules:
   - apiGroups:
     - ""
@@ -10255,15 +10508,35 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-sidecar
+    name: full-featured-pool-cold-sidecar
     namespace: full-featured
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: full-featured-sidecar
+    name: full-featured-pool-cold-sidecar
   subjects:
   - kind: ServiceAccount
-    name: full-featured
+    name: full-featured-pool-cold
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-sidecar
+    namespace: full-featured
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: full-featured-pool-hot-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-hot
     namespace: full-featured
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -10275,14 +10548,14 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-full-featured-metrics-reader
+    name: full-featured-pool-cold-full-featured-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: full-featured-full-featured-metrics-reader
+    name: full-featured-pool-cold-full-featured-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: full-featured
+    name: full-featured-pool-cold
     namespace: full-featured
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -10294,14 +10567,52 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-full-featured-rack-awareness
+    name: full-featured-pool-cold-full-featured-rack-awareness
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: full-featured-full-featured-rack-awareness
+    name: full-featured-pool-cold-full-featured-rack-awareness
   subjects:
   - kind: ServiceAccount
-    name: full-featured
+    name: full-featured-pool-cold
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-pool-hot-full-featured-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-hot
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-rack-awareness
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-pool-hot-full-featured-rack-awareness
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-hot
     namespace: full-featured
 - apiVersion: v1
   kind: Secret
@@ -10313,7 +10624,7 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-sts-lifecycle
+    name: full-featured-pool-cold-sts-lifecycle
     namespace: full-featured
   stringData:
     common.sh: |-
@@ -10435,6 +10746,97 @@
       RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep '"topology.kubernetes.io/zone"' | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')
       set -x
       rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-sts-lifecycle
+    namespace: full-featured
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.full-featured.full-featured.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      preStopHook
+      true
   type: Opaque
 - apiVersion: v1
   kind: Secret
@@ -10792,7 +11194,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-external
+    name: init-containers-pool-a-external
     namespace: init-containers
   spec:
     externalTrafficPolicy: Local
@@ -10820,6 +11222,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -10860,7 +11263,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers
+    name: init-containers-pool-a
     namespace: init-containers
 - apiVersion: v1
   kind: Service
@@ -11103,7 +11506,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-rpk
+    name: init-containers-pool-a-rpk
     namespace: init-containers
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -11144,7 +11547,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-default-cert
+    name: init-containers-pool-a-default-cert
     namespace: init-containers
   spec:
     dnsNames:
@@ -11171,7 +11574,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: init-containers-default-cert
+    secretName: init-containers-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -11182,7 +11585,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-external-cert
+    name: init-containers-pool-a-external-cert
     namespace: init-containers
   spec:
     dnsNames:
@@ -11209,7 +11612,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: init-containers-external-cert
+    secretName: init-containers-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -11220,7 +11623,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-sidecar
+    name: init-containers-pool-a-sidecar
     namespace: init-containers
   rules:
   - apiGroups:
@@ -11260,7 +11663,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-init-containers-metrics-reader
+    name: init-containers-pool-a-init-containers-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -11275,15 +11678,15 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-sidecar
+    name: init-containers-pool-a-sidecar
     namespace: init-containers
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: init-containers-sidecar
+    name: init-containers-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: init-containers
+    name: init-containers-pool-a
     namespace: init-containers
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -11294,14 +11697,14 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-init-containers-metrics-reader
+    name: init-containers-pool-a-init-containers-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: init-containers-init-containers-metrics-reader
+    name: init-containers-pool-a-init-containers-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: init-containers
+    name: init-containers-pool-a
     namespace: init-containers
 - apiVersion: v1
   kind: Secret
@@ -11312,7 +11715,7 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: init-containers-sts-lifecycle
+    name: init-containers-pool-a-sts-lifecycle
     namespace: init-containers
   stringData:
     common.sh: |-
@@ -11625,7 +12028,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-external
+    name: mcs-network-pool-a-external
     namespace: mcs-network
   spec:
     externalTrafficPolicy: Local
@@ -11653,6 +12056,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -11693,7 +12097,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network
+    name: mcs-network-pool-a
     namespace: mcs-network
 - apiVersion: v1
   kind: Service
@@ -11926,7 +12330,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-rpk
+    name: mcs-network-pool-a-rpk
     namespace: mcs-network
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -11967,7 +12371,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-default-cert
+    name: mcs-network-pool-a-default-cert
     namespace: mcs-network
   spec:
     dnsNames:
@@ -11998,7 +12402,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: mcs-network-default-cert
+    secretName: mcs-network-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -12009,7 +12413,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-external-cert
+    name: mcs-network-pool-a-external-cert
     namespace: mcs-network
   spec:
     dnsNames:
@@ -12040,7 +12444,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: mcs-network-external-cert
+    secretName: mcs-network-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -12051,7 +12455,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-sidecar
+    name: mcs-network-pool-a-sidecar
     namespace: mcs-network
   rules:
   - apiGroups:
@@ -12091,7 +12495,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-mcs-network-metrics-reader
+    name: mcs-network-pool-a-mcs-network-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -12106,15 +12510,15 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-sidecar
+    name: mcs-network-pool-a-sidecar
     namespace: mcs-network
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: mcs-network-sidecar
+    name: mcs-network-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: mcs-network
+    name: mcs-network-pool-a
     namespace: mcs-network
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -12125,14 +12529,14 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-mcs-network-metrics-reader
+    name: mcs-network-pool-a-mcs-network-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: mcs-network-mcs-network-metrics-reader
+    name: mcs-network-pool-a-mcs-network-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: mcs-network
+    name: mcs-network-pool-a
     namespace: mcs-network
 - apiVersion: v1
   kind: Secret
@@ -12143,7 +12547,7 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: mcs-network-sts-lifecycle
+    name: mcs-network-pool-a-sts-lifecycle
     namespace: mcs-network
   stringData:
     common.sh: |-
@@ -12386,7 +12790,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-external
+    name: memory-locking-pool-a-external
     namespace: memory-locking
   spec:
     externalTrafficPolicy: Local
@@ -12414,6 +12818,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -12454,7 +12859,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking
+    name: memory-locking-pool-a
     namespace: memory-locking
 - apiVersion: v1
   kind: Service
@@ -12697,7 +13102,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-rpk
+    name: memory-locking-pool-a-rpk
     namespace: memory-locking
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -12738,7 +13143,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-default-cert
+    name: memory-locking-pool-a-default-cert
     namespace: memory-locking
   spec:
     dnsNames:
@@ -12765,7 +13170,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: memory-locking-default-cert
+    secretName: memory-locking-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -12776,7 +13181,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-external-cert
+    name: memory-locking-pool-a-external-cert
     namespace: memory-locking
   spec:
     dnsNames:
@@ -12803,7 +13208,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: memory-locking-external-cert
+    secretName: memory-locking-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -12814,7 +13219,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-sidecar
+    name: memory-locking-pool-a-sidecar
     namespace: memory-locking
   rules:
   - apiGroups:
@@ -12854,7 +13259,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-memory-locking-metrics-reader
+    name: memory-locking-pool-a-memory-locking-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -12869,15 +13274,15 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-sidecar
+    name: memory-locking-pool-a-sidecar
     namespace: memory-locking
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: memory-locking-sidecar
+    name: memory-locking-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: memory-locking
+    name: memory-locking-pool-a
     namespace: memory-locking
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -12888,14 +13293,14 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-memory-locking-metrics-reader
+    name: memory-locking-pool-a-memory-locking-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: memory-locking-memory-locking-metrics-reader
+    name: memory-locking-pool-a-memory-locking-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: memory-locking
+    name: memory-locking-pool-a
     namespace: memory-locking
 - apiVersion: v1
   kind: Secret
@@ -12906,7 +13311,7 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: memory-locking-sts-lifecycle
+    name: memory-locking-pool-a-sts-lifecycle
     namespace: memory-locking
   stringData:
     common.sh: |-
@@ -13167,7 +13572,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-external
+    name: minimal-pool-a-external
     namespace: minimal
   spec:
     externalTrafficPolicy: Local
@@ -13195,6 +13600,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -13235,7 +13641,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal
+    name: minimal-pool-a
     namespace: minimal
 - apiVersion: v1
   kind: Service
@@ -13478,7 +13884,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-rpk
+    name: minimal-pool-a-rpk
     namespace: minimal
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -13519,7 +13925,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-default-cert
+    name: minimal-pool-a-default-cert
     namespace: minimal
   spec:
     dnsNames:
@@ -13546,7 +13952,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: minimal-default-cert
+    secretName: minimal-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -13557,7 +13963,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-external-cert
+    name: minimal-pool-a-external-cert
     namespace: minimal
   spec:
     dnsNames:
@@ -13584,7 +13990,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: minimal-external-cert
+    secretName: minimal-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -13595,7 +14001,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-sidecar
+    name: minimal-pool-a-sidecar
     namespace: minimal
   rules:
   - apiGroups:
@@ -13635,7 +14041,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-minimal-metrics-reader
+    name: minimal-pool-a-minimal-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -13650,15 +14056,15 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-sidecar
+    name: minimal-pool-a-sidecar
     namespace: minimal
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: minimal-sidecar
+    name: minimal-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: minimal
+    name: minimal-pool-a
     namespace: minimal
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -13669,14 +14075,14 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-minimal-metrics-reader
+    name: minimal-pool-a-minimal-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: minimal-minimal-metrics-reader
+    name: minimal-pool-a-minimal-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: minimal
+    name: minimal-pool-a
     namespace: minimal
 - apiVersion: v1
   kind: Secret
@@ -13687,7 +14093,7 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: minimal-sts-lifecycle
+    name: minimal-pool-a-sts-lifecycle
     namespace: minimal
   stringData:
     common.sh: |-
@@ -13948,7 +14354,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-external
+    name: monitoring-pool-a-external
     namespace: monitoring
   spec:
     externalTrafficPolicy: Local
@@ -13976,6 +14382,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -14016,7 +14423,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring
+    name: monitoring-pool-a
     namespace: monitoring
 - apiVersion: v1
   kind: Service
@@ -14259,7 +14666,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-rpk
+    name: monitoring-pool-a-rpk
     namespace: monitoring
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -14300,7 +14707,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-default-cert
+    name: monitoring-pool-a-default-cert
     namespace: monitoring
   spec:
     dnsNames:
@@ -14327,7 +14734,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: monitoring-default-cert
+    secretName: monitoring-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -14338,7 +14745,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-external-cert
+    name: monitoring-pool-a-external-cert
     namespace: monitoring
   spec:
     dnsNames:
@@ -14365,7 +14772,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: monitoring-external-cert
+    secretName: monitoring-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -14376,7 +14783,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-sidecar
+    name: monitoring-pool-a-sidecar
     namespace: monitoring
   rules:
   - apiGroups:
@@ -14416,7 +14823,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-monitoring-metrics-reader
+    name: monitoring-pool-a-monitoring-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -14431,15 +14838,15 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-sidecar
+    name: monitoring-pool-a-sidecar
     namespace: monitoring
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: monitoring-sidecar
+    name: monitoring-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: monitoring
+    name: monitoring-pool-a
     namespace: monitoring
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -14450,14 +14857,14 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-monitoring-metrics-reader
+    name: monitoring-pool-a-monitoring-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: monitoring-monitoring-metrics-reader
+    name: monitoring-pool-a-monitoring-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: monitoring
+    name: monitoring-pool-a
     namespace: monitoring
 - apiVersion: v1
   kind: Secret
@@ -14468,7 +14875,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: monitoring-sts-lifecycle
+    name: monitoring-pool-a-sts-lifecycle
     namespace: monitoring
   stringData:
     common.sh: |-
@@ -14729,7 +15136,7 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-external
+    name: multi-pool-pool-a-external
     namespace: multi-pool
   spec:
     externalTrafficPolicy: Local
@@ -14757,6 +15164,51 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-external
+    namespace: multi-pool
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-b
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -14797,7 +15249,19 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool
+    name: multi-pool-pool-a
+    namespace: multi-pool
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b
     namespace: multi-pool
 - apiVersion: v1
   kind: Service
@@ -15038,6 +15502,32 @@
     namespace: multi-pool
 - apiVersion: v1
   data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-a-rpk
+    namespace: multi-pool
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -15255,7 +15745,7 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-rpk
+    name: multi-pool-pool-b-rpk
     namespace: multi-pool
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -15296,7 +15786,7 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-default-cert
+    name: multi-pool-pool-a-default-cert
     namespace: multi-pool
   spec:
     dnsNames:
@@ -15323,7 +15813,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: multi-pool-default-cert
+    secretName: multi-pool-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -15334,7 +15824,7 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-external-cert
+    name: multi-pool-pool-a-external-cert
     namespace: multi-pool
   spec:
     dnsNames:
@@ -15361,7 +15851,83 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: multi-pool-external-cert
+    secretName: multi-pool-pool-a-external-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-default-cert
+    namespace: multi-pool
+  spec:
+    dnsNames:
+    - multi-pool-cluster.multi-pool.multi-pool.svc.cluster.local
+    - multi-pool-cluster.multi-pool.multi-pool.svc
+    - multi-pool-cluster.multi-pool.multi-pool
+    - '*.multi-pool-cluster.multi-pool.multi-pool.svc.cluster.local'
+    - '*.multi-pool-cluster.multi-pool.multi-pool.svc'
+    - '*.multi-pool-cluster.multi-pool.multi-pool'
+    - multi-pool.multi-pool.svc.cluster.local
+    - multi-pool.multi-pool.svc
+    - multi-pool.multi-pool
+    - '*.multi-pool.multi-pool.svc.cluster.local'
+    - '*.multi-pool.multi-pool.svc'
+    - '*.multi-pool.multi-pool'
+    - '*.multi-pool.svc.cluster.local'
+    - '*.multi-pool.svc'
+    - '*.multi-pool'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: multi-pool-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: multi-pool-pool-b-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-external-cert
+    namespace: multi-pool
+  spec:
+    dnsNames:
+    - multi-pool-cluster.multi-pool.multi-pool.svc.cluster.local
+    - multi-pool-cluster.multi-pool.multi-pool.svc
+    - multi-pool-cluster.multi-pool.multi-pool
+    - '*.multi-pool-cluster.multi-pool.multi-pool.svc.cluster.local'
+    - '*.multi-pool-cluster.multi-pool.multi-pool.svc'
+    - '*.multi-pool-cluster.multi-pool.multi-pool'
+    - multi-pool.multi-pool.svc.cluster.local
+    - multi-pool.multi-pool.svc
+    - multi-pool.multi-pool
+    - '*.multi-pool.multi-pool.svc.cluster.local'
+    - '*.multi-pool.multi-pool.svc'
+    - '*.multi-pool.multi-pool'
+    - '*.multi-pool.svc.cluster.local'
+    - '*.multi-pool.svc'
+    - '*.multi-pool'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: multi-pool-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: multi-pool-pool-b-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -15372,7 +15938,47 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-sidecar
+    name: multi-pool-pool-a-sidecar
+    namespace: multi-pool
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-sidecar
     namespace: multi-pool
   rules:
   - apiGroups:
@@ -15412,7 +16018,22 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-multi-pool-metrics-reader
+    name: multi-pool-pool-a-multi-pool-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-multi-pool-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -15427,15 +16048,34 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-sidecar
+    name: multi-pool-pool-a-sidecar
     namespace: multi-pool
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: multi-pool-sidecar
+    name: multi-pool-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: multi-pool
+    name: multi-pool-pool-a
+    namespace: multi-pool
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-sidecar
+    namespace: multi-pool
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: multi-pool-pool-b-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-pool-b
     namespace: multi-pool
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -15446,14 +16086,32 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-multi-pool-metrics-reader
+    name: multi-pool-pool-a-multi-pool-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: multi-pool-multi-pool-metrics-reader
+    name: multi-pool-pool-a-multi-pool-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: multi-pool
+    name: multi-pool-pool-a
+    namespace: multi-pool
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-multi-pool-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: multi-pool-pool-b-multi-pool-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-pool-b
     namespace: multi-pool
 - apiVersion: v1
   kind: Secret
@@ -15464,7 +16122,7 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-sts-lifecycle
+    name: multi-pool-pool-a-sts-lifecycle
     namespace: multi-pool
   stringData:
     common.sh: |-
@@ -15579,6 +16237,96 @@
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-b-sts-lifecycle
+    namespace: multi-pool
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.multi-pool.multi-pool.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      preStopHook
+      true
   type: Opaque
 - apiVersion: v1
   kind: Secret
@@ -15852,7 +16600,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-external
+    name: per-pod-service-overrides-pool-a-external
     namespace: per-pod-service-overrides
   spec:
     externalTrafficPolicy: Local
@@ -15880,6 +16628,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -15920,7 +16669,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides
+    name: per-pod-service-overrides-pool-a
     namespace: per-pod-service-overrides
 - apiVersion: v1
   kind: Service
@@ -16143,7 +16892,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-rpk
+    name: per-pod-service-overrides-pool-a-rpk
     namespace: per-pod-service-overrides
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -16184,7 +16933,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-default-cert
+    name: per-pod-service-overrides-pool-a-default-cert
     namespace: per-pod-service-overrides
   spec:
     dnsNames:
@@ -16211,7 +16960,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: per-pod-service-overrides-default-cert
+    secretName: per-pod-service-overrides-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -16222,7 +16971,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-external-cert
+    name: per-pod-service-overrides-pool-a-external-cert
     namespace: per-pod-service-overrides
   spec:
     dnsNames:
@@ -16249,7 +16998,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: per-pod-service-overrides-external-cert
+    secretName: per-pod-service-overrides-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -16260,7 +17009,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-sidecar
+    name: per-pod-service-overrides-pool-a-sidecar
     namespace: per-pod-service-overrides
   rules:
   - apiGroups:
@@ -16300,7 +17049,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-per-pod-service-overrides-metrics-rea
+    name: per-pod-service-overrides-pool-a-per-pod-service-overrides-metr
   rules:
   - nonResourceURLs:
     - /metrics
@@ -16315,15 +17064,15 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-sidecar
+    name: per-pod-service-overrides-pool-a-sidecar
     namespace: per-pod-service-overrides
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: per-pod-service-overrides-sidecar
+    name: per-pod-service-overrides-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: per-pod-service-overrides
+    name: per-pod-service-overrides-pool-a
     namespace: per-pod-service-overrides
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -16334,14 +17083,14 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-per-pod-service-overrides-metrics-rea
+    name: per-pod-service-overrides-pool-a-per-pod-service-overrides-metr
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: per-pod-service-overrides-per-pod-service-overrides-metrics-rea
+    name: per-pod-service-overrides-pool-a-per-pod-service-overrides-metr
   subjects:
   - kind: ServiceAccount
-    name: per-pod-service-overrides
+    name: per-pod-service-overrides-pool-a
     namespace: per-pod-service-overrides
 - apiVersion: v1
   kind: Secret
@@ -16352,7 +17101,7 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-overrides-sts-lifecycle
+    name: per-pod-service-overrides-pool-a-sts-lifecycle
     namespace: per-pod-service-overrides
   stringData:
     common.sh: |-
@@ -16527,7 +17276,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-external
+    name: per-pod-service-remote-disabled-pool-a-external
     namespace: per-pod-service-remote-disabled
   spec:
     externalTrafficPolicy: Local
@@ -16555,6 +17304,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -16595,7 +17345,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled
+    name: per-pod-service-remote-disabled-pool-a
     namespace: per-pod-service-remote-disabled
 - apiVersion: v1
   kind: Service
@@ -16818,7 +17568,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-rpk
+    name: per-pod-service-remote-disabled-pool-a-rpk
     namespace: per-pod-service-remote-disabled
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -16859,7 +17609,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-default-cert
+    name: per-pod-service-remote-disabled-pool-a-default-cert
     namespace: per-pod-service-remote-disabled
   spec:
     dnsNames:
@@ -16886,7 +17636,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: per-pod-service-remote-disabled-default-cert
+    secretName: per-pod-service-remote-disabled-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -16897,7 +17647,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-external-cert
+    name: per-pod-service-remote-disabled-pool-a-external-cert
     namespace: per-pod-service-remote-disabled
   spec:
     dnsNames:
@@ -16924,7 +17674,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: per-pod-service-remote-disabled-external-cert
+    secretName: per-pod-service-remote-disabled-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -16935,7 +17685,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-sidecar
+    name: per-pod-service-remote-disabled-pool-a-sidecar
     namespace: per-pod-service-remote-disabled
   rules:
   - apiGroups:
@@ -16975,7 +17725,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-per-pod-service-remote-disabled
+    name: per-pod-service-remote-disabled-pool-a-per-pod-service-remote-d
   rules:
   - nonResourceURLs:
     - /metrics
@@ -16990,15 +17740,15 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-sidecar
+    name: per-pod-service-remote-disabled-pool-a-sidecar
     namespace: per-pod-service-remote-disabled
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: per-pod-service-remote-disabled-sidecar
+    name: per-pod-service-remote-disabled-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: per-pod-service-remote-disabled
+    name: per-pod-service-remote-disabled-pool-a
     namespace: per-pod-service-remote-disabled
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -17009,14 +17759,14 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-per-pod-service-remote-disabled
+    name: per-pod-service-remote-disabled-pool-a-per-pod-service-remote-d
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: per-pod-service-remote-disabled-per-pod-service-remote-disabled
+    name: per-pod-service-remote-disabled-pool-a-per-pod-service-remote-d
   subjects:
   - kind: ServiceAccount
-    name: per-pod-service-remote-disabled
+    name: per-pod-service-remote-disabled-pool-a
     namespace: per-pod-service-remote-disabled
 - apiVersion: v1
   kind: Secret
@@ -17027,7 +17777,7 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: per-pod-service-remote-disabled-sts-lifecycle
+    name: per-pod-service-remote-disabled-pool-a-sts-lifecycle
     namespace: per-pod-service-remote-disabled
   stringData:
     common.sh: |-
@@ -17199,7 +17949,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-external
+    name: rack-awareness-pool-a-external
     namespace: rack-awareness
   spec:
     externalTrafficPolicy: Local
@@ -17227,6 +17977,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -17267,7 +18018,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness
+    name: rack-awareness-pool-a
     namespace: rack-awareness
 - apiVersion: v1
   kind: Service
@@ -17510,7 +18261,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-rpk
+    name: rack-awareness-pool-a-rpk
     namespace: rack-awareness
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -17551,7 +18302,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-default-cert
+    name: rack-awareness-pool-a-default-cert
     namespace: rack-awareness
   spec:
     dnsNames:
@@ -17578,7 +18329,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: rack-awareness-default-cert
+    secretName: rack-awareness-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -17589,7 +18340,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-external-cert
+    name: rack-awareness-pool-a-external-cert
     namespace: rack-awareness
   spec:
     dnsNames:
@@ -17616,7 +18367,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: rack-awareness-external-cert
+    secretName: rack-awareness-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -17627,7 +18378,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-sidecar
+    name: rack-awareness-pool-a-sidecar
     namespace: rack-awareness
   rules:
   - apiGroups:
@@ -17667,7 +18418,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-rack-awareness-metrics-reader
+    name: rack-awareness-pool-a-rack-awareness-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -17682,7 +18433,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-rack-awareness-rack-awareness
+    name: rack-awareness-pool-a-rack-awareness-rack-awareness
   rules:
   - apiGroups:
     - ""
@@ -17701,15 +18452,15 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-sidecar
+    name: rack-awareness-pool-a-sidecar
     namespace: rack-awareness
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: rack-awareness-sidecar
+    name: rack-awareness-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: rack-awareness
+    name: rack-awareness-pool-a
     namespace: rack-awareness
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -17720,14 +18471,14 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-rack-awareness-metrics-reader
+    name: rack-awareness-pool-a-rack-awareness-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: rack-awareness-rack-awareness-metrics-reader
+    name: rack-awareness-pool-a-rack-awareness-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: rack-awareness
+    name: rack-awareness-pool-a
     namespace: rack-awareness
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -17738,14 +18489,14 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-rack-awareness-rack-awareness
+    name: rack-awareness-pool-a-rack-awareness-rack-awareness
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: rack-awareness-rack-awareness-rack-awareness
+    name: rack-awareness-pool-a-rack-awareness-rack-awareness
   subjects:
   - kind: ServiceAccount
-    name: rack-awareness
+    name: rack-awareness-pool-a
     namespace: rack-awareness
 - apiVersion: v1
   kind: Secret
@@ -17756,7 +18507,7 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: rack-awareness-sts-lifecycle
+    name: rack-awareness-pool-a-sts-lifecycle
     namespace: rack-awareness
   stringData:
     common.sh: |-
@@ -18023,7 +18774,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-external
+    name: sasl-scram256-pool-a-external
     namespace: sasl-scram256
   spec:
     externalTrafficPolicy: Local
@@ -18051,6 +18802,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -18091,7 +18843,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256
+    name: sasl-scram256-pool-a
     namespace: sasl-scram256
 - apiVersion: v1
   kind: Service
@@ -18338,7 +19090,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-rpk
+    name: sasl-scram256-pool-a-rpk
     namespace: sasl-scram256
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -18379,7 +19131,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-default-cert
+    name: sasl-scram256-pool-a-default-cert
     namespace: sasl-scram256
   spec:
     dnsNames:
@@ -18406,7 +19158,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: sasl-scram256-default-cert
+    secretName: sasl-scram256-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -18417,7 +19169,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-external-cert
+    name: sasl-scram256-pool-a-external-cert
     namespace: sasl-scram256
   spec:
     dnsNames:
@@ -18444,7 +19196,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: sasl-scram256-external-cert
+    secretName: sasl-scram256-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -18455,7 +19207,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-sidecar
+    name: sasl-scram256-pool-a-sidecar
     namespace: sasl-scram256
   rules:
   - apiGroups:
@@ -18495,7 +19247,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-sasl-scram256-metrics-reader
+    name: sasl-scram256-pool-a-sasl-scram256-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -18510,15 +19262,15 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-sidecar
+    name: sasl-scram256-pool-a-sidecar
     namespace: sasl-scram256
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: sasl-scram256-sidecar
+    name: sasl-scram256-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: sasl-scram256
+    name: sasl-scram256-pool-a
     namespace: sasl-scram256
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -18529,14 +19281,14 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-sasl-scram256-metrics-reader
+    name: sasl-scram256-pool-a-sasl-scram256-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: sasl-scram256-sasl-scram256-metrics-reader
+    name: sasl-scram256-pool-a-sasl-scram256-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: sasl-scram256
+    name: sasl-scram256-pool-a
     namespace: sasl-scram256
 - apiVersion: v1
   kind: Secret
@@ -18547,7 +19299,7 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram256-sts-lifecycle
+    name: sasl-scram256-pool-a-sts-lifecycle
     namespace: sasl-scram256
   stringData:
     common.sh: |-
@@ -18823,7 +19575,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-external
+    name: sasl-scram512-with-tls-pool-a-external
     namespace: sasl-scram512-with-tls
   spec:
     externalTrafficPolicy: Local
@@ -18851,6 +19603,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -18891,7 +19644,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls
+    name: sasl-scram512-with-tls-pool-a
     namespace: sasl-scram512-with-tls
 - apiVersion: v1
   kind: Service
@@ -19138,7 +19891,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-rpk
+    name: sasl-scram512-with-tls-pool-a-rpk
     namespace: sasl-scram512-with-tls
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -19179,7 +19932,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-default-cert
+    name: sasl-scram512-with-tls-pool-a-default-cert
     namespace: sasl-scram512-with-tls
   spec:
     dnsNames:
@@ -19206,7 +19959,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: sasl-scram512-with-tls-default-cert
+    secretName: sasl-scram512-with-tls-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -19217,7 +19970,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-external-cert
+    name: sasl-scram512-with-tls-pool-a-external-cert
     namespace: sasl-scram512-with-tls
   spec:
     dnsNames:
@@ -19244,7 +19997,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: sasl-scram512-with-tls-external-cert
+    secretName: sasl-scram512-with-tls-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -19255,7 +20008,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-sidecar
+    name: sasl-scram512-with-tls-pool-a-sidecar
     namespace: sasl-scram512-with-tls
   rules:
   - apiGroups:
@@ -19295,7 +20048,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-sasl-scram512-with-tls-metrics-reader
+    name: sasl-scram512-with-tls-pool-a-sasl-scram512-with-tls-metrics-re
   rules:
   - nonResourceURLs:
     - /metrics
@@ -19310,15 +20063,15 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-sidecar
+    name: sasl-scram512-with-tls-pool-a-sidecar
     namespace: sasl-scram512-with-tls
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: sasl-scram512-with-tls-sidecar
+    name: sasl-scram512-with-tls-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: sasl-scram512-with-tls
+    name: sasl-scram512-with-tls-pool-a
     namespace: sasl-scram512-with-tls
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -19329,14 +20082,14 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-sasl-scram512-with-tls-metrics-reader
+    name: sasl-scram512-with-tls-pool-a-sasl-scram512-with-tls-metrics-re
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: sasl-scram512-with-tls-sasl-scram512-with-tls-metrics-reader
+    name: sasl-scram512-with-tls-pool-a-sasl-scram512-with-tls-metrics-re
   subjects:
   - kind: ServiceAccount
-    name: sasl-scram512-with-tls
+    name: sasl-scram512-with-tls-pool-a
     namespace: sasl-scram512-with-tls
 - apiVersion: v1
   kind: Secret
@@ -19347,7 +20100,7 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: sasl-scram512-with-tls-sts-lifecycle
+    name: sasl-scram512-with-tls-pool-a-sts-lifecycle
     namespace: sasl-scram512-with-tls
   stringData:
     common.sh: |-
@@ -19623,7 +20376,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-external
+    name: single-replica-pool-a-external
     namespace: single-replica
   spec:
     externalTrafficPolicy: Local
@@ -19651,6 +20404,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -19691,7 +20445,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica
+    name: single-replica-pool-a
     namespace: single-replica
 - apiVersion: v1
   kind: Service
@@ -19914,7 +20668,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-rpk
+    name: single-replica-pool-a-rpk
     namespace: single-replica
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -19955,7 +20709,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-default-cert
+    name: single-replica-pool-a-default-cert
     namespace: single-replica
   spec:
     dnsNames:
@@ -19982,7 +20736,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: single-replica-default-cert
+    secretName: single-replica-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -19993,7 +20747,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-external-cert
+    name: single-replica-pool-a-external-cert
     namespace: single-replica
   spec:
     dnsNames:
@@ -20020,7 +20774,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: single-replica-external-cert
+    secretName: single-replica-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -20031,7 +20785,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-sidecar
+    name: single-replica-pool-a-sidecar
     namespace: single-replica
   rules:
   - apiGroups:
@@ -20071,7 +20825,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-single-replica-metrics-reader
+    name: single-replica-pool-a-single-replica-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -20086,15 +20840,15 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-sidecar
+    name: single-replica-pool-a-sidecar
     namespace: single-replica
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: single-replica-sidecar
+    name: single-replica-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: single-replica
+    name: single-replica-pool-a
     namespace: single-replica
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -20105,14 +20859,14 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-single-replica-metrics-reader
+    name: single-replica-pool-a-single-replica-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: single-replica-single-replica-metrics-reader
+    name: single-replica-pool-a-single-replica-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: single-replica
+    name: single-replica-pool-a
     namespace: single-replica
 - apiVersion: v1
   kind: Secret
@@ -20123,7 +20877,7 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: single-replica-sts-lifecycle
+    name: single-replica-pool-a-sts-lifecycle
     namespace: single-replica
   stringData:
     common.sh: |-
@@ -20295,7 +21049,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-external
+    name: storage-hostpath-pool-a-external
     namespace: storage-hostpath
   spec:
     externalTrafficPolicy: Local
@@ -20323,6 +21077,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -20363,7 +21118,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath
+    name: storage-hostpath-pool-a
     namespace: storage-hostpath
 - apiVersion: v1
   kind: Service
@@ -20606,7 +21361,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-rpk
+    name: storage-hostpath-pool-a-rpk
     namespace: storage-hostpath
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -20647,7 +21402,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-default-cert
+    name: storage-hostpath-pool-a-default-cert
     namespace: storage-hostpath
   spec:
     dnsNames:
@@ -20674,7 +21429,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: storage-hostpath-default-cert
+    secretName: storage-hostpath-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -20685,7 +21440,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-external-cert
+    name: storage-hostpath-pool-a-external-cert
     namespace: storage-hostpath
   spec:
     dnsNames:
@@ -20712,7 +21467,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: storage-hostpath-external-cert
+    secretName: storage-hostpath-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -20723,7 +21478,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-sidecar
+    name: storage-hostpath-pool-a-sidecar
     namespace: storage-hostpath
   rules:
   - apiGroups:
@@ -20763,7 +21518,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-storage-hostpath-metrics-reader
+    name: storage-hostpath-pool-a-storage-hostpath-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -20778,15 +21533,15 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-sidecar
+    name: storage-hostpath-pool-a-sidecar
     namespace: storage-hostpath
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: storage-hostpath-sidecar
+    name: storage-hostpath-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: storage-hostpath
+    name: storage-hostpath-pool-a
     namespace: storage-hostpath
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -20797,14 +21552,14 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-storage-hostpath-metrics-reader
+    name: storage-hostpath-pool-a-storage-hostpath-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: storage-hostpath-storage-hostpath-metrics-reader
+    name: storage-hostpath-pool-a-storage-hostpath-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: storage-hostpath
+    name: storage-hostpath-pool-a
     namespace: storage-hostpath
 - apiVersion: v1
   kind: Secret
@@ -20815,7 +21570,7 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-hostpath-sts-lifecycle
+    name: storage-hostpath-pool-a-sts-lifecycle
     namespace: storage-hostpath
   stringData:
     common.sh: |-
@@ -21076,7 +21831,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-external
+    name: storage-pv-custom-pool-a-external
     namespace: storage-pv-custom
   spec:
     externalTrafficPolicy: Local
@@ -21104,6 +21859,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -21144,7 +21900,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom
+    name: storage-pv-custom-pool-a
     namespace: storage-pv-custom
 - apiVersion: v1
   kind: Service
@@ -21387,7 +22143,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-rpk
+    name: storage-pv-custom-pool-a-rpk
     namespace: storage-pv-custom
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -21428,7 +22184,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-default-cert
+    name: storage-pv-custom-pool-a-default-cert
     namespace: storage-pv-custom
   spec:
     dnsNames:
@@ -21455,7 +22211,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: storage-pv-custom-default-cert
+    secretName: storage-pv-custom-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -21466,7 +22222,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-external-cert
+    name: storage-pv-custom-pool-a-external-cert
     namespace: storage-pv-custom
   spec:
     dnsNames:
@@ -21493,7 +22249,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: storage-pv-custom-external-cert
+    secretName: storage-pv-custom-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -21504,7 +22260,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-sidecar
+    name: storage-pv-custom-pool-a-sidecar
     namespace: storage-pv-custom
   rules:
   - apiGroups:
@@ -21544,7 +22300,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-storage-pv-custom-metrics-reader
+    name: storage-pv-custom-pool-a-storage-pv-custom-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -21559,15 +22315,15 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-sidecar
+    name: storage-pv-custom-pool-a-sidecar
     namespace: storage-pv-custom
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: storage-pv-custom-sidecar
+    name: storage-pv-custom-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: storage-pv-custom
+    name: storage-pv-custom-pool-a
     namespace: storage-pv-custom
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -21578,14 +22334,14 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-storage-pv-custom-metrics-reader
+    name: storage-pv-custom-pool-a-storage-pv-custom-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: storage-pv-custom-storage-pv-custom-metrics-reader
+    name: storage-pv-custom-pool-a-storage-pv-custom-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: storage-pv-custom
+    name: storage-pv-custom-pool-a
     namespace: storage-pv-custom
 - apiVersion: v1
   kind: Secret
@@ -21596,7 +22352,7 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: storage-pv-custom-sts-lifecycle
+    name: storage-pv-custom-pool-a-sts-lifecycle
     namespace: storage-pv-custom
   stringData:
     common.sh: |-
@@ -21857,7 +22613,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-external
+    name: tiered-storage-emptydir-pool-a-external
     namespace: tiered-storage-emptydir
   spec:
     externalTrafficPolicy: Local
@@ -21885,6 +22641,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -21925,7 +22682,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir
+    name: tiered-storage-emptydir-pool-a
     namespace: tiered-storage-emptydir
 - apiVersion: v1
   kind: Service
@@ -22168,7 +22925,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-rpk
+    name: tiered-storage-emptydir-pool-a-rpk
     namespace: tiered-storage-emptydir
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -22209,7 +22966,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-default-cert
+    name: tiered-storage-emptydir-pool-a-default-cert
     namespace: tiered-storage-emptydir
   spec:
     dnsNames:
@@ -22236,7 +22993,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tiered-storage-emptydir-default-cert
+    secretName: tiered-storage-emptydir-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -22247,7 +23004,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-external-cert
+    name: tiered-storage-emptydir-pool-a-external-cert
     namespace: tiered-storage-emptydir
   spec:
     dnsNames:
@@ -22274,7 +23031,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tiered-storage-emptydir-external-cert
+    secretName: tiered-storage-emptydir-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -22285,7 +23042,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-sidecar
+    name: tiered-storage-emptydir-pool-a-sidecar
     namespace: tiered-storage-emptydir
   rules:
   - apiGroups:
@@ -22325,7 +23082,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-tiered-storage-emptydir-metrics-reader
+    name: tiered-storage-emptydir-pool-a-tiered-storage-emptydir-metrics
   rules:
   - nonResourceURLs:
     - /metrics
@@ -22340,15 +23097,15 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-sidecar
+    name: tiered-storage-emptydir-pool-a-sidecar
     namespace: tiered-storage-emptydir
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: tiered-storage-emptydir-sidecar
+    name: tiered-storage-emptydir-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: tiered-storage-emptydir
+    name: tiered-storage-emptydir-pool-a
     namespace: tiered-storage-emptydir
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -22359,14 +23116,14 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-tiered-storage-emptydir-metrics-reader
+    name: tiered-storage-emptydir-pool-a-tiered-storage-emptydir-metrics
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: tiered-storage-emptydir-tiered-storage-emptydir-metrics-reader
+    name: tiered-storage-emptydir-pool-a-tiered-storage-emptydir-metrics
   subjects:
   - kind: ServiceAccount
-    name: tiered-storage-emptydir
+    name: tiered-storage-emptydir-pool-a
     namespace: tiered-storage-emptydir
 - apiVersion: v1
   kind: Secret
@@ -22377,7 +23134,7 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-emptydir-sts-lifecycle
+    name: tiered-storage-emptydir-pool-a-sts-lifecycle
     namespace: tiered-storage-emptydir
   stringData:
     common.sh: |-
@@ -22638,7 +23395,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-external
+    name: tiered-storage-hostpath-pool-a-external
     namespace: tiered-storage-hostpath
   spec:
     externalTrafficPolicy: Local
@@ -22666,6 +23423,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -22706,7 +23464,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath
+    name: tiered-storage-hostpath-pool-a
     namespace: tiered-storage-hostpath
 - apiVersion: v1
   kind: Service
@@ -22949,7 +23707,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-rpk
+    name: tiered-storage-hostpath-pool-a-rpk
     namespace: tiered-storage-hostpath
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -22990,7 +23748,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-default-cert
+    name: tiered-storage-hostpath-pool-a-default-cert
     namespace: tiered-storage-hostpath
   spec:
     dnsNames:
@@ -23017,7 +23775,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tiered-storage-hostpath-default-cert
+    secretName: tiered-storage-hostpath-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -23028,7 +23786,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-external-cert
+    name: tiered-storage-hostpath-pool-a-external-cert
     namespace: tiered-storage-hostpath
   spec:
     dnsNames:
@@ -23055,7 +23813,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tiered-storage-hostpath-external-cert
+    secretName: tiered-storage-hostpath-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -23066,7 +23824,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-sidecar
+    name: tiered-storage-hostpath-pool-a-sidecar
     namespace: tiered-storage-hostpath
   rules:
   - apiGroups:
@@ -23106,7 +23864,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-tiered-storage-hostpath-metrics-reader
+    name: tiered-storage-hostpath-pool-a-tiered-storage-hostpath-metrics
   rules:
   - nonResourceURLs:
     - /metrics
@@ -23121,15 +23879,15 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-sidecar
+    name: tiered-storage-hostpath-pool-a-sidecar
     namespace: tiered-storage-hostpath
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: tiered-storage-hostpath-sidecar
+    name: tiered-storage-hostpath-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: tiered-storage-hostpath
+    name: tiered-storage-hostpath-pool-a
     namespace: tiered-storage-hostpath
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -23140,14 +23898,14 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-tiered-storage-hostpath-metrics-reader
+    name: tiered-storage-hostpath-pool-a-tiered-storage-hostpath-metrics
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: tiered-storage-hostpath-tiered-storage-hostpath-metrics-reader
+    name: tiered-storage-hostpath-pool-a-tiered-storage-hostpath-metrics
   subjects:
   - kind: ServiceAccount
-    name: tiered-storage-hostpath
+    name: tiered-storage-hostpath-pool-a
     namespace: tiered-storage-hostpath
 - apiVersion: v1
   kind: Secret
@@ -23158,7 +23916,7 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-hostpath-sts-lifecycle
+    name: tiered-storage-hostpath-pool-a-sts-lifecycle
     namespace: tiered-storage-hostpath
   stringData:
     common.sh: |-
@@ -23419,7 +24177,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-external
+    name: tiered-storage-pv-pool-a-external
     namespace: tiered-storage-pv
   spec:
     externalTrafficPolicy: Local
@@ -23447,6 +24205,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -23487,7 +24246,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv
+    name: tiered-storage-pv-pool-a
     namespace: tiered-storage-pv
 - apiVersion: v1
   kind: Service
@@ -23730,7 +24489,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-rpk
+    name: tiered-storage-pv-pool-a-rpk
     namespace: tiered-storage-pv
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -23771,7 +24530,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-default-cert
+    name: tiered-storage-pv-pool-a-default-cert
     namespace: tiered-storage-pv
   spec:
     dnsNames:
@@ -23798,7 +24557,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tiered-storage-pv-default-cert
+    secretName: tiered-storage-pv-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -23809,7 +24568,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-external-cert
+    name: tiered-storage-pv-pool-a-external-cert
     namespace: tiered-storage-pv
   spec:
     dnsNames:
@@ -23836,7 +24595,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tiered-storage-pv-external-cert
+    secretName: tiered-storage-pv-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -23847,7 +24606,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-sidecar
+    name: tiered-storage-pv-pool-a-sidecar
     namespace: tiered-storage-pv
   rules:
   - apiGroups:
@@ -23887,7 +24646,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-tiered-storage-pv-metrics-reader
+    name: tiered-storage-pv-pool-a-tiered-storage-pv-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -23902,15 +24661,15 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-sidecar
+    name: tiered-storage-pv-pool-a-sidecar
     namespace: tiered-storage-pv
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: tiered-storage-pv-sidecar
+    name: tiered-storage-pv-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: tiered-storage-pv
+    name: tiered-storage-pv-pool-a
     namespace: tiered-storage-pv
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -23921,14 +24680,14 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-tiered-storage-pv-metrics-reader
+    name: tiered-storage-pv-pool-a-tiered-storage-pv-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: tiered-storage-pv-tiered-storage-pv-metrics-reader
+    name: tiered-storage-pv-pool-a-tiered-storage-pv-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: tiered-storage-pv
+    name: tiered-storage-pv-pool-a
     namespace: tiered-storage-pv
 - apiVersion: v1
   kind: Secret
@@ -23939,7 +24698,7 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tiered-storage-pv-sts-lifecycle
+    name: tiered-storage-pv-pool-a-sts-lifecycle
     namespace: tiered-storage-pv
   stringData:
     common.sh: |-
@@ -24200,7 +24959,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-external
+    name: tls-issuer-ref-pool-a-external
     namespace: tls-issuer-ref
   spec:
     externalTrafficPolicy: Local
@@ -24228,6 +24987,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -24268,7 +25028,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref
+    name: tls-issuer-ref-pool-a
     namespace: tls-issuer-ref
 - apiVersion: v1
   kind: Service
@@ -24511,7 +25271,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-rpk
+    name: tls-issuer-ref-pool-a-rpk
     namespace: tls-issuer-ref
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -24552,7 +25312,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-default-cert
+    name: tls-issuer-ref-pool-a-default-cert
     namespace: tls-issuer-ref
   spec:
     dnsNames:
@@ -24579,7 +25339,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-issuer-ref-default-cert
+    secretName: tls-issuer-ref-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -24590,7 +25350,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-external-cert
+    name: tls-issuer-ref-pool-a-external-cert
     namespace: tls-issuer-ref
   spec:
     dnsNames:
@@ -24617,7 +25377,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-issuer-ref-external-cert
+    secretName: tls-issuer-ref-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -24628,7 +25388,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-sidecar
+    name: tls-issuer-ref-pool-a-sidecar
     namespace: tls-issuer-ref
   rules:
   - apiGroups:
@@ -24668,7 +25428,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-tls-issuer-ref-metrics-reader
+    name: tls-issuer-ref-pool-a-tls-issuer-ref-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -24683,15 +25443,15 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-sidecar
+    name: tls-issuer-ref-pool-a-sidecar
     namespace: tls-issuer-ref
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: tls-issuer-ref-sidecar
+    name: tls-issuer-ref-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: tls-issuer-ref
+    name: tls-issuer-ref-pool-a
     namespace: tls-issuer-ref
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -24702,14 +25462,14 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-tls-issuer-ref-metrics-reader
+    name: tls-issuer-ref-pool-a-tls-issuer-ref-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: tls-issuer-ref-tls-issuer-ref-metrics-reader
+    name: tls-issuer-ref-pool-a-tls-issuer-ref-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: tls-issuer-ref
+    name: tls-issuer-ref-pool-a
     namespace: tls-issuer-ref
 - apiVersion: v1
   kind: Secret
@@ -24720,7 +25480,7 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-sts-lifecycle
+    name: tls-issuer-ref-pool-a-sts-lifecycle
     namespace: tls-issuer-ref
   stringData:
     common.sh: |-
@@ -24981,7 +25741,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-external
+    name: tls-issuer-ref-mtls-pool-a-external
     namespace: tls-issuer-ref-mtls
   spec:
     externalTrafficPolicy: Local
@@ -25009,6 +25769,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -25049,7 +25810,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls
+    name: tls-issuer-ref-mtls-pool-a
     namespace: tls-issuer-ref-mtls
 - apiVersion: v1
   kind: Service
@@ -25292,7 +26053,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-rpk
+    name: tls-issuer-ref-mtls-pool-a-rpk
     namespace: tls-issuer-ref-mtls
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -25333,7 +26094,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-default-cert
+    name: tls-issuer-ref-mtls-pool-a-default-cert
     namespace: tls-issuer-ref-mtls
   spec:
     dnsNames:
@@ -25360,7 +26121,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-issuer-ref-mtls-default-cert
+    secretName: tls-issuer-ref-mtls-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -25371,7 +26132,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-external-cert
+    name: tls-issuer-ref-mtls-pool-a-external-cert
     namespace: tls-issuer-ref-mtls
   spec:
     dnsNames:
@@ -25398,7 +26159,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-issuer-ref-mtls-external-cert
+    secretName: tls-issuer-ref-mtls-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -25409,7 +26170,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-sidecar
+    name: tls-issuer-ref-mtls-pool-a-sidecar
     namespace: tls-issuer-ref-mtls
   rules:
   - apiGroups:
@@ -25449,7 +26210,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-tls-issuer-ref-mtls-metrics-reader
+    name: tls-issuer-ref-mtls-pool-a-tls-issuer-ref-mtls-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -25464,15 +26225,15 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-sidecar
+    name: tls-issuer-ref-mtls-pool-a-sidecar
     namespace: tls-issuer-ref-mtls
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: tls-issuer-ref-mtls-sidecar
+    name: tls-issuer-ref-mtls-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: tls-issuer-ref-mtls
+    name: tls-issuer-ref-mtls-pool-a
     namespace: tls-issuer-ref-mtls
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -25483,14 +26244,14 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-tls-issuer-ref-mtls-metrics-reader
+    name: tls-issuer-ref-mtls-pool-a-tls-issuer-ref-mtls-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: tls-issuer-ref-mtls-tls-issuer-ref-mtls-metrics-reader
+    name: tls-issuer-ref-mtls-pool-a-tls-issuer-ref-mtls-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: tls-issuer-ref-mtls
+    name: tls-issuer-ref-mtls-pool-a
     namespace: tls-issuer-ref-mtls
 - apiVersion: v1
   kind: Secret
@@ -25501,7 +26262,7 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-sts-lifecycle
+    name: tls-issuer-ref-mtls-pool-a-sts-lifecycle
     namespace: tls-issuer-ref-mtls
   stringData:
     common.sh: |-
@@ -25762,7 +26523,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-external
+    name: tls-mtls-pool-a-external
     namespace: tls-mtls
   spec:
     externalTrafficPolicy: Local
@@ -25790,6 +26551,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -25830,7 +26592,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls
+    name: tls-mtls-pool-a
     namespace: tls-mtls
 - apiVersion: v1
   kind: Service
@@ -26073,7 +26835,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-rpk
+    name: tls-mtls-pool-a-rpk
     namespace: tls-mtls
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -26114,7 +26876,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-default-cert
+    name: tls-mtls-pool-a-default-cert
     namespace: tls-mtls
   spec:
     dnsNames:
@@ -26141,7 +26903,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-mtls-default-cert
+    secretName: tls-mtls-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -26152,7 +26914,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-external-cert
+    name: tls-mtls-pool-a-external-cert
     namespace: tls-mtls
   spec:
     dnsNames:
@@ -26179,7 +26941,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-mtls-external-cert
+    secretName: tls-mtls-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -26190,7 +26952,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-sidecar
+    name: tls-mtls-pool-a-sidecar
     namespace: tls-mtls
   rules:
   - apiGroups:
@@ -26230,7 +26992,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-tls-mtls-metrics-reader
+    name: tls-mtls-pool-a-tls-mtls-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -26245,15 +27007,15 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-sidecar
+    name: tls-mtls-pool-a-sidecar
     namespace: tls-mtls
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: tls-mtls-sidecar
+    name: tls-mtls-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: tls-mtls
+    name: tls-mtls-pool-a
     namespace: tls-mtls
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -26264,14 +27026,14 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-tls-mtls-metrics-reader
+    name: tls-mtls-pool-a-tls-mtls-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: tls-mtls-tls-mtls-metrics-reader
+    name: tls-mtls-pool-a-tls-mtls-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: tls-mtls
+    name: tls-mtls-pool-a
     namespace: tls-mtls
 - apiVersion: v1
   kind: Secret
@@ -26282,7 +27044,7 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-mtls-sts-lifecycle
+    name: tls-mtls-pool-a-sts-lifecycle
     namespace: tls-mtls
   stringData:
     common.sh: |-
@@ -26543,7 +27305,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-external
+    name: tls-self-signed-pool-a-external
     namespace: tls-self-signed
   spec:
     externalTrafficPolicy: Local
@@ -26571,6 +27333,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -26611,7 +27374,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed
+    name: tls-self-signed-pool-a
     namespace: tls-self-signed
 - apiVersion: v1
   kind: Service
@@ -26854,7 +27617,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-rpk
+    name: tls-self-signed-pool-a-rpk
     namespace: tls-self-signed
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -26895,7 +27658,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-default-cert
+    name: tls-self-signed-pool-a-default-cert
     namespace: tls-self-signed
   spec:
     dnsNames:
@@ -26922,7 +27685,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-self-signed-default-cert
+    secretName: tls-self-signed-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -26933,7 +27696,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-external-cert
+    name: tls-self-signed-pool-a-external-cert
     namespace: tls-self-signed
   spec:
     dnsNames:
@@ -26960,7 +27723,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: tls-self-signed-external-cert
+    secretName: tls-self-signed-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -26971,7 +27734,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-sidecar
+    name: tls-self-signed-pool-a-sidecar
     namespace: tls-self-signed
   rules:
   - apiGroups:
@@ -27011,7 +27774,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-tls-self-signed-metrics-reader
+    name: tls-self-signed-pool-a-tls-self-signed-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -27026,15 +27789,15 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-sidecar
+    name: tls-self-signed-pool-a-sidecar
     namespace: tls-self-signed
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: tls-self-signed-sidecar
+    name: tls-self-signed-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: tls-self-signed
+    name: tls-self-signed-pool-a
     namespace: tls-self-signed
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -27045,14 +27808,14 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-tls-self-signed-metrics-reader
+    name: tls-self-signed-pool-a-tls-self-signed-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: tls-self-signed-tls-self-signed-metrics-reader
+    name: tls-self-signed-pool-a-tls-self-signed-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: tls-self-signed
+    name: tls-self-signed-pool-a
     namespace: tls-self-signed
 - apiVersion: v1
   kind: Secret
@@ -27063,7 +27826,7 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-self-signed-sts-lifecycle
+    name: tls-self-signed-pool-a-sts-lifecycle
     namespace: tls-self-signed
   stringData:
     common.sh: |-

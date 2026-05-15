@@ -66,10 +66,6 @@ type StretchClusterSpec struct {
 	// may be overridden per-NodePool via NodePool.Spec.Resources.
 	Resources *StretchResources `json:"resources,omitempty"`
 
-	// Defines settings for the headless ClusterIP Service. Acts as a default
-	// for all NodePools; may be overridden per-NodePool via NodePool.Spec.Service.
-	Service *Service `json:"service,omitempty"`
-
 	// Defines storage settings for the Redpanda data directory and the Tiered
 	// Storage cache. Acts as a default for all NodePools; may be overridden
 	// per-NodePool via NodePool.Spec.Storage (typically to point at a

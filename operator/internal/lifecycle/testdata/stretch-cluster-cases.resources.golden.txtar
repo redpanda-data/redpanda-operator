@@ -736,7 +736,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-external
+    name: compat-test-basic-a-external
     namespace: compat-test
   spec:
     externalTrafficPolicy: Local
@@ -764,6 +764,53 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-a
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-external
+    namespace: compat-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-b
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -808,7 +855,21 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test
+    name: compat-test-basic-a
+    namespace: compat-test
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b
     namespace: compat-test
 - apiVersion: v1
   kind: Service
@@ -1023,6 +1084,34 @@
     namespace: compat-test
 - apiVersion: v1
   data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-a-rpk
+    namespace: compat-test
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -1213,7 +1302,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-rpk
+    name: compat-test-basic-b-rpk
     namespace: compat-test
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -1260,7 +1349,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-default-cert
+    name: compat-test-basic-a-default-cert
     namespace: compat-test
   spec:
     dnsNames:
@@ -1287,7 +1376,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: compat-test-default-cert
+    secretName: compat-test-basic-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -1300,7 +1389,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-external-cert
+    name: compat-test-basic-a-external-cert
     namespace: compat-test
   spec:
     dnsNames:
@@ -1327,7 +1416,87 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: compat-test-external-cert
+    secretName: compat-test-basic-a-external-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-default-cert
+    namespace: compat-test
+  spec:
+    dnsNames:
+    - compat-test-cluster.compat-test.compat-test.svc.cluster.local
+    - compat-test-cluster.compat-test.compat-test.svc
+    - compat-test-cluster.compat-test.compat-test
+    - '*.compat-test-cluster.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test-cluster.compat-test.compat-test.svc'
+    - '*.compat-test-cluster.compat-test.compat-test'
+    - compat-test.compat-test.svc.cluster.local
+    - compat-test.compat-test.svc
+    - compat-test.compat-test
+    - '*.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test.compat-test.svc'
+    - '*.compat-test.compat-test'
+    - '*.compat-test.svc.cluster.local'
+    - '*.compat-test.svc'
+    - '*.compat-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: compat-test-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: compat-test-basic-b-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-external-cert
+    namespace: compat-test
+  spec:
+    dnsNames:
+    - compat-test-cluster.compat-test.compat-test.svc.cluster.local
+    - compat-test-cluster.compat-test.compat-test.svc
+    - compat-test-cluster.compat-test.compat-test
+    - '*.compat-test-cluster.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test-cluster.compat-test.compat-test.svc'
+    - '*.compat-test-cluster.compat-test.compat-test'
+    - compat-test.compat-test.svc.cluster.local
+    - compat-test.compat-test.svc
+    - compat-test.compat-test
+    - '*.compat-test.compat-test.svc.cluster.local'
+    - '*.compat-test.compat-test.svc'
+    - '*.compat-test.compat-test'
+    - '*.compat-test.svc.cluster.local'
+    - '*.compat-test.svc'
+    - '*.compat-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: compat-test-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: compat-test-basic-b-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -1340,7 +1509,49 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-sidecar
+    name: compat-test-basic-a-sidecar
+    namespace: compat-test
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-sidecar
     namespace: compat-test
   rules:
   - apiGroups:
@@ -1382,7 +1593,24 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-compat-test-metrics-reader
+    name: compat-test-basic-a-compat-test-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-compat-test-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -1399,15 +1627,36 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-sidecar
+    name: compat-test-basic-a-sidecar
     namespace: compat-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: compat-test-sidecar
+    name: compat-test-basic-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: compat-test
+    name: compat-test-basic-a
+    namespace: compat-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-sidecar
+    namespace: compat-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: compat-test-basic-b-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: compat-test-basic-b
     namespace: compat-test
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -1420,14 +1669,34 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-compat-test-metrics-reader
+    name: compat-test-basic-a-compat-test-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: compat-test-compat-test-metrics-reader
+    name: compat-test-basic-a-compat-test-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: compat-test
+    name: compat-test-basic-a
+    namespace: compat-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-compat-test-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: compat-test-basic-b-compat-test-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: compat-test-basic-b
     namespace: compat-test
 - apiVersion: v1
   kind: Secret
@@ -1440,7 +1709,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/owner: compat-test
-    name: compat-test-sts-lifecycle
+    name: compat-test-basic-a-sts-lifecycle
     namespace: compat-test
   stringData:
     common.sh: |-
@@ -1558,6 +1827,99 @@
 
       LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/owner: compat-test
+    name: compat-test-basic-b-sts-lifecycle
+    namespace: compat-test
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.compat-test.compat-test.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      touch /tmp/preStopHookFinished
+      echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."
+      true
   type: Opaque
 - apiVersion: v1
   kind: Secret
@@ -1702,7 +2064,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-external
+    name: flat-network-test-pool-a-external
     namespace: flat-network-test
   spec:
     externalTrafficPolicy: Local
@@ -1730,6 +2092,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: flat-network-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -1774,7 +2137,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test
+    name: flat-network-test-pool-a
     namespace: flat-network-test
 - apiVersion: v1
   kind: Service
@@ -2003,7 +2366,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-rpk
+    name: flat-network-test-pool-a-rpk
     namespace: flat-network-test
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -2050,7 +2413,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-default-cert
+    name: flat-network-test-pool-a-default-cert
     namespace: flat-network-test
   spec:
     dnsNames:
@@ -2077,7 +2440,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: flat-network-test-default-cert
+    secretName: flat-network-test-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -2090,7 +2453,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-external-cert
+    name: flat-network-test-pool-a-external-cert
     namespace: flat-network-test
   spec:
     dnsNames:
@@ -2117,7 +2480,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: flat-network-test-external-cert
+    secretName: flat-network-test-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -2130,7 +2493,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-sidecar
+    name: flat-network-test-pool-a-sidecar
     namespace: flat-network-test
   rules:
   - apiGroups:
@@ -2172,7 +2535,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-flat-network-test-metrics-reader
+    name: flat-network-test-pool-a-flat-network-test-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -2189,15 +2552,15 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-sidecar
+    name: flat-network-test-pool-a-sidecar
     namespace: flat-network-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: flat-network-test-sidecar
+    name: flat-network-test-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: flat-network-test
+    name: flat-network-test-pool-a
     namespace: flat-network-test
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -2210,14 +2573,14 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-flat-network-test-metrics-reader
+    name: flat-network-test-pool-a-flat-network-test-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: flat-network-test-flat-network-test-metrics-reader
+    name: flat-network-test-pool-a-flat-network-test-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: flat-network-test
+    name: flat-network-test-pool-a
     namespace: flat-network-test
 - apiVersion: v1
   kind: Secret
@@ -2230,7 +2593,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: flat-network-test
       cluster.redpanda.com/owner: flat-network-test
-    name: flat-network-test-sts-lifecycle
+    name: flat-network-test-pool-a-sts-lifecycle
     namespace: flat-network-test
   stringData:
     common.sh: |-
@@ -2471,7 +2834,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-external
+    name: mcs-network-test-pool-a-external
     namespace: mcs-network-test
   spec:
     externalTrafficPolicy: Local
@@ -2499,6 +2862,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-a
       app.kubernetes.io/instance: mcs-network-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -2543,7 +2907,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test
+    name: mcs-network-test-pool-a
     namespace: mcs-network-test
 - apiVersion: v1
   kind: Service
@@ -2772,7 +3136,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-rpk
+    name: mcs-network-test-pool-a-rpk
     namespace: mcs-network-test
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -2819,7 +3183,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-default-cert
+    name: mcs-network-test-pool-a-default-cert
     namespace: mcs-network-test
   spec:
     dnsNames:
@@ -2850,7 +3214,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: mcs-network-test-default-cert
+    secretName: mcs-network-test-pool-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -2863,7 +3227,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-external-cert
+    name: mcs-network-test-pool-a-external-cert
     namespace: mcs-network-test
   spec:
     dnsNames:
@@ -2894,7 +3258,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: mcs-network-test-external-cert
+    secretName: mcs-network-test-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -2907,7 +3271,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-sidecar
+    name: mcs-network-test-pool-a-sidecar
     namespace: mcs-network-test
   rules:
   - apiGroups:
@@ -2949,7 +3313,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-mcs-network-test-metrics-reader
+    name: mcs-network-test-pool-a-mcs-network-test-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -2966,15 +3330,15 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-sidecar
+    name: mcs-network-test-pool-a-sidecar
     namespace: mcs-network-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: mcs-network-test-sidecar
+    name: mcs-network-test-pool-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: mcs-network-test
+    name: mcs-network-test-pool-a
     namespace: mcs-network-test
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -2987,14 +3351,14 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-mcs-network-test-metrics-reader
+    name: mcs-network-test-pool-a-mcs-network-test-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: mcs-network-test-mcs-network-test-metrics-reader
+    name: mcs-network-test-pool-a-mcs-network-test-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: mcs-network-test
+    name: mcs-network-test-pool-a
     namespace: mcs-network-test
 - apiVersion: v1
   kind: Secret
@@ -3007,7 +3371,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: mcs-network-test
       cluster.redpanda.com/owner: mcs-network-test
-    name: mcs-network-test-sts-lifecycle
+    name: mcs-network-test-pool-a-sts-lifecycle
     namespace: mcs-network-test
   stringData:
     common.sh: |-
@@ -3200,7 +3564,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-external
+    name: nodepool-basic-test-basic-a-external
     namespace: nodepool-basic-test
   spec:
     externalTrafficPolicy: Local
@@ -3228,6 +3592,53 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-a
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-external
+    namespace: nodepool-basic-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-b
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -3272,7 +3683,21 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test
+    name: nodepool-basic-test-basic-a
+    namespace: nodepool-basic-test
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b
     namespace: nodepool-basic-test
 - apiVersion: v1
   kind: Service
@@ -3487,6 +3912,34 @@
     namespace: nodepool-basic-test
 - apiVersion: v1
   data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-a-rpk
+    namespace: nodepool-basic-test
+- apiVersion: v1
+  data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
     bootstrap.yaml.fixups: '[]'
     redpanda.yaml: |-
@@ -3677,7 +4130,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-rpk
+    name: nodepool-basic-test-basic-b-rpk
     namespace: nodepool-basic-test
 - apiVersion: cert-manager.io/v1
   kind: Issuer
@@ -3724,7 +4177,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-default-cert
+    name: nodepool-basic-test-basic-a-default-cert
     namespace: nodepool-basic-test
   spec:
     dnsNames:
@@ -3751,7 +4204,7 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: nodepool-basic-test-default-cert
+    secretName: nodepool-basic-test-basic-a-default-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -3764,7 +4217,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-external-cert
+    name: nodepool-basic-test-basic-a-external-cert
     namespace: nodepool-basic-test
   spec:
     dnsNames:
@@ -3791,7 +4244,87 @@
     privateKey:
       algorithm: ECDSA
       size: 256
-    secretName: nodepool-basic-test-external-cert
+    secretName: nodepool-basic-test-basic-a-external-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-default-cert
+    namespace: nodepool-basic-test
+  spec:
+    dnsNames:
+    - nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc.cluster.local
+    - nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc
+    - nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test
+    - '*.nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test'
+    - nodepool-basic-test.nodepool-basic-test.svc.cluster.local
+    - nodepool-basic-test.nodepool-basic-test.svc
+    - nodepool-basic-test.nodepool-basic-test
+    - '*.nodepool-basic-test.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test.nodepool-basic-test'
+    - '*.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: nodepool-basic-test-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: nodepool-basic-test-basic-b-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-external-cert
+    namespace: nodepool-basic-test
+  spec:
+    dnsNames:
+    - nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc.cluster.local
+    - nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc
+    - nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test
+    - '*.nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test-cluster.nodepool-basic-test.nodepool-basic-test'
+    - nodepool-basic-test.nodepool-basic-test.svc.cluster.local
+    - nodepool-basic-test.nodepool-basic-test.svc
+    - nodepool-basic-test.nodepool-basic-test
+    - '*.nodepool-basic-test.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test.nodepool-basic-test'
+    - '*.nodepool-basic-test.svc.cluster.local'
+    - '*.nodepool-basic-test.svc'
+    - '*.nodepool-basic-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: nodepool-basic-test-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: nodepool-basic-test-basic-b-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -3804,7 +4337,49 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-sidecar
+    name: nodepool-basic-test-basic-a-sidecar
+    namespace: nodepool-basic-test
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-sidecar
     namespace: nodepool-basic-test
   rules:
   - apiGroups:
@@ -3846,7 +4421,24 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-nodepool-basic-test-metrics-reader
+    name: nodepool-basic-test-basic-a-nodepool-basic-test-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-nodepool-basic-test-metrics-reader
   rules:
   - nonResourceURLs:
     - /metrics
@@ -3863,15 +4455,36 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-sidecar
+    name: nodepool-basic-test-basic-a-sidecar
     namespace: nodepool-basic-test
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: Role
-    name: nodepool-basic-test-sidecar
+    name: nodepool-basic-test-basic-a-sidecar
   subjects:
   - kind: ServiceAccount
-    name: nodepool-basic-test
+    name: nodepool-basic-test-basic-a
+    namespace: nodepool-basic-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-sidecar
+    namespace: nodepool-basic-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: nodepool-basic-test-basic-b-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: nodepool-basic-test-basic-b
     namespace: nodepool-basic-test
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -3884,14 +4497,34 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-nodepool-basic-test-metrics-reader
+    name: nodepool-basic-test-basic-a-nodepool-basic-test-metrics-reader
   roleRef:
     apiGroup: rbac.authorization.k8s.io
     kind: ClusterRole
-    name: nodepool-basic-test-nodepool-basic-test-metrics-reader
+    name: nodepool-basic-test-basic-a-nodepool-basic-test-metrics-reader
   subjects:
   - kind: ServiceAccount
-    name: nodepool-basic-test
+    name: nodepool-basic-test-basic-a
+    namespace: nodepool-basic-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-nodepool-basic-test-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: nodepool-basic-test-basic-b-nodepool-basic-test-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: nodepool-basic-test-basic-b
     namespace: nodepool-basic-test
 - apiVersion: v1
   kind: Secret
@@ -3904,7 +4537,7 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
-    name: nodepool-basic-test-sts-lifecycle
+    name: nodepool-basic-test-basic-a-sts-lifecycle
     namespace: nodepool-basic-test
   stringData:
     common.sh: |-
@@ -4034,6 +4667,99 @@
       app.kubernetes.io/name: redpanda
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/owner: nodepool-basic-test
+    name: nodepool-basic-test-basic-b-sts-lifecycle
+    namespace: nodepool-basic-test
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.nodepool-basic-test.nodepool-basic-test.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      touch /tmp/preStopHookFinished
+      echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/owner: nodepool-basic-test
     name: nodepool-basic-test-basic-b-configurator
     namespace: nodepool-basic-test
   stringData:
@@ -4149,6 +4875,1270 @@
       app.kubernetes.io/cluster-name: ""
       app.kubernetes.io/component: redpanda-basic-b-statefulset
       app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/name: redpanda
+      apps.kubernetes.io/pod-index: "0"
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+-- per-pool-variation-test --
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-lax-external
+    namespace: per-pool-variation-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-lax
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-external
+    namespace: per-pool-variation-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-strict
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: policy/v1
+  kind: PodDisruptionBudget
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test
+    namespace: per-pool-variation-test
+  spec:
+    maxUnavailable: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/cluster-name: ""
+        app.kubernetes.io/instance: per-pool-variation-test
+        app.kubernetes.io/name: redpanda
+        redpanda.com/poddisruptionbudget: per-pool-variation-test
+  status:
+    currentHealthy: 0
+    desiredHealthy: 0
+    disruptionsAllowed: 0
+    expectedPods: 0
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      iam.gke.io/gcp-service-account: strict@example.iam.gserviceaccount.com
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict
+    namespace: per-pool-variation-test
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+      monitoring.redpanda.com/enabled: "false"
+    name: per-pool-variation-test
+    namespace: per-pool-variation-test
+  spec:
+    clusterIP: None
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/name: redpanda
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict
+    namespace: per-pool-variation-test
+  spec:
+    endpoints:
+    - interval: 15s
+      path: /public_metrics
+      port: admin
+      scheme: HTTPS
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+    namespaceSelector: {}
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: redpanda-pool-strict
+        app.kubernetes.io/instance: per-pool-variation-test
+        app.kubernetes.io/name: redpanda
+        monitoring.redpanda.com/enabled: "true"
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        brokers:
+        - address: per-pool-variation-test-pool-lax-0.per-pool-variation-test
+          port: 9093
+        - address: per-pool-variation-test-pool-strict-0.per-pool-variation-test
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        seed_servers:
+        - host:
+            address: per-pool-variation-test-pool-lax-0.
+            port: 33145
+        - host:
+            address: per-pool-variation-test-pool-strict-0.
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=1638M
+        - --reserve-memory=204M
+        - --smp=1
+        admin_api:
+          addresses:
+          - per-pool-variation-test-pool-lax-0.per-pool-variation-test:9644
+          - per-pool-variation-test-pool-strict-0.per-pool-variation-test:9644
+          tls: null
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - per-pool-variation-test-pool-lax-0.per-pool-variation-test:9093
+          - per-pool-variation-test-pool-strict-0.per-pool-variation-test:9093
+          tls: null
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - per-pool-variation-test-pool-lax-0.per-pool-variation-test:8081
+          - per-pool-variation-test-pool-strict-0.per-pool-variation-test:8081
+          tls: null
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        brokers:
+        - address: per-pool-variation-test-pool-lax-0.per-pool-variation-test
+          port: 9093
+        - address: per-pool-variation-test-pool-strict-0.per-pool-variation-test
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-lax
+    namespace: per-pool-variation-test
+- apiVersion: v1
+  data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls: null
+      kafka_api:
+        brokers: []
+        tls: null
+      name: default
+      schema_registry:
+        addresses: []
+        tls: null
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-lax-rpk
+    namespace: per-pool-variation-test
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"5368709120"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          cert_file: /etc/tls/certs/strict-default-client/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/strict-default-client/tls.key
+          require_client_auth: true
+          truststore_file: /etc/tls/certs/strict-default/ca.crt
+        brokers:
+        - address: per-pool-variation-test-pool-lax-0.per-pool-variation-test
+          port: 9093
+        - address: per-pool-variation-test-pool-strict-0.per-pool-variation-test
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/strict-default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/strict-default/tls.key
+          name: internal
+          require_client_auth: true
+          truststore_file: /etc/tls/certs/strict-default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/strict-default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/strict-default/tls.key
+          name: internal
+          require_client_auth: true
+          truststore_file: /etc/tls/certs/strict-default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: per-pool-variation-test-pool-lax-0.
+            port: 33145
+        - host:
+            address: per-pool-variation-test-pool-strict-0.
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=13107M
+        - --reserve-memory=232M
+        - --smp=4
+        admin_api:
+          addresses:
+          - per-pool-variation-test-pool-lax-0.per-pool-variation-test:9644
+          - per-pool-variation-test-pool-strict-0.per-pool-variation-test:9644
+          tls:
+            ca_file: /etc/tls/certs/strict-default/ca.crt
+            cert_file: /etc/tls/certs/strict-default-client/tls.crt
+            key_file: /etc/tls/certs/strict-default-client/tls.key
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - per-pool-variation-test-pool-lax-0.per-pool-variation-test:9093
+          - per-pool-variation-test-pool-strict-0.per-pool-variation-test:9093
+          tls:
+            ca_file: /etc/tls/certs/strict-default/ca.crt
+            cert_file: /etc/tls/certs/strict-default-client/tls.crt
+            key_file: /etc/tls/certs/strict-default-client/tls.key
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - per-pool-variation-test-pool-lax-0.per-pool-variation-test:8081
+          - per-pool-variation-test-pool-strict-0.per-pool-variation-test:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          cert_file: /etc/tls/certs/strict-default-client/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/strict-default-client/tls.key
+          require_client_auth: true
+          truststore_file: /etc/tls/certs/strict-default/ca.crt
+        brokers:
+        - address: per-pool-variation-test-pool-lax-0.per-pool-variation-test
+          port: 9093
+        - address: per-pool-variation-test-pool-strict-0.per-pool-variation-test
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict
+    namespace: per-pool-variation-test
+- apiVersion: v1
+  data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-rpk
+    namespace: per-pool-variation-test
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-default-root-issuer
+    namespace: per-pool-variation-test
+  spec:
+    ca:
+      secretName: per-pool-variation-test-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-external-root-issuer
+    namespace: per-pool-variation-test
+  spec:
+    ca:
+      secretName: per-pool-variation-test-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-strict-default-root-issuer
+    namespace: per-pool-variation-test
+  spec:
+    ca:
+      secretName: per-pool-variation-test-strict-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-strict-default-cert
+    namespace: per-pool-variation-test
+  spec:
+    dnsNames:
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc.cluster.local
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test'
+    - per-pool-variation-test.per-pool-variation-test.svc.cluster.local
+    - per-pool-variation-test.per-pool-variation-test.svc
+    - per-pool-variation-test.per-pool-variation-test
+    - '*.per-pool-variation-test.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test.per-pool-variation-test'
+    - '*.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pool-variation-test-strict-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pool-variation-test-pool-strict-strict-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-external-cert
+    namespace: per-pool-variation-test
+  spec:
+    dnsNames:
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc.cluster.local
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test'
+    - per-pool-variation-test.per-pool-variation-test.svc.cluster.local
+    - per-pool-variation-test.per-pool-variation-test.svc
+    - per-pool-variation-test.per-pool-variation-test
+    - '*.per-pool-variation-test.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test.per-pool-variation-test'
+    - '*.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pool-variation-test-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pool-variation-test-pool-strict-external-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-default-cert
+    namespace: per-pool-variation-test
+  spec:
+    dnsNames:
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc.cluster.local
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc
+    - per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test-cluster.per-pool-variation-test.per-pool-variation-test'
+    - per-pool-variation-test.per-pool-variation-test.svc.cluster.local
+    - per-pool-variation-test.per-pool-variation-test.svc
+    - per-pool-variation-test.per-pool-variation-test
+    - '*.per-pool-variation-test.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test.per-pool-variation-test'
+    - '*.per-pool-variation-test.svc.cluster.local'
+    - '*.per-pool-variation-test.svc'
+    - '*.per-pool-variation-test'
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pool-variation-test-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pool-variation-test-pool-strict-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-strict-default-client
+    namespace: per-pool-variation-test
+  spec:
+    commonName: per-pool-variation-test-pool-strict--strict-default-client
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: per-pool-variation-test-strict-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: per-pool-variation-test-pool-strict-strict-default-client-cert
+  status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-sidecar
+    namespace: per-pool-variation-test
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-rpk-debug-bundle
+    namespace: per-pool-variation-test
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    - endpoints
+    - events
+    - limitranges
+    - persistentvolumeclaims
+    - pods
+    - pods/log
+    - replicationcontrollers
+    - resourcequotas
+    - serviceaccounts
+    - services
+    verbs:
+    - get
+    - list
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-per-pool-variation-test-met
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-sidecar
+    namespace: per-pool-variation-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: per-pool-variation-test-pool-strict-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: per-pool-variation-test-pool-strict
+    namespace: per-pool-variation-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-rpk-debug-bundle
+    namespace: per-pool-variation-test
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: per-pool-variation-test-pool-strict-rpk-debug-bundle
+  subjects:
+  - kind: ServiceAccount
+    name: per-pool-variation-test-pool-strict
+    namespace: per-pool-variation-test
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-per-pool-variation-test-met
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: per-pool-variation-test-pool-strict-per-pool-variation-test-met
+  subjects:
+  - kind: ServiceAccount
+    name: per-pool-variation-test-pool-strict
+    namespace: per-pool-variation-test
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-lax-sts-lifecycle
+    namespace: per-pool-variation-test
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="http://${SERVICE_NAME}.per-pool-variation-test.per-pool-variation-test.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail  ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent  ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX}  ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX}  ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      touch /tmp/preStopHookFinished
+      echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-lax-configurator
+    namespace: per-pool-variation-test
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"per-pool-variation-test-pool-lax-${POD_ORDINAL}.per-pool-variation-test\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
+
+      LISTENER="{\"address\":\"per-pool-variation-test-pool-lax-${POD_ORDINAL}.per-pool-variation-test\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-sts-lifecycle
+    namespace: per-pool-variation-test
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.per-pool-variation-test.per-pool-variation-test.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/strict-default-client/ca.crt --cert /etc/tls/certs/strict-default-client/tls.crt --key /etc/tls/certs/strict-default-client/tls.key ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/strict-default-client/ca.crt --cert /etc/tls/certs/strict-default-client/tls.crt --key /etc/tls/certs/strict-default-client/tls.key ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/strict-default-client/ca.crt --cert /etc/tls/certs/strict-default-client/tls.crt --key /etc/tls/certs/strict-default-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/strict-default-client/ca.crt --cert /etc/tls/certs/strict-default-client/tls.crt --key /etc/tls/certs/strict-default-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      touch /tmp/preStopHookFinished
+      echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+    name: per-pool-variation-test-pool-strict-configurator
+    namespace: per-pool-variation-test
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"per-pool-variation-test-pool-strict-${POD_ORDINAL}.per-pool-variation-test\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
+
+      LISTENER="{\"address\":\"per-pool-variation-test-pool-strict-${POD_ORDINAL}.per-pool-variation-test\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+      monitoring.redpanda.com/enabled: "false"
+    name: per-pool-variation-test-pool-lax-0
+    namespace: per-pool-variation-test
+  spec:
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-lax-statefulset
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/name: redpanda
+      apps.kubernetes.io/pod-index: "0"
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: per-pool-variation-test
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: per-pool-variation-test
+      cluster.redpanda.com/owner: per-pool-variation-test
+      monitoring.redpanda.com/enabled: "true"
+    name: per-pool-variation-test-pool-strict-0
+    namespace: per-pool-variation-test
+  spec:
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-strict-statefulset
+      app.kubernetes.io/instance: per-pool-variation-test
       app.kubernetes.io/name: redpanda
       apps.kubernetes.io/pod-index: "0"
     type: ClusterIP

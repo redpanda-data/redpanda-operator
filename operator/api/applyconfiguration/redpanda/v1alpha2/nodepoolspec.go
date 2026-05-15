@@ -180,14 +180,6 @@ func (b *NodePoolSpecApplyConfiguration) WithResources(value *StretchResourcesAp
 	return b
 }
 
-// WithService sets the Service field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Service field is set to the value of the last call.
-func (b *NodePoolSpecApplyConfiguration) WithService(value *ServiceApplyConfiguration) *NodePoolSpecApplyConfiguration {
-	b.EmbeddedNodePoolSpecApplyConfiguration.Service = value
-	return b
-}
-
 // WithImagePullSecrets adds the given value to the ImagePullSecrets field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ImagePullSecrets field.

@@ -23,11 +23,11 @@ func serviceInternal(state *RenderState) *corev1.Service {
 	// This service should not be used by any client application.
 	var ports []corev1.ServicePort
 
-	l := state.PoolSpec().Listeners
+	l := state.PoolSpec(state.representativePool()).Listeners
 
 	// Admin listener.
 	if l == nil || l.Admin == nil || l.Admin.IsEnabled() {
-		adminPort := state.PoolSpec().AdminPort()
+		adminPort := state.PoolSpec(state.representativePool()).AdminPort()
 		adminServicePort := corev1.ServicePort{
 			Name:       internalAdminAPIPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -42,7 +42,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// HTTP proxy listener.
 	if l != nil && l.HTTP != nil && l.HTTP.IsEnabled() {
-		httpPort := state.PoolSpec().HTTPPort()
+		httpPort := state.PoolSpec(state.representativePool()).HTTPPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalPandaProxyPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -53,7 +53,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// Kafka listener.
 	if l == nil || l.Kafka == nil || l.Kafka.IsEnabled() {
-		kafkaPort := state.PoolSpec().KafkaPort()
+		kafkaPort := state.PoolSpec(state.representativePool()).KafkaPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalKafkaPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -63,7 +63,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 	}
 
 	// RPC listener (always required for inter-broker communication).
-	rpcPort := state.PoolSpec().RPCPort()
+	rpcPort := state.PoolSpec(state.representativePool()).RPCPort()
 	ports = append(ports, corev1.ServicePort{
 		Name:       internalRPCPortName,
 		Protocol:   corev1.ProtocolTCP,
@@ -73,7 +73,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// Schema Registry listener.
 	if l != nil && l.SchemaRegistry != nil && l.SchemaRegistry.IsEnabled() {
-		srPort := state.PoolSpec().SchemaRegistryPort()
+		srPort := state.PoolSpec(state.representativePool()).SchemaRegistryPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalSchemaRegistryPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -82,13 +82,8 @@ func serviceInternal(state *RenderState) *corev1.Service {
 		})
 	}
 
-	annotations := map[string]string{}
-	if svc := state.PoolSpec().Service; svc != nil && svc.Internal != nil {
-		annotations = svc.Internal.Annotations
-	}
-
 	labels := state.commonLabels()
-	labels[labelMonitorKey] = fmt.Sprintf("%t", state.PoolSpec().Monitoring.IsEnabled())
+	labels[labelMonitorKey] = fmt.Sprintf("%t", state.PoolSpec(state.representativePool()).Monitoring.IsEnabled())
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -96,10 +91,9 @@ func serviceInternal(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        state.PoolSpec().GetServiceName(state.fullname()),
-			Namespace:   state.namespace,
-			Labels:      labels,
-			Annotations: annotations,
+			Name:      state.ServiceName(),
+			Namespace: state.namespace,
+			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,

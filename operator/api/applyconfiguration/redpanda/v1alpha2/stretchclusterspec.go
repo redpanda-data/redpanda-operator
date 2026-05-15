@@ -27,7 +27,6 @@ type StretchClusterSpecApplyConfiguration struct {
 	Logging          *StretchLoggingApplyConfiguration   `json:"logging,omitempty"`
 	AuditLogging     *AuditLoggingApplyConfiguration     `json:"auditLogging,omitempty"`
 	Resources        *StretchResourcesApplyConfiguration `json:"resources,omitempty"`
-	Service          *ServiceApplyConfiguration          `json:"service,omitempty"`
 	Storage          *StretchStorageApplyConfiguration   `json:"storage,omitempty"`
 	Tuning           *StretchTuningApplyConfiguration    `json:"tuning,omitempty"`
 	Config           *ConfigApplyConfiguration           `json:"config,omitempty"`
@@ -117,14 +116,6 @@ func (b *StretchClusterSpecApplyConfiguration) WithAuditLogging(value *AuditLogg
 // If called multiple times, the Resources field is set to the value of the last call.
 func (b *StretchClusterSpecApplyConfiguration) WithResources(value *StretchResourcesApplyConfiguration) *StretchClusterSpecApplyConfiguration {
 	b.Resources = value
-	return b
-}
-
-// WithService sets the Service field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Service field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithService(value *ServiceApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.Service = value
 	return b
 }
 

@@ -742,10 +742,9 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 
 	sc := state.cluster.StretchCluster
 
-	// TLS now lives on the NodePool spec. Pick a representative NodePool and
-	// apply defaults so BootstrappedCertNames sees the same TLS configuration
-	// the renderer will use. CA bootstrapping is per-cert, not per-cluster,
-	// and TLS shape is expected to match across all NodePools.
+	// TLS lives on the NodePool spec; collect the union of bootstrappable
+	// cert names across every NodePool so the CA reconciler distributes a
+	// secret for each cert that any pool in any cluster needs.
 	allPools := state.cluster.GetAllNodePools()
 	if len(allPools) == 0 {
 		logger.V(log.TraceLevel).Info("no NodePools, skipping CA sync")
@@ -753,9 +752,19 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 	}
 	defaultedClusterSpec := *sc.Spec.DeepCopy()
 	defaultedClusterSpec.MergeDefaults()
-	defaultedPoolSpec := allPools[0].Spec.EmbeddedNodePoolSpec.DeepCopy()
-	defaultedPoolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
-	managedCerts := rendermulticluster.BootstrappedCertNames(defaultedPoolSpec)
+	managedCertSet := map[string]struct{}{}
+	for _, pool := range allPools {
+		defaultedPoolSpec := pool.Spec.EmbeddedNodePoolSpec.DeepCopy()
+		defaultedPoolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
+		for _, name := range rendermulticluster.BootstrappedCertNames(defaultedPoolSpec) {
+			managedCertSet[name] = struct{}{}
+		}
+	}
+	managedCerts := make([]string, 0, len(managedCertSet))
+	for name := range managedCertSet {
+		managedCerts = append(managedCerts, name)
+	}
+	sort.Strings(managedCerts)
 	if len(managedCerts) == 0 {
 		logger.V(log.TraceLevel).Info("no operator-managed TLS certs, skipping CA sync")
 		return ctrl.Result{}, nil

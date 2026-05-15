@@ -82,11 +82,11 @@ func RenderResources(state *RenderState) ([]kube.Object, error) {
 	}
 
 	var manifests []kube.Object
-	manifests = appendIfNotNil(manifests, nodePortService(state))
+	manifests = appendIfNotNil(manifests, nodePortService(state)...)
 	manifests = appendIfNotNil(manifests, pdb)
-	manifests = appendIfNotNil(manifests, serviceAccount(state))
+	manifests = appendIfNotNil(manifests, serviceAccounts(state)...)
 	manifests = appendIfNotNil(manifests, serviceInternal(state))
-	manifests = appendIfNotNil(manifests, serviceMonitor(state))
+	manifests = appendIfNotNil(manifests, serviceMonitors(state)...)
 	manifests = appendIfNotNil(manifests, cm...)
 	manifests = appendIfNotNil(manifests, certIssuers(state)...)
 	manifests = appendIfNotNil(manifests, certs...)

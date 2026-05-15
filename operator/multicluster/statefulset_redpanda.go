@@ -67,12 +67,12 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Nod
 
 	p := scriptParamsFromState(state, pool)
 
-	l := state.PoolSpec().Listeners
+	l := state.PoolSpec(pool).Listeners
 
-	ports := redpandaContainerPorts(l, state.PoolSpec())
+	ports := redpandaContainerPorts(l, state.PoolSpec(pool))
 
 	// Get resource requirements from the spec.
-	resources := state.PoolSpec().GetResourceRequirements()
+	resources := state.PoolSpec(pool).GetResourceRequirements()
 
 	env := statefulSetRedpandaEnv()
 	env = append(env, metricsEnvironmentVariables(state, pool)...)
@@ -132,7 +132,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Nod
 			fmt.Sprintf(`--advertise-rpc-addr=%s:%d`, internalAdvertiseAddress, p.RPCPort),
 		},
 		Ports:        ports,
-		VolumeMounts: statefulSetVolumeMounts(state),
+		VolumeMounts: statefulSetVolumeMounts(state, pool),
 	}
 
 	return container
