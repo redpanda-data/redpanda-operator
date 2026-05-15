@@ -171,13 +171,10 @@ func TestUserNoGenerateMissingSecret(t *testing.T) {
 
 	require.NoError(t, k8sClient.Create(ctx, user))
 
-	// First reconcile adds the finalizer.
-	_, err = environment.Reconciler.Reconcile(ctx, req)
-	require.NoError(t, err)
-
-	// Second reconcile attempts user creation. With NoGenerate=true and the
+	// Reconcile attempts user creation. With NoGenerate=true and the
 	// referenced Secret missing, getPassword propagates the NotFound error
-	// instead of synthesizing a Secret.
+	// instead of synthesizing a Secret. The finalizer patch and sync run
+	// in the same reconcile pass, so we expect a single failing call.
 	_, err = environment.Reconciler.Reconcile(ctx, req)
 	require.Error(t, err, "expected reconcile to fail when NoGenerate=true and Secret is missing")
 	require.True(t, apierrors.IsNotFound(err) ||
