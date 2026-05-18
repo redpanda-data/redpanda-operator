@@ -15,6 +15,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // Rendering-specific defaults (not inherent to the CRD types).
@@ -128,8 +130,10 @@ const internalListenerName = "internal"
 var defaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
 
 // defaultBootstrapUsername is the default SCRAM username created by
-// RP_BOOTSTRAP_USER and added to the superusers list.
-const defaultBootstrapUsername = "kubernetes-controller"
+// RP_BOOTSTRAP_USER and added to the superusers list. Aliases the canonical
+// constant in v1alpha2 so callers outside this package don't have to depend
+// on the API package just for the username string.
+const defaultBootstrapUsername = redpandav1alpha2.StretchClusterBootstrapUsername
 
 // Supported SASL mechanisms.
 var supportedSASLMechanisms = []string{

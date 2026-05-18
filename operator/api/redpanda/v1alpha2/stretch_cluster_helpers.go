@@ -78,6 +78,18 @@ const (
 	DefaultSASLMechanism               = "SCRAM-SHA-512"
 	DefaultExpectedFS                  = "xfs"
 	DefaultRackAwarenessNodeAnnotation = "topology.kubernetes.io/zone"
+
+	// StretchClusterBootstrapUsername is the SCRAM username the operator
+	// provisions on a StretchCluster when SASL is enabled. It is added to
+	// the superusers list and used by every operator-side client (admin,
+	// kafka, schema registry) that needs to authenticate against the
+	// cluster.
+	StretchClusterBootstrapUsername = "kubernetes-controller"
+
+	// StretchClusterBootstrapPasswordKey is the key under which the
+	// generated bootstrap user password lives in the secret returned by
+	// [StretchCluster.BootstrapUserSecretName].
+	StretchClusterBootstrapPasswordKey = "password"
 )
 
 // --- RackAwareness ---
@@ -780,6 +792,20 @@ func (t *TLS) CertificatesFor(fullname, name string) (certSecret, certKey, clien
 	clientSecret = fmt.Sprintf("%s-default-client-cert", fullname)
 
 	return certSecret, corev1.TLSCertKey, clientSecret
+}
+
+// --- StretchCluster convenience methods ---
+
+// BootstrapUserSecretName returns the per-cluster name of the Secret holding
+// the SCRAM password for [StretchClusterBootstrapUsername]. The
+// [StretchClusterBootstrapPasswordKey] field on that Secret holds the
+// password. Both the operator's runtime clients and the resource renderers
+// must agree on this name — see the canonical references at
+// operator/multicluster/secrets.go, operator/multicluster/render_state.go,
+// operator/multicluster/statefulset_redpanda.go, and
+// operator/pkg/client/stretch_cluster.go.
+func (sc *StretchCluster) BootstrapUserSecretName() string {
+	return fmt.Sprintf("%s-bootstrap-user", sc.Name)
 }
 
 // --- StretchClusterSpec convenience methods ---

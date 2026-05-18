@@ -302,7 +302,7 @@ func (r *RenderState) fetchBootstrapUser() error {
 		return nil
 	}
 
-	secretName := fmt.Sprintf("%s-bootstrap-user", r.fullname())
+	secretName := r.cluster.BootstrapUserSecretName()
 
 	// Bound the Get explicitly. fetchBootstrapUser runs inside NewRenderState
 	// per cluster the renderer iterates; without a deadline a partitioned peer's

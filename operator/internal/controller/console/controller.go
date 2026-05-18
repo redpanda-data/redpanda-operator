@@ -31,8 +31,10 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
@@ -41,6 +43,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -61,8 +64,19 @@ const (
 // +kubebuilder:rbac:groups="monitoring.coreos.com",resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 
 type Controller struct {
+	// Ctl is the kube.Ctl bound to the controller's local cluster. It is
+	// used for reconciles whose req.ClusterName is the local cluster
+	// (mcmanager.LocalCluster, i.e. the empty string) as well as for
+	// setup-time reads (e.g. ServiceMonitor CRD discovery).
 	Ctl    *kube.Ctl
 	Config *kube.RESTConfig
+
+	// Manager, when non-nil, enables per-cluster routing for reconciles
+	// whose req.ClusterName names a provider cluster. SetupWithManager and
+	// SetupWithMulticlusterManager both populate this so that
+	// Reconcile-time reads and writes target the cluster where the Console
+	// CR actually lives.
+	Manager multicluster.Manager
 
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
@@ -78,6 +92,8 @@ type Controller struct {
 }
 
 func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
+	c.Manager = mgr
+
 	// If rng is not set for testing, create and seed a new one.
 	if c.rng == nil {
 		// TODO: Weak RNG is probably acceptable here but best to doublecheck
@@ -115,8 +131,63 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 	return builder.Complete(controller.FilterNamespaceReconciler(namespace, c))
 }
 
+// SetupWithMulticlusterManager registers the Console controller against a
+// multicluster manager (e.g. the raft-based runtime manager wired up by the
+// `multicluster` subcommand). It is a superset of [Controller.SetupWithManager]
+// that additionally watches StretchCluster CRs for re-enqueue, which is only
+// safe in the multicluster operator mode where the StretchCluster CRD is
+// guaranteed to be installed alongside the Console CRD.
+//
+// Mirrors the pattern established by NodePool's SetupWithMultiClusterManager.
+func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multicluster.Manager) error {
+	c.Manager = mgr
+
+	// If rng is not set for testing, create and seed a new one.
+	if c.rng == nil {
+		c.rng = rand.New(rand.NewSource(time.Now().UnixMicro())) //nolint:gosec
+	}
+
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			// NB: This mirrors the workaround in
+			// redpanda.SetupMulticlusterController. The multicluster runtime
+			// doesn't propagate name-uniqueness validation cleanly when
+			// multiple managers register the same controller in a single
+			// process (e.g. integration tests spinning up N peer managers),
+			// so we opt out. Consider an upstream fix.
+			SkipNameValidation: ptr.To(true),
+		}).
+		For(&redpandav1alpha2.Console{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+
+	for _, t := range console.Types() {
+		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
+			if c.skipServiceMonitorWatchIfNotInstalled(ctx) {
+				continue
+			}
+		}
+		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+	}
+
+	// Re-enqueue Console CRs that reference a StretchCluster. Redpanda CRs
+	// are not deployed in multicluster mode, so no Redpanda watch is needed.
+	for _, clusterName := range mgr.GetClusterNames() {
+		stretchHandler, err := controller.RegisterStretchClusterSourceIndex(ctx, mgr, "console_stretch", clusterName, &redpandav1alpha2.Console{}, &redpandav1alpha2.ConsoleList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, stretchHandler, controller.WatchOptions(clusterName)...)
+	}
+
+	return builder.Complete(c)
+}
+
 func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
-	cr, err := kube.Get[redpandav1alpha2.Console](ctx, c.Ctl, req.NamespacedName)
+	ctl, err := c.ctlFor(ctx, req.ClusterName)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	cr, err := kube.Get[redpandav1alpha2.Console](ctx, ctl, req.NamespacedName)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -124,7 +195,7 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	syncer, err := c.syncerFor(cr)
+	syncer, err := c.syncerFor(ctl, cr)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -143,7 +214,7 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 		}
 
 		// Clean up the JWT secret, if it exists.
-		if err := c.Ctl.Delete(ctx, &corev1.Secret{
+		if err := ctl.Delete(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      c.jwtSecretName(cr),
 				Namespace: cr.Namespace,
@@ -153,7 +224,7 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 		}
 
 		// NB: Apply can't be used to remove finalizers.
-		if err := c.Ctl.Update(ctx, cr); err != nil {
+		if err := ctl.Update(ctx, cr); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -164,12 +235,12 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 
 	// Add the finalizer, if not present.
 	if controllerutil.AddFinalizer(cr, finalizerKey) {
-		if err := c.Ctl.Apply(ctx, cr, client.ForceOwnership); err != nil {
+		if err := ctl.Apply(ctx, cr, client.ForceOwnership); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	if err := c.maybeSetJWTToken(ctx, cr); err != nil {
+	if err := c.maybeSetJWTToken(ctx, ctl, cr); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -193,23 +264,53 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 		}
 	}
 
-	if err := c.Ctl.ApplyStatus(ctx, cr, client.ForceOwnership); err != nil {
+	if err := ctl.ApplyStatus(ctx, cr, client.ForceOwnership); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (c *Controller) syncerFor(cr *redpandav1alpha2.Console) (*kube.Syncer, error) {
-	gvk, err := kube.GVKFor(c.Ctl.Scheme(), cr)
+// ctlFor returns a [kube.Ctl] scoped to the given clusterName. For the local
+// cluster (empty string == [mcmanager.LocalCluster]) — and for any case where
+// the controller has no Manager wired in — it returns the externally-supplied
+// c.Ctl. Otherwise it builds a fresh [kube.Ctl] against the peer cluster's
+// REST config / scheme / cache for this reconcile pass; mirrors the
+// per-reconcile [cluster.Cluster.GetClient] pattern used by other
+// multicluster reconcilers (see NodePoolReconciler).
+func (c *Controller) ctlFor(ctx context.Context, clusterName string) (*kube.Ctl, error) {
+	if clusterName == mcmanager.LocalCluster || c.Manager == nil {
+		return c.Ctl, nil
+	}
+
+	cluster, err := c.Manager.GetCluster(ctx, clusterName)
+	if err != nil {
+		return nil, fmt.Errorf("looking up cluster %q: %w", clusterName, err)
+	}
+
+	ctl, err := kube.FromRESTConfig(cluster.GetConfig(), kube.Options{
+		Options: client.Options{
+			Scheme: cluster.GetScheme(),
+			Cache:  &client.CacheOptions{Reader: cluster.GetCache()},
+		},
+		FieldManager: string(lifecycle.DefaultFieldOwner),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building kube.Ctl for cluster %q: %w", clusterName, err)
+	}
+	return ctl, nil
+}
+
+func (c *Controller) syncerFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) (*kube.Syncer, error) {
+	gvk, err := kube.GVKFor(ctl.Scheme(), cr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &kube.Syncer{
-		Ctl:             c.Ctl,
+		Ctl:             ctl,
 		Namespace:       cr.Namespace,
-		Renderer:        c.rendererFor(cr),
+		Renderer:        c.rendererFor(ctl, cr),
 		Owner:           *metav1.NewControllerRef(cr, gvk),
 		OwnershipLabels: c.ownershipLabelsFor(cr),
 	}, nil
@@ -225,7 +326,7 @@ func (c *Controller) ownershipLabelsFor(cr *redpandav1alpha2.Console) map[string
 	}
 }
 
-func (c *Controller) rendererFor(cr *redpandav1alpha2.Console) *render {
+func (c *Controller) rendererFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) *render {
 	caps := c.resolveCapabilities()
 
 	metrics := console.MetricsState{
@@ -242,7 +343,7 @@ func (c *Controller) rendererFor(cr *redpandav1alpha2.Console) *render {
 	}
 
 	return &render{
-		ctl:     c.Ctl,
+		ctl:     ctl,
 		console: cr,
 		labels:  c.ownershipLabelsFor(cr),
 		metrics: metrics,
@@ -285,7 +386,7 @@ func (c *Controller) jwtSecretName(cr *redpandav1alpha2.Console) string {
 //
 // This generated key is stored in an immutable secret that is managed outside
 // of the Syncer to prevent re-minting.
-func (c *Controller) maybeSetJWTToken(ctx context.Context, cr *redpandav1alpha2.Console) error {
+func (c *Controller) maybeSetJWTToken(ctx context.Context, ctl *kube.Ctl, cr *redpandav1alpha2.Console) error {
 	explicitJWTKey := cr.Spec.Secret.Authentication != nil && cr.Spec.Secret.Authentication.JWTSigningKey != nil
 	if explicitJWTKey {
 		return nil
@@ -293,13 +394,13 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, cr *redpandav1alpha2.
 
 	name := c.jwtSecretName(cr)
 
-	secret, err := kube.Get[corev1.Secret](ctx, c.Ctl, kube.ObjectKey{Namespace: cr.Namespace, Name: name})
+	secret, err := kube.Get[corev1.Secret](ctx, ctl, kube.ObjectKey{Namespace: cr.Namespace, Name: name})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 
 	if secret == nil {
-		gvk, err := kube.GVKFor(c.Ctl.Scheme(), cr)
+		gvk, err := kube.GVKFor(ctl.Scheme(), cr)
 		if err != nil {
 			return err
 		}
@@ -307,7 +408,7 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, cr *redpandav1alpha2.
 		// NB: Create and Immutable are used here to ensure that key generation
 		// is idempotent. Immutable prevents accidental updates or changes and
 		// Create prevents race conditions from causing a re-mint.
-		secret, err = kube.Create(ctx, c.Ctl, corev1.Secret{
+		secret, err = kube.Create(ctx, ctl, corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: cr.Namespace,
@@ -420,6 +521,16 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 		key := kube.ObjectKey{
 			Name:      ref.Name,
 			Namespace: r.console.Namespace,
+		}
+
+		if ref.IsStretchCluster() {
+			var sc redpandav1alpha2.StretchCluster
+			if err := r.ctl.Get(ctx, key, &sc); err != nil {
+				return console.PartialRenderValues{}, err
+			}
+
+			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc)
+			return console.StaticConfigurationSourceToPartialRenderValues(cfg), nil
 		}
 
 		// TODO: Add support for vectorized clusters?

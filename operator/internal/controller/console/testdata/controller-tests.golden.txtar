@@ -816,3 +816,228 @@
     type: ClusterIP
   status:
     loadBalancer: {}
+-- stretch-cluster-ref --
+- apiVersion: v1
+  data:
+    config.yaml: |
+      # from .Values.config
+      kafka:
+        brokers:
+        - test-stretch.test-ns.svc.cluster.local:9093
+        tls:
+          caFilepath: /etc/tls/certs/secrets/test-stretch-default-root-certificate/tls.crt
+          enabled: true
+      redpanda:
+        adminApi:
+          enabled: true
+          tls:
+            caFilepath: /etc/tls/certs/secrets/test-stretch-default-root-certificate/tls.crt
+            enabled: true
+          urls:
+          - https://test-stretch.test-ns.svc.cluster.local:9644
+      schemaRegistry:
+        enabled: true
+        tls:
+          caFilepath: /etc/tls/certs/secrets/test-stretch-default-root-certificate/tls.crt
+          enabled: true
+        urls:
+        - https://test-stretch.test-ns.svc.cluster.local:8081
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-stretch-cluster-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-stretch-cluster-ref-console
+    namespace: test-ns
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-stretch-cluster-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-stretch-cluster-ref-console
+    namespace: test-ns
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: console-stretch-cluster-ref
+        app.kubernetes.io/name: console
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          checksum/config: 2aa9339ab61b6200f21554e17ac4d531580ad9a9ac5aa44829b64e49267c8fdf
+        labels:
+          app.kubernetes.io/instance: console-stretch-cluster-ref
+          app.kubernetes.io/name: console
+      spec:
+        affinity: {}
+        automountServiceAccountToken: false
+        containers:
+        - args:
+          - --config.filepath=/etc/console/configs/config.yaml
+          env:
+          - name: AUTHENTICATION_JWTSIGNINGKEY
+            valueFrom:
+              secretKeyRef:
+                key: authentication-jwt-signingkey
+                name: console-stretch-cluster-ref-console
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+            value: redpandadata/console:v3.7.0
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: docker.redpanda.com/redpandadata/console:v3.7.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: console
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          securityContext:
+            runAsNonRoot: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/console/configs
+            name: configs
+            readOnly: true
+          - mountPath: /etc/console/secrets
+            name: secrets
+            readOnly: true
+          - mountPath: /etc/tls/certs
+            name: redpanda-certificates
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 99
+          fsGroupChangePolicy: Always
+          runAsUser: 99
+        serviceAccount: console-stretch-cluster-ref-console
+        serviceAccountName: console-stretch-cluster-ref-console
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: console-stretch-cluster-ref-console
+          name: configs
+        - name: secrets
+          secret:
+            defaultMode: 420
+            secretName: console-stretch-cluster-ref-console
+        - name: redpanda-certificates
+          projected:
+            defaultMode: 420
+            sources:
+            - secret:
+                items:
+                - key: tls.crt
+                  path: secrets/test-stretch-default-root-certificate/tls.crt
+                name: test-stretch-default-root-certificate
+  status: {}
+- apiVersion: v1
+  data:
+    authentication-jwt-signingkey: QFMxdEokPGxVdnZlWXU7QVsuRiIubz9AUkNFS3YoXiw=
+    authentication-oidc-client-secret: ""
+    kafka-sasl-aws-msk-iam-secret-key: ""
+    kafka-sasl-password: ""
+    kafka-tls-ca: ""
+    kafka-tls-cert: ""
+    kafka-tls-key: ""
+    license: ""
+    redpanda-admin-api-password: ""
+    redpanda-admin-api-tls-ca: ""
+    redpanda-admin-api-tls-cert: ""
+    redpanda-admin-api-tls-key: ""
+    schema-registry-bearertoken: ""
+    schema-registry-password: ""
+    schemaregistry-tls-ca: ""
+    schemaregistry-tls-cert: ""
+    schemaregistry-tls-key: ""
+    serde-protobuf-git-basicauth-password: ""
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-stretch-cluster-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-stretch-cluster-ref-console
+    namespace: test-ns
+  type: Opaque
+- apiVersion: v1
+  data:
+    key: QFMxdEokPGxVdnZlWXU7QVsuRiIubz9AUkNFS3YoXiw=
+  immutable: true
+  kind: Secret
+  metadata:
+    name: console-stretch-cluster-ref-jwt-secret
+    namespace: test-ns
+  type: Opaque
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-stretch-cluster-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-stretch-cluster-ref-console
+    namespace: test-ns
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-stretch-cluster-ref
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-stretch-cluster-ref-console
+    namespace: test-ns
+  spec:
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app.kubernetes.io/instance: console-stretch-cluster-ref
+      app.kubernetes.io/name: console
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
