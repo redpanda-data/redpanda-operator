@@ -79,6 +79,16 @@ const (
 	DefaultExpectedFS                  = "xfs"
 	DefaultRackAwarenessNodeAnnotation = "topology.kubernetes.io/zone"
 
+	// DefaultCertName is the cert-manager Certificate name attached to
+	// internal listeners (admin, kafka, http, schemaRegistry, rpc) when
+	// TLS defaults apply. The operator owns the CA for this cert.
+	DefaultCertName = "default"
+
+	// ExternalCertName is the cert-manager Certificate name attached to
+	// external listeners when TLS defaults apply. The operator owns the
+	// CA for this cert.
+	ExternalCertName = "external"
+
 	// StretchClusterBootstrapUsername is the SCRAM username the operator
 	// provisions on a StretchCluster when SASL is enabled. It is added to
 	// the superusers list and used by every operator-side client (admin,
@@ -1504,13 +1514,13 @@ func (s *EmbeddedNodePoolSpec) mergeDefaultTLS() {
 	if s.TLS.Certs == nil {
 		s.TLS.Certs = make(map[string]*Certificate)
 	}
-	if s.TLS.Certs["default"] == nil {
-		s.TLS.Certs["default"] = &Certificate{
+	if s.TLS.Certs[DefaultCertName] == nil {
+		s.TLS.Certs[DefaultCertName] = &Certificate{
 			CAEnabled: ptr.To(true),
 		}
 	}
-	if s.TLS.Certs["external"] == nil {
-		s.TLS.Certs["external"] = &Certificate{
+	if s.TLS.Certs[ExternalCertName] == nil {
+		s.TLS.Certs[ExternalCertName] = &Certificate{
 			CAEnabled: ptr.To(true),
 		}
 	}
@@ -1557,7 +1567,7 @@ func mergeDefaultAPIListener(listener **StretchAPIListener, defaultPort, extPort
 	}
 	if l.TLS == nil {
 		l.TLS = &StretchListenerTLS{
-			Cert:              ptr.To("default"),
+			Cert:              ptr.To(DefaultCertName),
 			RequireClientAuth: ptr.To(false),
 		}
 	}
@@ -1596,8 +1606,10 @@ func (s *EmbeddedNodePoolSpec) mergeDefaultRPCListener() {
 }
 
 func mergeDefaultExternalListener(existing map[string]*StretchExternalListener, port int32, advertisedPort int32, target *map[string]*StretchExternalListener) {
+	// Default key for the listener-name → ExternalListener map; this is a
+	// listener name, not the cert name.
 	name := "default"
-	certName := "external"
+	certName := ExternalCertName
 	if existing == nil {
 		*target = map[string]*StretchExternalListener{
 			name: {

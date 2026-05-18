@@ -277,7 +277,7 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 
 	certName := listener.TLS.GetCert()
 	if certName == "" {
-		certName = "default"
+		certName = redpandav1alpha2.DefaultCertName
 	}
 
 	// CertificatesFor resolves the CA secret name and key based on the cert

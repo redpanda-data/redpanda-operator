@@ -145,7 +145,7 @@ func stretchListener(poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, get func(*
 func stretchListenerTLS(sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, listener *redpandav1alpha2.StretchAPIListener) *ir.CommonTLS {
 	certName := listener.TLS.GetCert()
 	if certName == "" {
-		certName = "default"
+		certName = redpandav1alpha2.DefaultCertName
 	}
 
 	caSecretName, caKey, _ := poolSpec.TLS.CertificatesFor(sc.Name, certName)
