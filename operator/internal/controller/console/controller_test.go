@@ -200,6 +200,9 @@ func TestController(t *testing.T) {
 	consoleCtrl := Controller{
 		Ctl: ctl,
 		rng: rand.New(rand.NewSource(0)),
+		// Test fixture exercises both Redpanda and StretchCluster ClusterRef
+		// paths; the latter is gated behind the multicluster mode flag.
+		Multicluster: true,
 	}
 
 	for _, tc := range testCases {

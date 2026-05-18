@@ -87,6 +87,13 @@ type Controller struct {
 	// CR actually lives.
 	Manager multicluster.Manager
 
+	// Multicluster is true when the controller was registered via
+	// SetupWithMulticlusterManager — i.e. running inside the multicluster
+	// operator where StretchCluster and NodePool CRDs are installed. In
+	// single-cluster mode the StretchCluster branch is skipped because
+	// those CRDs may not be present.
+	Multicluster bool
+
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
 	// value.
@@ -150,6 +157,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 // Mirrors the pattern established by NodePool's SetupWithMultiClusterManager.
 func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multicluster.Manager) error {
 	c.Manager = mgr
+	c.Multicluster = true
 
 	// If rng is not set for testing, create and seed a new one.
 	if c.rng == nil {
@@ -356,10 +364,11 @@ func (c *Controller) rendererFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) *r
 	}
 
 	return &render{
-		ctl:     ctl,
-		console: cr,
-		labels:  c.ownershipLabelsFor(cr),
-		metrics: metrics,
+		ctl:          ctl,
+		console:      cr,
+		labels:       c.ownershipLabelsFor(cr),
+		metrics:      metrics,
+		multicluster: c.Multicluster,
 	}
 }
 
@@ -467,6 +476,11 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, ctl *kube.Ctl, cr *re
 // or removed on the local K8s cluster — the only event that triggers a
 // re-pick is the currently-pinned pool going away.
 func (c *Controller) maybeSelectStretchSourcePool(ctx context.Context, ctl *kube.Ctl, cr *redpandav1alpha2.Console) error {
+	// StretchCluster and NodePool CRDs are only installed by the
+	// multicluster operator; skip everything in single-cluster mode.
+	if !c.Multicluster {
+		return nil
+	}
 	if cr.Spec.ClusterSource == nil || cr.Spec.ClusterSource.ClusterRef == nil {
 		return nil
 	}
@@ -528,6 +542,11 @@ type render struct {
 	labels  map[string]string
 	console *redpandav1alpha2.Console
 	metrics console.MetricsState
+
+	// multicluster mirrors Controller.Multicluster — when false the
+	// StretchCluster branch in clusterFragment is skipped because the
+	// StretchCluster and NodePool CRDs aren't installed.
+	multicluster bool
 }
 
 func (r *render) Types() []kube.Object {
@@ -597,6 +616,14 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 		}
 
 		if ref.IsStretchCluster() {
+			// StretchCluster + NodePool CRDs are only installed by the
+			// multicluster operator. Refuse to dereference a stretch
+			// ClusterRef in single-cluster mode rather than 404'ing on
+			// the CRDs.
+			if !r.multicluster {
+				return console.PartialRenderValues{}, fmt.Errorf("ClusterSource.ClusterRef.Kind=%q requires the multicluster operator (StretchCluster/NodePool CRDs are not installed in single-cluster mode)", redpandav1alpha2.StretchClusterRefKind)
+			}
+
 			var sc redpandav1alpha2.StretchCluster
 			if err := r.ctl.Get(ctx, key, &sc); err != nil {
 				return console.PartialRenderValues{}, err
