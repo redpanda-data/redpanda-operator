@@ -221,14 +221,19 @@ func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	}
 }
 
+// nodepoolManifest produces the full NodePool manifest for one region. The
+// pool name is injected into the metadata header AND substituted into the
+// manifest body wherever ${POOL_NAME} appears, so the same DocString can
+// drive per-pool spec variation (e.g. PVC labels that differ per region).
 func nodepoolManifest(nodeName string, manifest *godog.DocString) []byte {
+	content := strings.ReplaceAll(manifest.Content, "${POOL_NAME}", nodeName)
 	return []byte(fmt.Sprintf(`
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
 metadata:
   name: %s
   namespace: default
-`, nodeName) + manifest.Content)
+`, nodeName) + content)
 }
 
 func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
@@ -361,6 +366,42 @@ func applyNodePoolWithStretchCluster(ctx context.Context, t framework.TestingT, 
 	cleanupWrapper(t, func(ctx context.Context) {
 		nodes.DeleteNodepools(ctx, manifest)
 	})
+}
+
+// checkPVCLabelInRegion asserts that a PersistentVolumeClaim in a specific
+// region of the multicluster operator has a label with the expected value.
+// Used to verify that per-pool variation flows through to per-pool rendered
+// resources — when each pool sets a different value on the same label, each
+// region's PVC must reflect its own pool's value.
+func checkPVCLabelInRegion(ctx context.Context, t framework.TestingT, clusterName, regionName, pvcName, namespace, labelKey, labelValue string) {
+	nodes := getNodes(ctx, clusterName)
+	var target *vclusterNode
+	for _, node := range nodes {
+		if node.logicalName == regionName {
+			target = node
+			break
+		}
+	}
+	require.NotNil(t, target, "no region %q in multicluster %q", regionName, clusterName)
+
+	nn := types.NamespacedName{Namespace: namespace, Name: pvcName}
+	require.Eventually(t, func() bool {
+		var pvc corev1.PersistentVolumeClaim
+		if err := target.Get(ctx, nn, &pvc); err != nil {
+			t.Logf("fetching PVC %s on %s: %v", nn, target.Name(), err)
+			return false
+		}
+		actual, ok := pvc.Labels[labelKey]
+		if !ok {
+			t.Logf("PVC %s on %s missing label %q (labels: %v)", nn, target.Name(), labelKey, pvc.Labels)
+			return false
+		}
+		if actual != labelValue {
+			t.Logf("PVC %s on %s label %q=%q, want %q", nn, target.Name(), labelKey, actual, labelValue)
+			return false
+		}
+		return true
+	}, 2*time.Minute, 5*time.Second, "PVC %s on %s never got label %q=%q", nn, target.Name(), labelKey, labelValue)
 }
 
 func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clusterName, name, namespace, groupVersionKind, finalizer string) {

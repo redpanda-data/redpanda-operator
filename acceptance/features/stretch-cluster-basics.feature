@@ -38,6 +38,16 @@ Feature: Multicluster Operator
       rbac:
         enabled: true
         rpkDebugBundle: true
+      # Per-pool PVC label varies by region: each region's NodePool is named
+      # first/second/third (via ${POOL_NAME}). The label propagates to the
+      # PVC template and the assertion below verifies each region's PVC
+      # picked up its own pool's value — confirming the operator does not
+      # leak a representative pool's spec into other pools.
+      storage:
+        persistentVolume:
+          enabled: true
+          labels:
+            redpanda.com/test-pool-marker: ${POOL_NAME}
       tls:
         enabled: true
         certs:
@@ -76,3 +86,9 @@ Feature: Multicluster Operator
     # rpk topic list exercises the Kafka listener which uses the "user-provided"
     # cert (SecretRef), validating that the pre-signed TLS secret works.
     And I execute "rpk topic list" command in the statefulset container in each cluster
+    # Per-pool fan-out check: each region's PVC carries its own pool's label
+    # value. If the operator rendered all pools against a representative
+    # pool's spec, every PVC would have the same value (or no label at all).
+    Then in "multicluster" region "vc-0" the PVC "datadir-cluster-first-0" in namespace "default" should have label "redpanda.com/test-pool-marker" with value "first"
+    And in "multicluster" region "vc-1" the PVC "datadir-cluster-second-0" in namespace "default" should have label "redpanda.com/test-pool-marker" with value "second"
+    And in "multicluster" region "vc-2" the PVC "datadir-cluster-third-0" in namespace "default" should have label "redpanda.com/test-pool-marker" with value "third"

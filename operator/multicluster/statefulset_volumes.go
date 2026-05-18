@@ -310,14 +310,20 @@ func volumeClaimTemplateDatadir(state *RenderState, pool *redpandav1alpha2.NodeP
 
 	pv := storage.PersistentVolume
 
+	labels := map[string]string{
+		labelNameKey:      labelNameValue,
+		labelInstanceKey:  state.releaseName,
+		labelComponentKey: labelNameValue,
+	}
+	for k, v := range pv.Labels {
+		labels[k] = v
+	}
+
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: datadirVolumeName,
-			Labels: map[string]string{
-				labelNameKey:      labelNameValue,
-				labelInstanceKey:  state.releaseName,
-				labelComponentKey: labelNameValue,
-			},
+			Name:        datadirVolumeName,
+			Labels:      labels,
+			Annotations: pv.Annotations,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},

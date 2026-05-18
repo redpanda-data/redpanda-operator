@@ -1264,13 +1264,18 @@ func (s *StretchClusterSpec) MergeDefaults() {
 
 // MergeDefaultsFrom populates nil fields on the NodePool spec. Per-K8s-cluster
 // fields are defaulted directly; defaultable fields (Storage, Resources,
-// Service, ImagePullSecrets) are inherited from the supplied cluster spec when
-// the NodePool didn't set them.
+// ImagePullSecrets) are inherited from the supplied cluster spec when the
+// NodePool didn't set them. Storage / Resources defaults are then filled in
+// at the pool level too, so partial overrides (e.g. setting only PVC labels)
+// still pick up the unset sub-fields (Size, Enabled, …) the cluster default
+// would supply.
 //
 // The caller is expected to have already invoked cluster.MergeDefaults() so
 // that inherited values are themselves defaulted.
 func (s *EmbeddedNodePoolSpec) MergeDefaultsFrom(cluster *StretchClusterSpec) {
 	s.inheritFromCluster(cluster)
+	fillStretchStorageDefaults(&s.Storage)
+	fillStretchResourcesDefaults(&s.Resources)
 	s.mergeDefaultTLS()
 	s.mergeDefaultExternal()
 	s.mergeDefaultListeners()
@@ -1296,21 +1301,7 @@ func (s *EmbeddedNodePoolSpec) inheritFromCluster(cluster *StretchClusterSpec) {
 	}
 }
 
-func (s *StretchClusterSpec) mergeDefaultStorage() {
-	if s.Storage == nil {
-		s.Storage = &StretchStorage{}
-	}
-	if s.Storage.PersistentVolume == nil {
-		s.Storage.PersistentVolume = &PersistentVolume{}
-	}
-	if s.Storage.PersistentVolume.Enabled == nil {
-		s.Storage.PersistentVolume.Enabled = ptr.To(true)
-	}
-	if s.Storage.PersistentVolume.Size == nil {
-		size := resource.MustParse("20Gi")
-		s.Storage.PersistentVolume.Size = &size
-	}
-}
+func (s *StretchClusterSpec) mergeDefaultStorage() { fillStretchStorageDefaults(&s.Storage) }
 
 func (s *StretchClusterSpec) mergeDefaultTuning() {
 	if s.Tuning == nil {
@@ -1321,30 +1312,56 @@ func (s *StretchClusterSpec) mergeDefaultTuning() {
 	}
 }
 
-func (s *StretchClusterSpec) mergeDefaultResources() {
-	if s.Resources == nil {
-		s.Resources = &StretchResources{}
+func (s *StretchClusterSpec) mergeDefaultResources() { fillStretchResourcesDefaults(&s.Resources) }
+
+// fillStretchStorageDefaults populates the PersistentVolume sub-fields with
+// the operator-managed defaults (enabled, 20Gi) when unset. Used by both the
+// cluster spec and the NodePool spec so partial pool overrides (e.g. only
+// labels) still pick up the size/enabled defaults.
+func fillStretchStorageDefaults(p **StretchStorage) {
+	if *p == nil {
+		*p = &StretchStorage{}
 	}
-	r := s.Resources
-	// Only default legacy fields if Limits/Requests are not set.
-	if len(r.Limits) == 0 && len(r.Requests) == 0 {
-		if r.CPU == nil {
-			r.CPU = &CPU{}
-		}
-		if r.CPU.Cores == nil {
-			cores := resource.MustParse("1")
-			r.CPU.Cores = &cores
-		}
-		if r.Memory == nil {
-			r.Memory = &Memory{}
-		}
-		if r.Memory.Container == nil {
-			r.Memory.Container = &ContainerResources{}
-		}
-		if r.Memory.Container.Max == nil {
-			max := resource.MustParse("2.5Gi")
-			r.Memory.Container.Max = &max
-		}
+	s := *p
+	if s.PersistentVolume == nil {
+		s.PersistentVolume = &PersistentVolume{}
+	}
+	if s.PersistentVolume.Enabled == nil {
+		s.PersistentVolume.Enabled = ptr.To(true)
+	}
+	if s.PersistentVolume.Size == nil {
+		size := resource.MustParse("20Gi")
+		s.PersistentVolume.Size = &size
+	}
+}
+
+// fillStretchResourcesDefaults populates the legacy CPU.Cores / Memory.Container
+// fields when neither Limits nor Requests are set. Symmetric across the cluster
+// and NodePool specs.
+func fillStretchResourcesDefaults(p **StretchResources) {
+	if *p == nil {
+		*p = &StretchResources{}
+	}
+	r := *p
+	if len(r.Limits) > 0 || len(r.Requests) > 0 {
+		return
+	}
+	if r.CPU == nil {
+		r.CPU = &CPU{}
+	}
+	if r.CPU.Cores == nil {
+		cores := resource.MustParse("1")
+		r.CPU.Cores = &cores
+	}
+	if r.Memory == nil {
+		r.Memory = &Memory{}
+	}
+	if r.Memory.Container == nil {
+		r.Memory.Container = &ContainerResources{}
+	}
+	if r.Memory.Container.Max == nil {
+		max := resource.MustParse("2.5Gi")
+		r.Memory.Container.Max = &max
 	}
 }
 

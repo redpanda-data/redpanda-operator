@@ -272,7 +272,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-configurator
+            name: compat-test-basic-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -647,7 +647,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-configurator
+            name: compat-test-basic-b-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1023,7 +1023,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: flat-network-test-configurator
+            name: flat-network-test-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1399,7 +1399,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: mcs-network-test-configurator
+            name: mcs-network-test-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1775,7 +1775,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-configurator
+            name: nodepool-basic-test-basic-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2150,7 +2150,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-configurator
+            name: nodepool-basic-test-basic-b-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2509,7 +2509,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: per-pool-variation-test-configurator
+            name: per-pool-variation-test-pool-lax-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2893,7 +2893,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: per-pool-variation-test-configurator
+            name: per-pool-variation-test-pool-strict-configurator
         - command:
           - /redpanda-operator
           - bootstrap

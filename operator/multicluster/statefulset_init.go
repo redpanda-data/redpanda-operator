@@ -103,7 +103,7 @@ func statefulSetInitContainerFSValidator(state *RenderState, pool *redpandav1alp
 		},
 		VolumeMounts: append(
 			state.commonMounts(pool),
-			corev1.VolumeMount{Name: fmt.Sprintf(`%.49s-fs-validator`, state.fullname()), MountPath: `/etc/secrets/fs-validator/scripts/`},
+			corev1.VolumeMount{Name: fmt.Sprintf(`%.49s-fs-validator`, state.poolFullname(pool)), MountPath: `/etc/secrets/fs-validator/scripts/`},
 			corev1.VolumeMount{Name: datadirVolumeName, MountPath: datadirMountPath},
 		),
 	}
@@ -114,7 +114,7 @@ func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1al
 	volMounts = append(volMounts,
 		corev1.VolumeMount{Name: configVolumeName, MountPath: redpandaConfigMountPath},
 		corev1.VolumeMount{Name: baseConfigVolumeName, MountPath: baseConfigMountPath},
-		corev1.VolumeMount{Name: fmt.Sprintf(`%.51s-configurator`, state.fullname()), MountPath: "/etc/secrets/configurator/scripts/"},
+		corev1.VolumeMount{Name: fmt.Sprintf(`%.51s-configurator`, state.poolFullname(pool)), MountPath: "/etc/secrets/configurator/scripts/"},
 	)
 
 	if state.Spec().RackAwareness.IsEnabled() {

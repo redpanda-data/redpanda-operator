@@ -268,7 +268,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: audit-logging-configurator
+            name: audit-logging-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -646,7 +646,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: common-labels-configurator
+            name: common-labels-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1020,7 +1020,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-cluster-domain-configurator
+            name: custom-cluster-domain-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1394,7 +1394,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-config-configurator
+            name: custom-config-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1770,7 +1770,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-image-configurator
+            name: custom-image-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2144,7 +2144,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-resources-configurator
+            name: custom-resources-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2521,7 +2521,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-resources-explicit-configurator
+            name: custom-resources-explicit-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2895,7 +2895,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: enterprise-configurator
+            name: enterprise-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -3269,7 +3269,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: external-loadbalancer-configurator
+            name: external-loadbalancer-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -3643,7 +3643,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: external-nodeport-configurator
+            name: external-nodeport-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -4017,7 +4017,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: external-tls-configurator
+            name: external-tls-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -4391,7 +4391,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: flat-network-configurator
+            name: flat-network-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -4818,7 +4818,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: full-featured-configurator
+            name: full-featured-pool-cold-configurator
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -5224,7 +5224,7 @@
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
           - mountPath: /etc/secrets/fs-validator/scripts/
-            name: full-featured-fs-validator
+            name: full-featured-pool-hot-fs-validator
           - mountPath: /var/lib/redpanda/data
             name: datadir
         - command:
@@ -5287,7 +5287,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: full-featured-configurator
+            name: full-featured-pool-hot-configurator
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -5685,7 +5685,7 @@
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
           - mountPath: /etc/secrets/fs-validator/scripts/
-            name: init-containers-fs-validator
+            name: init-containers-pool-a-fs-validator
           - mountPath: /var/lib/redpanda/data
             name: datadir
         - command:
@@ -5722,7 +5722,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: init-containers-configurator
+            name: init-containers-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -6100,7 +6100,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: mcs-network-configurator
+            name: mcs-network-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -6474,7 +6474,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: memory-locking-configurator
+            name: memory-locking-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -6848,7 +6848,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: minimal-configurator
+            name: minimal-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -7222,7 +7222,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: monitoring-configurator
+            name: monitoring-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -7596,7 +7596,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: multi-pool-configurator
+            name: multi-pool-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -7972,7 +7972,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: multi-pool-configurator
+            name: multi-pool-pool-b-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -8347,7 +8347,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: per-pod-service-overrides-configurator
+            name: per-pod-service-overrides-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -8721,7 +8721,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: per-pod-service-remote-disabled-configurator
+            name: per-pod-service-remote-disabled-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -9095,7 +9095,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: rack-awareness-configurator
+            name: rack-awareness-pool-a-configurator
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -9495,7 +9495,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: sasl-scram256-configurator
+            name: sasl-scram256-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -9895,7 +9895,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: sasl-scram512-with-tls-configurator
+            name: sasl-scram512-with-tls-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -10272,7 +10272,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: single-replica-configurator
+            name: single-replica-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -10646,7 +10646,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: storage-hostpath-configurator
+            name: storage-hostpath-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -11006,7 +11006,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: storage-pv-custom-configurator
+            name: storage-pv-custom-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -11403,7 +11403,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tiered-storage-emptydir-configurator
+            name: tiered-storage-emptydir-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -11802,7 +11802,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tiered-storage-hostpath-configurator
+            name: tiered-storage-hostpath-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -12201,7 +12201,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tiered-storage-pv-configurator
+            name: tiered-storage-pv-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -12589,7 +12589,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-issuer-ref-configurator
+            name: tls-issuer-ref-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -12963,7 +12963,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-issuer-ref-mtls-configurator
+            name: tls-issuer-ref-mtls-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -13337,7 +13337,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-mtls-configurator
+            name: tls-mtls-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -13711,7 +13711,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-self-signed-configurator
+            name: tls-self-signed-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
