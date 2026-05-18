@@ -342,16 +342,6 @@ func (r *RenderState) BrokerList(port int32) []string {
 	return brokers
 }
 
-func (r *RenderState) allPodNames() []string {
-	var names []string
-	for _, pool := range r.inClusterPools {
-		for i := int32(0); i < pool.GetReplicas(); i++ {
-			names = append(names, fmt.Sprintf("%s-%d", r.poolFullname(pool), i))
-		}
-	}
-	return names
-}
-
 // fetchBootstrapUser looks up an existing bootstrap user secret so that we
 // re-emit it with the same password rather than generating a new random one
 // on every reconciliation. If the secret doesn't exist yet, secretBootstrapUser()
