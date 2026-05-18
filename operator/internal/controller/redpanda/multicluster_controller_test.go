@@ -319,9 +319,11 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 			Name: scName,
 		},
 	})
+	poolName := "pool"
+	poolFullname := scName + "-" + poolName
 	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: scName + "-pool",
+			Name: poolName,
 		},
 		Spec: redpandav1alpha2.NodePoolSpec{
 			ClusterRef: redpandav1alpha2.ClusterRef{
@@ -331,6 +333,10 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 			},
 			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 				TLS: tlsSpec,
+				// Disable external so this test's NodePool doesn't grab the
+				// shared default NodePort (31644) — TestUserProvidedCA runs
+				// in the same K8s cluster and would collide otherwise.
+				External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
 			},
 		},
 	})
@@ -369,7 +375,9 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 	defaultedClusterSpec.MergeDefaults()
 	defaultedPoolSpec := redpandav1alpha2.EmbeddedNodePoolSpec{TLS: tlsSpec}
 	defaultedPoolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
-	leafCertSecretName := defaultedPoolSpec.TLS.CertServerSecretName(scName, "default")
+	// Cert resources are per-pool — the secret name is keyed off the
+	// pool's full name (cluster + suffix), not just the cluster name.
+	leafCertSecretName := defaultedPoolSpec.TLS.CertServerSecretName(poolFullname, "default")
 
 	leafCACerts := make([][]byte, len(s.mc.Envs))
 	for i, env := range s.mc.Envs {
@@ -462,9 +470,11 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 			Name: scName,
 		},
 	})
+	poolName := "pool"
+	poolFullname := scName + "-" + poolName
 	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: scName + "-pool",
+			Name: poolName,
 		},
 		Spec: redpandav1alpha2.NodePoolSpec{
 			ClusterRef: redpandav1alpha2.ClusterRef{
@@ -474,6 +484,10 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 			},
 			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 				TLS: tlsSpec,
+				// Disable external so this test's NodePool doesn't grab the
+				// shared default NodePort (31644) — TestIssuerRef runs in
+				// the same K8s cluster and would collide otherwise.
+				External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
 			},
 		},
 	})
@@ -542,7 +556,9 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 	defaultedClusterSpec.MergeDefaults()
 	defaultedPoolSpec := redpandav1alpha2.EmbeddedNodePoolSpec{TLS: tlsSpec}
 	defaultedPoolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
-	leafCertSecretName := defaultedPoolSpec.TLS.CertServerSecretName(scName, "default")
+	// Cert resources are per-pool — the secret name is keyed off the
+	// pool's full name (cluster + suffix), not just the cluster name.
+	leafCertSecretName := defaultedPoolSpec.TLS.CertServerSecretName(poolFullname, "default")
 
 	for i, env := range s.mc.Envs {
 		cl := env.Client()
