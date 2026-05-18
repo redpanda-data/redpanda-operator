@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -51,6 +52,14 @@ import (
 const (
 	finalizerKey     = "operator.redpanda.com/finalizer"
 	managedByService = "redpanda-operator"
+
+	// stretchSourcePoolAnnotation records the NodePool that the controller
+	// pinned as the source of per-K8s-cluster spec (TLS, listener ports,
+	// ClusterDomain) when ClusterSource references a StretchCluster.
+	// Persisting the choice keeps the rendered Console config stable across
+	// reconciles even as new pools come and go on the local K8s cluster — we
+	// only re-pick when the previously chosen pool is no longer present.
+	stretchSourcePoolAnnotation = "operator.redpanda.com/stretch-source-pool"
 )
 
 // console resources
@@ -241,6 +250,10 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 	}
 
 	if err := c.maybeSetJWTToken(ctx, ctl, cr); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := c.maybeSelectStretchSourcePool(ctx, ctl, cr); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -437,6 +450,66 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, ctl *kube.Ctl, cr *re
 	return nil
 }
 
+// maybeSelectStretchSourcePool resolves which NodePool will drive
+// per-K8s-cluster spec (TLS, listener ports, ClusterDomain) for a Console CR
+// whose ClusterSource references a StretchCluster, and persists the choice
+// as an annotation on the CR. The renderer then reads the annotation to
+// pick the same pool every reconcile.
+//
+// Selection rules:
+//   - If the annotation is already set and the named pool still exists in
+//     the same K8s cluster (this controller's local cluster), keep it.
+//   - Otherwise, choose the lexically smallest NodePool in the same
+//     namespace whose ClusterRef points at this StretchCluster, persist
+//     that choice, and return.
+//
+// Pinning prevents the rendered config from flapping when pools are added
+// or removed on the local K8s cluster — the only event that triggers a
+// re-pick is the currently-pinned pool going away.
+func (c *Controller) maybeSelectStretchSourcePool(ctx context.Context, ctl *kube.Ctl, cr *redpandav1alpha2.Console) error {
+	if cr.Spec.ClusterSource == nil || cr.Spec.ClusterSource.ClusterRef == nil {
+		return nil
+	}
+	ref := cr.Spec.ClusterSource.ClusterRef
+	if !ref.IsStretchCluster() {
+		return nil
+	}
+
+	nodePoolList, err := kube.List[redpandav1alpha2.NodePoolList](ctx, ctl, cr.Namespace)
+	if err != nil {
+		return err
+	}
+	var candidateNames []string
+	for i := range nodePoolList.Items {
+		np := &nodePoolList.Items[i]
+		poolRef := np.Spec.ClusterRef
+		if poolRef.IsStretchCluster() && poolRef.Name == ref.Name {
+			candidateNames = append(candidateNames, np.Name)
+		}
+	}
+	if len(candidateNames) == 0 {
+		return fmt.Errorf("no NodePools found for StretchCluster %s/%s", cr.Namespace, ref.Name)
+	}
+
+	if current := cr.Annotations[stretchSourcePoolAnnotation]; current != "" {
+		for _, name := range candidateNames {
+			if name == current {
+				return nil
+			}
+		}
+		// Previously chosen pool is gone; fall through to re-pick.
+	}
+
+	sort.Strings(candidateNames)
+	chosen := candidateNames[0]
+
+	if cr.Annotations == nil {
+		cr.Annotations = map[string]string{}
+	}
+	cr.Annotations[stretchSourcePoolAnnotation] = chosen
+	return ctl.Apply(ctx, cr, client.ForceOwnership)
+}
+
 func (c *Controller) skipServiceMonitorWatchIfNotInstalled(ctx context.Context) (skip bool) {
 	var serviceMonitorList monitoringv1.ServiceMonitorList
 	err := c.Ctl.List(ctx, "default", &serviceMonitorList)
@@ -530,31 +603,23 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 			}
 
 			// Per-K8s-cluster fields (TLS, listener ports, ClusterDomain)
-			// live on NodePool specs after the field-move refactor. Pick a
-			// representative NodePool referencing this StretchCluster and
-			// apply cluster + pool defaults so the converter sees a fully
-			// populated spec.
-			nodePoolList, err := kube.List[redpandav1alpha2.NodePoolList](ctx, r.ctl, r.console.Namespace)
+			// live on NodePool specs after the field-move refactor. The
+			// reconciler pins one local NodePool via the source-pool
+			// annotation (see maybeSelectStretchSourcePool); fetch that
+			// pool here so the rendered config stays stable across
+			// reconciles.
+			poolName := r.console.Annotations[stretchSourcePoolAnnotation]
+			if poolName == "" {
+				return console.PartialRenderValues{}, fmt.Errorf("stretch source pool annotation %q is not set; reconciler should have populated it", stretchSourcePoolAnnotation)
+			}
+			pool, err := kube.Get[redpandav1alpha2.NodePool](ctx, r.ctl, kube.ObjectKey{Namespace: r.console.Namespace, Name: poolName})
 			if err != nil {
 				return console.PartialRenderValues{}, err
 			}
-			var poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec
 			defaultedClusterSpec := *sc.Spec.DeepCopy()
 			defaultedClusterSpec.MergeDefaults()
-			for i := range nodePoolList.Items {
-				np := &nodePoolList.Items[i]
-				poolRef := np.Spec.ClusterRef
-				if !poolRef.IsStretchCluster() || poolRef.Name != sc.Name {
-					continue
-				}
-				ps := np.Spec.EmbeddedNodePoolSpec.DeepCopy()
-				ps.MergeDefaultsFrom(&defaultedClusterSpec)
-				poolSpec = ps
-				break
-			}
-			if poolSpec == nil {
-				return console.PartialRenderValues{}, fmt.Errorf("no NodePools found for StretchCluster %s/%s", sc.Namespace, sc.Name)
-			}
+			poolSpec := pool.Spec.EmbeddedNodePoolSpec.DeepCopy()
+			poolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
 
 			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc, poolSpec)
 			return console.StaticConfigurationSourceToPartialRenderValues(cfg), nil
