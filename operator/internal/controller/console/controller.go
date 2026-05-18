@@ -529,7 +529,34 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 				return console.PartialRenderValues{}, err
 			}
 
-			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc)
+			// Per-K8s-cluster fields (TLS, listener ports, ClusterDomain)
+			// live on NodePool specs after the field-move refactor. Pick a
+			// representative NodePool referencing this StretchCluster and
+			// apply cluster + pool defaults so the converter sees a fully
+			// populated spec.
+			nodePoolList, err := kube.List[redpandav1alpha2.NodePoolList](ctx, r.ctl, r.console.Namespace)
+			if err != nil {
+				return console.PartialRenderValues{}, err
+			}
+			var poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec
+			defaultedClusterSpec := *sc.Spec.DeepCopy()
+			defaultedClusterSpec.MergeDefaults()
+			for i := range nodePoolList.Items {
+				np := &nodePoolList.Items[i]
+				poolRef := np.Spec.ClusterRef
+				if !poolRef.IsStretchCluster() || poolRef.Name != sc.Name {
+					continue
+				}
+				ps := np.Spec.EmbeddedNodePoolSpec.DeepCopy()
+				ps.MergeDefaultsFrom(&defaultedClusterSpec)
+				poolSpec = ps
+				break
+			}
+			if poolSpec == nil {
+				return console.PartialRenderValues{}, fmt.Errorf("no NodePools found for StretchCluster %s/%s", sc.Namespace, sc.Name)
+			}
+
+			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc, poolSpec)
 			return console.StaticConfigurationSourceToPartialRenderValues(cfg), nil
 		}
 
