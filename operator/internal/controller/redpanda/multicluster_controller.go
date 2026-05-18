@@ -742,42 +742,13 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 
 	sc := state.cluster.StretchCluster
 
-	// TLS lives on the NodePool spec; collect the union of bootstrappable
-	// cert names across every NodePool so the CA reconciler distributes a
-	// secret for each cert that any pool in any cluster needs. When no
-	// NodePools exist yet (the user just applied a StretchCluster), use an
-	// empty placeholder pool spec — MergeDefaultsFrom populates it with the
-	// same default TLS that a fresh NodePool would inherit (the "default"
-	// and "external" certs), so the CA is bootstrapped up front rather than
-	// blocked on the first NodePool. Any unusual cert names on a NodePool
-	// added later will be picked up on the next reconcile.
-	allPools := state.cluster.GetAllNodePools()
-	defaultedClusterSpec := *sc.Spec.DeepCopy()
-	defaultedClusterSpec.MergeDefaults()
-	poolSpecs := make([]*redpandav1alpha2.EmbeddedNodePoolSpec, 0, max(1, len(allPools)))
-	if len(allPools) == 0 {
-		poolSpecs = append(poolSpecs, &redpandav1alpha2.EmbeddedNodePoolSpec{})
-	} else {
-		for _, pool := range allPools {
-			poolSpecs = append(poolSpecs, pool.Spec.EmbeddedNodePoolSpec.DeepCopy())
-		}
-	}
-	managedCertSet := map[string]struct{}{}
-	for _, ps := range poolSpecs {
-		ps.MergeDefaultsFrom(&defaultedClusterSpec)
-		for _, name := range rendermulticluster.BootstrappedCertNames(ps) {
-			managedCertSet[name] = struct{}{}
-		}
-	}
-	managedCerts := make([]string, 0, len(managedCertSet))
-	for name := range managedCertSet {
-		managedCerts = append(managedCerts, name)
-	}
-	sort.Strings(managedCerts)
-	if len(managedCerts) == 0 {
-		logger.V(log.TraceLevel).Info("no operator-managed TLS certs, skipping CA sync")
-		return ctrl.Result{}, nil
-	}
+	// CA bootstrap covers only the operator's well-known cert names —
+	// "default" and "external" — which every NodePool inherits via
+	// mergeDefaultTLS. Any custom cert names a user puts on a NodePool are
+	// expected to come with a SecretRef or IssuerRef (BYO), so they don't
+	// need a bootstrapped CA. Keeping this list static here means CA sync
+	// doesn't depend on NodePools existing yet.
+	managedCerts := []string{"default", "external"}
 
 	clusterNames := r.Manager.GetClusterNames()
 
