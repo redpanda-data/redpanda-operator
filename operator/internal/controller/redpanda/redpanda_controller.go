@@ -774,10 +774,24 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 		return ctrl.Result{}, errors.WithStack(err)
 	}
 
-	config, err := r.clusterConfigFor(ctx, state.cluster.Redpanda, schema, cluster)
+	config, warnings, err := r.clusterConfigFor(ctx, state.cluster.Redpanda, schema, cluster)
 	if err != nil {
 		logger.Error(err, "fetching cluster config")
 		return ctrl.Result{}, errors.WithStack(err)
+	}
+	// If any fixups produced warnings (typically `errorToWarning`-wrapped
+	// failed external secret lookups on Optional secrets), the
+	// corresponding entries in `config` still hold their unexpanded
+	// `${secrets.X}` placeholders. Pushing that to PatchClusterConfig
+	// would surface Redpanda's downstream validation error (e.g. "Must
+	// set both of iceberg_rest_catalog_client_id ...") instead of the
+	// actual root cause (e.g. an AccessDeniedException from the secret
+	// store). Fail the reconcile with the warning text so the user sees
+	// the actionable cause directly in the status condition. See K8S-858.
+	if msg := clusterconfiguration.FormatWarnings(warnings); msg != "" {
+		err := errors.Newf("cluster config has unresolved external secret references: %s", msg)
+		logger.Error(err, "fetching cluster config")
+		return ctrl.Result{}, err
 	}
 
 	superusers, err := r.superusersFor(ctx, state.cluster.Redpanda, cluster)
@@ -840,7 +854,7 @@ func (r *RedpandaReconciler) superusersFor(ctx context.Context, rp *redpandav1al
 	return syncclusterconfig.NormalizeSuperusers(append(superusers, values.Auth.SASL.BootstrapUser.Username())), nil
 }
 
-func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda, schema rpadmin.ConfigSchema, cluster cluster.Cluster) (_ map[string]any, err error) {
+func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav1alpha2.Redpanda, schema rpadmin.ConfigSchema, cluster cluster.Cluster) (_ map[string]any, _ []error, err error) {
 	// Parinoided panic catch as we're calling directly into helm functions.
 	defer func() {
 		if r := recover(); r != nil {
@@ -850,7 +864,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 
 	dot, err := rp.GetDot(cluster.GetConfig())
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 
 	// The most reliable way to get the correct and full cluster config is to
@@ -859,7 +873,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	// configmaps or secrets.
 	state, err := redpanda.RenderStateFromDot(dot)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 	job := redpanda.PostInstallUpgradeJob(state)
 	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state, redpanda.Pool{Statefulset: state.Values.Statefulset})
@@ -872,21 +886,21 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	}
 	for _, e := range job.Spec.Template.Spec.InitContainers[0].Env {
 		if err := conf.EnsureInitEnv(e); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 	}
 	for _, e := range job.Spec.Template.Spec.InitContainers[0].EnvFrom {
 		if err := conf.EnsureInitEnvFrom(e); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 	}
 
 	desired, err := conf.Reify(ctx, cluster.GetClient(), r.CloudSecretsExpander, schema)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 
-	return desired, nil
+	return desired, conf.Warnings(), nil
 }
 
 // syncStatus updates the status of the Redpanda cluster at the end of reconciliation when
