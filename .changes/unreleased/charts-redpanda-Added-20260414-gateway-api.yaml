@@ -1,0 +1,15 @@
+project: charts/redpanda
+kind: Added
+body: |-
+    Added Gateway API TLSRoute support for external access (**Beta**). Individual
+    external listeners can opt into TLSRoute mode via `type: tlsroute` (a
+    per-listener type that overrides the cluster-wide `external.type`), enabling
+    SNI-based routing through a user-managed Gateway. Supports per-listener
+    domains and gradual migration from NodePort/LoadBalancer to Gateway API.
+
+    Beta status: the API surface (chart values under
+    `listeners.<proto>.external.<name>.type` and `external.gateway`) may
+    still change in backwards-incompatible ways before GA. Production use is
+    not recommended; please file issues with feedback on the values shape and
+    rendered TLSRoute objects.
+time: 2026-04-14T20:00:00.000000-04:00

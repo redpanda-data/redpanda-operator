@@ -26,6 +26,8 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_ := (get (fromJson (include "redpanda.checkVersion" (dict "a" (list $state)))) "r") -}}
+{{- $_ := (get (fromJson (include "redpanda.ExternalConfig.ValidateGateway" (dict "a" (list $state.Values.external)))) "r") -}}
+{{- $_ := (get (fromJson (include "redpanda.validateGatewayListeners" (dict "a" (list $state)))) "r") -}}
 {{- $manifests := (list (get (fromJson (include "redpanda.NodePortService" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.PodDisruptionBudget" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.ServiceAccount" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.ServiceInternal" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.ServiceMonitor" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.PostInstallUpgradeJob" (dict "a" (list $state)))) "r")) -}}
 {{- range $_, $obj := (get (fromJson (include "redpanda.ConfigMaps" (dict "a" (list $state)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
@@ -76,6 +78,18 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $obj := (get (fromJson (include "redpanda.LoadBalancerServices" (dict "a" (list $state)))) "r") -}}
+{{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $_, $obj := (get (fromJson (include "redpanda.GatewayServices" (dict "a" (list $state)))) "r") -}}
+{{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $_, $obj := (get (fromJson (include "redpanda.TLSRoutes" (dict "a" (list $state)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
