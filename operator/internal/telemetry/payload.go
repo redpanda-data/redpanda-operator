@@ -73,6 +73,9 @@ type Payload struct {
 		// Connectors deployment (spec.connectors.enabled) — this is NOT Redpanda
 		// Connect; the field is named accordingly to avoid misleading dashboards.
 		ManagedConnectors int `json:"managedConnectorsEnabled"`
+		// GatewayAPIExternalAccess counts clusters using Gateway API TLSRoute-based
+		// external access (spec.external.gateway.enabled).
+		GatewayAPIExternalAccess int `json:"gatewayAPIExternalAccessEnabled"`
 	} `json:"redpanda"`
 
 	// VectorizedClusters counts deprecated v1 (vectorized Cluster CR) installs

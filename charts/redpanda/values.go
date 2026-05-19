@@ -260,6 +260,87 @@ type ExternalConfig struct {
 	SourceRanges   []string           `json:"sourceRanges"`
 	Service        Enableable         `json:"service"`
 	ExternalDNS    *Enableable        `json:"externalDns"`
+	// Gateway configures Gateway API TLSRoute-based external access.
+	// When enabled, ClusterIP services and TLSRoute resources are created
+	// instead of NodePort/LoadBalancer services. The Gateway itself must be
+	// managed separately; the chart only creates TLSRoute resources that
+	// reference it.
+	Gateway *GatewayConfig `json:"gateway,omitempty"`
+}
+
+// GatewayConfig holds configuration for Gateway API-based external access
+// using TLSRoute resources with SNI-based routing.
+type GatewayConfig struct {
+	// Enabled activates Gateway API TLSRoute-based external access. When true,
+	// this takes precedence over the NodePort/LoadBalancer external.type setting.
+	Enabled bool `json:"enabled"`
+	// ParentRefs defines which Gateway(s) handle the TLSRoutes. At least one
+	// parent reference must be provided. These are passed directly into each
+	// TLSRoute's spec.parentRefs.
+	ParentRefs []GatewayParentRef `json:"parentRefs"`
+	// AdvertisedPort is the port advertised to clients. Defaults to 443
+	// because the actual listening port is configured on the Gateway, not
+	// on the TLSRoute.
+	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
+}
+
+// GatewayParentRef identifies a Gateway (or ListenerSet) that should handle
+// the TLSRoute traffic. The schema mirrors the upstream Gateway API
+// ParentReference so users see familiar field names.
+type GatewayParentRef struct {
+	// Group is the API group of the referent. Defaults to
+	// "gateway.networking.k8s.io".
+	Group *string `json:"group,omitempty"`
+	// Kind is the kind of the referent. Defaults to "Gateway".
+	Kind *string `json:"kind,omitempty"`
+	// Name is the name of the referent.
+	Name string `json:"name"`
+	// Namespace is the namespace of the referent. When unspecified, refers
+	// to the local namespace of the TLSRoute.
+	Namespace *string `json:"namespace,omitempty"`
+	// SectionName is the name of a section within the target resource.
+	SectionName *string `json:"sectionName,omitempty"`
+}
+
+// IsGatewayRequested returns true when the user asked for Gateway API
+// TLSRoute-based external access — regardless of whether the config is valid.
+// This is intentionally separate from [ExternalConfig.IsGatewayEnabled]:
+// "requested" governs whether conventional NodePort/LoadBalancer services must
+// be suppressed (so a half-configured gateway listener can never silently fall
+// back to a NodePort and expose brokers), while "enabled" governs whether the
+// TLSRoute/ClusterIP resources are actually rendered. [ValidateGateway] closes
+// the gap between the two by failing render when a request is invalid.
+func (e *ExternalConfig) IsGatewayRequested() bool {
+	return e.Enabled && e.Gateway != nil && e.Gateway.Enabled
+}
+
+// IsGatewayEnabled returns true when Gateway API TLSRoute-based external
+// access is configured, enabled, and valid (at least one parentRef). Resource
+// rendering (TLSRoutes, ClusterIP services, advertised addresses) gates on this.
+func (e *ExternalConfig) IsGatewayEnabled() bool {
+	return e.IsGatewayRequested() && len(e.Gateway.ParentRefs) > 0
+}
+
+// ValidateGateway fails render (fail-closed) when Gateway API mode is requested
+// but misconfigured. Without this, a listener with gateway: true but empty
+// parentRefs would make IsGatewayEnabled() false and silently render as a
+// conventional NodePort/LoadBalancer — the opposite of what the user asked for,
+// potentially exposing Kafka/Admin endpoints on nodes. The CRD enforces the same
+// rule via +kubebuilder:validation:MinItems=1 on parentRefs; this guards the
+// raw-Helm path where that admission check does not run.
+func (e *ExternalConfig) ValidateGateway() {
+	if e.IsGatewayRequested() && len(e.Gateway.ParentRefs) == 0 {
+		panic("external.gateway.enabled is true but external.gateway.parentRefs is empty; Gateway API mode requires at least one parentRef. Refusing to fall back to NodePort/LoadBalancer.")
+	}
+}
+
+// GatewayAdvertisedPort returns the port to advertise to clients when using
+// Gateway API. Defaults to 443.
+func (g *GatewayConfig) GatewayAdvertisedPort() int32 {
+	if g.AdvertisedPort != nil {
+		return *g.AdvertisedPort
+	}
+	return 443
 }
 
 type Enableable struct {
@@ -1666,6 +1747,17 @@ func (l *ListenerConfig[T]) ServicePorts(namePrefix string, external *ExternalCo
 		if !ptr.Deref(listener.Enabled, external.Enabled) {
 			continue
 		}
+		// Skip listeners that opted into Gateway API TLSRoute mode; they get
+		// their own ClusterIP services instead. The per-listener `gateway: true`
+		// flag is authoritative on its own — it must exclude the listener from
+		// the conventional NodePort/LoadBalancer Service regardless of the global
+		// external.gateway state. Otherwise a listener that opts in while the
+		// global gateway block is off/absent would silently fall back to a
+		// node-exposed Service. validateGatewayListeners fails render for that
+		// misconfiguration; this skip is the matching fail-closed exclusion.
+		if ptr.Deref(listener.Gateway, false) {
+			continue
+		}
 
 		fallbackPorts := append(listener.AdvertisedPorts, l.Port)
 
@@ -1779,6 +1871,20 @@ type ExternalListener[T ~string] struct {
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
+
+	// Gateway opts this individual listener into Gateway API TLSRoute mode.
+	// Requires external.gateway to be configured with parentRefs.
+	// When true, a TLSRoute is created for this listener instead of
+	// including it in NodePort/LoadBalancer services. This allows gradual
+	// migration: some listeners can use TLSRoute while others remain on
+	// NodePort/LoadBalancer.
+	Gateway *bool `json:"gateway,omitempty"`
+	// Host is the SNI hostname for the bootstrap TLSRoute (requires gateway: true).
+	Host *string `json:"host,omitempty"`
+	// HostTemplate is a template for per-broker TLSRoute SNI hostnames.
+	// Available variables: $POD_ORDINAL, $POD_NAME.
+	// Example: "kafka-$POD_ORDINAL-broker.example.com"
+	HostTemplate *string `json:"hostTemplate,omitempty"`
 }
 
 func (l *ExternalListener[T]) AsString() ExternalListener[string] {
@@ -1796,6 +1902,9 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		TLS:                  l.TLS,
 		AuthenticationMethod: auth,
 		PrefixTemplate:       l.PrefixTemplate,
+		Gateway:              l.Gateway,
+		Host:                 l.Host,
+		HostTemplate:         l.HostTemplate,
 	}
 }
 
@@ -1806,6 +1915,12 @@ func (ExternalListener[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 func (l *ExternalListener[T]) IsEnabled() bool {
 	return ptr.Deref(l.Enabled, true) && l.Port > 0
+}
+
+// IsGatewayListener returns true when this listener has opted into Gateway API
+// TLSRoute mode via the gateway: true field.
+func (l *ExternalListener[T]) IsGatewayListener() bool {
+	return ptr.Deref(l.Gateway, false)
 }
 
 type TunableConfig map[string]any

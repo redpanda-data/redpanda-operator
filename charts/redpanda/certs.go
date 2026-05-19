@@ -60,6 +60,13 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)))
 		}
 
+		// Gateway API: a TLS-passthrough listener presents this managed cert
+		// directly to clients, who connect using the listener's host/hostTemplate
+		// SNI names. Those names are not covered by the internal service DNS or the
+		// external.domain wildcard above, so add them here to avoid post-bootstrap
+		// hostname-verification failures.
+		names = append(names, gatewayServerCertDNSNames(state, name)...)
+
 		duration := helmette.Default("43800h", data.Duration)
 		issuerRef := ptr.Deref(data.IssuerRef, cmmetav1.ObjectReference{
 			Kind:  "Issuer",
@@ -141,4 +148,61 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 	}
 
 	return certs
+}
+
+// gatewayServerCertDNSNames returns the Gateway API SNI hostnames that the
+// managed server certificate named certName must additionally cover. Every
+// external listener that opts into Gateway TLSRoute mode with TLS enabled and
+// resolves to certName contributes its bootstrap host plus one rendered
+// hostTemplate name per broker. Under TLS passthrough the broker presents this
+// cert directly, so omitting these SANs makes Kafka clients fail hostname
+// verification once they reconnect to a per-broker SNI host.
+func gatewayServerCertDNSNames(state *RenderState, certName string) []string {
+	if !state.Values.External.IsGatewayEnabled() {
+		return nil
+	}
+
+	pods := gatewayPodNames(state)
+	var names []string
+
+	for _, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
+		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.Kafka.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
+	}
+	for _, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
+		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.HTTP.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
+	}
+	for _, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
+		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.Admin.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
+	}
+	for _, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
+		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.SchemaRegistry.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
+	}
+
+	return names
+}
+
+// appendGatewayCertHosts appends a gateway listener's SNI hostnames to names
+// when the listener is enabled, in gateway mode, TLS-enabled, and resolves to
+// certName. extTLS.IsEnabled is nil-safe, and GetCertName is only reached when
+// it returns true (so extTLS is non-nil there).
+func appendGatewayCertHosts(state *RenderState, names []string, certName string, enabled bool, isGateway bool, extTLS *ExternalTLS, listenerTLS *InternalTLS, host string, hostTemplate string, pods []string) []string {
+	if !enabled || !isGateway {
+		return names
+	}
+	if !extTLS.IsEnabled(listenerTLS, &state.Values.TLS) {
+		return names
+	}
+	if extTLS.GetCertName(listenerTLS) != certName {
+		return names
+	}
+
+	if host != "" {
+		names = append(names, host)
+	}
+	if hostTemplate != "" {
+		for i, podname := range pods {
+			names = append(names, renderBrokerHost(hostTemplate, i, podname))
+		}
+	}
+	return names
 }

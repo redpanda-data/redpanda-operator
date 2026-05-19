@@ -29,15 +29,21 @@ func Secrets(state *RenderState) []*corev1.Secret {
 	if saslUsers := SecretSASLUsers(state); saslUsers != nil {
 		secrets = append(secrets, saslUsers)
 	}
-	secrets = append(secrets, SecretConfigurator(state, Pool{Statefulset: state.Values.Statefulset}))
+	// ordinalOffset tracks the global broker ordinal where each pool begins, in
+	// the same main-then-pools order as [gatewayPodNames]. The configurator
+	// renders advertised addresses with a pool-local ordinal, so it needs this
+	// offset to recover the global ordinal that Gateway TLSRoutes/services use.
+	secrets = append(secrets, SecretConfigurator(state, Pool{Statefulset: state.Values.Statefulset}, 0))
 	if fsValidator := SecretFSValidator(state, Pool{Statefulset: state.Values.Statefulset}); fsValidator != nil {
 		secrets = append(secrets, fsValidator)
 	}
+	ordinalOffset := int(state.Values.Statefulset.Replicas)
 	for _, set := range state.Pools {
-		secrets = append(secrets, SecretConfigurator(state, set))
+		secrets = append(secrets, SecretConfigurator(state, set, ordinalOffset))
 		if fsValidator := SecretFSValidator(state, set); fsValidator != nil {
 			secrets = append(secrets, fsValidator)
 		}
+		ordinalOffset = ordinalOffset + int(set.Statefulset.Replicas)
 	}
 	if bootstrapUser := SecretBootstrapUser(state); bootstrapUser != nil {
 		secrets = append(secrets, bootstrapUser)
@@ -296,7 +302,7 @@ echo "passed"`
 	return secret
 }
 
-func SecretConfigurator(state *RenderState, pool Pool) *corev1.Secret {
+func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -335,10 +341,10 @@ func SecretConfigurator(state *RenderState, pool Pool) *corev1.Secret {
 		)
 	}
 
-	kafkaSnippet := secretConfiguratorKafkaConfig(state, pool.Statefulset)
+	kafkaSnippet := secretConfiguratorKafkaConfig(state, pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, kafkaSnippet...)
 
-	httpSnippet := secretConfiguratorHTTPConfig(state, pool.Statefulset)
+	httpSnippet := secretConfiguratorHTTPConfig(state, pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, httpSnippet...)
 
 	if RedpandaAtLeast_22_3_0(state) && state.Values.RackAwareness.Enabled {
@@ -357,7 +363,7 @@ func SecretConfigurator(state *RenderState, pool Pool) *corev1.Secret {
 	return secret
 }
 
-func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset) []string {
+func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset, ordinalOffset int) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
@@ -398,7 +404,16 @@ func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset) []string
 					}
 				}
 
-				host := advertisedHostJSON(state, externalName, port, replicaIndex)
+				host := advertisedHostJSON(
+					state,
+					port,
+					replicaIndex,
+					ordinalOffset+replicaIndex,
+					ptr.Deref(externalVals.Host, ""),
+					ptr.Deref(externalVals.HostTemplate, ""),
+					externalVals.IsGatewayListener(),
+				)
+				host["name"] = externalName
 				// XXX: the original code used the stringified `host` value as a template
 				// for re-expansion; however it was impossible to make this work usefully,
 				/// even with the original yaml template.
@@ -433,7 +448,7 @@ func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset) []string
 	return snippet
 }
 
-func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset) []string {
+func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset, ordinalOffset int) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
 	var snippet []string
@@ -474,7 +489,16 @@ func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset) []string 
 					}
 				}
 
-				host := advertisedHostJSON(state, externalName, port, replicaIndex)
+				host := advertisedHostJSON(
+					state,
+					port,
+					replicaIndex,
+					ordinalOffset+replicaIndex,
+					ptr.Deref(externalVals.Host, ""),
+					ptr.Deref(externalVals.HostTemplate, ""),
+					externalVals.IsGatewayListener(),
+				)
+				host["name"] = externalName
 				// XXX: the original code used the stringified `host` value as a template
 				// for re-expansion; however it was impossible to make this work usefully,
 				/// even with the original yaml template.
@@ -537,9 +561,21 @@ func externalAdvertiseAddress(state *RenderState) string {
 }
 
 // was advertised-host
-func advertisedHostJSON(state *RenderState, externalName string, port int32, replicaIndex int) map[string]any {
-	host := map[string]any{
-		"name":    externalName,
+func advertisedHostJSON(state *RenderState, port int32, replicaIndex int, globalOrdinal int, host string, hostTemplate string, isGateway bool) map[string]any {
+	// Gateway API mode: advertise the TLSRoute SNI hostname and the
+	// gateway's advertised port (default 443) rather than a NodePort/LB address.
+	// Only applies to listeners that opted into gateway mode.
+	//
+	// NB: gateway mode keys off globalOrdinal, not the pool-local replicaIndex.
+	// The configurator renders per node pool with a StatefulSet-local ordinal,
+	// but TLSRoutes/services are named/hosted by the global pod-list index, so a
+	// pool broker must advertise the host at its global ordinal to match them.
+	if state.Values.External.IsGatewayEnabled() && isGateway {
+		return advertisedHostJSONGateway(state, globalOrdinal, host, hostTemplate)
+	}
+
+	hostMap := map[string]any{
+		"name":    "",
 		"address": externalAdvertiseAddress(state),
 		"port":    port,
 	}
@@ -551,20 +587,51 @@ func advertisedHostJSON(state *RenderState, externalName string, port int32, rep
 			address = state.Values.External.Addresses[0]
 		}
 		if domain := ptr.Deref(state.Values.External.Domain, ""); domain != "" {
-			host = map[string]any{
-				"name":    externalName,
+			hostMap = map[string]any{
+				"name":    "",
 				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, domain, state.Dot)),
 				"port":    port,
 			}
 		} else {
-			host = map[string]any{
-				"name":    externalName,
+			hostMap = map[string]any{
+				"name":    "",
 				"address": address,
 				"port":    port,
 			}
 		}
 	}
-	return host
+	return hostMap
+}
+
+// advertisedHostJSONGateway builds the advertised host entry for Gateway API
+// mode. The address is the per-broker SNI hostname (from HostTemplate) and the
+// port is the gateway's advertised port (default 443). globalOrdinal is the
+// broker's index into [gatewayPodNames] (the same index used to name/host its
+// TLSRoute and per-broker service), so the advertised address matches the route
+// that carries it.
+func advertisedHostJSONGateway(state *RenderState, globalOrdinal int, host string, hostTemplate string) map[string]any {
+	gw := state.Values.External.Gateway
+	port := gw.GatewayAdvertisedPort()
+
+	if hostTemplate == "" {
+		// Fallback: use the bootstrap host if no template is set.
+		hostTemplate = host
+	}
+
+	pods := gatewayPodNames(state)
+
+	podName := ""
+	if globalOrdinal < len(pods) {
+		podName = pods[globalOrdinal]
+	}
+
+	address := renderBrokerHost(hostTemplate, globalOrdinal, podName)
+
+	return map[string]any{
+		"name":    "",
+		"address": address,
+		"port":    port,
+	}
 }
 
 // adminInternalHTTPProtocol was admin-http-protocol

@@ -14,15 +14,16 @@ package v1alpha2
 // ExternalApplyConfiguration represents a declarative configuration of the External type for use
 // with apply.
 type ExternalApplyConfiguration struct {
-	Addresses      []string                           `json:"addresses,omitempty"`
-	Annotations    map[string]string                  `json:"annotations,omitempty"`
-	Domain         *string                            `json:"domain,omitempty"`
-	Enabled        *bool                              `json:"enabled,omitempty"`
-	Service        *ExternalServiceApplyConfiguration `json:"service,omitempty"`
-	SourceRanges   []string                           `json:"sourceRanges,omitempty"`
-	Type           *string                            `json:"type,omitempty"`
-	ExternalDNS    *ExternalDNSApplyConfiguration     `json:"externalDns,omitempty"`
-	PrefixTemplate *string                            `json:"prefixTemplate,omitempty"`
+	Addresses      []string                                 `json:"addresses,omitempty"`
+	Annotations    map[string]string                        `json:"annotations,omitempty"`
+	Domain         *string                                  `json:"domain,omitempty"`
+	Enabled        *bool                                    `json:"enabled,omitempty"`
+	Service        *ExternalServiceApplyConfiguration       `json:"service,omitempty"`
+	SourceRanges   []string                                 `json:"sourceRanges,omitempty"`
+	Type           *string                                  `json:"type,omitempty"`
+	ExternalDNS    *ExternalDNSApplyConfiguration           `json:"externalDns,omitempty"`
+	PrefixTemplate *string                                  `json:"prefixTemplate,omitempty"`
+	Gateway        *GatewayExternalConfigApplyConfiguration `json:"gateway,omitempty"`
 }
 
 // ExternalApplyConfiguration constructs a declarative configuration of the External type for use with
@@ -110,5 +111,13 @@ func (b *ExternalApplyConfiguration) WithExternalDNS(value *ExternalDNSApplyConf
 // If called multiple times, the PrefixTemplate field is set to the value of the last call.
 func (b *ExternalApplyConfiguration) WithPrefixTemplate(value string) *ExternalApplyConfiguration {
 	b.PrefixTemplate = &value
+	return b
+}
+
+// WithGateway sets the Gateway field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Gateway field is set to the value of the last call.
+func (b *ExternalApplyConfiguration) WithGateway(value *GatewayExternalConfigApplyConfiguration) *ExternalApplyConfiguration {
+	b.Gateway = value
 	return b
 }

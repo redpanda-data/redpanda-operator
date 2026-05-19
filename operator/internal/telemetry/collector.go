@@ -271,6 +271,16 @@ func (c *Collector) aggregateRedpandas(payload *Payload, items []redpandav1alpha
 		if spec.Connectors != nil && ptrBool(spec.Connectors.Enabled) {
 			payload.Redpanda.ManagedConnectors++
 		}
+		// Mirror redpanda.ExternalConfig.IsGatewayEnabled(): a cluster only counts
+		// as using Gateway API external access when external access is enabled, the
+		// gateway block is enabled, AND at least one parentRef is set (otherwise no
+		// TLSRoutes are rendered). Counting on gateway.Enabled alone overcounts
+		// half-configured clusters that render no gateway resources.
+		if spec.External != nil && ptrBool(spec.External.Enabled) &&
+			spec.External.Gateway != nil && ptrBool(spec.External.Gateway.Enabled) &&
+			len(spec.External.Gateway.ParentRefs) > 0 {
+			payload.Redpanda.GatewayAPIExternalAccess++
+		}
 
 		// Broker count + sizing: chart-rendered. Fall back to raw replicas for the
 		// count if rendering fails (sizing is simply skipped for that cluster).

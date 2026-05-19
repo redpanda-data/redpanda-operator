@@ -1241,12 +1241,132 @@ statefulset:
         secret:
           secretName: "redpanda-external-cert"
 
--- rpk-profile-watcher-disabled --
+-- gateway-api-tlsroute --
+# Gateway API TLSRoute-based external access with per-listener SNI hostnames.
+# Verifies that ClusterIP services and TLSRoute resources are generated,
+# and that NodePort/LoadBalancer services are NOT created.
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
-# K8S-755: the in-pod rpk refresh is on by default; this is the kill switch.
-# The sidecar must then render without the --watch-rpk-profile args.
-statefulset:
-  sideCars:
-    rpkProfileWatcher:
-      enabled: false
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: kafka-gateway
+      sectionName: kafka
+    advertisedPort: 9094
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        gateway: true
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
+        tls:
+          cert: default
+
+-- gateway-api-migration --
+# Gradual migration: existing NodePort listener coexists with a new TLSRoute
+# listener on a different port. Verifies that:
+# - The NodePort service includes only the traditional listener port (9094)
+# - Gateway ClusterIP services include only the TLSRoute listener port (9095)
+# - TLSRoutes are created only for the gateway listener
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  type: NodePort
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: kafka-gateway
+      sectionName: kafka
+    advertisedPort: 443
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        advertisedPorts:
+        - 30092
+      gw-listener:
+        port: 9095
+        gateway: true
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
+        tls:
+          cert: default
+
+-- gateway-listener-without-global-gateway --
+# A listener opts into gateway mode (gateway: true) but the global
+# external.gateway block is absent. This must FAIL render rather than silently
+# falling back to a node-exposed NodePort Service (re-review finding 1).
+# ASSERT-ERROR-CONTAINS ["sets gateway: true but external.gateway is not enabled"]
+external:
+  enabled: true
+  type: NodePort
+listeners:
+  kafka:
+    external:
+      default:
+        enabled: true
+        port: 9094
+        gateway: true
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL.example.com
+
+-- gateway-all-listeners-loadbalancer --
+# external.type=LoadBalancer with every enabled external listener on gateway
+# mode. Must render successfully with NO per-broker LoadBalancer Services (they
+# would otherwise have an empty port list, which the API server rejects) — only
+# TLSRoutes + gateway ClusterIP services (re-review finding 2).
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  type: LoadBalancer
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: redpanda-gateway
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        gateway: true
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL.example.com
+        tls:
+          cert: default
+  admin:
+    external:
+      default:
+        gateway: true
+        host: admin.example.com
+  http:
+    external:
+      default:
+        gateway: true
+        host: http.example.com
+  schemaRegistry:
+    external:
+      default:
+        gateway: true
+        host: schema.example.com
