@@ -274,12 +274,21 @@ tasks:
     vars:
       RUN: '{{ default `"^TestAcceptance"` .RUN }}'
       GO_TEST_RUNNER: '{{default "go test" .GO_TEST_RUNNER}}'
+      # Cap how many @multicluster features run concurrently. Each parallel
+      # feature spins up 3 vclusters (+ cert-manager + Redpanda) on the single
+      # shared k3d cluster; left uncapped, `go test -parallel` defaults to
+      # GOMAXPROCS (48 on the CI m6id.12xlarge), so every parallel feature
+      # launches at once and overwhelms the node (image-pull QPS throttling,
+      # crashlooping pods, helm --wait timeouts). Keep this small.
+      MULTICLUSTER_PARALLELISM: '{{ default 3 .MULTICLUSTER_PARALLELISM }}'
     cmds:
     - task: test:unit
       vars:
         GO_TEST_RUNNER: 'HARPOON_GROUPS=multicluster {{.GO_TEST_RUNNER}}'
         PKG: ./acceptance/
-        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -timeout 60m -tags acceptance'
+        # -timeout is generous (75m) because capping parallelism serializes the
+        # feature waves, extending wall-clock beyond the old all-at-once run.
+        CLI_ARGS: '{{.CLI_ARGS}} -run {{.RUN}} -parallel {{.MULTICLUSTER_PARALLELISM}} -timeout 75m -tags acceptance'
 
   test:pull-images:
     vars:

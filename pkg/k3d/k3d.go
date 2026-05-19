@@ -301,6 +301,19 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		// Disable bundled k3s components that we don't use in tests.
 		`--k3s-arg`, `--disable=traefik@server:*`,
 		`--k3s-arg`, `--disable=servicelb@server:*`,
+		// Raise kubelet image-pull rate limits and allow parallel pulls. The
+		// kubelet defaults (registry-qps=5, registry-burst=10,
+		// serialize-image-pulls=true) throttle the burst of pulls when many
+		// pods start at once (e.g. several multicluster acceptance features
+		// each launching vclusters + Redpanda), surfacing as "pull QPS
+		// exceeded" events and slow/crashlooping pods. Apply to both server and
+		// agent kubelets since pods may schedule on either.
+		`--k3s-arg`, `--kubelet-arg=registry-qps=20@server:*`,
+		`--k3s-arg`, `--kubelet-arg=registry-burst=40@server:*`,
+		`--k3s-arg`, `--kubelet-arg=serialize-image-pulls=false@server:*`,
+		`--k3s-arg`, `--kubelet-arg=registry-qps=20@agent:*`,
+		`--k3s-arg`, `--kubelet-arg=registry-burst=40@agent:*`,
+		`--k3s-arg`, `--kubelet-arg=serialize-image-pulls=false@agent:*`,
 		`--network`, config.network,
 		`--verbose`,
 	}

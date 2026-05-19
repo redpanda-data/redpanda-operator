@@ -41,7 +41,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -387,62 +386,158 @@ func setupTestManager(ctx context.Context, cfg *rest.Config, c runtimeclient.Cli
 	return mgr
 }
 
+const (
+	// multiclusterManagerSetupAttempts bounds how many times
+	// setupMulticlusterManager rebuilds the test-side manager (and its
+	// per-vcluster port-forwards) before giving up.
+	multiclusterManagerSetupAttempts = 3
+	// multiclusterManagerSetupBackoff is the pause between setup attempts.
+	multiclusterManagerSetupBackoff = 5 * time.Second
+	// multiclusterEngageTimeout bounds a single attempt's wait for every
+	// vcluster to register with the manager and sync its informer cache.
+	multiclusterEngageTimeout = 90 * time.Second
+)
+
 // setupMulticlusterManager builds a StaticMulticlusterManager from the given
 // vcluster nodes. It port-forwards a REST config for each node and returns both
 // the manager and the per-node REST configs (needed to construct a dialer). The
 // manager uses direct (non-cached) clients and does not require starting.
+//
+// Engagement is retried: if any vcluster fails to register or sync its cache
+// within the per-attempt budget, the whole attempt (port-forwards + manager) is
+// torn down and rebuilt. This is necessary because the StaticMulticluster
+// manager engages clusters exactly once — a cluster whose informer cache misses
+// its sync window is dropped permanently and never retried, and the underlying
+// proxy/port-forward to a vcluster API server can be transiently disrupted under
+// CI load. Rebuilding from scratch re-establishes fresh port-forwards and
+// re-engages every cluster.
 func setupMulticlusterManager(ctx context.Context, nodes []*vclusterNode) (multicluster.Manager, map[string]*rest.Config) {
 	t := framework.T(ctx)
 
-	pfCfgs := make(map[string]*rest.Config, len(nodes))
-	for _, node := range nodes {
-		pfCfg, err := node.PortForwardedRESTConfig(ctx)
+	var lastErr error
+	for attempt := 1; attempt <= multiclusterManagerSetupAttempts; attempt++ {
+		mgr, pfCfgs, cancel, err := tryEngageMulticlusterManager(ctx, t, nodes)
+		if err == nil {
+			// Keep the successful attempt's port-forwards and manager goroutine
+			// alive for the rest of the scenario; tear them down at cleanup.
+			t.Cleanup(func(context.Context) { cancel() })
+			return mgr, pfCfgs
+		}
+
+		lastErr = err
+		t.Logf("multicluster manager setup attempt %d/%d failed: %v", attempt, multiclusterManagerSetupAttempts, err)
+
+		if attempt < multiclusterManagerSetupAttempts {
+			select {
+			case <-time.After(multiclusterManagerSetupBackoff):
+			case <-ctx.Done():
+				t.Fatalf("multicluster manager setup aborted: %v", ctx.Err())
+			}
+		}
+	}
+
+	t.Fatalf("multicluster manager setup failed after %d attempts: %v", multiclusterManagerSetupAttempts, lastErr)
+	return nil, nil
+}
+
+// tryEngageMulticlusterManager performs a single attempt to build and engage a
+// StaticMulticlusterManager. On success it returns the manager, the per-node
+// REST configs, and a cancel func the caller MUST retain until the manager is no
+// longer needed — cancelling tears down the port-forwards and the manager
+// goroutine. On failure it tears down everything it created and returns an error
+// naming which clusters did and did not come up.
+func tryEngageMulticlusterManager(ctx context.Context, t framework.TestingT, nodes []*vclusterNode) (mgr multicluster.Manager, pfCfgs map[string]*rest.Config, cancel context.CancelFunc, err error) {
+	attemptCtx, attemptCancel := context.WithCancel(ctx)
+	// On any error path, release everything this attempt created. On success the
+	// cancel is handed to the caller instead (see the success return below).
+	defer func() {
 		if err != nil {
-			t.Fatalf("port-forwarded REST config for %s: %v", node.Name(), err)
+			attemptCancel()
+		}
+	}()
+
+	pfCfgs = make(map[string]*rest.Config, len(nodes))
+	for _, node := range nodes {
+		pfCfg, perr := node.PortForwardedRESTConfig(attemptCtx)
+		if perr != nil {
+			return nil, nil, nil, fmt.Errorf("port-forwarded REST config for %s: %w", node.Name(), perr)
 		}
 		pfCfgs[node.Name()] = pfCfg
 	}
 
-	mgr, err := multicluster.NewStaticMulticlusterManager(nodes[0].Name(), pfCfgs, t.Scheme())
+	mgr, err = multicluster.NewStaticMulticlusterManager(nodes[0].Name(), pfCfgs, t.Scheme())
 	if err != nil {
-		t.Fatalf("initializing multicluster manager: %v", err)
+		return nil, nil, nil, fmt.Errorf("initializing multicluster manager: %w", err)
 	}
-	go mgr.Start(ctx)
+	go mgr.Start(attemptCtx)
 
 	// Elected fires when leader election completes (immediately for non-LE
 	// managers) but does NOT wait for cache sync. We must wait for both.
 	select {
 	case <-mgr.Elected():
+	case <-attemptCtx.Done():
+		return nil, nil, nil, fmt.Errorf("manager election aborted: %w", attemptCtx.Err())
 	case <-time.After(60 * time.Second):
-		t.Fatalf("multicluster manager did not become elected within 60s")
+		return nil, nil, nil, fmt.Errorf("manager did not become elected within 60s")
 	}
 
-	// Wait for all informer caches to sync so that cached-client List/Get
-	// calls don't block on first access. Sync each cluster individually
-	// since the multicluster Manager doesn't expose a global GetCache.
-	//
-	// mgr.Start engages clusters asynchronously, so GetCluster can briefly
-	// return "cluster not found" for a name that GetClusterNames already
-	// reports. Poll until each cluster is registered before treating it as
-	// fatal — Elected only signals leader election, not engagement.
-	syncCtx, syncCancel := context.WithTimeout(ctx, 2*time.Minute)
-	defer syncCancel()
-	for _, name := range mgr.GetClusterNames() {
-		var cl cluster.Cluster
-		require.Eventually(t, func() bool {
-			c, err := mgr.GetCluster(syncCtx, name)
-			if err != nil {
-				return false
+	// Wait for every cluster to register AND sync its informer cache. The
+	// provider engages clusters asynchronously and one-shot: GetCluster can
+	// briefly report "cluster not found", and a cluster whose cache misses its
+	// sync window is dropped without retry (the provider only logs the error,
+	// to a logger that is not wired up in the test process). Poll all clusters
+	// together so a slow one doesn't starve the others, and on timeout report
+	// exactly which clusters did/didn't come up to make the failure debuggable.
+	names := mgr.GetClusterNames()
+	engageCtx, engageCancel := context.WithTimeout(attemptCtx, multiclusterEngageTimeout)
+	defer engageCancel()
+
+	synced := make(map[string]bool, len(names))
+	seenRegistered := make(map[string]bool, len(names))
+	for {
+		for _, name := range names {
+			if synced[name] {
+				continue
 			}
-			cl = c
-			return true
-		}, 60*time.Second, 1*time.Second, "cluster %s never registered with multicluster manager", name)
-		if !cl.GetCache().WaitForCacheSync(syncCtx) {
-			t.Fatalf("cache for cluster %s did not sync within 2m", name)
+			cl, gerr := mgr.GetCluster(engageCtx, name)
+			if gerr != nil {
+				continue
+			}
+			seenRegistered[name] = true
+			// Use a short sub-timeout so we poll rather than block the whole
+			// remaining budget waiting on a single cluster's cache.
+			waitCtx, waitCancel := context.WithTimeout(engageCtx, 2*time.Second)
+			ok := cl.GetCache().WaitForCacheSync(waitCtx)
+			waitCancel()
+			if ok {
+				synced[name] = true
+			}
+		}
+
+		if len(synced) == len(names) {
+			return mgr, pfCfgs, attemptCancel, nil
+		}
+
+		if engageCtx.Err() != nil {
+			missing := make([]string, 0, len(names))
+			for _, name := range names {
+				if synced[name] {
+					continue
+				}
+				status := "never registered"
+				if seenRegistered[name] {
+					status = "registered but cache never synced"
+				}
+				missing = append(missing, fmt.Sprintf("%s (%s)", name, status))
+			}
+			return nil, nil, nil, fmt.Errorf("clusters did not engage with multicluster manager within %s: %s", multiclusterEngageTimeout, strings.Join(missing, ", "))
+		}
+
+		select {
+		case <-time.After(1 * time.Second):
+		case <-engageCtx.Done():
 		}
 	}
-
-	return mgr, pfCfgs
 }
 
 func clientsForCluster(ctx context.Context, cluster string) *clusterClients {

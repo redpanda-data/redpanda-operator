@@ -161,6 +161,11 @@ func init() {
 	// Operator upgrade scenario steps
 	framework.RegisterStep(`^I install local CRDs from "([^"]*)"`, iInstallLocalCRDs)
 
+	// Stretch-cluster operator upgrade scenario steps
+	framework.RegisterStep(`^I create a multicluster operator named "([^"]*)" with (\d+) nodes using helm chart "([^"]*)" version "([^"]*)"$`, createNetworkedVClusterOperatorsWithChart)
+	framework.RegisterStep(`^the multicluster operator raft quorum in "([^"]*)" is healthy$`, multiclusterOperatorRaftQuorumIsHealthy)
+	framework.RegisterStep(`^I upgrade the multicluster operator in "([^"]*)" to the local dev chart, one vcluster at a time$`, upgradeMulticlusterOperatorOneAtATime)
+
 	// Console scenario steps
 	framework.RegisterStep(`^Console "([^"]+)" will be healthy`, consoleIsHealthy)
 	framework.RegisterStep(`^the migrated console cluster "([^"]+)" should have (\d+) warning(s)?$`, consoleHasWarnings)
