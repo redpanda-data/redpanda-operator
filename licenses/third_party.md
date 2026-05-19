@@ -323,7 +323,7 @@ Run `task generate:third-party-licenses-list`.
 | pgregory.net/rapid | [MPL-2.0](https://github.com/chrisseto/rapid/blob/cdeef406c65c/LICENSE) |
 | sigs.k8s.io/apiserver-network-proxy/konnectivity-client | [Apache-2.0](https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/konnectivity-client/v0.34.0/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.23.1/LICENSE) |
-| sigs.k8s.io/gateway-api/apis/v1 | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.4.1/LICENSE) |
+| sigs.k8s.io/gateway-api/apis | [Apache-2.0](https://github.com/kubernetes-sigs/gateway-api/blob/v1.4.1/LICENSE) |
 | sigs.k8s.io/json | [Apache-2.0](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/json | [BSD-3-Clause](https://github.com/kubernetes-sigs/json/blob/2d320260d730/LICENSE) |
 | sigs.k8s.io/kustomize/api | [Apache-2.0](https://github.com/kubernetes-sigs/kustomize/blob/api/v0.20.1/LICENSE) |

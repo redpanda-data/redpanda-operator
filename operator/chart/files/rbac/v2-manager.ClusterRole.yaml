@@ -179,6 +179,18 @@ rules:
       - update
       - watch
   - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - tlsroutes
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
       - monitoring.coreos.com
     resources:
       - podmonitors

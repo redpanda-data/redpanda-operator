@@ -24,7 +24,9 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
@@ -56,6 +58,14 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
+		// Use the upstream Gateway API v1alpha2 TLSRoute (not the chart's
+		// lightweight TLSRoute struct) so controller-runtime can List/Watch
+		// it via the registered v1alpha2 scheme — which provides the
+		// required TLSRouteList + ListOptions kinds.
+		// The chart still renders the same wire bytes; the lightweight
+		// struct exists only to keep the gotohelm transpiler happy and is
+		// never used by the operator's controller cache.
+		&gatewayv1alpha2.TLSRoute{},
 		&monitoringv1.PodMonitor{},
 		&monitoringv1.ServiceMonitor{},
 		&networkingv1.Ingress{},
@@ -72,7 +82,29 @@ func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
+	addTLSRouteToScheme(Scheme)
 }
+
+// addTLSRouteToScheme registers the Gateway API v1alpha2 types (TLSRoute +
+// TLSRouteList + the v1alpha2 ListOptions) on the supplied scheme so the
+// operator's controller-runtime cache can List/Watch TLSRoutes that this
+// chart renders. The earlier shape — registering only the chart's
+// lightweight TLSRoute kind via AddKnownTypeWithName — was insufficient:
+// controller-runtime needs the matching List kind in the scheme to issue
+// List calls, which it does on every reconcile pass.
+// +gotohelm:ignore=true
+func addTLSRouteToScheme(s *runtime.Scheme) {
+	must(gatewayv1alpha2.Install(s))
+}
+
+// Keep the `schema` and chart-local `TLSRoute` references reachable after
+// the import shuffle above. `schema` is still used transitively by the
+// gateway-api scheme registration path, and `TLSRoute` remains the type
+// returned by TLSRoutes() (the gotohelm-rendered path).
+var (
+	_ = schema.GroupVersion{}
+	_ = (*TLSRoute)(nil)
+)
 
 // +gotohelm:ignore=true
 func must(err error) {
@@ -164,6 +196,14 @@ func renderResources(state *RenderState) []kube.Object {
 	}
 
 	for _, obj := range LoadBalancerServices(state) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range GatewayServices(state) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range TLSRoutes(state) {
 		manifests = append(manifests, obj)
 	}
 

@@ -1240,3 +1240,70 @@ statefulset:
       - name: "3rd-party-certs"
         secret:
           secretName: "redpanda-external-cert"
+
+-- gateway-api-tlsroute --
+# Gateway API TLSRoute-based external access with per-listener SNI hostnames.
+# Verifies that ClusterIP services and TLSRoute resources are generated,
+# and that NodePort/LoadBalancer services are NOT created.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: kafka-gateway
+      sectionName: kafka
+    advertisedPort: 9094
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        gateway: true
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
+        tls:
+          cert: default
+
+-- gateway-api-migration --
+# Gradual migration: existing NodePort listener coexists with a new TLSRoute
+# listener on a different port. Verifies that:
+# - The NodePort service includes only the traditional listener port (9094)
+# - Gateway ClusterIP services include only the TLSRoute listener port (9095)
+# - TLSRoutes are created only for the gateway listener
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  type: NodePort
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: kafka-gateway
+      sectionName: kafka
+    advertisedPort: 443
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        advertisedPorts:
+        - 30092
+      gw-listener:
+        port: 9095
+        gateway: true
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
+        tls:
+          cert: default

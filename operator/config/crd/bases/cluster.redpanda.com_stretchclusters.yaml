@@ -383,6 +383,48 @@ spec:
                           `external.addresses[i]`.`external.domain`.
                         type: boolean
                     type: object
+                  gateway:
+                    description: Configures Gateway API TLSRoute-based external access.
+                      When enabled, ClusterIP services and TLSRoute resources are
+                      created instead of NodePort/LoadBalancer services. The Gateway
+                      itself must be managed externally.
+                    properties:
+                      advertisedPort:
+                        description: The port advertised to clients. Defaults to 443.
+                        format: int32
+                        type: integer
+                      enabled:
+                        description: Enables Gateway API TLSRoute-based external access.
+                        type: boolean
+                      parentRefs:
+                        description: Defines which Gateway(s) handle the TLSRoutes.
+                          At least one parent reference must be provided.
+                        items:
+                          description: GatewayParentRefConfig identifies a Gateway
+                            (or ListenerSet) that should handle the TLSRoute traffic.
+                            Schema mirrors the upstream Gateway API ParentReference.
+                          properties:
+                            group:
+                              description: API group of the referent. Defaults to
+                                "gateway.networking.k8s.io".
+                              type: string
+                            kind:
+                              description: Kind of the referent. Defaults to "Gateway".
+                              type: string
+                            name:
+                              description: Name of the referent.
+                              type: string
+                            namespace:
+                              description: Namespace of the referent.
+                              type: string
+                            sectionName:
+                              description: Name of a section within the target resource.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                    type: object
                   prefixTemplate:
                     description: Specifies a naming prefix template for external Services.
                     type: string
