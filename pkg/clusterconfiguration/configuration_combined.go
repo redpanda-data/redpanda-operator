@@ -318,6 +318,20 @@ func (c *CombinedCfg) ReifyClusterConfiguration(
 	return c.Cluster.Reify(ctx, c.reader, c.cloudExpander, schema)
 }
 
+// ClusterConfigWarnings returns non-fatal warnings collected during the last
+// ReifyClusterConfiguration call — typically `errorToWarning`-wrapped failed
+// external secret expansions on Optional secrets. The corresponding entries
+// in the rendered config keep their unexpanded `${secrets.X}` placeholders,
+// so callers passing the config to the Redpanda admin API should surface
+// these warnings in a status condition. Otherwise the only user-visible
+// signal will be Redpanda's downstream validation error on the unexpanded
+// placeholder, which obscures the root cause (e.g., an
+// AccessDeniedException from the cloud secret store).
+// See K8S-858.
+func (c *CombinedCfg) ClusterConfigWarnings() []error {
+	return c.Cluster.Warnings()
+}
+
 // clone supplies a serialisation-backed object cloning mechanism for cases where
 // the underlying type doesn't supply a `.Clone()` mechanism.
 func clone[T any](val T) (T, error) {

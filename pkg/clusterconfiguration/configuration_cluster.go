@@ -43,6 +43,23 @@ type clusterCfg struct {
 
 	// These are created only once, on demand
 	concrete map[string]any
+
+	// warnings captures non-fatal fixup failures from the last Reify call,
+	// most commonly an `errorToWarning`-wrapped external secret lookup that
+	// could not be resolved. The fixup's templated value remains in
+	// `concrete` (unexpanded), so any caller passing the result to the
+	// Redpanda admin API needs to surface these warnings to the user —
+	// otherwise the only signal will be Redpanda's downstream validation
+	// error on the unexpanded placeholder, which obscures the root cause.
+	// See K8S-858.
+	warnings []error
+}
+
+// Warnings returns the warnings collected during the last Reify call.
+// Returns nil if Reify has not been called or if no warnings were emitted.
+// The returned slice is owned by the clusterCfg; callers must not modify it.
+func (c *clusterCfg) Warnings() []error {
+	return c.warnings
 }
 
 func (c *clusterCfg) Error() error {
@@ -236,6 +253,13 @@ func (c *clusterCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudEx
 	if err := t.Fixup(factory); err != nil {
 		return nil, errors.WithStack(err)
 	}
+	// Fixup emits non-fatal warnings (typically `errorToWarning`-wrapped
+	// failed secret expansions on Optional secrets) without aborting.
+	// Snapshot them so callers can surface them in a status condition
+	// before passing the partially-rendered config to the Redpanda admin
+	// API. Without this, the caller would only see Redpanda's downstream
+	// "Must set both of …" validation error on the unexpanded placeholder.
+	c.warnings = append([]error(nil), t.Warnings...)
 
 	// Finally, use the schema to turn those representations into concrete values
 	properties := make(map[string]any, len(representations))

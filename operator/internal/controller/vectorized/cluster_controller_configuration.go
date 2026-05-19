@@ -80,6 +80,23 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	if err != nil {
 		return 0, errorWithContext(err, "error while creating the concrete configuration")
 	}
+	// If any fixups produced warnings (typically `errorToWarning`-wrapped
+	// failed external secret lookups on Optional secrets), the
+	// corresponding entries in `config` still hold their unexpanded
+	// `${secrets.X}` placeholders. Pushing that to PatchClusterConfig
+	// would surface Redpanda's downstream validation error (e.g. "Must
+	// set both of iceberg_rest_catalog_client_id ...") instead of the
+	// actual root cause (e.g. an AccessDeniedException from the secret
+	// store). Bail out of the reconcile with the warning text so it
+	// shows up as the actionable cause in the Cluster CR's
+	// ClusterConfiguredConditionType status condition. Shares the same
+	// helper as the v2 path. See K8S-858.
+	if msg := clusterconfiguration.FormatWarnings(cfg.ClusterConfigWarnings()); msg != "" {
+		return 0, errorWithContext(
+			fmt.Errorf("cluster config has unresolved external secret references: %s", msg),
+			"unresolved external secret references",
+		)
+	}
 
 	// Checking if the feature is active because in the initial stages of cluster creation, it takes time for the feature to be activated
 	// and the API returns the same error (400) that is returned in case of malformed input, which causes a stop of the reconciliation
