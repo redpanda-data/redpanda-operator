@@ -562,6 +562,33 @@ func toStringMap(v any) (map[string]any, error) {
 	return m, nil
 }
 
+// HelmUpgrade upgrades an existing release using the in-process Helm action
+// API, paralleling HelmInstall. The release name is passed separately because
+// helm.UpgradeOptions intentionally has no Name field (it mirrors `helm upgrade
+// RELEASE CHART`).
+func (c *Cluster) HelmUpgrade(ctx context.Context, releaseName, chartName string, options helm.UpgradeOptions) (*release.Release, error) {
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(c.AsRESTClientGetter(), options.Namespace, "secret", log.FromContext(ctx).Info); err != nil {
+		return nil, err
+	}
+
+	upgrade := action.NewUpgrade(actionConfig)
+	upgrade.Namespace = options.Namespace
+	upgrade.ReuseValues = options.ReuseValues
+
+	chart, err := loader.Load(chartName)
+	if err != nil {
+		return nil, err
+	}
+
+	vals, err := toStringMap(options.Values)
+	if err != nil {
+		return nil, fmt.Errorf("converting values: %w", err)
+	}
+
+	return upgrade.Run(releaseName, chart, vals)
+}
+
 func (c *Cluster) HelmUninstall(ctx context.Context, rel *release.Release) error {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(c.AsRESTClientGetter(), rel.Namespace, "secret", log.FromContext(ctx).Info); err != nil {

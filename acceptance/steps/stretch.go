@@ -735,7 +735,39 @@ func extractConditions(o client.Object) []metav1.Condition {
 	return nil
 }
 
+// operatorChartSource describes which operator helm chart to install in each
+// vcluster. Exactly one of Path / RemoteChart must be set. ImageRepository and
+// ImageTag override the chart's image (set both, or leave both empty to keep
+// the chart's defaults — used when installing a published chart whose default
+// image is what we want).
+type operatorChartSource struct {
+	Path            string       // local path on disk (e.g. "../operator/chart")
+	RemoteChart     *remoteChart // pulled from a helm repo at install time
+	ImageRepository string
+	ImageTag        string
+}
+
+type remoteChart struct {
+	RepoURL   string // e.g. "https://charts.redpanda.com"
+	ChartName string // e.g. "operator"
+	Version   string // e.g. "v26.2.1-beta.2"
+}
+
+// localDevOperatorChart is the chart source used by the default
+// `I create a multicluster operator named "X" with N nodes` step.
+func localDevOperatorChart() operatorChartSource {
+	return operatorChartSource{
+		Path:            "../operator/chart",
+		ImageRepository: "localhost/redpanda-operator",
+		ImageTag:        "dev",
+	}
+}
+
 func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {
+	return createNetworkedVClusterOperatorsFromSource(ctx, t, clusterName, clusters, localDevOperatorChart())
+}
+
+func createNetworkedVClusterOperatorsFromSource(ctx context.Context, t framework.TestingT, clusterName string, clusters int32, src operatorChartSource) context.Context {
 	namespace := metav1.NamespaceDefault
 	redpandaLicense := os.Getenv(LicenseEnvVar)
 	require.NotEmpty(t, redpandaLicense, LicenseEnvVar+" env var must be set")
@@ -744,7 +776,7 @@ func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT,
 	vclusters := createVClusters(ctx, t, clusters, k3dNodeNames)
 	assignOperatorServiceIPs(ctx, t, vclusters, namespace)
 	peers := bootstrapTLS(ctx, t, vclusters, namespace)
-	deployOperators(ctx, t, vclusters, namespace, redpandaLicense, peers)
+	deployOperatorsFromSource(ctx, t, vclusters, namespace, redpandaLicense, peers, src)
 	// Register dumpDiagnostics AFTER deployOperators so it fires before the
 	// HelmUninstall cleanup (t.Cleanup is LIFO), ensuring ClusterRoles and
 	// other resources are still present when diagnostics are collected.
@@ -764,6 +796,13 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32, 
 	suffix := apirand.String(8)
 
 	nodes := make([]*vclusterNode, clusters)
+	// errs collects per-vcluster creation failures. require/assert (which call
+	// t.FailNow) MUST NOT be invoked from these worker goroutines: godog's
+	// testingT.FailNow panics ("FailNow or SkipNow called") when called off the
+	// test goroutine, which crashes the whole test binary instead of failing the
+	// scenario cleanly. So each goroutine records its error here and we assert on
+	// the test goroutine after wg.Wait().
+	errs := make([]error, clusters)
 	var wg sync.WaitGroup
 
 	// Register cert-manager types into the shared scheme once, before launching
@@ -785,7 +824,10 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32, 
 				networkingValues(i, clusters, suffix) +
 				pinningValues(k3dNodeNames[i])
 			cluster, err := vcluster.New(ctx, t.RestConfig(), vcluster.WithName(actualName), vcluster.WithValues(helm.RawYAML(vClusterValues)))
-			require.NoError(t, err)
+			if err != nil {
+				errs[i] = fmt.Errorf("creating vcluster %q: %w", actualName, err)
+				return
+			}
 			scheme := t.Scheme()
 			cluster.SetScheme(scheme)
 
@@ -798,7 +840,10 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32, 
 				}
 			})
 			c, err := cluster.Client(client.Options{Scheme: t.Scheme()})
-			require.NoError(t, err)
+			if err != nil {
+				errs[i] = fmt.Errorf("building client for vcluster %q: %w", actualName, err)
+				return
+			}
 
 			// Use the vCluster's host-namespace ClusterIP service as the API server
 			// address. This service ({actualName}/{actualName}) is replicated into peer
@@ -818,6 +863,11 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32, 
 	}
 
 	wg.Wait()
+
+	// Surface any goroutine error on the test goroutine, where FailNow is legal.
+	for i, err := range errs {
+		require.NoErrorf(t, err, "failed creating vcluster %d", i)
+	}
 	return nodes
 }
 
@@ -985,7 +1035,52 @@ func bootstrapTLS(ctx context.Context, t framework.TestingT, vclusters []*vclust
 	return peers
 }
 
-func deployOperators(ctx context.Context, t framework.TestingT, vclusters []*vclusterNode, namespace, redpandaLicense string, peers []any) {
+// operatorHelmReleaseName is the helm release name used for the operator
+// across every multicluster test. The chart's Fullname() function (which the
+// chart uses for the Deployment, Service, and bootstrap-certificates secret
+// names) resolves to "redpanda-operator" because the chart name is "operator"
+// and the release name is "redpanda".
+const operatorHelmReleaseName = "redpanda"
+
+// operatorHelmValues builds the helm values map shared by both initial install
+// and upgrade. If imageRepo/imageTag are empty, the chart defaults stand —
+// used when installing a published release whose default image is what we
+// want.
+func operatorHelmValues(cluster *vclusterNode, peers []any, imageRepo, imageTag string) map[string]any {
+	values := map[string]any{
+		"crds": map[string]any{
+			"enabled":      true,
+			"experimental": true,
+		},
+		"logLevel": "debug",
+		"multicluster": map[string]any{
+			"enabled":                  true,
+			"name":                     cluster.Name(),
+			"apiServerExternalAddress": cluster.APIServer(),
+			"peers":                    peers,
+		},
+		"enterprise": map[string]any{
+			"licenseSecretRef": map[string]any{
+				"name": licenseSecretName,
+				"key":  "redpanda.license",
+			},
+		},
+	}
+	if imageRepo != "" && imageTag != "" {
+		values["image"] = map[string]any{
+			"repository": imageRepo,
+			"tag":        imageTag,
+		}
+	}
+	return values
+}
+
+func deployOperatorsFromSource(ctx context.Context, t framework.TestingT, vclusters []*vclusterNode, namespace, redpandaLicense string, peers []any, src operatorChartSource) {
+	chartPath := resolveOperatorChart(ctx, t, src)
+	deployOperatorsWithChart(ctx, t, vclusters, namespace, redpandaLicense, peers, chartPath, src.ImageRepository, src.ImageTag)
+}
+
+func deployOperatorsWithChart(ctx context.Context, t framework.TestingT, vclusters []*vclusterNode, namespace, redpandaLicense string, peers []any, chartPath, imageRepo, imageTag string) {
 	// "issuer-managed" cert: user provides CA secret + Issuer, StretchCluster
 	// uses IssuerRef. Used by admin, http, schemaRegistry, and rpc listeners.
 	issuerManagedSecret, err := generateCASecret("cluster", "issuer-managed", namespace)
@@ -1059,32 +1154,10 @@ func deployOperators(ctx context.Context, t framework.TestingT, vclusters []*vcl
 		// No Issuer needed — the operator uses this secret directly.
 		require.NoError(t, cluster.Create(ctx, userProvidedServerSecret.DeepCopy()))
 
-		t.Logf("deploying operator in %q", cluster.Name())
-		rel, err := cluster.HelmInstall(ctx, "../operator/chart", helm.InstallOptions{
-			Name: "redpanda",
-			Values: map[string]any{
-				"crds": map[string]any{
-					"enabled":      true,
-					"experimental": true,
-				},
-				"logLevel": "debug",
-				"multicluster": map[string]any{
-					"enabled":                  true,
-					"name":                     cluster.Name(),
-					"apiServerExternalAddress": cluster.APIServer(),
-					"peers":                    peers,
-				},
-				"image": map[string]any{
-					"repository": "localhost/redpanda-operator",
-					"tag":        "dev",
-				},
-				"enterprise": map[string]any{
-					"licenseSecretRef": map[string]any{
-						"name": licenseSecretName,
-						"key":  "redpanda.license",
-					},
-				},
-			},
+		t.Logf("deploying operator in %q from chart %q", cluster.Name(), chartPath)
+		rel, err := cluster.HelmInstall(ctx, chartPath, helm.InstallOptions{
+			Name:      operatorHelmReleaseName,
+			Values:    operatorHelmValues(cluster, peers, imageRepo, imageTag),
 			Namespace: namespace,
 		})
 		require.NoError(t, err)

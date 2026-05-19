@@ -108,6 +108,9 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 				Namespace:       "cert-manager",
 				Version:         testutil.CertManagerVersion,
 				CreateNamespace: true,
+				// Default helm --wait timeout is 5m; give readiness extra grace
+				// so a momentarily-loaded CI node doesn't fail suite setup.
+				Timeout: ptr.To(10 * time.Minute),
 				Values: map[string]any{
 					"installCRDs": true,
 					"global": map[string]any{
@@ -229,6 +232,9 @@ func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
 		Name:            "redpanda-operator",
 		Namespace:       sharedOperatorNamespace,
 		CreateNamespace: true,
+		// Default helm --wait timeout is 5m; give readiness extra grace so a
+		// momentarily-loaded CI node doesn't fail suite setup.
+		Timeout: ptr.To(10 * time.Minute),
 		Values: operatorchart.PartialValues{
 			LogLevel: ptr.To("trace"),
 			Image: &operatorchart.PartialImage{
