@@ -36,11 +36,11 @@ var (
 		certmanagerv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		monitoringv1.AddToScheme,
-		// Gateway API v1 (GA) — TLSRoute + TLSRouteList. Required by the
-		// controller-runtime cache to List/Watch TLSRoute objects rendered by
-		// the redpanda chart. TLSRoute is GA (v1) as of Gateway API v1.5;
-		// registering the typed List kind here is what lets the cache issue
-		// List calls on every reconcile pass.
+		// Gateway API v1 — registers the typed List kinds the controller-runtime
+		// cache needs to List/Watch the gateway objects we render: TLSRoute (from
+		// the redpanda chart) and HTTPRoute (from the Console chart/CRD). A single
+		// gatewayv1.Install covers both; it is what lets the cache issue List
+		// calls for these kinds on every reconcile pass.
 		gatewayv1.Install,
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
@@ -51,6 +51,15 @@ var (
 		clientgoscheme.AddToScheme,
 		redpandav1alpha2.Install,
 		monitoringv1.AddToScheme,
+		// Register gatewayv1 (HTTPRoute) in the multicluster scheme too — the
+		// multicluster Console controller references HTTPRoute exactly like the
+		// v2 controller. The Gateway API CRDs are optional: skipWatchIfNotInstalled
+		// and the renderer skip HTTPRoute when the CRD is absent, but that graceful
+		// skip relies on a NoKindMatchError, which only surfaces when the type is
+		// in the scheme. Without this, HTTPRoute ops fail with a serialization
+		// error instead and the Console reconcile never completes (no Deployment) —
+		// same reasoning as monitoringv1 above for ServiceMonitor.
+		gatewayv1.Install,
 		mcsv1alpha1.Install,
 	}
 

@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -108,6 +109,7 @@ type ConsoleValues struct {
 	SecurityContext              *corev1.SecurityContext           `json:"securityContext,omitempty"`
 	Service                      *ServiceConfig                    `json:"service,omitempty"`
 	Ingress                      *IngressConfig                    `json:"ingress,omitempty"`
+	Gateway                      *GatewayConfig                    `json:"gateway,omitempty"`
 	Resources                    *corev1.ResourceRequirements      `json:"resources,omitempty"`
 	Autoscaling                  *AutoScaling                      `json:"autoscaling,omitempty"`
 	NodeSelector                 map[string]string                 `json:"nodeSelector,omitempty"`
@@ -193,6 +195,23 @@ type IngressHost struct {
 type IngressPath struct {
 	Path     string                 `json:"path,omitempty"`
 	PathType *networkingv1.PathType `json:"pathType,omitempty"`
+}
+
+// GatewayConfig configures a Gateway API HTTPRoute for Console.
+type GatewayConfig struct {
+	Enabled     *bool                    `json:"enabled,omitempty"`
+	Annotations map[string]string        `json:"annotations,omitempty"`
+	ParentRefs  []GatewayParentReference `json:"parentRefs,omitempty"`
+	Hostnames   []string                 `json:"hostnames,omitempty"`
+	Path        *string                  `json:"path,omitempty"`
+	PathType    *gatewayv1.PathMatchType `json:"pathType,omitempty"`
+}
+
+// GatewayParentReference identifies a parent Gateway for the HTTPRoute.
+type GatewayParentReference struct {
+	Name        string                 `json:"name"`
+	Namespace   *string                `json:"namespace,omitempty"`
+	SectionName *gatewayv1.SectionName `json:"sectionName,omitempty"`
 }
 
 type SecretMount struct {

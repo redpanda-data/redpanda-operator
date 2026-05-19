@@ -73,6 +73,12 @@ values:
       create: false
     enabled: true
     fullnameOverride: ""
+    gateway:
+      enabled: false
+      hostnames:
+      - chart-example.local
+      path: /
+      pathType: PathPrefix
     image:
       pullPolicy: IfNotPresent
       registry: docker.redpanda.com
@@ -677,6 +683,12 @@ values:
       create: false
     enabled: true
     fullnameOverride: ""
+    gateway:
+      enabled: false
+      hostnames:
+      - chart-example.local
+      path: /
+      pathType: PathPrefix
     image:
       pullPolicy: IfNotPresent
       registry: docker.redpanda.com
@@ -1658,6 +1670,12 @@ values:
       create: false
     enabled: true
     fullnameOverride: ""
+    gateway:
+      enabled: false
+      hostnames:
+      - chart-example.local
+      path: /
+      pathType: PathPrefix
     image:
       pullPolicy: IfNotPresent
       registry: docker.redpanda.com
