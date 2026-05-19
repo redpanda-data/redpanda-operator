@@ -326,8 +326,14 @@ func (p *PoolTracker) RequiresUpdate() []*MulticlusterStatefulSet {
 
 		outOfDateGeneration := labels[generationLabel] != generation
 		outOfDateConfigVersion := labels[configVersionLabel] != desired.set.Labels[configVersionLabel]
+		// The renderer applies one of two pool-generation labels depending on
+		// which CRD owns the pool: NodePool (v2 single-cluster) sets
+		// nodePoolGenerationLabel; RedpandaBrokerPool (stretch) sets
+		// brokerPoolGenerationLabel. Compare both so a generation bump on
+		// either CRD triggers a reroll.
 		outOfDateNodePool := labels[nodePoolGenerationLabel] != desired.set.Labels[nodePoolGenerationLabel]
-		if outOfDateGeneration || outOfDateConfigVersion || outOfDateNodePool {
+		outOfDateBrokerPool := labels[brokerPoolGenerationLabel] != desired.set.Labels[brokerPoolGenerationLabel]
+		if outOfDateGeneration || outOfDateConfigVersion || outOfDateNodePool || outOfDateBrokerPool {
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
 

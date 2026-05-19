@@ -31,7 +31,7 @@ func nodePortService(state *RenderState) []*corev1.Service {
 	return out
 }
 
-func nodePortServiceForPool(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Service {
+func nodePortServiceForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Service {
 	ext := state.PoolSpec(pool).External
 	if ext == nil || !ext.IsEnabled() {
 		return nil
@@ -75,7 +75,7 @@ func nodePortServiceForPool(state *RenderState, pool *redpandav1alpha2.NodePool)
 	}
 }
 
-func nodePortSelector(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]string {
+func nodePortSelector(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]string {
 	sel := state.clusterPodLabelsSelector()
 	sel[labelComponentKey] = "redpanda" + pool.Suffix()
 	return sel

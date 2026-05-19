@@ -31,7 +31,7 @@ func roles(state *RenderState) []*rbacv1.Role {
 	return out
 }
 
-func rolesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) []*rbacv1.Role {
+func rolesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []*rbacv1.Role {
 	if !state.PoolSpec(pool).RBAC.IsEnabled() {
 		return nil
 	}
@@ -108,7 +108,7 @@ func clusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 	return out
 }
 
-func clusterRolesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) []*rbacv1.ClusterRole {
+func clusterRolesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []*rbacv1.ClusterRole {
 	if !state.PoolSpec(pool).RBAC.IsEnabled() {
 		return nil
 	}

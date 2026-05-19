@@ -49,7 +49,7 @@ var (
 	}
 	multiclusterCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.StretchCluster(),
-		crds.NodePool(),
+		crds.RedpandaBrokerPool(),
 	}
 	schemes = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,

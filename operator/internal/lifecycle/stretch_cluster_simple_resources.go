@@ -52,12 +52,12 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 
 	applyDefaultImage := defaultImage(m.redpandaImage)
 	applyDefaultSidecar := defaultImage(m.sideCarImage)
-	inCluster := cluster.GetNodePoolsForCluster(canonicalName)
+	inCluster := cluster.GetBrokerPoolsForCluster(canonicalName)
 	for _, pool := range inCluster {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
 	}
-	allPools := cluster.GetAllNodePools()
+	allPools := cluster.GetAllBrokerPools()
 	for _, pool := range allPools {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
@@ -107,11 +107,11 @@ func (m *StretchClusterSimpleResourceRenderer) WatchedResourceTypes() []client.O
 
 func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *StretchClusterWithPools) []string {
 	var adminAPIEndpoints []string
-	for _, pool := range cluster.NodePools {
-		for i := int32(0); i < pool.nodePool.GetReplicas(); i++ {
-			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.nodePool.Suffix()
+	for _, pool := range cluster.BrokerPools {
+		for i := int32(0); i < pool.brokerPool.GetReplicas(); i++ {
+			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.brokerPool.Suffix()
 			name := multiclusterRenderer.PerPodServiceName(poolFullname, i)
-			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.nodePool.GetNamespace(), pool.nodePool.Spec.AdminPort()))
+			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.brokerPool.GetNamespace(), pool.brokerPool.Spec.AdminPort()))
 		}
 	}
 	return adminAPIEndpoints

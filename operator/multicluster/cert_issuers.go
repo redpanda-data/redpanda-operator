@@ -30,7 +30,7 @@ type bootstrappedCert struct {
 
 // bootstrappedCerts returns the set of in-use cert names (with durations) that
 // require self-signed issuer and root CA bootstrapping.
-func bootstrappedCerts(spec *redpandav1alpha2.EmbeddedNodePoolSpec) []bootstrappedCert {
+func bootstrappedCerts(spec *redpandav1alpha2.EmbeddedBrokerPoolSpec) []bootstrappedCert {
 	var result []bootstrappedCert
 	for _, name := range BootstrappedCertNames(spec) {
 		duration := defaultCertDuration
@@ -48,7 +48,7 @@ func bootstrappedCerts(spec *redpandav1alpha2.EmbeddedNodePoolSpec) []bootstrapp
 //   - it's explicitly disabled
 //   - it has a user-provided SecretRef (externally managed cert)
 //   - it has an external IssuerRef (user manages their own cert-manager issuer)
-func BootstrappedCertNames(spec *redpandav1alpha2.EmbeddedNodePoolSpec) []string {
+func BootstrappedCertNames(spec *redpandav1alpha2.EmbeddedBrokerPoolSpec) []string {
 	if spec == nil || spec.TLS == nil || !spec.TLS.IsEnabled() {
 		return nil
 	}

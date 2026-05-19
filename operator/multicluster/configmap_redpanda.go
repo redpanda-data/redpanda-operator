@@ -23,7 +23,7 @@ import (
 // rpk config) is emitted — this is the version baked into the ConfigMap that pods
 // mount. When false, a minimal config without seed servers is generated for the
 // checksum annotation, so that replica count changes don't trigger rolling restarts.
-func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpandav1alpha2.NodePool) (string, error) {
+func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpandav1alpha2.RedpandaBrokerPool) (string, error) {
 	redpanda := map[string]any{
 		"empty_seed_starts_cluster": false,
 		"crash_loop_limit":          5,
@@ -89,7 +89,7 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 }
 
 // configureListeners populates the listener entries in the redpanda config section.
-func configureListeners(redpanda map[string]any, state *RenderState, pool *redpandav1alpha2.NodePool) {
+func configureListeners(redpanda map[string]any, state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) {
 	l := state.PoolSpec(pool).Listeners
 
 	var admin, kafka *redpandav1alpha2.StretchAPIListener
@@ -131,7 +131,7 @@ func configureListeners(redpanda map[string]any, state *RenderState, pool *redpa
 func configureAPIListener(
 	redpanda map[string]any,
 	state *RenderState,
-	pool *redpandav1alpha2.NodePool,
+	pool *redpandav1alpha2.RedpandaBrokerPool,
 	listener *redpandav1alpha2.StretchAPIListener,
 	listenerKey, tlsKey string,
 	internalPort, defaultExtPort int32,
@@ -172,7 +172,7 @@ func configureAPIListener(
 }
 
 // listenerTLSEntry returns the TLS config map for a named listener.
-func listenerTLSEntry(state *RenderState, pool *redpandav1alpha2.NodePool, name string, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
+func listenerTLSEntry(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, name string, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
 	certName := tls.GetCert()
 	return map[string]any{
 		"name":                name,

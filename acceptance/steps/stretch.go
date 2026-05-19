@@ -141,14 +141,14 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 			}
 		}
 
-		// Dump NodePools.
-		var npList redpandav1alpha2.NodePoolList
-		if err := node.List(diagCtx, &npList); err != nil {
-			t.Logf("[multicluster-diagnostics] failed to list NodePools: %v", err)
+		// Dump RedpandaBrokerPools.
+		var bpList redpandav1alpha2.RedpandaBrokerPoolList
+		if err := node.List(diagCtx, &bpList); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list RedpandaBrokerPools: %v", err)
 		} else {
-			for _, np := range npList.Items {
-				t.Logf("[multicluster-diagnostics] NodePool %s/%s: replicas=%d, conditions=%d",
-					np.Namespace, np.Name, ptr.Deref(np.Spec.Replicas, 0), len(np.Status.Conditions))
+			for _, bp := range bpList.Items {
+				t.Logf("[multicluster-diagnostics] RedpandaBrokerPool %s/%s: replicas=%d, conditions=%d",
+					bp.Namespace, bp.Name, ptr.Deref(bp.Spec.Replicas, 0), len(bp.Status.Conditions))
 			}
 		}
 
@@ -221,38 +221,39 @@ func (v vclusterNodes) ApplyAll(ctx context.Context, manifest []byte) {
 	}
 }
 
-// nodepoolManifest produces the full NodePool manifest for one region. The
-// pool name is injected into the metadata header AND substituted into the
-// manifest body wherever ${POOL_NAME} appears, so the same DocString can
-// drive per-pool spec variation (e.g. PVC labels that differ per region).
-func nodepoolManifest(nodeName string, manifest *godog.DocString) []byte {
+// brokerPoolManifest produces the full RedpandaBrokerPool manifest for one
+// region. The pool name is injected into the metadata header AND substituted
+// into the manifest body wherever ${POOL_NAME} appears, so the same
+// DocString can drive per-pool spec variation (e.g. PVC labels that differ
+// per region).
+func brokerPoolManifest(nodeName string, manifest *godog.DocString) []byte {
 	content := strings.ReplaceAll(manifest.Content, "${POOL_NAME}", nodeName)
 	return []byte(fmt.Sprintf(`
 apiVersion: cluster.redpanda.com/v1alpha2
-kind: NodePool
+kind: RedpandaBrokerPool
 metadata:
   name: %s
   namespace: default
 `, nodeName) + content)
 }
 
-func (v vclusterNodes) ApplyNodepoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
+func (v vclusterNodes) ApplyBrokerPoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
 	for _, node := range v {
-		fullManifest := nodepoolManifest(nameMap[node.logicalName], manifest)
+		fullManifest := brokerPoolManifest(nameMap[node.logicalName], manifest)
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlApply(ctx, fullManifest))
 	}
 }
 
-func (v vclusterNodes) DeleteNodepools(ctx context.Context, manifest *godog.DocString) {
+func (v vclusterNodes) DeleteBrokerPools(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
 	for _, node := range v {
 		if node.offline {
-			t.Logf("skipping NodePool cleanup for offline region %q", node.logicalName)
+			t.Logf("skipping RedpandaBrokerPool cleanup for offline region %q", node.logicalName)
 			continue
 		}
-		fullManifest := nodepoolManifest(nameMap[node.logicalName], manifest)
+		fullManifest := brokerPoolManifest(nameMap[node.logicalName], manifest)
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlDelete(ctx, fullManifest))
 	}
@@ -360,11 +361,11 @@ func iApplyKuberneteMulticlusterManifest(ctx context.Context, t framework.Testin
 	})
 }
 
-func applyNodePoolWithStretchCluster(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
+func applyBrokerPoolWithStretchCluster(ctx context.Context, t framework.TestingT, clusterName string, manifest *godog.DocString) {
 	nodes := getNodes(ctx, clusterName)
-	nodes.ApplyNodepoolsWithDifferentNamePerCluster(ctx, manifest)
+	nodes.ApplyBrokerPoolsWithDifferentNamePerCluster(ctx, manifest)
 	cleanupWrapper(t, func(ctx context.Context) {
-		nodes.DeleteNodepools(ctx, manifest)
+		nodes.DeleteBrokerPools(ctx, manifest)
 	})
 }
 
@@ -890,15 +891,15 @@ func expectStatefulsetsReady(ctx context.Context, t framework.TestingT, stsCount
 	}, 10*time.Minute, 10*time.Second, "expected %d ready statefulsets across %d clusters", stsCount, clusterCount)
 }
 
-func expectNodePoolsBoundAndDeployed(ctx context.Context, t framework.TestingT, expectedCount int32, clusterName string) {
+func expectBrokerPoolsBoundAndDeployed(ctx context.Context, t framework.TestingT, expectedCount int32, clusterName string) {
 	nodes := getNodes(ctx, clusterName)
 
 	require.Eventually(t, func() bool {
 		boundAndDeployed := int32(0)
 		for _, node := range nodes {
-			var pools redpandav1alpha2.NodePoolList
+			var pools redpandav1alpha2.RedpandaBrokerPoolList
 			if err := node.List(ctx, &pools, client.InNamespace("default")); err != nil {
-				t.Logf("error listing NodePools in %s: %v", node.Name(), err)
+				t.Logf("error listing RedpandaBrokerPools in %s: %v", node.Name(), err)
 				return false
 			}
 			for _, pool := range pools.Items {
@@ -908,15 +909,15 @@ func expectNodePoolsBoundAndDeployed(ctx context.Context, t framework.TestingT, 
 					deployed != nil && deployed.Status == metav1.ConditionTrue {
 					boundAndDeployed++
 				} else {
-					t.Logf("NodePool %s in %s: Bound=%v Deployed=%v",
+					t.Logf("RedpandaBrokerPool %s in %s: Bound=%v Deployed=%v",
 						pool.Name, node.Name(),
 						conditionStatus(bound), conditionStatus(deployed))
 				}
 			}
 		}
-		t.Logf("bound and deployed NodePools: %d/%d", boundAndDeployed, expectedCount)
+		t.Logf("bound and deployed RedpandaBrokerPools: %d/%d", boundAndDeployed, expectedCount)
 		return boundAndDeployed >= expectedCount
-	}, 5*time.Minute, 5*time.Second, "expected %d NodePools to be bound and deployed", expectedCount)
+	}, 5*time.Minute, 5*time.Second, "expected %d RedpandaBrokerPools to be bound and deployed", expectedCount)
 }
 
 func conditionStatus(cond *metav1.Condition) string {

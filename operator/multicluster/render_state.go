@@ -43,8 +43,8 @@ type PodEndpoint struct {
 
 type RenderState struct {
 	cluster        *redpandav1alpha2.StretchCluster
-	inClusterPools []*redpandav1alpha2.NodePool
-	pools          []*redpandav1alpha2.NodePool
+	inClusterPools []*redpandav1alpha2.RedpandaBrokerPool
+	pools          []*redpandav1alpha2.RedpandaBrokerPool
 	podEndpoints   []PodEndpoint
 	clusterName    string
 	releaseName    string
@@ -80,7 +80,7 @@ func (r *RenderState) Context() context.Context {
 	return r.ctx
 }
 
-func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.NodePool) []string {
+func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.RedpandaBrokerPool) []string {
 	// In MCS mode, use the clusterset.local domain so DNS resolves via the
 	// MCS controller across cluster boundaries.
 	addressFmt := "%s.%s:%d"
@@ -107,18 +107,18 @@ func NewRenderState(
 	config *kube.RESTConfig,
 	cluster *redpandav1alpha2.StretchCluster,
 	// inClusterPool is a list of NodePools in given cluster
-	inClusterPool []*redpandav1alpha2.NodePool,
+	inClusterPool []*redpandav1alpha2.RedpandaBrokerPool,
 	// pools is a list of NodePools in all K8S clusters
-	pools []*redpandav1alpha2.NodePool,
+	pools []*redpandav1alpha2.RedpandaBrokerPool,
 	clusterName string,
 ) (*RenderState, error) {
 	// Deep-copy to avoid mutating the caller's CRD objects.
 	cluster = cluster.DeepCopy()
-	copiedInClusterPools := make([]*redpandav1alpha2.NodePool, len(inClusterPool))
+	copiedInClusterPools := make([]*redpandav1alpha2.RedpandaBrokerPool, len(inClusterPool))
 	for i, p := range inClusterPool {
 		copiedInClusterPools[i] = p.DeepCopy()
 	}
-	copiedPools := make([]*redpandav1alpha2.NodePool, len(pools))
+	copiedPools := make([]*redpandav1alpha2.RedpandaBrokerPool, len(pools))
 	for i, p := range pools {
 		copiedPools[i] = p.DeepCopy()
 	}
@@ -217,11 +217,11 @@ func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
 // Returns an empty (but non-nil) spec when pool is nil — keeps direct field
 // access safe for renderers that legitimately have no pool in scope (e.g.
 // before any NodePool exists).
-func (r *RenderState) PoolSpec(pool *redpandav1alpha2.NodePool) *redpandav1alpha2.EmbeddedNodePoolSpec {
+func (r *RenderState) PoolSpec(pool *redpandav1alpha2.RedpandaBrokerPool) *redpandav1alpha2.EmbeddedBrokerPoolSpec {
 	if pool == nil {
-		return &redpandav1alpha2.EmbeddedNodePoolSpec{}
+		return &redpandav1alpha2.EmbeddedBrokerPoolSpec{}
 	}
-	return &pool.Spec.EmbeddedNodePoolSpec
+	return &pool.Spec.EmbeddedBrokerPoolSpec
 }
 
 // representativePool returns the first in-cluster NodePool, or nil when no
@@ -229,7 +229,7 @@ func (r *RenderState) PoolSpec(pool *redpandav1alpha2.NodePool) *redpandav1alpha
 // need *some* pool's view to populate (e.g. the headless ClusterIP Service's
 // port list, which assumes all in-cluster pools agree on listener port
 // numbers — TLS / auth content may still differ per pool).
-func (r *RenderState) representativePool() *redpandav1alpha2.NodePool {
+func (r *RenderState) representativePool() *redpandav1alpha2.RedpandaBrokerPool {
 	if len(r.inClusterPools) == 0 {
 		return nil
 	}
@@ -246,36 +246,36 @@ func (r *RenderState) ServiceName() string {
 // InternalDomain returns the fully qualified internal DNS suffix that the
 // headless ClusterIP Service exposes for the supplied pool's pods. The
 // ClusterDomain comes from the pool spec; the service name is cluster-wide.
-func (r *RenderState) InternalDomain(pool *redpandav1alpha2.NodePool) string {
+func (r *RenderState) InternalDomain(pool *redpandav1alpha2.RedpandaBrokerPool) string {
 	return r.PoolSpec(pool).InternalDomain(r.ServiceName(), r.namespace)
 }
 
 // AdminInternalURL returns the admin API URL template used inside the
 // supplied pool's pods (probes, post-install scripts). Wraps
 // EmbeddedNodePoolSpec.AdminInternalURL with the cluster-wide service name.
-func (r *RenderState) AdminInternalURL(pool *redpandav1alpha2.NodePool) string {
+func (r *RenderState) AdminInternalURL(pool *redpandav1alpha2.RedpandaBrokerPool) string {
 	return r.PoolSpec(pool).AdminInternalURL(r.ServiceName(), r.namespace)
 }
 
 // AdminAPIURLs returns the admin API host:port template used in probes for
 // the supplied pool. Wraps EmbeddedNodePoolSpec.AdminAPIURLs with the
 // cluster-wide service name.
-func (r *RenderState) AdminAPIURLs(pool *redpandav1alpha2.NodePool) string {
+func (r *RenderState) AdminAPIURLs(pool *redpandav1alpha2.RedpandaBrokerPool) string {
 	return r.PoolSpec(pool).AdminAPIURLs(r.ServiceName(), r.namespace)
 }
 
 // Pools returns the list of NodePools across K8S clusters. Exported for test/debugging access.
-func (r *RenderState) Pools() []*redpandav1alpha2.NodePool {
+func (r *RenderState) Pools() []*redpandav1alpha2.RedpandaBrokerPool {
 	return r.pools
 }
 
 // InClusterPools returns the list of NodePools from single K8S cluster. Exported for test/debugging access.
-func (r *RenderState) InClusterPools() []*redpandav1alpha2.NodePool {
+func (r *RenderState) InClusterPools() []*redpandav1alpha2.RedpandaBrokerPool {
 	return r.inClusterPools
 }
 
 // isLocalPool returns true if the given pool is in the local cluster.
-func (r *RenderState) isLocalPool(pool *redpandav1alpha2.NodePool) bool {
+func (r *RenderState) isLocalPool(pool *redpandav1alpha2.RedpandaBrokerPool) bool {
 	for _, p := range r.inClusterPools {
 		if p.Name == pool.Name {
 			return true
@@ -310,7 +310,7 @@ func (r *RenderState) clusterPodLabelsSelector() map[string]string {
 	}
 }
 
-func (r *RenderState) poolFullname(pool *redpandav1alpha2.NodePool) string {
+func (r *RenderState) poolFullname(pool *redpandav1alpha2.RedpandaBrokerPool) string {
 	return fmt.Sprintf("%s%s", r.fullname(), pool.Suffix())
 }
 

@@ -37,7 +37,7 @@ type bootstrapResult struct {
 //  4. ClusterConfig — user-specified cluster-level config overrides
 //  5. TunableConfig — user-specified tunable config overrides
 //  6. ExtraClusterConfiguration — escape hatch for arbitrary key/value pairs
-func bootstrapContents(state *RenderState, pool *redpandav1alpha2.NodePool) bootstrapResult {
+func bootstrapContents(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) bootstrapResult {
 	fixups := []clusterconfiguration.Fixup{}
 	var envVars []corev1.EnvVar
 

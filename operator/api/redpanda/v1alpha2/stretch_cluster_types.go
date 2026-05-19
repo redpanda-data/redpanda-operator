@@ -115,10 +115,10 @@ type StretchClusterStatus struct {
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	// NodePools contains information about the node pools associated
-	// with this cluster.
+	// BrokerPools contains information about the broker pools
+	// associated with this cluster.
 	// +optional
-	NodePools []EmbeddedNodePoolStatus `json:"nodePools,omitempty"`
+	BrokerPools []EmbeddedBrokerPoolStatus `json:"brokerPools,omitempty"`
 
 	// ConfigVersion contains the configuration version written in
 	// Redpanda used for restarting broker nodes as necessary.

@@ -27,7 +27,7 @@ import (
 // pool supplies the per-K8s-cluster TLS settings (cert source, client auth
 // requirement); cert resources are per-pool (see certs.go) so the secret
 // names use the pool's fullname.
-func (r *RenderState) TLSConfig(pool *redpandav1alpha2.NodePool, certName string) (*tls.Config, error) {
+func (r *RenderState) TLSConfig(pool *redpandav1alpha2.RedpandaBrokerPool, certName string) (*tls.Config, error) {
 	if r.client == nil {
 		return nil, fmt.Errorf("no kubernetes client available for TLS config lookup")
 	}

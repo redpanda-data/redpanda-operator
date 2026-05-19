@@ -321,17 +321,17 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 	})
 	poolName := "pool"
 	poolFullname := scName + "-" + poolName
-	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.NodePool{
+	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.RedpandaBrokerPool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: poolName,
 		},
-		Spec: redpandav1alpha2.NodePoolSpec{
+		Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{
 			ClusterRef: redpandav1alpha2.ClusterRef{
 				Name:  scName,
 				Group: ptr.To("cluster.redpanda.com"),
 				Kind:  ptr.To(redpandav1alpha2.StretchClusterRefKind),
 			},
-			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				TLS: tlsSpec,
 				// Disable external so this test's NodePool doesn't grab the
 				// shared default NodePort (31644) — TestUserProvidedCA runs
@@ -373,7 +373,7 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 	// We look for the server cert secret name that the renderer produces.
 	defaultedClusterSpec := redpandav1alpha2.StretchClusterSpec{}
 	defaultedClusterSpec.MergeDefaults()
-	defaultedPoolSpec := redpandav1alpha2.EmbeddedNodePoolSpec{TLS: tlsSpec}
+	defaultedPoolSpec := redpandav1alpha2.EmbeddedBrokerPoolSpec{TLS: tlsSpec}
 	defaultedPoolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
 	// Cert resources are per-pool — the secret name is keyed off the
 	// pool's full name (cluster + suffix), not just the cluster name.
@@ -472,17 +472,17 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 	})
 	poolName := "pool"
 	poolFullname := scName + "-" + poolName
-	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.NodePool{
+	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.RedpandaBrokerPool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: poolName,
 		},
-		Spec: redpandav1alpha2.NodePoolSpec{
+		Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{
 			ClusterRef: redpandav1alpha2.ClusterRef{
 				Name:  scName,
 				Group: ptr.To("cluster.redpanda.com"),
 				Kind:  ptr.To(redpandav1alpha2.StretchClusterRefKind),
 			},
-			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				TLS: tlsSpec,
 				// Disable external so this test's NodePool doesn't grab the
 				// shared default NodePort (31644) — TestIssuerRef runs in
@@ -554,7 +554,7 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 	// Step 8: Wait for cert-manager to issue leaf certs and verify they use the user's CA.
 	defaultedClusterSpec := redpandav1alpha2.StretchClusterSpec{}
 	defaultedClusterSpec.MergeDefaults()
-	defaultedPoolSpec := redpandav1alpha2.EmbeddedNodePoolSpec{TLS: tlsSpec}
+	defaultedPoolSpec := redpandav1alpha2.EmbeddedBrokerPoolSpec{TLS: tlsSpec}
 	defaultedPoolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
 	// Cert resources are per-pool — the secret name is keyed off the
 	// pool's full name (cluster + suffix), not just the cluster name.

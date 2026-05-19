@@ -505,25 +505,25 @@ func (s *SetDataDirOwnership) IsEnabled() bool {
 	return s != nil && ptr.Deref(s.Enabled, false)
 }
 
-// --- PoolFSValidator ---
+// --- BrokerPoolFSValidator ---
 
 // IsEnabled returns whether the FS validator init container is enabled. Safe to call on nil receiver.
-func (f *PoolFSValidator) IsEnabled() bool {
+func (f *BrokerPoolFSValidator) IsEnabled() bool {
 	return f != nil && ptr.Deref(f.Enabled, false)
 }
 
 // GetExpectedFS returns the expected filesystem, defaulting to "xfs".
-func (f *PoolFSValidator) GetExpectedFS() string {
+func (f *BrokerPoolFSValidator) GetExpectedFS() string {
 	if f != nil && f.ExpectedFS != nil {
 		return *f.ExpectedFS
 	}
 	return DefaultExpectedFS
 }
 
-// --- PoolSetDataDirOwnership ---
+// --- BrokerPoolSetDataDirOwnership ---
 
 // IsEnabled returns whether the set-datadir-ownership init container is enabled. Safe to call on nil receiver.
-func (s *PoolSetDataDirOwnership) IsEnabled() bool {
+func (s *BrokerPoolSetDataDirOwnership) IsEnabled() bool {
 	return s != nil && ptr.Deref(s.Enabled, false)
 }
 
@@ -818,15 +818,15 @@ func (sc *StretchCluster) BootstrapUserSecretName() string {
 	return fmt.Sprintf("%s-bootstrap-user", sc.Name)
 }
 
-// --- EmbeddedNodePoolSpec convenience methods ---
+// --- EmbeddedBrokerPoolSpec convenience methods ---
 //
 // These methods read per-K8s-cluster fields (TLS, Listeners, ClusterDomain,
-// ServiceAccount, ...) and per-NodePool overrides of cluster defaults
+// ServiceAccount, ...) and per-RedpandaBrokerPool overrides of cluster defaults
 // (Resources, Storage). They expect MergeDefaultsFrom to have been called on
 // the receiver so that values are fully populated.
 
 // IsAdminTLSEnabled returns whether TLS is enabled on the admin listener. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) IsAdminTLSEnabled() bool {
+func (s *EmbeddedBrokerPoolSpec) IsAdminTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -834,7 +834,7 @@ func (s *EmbeddedNodePoolSpec) IsAdminTLSEnabled() bool {
 }
 
 // IsKafkaTLSEnabled returns whether TLS is enabled on the Kafka listener. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) IsKafkaTLSEnabled() bool {
+func (s *EmbeddedBrokerPoolSpec) IsKafkaTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -842,7 +842,7 @@ func (s *EmbeddedNodePoolSpec) IsKafkaTLSEnabled() bool {
 }
 
 // IsHTTPTLSEnabled returns whether TLS is enabled on the HTTP listener. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) IsHTTPTLSEnabled() bool {
+func (s *EmbeddedBrokerPoolSpec) IsHTTPTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -850,7 +850,7 @@ func (s *EmbeddedNodePoolSpec) IsHTTPTLSEnabled() bool {
 }
 
 // IsSchemaRegistryTLSEnabled returns whether TLS is enabled on the Schema Registry listener. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) IsSchemaRegistryTLSEnabled() bool {
+func (s *EmbeddedBrokerPoolSpec) IsSchemaRegistryTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -858,7 +858,7 @@ func (s *EmbeddedNodePoolSpec) IsSchemaRegistryTLSEnabled() bool {
 }
 
 // IsRPCTLSEnabled returns whether TLS is enabled on the RPC listener. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) IsRPCTLSEnabled() bool {
+func (s *EmbeddedBrokerPoolSpec) IsRPCTLSEnabled() bool {
 	if s == nil {
 		return false
 	}
@@ -866,7 +866,7 @@ func (s *EmbeddedNodePoolSpec) IsRPCTLSEnabled() bool {
 }
 
 // listeners returns a non-nil StretchListeners, defaulting to an empty value.
-func (s *EmbeddedNodePoolSpec) listeners() StretchListeners {
+func (s *EmbeddedBrokerPoolSpec) listeners() StretchListeners {
 	if s.Listeners == nil {
 		return StretchListeners{}
 	}
@@ -874,7 +874,7 @@ func (s *EmbeddedNodePoolSpec) listeners() StretchListeners {
 }
 
 // GetClusterDomain returns the cluster domain, defaulting to "cluster.local". Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) GetClusterDomain() string {
+func (s *EmbeddedBrokerPoolSpec) GetClusterDomain() string {
 	if s != nil && s.ClusterDomain != nil {
 		return *s.ClusterDomain
 	}
@@ -884,14 +884,14 @@ func (s *EmbeddedNodePoolSpec) GetClusterDomain() string {
 // InternalDomain returns the fully qualified internal DNS domain that the
 // headless ClusterIP Service exposes. The headless service is cluster-wide
 // (named after the StretchCluster) while ClusterDomain is per-K8s-cluster,
-// so the caller supplies the service name and we use this NodePool's
+// so the caller supplies the service name and we use this RedpandaBrokerPool's
 // ClusterDomain. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) InternalDomain(serviceName, namespace string) string {
+func (s *EmbeddedBrokerPoolSpec) InternalDomain(serviceName, namespace string) string {
 	return fmt.Sprintf("%s.%s.svc.%s", serviceName, namespace, s.GetClusterDomain())
 }
 
 // GetServiceAccountName returns the effective service account name for the spec. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) GetServiceAccountName(fullname string) string {
+func (s *EmbeddedBrokerPoolSpec) GetServiceAccountName(fullname string) string {
 	if s == nil {
 		return fullname
 	}
@@ -901,7 +901,7 @@ func (s *EmbeddedNodePoolSpec) GetServiceAccountName(fullname string) string {
 // GetResourceRequirements returns the Kubernetes resource requirements from the spec.
 // Supports both new-style (Limits/Requests) and legacy (CPU.Cores + Memory.Container.Max) modes.
 // Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) GetResourceRequirements() corev1.ResourceRequirements {
+func (s *EmbeddedBrokerPoolSpec) GetResourceRequirements() corev1.ResourceRequirements {
 	if s == nil || s.Resources == nil {
 		return corev1.ResourceRequirements{}
 	}
@@ -931,7 +931,7 @@ func (s *EmbeddedNodePoolSpec) GetResourceRequirements() corev1.ResourceRequirem
 
 // InUseServerCerts returns the cert names for all listeners with TLS enabled.
 // Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) InUseServerCerts() []string {
+func (s *EmbeddedBrokerPoolSpec) InUseServerCerts() []string {
 	if s == nil || !s.TLS.IsEnabled() {
 		return nil
 	}
@@ -940,7 +940,7 @@ func (s *EmbeddedNodePoolSpec) InUseServerCerts() []string {
 
 // InUseClientCerts returns the cert names for listeners requiring client auth (mTLS).
 // Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) InUseClientCerts() []string {
+func (s *EmbeddedBrokerPoolSpec) InUseClientCerts() []string {
 	if s == nil || !s.TLS.IsEnabled() {
 		return nil
 	}
@@ -961,7 +961,7 @@ const (
 
 // IsTieredStorageEnabled returns whether tiered storage is enabled.
 // Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) IsTieredStorageEnabled() bool {
+func (s *EmbeddedBrokerPoolSpec) IsTieredStorageEnabled() bool {
 	if s == nil || s.Storage == nil || s.Storage.Tiered == nil || s.Storage.Tiered.Config == nil {
 		return false
 	}
@@ -971,7 +971,7 @@ func (s *EmbeddedNodePoolSpec) IsTieredStorageEnabled() bool {
 
 // TieredMountType returns the tiered storage mount type. Defaults to "none" if not set.
 // Valid values: "none", "hostPath", "emptyDir", "persistentVolume".
-func (s *EmbeddedNodePoolSpec) TieredMountType() string {
+func (s *EmbeddedBrokerPoolSpec) TieredMountType() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.MountType != nil {
 		return *s.Storage.Tiered.MountType
 	}
@@ -979,7 +979,7 @@ func (s *EmbeddedNodePoolSpec) TieredMountType() string {
 }
 
 // TieredCacheDirectory returns the cloud storage cache directory path.
-func (s *EmbeddedNodePoolSpec) TieredCacheDirectory() string {
+func (s *EmbeddedBrokerPoolSpec) TieredCacheDirectory() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.Config != nil {
 		if s.Storage.Tiered.Config.CloudStorageCacheDirectory != nil {
 			return *s.Storage.Tiered.Config.CloudStorageCacheDirectory
@@ -990,7 +990,7 @@ func (s *EmbeddedNodePoolSpec) TieredCacheDirectory() string {
 
 // TieredStorageVolumeName returns the volume name for tiered storage,
 // using NameOverwrite from the PersistentVolume if set.
-func (s *EmbeddedNodePoolSpec) TieredStorageVolumeName() string {
+func (s *EmbeddedBrokerPoolSpec) TieredStorageVolumeName() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil &&
 		s.Storage.Tiered.PersistentVolume != nil &&
 		s.Storage.Tiered.PersistentVolume.NameOverwrite != nil &&
@@ -1001,7 +1001,7 @@ func (s *EmbeddedNodePoolSpec) TieredStorageVolumeName() string {
 }
 
 // TieredStorageHostPath returns the host path for tiered storage.
-func (s *EmbeddedNodePoolSpec) TieredStorageHostPath() string {
+func (s *EmbeddedBrokerPoolSpec) TieredStorageHostPath() string {
 	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.HostPath != nil {
 		return *s.Storage.Tiered.HostPath
 	}
@@ -1109,7 +1109,7 @@ func (s *StretchClusterSpec) IsMetricsReporterEnabled() bool {
 // GetStorageMinFreeBytes computes storage_min_free_bytes as min(5GiB, 5% of PV size).
 // Returns 5GiB if PV is disabled or has no size set.
 // Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) GetStorageMinFreeBytes() int64 {
+func (s *EmbeddedBrokerPoolSpec) GetStorageMinFreeBytes() int64 {
 	if s == nil || s.Storage == nil || s.Storage.PersistentVolume == nil ||
 		!s.Storage.PersistentVolume.IsEnabled() || s.Storage.PersistentVolume.Size == nil {
 		return 5 * GiB
@@ -1124,7 +1124,7 @@ func (s *EmbeddedNodePoolSpec) GetStorageMinFreeBytes() int64 {
 // GetTieredStorageCacheSize returns the parsed cloud storage cache size quantity,
 // or nil if not set or unparseable.
 // Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) GetTieredStorageCacheSize() *resource.Quantity {
+func (s *EmbeddedBrokerPoolSpec) GetTieredStorageCacheSize() *resource.Quantity {
 	if s == nil || s.Storage == nil || s.Storage.Tiered == nil ||
 		s.Storage.Tiered.Config == nil || s.Storage.Tiered.Config.CloudStorageCacheSize == nil {
 		return nil
@@ -1136,10 +1136,10 @@ func (s *EmbeddedNodePoolSpec) GetTieredStorageCacheSize() *resource.Quantity {
 	return &q
 }
 
-// --- NodePool helpers ---
+// --- RedpandaBrokerPool helpers ---
 
 // AdminPort returns the admin API port. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) AdminPort() int32 {
+func (s *EmbeddedBrokerPoolSpec) AdminPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.Admin != nil {
 		return s.Listeners.Admin.GetPort(DefaultAdminPort)
 	}
@@ -1147,7 +1147,7 @@ func (s *EmbeddedNodePoolSpec) AdminPort() int32 {
 }
 
 // KafkaPort returns the Kafka API port. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) KafkaPort() int32 {
+func (s *EmbeddedBrokerPoolSpec) KafkaPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.Kafka != nil {
 		return s.Listeners.Kafka.GetPort(DefaultKafkaPort)
 	}
@@ -1155,7 +1155,7 @@ func (s *EmbeddedNodePoolSpec) KafkaPort() int32 {
 }
 
 // HTTPPort returns the HTTP Proxy port. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) HTTPPort() int32 {
+func (s *EmbeddedBrokerPoolSpec) HTTPPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.HTTP != nil {
 		return s.Listeners.HTTP.GetPort(DefaultHTTPPort)
 	}
@@ -1163,7 +1163,7 @@ func (s *EmbeddedNodePoolSpec) HTTPPort() int32 {
 }
 
 // RPCPort returns the RPC port. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) RPCPort() int32 {
+func (s *EmbeddedBrokerPoolSpec) RPCPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.RPC != nil && s.Listeners.RPC.Port != nil {
 		return int32(*s.Listeners.RPC.Port)
 	}
@@ -1171,7 +1171,7 @@ func (s *EmbeddedNodePoolSpec) RPCPort() int32 {
 }
 
 // SchemaRegistryPort returns the Schema Registry port. Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) SchemaRegistryPort() int32 {
+func (s *EmbeddedBrokerPoolSpec) SchemaRegistryPort() int32 {
 	if s != nil && s.Listeners != nil && s.Listeners.SchemaRegistry != nil {
 		return s.Listeners.SchemaRegistry.GetPort(DefaultSchemaRegistryPort)
 	}
@@ -1180,7 +1180,7 @@ func (s *EmbeddedNodePoolSpec) SchemaRegistryPort() int32 {
 
 // AdminInternalHTTPProtocol returns "https" if admin TLS is enabled, "http" otherwise.
 // Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) AdminInternalHTTPProtocol() string {
+func (s *EmbeddedBrokerPoolSpec) AdminInternalHTTPProtocol() string {
 	if s.IsAdminTLSEnabled() {
 		return "https"
 	}
@@ -1189,7 +1189,7 @@ func (s *EmbeddedNodePoolSpec) AdminInternalHTTPProtocol() string {
 
 // AdminInternalURL returns the internal admin API URL template. The caller
 // supplies the headless service name (cluster-wide). Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) AdminInternalURL(serviceName, namespace string) string {
+func (s *EmbeddedBrokerPoolSpec) AdminInternalURL(serviceName, namespace string) string {
 	return fmt.Sprintf("%s://%s.%s:%d",
 		s.AdminInternalHTTPProtocol(),
 		"${SERVICE_NAME}",
@@ -1200,18 +1200,18 @@ func (s *EmbeddedNodePoolSpec) AdminInternalURL(serviceName, namespace string) s
 
 // AdminAPIURLs returns the admin API URL for probes. The caller supplies the
 // headless service name (cluster-wide). Safe to call on nil receiver.
-func (s *EmbeddedNodePoolSpec) AdminAPIURLs(serviceName, namespace string) string {
+func (s *EmbeddedBrokerPoolSpec) AdminAPIURLs(serviceName, namespace string) string {
 	return fmt.Sprintf("${SERVICE_NAME}.%s:%d", s.InternalDomain(serviceName, namespace), s.AdminPort())
 }
 
 // GetReplicas returns the replica count for a node pool, defaulting to 1.
-func (n *NodePool) GetReplicas() int32 {
+func (n *RedpandaBrokerPool) GetReplicas() int32 {
 	return ptr.Deref(n.Spec.Replicas, 1)
 }
 
 // Suffix returns the suffix for this pool's resource names.
 // Returns "-<name>" if the pool has a name, or "" otherwise.
-func (n *NodePool) Suffix() string {
+func (n *RedpandaBrokerPool) Suffix() string {
 	if n.Name != "" {
 		return fmt.Sprintf("-%s", n.Name)
 	}
@@ -1224,7 +1224,7 @@ func imageRef(repo *string, defaultRepo string, tag *string, defaultTag string) 
 }
 
 // RedpandaImage returns the full image reference (repository:tag).
-func (n *NodePool) RedpandaImage() string {
+func (n *RedpandaBrokerPool) RedpandaImage() string {
 	if n.Spec.Image != nil {
 		return imageRef(n.Spec.Image.Repository, DefaultRedpandaRepository, n.Spec.Image.Tag, DefaultRedpandaImageTag)
 	}
@@ -1232,7 +1232,7 @@ func (n *NodePool) RedpandaImage() string {
 }
 
 // SidecarImage returns the full image reference for the sidecar (repository:tag).
-func (n *NodePool) SidecarImage() string {
+func (n *RedpandaBrokerPool) SidecarImage() string {
 	if n.Spec.SidecarImage != nil {
 		return imageRef(n.Spec.SidecarImage.Repository, DefaultSidecarRepository, n.Spec.SidecarImage.Tag, DefaultOperatorImageTag)
 	}
@@ -1240,7 +1240,7 @@ func (n *NodePool) SidecarImage() string {
 }
 
 // InitImage returns the full image reference for the init container (repository:tag).
-func (n *NodePool) InitImage() string {
+func (n *RedpandaBrokerPool) InitImage() string {
 	if n.Spec.InitContainerImage != nil {
 		return imageRef(n.Spec.InitContainerImage.Repository, DefaultInitContainerRepository, n.Spec.InitContainerImage.Tag, DefaultInitContainerImageTag)
 	}
@@ -1249,14 +1249,14 @@ func (n *NodePool) InitImage() string {
 
 // --- Defaults merging ---
 //
-// Defaulting is split across the StretchCluster and NodePool specs to match
+// Defaulting is split across the StretchCluster and RedpandaBrokerPool specs to match
 // where the data now lives. Call ordering:
 //
 //   1. cluster.Spec.MergeDefaults() — populates cluster-wide fields that may
-//      act as defaults for NodePools (Storage, Resources, Service-shaped fields)
+//      act as defaults for RedpandaBrokerPools (Storage, Resources, Service-shaped fields)
 //      and pure cluster-wide fields (Tuning, Logging).
 //   2. for each pool: pool.Spec.MergeDefaultsFrom(&cluster.Spec) — inherits the
-//      defaulted cluster fields where the NodePool didn't override, then
+//      defaulted cluster fields where the RedpandaBrokerPool did not override, then
 //      populates per-K8s-cluster fields (TLS, External, Listeners, ServiceAccount,
 //      RBAC).
 //
@@ -1272,17 +1272,17 @@ func (s *StretchClusterSpec) MergeDefaults() {
 	s.mergeDefaultLogging()
 }
 
-// MergeDefaultsFrom populates nil fields on the NodePool spec. Per-K8s-cluster
+// MergeDefaultsFrom populates nil fields on the RedpandaBrokerPool spec. Per-K8s-cluster
 // fields are defaulted directly; defaultable fields (Storage, Resources,
 // ImagePullSecrets) are inherited from the supplied cluster spec when the
-// NodePool didn't set them. Storage / Resources defaults are then filled in
+// RedpandaBrokerPool did not set them. Storage / Resources defaults are then filled in
 // at the pool level too, so partial overrides (e.g. setting only PVC labels)
 // still pick up the unset sub-fields (Size, Enabled, …) the cluster default
 // would supply.
 //
 // The caller is expected to have already invoked cluster.MergeDefaults() so
 // that inherited values are themselves defaulted.
-func (s *EmbeddedNodePoolSpec) MergeDefaultsFrom(cluster *StretchClusterSpec) {
+func (s *EmbeddedBrokerPoolSpec) MergeDefaultsFrom(cluster *StretchClusterSpec) {
 	s.inheritFromCluster(cluster)
 	fillStretchStorageDefaults(&s.Storage)
 	fillStretchResourcesDefaults(&s.Resources)
@@ -1293,10 +1293,10 @@ func (s *EmbeddedNodePoolSpec) MergeDefaultsFrom(cluster *StretchClusterSpec) {
 	s.mergeDefaultRBAC()
 }
 
-// inheritFromCluster copies defaultable cluster-wide values onto the NodePool
-// when the NodePool did not provide its own. Existing NodePool values win
+// inheritFromCluster copies defaultable cluster-wide values onto the RedpandaBrokerPool
+// when the RedpandaBrokerPool did not provide its own. Existing RedpandaBrokerPool values win
 // (top-level replace; no deep merge).
-func (s *EmbeddedNodePoolSpec) inheritFromCluster(cluster *StretchClusterSpec) {
+func (s *EmbeddedBrokerPoolSpec) inheritFromCluster(cluster *StretchClusterSpec) {
 	if cluster == nil {
 		return
 	}
@@ -1326,7 +1326,7 @@ func (s *StretchClusterSpec) mergeDefaultResources() { fillStretchResourcesDefau
 
 // fillStretchStorageDefaults populates the PersistentVolume sub-fields with
 // the operator-managed defaults (enabled, 20Gi) when unset. Used by both the
-// cluster spec and the NodePool spec so partial pool overrides (e.g. only
+// cluster spec and the RedpandaBrokerPool spec so partial pool overrides (e.g. only
 // labels) still pick up the size/enabled defaults.
 func fillStretchStorageDefaults(p **StretchStorage) {
 	if *p == nil {
@@ -1347,7 +1347,7 @@ func fillStretchStorageDefaults(p **StretchStorage) {
 
 // fillStretchResourcesDefaults populates the legacy CPU.Cores / Memory.Container
 // fields when neither Limits nor Requests are set. Symmetric across the cluster
-// and NodePool specs.
+// and RedpandaBrokerPool specs.
 func fillStretchResourcesDefaults(p **StretchResources) {
 	if *p == nil {
 		*p = &StretchResources{}
@@ -1386,7 +1386,7 @@ func (s *StretchClusterSpec) mergeDefaultLogging() {
 
 // GetRedpandaStartFlags computes the --memory, --reserve-memory, and --smp flags
 // from the Resources configuration, mirroring the Helm chart logic.
-func (s *EmbeddedNodePoolSpec) GetRedpandaStartFlags() map[string]string {
+func (s *EmbeddedBrokerPoolSpec) GetRedpandaStartFlags() map[string]string {
 	if s == nil || s.Resources == nil {
 		return nil
 	}
@@ -1460,7 +1460,7 @@ func (s *EmbeddedNodePoolSpec) GetRedpandaStartFlags() map[string]string {
 }
 
 // GetOverProvisionValue returns whether Redpanda should run in overprovisioned mode.
-func (s *EmbeddedNodePoolSpec) GetOverProvisionValue() bool {
+func (s *EmbeddedBrokerPoolSpec) GetOverProvisionValue() bool {
 	if s == nil || s.Resources == nil {
 		return false
 	}
@@ -1481,14 +1481,14 @@ func (s *EmbeddedNodePoolSpec) GetOverProvisionValue() bool {
 }
 
 // GetEnableMemoryLocking returns whether memory locking should be enabled.
-func (s *EmbeddedNodePoolSpec) GetEnableMemoryLocking() bool {
+func (s *EmbeddedBrokerPoolSpec) GetEnableMemoryLocking() bool {
 	if s == nil || s.Resources == nil || s.Resources.Memory == nil {
 		return false
 	}
 	return ptr.Deref(s.Resources.Memory.EnableMemoryLocking, false)
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultServiceAccount() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultServiceAccount() {
 	if s.ServiceAccount == nil {
 		s.ServiceAccount = &ServiceAccount{
 			Create: ptr.To(true),
@@ -1496,7 +1496,7 @@ func (s *EmbeddedNodePoolSpec) mergeDefaultServiceAccount() {
 	}
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultRBAC() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultRBAC() {
 	if s.RBAC == nil {
 		s.RBAC = &RBAC{
 			Enabled: ptr.To(true),
@@ -1504,7 +1504,7 @@ func (s *EmbeddedNodePoolSpec) mergeDefaultRBAC() {
 	}
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultTLS() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultTLS() {
 	if s.TLS == nil {
 		s.TLS = &TLS{}
 	}
@@ -1526,7 +1526,7 @@ func (s *EmbeddedNodePoolSpec) mergeDefaultTLS() {
 	}
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultExternal() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultExternal() {
 	if s.External == nil {
 		s.External = &External{}
 	}
@@ -1545,7 +1545,7 @@ func (s *EmbeddedNodePoolSpec) mergeDefaultExternal() {
 	}
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultListeners() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultListeners() {
 	if s.Listeners == nil {
 		s.Listeners = &StretchListeners{}
 	}
@@ -1574,23 +1574,23 @@ func mergeDefaultAPIListener(listener **StretchAPIListener, defaultPort, extPort
 	mergeDefaultExternalListener(l.External, extPort, extAdvertisedPort, &l.External)
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultAdminListener() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultAdminListener() {
 	mergeDefaultAPIListener(&s.Listeners.Admin, DefaultAdminPort, DefaultExternalAdminPort, DefaultExternalAdminAdvertisedPort)
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultKafkaListener() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultKafkaListener() {
 	mergeDefaultAPIListener(&s.Listeners.Kafka, DefaultKafkaPort, DefaultExternalKafkaPort, DefaultExternalKafkaAdvertisedPort)
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultHTTPListener() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultHTTPListener() {
 	mergeDefaultAPIListener(&s.Listeners.HTTP, DefaultHTTPPort, DefaultExternalHTTPPort, DefaultExternalHTTPAdvertisedPort)
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultSchemaRegistryListener() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultSchemaRegistryListener() {
 	mergeDefaultAPIListener(&s.Listeners.SchemaRegistry, DefaultSchemaRegistryPort, DefaultExternalSchemaRegistryPort, DefaultExternalSchemaRegistryAdvertisedPort)
 }
 
-func (s *EmbeddedNodePoolSpec) mergeDefaultRPCListener() {
+func (s *EmbeddedBrokerPoolSpec) mergeDefaultRPCListener() {
 	if s.Listeners.RPC == nil {
 		s.Listeners.RPC = &StretchRPC{}
 	}

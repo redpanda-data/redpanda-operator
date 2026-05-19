@@ -18,10 +18,10 @@ import (
 // StretchClusterStatusApplyConfiguration represents a declarative configuration of the StretchClusterStatus type for use
 // with apply.
 type StretchClusterStatusApplyConfiguration struct {
-	Conditions    []v1.ConditionApplyConfiguration           `json:"conditions,omitempty"`
-	NodePools     []EmbeddedNodePoolStatusApplyConfiguration `json:"nodePools,omitempty"`
-	ConfigVersion *string                                    `json:"configVersion,omitempty"`
-	LicenseStatus *RedpandaLicenseStatusApplyConfiguration   `json:"license,omitempty"`
+	Conditions    []v1.ConditionApplyConfiguration             `json:"conditions,omitempty"`
+	BrokerPools   []EmbeddedBrokerPoolStatusApplyConfiguration `json:"brokerPools,omitempty"`
+	ConfigVersion *string                                      `json:"configVersion,omitempty"`
+	LicenseStatus *RedpandaLicenseStatusApplyConfiguration     `json:"license,omitempty"`
 }
 
 // StretchClusterStatusApplyConfiguration constructs a declarative configuration of the StretchClusterStatus type for use with
@@ -43,15 +43,15 @@ func (b *StretchClusterStatusApplyConfiguration) WithConditions(values ...*v1.Co
 	return b
 }
 
-// WithNodePools adds the given value to the NodePools field in the declarative configuration
+// WithBrokerPools adds the given value to the BrokerPools field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the NodePools field.
-func (b *StretchClusterStatusApplyConfiguration) WithNodePools(values ...*EmbeddedNodePoolStatusApplyConfiguration) *StretchClusterStatusApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the BrokerPools field.
+func (b *StretchClusterStatusApplyConfiguration) WithBrokerPools(values ...*EmbeddedBrokerPoolStatusApplyConfiguration) *StretchClusterStatusApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithNodePools")
+			panic("nil value passed to WithBrokerPools")
 		}
-		b.NodePools = append(b.NodePools, *values[i])
+		b.BrokerPools = append(b.BrokerPools, *values[i])
 	}
 	return b
 }

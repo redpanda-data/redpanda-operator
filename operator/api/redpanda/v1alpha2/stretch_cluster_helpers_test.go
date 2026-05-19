@@ -853,21 +853,21 @@ func TestTrustStore(t *testing.T) {
 func TestStretchClusterSpec(t *testing.T) {
 	t.Run("TLSEnabled", func(t *testing.T) {
 		t.Run("nil spec", func(t *testing.T) {
-			assert.False(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).IsAdminTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).IsKafkaTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).IsHTTPTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).IsSchemaRegistryTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).IsRPCTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).IsAdminTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).IsKafkaTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).IsHTTPTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).IsSchemaRegistryTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).IsRPCTLSEnabled())
 		})
 
 		t.Run("global TLS enabled no listener overrides", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}
 			assert.True(t, spec.IsAdminTLSEnabled())
 			assert.True(t, spec.IsKafkaTLSEnabled())
 		})
 
 		t.Run("listener explicitly disables", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
 				Listeners: &redpandav1alpha2.StretchListeners{
 					Admin: &redpandav1alpha2.StretchAPIListener{
@@ -884,7 +884,7 @@ func TestStretchClusterSpec(t *testing.T) {
 
 	t.Run("Ports", func(t *testing.T) {
 		t.Run("defaults", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{}
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{}
 			assert.Equal(t, redpandav1alpha2.DefaultAdminPort, spec.AdminPort())
 			assert.Equal(t, redpandav1alpha2.DefaultKafkaPort, spec.KafkaPort())
 			assert.Equal(t, redpandav1alpha2.DefaultHTTPPort, spec.HTTPPort())
@@ -893,7 +893,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		})
 
 		t.Run("custom ports", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Listeners: &redpandav1alpha2.StretchListeners{
 					Admin: &redpandav1alpha2.StretchAPIListener{
 						StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(1234))},
@@ -913,12 +913,12 @@ func TestStretchClusterSpec(t *testing.T) {
 	t.Run("ClusterDomain", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			input    *redpandav1alpha2.EmbeddedNodePoolSpec
+			input    *redpandav1alpha2.EmbeddedBrokerPoolSpec
 			expected string
 		}{
 			{"nil receiver", nil, redpandav1alpha2.DefaultClusterDomain},
-			{"zero value", &redpandav1alpha2.EmbeddedNodePoolSpec{}, redpandav1alpha2.DefaultClusterDomain},
-			{"custom domain", &redpandav1alpha2.EmbeddedNodePoolSpec{ClusterDomain: ptr.To("custom.local")}, "custom.local"},
+			{"zero value", &redpandav1alpha2.EmbeddedBrokerPoolSpec{}, redpandav1alpha2.DefaultClusterDomain},
+			{"custom domain", &redpandav1alpha2.EmbeddedBrokerPoolSpec{ClusterDomain: ptr.To("custom.local")}, "custom.local"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -930,12 +930,12 @@ func TestStretchClusterSpec(t *testing.T) {
 	t.Run("InternalDomain", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			input    *redpandav1alpha2.EmbeddedNodePoolSpec
+			input    *redpandav1alpha2.EmbeddedBrokerPoolSpec
 			expected string
 		}{
-			{"default domain", &redpandav1alpha2.EmbeddedNodePoolSpec{}, "release.ns.svc.cluster.local."},
-			{"custom domain without trailing dot", &redpandav1alpha2.EmbeddedNodePoolSpec{ClusterDomain: ptr.To("custom.local")}, "release.ns.svc.custom.local"},
-			{"custom domain with trailing dot", &redpandav1alpha2.EmbeddedNodePoolSpec{ClusterDomain: ptr.To("custom.local.")}, "release.ns.svc.custom.local."},
+			{"default domain", &redpandav1alpha2.EmbeddedBrokerPoolSpec{}, "release.ns.svc.cluster.local."},
+			{"custom domain without trailing dot", &redpandav1alpha2.EmbeddedBrokerPoolSpec{ClusterDomain: ptr.To("custom.local")}, "release.ns.svc.custom.local"},
+			{"custom domain with trailing dot", &redpandav1alpha2.EmbeddedBrokerPoolSpec{ClusterDomain: ptr.To("custom.local.")}, "release.ns.svc.custom.local."},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -946,12 +946,12 @@ func TestStretchClusterSpec(t *testing.T) {
 
 	t.Run("InUseCerts", func(t *testing.T) {
 		t.Run("no TLS", func(t *testing.T) {
-			assert.Nil(t, (&redpandav1alpha2.EmbeddedNodePoolSpec{}).InUseServerCerts())
-			assert.Nil(t, (&redpandav1alpha2.EmbeddedNodePoolSpec{}).InUseClientCerts())
+			assert.Nil(t, (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).InUseServerCerts())
+			assert.Nil(t, (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).InUseClientCerts())
 		})
 
 		t.Run("with listeners", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
 				Listeners: &redpandav1alpha2.StretchListeners{
 					Admin: &redpandav1alpha2.StretchAPIListener{
@@ -977,11 +977,11 @@ func TestStretchClusterSpec(t *testing.T) {
 	t.Run("AdminInternalHTTPProtocol", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			input    *redpandav1alpha2.EmbeddedNodePoolSpec
+			input    *redpandav1alpha2.EmbeddedBrokerPoolSpec
 			expected string
 		}{
-			{"no TLS", &redpandav1alpha2.EmbeddedNodePoolSpec{}, "http"},
-			{"with TLS", &redpandav1alpha2.EmbeddedNodePoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}, "https"},
+			{"no TLS", &redpandav1alpha2.EmbeddedBrokerPoolSpec{}, "http"},
+			{"with TLS", &redpandav1alpha2.EmbeddedBrokerPoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}, "https"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -991,18 +991,18 @@ func TestStretchClusterSpec(t *testing.T) {
 	})
 
 	t.Run("AdminAPIURLs", func(t *testing.T) {
-		spec := &redpandav1alpha2.EmbeddedNodePoolSpec{}
+		spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{}
 		assert.Equal(t, "${SERVICE_NAME}.release.ns.svc.cluster.local.:9644", spec.AdminAPIURLs("release", "ns"))
 	})
 
 	t.Run("AdminInternalURL", func(t *testing.T) {
 		t.Run("without TLS", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{}
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{}
 			assert.Equal(t, "http://${SERVICE_NAME}.release.ns.svc.cluster.local:9644", spec.AdminInternalURL("release", "ns"))
 		})
 
 		t.Run("with TLS", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}
 			assert.Equal(t, "https://${SERVICE_NAME}.release.ns.svc.cluster.local:9644", spec.AdminInternalURL("release", "ns"))
 		})
 	})
@@ -1177,16 +1177,16 @@ func TestStretchClusterSpec(t *testing.T) {
 
 	t.Run("GetStorageMinFreeBytes", func(t *testing.T) {
 		t.Run("nil spec", func(t *testing.T) {
-			assert.Equal(t, int64(5*redpandav1alpha2.GiB), (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).GetStorageMinFreeBytes())
+			assert.Equal(t, int64(5*redpandav1alpha2.GiB), (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).GetStorageMinFreeBytes())
 		})
 
 		t.Run("no PV", func(t *testing.T) {
-			assert.Equal(t, int64(5*redpandav1alpha2.GiB), (&redpandav1alpha2.EmbeddedNodePoolSpec{}).GetStorageMinFreeBytes())
+			assert.Equal(t, int64(5*redpandav1alpha2.GiB), (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).GetStorageMinFreeBytes())
 		})
 
 		t.Run("small PV uses 5 percent", func(t *testing.T) {
 			smallSize := resource.MustParse("20Gi")
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					PersistentVolume: &redpandav1alpha2.PersistentVolume{
 						Enabled: ptr.To(true),
@@ -1200,7 +1200,7 @@ func TestStretchClusterSpec(t *testing.T) {
 
 		t.Run("large PV capped at 5 GiB", func(t *testing.T) {
 			largeSize := resource.MustParse("500Gi")
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					PersistentVolume: &redpandav1alpha2.PersistentVolume{
 						Enabled: ptr.To(true),
@@ -1214,15 +1214,15 @@ func TestStretchClusterSpec(t *testing.T) {
 
 	t.Run("GetTieredStorageCacheSize", func(t *testing.T) {
 		t.Run("nil spec", func(t *testing.T) {
-			assert.Nil(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).GetTieredStorageCacheSize())
+			assert.Nil(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).GetTieredStorageCacheSize())
 		})
 
 		t.Run("empty spec", func(t *testing.T) {
-			assert.Nil(t, (&redpandav1alpha2.EmbeddedNodePoolSpec{}).GetTieredStorageCacheSize())
+			assert.Nil(t, (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).GetTieredStorageCacheSize())
 		})
 
 		t.Run("valid size", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					Tiered: &redpandav1alpha2.StretchTiered{
 						Config: &redpandav1alpha2.StretchTieredConfig{
@@ -1238,7 +1238,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		})
 
 		t.Run("invalid size returns nil", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					Tiered: &redpandav1alpha2.StretchTiered{
 						Config: &redpandav1alpha2.StretchTieredConfig{
@@ -1253,10 +1253,10 @@ func TestStretchClusterSpec(t *testing.T) {
 
 	t.Run("TieredStorage", func(t *testing.T) {
 		t.Run("IsTieredStorageEnabled", func(t *testing.T) {
-			assert.False(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).IsTieredStorageEnabled())
-			assert.False(t, (&redpandav1alpha2.EmbeddedNodePoolSpec{}).IsTieredStorageEnabled())
+			assert.False(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).IsTieredStorageEnabled())
+			assert.False(t, (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).IsTieredStorageEnabled())
 
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					Tiered: &redpandav1alpha2.StretchTiered{
 						Config: &redpandav1alpha2.StretchTieredConfig{
@@ -1272,8 +1272,8 @@ func TestStretchClusterSpec(t *testing.T) {
 		})
 
 		t.Run("TieredMountType", func(t *testing.T) {
-			assert.Equal(t, "none", (&redpandav1alpha2.EmbeddedNodePoolSpec{}).TieredMountType())
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			assert.Equal(t, "none", (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).TieredMountType())
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					Tiered: &redpandav1alpha2.StretchTiered{MountType: ptr.To("emptyDir")},
 				},
@@ -1282,8 +1282,8 @@ func TestStretchClusterSpec(t *testing.T) {
 		})
 
 		t.Run("TieredCacheDirectory", func(t *testing.T) {
-			assert.Equal(t, redpandav1alpha2.DefaultTieredStorageCacheDir, (&redpandav1alpha2.EmbeddedNodePoolSpec{}).TieredCacheDirectory())
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			assert.Equal(t, redpandav1alpha2.DefaultTieredStorageCacheDir, (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).TieredCacheDirectory())
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					Tiered: &redpandav1alpha2.StretchTiered{
 						Config: &redpandav1alpha2.StretchTieredConfig{
@@ -1296,8 +1296,8 @@ func TestStretchClusterSpec(t *testing.T) {
 		})
 
 		t.Run("TieredStorageVolumeName", func(t *testing.T) {
-			assert.Equal(t, "tiered-storage-dir", (&redpandav1alpha2.EmbeddedNodePoolSpec{}).TieredStorageVolumeName())
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			assert.Equal(t, "tiered-storage-dir", (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).TieredStorageVolumeName())
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					Tiered: &redpandav1alpha2.StretchTiered{
 						PersistentVolume: &redpandav1alpha2.PersistentVolume{
@@ -1310,8 +1310,8 @@ func TestStretchClusterSpec(t *testing.T) {
 		})
 
 		t.Run("TieredStorageHostPath", func(t *testing.T) {
-			assert.Equal(t, "", (&redpandav1alpha2.EmbeddedNodePoolSpec{}).TieredStorageHostPath())
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			assert.Equal(t, "", (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).TieredStorageHostPath())
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Storage: &redpandav1alpha2.StretchStorage{
 					Tiered: &redpandav1alpha2.StretchTiered{HostPath: ptr.To("/mnt/tiered")},
 				},
@@ -1322,13 +1322,13 @@ func TestStretchClusterSpec(t *testing.T) {
 
 	t.Run("GetResourceRequirements", func(t *testing.T) {
 		t.Run("nil spec", func(t *testing.T) {
-			assert.Equal(t, corev1.ResourceRequirements{}, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).GetResourceRequirements())
+			assert.Equal(t, corev1.ResourceRequirements{}, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).GetResourceRequirements())
 		})
 
 		t.Run("new style Limits and Requests", func(t *testing.T) {
 			limits := map[corev1.ResourceName]resource.Quantity{corev1.ResourceCPU: resource.MustParse("2")}
 			requests := map[corev1.ResourceName]resource.Quantity{corev1.ResourceMemory: resource.MustParse("4Gi")}
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{
 					Limits:   limits,
 					Requests: requests,
@@ -1342,7 +1342,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("legacy CPU Cores and Memory", func(t *testing.T) {
 			cores := resource.MustParse("1")
 			mem := resource.MustParse("2.5Gi")
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{
 					CPU:    &redpandav1alpha2.CPU{Cores: &cores},
 					Memory: &redpandav1alpha2.Memory{Container: &redpandav1alpha2.ContainerResources{Max: &mem}},
@@ -1355,14 +1355,14 @@ func TestStretchClusterSpec(t *testing.T) {
 		})
 
 		t.Run("no resources set", func(t *testing.T) {
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{Resources: &redpandav1alpha2.StretchResources{}}
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{Resources: &redpandav1alpha2.StretchResources{}}
 			assert.Equal(t, corev1.ResourceRequirements{}, spec.GetResourceRequirements())
 		})
 	})
 
 	t.Run("GetRedpandaStartFlags", func(t *testing.T) {
 		t.Run("nil spec", func(t *testing.T) {
-			assert.Nil(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).GetRedpandaStartFlags())
+			assert.Nil(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).GetRedpandaStartFlags())
 		})
 
 		t.Run("new mode Limits and Requests", func(t *testing.T) {
@@ -1374,7 +1374,7 @@ func TestStretchClusterSpec(t *testing.T) {
 				corev1.ResourceCPU:    resource.MustParse("2"),
 				corev1.ResourceMemory: resource.MustParse("4Gi"),
 			}
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{Limits: limits, Requests: requests},
 			}
 			flags := spec.GetRedpandaStartFlags()
@@ -1389,7 +1389,7 @@ func TestStretchClusterSpec(t *testing.T) {
 				corev1.ResourceMemory: resource.MustParse("4Gi"),
 			}
 			requests := map[corev1.ResourceName]resource.Quantity{corev1.ResourceCPU: resource.MustParse("500m")}
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{Limits: limits, Requests: requests},
 			}
 			flags := spec.GetRedpandaStartFlags()
@@ -1399,7 +1399,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("legacy mode", func(t *testing.T) {
 			cores := resource.MustParse("2")
 			mem := resource.MustParse("4Gi")
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{
 					CPU:    &redpandav1alpha2.CPU{Cores: &cores},
 					Memory: &redpandav1alpha2.Memory{Container: &redpandav1alpha2.ContainerResources{Max: &mem}},
@@ -1414,17 +1414,17 @@ func TestStretchClusterSpec(t *testing.T) {
 
 	t.Run("GetOverProvisionValue", func(t *testing.T) {
 		t.Run("nil spec", func(t *testing.T) {
-			assert.False(t, (*redpandav1alpha2.EmbeddedNodePoolSpec)(nil).GetOverProvisionValue())
+			assert.False(t, (*redpandav1alpha2.EmbeddedBrokerPoolSpec)(nil).GetOverProvisionValue())
 		})
 
 		t.Run("empty spec", func(t *testing.T) {
-			assert.False(t, (&redpandav1alpha2.EmbeddedNodePoolSpec{}).GetOverProvisionValue())
+			assert.False(t, (&redpandav1alpha2.EmbeddedBrokerPoolSpec{}).GetOverProvisionValue())
 		})
 
 		t.Run("sub-core in new mode is overprovisioned", func(t *testing.T) {
 			requests := map[corev1.ResourceName]resource.Quantity{corev1.ResourceCPU: resource.MustParse("500m")}
 			limits := map[corev1.ResourceName]resource.Quantity{corev1.ResourceCPU: resource.MustParse("500m")}
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{Limits: limits, Requests: requests},
 			}
 			assert.True(t, spec.GetOverProvisionValue())
@@ -1432,7 +1432,7 @@ func TestStretchClusterSpec(t *testing.T) {
 
 		t.Run("full core in new mode is not overprovisioned", func(t *testing.T) {
 			requests := map[corev1.ResourceName]resource.Quantity{corev1.ResourceCPU: resource.MustParse("1")}
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{Limits: requests, Requests: requests},
 			}
 			assert.False(t, spec.GetOverProvisionValue())
@@ -1440,7 +1440,7 @@ func TestStretchClusterSpec(t *testing.T) {
 
 		t.Run("legacy sub-core", func(t *testing.T) {
 			cores := resource.MustParse("500m")
-			spec := &redpandav1alpha2.EmbeddedNodePoolSpec{Resources: &redpandav1alpha2.StretchResources{CPU: &redpandav1alpha2.CPU{Cores: &cores}}}
+			spec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{Resources: &redpandav1alpha2.StretchResources{CPU: &redpandav1alpha2.CPU{Cores: &cores}}}
 			assert.True(t, spec.GetOverProvisionValue())
 		})
 	})
@@ -1448,12 +1448,12 @@ func TestStretchClusterSpec(t *testing.T) {
 	t.Run("GetEnableMemoryLocking", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			spec     *redpandav1alpha2.EmbeddedNodePoolSpec
+			spec     *redpandav1alpha2.EmbeddedBrokerPoolSpec
 			expected bool
 		}{
 			{"nil spec", nil, false},
-			{"empty spec", &redpandav1alpha2.EmbeddedNodePoolSpec{}, false},
-			{"enabled", &redpandav1alpha2.EmbeddedNodePoolSpec{
+			{"empty spec", &redpandav1alpha2.EmbeddedBrokerPoolSpec{}, false},
+			{"enabled", &redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Resources: &redpandav1alpha2.StretchResources{
 					Memory: &redpandav1alpha2.Memory{EnableMemoryLocking: ptr.To(true)},
 				},
@@ -1467,15 +1467,15 @@ func TestStretchClusterSpec(t *testing.T) {
 	})
 }
 
-func TestNodePool(t *testing.T) {
+func TestRedpandaBrokerPool(t *testing.T) {
 	t.Run("GetReplicas", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			pool     *redpandav1alpha2.NodePool
+			pool     *redpandav1alpha2.RedpandaBrokerPool
 			expected int32
 		}{
-			{"default", &redpandav1alpha2.NodePool{}, 1},
-			{"custom", &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{Replicas: ptr.To(int32(3))}}}, 3},
+			{"default", &redpandav1alpha2.RedpandaBrokerPool{}, 1},
+			{"custom", &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{Replicas: ptr.To(int32(3))}}}, 3},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -1486,11 +1486,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("Suffix", func(t *testing.T) {
 		t.Run("unnamed pool", func(t *testing.T) {
-			assert.Equal(t, "", (&redpandav1alpha2.NodePool{}).Suffix())
+			assert.Equal(t, "", (&redpandav1alpha2.RedpandaBrokerPool{}).Suffix())
 		})
 
 		t.Run("named pool", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{}
+			pool := &redpandav1alpha2.RedpandaBrokerPool{}
 			pool.Name = "fast"
 			assert.Equal(t, "-fast", pool.Suffix())
 		})
@@ -1498,11 +1498,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("RedpandaImage", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
-			assert.Equal(t, redpandav1alpha2.DefaultRedpandaRepository+":"+redpandav1alpha2.DefaultRedpandaImageTag, (&redpandav1alpha2.NodePool{}).RedpandaImage())
+			assert.Equal(t, redpandav1alpha2.DefaultRedpandaRepository+":"+redpandav1alpha2.DefaultRedpandaImageTag, (&redpandav1alpha2.RedpandaBrokerPool{}).RedpandaImage())
 		})
 
 		t.Run("custom", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			pool := &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Image: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("custom/repo"), Tag: ptr.To("v1.0")},
 			}}}
 			assert.Equal(t, "custom/repo:v1.0", pool.RedpandaImage())
@@ -1511,11 +1511,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("SidecarImage", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
-			assert.Equal(t, redpandav1alpha2.DefaultSidecarRepository+":"+redpandav1alpha2.DefaultOperatorImageTag, (&redpandav1alpha2.NodePool{}).SidecarImage())
+			assert.Equal(t, redpandav1alpha2.DefaultSidecarRepository+":"+redpandav1alpha2.DefaultOperatorImageTag, (&redpandav1alpha2.RedpandaBrokerPool{}).SidecarImage())
 		})
 
 		t.Run("custom", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			pool := &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				SidecarImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("custom/sidecar"), Tag: ptr.To("v2.0")},
 			}}}
 			assert.Equal(t, "custom/sidecar:v2.0", pool.SidecarImage())
@@ -1524,11 +1524,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("InitImage", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
-			assert.Equal(t, redpandav1alpha2.DefaultInitContainerRepository+":"+redpandav1alpha2.DefaultInitContainerImageTag, (&redpandav1alpha2.NodePool{}).InitImage())
+			assert.Equal(t, redpandav1alpha2.DefaultInitContainerRepository+":"+redpandav1alpha2.DefaultInitContainerImageTag, (&redpandav1alpha2.RedpandaBrokerPool{}).InitImage())
 		})
 
 		t.Run("custom", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			pool := &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				InitContainerImage: &redpandav1alpha2.InitContainerImage{Repository: ptr.To("custom/init"), Tag: ptr.To("v3.0")},
 			}}}
 			assert.Equal(t, "custom/init:v3.0", pool.InitImage())
@@ -1589,14 +1589,14 @@ func TestInitContainerFlags(t *testing.T) {
 		}
 	})
 
-	t.Run("PoolFSValidator", func(t *testing.T) {
+	t.Run("BrokerPoolFSValidator", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			input    *redpandav1alpha2.PoolFSValidator
+			input    *redpandav1alpha2.BrokerPoolFSValidator
 			expected bool
 		}{
 			{"nil receiver", nil, false},
-			{"enabled", &redpandav1alpha2.PoolFSValidator{Enabled: ptr.To(true)}, true},
+			{"enabled", &redpandav1alpha2.BrokerPoolFSValidator{Enabled: ptr.To(true)}, true},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -1605,14 +1605,14 @@ func TestInitContainerFlags(t *testing.T) {
 		}
 	})
 
-	t.Run("PoolSetDataDirOwnership", func(t *testing.T) {
+	t.Run("BrokerPoolSetDataDirOwnership", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			input    *redpandav1alpha2.PoolSetDataDirOwnership
+			input    *redpandav1alpha2.BrokerPoolSetDataDirOwnership
 			expected bool
 		}{
 			{"nil receiver", nil, false},
-			{"enabled", &redpandav1alpha2.PoolSetDataDirOwnership{Enabled: ptr.To(true)}, true},
+			{"enabled", &redpandav1alpha2.BrokerPoolSetDataDirOwnership{Enabled: ptr.To(true)}, true},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -1746,16 +1746,16 @@ func TestListener(t *testing.T) {
 	})
 }
 
-func TestPoolFSValidator(t *testing.T) {
+func TestBrokerPoolFSValidator(t *testing.T) {
 	t.Run("GetExpectedFS", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			input    *redpandav1alpha2.PoolFSValidator
+			input    *redpandav1alpha2.BrokerPoolFSValidator
 			expected string
 		}{
 			{"nil receiver", nil, "xfs"},
-			{"zero value", &redpandav1alpha2.PoolFSValidator{}, "xfs"},
-			{"custom", &redpandav1alpha2.PoolFSValidator{ExpectedFS: ptr.To("ext4")}, "ext4"},
+			{"zero value", &redpandav1alpha2.BrokerPoolFSValidator{}, "xfs"},
+			{"custom", &redpandav1alpha2.BrokerPoolFSValidator{ExpectedFS: ptr.To("ext4")}, "ext4"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {

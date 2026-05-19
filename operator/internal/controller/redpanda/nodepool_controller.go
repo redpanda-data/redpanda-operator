@@ -25,7 +25,6 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
@@ -52,69 +51,6 @@ import (
 // fields and finalizers on the NodePool objects, rendering of NodePools takes place within the RedpandaReconciler.
 type NodePoolReconciler struct {
 	Manager multicluster.Manager
-}
-
-func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
-	mgr.GetLogger().WithName("SetupWithMultiClusterManager").Info("registering NodePool controller", "knownClusters", createCanonicalClusterNameList(mgr))
-	return mcbuilder.ControllerManagedBy(mgr).
-		For(
-			&redpandav1alpha2.NodePool{},
-			mcbuilder.WithEngageWithLocalCluster(true),
-			mcbuilder.WithEngageWithProviderClusters(true),
-		).
-		Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {
-			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
-				l := log.FromContext(ctx).WithName("NodePoolReconciler.StretchClusterWatch").V(log.TraceLevel)
-				l.Info("StretchCluster event received", "stretchCluster", client.ObjectKeyFromObject(object).String(), "knownClusters", createCanonicalClusterNameList(mgr))
-				var reqs []mcreconcile.Request
-				for _, clusterName := range mgr.GetClusterNames() {
-					k8sCluster, err := mgr.GetCluster(ctx, clusterName)
-					if err != nil {
-						l.Error(err, "cannot get cluster", "cluster", clusterName)
-						continue
-					}
-					k8sClient := k8sCluster.GetClient()
-					var nodePools redpandav1alpha2.NodePoolList
-					err = k8sClient.List(ctx, &nodePools, client.InNamespace(object.GetNamespace()))
-					if err != nil {
-						l.Error(err, "cannot list NodePools", "cluster", clusterName)
-						continue
-					}
-					l.Info("listed NodePools", "cluster", lifecycle.CanonicalClusterName(clusterName, mgr.GetLocalClusterName), "count", len(nodePools.Items))
-					for _, pool := range nodePools.Items {
-						l.Info("checking NodePool", "cluster", clusterName, "nodePool", pool.Name, "clusterRefName", pool.Spec.ClusterRef.Name, "isStretchCluster", pool.Spec.ClusterRef.IsStretchCluster())
-						if pool.Spec.ClusterRef.IsStretchCluster() && pool.Spec.ClusterRef.Name == object.GetName() {
-							reqs = append(reqs, mcreconcile.Request{
-								Request: reconcile.Request{
-									NamespacedName: types.NamespacedName{
-										Namespace: pool.Namespace,
-										Name:      pool.Name,
-									},
-								},
-								ClusterName: clusterName,
-							})
-						}
-					}
-				}
-				l.Info("enqueuing NodePool reconcile requests", "requests", reqs)
-				return reqs
-			})
-		}).
-		Complete(
-			observability.Wrap[mcreconcile.Request](
-				&NodePoolReconciler{Manager: mgr},
-				"NodePool",
-				periodicRequeue,
-			),
-		)
-}
-
-func createCanonicalClusterNameList(mgr multicluster.Manager) []string {
-	var canonicalClusterList []string
-	for _, clusterName := range mgr.GetClusterNames() {
-		canonicalClusterList = append(canonicalClusterList, lifecycle.CanonicalClusterName(clusterName, mgr.GetLocalClusterName))
-	}
-	return canonicalClusterList
 }
 
 // SetupWithManager sets up the controller with the Manager.

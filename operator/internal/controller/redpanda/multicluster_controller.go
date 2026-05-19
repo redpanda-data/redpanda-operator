@@ -86,7 +86,6 @@ type MulticlusterReconciler struct {
 	Manager         multicluster.Manager
 	LifecycleClient *lifecycle.ResourceClient[lifecycle.StretchClusterWithPools, *lifecycle.StretchClusterWithPools]
 	ClientFactory   internalclient.ClientFactory
-	UseNodePools    bool
 
 	// ReconcileTimeout is a defense-in-depth ceiling on the wall time of a
 	// single reconcile pass — the primary mechanism is per-call timeouts
@@ -198,7 +197,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	defer state.cleanup()
 
 	// Update the per-member broker count gauges from the freshly-fetched
-	// NodePool state. Recording here rather than later means the dashboard
+	// RedpandaBrokerPool state. Recording here rather than later means the dashboard
 	// reflects what's deployed even on reconcile paths that abort early
 	// (deletion, finalizer-only updates, etc.).
 	r.recordBrokerCountMetrics(state)
@@ -470,13 +469,13 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 
 	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames())
 
-	// grab NodePools from all connected clusters
-	nodePools, nodePoolsObserved, err := r.LifecycleClient.FetchExistingNodePoolsFromAllClusters(ctx, sccluster)
+	// grab RedpandaBrokerPools from all connected clusters
+	brokerPools, brokerPoolsObserved, err := r.LifecycleClient.FetchExistingBrokerPoolsFromAllClusters(ctx, sccluster)
 	if err != nil {
-		logger.Error(err, "fetching nodepools")
+		logger.Error(err, "fetching brokerpools")
 		return nil, err
 	}
-	sccluster.NodePools = nodePools
+	sccluster.BrokerPools = brokerPools
 
 	// grab our existing and desired pool resources
 	// so that we can immediately calculate cluster status
@@ -487,7 +486,7 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	if restartOnConfigChange {
 		injectedConfigVersion = sc.Status.ConfigVersion
 	}
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, nodePoolsObserved)
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, brokerPoolsObserved)
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return nil, err
@@ -516,20 +515,20 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	}, nil
 }
 
-// recordBrokerCountMetrics walks every member cluster's NodePools and emits
-// the per-member `brokers` / `brokers_ready` gauges. Done as a side effect
-// of fetchInitialState rather than inside the lifecycle package because
+// recordBrokerCountMetrics walks every member cluster's RedpandaBrokerPools and
+// emits the per-member `brokers` / `brokers_ready` gauges. Done as a side
+// effect of fetchInitialState rather than inside the lifecycle package because
 // the metric label set (stretchcluster, member) is observability-specific
 // and the lifecycle types don't otherwise need to know about it.
 //
-// Members with no NodePools still emit zero values so dashboards can show
-// "this peer is configured but has no pools yet" instead of an absent
+// Members with no RedpandaBrokerPools still emit zero values so dashboards can
+// show "this peer is configured but has no pools yet" instead of an absent
 // series.
 func (r *MulticlusterReconciler) recordBrokerCountMetrics(state *stretchClusterReconciliationState) {
 	sc := state.cluster.StretchCluster
 	for _, clusterName := range r.Manager.GetClusterNames() {
 		var desired, ready int32
-		for _, pool := range state.cluster.GetNodePoolsForCluster(clusterName) {
+		for _, pool := range state.cluster.GetBrokerPoolsForCluster(clusterName) {
 			if pool == nil {
 				continue
 			}
@@ -743,10 +742,11 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 	sc := state.cluster.StretchCluster
 
 	// CA bootstrap covers only the operator's well-known cert names which
-	// every NodePool inherits via mergeDefaultTLS. Any custom cert names a
-	// user puts on a NodePool are expected to come with a SecretRef or
-	// IssuerRef (BYO), so they don't need a bootstrapped CA. Keeping this
-	// list static here means CA sync doesn't depend on NodePools existing.
+	// every RedpandaBrokerPool inherits via mergeDefaultTLS. Any custom cert
+	// names a user puts on a RedpandaBrokerPool are expected to come with a
+	// SecretRef or IssuerRef (BYO), so they don't need a bootstrapped CA.
+	// Keeping this list static here means CA sync doesn't depend on
+	// RedpandaBrokerPools existing.
 	managedCerts := []string{
 		redpandav1alpha2.DefaultCertName,
 		redpandav1alpha2.ExternalCertName,

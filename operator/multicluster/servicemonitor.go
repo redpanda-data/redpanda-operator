@@ -32,7 +32,7 @@ func serviceMonitors(state *RenderState) []*monitoringv1.ServiceMonitor {
 	return out
 }
 
-func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.NodePool) *monitoringv1.ServiceMonitor {
+func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *monitoringv1.ServiceMonitor {
 	if !state.PoolSpec(pool).Monitoring.IsEnabled() {
 		return nil
 	}

@@ -92,13 +92,14 @@ var (
 	}, []string{"stretchcluster", "member"})
 
 	// StretchClusterBrokers is the desired broker count per member,
-	// summed across all NodePools that point at that member. A healthy
-	// converged cluster has `brokers == brokers_ready` on every member.
+	// summed across all RedpandaBrokerPools that point at that member. A
+	// healthy converged cluster has `brokers == brokers_ready` on every
+	// member.
 	StretchClusterBrokers = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricsNamespace,
 		Subsystem: stretchSubsystem,
 		Name:      "brokers",
-		Help:      "Desired broker count per StretchCluster member, summed across NodePools.",
+		Help:      "Desired broker count per StretchCluster member, summed across RedpandaBrokerPools.",
 	}, []string{"stretchcluster", "member"})
 
 	// StretchClusterBrokersReady is the ready broker count per member.
@@ -108,7 +109,7 @@ var (
 		Namespace: metricsNamespace,
 		Subsystem: stretchSubsystem,
 		Name:      "brokers_ready",
-		Help:      "Ready broker count per StretchCluster member, summed across NodePools (sum of NodePool.status.readyReplicas).",
+		Help:      "Ready broker count per StretchCluster member, summed across RedpandaBrokerPools (sum of RedpandaBrokerPool.status.readyReplicas).",
 	}, []string{"stretchcluster", "member"})
 
 	// StretchClusterReplicationHealth is 1 when the admin API reports

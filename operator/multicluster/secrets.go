@@ -49,7 +49,7 @@ func secrets(state *RenderState) ([]*corev1.Secret, error) {
 // secretSTSLifecycle returns the lifecycle scripts Secret for the StatefulSet
 // of the given pool. Lifecycle scripts embed pool-specific TLS/listener
 // settings (admin URLs, curl flags) so each pool gets its own copy.
-func secretSTSLifecycle(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Secret {
+func secretSTSLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Secret {
 	p := scriptParamsForLifecycle(state, pool)
 
 	return &corev1.Secret{
@@ -158,7 +158,7 @@ func secretBootstrapUser(state *RenderState) *corev1.Secret {
 }
 
 // secretFSValidator returns the filesystem validator Secret for a pool.
-func secretFSValidator(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Secret {
+func secretFSValidator(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Secret {
 	if pool.Spec.InitContainers == nil || !pool.Spec.InitContainers.FSValidator.IsEnabled() {
 		return nil
 	}
@@ -181,7 +181,7 @@ func secretFSValidator(state *RenderState, pool *redpandav1alpha2.NodePool) *cor
 }
 
 // secretConfigurator returns the configurator script Secret for a pool.
-func secretConfigurator(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.Secret {
+func secretConfigurator(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Secret {
 	p := scriptParamsFromState(state, pool)
 
 	return &corev1.Secret{

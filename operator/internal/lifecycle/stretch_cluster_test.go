@@ -116,9 +116,9 @@ func TestStretchClusterResourceClient(t *testing.T) {
 
 	decoder := serializer.NewCodecFactory(controller.MulticlusterScheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
 
-	decode := func(t *testing.T, manifests []byte) (*redpandav1alpha2.StretchCluster, []*redpandav1alpha2.NodePool) {
+	decode := func(t *testing.T, manifests []byte) (*redpandav1alpha2.StretchCluster, []*redpandav1alpha2.RedpandaBrokerPool) {
 		var cluster *redpandav1alpha2.StretchCluster
-		pools := []*redpandav1alpha2.NodePool{}
+		pools := []*redpandav1alpha2.RedpandaBrokerPool{}
 		for _, obj := range strings.Split(string(manifests), "---") {
 			obj := strings.Trim(obj, " ")
 			if obj == "" {
@@ -130,7 +130,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 			case *redpandav1alpha2.StretchCluster:
 				require.Nil(t, cluster)
 				cluster = o
-			case *redpandav1alpha2.NodePool:
+			case *redpandav1alpha2.RedpandaBrokerPool:
 				pools = append(pools, o)
 			default:
 				t.Fatalf("invalid type found in manifest: %s", gvk.String())
@@ -153,11 +153,11 @@ func TestStretchClusterResourceClient(t *testing.T) {
 			// override name and namespace to make it unique
 			stretchCluster.Name = file.Name
 			stretchCluster.Namespace = file.Name
-			wrapped := make([]*NodePoolInCluster, len(pools))
+			wrapped := make([]*BrokerPoolInCluster, len(pools))
 			for i, pool := range pools {
-				wrapped[i] = &NodePoolInCluster{
-					cluster:  "",
-					nodePool: pool,
+				wrapped[i] = &BrokerPoolInCluster{
+					cluster:    "",
+					brokerPool: pool,
 				}
 			}
 			cluster := NewStretchClusterWithPools(stretchCluster, []string{""}, wrapped...)
@@ -183,7 +183,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 			cl, err := manager.GetCluster(ctx, "")
 			require.NoError(t, err)
 
-			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetNodePoolsForCluster(""), cluster.GetAllNodePools(), "")
+			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetBrokerPoolsForCluster(""), cluster.GetAllBrokerPools(), "")
 			require.NoError(t, err)
 
 			yamlBytes, err := yaml.Marshal(map[string]any{

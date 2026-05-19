@@ -180,16 +180,16 @@ func TestController(t *testing.T) {
 		},
 	}))
 
-	// A NodePool is required for the StretchCluster → StaticConfig converter
-	// (per-K8s-cluster fields like TLS and listener ports live on the pool
-	// spec). Apply a minimal one so the stretch-cluster-ref test case has
-	// something to convert from.
-	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.NodePool{
+	// A RedpandaBrokerPool is required for the StretchCluster → StaticConfig
+	// converter (per-K8s-cluster fields like TLS and listener ports live on
+	// the pool spec). Apply a minimal one so the stretch-cluster-ref test
+	// case has something to convert from.
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.RedpandaBrokerPool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-stretch-pool",
 			Namespace: ns.Name,
 		},
-		Spec: redpandav1alpha2.NodePoolSpec{
+		Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{
 			ClusterRef: redpandav1alpha2.ClusterRef{
 				Name: "test-stretch",
 				Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),

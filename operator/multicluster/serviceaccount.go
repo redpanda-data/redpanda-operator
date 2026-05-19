@@ -30,7 +30,7 @@ func serviceAccounts(state *RenderState) []*corev1.ServiceAccount {
 	return out
 }
 
-func serviceAccountForPool(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.ServiceAccount {
+func serviceAccountForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.ServiceAccount {
 	sa := state.PoolSpec(pool).ServiceAccount
 	if !sa.ShouldCreate() {
 		return nil

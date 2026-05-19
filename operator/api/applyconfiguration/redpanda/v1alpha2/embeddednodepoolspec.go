@@ -11,10 +11,6 @@
 
 package v1alpha2
 
-import (
-	v1 "k8s.io/api/core/v1"
-)
-
 // EmbeddedNodePoolSpecApplyConfiguration represents a declarative configuration of the EmbeddedNodePoolSpec type for use
 // with apply.
 type EmbeddedNodePoolSpecApplyConfiguration struct {
@@ -27,16 +23,6 @@ type EmbeddedNodePoolSpecApplyConfiguration struct {
 	Image                      *RedpandaImageApplyConfiguration      `json:"image,omitempty"`
 	SidecarImage               *RedpandaImageApplyConfiguration      `json:"sidecarImage,omitempty"`
 	InitContainerImage         *InitContainerImageApplyConfiguration `json:"initContainerImage,omitempty"`
-	ClusterDomain              *string                               `json:"clusterDomain,omitempty"`
-	TLS                        *TLSApplyConfiguration                `json:"tls,omitempty"`
-	External                   *ExternalApplyConfiguration           `json:"external,omitempty"`
-	Listeners                  *StretchListenersApplyConfiguration   `json:"listeners,omitempty"`
-	RBAC                       *RBACApplyConfiguration               `json:"rbac,omitempty"`
-	ServiceAccount             *ServiceAccountApplyConfiguration     `json:"serviceAccount,omitempty"`
-	Monitoring                 *MonitoringApplyConfiguration         `json:"monitoring,omitempty"`
-	Storage                    *StretchStorageApplyConfiguration     `json:"storage,omitempty"`
-	Resources                  *StretchResourcesApplyConfiguration   `json:"resources,omitempty"`
-	ImagePullSecrets           []v1.LocalObjectReference             `json:"imagePullSecrets,omitempty"`
 }
 
 // EmbeddedNodePoolSpecApplyConfiguration constructs a declarative configuration of the EmbeddedNodePoolSpec type for use with
@@ -122,87 +108,5 @@ func (b *EmbeddedNodePoolSpecApplyConfiguration) WithSidecarImage(value *Redpand
 // If called multiple times, the InitContainerImage field is set to the value of the last call.
 func (b *EmbeddedNodePoolSpecApplyConfiguration) WithInitContainerImage(value *InitContainerImageApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
 	b.InitContainerImage = value
-	return b
-}
-
-// WithClusterDomain sets the ClusterDomain field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ClusterDomain field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithClusterDomain(value string) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.ClusterDomain = &value
-	return b
-}
-
-// WithTLS sets the TLS field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the TLS field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithTLS(value *TLSApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.TLS = value
-	return b
-}
-
-// WithExternal sets the External field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the External field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithExternal(value *ExternalApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.External = value
-	return b
-}
-
-// WithListeners sets the Listeners field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Listeners field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithListeners(value *StretchListenersApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.Listeners = value
-	return b
-}
-
-// WithRBAC sets the RBAC field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RBAC field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithRBAC(value *RBACApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.RBAC = value
-	return b
-}
-
-// WithServiceAccount sets the ServiceAccount field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ServiceAccount field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithServiceAccount(value *ServiceAccountApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.ServiceAccount = value
-	return b
-}
-
-// WithMonitoring sets the Monitoring field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Monitoring field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithMonitoring(value *MonitoringApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.Monitoring = value
-	return b
-}
-
-// WithStorage sets the Storage field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Storage field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithStorage(value *StretchStorageApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.Storage = value
-	return b
-}
-
-// WithResources sets the Resources field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Resources field is set to the value of the last call.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithResources(value *StretchResourcesApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
-	b.Resources = value
-	return b
-}
-
-// WithImagePullSecrets adds the given value to the ImagePullSecrets field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ImagePullSecrets field.
-func (b *EmbeddedNodePoolSpecApplyConfiguration) WithImagePullSecrets(values ...v1.LocalObjectReference) *EmbeddedNodePoolSpecApplyConfiguration {
-	for i := range values {
-		b.ImagePullSecrets = append(b.ImagePullSecrets, values[i])
-	}
 	return b
 }

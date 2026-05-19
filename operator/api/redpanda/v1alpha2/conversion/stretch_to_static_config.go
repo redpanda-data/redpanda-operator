@@ -39,7 +39,7 @@ import (
 // because each cluster's local headless Service has EndpointSlices for
 // every peer pod (under crossClusterMode=flat) or the equivalent for the
 // other cross-cluster modes.
-func ConvertStretchClusterToStaticConfig(sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec) *ir.StaticConfigurationSource {
+func ConvertStretchClusterToStaticConfig(sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav1alpha2.EmbeddedBrokerPoolSpec) *ir.StaticConfigurationSource {
 	if sc == nil || poolSpec == nil {
 		return nil
 	}
@@ -60,7 +60,7 @@ func ConvertStretchClusterToStaticConfig(sc *redpandav1alpha2.StretchCluster, po
 	return cfg
 }
 
-func stretchKafkaSpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, host string) *ir.KafkaAPISpec {
+func stretchKafkaSpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, poolSpec *redpandav1alpha2.EmbeddedBrokerPoolSpec, host string) *ir.KafkaAPISpec {
 	kafka := &ir.KafkaAPISpec{
 		Brokers: []string{fmt.Sprintf("%s:%d", host, poolSpec.KafkaPort())},
 	}
@@ -80,7 +80,7 @@ func stretchKafkaSpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha
 	return kafka
 }
 
-func stretchAdminSpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, host string) *ir.AdminAPISpec {
+func stretchAdminSpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, poolSpec *redpandav1alpha2.EmbeddedBrokerPoolSpec, host string) *ir.AdminAPISpec {
 	scheme := "http"
 	var tls *ir.CommonTLS
 	if listener := stretchListener(poolSpec, func(l *redpandav1alpha2.StretchListeners) *redpandav1alpha2.StretchAPIListener { return l.Admin }); listener != nil && listener.IsTLSEnabled(poolSpec.TLS) {
@@ -103,7 +103,7 @@ func stretchAdminSpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha
 	return admin
 }
 
-func stretchSchemaRegistrySpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, host string) *ir.SchemaRegistrySpec {
+func stretchSchemaRegistrySpec(sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, poolSpec *redpandav1alpha2.EmbeddedBrokerPoolSpec, host string) *ir.SchemaRegistrySpec {
 	listener := stretchListener(poolSpec, func(l *redpandav1alpha2.StretchListeners) *redpandav1alpha2.StretchAPIListener {
 		return l.SchemaRegistry
 	})
@@ -132,7 +132,7 @@ func stretchSchemaRegistrySpec(sc *redpandav1alpha2.StretchCluster, spec *redpan
 
 // stretchListener pulls a listener out of poolSpec.Listeners via the supplied
 // getter, returning nil safely if Listeners is unset.
-func stretchListener(poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, get func(*redpandav1alpha2.StretchListeners) *redpandav1alpha2.StretchAPIListener) *redpandav1alpha2.StretchAPIListener {
+func stretchListener(poolSpec *redpandav1alpha2.EmbeddedBrokerPoolSpec, get func(*redpandav1alpha2.StretchListeners) *redpandav1alpha2.StretchAPIListener) *redpandav1alpha2.StretchAPIListener {
 	if poolSpec == nil || poolSpec.Listeners == nil {
 		return nil
 	}
@@ -142,7 +142,7 @@ func stretchListener(poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, get func(*
 // stretchListenerTLS builds the CommonTLS describing where the CA cert can
 // be loaded from, matching how Factory.stretchClusterListenerTLSConfig
 // resolves the secret at runtime.
-func stretchListenerTLS(sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav1alpha2.EmbeddedNodePoolSpec, listener *redpandav1alpha2.StretchAPIListener) *ir.CommonTLS {
+func stretchListenerTLS(sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav1alpha2.EmbeddedBrokerPoolSpec, listener *redpandav1alpha2.StretchAPIListener) *ir.CommonTLS {
 	certName := listener.TLS.GetCert()
 	if certName == "" {
 		certName = redpandav1alpha2.DefaultCertName

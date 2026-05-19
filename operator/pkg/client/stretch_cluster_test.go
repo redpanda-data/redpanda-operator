@@ -122,13 +122,13 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 func (s *StretchClusterFactorySuite) applyNodePools(t *testing.T, ctx context.Context, scName, ns, poolPrefix string) {
 	t.Helper()
 	for i, env := range s.mc.Envs {
-		pool := &redpandav1alpha2.NodePool{
+		pool := &redpandav1alpha2.RedpandaBrokerPool{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-%d", poolPrefix, i),
 				Namespace: ns,
 			},
-			Spec: redpandav1alpha2.NodePoolSpec{
-				EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 					Replicas: ptr.To(int32(1)),
 					External: &redpandav1alpha2.External{
 						Enabled: ptr.To(false),
@@ -173,7 +173,7 @@ func (s *StretchClusterFactorySuite) waitForBrokerReady(t *testing.T, ctx contex
 		if err := s.mc.Envs[0].Client().Get(ctx, nn, &cluster); err != nil {
 			return false
 		}
-		for _, pool := range cluster.Status.NodePools {
+		for _, pool := range cluster.Status.BrokerPools {
 			if pool.ReadyReplicas > 0 {
 				return true
 			}
@@ -435,7 +435,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 			return false
 		}
 		readyCount := int32(0)
-		for _, pool := range cluster.Status.NodePools {
+		for _, pool := range cluster.Status.BrokerPools {
 			readyCount += pool.ReadyReplicas
 		}
 		return readyCount >= 3
@@ -454,7 +454,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 	t.Run("SingleNodePoolDeletion", func(t *testing.T) {
 		// Delete the NodePool from cluster 2 only.
 		poolToDelete := "cleanup-pool-2"
-		pool := &redpandav1alpha2.NodePool{
+		pool := &redpandav1alpha2.RedpandaBrokerPool{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      poolToDelete,
 				Namespace: ns,
@@ -477,7 +477,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 				return false
 			}
 			readyCount := int32(0)
-			for _, pool := range cluster.Status.NodePools {
+			for _, pool := range cluster.Status.BrokerPools {
 				readyCount += pool.ReadyReplicas
 			}
 			t.Logf("ready brokers: %d (want >= 2)", readyCount)
@@ -548,7 +548,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 			if err := s.mc.Envs[0].Client().Get(ctx, nn, &cluster); err != nil {
 				return false
 			}
-			for _, pool := range cluster.Status.NodePools {
+			for _, pool := range cluster.Status.BrokerPools {
 				if pool.ReadyReplicas > 0 {
 					return true
 				}
@@ -559,7 +559,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 
 	t.Run("FullDeletion", func(t *testing.T) {
 		// Delete all remaining NodePools across all clusters.
-		s.mc.DeleteAll(t, ctx, ns, &redpandav1alpha2.NodePool{})
+		s.mc.DeleteAll(t, ctx, ns, &redpandav1alpha2.RedpandaBrokerPool{})
 		// Delete the StretchCluster from all clusters.
 		s.mc.DeleteAll(t, ctx, ns, &redpandav1alpha2.StretchCluster{})
 

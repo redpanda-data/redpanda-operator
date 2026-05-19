@@ -14,7 +14,7 @@ import (
 )
 
 // schemaRegistryConfig generates the schema_registry section of the redpanda.yaml template.
-func schemaRegistryConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]any {
+func schemaRegistryConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	cfg := map[string]any{}
 
 	var sr *redpandav1alpha2.StretchAPIListener

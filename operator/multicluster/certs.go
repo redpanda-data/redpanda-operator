@@ -39,7 +39,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 	return out, nil
 }
 
-func certificatesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) ([]*certmanagerv1.Certificate, error) {
+func certificatesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*certmanagerv1.Certificate, error) {
 	fullname := state.fullname()
 	poolFullname := state.poolFullname(pool)
 	service := state.ServiceName()

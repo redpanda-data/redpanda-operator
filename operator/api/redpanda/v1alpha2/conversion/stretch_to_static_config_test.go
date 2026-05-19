@@ -36,7 +36,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		mutate func(*redpandav1alpha2.StretchCluster, *redpandav1alpha2.EmbeddedNodePoolSpec)
+		mutate func(*redpandav1alpha2.StretchCluster, *redpandav1alpha2.EmbeddedBrokerPoolSpec)
 		// Optional per-case assertions; the common assertions on host /
 		// ports are always applied.
 		assert func(*testing.T, *ir.StaticConfigurationSource)
@@ -46,7 +46,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 			// "no opinion" spec yields TLS-on URLs. This matches the Helm
 			// chart's historical defaulting.
 			name:   "default spec (TLS auto-enabled, no SASL)",
-			mutate: func(_ *redpandav1alpha2.StretchCluster, _ *redpandav1alpha2.EmbeddedNodePoolSpec) {},
+			mutate: func(_ *redpandav1alpha2.StretchCluster, _ *redpandav1alpha2.EmbeddedBrokerPoolSpec) {},
 			assert: func(t *testing.T, cfg *ir.StaticConfigurationSource) {
 				require.NotNil(t, cfg.Kafka.TLS)
 				require.Nil(t, cfg.Kafka.SASL)
@@ -60,7 +60,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "TLS explicitly disabled, no SASL",
-			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				p.TLS = &redpandav1alpha2.TLS{Enabled: ptr.To(false)}
 				// Per-listener TLS overrides global; if the listener
 				// hasn't been touched MergeDefaults still gives it a
@@ -77,7 +77,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "TLS enabled with default cert, no SASL",
-			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				p.TLS = &redpandav1alpha2.TLS{Enabled: ptr.To(true)}
 			},
 			assert: func(t *testing.T, cfg *ir.StaticConfigurationSource) {
@@ -91,7 +91,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "TLS enabled with user-provided SecretRef",
-			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				p.TLS = &redpandav1alpha2.TLS{
 					Enabled: ptr.To(true),
 					Certs: map[string]*redpandav1alpha2.Certificate{
@@ -110,7 +110,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "TLS enabled with IssuerRef (ca.crt key in leaf secret)",
-			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				p.TLS = &redpandav1alpha2.TLS{
 					Enabled: ptr.To(true),
 					Certs: map[string]*redpandav1alpha2.Certificate{
@@ -131,7 +131,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "SASL enabled, default mechanism",
-			mutate: func(sc *redpandav1alpha2.StretchCluster, _ *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(sc *redpandav1alpha2.StretchCluster, _ *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				sc.Spec.Auth = &redpandav1alpha2.Auth{
 					SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)},
 				}
@@ -149,7 +149,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "SASL enabled, explicit mechanism",
-			mutate: func(sc *redpandav1alpha2.StretchCluster, _ *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(sc *redpandav1alpha2.StretchCluster, _ *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				sc.Spec.Auth = &redpandav1alpha2.Auth{
 					SASL: &redpandav1alpha2.SASL{
 						Enabled:   ptr.To(true),
@@ -163,7 +163,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "TLS + SASL together",
-			mutate: func(sc *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(sc *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				p.TLS = &redpandav1alpha2.TLS{Enabled: ptr.To(true)}
 				sc.Spec.Auth = &redpandav1alpha2.Auth{
 					SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)},
@@ -180,7 +180,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 		},
 		{
 			name: "custom cluster domain (TLS disabled)",
-			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				p.ClusterDomain = ptr.To("example.internal")
 				p.TLS = &redpandav1alpha2.TLS{Enabled: ptr.To(false)}
 			},
@@ -195,7 +195,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 			// TLS is globally disabled, but the kafka listener is
 			// explicitly turned back on. Other listeners stay plaintext.
 			name: "per-listener TLS opt-in over disabled global",
-			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedNodePoolSpec) {
+			mutate: func(_ *redpandav1alpha2.StretchCluster, p *redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 				p.TLS = &redpandav1alpha2.TLS{Enabled: ptr.To(false)}
 				p.Listeners = &redpandav1alpha2.StretchListeners{
 					Kafka: &redpandav1alpha2.StretchAPIListener{
@@ -220,7 +220,7 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 			sc := &redpandav1alpha2.StretchCluster{
 				ObjectMeta: metav1.ObjectMeta{Name: scName, Namespace: scNs},
 			}
-			poolSpec := &redpandav1alpha2.EmbeddedNodePoolSpec{}
+			poolSpec := &redpandav1alpha2.EmbeddedBrokerPoolSpec{}
 			tc.mutate(sc, poolSpec)
 
 			// Default the pool the same way callers (e.g. console controller,

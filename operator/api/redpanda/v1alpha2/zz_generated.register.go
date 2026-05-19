@@ -61,6 +61,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&NodePool{},
 		&NodePoolList{},
 		&Redpanda{},
+		&RedpandaBrokerPool{},
+		&RedpandaBrokerPoolList{},
 		&RedpandaList{},
 		&RedpandaRole{},
 		&RedpandaRoleList{},

@@ -75,7 +75,7 @@ type ScriptParams struct {
 // For mesh/flat modes, uses the per-pod service name (<pool>-<ordinal>)
 // which is resolvable across clusters, rather than the StatefulSet pod FQDN
 // which only resolves within the local cluster.
-func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.NodePool) string {
+func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) string {
 	if state.Spec().Networking.IsMCS() {
 		return fmt.Sprintf("${SERVICE_NAME}.%s.svc.clusterset.local", state.namespace)
 	}
@@ -88,7 +88,7 @@ func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.N
 
 // scriptParamsForLifecycle returns script params for lifecycle hooks for the
 // given pool. Lifecycle hooks need pool-specific admin URL / TLS settings.
-func scriptParamsForLifecycle(state *RenderState, pool *redpandav1alpha2.NodePool) ScriptParams {
+func scriptParamsForLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
 	return ScriptParams{
 		AdminCurlFlags:    state.adminTLSCurlFlags(pool),
 		CurlURL:           state.AdminInternalURL(pool),
@@ -98,7 +98,7 @@ func scriptParamsForLifecycle(state *RenderState, pool *redpandav1alpha2.NodePoo
 	}
 }
 
-func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.NodePool) ScriptParams {
+func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
 	p := ScriptParams{
 		AdminCurlFlags:              state.adminTLSCurlFlags(pool),
 		CurlURL:                     state.AdminInternalURL(pool),
@@ -408,7 +408,7 @@ func livenessProbeScript(p ScriptParams) string {
 	)
 }
 
-func (r *RenderState) adminTLSCurlFlags(pool *redpandav1alpha2.NodePool) string {
+func (r *RenderState) adminTLSCurlFlags(pool *redpandav1alpha2.RedpandaBrokerPool) string {
 	if !r.PoolSpec(pool).IsAdminTLSEnabled() {
 		return ""
 	}

@@ -55,12 +55,12 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 	// Apply operator-level default images to pools that don't specify their own.
 	applyDefaultImage := defaultImage(m.redpandaImage)
 	applyDefaultSidecar := defaultImage(m.sideCarImage)
-	inCluster := cluster.GetNodePoolsForCluster(canonicalName)
+	inCluster := cluster.GetBrokerPoolsForCluster(canonicalName)
 	for _, pool := range inCluster {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
 	}
-	allPools := cluster.GetAllNodePools()
+	allPools := cluster.GetAllBrokerPools()
 	for _, pool := range allPools {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)

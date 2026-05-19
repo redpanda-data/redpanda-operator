@@ -437,24 +437,23 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 	return !resolved.GetDeletionTimestamp().IsZero(), nil
 }
 
-// FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
-// a tracker that can be used for determining necessary operations on the pools.
-// FetchExistingAndDesiredPools fetches the existing and desired node pools
-// for a given cluster, returning a tracker that can be used for determining
+// FetchExistingAndDesiredPools fetches the existing and desired pools for a
+// given cluster, returning a tracker that can be used for determining
 // necessary operations on the pools.
 //
-// nodePoolsObserved is the observation set returned by
-// FetchExistingNodePoolsFromAllClusters — clusters whose NodePool list was
-// successfully fetched earlier in the same reconcile. A cluster is only
-// marked fully observed on the PoolTracker when ALL of:
-//   - its NodePool list was already observed (passed in), AND
+// poolsObserved is the observation set returned by
+// FetchExistingBrokerPoolsFromAllClusters — clusters whose
+// RedpandaBrokerPool list was successfully fetched earlier in the same
+// reconcile. A cluster is only marked fully observed on the PoolTracker when
+// ALL of:
+//   - its broker-pool list was already observed (passed in), AND
 //   - fetchExistingPools here didn't probe-skip, AND
 //   - Render here didn't error
 //
 // hold. ToScaleDown / ToDelete gate "no desired counterpart" decisions on
 // this combined observation so a partial-visibility reconcile can never
 // trigger an unintended decommission.
-func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool) (*PoolTracker, error) {
+func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, poolsObserved map[string]bool) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
 	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
@@ -522,13 +521,14 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 
 		// Mark this cluster fully observed ONLY if every upstream fetch
 		// for it also succeeded. The local cluster is unconditionally
-		// observed (its NodePool list was either observed too, or it's
-		// the only place we could see anything anyway). Remote clusters
-		// require the NodePool-list observation from the earlier call.
-		if clusterName == mcmanager.LocalCluster || nodePoolsObserved[clusterName] {
+		// observed (its broker-pool list was either observed too, or
+		// it's the only place we could see anything anyway). Remote
+		// clusters require the broker-pool list observation from the
+		// earlier call.
+		if clusterName == mcmanager.LocalCluster || poolsObserved[clusterName] {
 			pools.MarkClusterObserved(clusterName)
 		} else {
-			logger.Info("pool data fetched but NodePool list was not observed for cluster, not marking fully observed (no-desired-counterpart scale-down disabled for it)",
+			logger.Info("pool data fetched but RedpandaBrokerPool list was not observed for cluster, not marking fully observed (no-desired-counterpart scale-down disabled for it)",
 				"cluster", canonical)
 		}
 	}
@@ -878,56 +878,57 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	return existing, nil
 }
 
-// FetchExistingNodePoolsFromAllClusters returns the union of NodePools
-// referencing the given cluster across every engaged cluster, plus the set of
-// cluster names whose List actually succeeded (vs. being probe-skipped or
-// failing the call). The observed set is load-bearing for downstream
-// scale-down safety: when a cluster's NodePool list wasn't observed, the
-// renderer downstream can produce a desiredCount=0 for that cluster purely
-// because we never saw its NodePools — indistinguishable from a real
-// deletion. Callers must gate any "no desired counterpart → drain"
-// decision on the observed set so a transient fetch failure on a
-// partitioned peer can't be misread as user intent to remove all pools.
-func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context.Context, cluster U) ([]*NodePoolInCluster, map[string]bool, error) {
+// FetchExistingBrokerPoolsFromAllClusters returns the union of
+// RedpandaBrokerPools referencing the given cluster across every engaged
+// cluster, plus the set of cluster names whose List actually succeeded (vs.
+// being probe-skipped or failing the call). The observed set is load-bearing
+// for downstream scale-down safety: when a cluster's RedpandaBrokerPool list
+// wasn't observed, the renderer downstream can produce a desiredCount=0 for
+// that cluster purely because we never saw its broker pools —
+// indistinguishable from a real deletion. Callers must gate any "no desired
+// counterpart → drain" decision on the observed set so a transient fetch
+// failure on a partitioned peer can't be misread as user intent to remove
+// all pools.
+func (r *ResourceClient[T, U]) FetchExistingBrokerPoolsFromAllClusters(ctx context.Context, cluster U) ([]*BrokerPoolInCluster, map[string]bool, error) {
 	logger := log.FromContext(ctx)
-	var nodePools []*NodePoolInCluster
+	var brokerPools []*BrokerPoolInCluster
 	observed := map[string]bool{}
 	for _, clusterName := range r.clusterList(cluster) {
 		canonicalName := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
-			logger.Info("remote cluster unreachable (probe) in FetchExistingNodePoolsFromAllClusters, skipping", "cluster", canonicalName)
+			logger.Info("remote cluster unreachable (probe) in FetchExistingBrokerPoolsFromAllClusters, skipping", "cluster", canonicalName)
 			continue
 		}
 		ctl, err := r.ctl(ctx, clusterName)
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
-				logger.Info("remote cluster unreachable in FetchExistingNodePoolsFromAllClusters, skipping", "cluster", canonicalName, "error", err)
+				logger.Info("remote cluster unreachable in FetchExistingBrokerPoolsFromAllClusters, skipping", "cluster", canonicalName, "error", err)
 				continue
 			}
 			return nil, nil, err
 		}
 		listCtx, listCancel := context.WithTimeout(ctx, CallTimeoutFor(clusterName))
-		allNodePools, err := kube.List[redpandav1alpha2.NodePoolList](listCtx, ctl, cluster.GetNamespace())
+		allBrokerPools, err := kube.List[redpandav1alpha2.RedpandaBrokerPoolList](listCtx, ctl, cluster.GetNamespace())
 		listCancel()
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
-				logger.Info("could not list NodePools on remote cluster, skipping", "cluster", canonicalName, "error", err)
+				logger.Info("could not list RedpandaBrokerPools on remote cluster, skipping", "cluster", canonicalName, "error", err)
 				continue
 			}
 			return nil, nil, err
 		}
 		observed[clusterName] = true
-		for _, pool := range allNodePools.Items {
+		for _, pool := range allBrokerPools.Items {
 			clusterRef := pool.Spec.ClusterRef
 			if clusterRef.IsStretchCluster() && clusterRef.Name == cluster.GetName() {
-				nodePools = append(nodePools, &NodePoolInCluster{
-					cluster:  canonicalName,
-					nodePool: pool.DeepCopy(),
+				brokerPools = append(brokerPools, &BrokerPoolInCluster{
+					cluster:    canonicalName,
+					brokerPool: pool.DeepCopy(),
 				})
 			}
 		}
 	}
-	return nodePools, observed, nil
+	return brokerPools, observed, nil
 }
 
 func setConfigVersionLabels(labels map[string]string, configVersion string) map[string]string {

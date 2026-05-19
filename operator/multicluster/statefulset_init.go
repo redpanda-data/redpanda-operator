@@ -20,7 +20,7 @@ import (
 )
 
 // statefulSetInitContainers returns the init containers for the StatefulSet.
-func statefulSetInitContainers(state *RenderState, pool *redpandav1alpha2.NodePool) []corev1.Container {
+func statefulSetInitContainers(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.Container {
 	var containers []corev1.Container
 
 	if state.Spec().Tuning.IsTuneAioEventsEnabled() {
@@ -48,7 +48,7 @@ func statefulSetInitContainers(state *RenderState, pool *redpandav1alpha2.NodePo
 	return containers
 }
 
-func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
+func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
 	return corev1.Container{
 		Name:    redpandaTuningContainerName,
 		Image:   pool.RedpandaImage(),
@@ -70,7 +70,7 @@ func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.N
 	}
 }
 
-func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
+func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
 	return corev1.Container{
 		Name:    setDataDirectoryOwnershipContainerName,
 		Image:   pool.InitImage(),
@@ -86,8 +86,8 @@ func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool *redpa
 	}
 }
 
-func statefulSetInitContainerFSValidator(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
-	var fsValidator *redpandav1alpha2.PoolFSValidator
+func statefulSetInitContainerFSValidator(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
+	var fsValidator *redpandav1alpha2.BrokerPoolFSValidator
 	if pool.Spec.InitContainers != nil {
 		fsValidator = pool.Spec.InitContainers.FSValidator
 	}
@@ -109,7 +109,7 @@ func statefulSetInitContainerFSValidator(state *RenderState, pool *redpandav1alp
 	}
 }
 
-func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
+func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
 	volMounts := state.commonMounts(pool)
 	volMounts = append(volMounts,
 		corev1.VolumeMount{Name: configVolumeName, MountPath: redpandaConfigMountPath},
@@ -159,7 +159,7 @@ func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1al
 
 // bootstrapYamlTemplater returns an init container that templates environment variables
 // into bootstrap.yaml.
-func bootstrapYamlTemplater(pool *redpandav1alpha2.NodePool, envVars []corev1.EnvVar) corev1.Container {
+func bootstrapYamlTemplater(pool *redpandav1alpha2.RedpandaBrokerPool, envVars []corev1.EnvVar) corev1.Container {
 	image := pool.SidecarImage()
 
 	var cliArgs []string
@@ -201,7 +201,7 @@ func bootstrapYamlTemplater(pool *redpandav1alpha2.NodePool, envVars []corev1.En
 
 // statefulSetInitContainerSetTieredStorageCacheDirOwnership returns an init container
 // that creates and chowns the tiered storage cache directory.
-func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
+func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
 	cacheDir := state.PoolSpec(pool).TieredCacheDirectory()
 
 	volMounts := state.commonMounts(pool)

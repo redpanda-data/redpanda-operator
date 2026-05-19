@@ -14,7 +14,7 @@ import (
 )
 
 // pandaProxyConfig generates the pandaproxy section of the redpanda.yaml template.
-func pandaProxyConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]any {
+func pandaProxyConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	cfg := map[string]any{}
 
 	var http *redpandav1alpha2.StretchAPIListener

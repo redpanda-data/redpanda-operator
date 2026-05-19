@@ -9,6 +9,10 @@
 
 package lifecycle
 
+import (
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+)
+
 // StretchClusterStatusUpdater represents a status updater for v2 clusters.
 type StretchClusterStatusUpdater struct{}
 
@@ -24,7 +28,7 @@ func (m *StretchClusterStatusUpdater) Update(cluster *StretchClusterWithPools, s
 	dirty := status.StretchClusterStatus.UpdateConditions(cluster.StretchCluster)
 
 	for _, pool := range status.Pools {
-		if setAndDirtyCheckPools(&cluster.Status.NodePools, pool) {
+		if setAndDirtyCheckBrokerPools(&cluster.Status.BrokerPools, pool) {
 			dirty = true
 		}
 	}
@@ -40,4 +44,48 @@ func (m *StretchClusterStatusUpdater) Update(cluster *StretchClusterWithPools, s
 	}
 
 	return dirty
+}
+
+func setAndDirtyCheckBrokerPools(pools *[]redpandav1alpha2.EmbeddedBrokerPoolStatus, updated PoolStatus) bool {
+	dirty := false
+	for i, existing := range *pools {
+		if existing.Name == updated.Name {
+			if setAndDirtyCheck(&existing.Replicas, updated.Replicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.DesiredReplicas, updated.DesiredReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.OutOfDateReplicas, updated.OutOfDateReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.UpToDateReplicas, updated.UpToDateReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.CondemnedReplicas, updated.CondemnedReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.ReadyReplicas, updated.ReadyReplicas) {
+				dirty = true
+			}
+			if setAndDirtyCheck(&existing.RunningReplicas, updated.RunningReplicas) {
+				dirty = true
+			}
+
+			(*pools)[i] = existing
+			return dirty
+		}
+	}
+
+	*pools = append(*pools, redpandav1alpha2.EmbeddedBrokerPoolStatus{
+		Name:              updated.Name,
+		Replicas:          updated.Replicas,
+		DesiredReplicas:   updated.DesiredReplicas,
+		OutOfDateReplicas: updated.OutOfDateReplicas,
+		UpToDateReplicas:  updated.UpToDateReplicas,
+		CondemnedReplicas: updated.CondemnedReplicas,
+		ReadyReplicas:     updated.ReadyReplicas,
+		RunningReplicas:   updated.RunningReplicas,
+	})
+	return true
 }

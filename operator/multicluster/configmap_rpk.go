@@ -21,7 +21,7 @@ import (
 )
 
 // rpkNodeConfig generates the rpk section of the redpanda.yaml template.
-func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]any {
+func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	flags := redpandaAdditionalStartFlags(state, pool)
 
 	l := state.PoolSpec(pool).Listeners
@@ -59,7 +59,7 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[stri
 
 // rpkListenerTLS returns the rpk client TLS config for a listener, or nil if
 // TLS is not enabled or no cert is configured.
-func rpkListenerTLS(state *RenderState, pool *redpandav1alpha2.NodePool, listener *redpandav1alpha2.StretchAPIListener) map[string]any {
+func rpkListenerTLS(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, listener *redpandav1alpha2.StretchAPIListener) map[string]any {
 	if listener == nil || !listener.IsTLSEnabled(state.PoolSpec(pool).TLS) || listener.TLS.GetCert() == "" {
 		return nil
 	}
@@ -67,7 +67,7 @@ func rpkListenerTLS(state *RenderState, pool *redpandav1alpha2.NodePool, listene
 }
 
 // rpkClientTLSConfig returns the TLS config map for rpk client connections.
-func rpkClientTLSConfig(state *RenderState, pool *redpandav1alpha2.NodePool, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
+func rpkClientTLSConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
 	certName := tls.GetCert()
 	result := map[string]any{
 		"ca_file": tls.ServerCAPath(state.PoolSpec(pool).TLS),
@@ -82,7 +82,7 @@ func rpkClientTLSConfig(state *RenderState, pool *redpandav1alpha2.NodePool, tls
 
 // kafkaClientConfig generates the pandaproxy_client / schema_registry_client / audit_log_client
 // section of the redpanda.yaml template. clientType is "pandaproxy", "schema_registry", or "audit_log".
-func kafkaClientConfig(state *RenderState, pool *redpandav1alpha2.NodePool, clientType string) map[string]any {
+func kafkaClientConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, clientType string) map[string]any {
 	var brokerList []map[string]any
 
 	// Check if use_localhost is set in node config.
@@ -129,7 +129,7 @@ func kafkaClientConfig(state *RenderState, pool *redpandav1alpha2.NodePool, clie
 }
 
 // redpandaAdditionalStartFlags returns the additional_start_flags for rpk.
-func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.NodePool) []string {
+func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []string {
 	var flags []string
 
 	// Add logging level.
@@ -158,7 +158,7 @@ func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.Nod
 // rpkProfileConfigMap returns a ConfigMap containing an RPK profile for external
 // client connections to the given pool. Returns nil if external access is not
 // enabled on that pool.
-func rpkProfileConfigMap(state *RenderState, pool *redpandav1alpha2.NodePool) *corev1.ConfigMap {
+func rpkProfileConfigMap(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.ConfigMap {
 	if !state.PoolSpec(pool).External.IsEnabled() {
 		return nil
 	}
@@ -182,7 +182,7 @@ func rpkProfileConfigMap(state *RenderState, pool *redpandav1alpha2.NodePool) *c
 }
 
 // rpkProfile generates the RPK profile data for external client connections.
-func rpkProfile(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]any {
+func rpkProfile(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	// For stretch clusters, the advertised addresses are runtime-dependent
 	// (per-node), so we use empty lists here. The profile is primarily useful
 	// for its TLS configuration and name.

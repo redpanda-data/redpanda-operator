@@ -376,8 +376,8 @@ func Run(
 		}
 	}
 
-	if err := redpandacontrollers.SetupWithMultiClusterManager(manager); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
+	if err := redpandacontrollers.SetupRedpandaBrokerPoolWithMultiClusterManager(manager); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "RedpandaBrokerPool")
 		return err
 	}
 

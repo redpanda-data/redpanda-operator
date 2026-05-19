@@ -14,23 +14,26 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-// StretchClusterWithPools serves as an intermediate structure to merge a Cluster with its NodePools in v2
+// StretchClusterWithPools serves as an intermediate structure to merge a
+// StretchCluster with its broker pools across member K8s clusters.
 type StretchClusterWithPools struct {
 	*redpandav1alpha2.StretchCluster
-	NodePools    []*NodePoolInCluster
+	BrokerPools  []*BrokerPoolInCluster
 	PodEndpoints []PodEndpoint
 	clusters     []string
 }
 
-type NodePoolInCluster struct {
-	cluster  string
-	nodePool *redpandav1alpha2.NodePool
+// BrokerPoolInCluster pairs a RedpandaBrokerPool with the K8s cluster it
+// lives in.
+type BrokerPoolInCluster struct {
+	cluster    string
+	brokerPool *redpandav1alpha2.RedpandaBrokerPool
 }
 
-func NewStretchClusterWithPools(cluster *redpandav1alpha2.StretchCluster, clusters []string, pools ...*NodePoolInCluster) *StretchClusterWithPools {
+func NewStretchClusterWithPools(cluster *redpandav1alpha2.StretchCluster, clusters []string, pools ...*BrokerPoolInCluster) *StretchClusterWithPools {
 	return &StretchClusterWithPools{
 		StretchCluster: cluster,
-		NodePools:      pools,
+		BrokerPools:    pools,
 		clusters:       clusters,
 	}
 }
@@ -39,25 +42,26 @@ func (s *StretchClusterWithPools) GetClusters() []string {
 	return s.clusters
 }
 
-func (s *StretchClusterWithPools) GetNodePoolsForCluster(clusterName string) []*redpandav1alpha2.NodePool {
-	var result []*redpandav1alpha2.NodePool
-	for _, nodePool := range s.NodePools {
-		if nodePool.cluster == clusterName {
-			result = append(result, nodePool.nodePool)
+func (s *StretchClusterWithPools) GetBrokerPoolsForCluster(clusterName string) []*redpandav1alpha2.RedpandaBrokerPool {
+	var result []*redpandav1alpha2.RedpandaBrokerPool
+	for _, pool := range s.BrokerPools {
+		if pool.cluster == clusterName {
+			result = append(result, pool.brokerPool)
 		}
 	}
 	return result
 }
 
-func (s *StretchClusterWithPools) GetAllNodePools() []*redpandav1alpha2.NodePool {
-	var result []*redpandav1alpha2.NodePool
-	for _, nodePool := range s.NodePools {
-		result = append(result, nodePool.nodePool)
+func (s *StretchClusterWithPools) GetAllBrokerPools() []*redpandav1alpha2.RedpandaBrokerPool {
+	var result []*redpandav1alpha2.RedpandaBrokerPool
+	for _, pool := range s.BrokerPools {
+		result = append(result, pool.brokerPool)
 	}
 	return result
 }
 
-// V2ResourceManagers is a factory function for tying together all of our v2 interfaces.
+// StretchClusterResourceManagers is a factory function for tying together all
+// of the StretchCluster-side resource manager interfaces.
 func StretchClusterResourceManagers(redpandaImage, sidecarImage Image, cloudSecrets CloudSecretsFlags) func(mgr multicluster.Manager) (
 	OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools],
 	ClusterStatusUpdater[StretchClusterWithPools, *StretchClusterWithPools],

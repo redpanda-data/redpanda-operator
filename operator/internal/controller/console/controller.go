@@ -53,7 +53,7 @@ const (
 	finalizerKey     = "operator.redpanda.com/finalizer"
 	managedByService = "redpanda-operator"
 
-	// stretchSourcePoolAnnotation records the NodePool that the controller
+	// stretchSourcePoolAnnotation records the RedpandaBrokerPool that the controller
 	// pinned as the source of per-K8s-cluster spec (TLS, listener ports,
 	// ClusterDomain) when ClusterSource references a StretchCluster.
 	// Persisting the choice keeps the rendered Console config stable across
@@ -89,7 +89,7 @@ type Controller struct {
 
 	// Multicluster is true when the controller was registered via
 	// SetupWithMulticlusterManager — i.e. running inside the multicluster
-	// operator where StretchCluster and NodePool CRDs are installed. In
+	// operator where StretchCluster and RedpandaBrokerPool CRDs are installed. In
 	// single-cluster mode the StretchCluster branch is skipped because
 	// those CRDs may not be present.
 	Multicluster bool
@@ -154,7 +154,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 // safe in the multicluster operator mode where the StretchCluster CRD is
 // guaranteed to be installed alongside the Console CRD.
 //
-// Mirrors the pattern established by NodePool's SetupWithMultiClusterManager.
+// Mirrors the pattern established by RedpandaBrokerPool's SetupRedpandaBrokerPoolWithMultiClusterManager.
 func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multicluster.Manager) error {
 	c.Manager = mgr
 	c.Multicluster = true
@@ -298,7 +298,7 @@ func (c *Controller) Reconcile(ctx context.Context, req mcreconcile.Request) (ct
 // c.Ctl. Otherwise it builds a fresh [kube.Ctl] against the peer cluster's
 // REST config / scheme / cache for this reconcile pass; mirrors the
 // per-reconcile [cluster.Cluster.GetClient] pattern used by other
-// multicluster reconcilers (see NodePoolReconciler).
+// multicluster reconcilers (see RedpandaBrokerPoolReconciler).
 func (c *Controller) ctlFor(ctx context.Context, clusterName string) (*kube.Ctl, error) {
 	if clusterName == mcmanager.LocalCluster || c.Manager == nil {
 		return c.Ctl, nil
@@ -459,7 +459,7 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, ctl *kube.Ctl, cr *re
 	return nil
 }
 
-// maybeSelectStretchSourcePool resolves which NodePool will drive
+// maybeSelectStretchSourcePool resolves which RedpandaBrokerPool will drive
 // per-K8s-cluster spec (TLS, listener ports, ClusterDomain) for a Console CR
 // whose ClusterSource references a StretchCluster, and persists the choice
 // as an annotation on the CR. The renderer then reads the annotation to
@@ -468,15 +468,15 @@ func (c *Controller) maybeSetJWTToken(ctx context.Context, ctl *kube.Ctl, cr *re
 // Selection rules:
 //   - If the annotation is already set and the named pool still exists in
 //     the same K8s cluster (this controller's local cluster), keep it.
-//   - Otherwise, choose the lexically smallest NodePool in the same
-//     namespace whose ClusterRef points at this StretchCluster, persist
-//     that choice, and return.
+//   - Otherwise, choose the lexically smallest RedpandaBrokerPool in the
+//     same namespace whose ClusterRef points at this StretchCluster,
+//     persist that choice, and return.
 //
 // Pinning prevents the rendered config from flapping when pools are added
 // or removed on the local K8s cluster — the only event that triggers a
 // re-pick is the currently-pinned pool going away.
 func (c *Controller) maybeSelectStretchSourcePool(ctx context.Context, ctl *kube.Ctl, cr *redpandav1alpha2.Console) error {
-	// StretchCluster and NodePool CRDs are only installed by the
+	// StretchCluster and RedpandaBrokerPool CRDs are only installed by the
 	// multicluster operator; skip everything in single-cluster mode.
 	if !c.Multicluster {
 		return nil
@@ -489,20 +489,20 @@ func (c *Controller) maybeSelectStretchSourcePool(ctx context.Context, ctl *kube
 		return nil
 	}
 
-	nodePoolList, err := kube.List[redpandav1alpha2.NodePoolList](ctx, ctl, cr.Namespace)
+	brokerPoolList, err := kube.List[redpandav1alpha2.RedpandaBrokerPoolList](ctx, ctl, cr.Namespace)
 	if err != nil {
 		return err
 	}
 	var candidateNames []string
-	for i := range nodePoolList.Items {
-		np := &nodePoolList.Items[i]
-		poolRef := np.Spec.ClusterRef
+	for i := range brokerPoolList.Items {
+		bp := &brokerPoolList.Items[i]
+		poolRef := bp.Spec.ClusterRef
 		if poolRef.IsStretchCluster() && poolRef.Name == ref.Name {
-			candidateNames = append(candidateNames, np.Name)
+			candidateNames = append(candidateNames, bp.Name)
 		}
 	}
 	if len(candidateNames) == 0 {
-		return fmt.Errorf("no NodePools found for StretchCluster %s/%s", cr.Namespace, ref.Name)
+		return fmt.Errorf("no RedpandaBrokerPools found for StretchCluster %s/%s", cr.Namespace, ref.Name)
 	}
 
 	if current := cr.Annotations[stretchSourcePoolAnnotation]; current != "" {
@@ -545,7 +545,7 @@ type render struct {
 
 	// multicluster mirrors Controller.Multicluster — when false the
 	// StretchCluster branch in clusterFragment is skipped because the
-	// StretchCluster and NodePool CRDs aren't installed.
+	// StretchCluster and RedpandaBrokerPool CRDs aren't installed.
 	multicluster bool
 }
 
@@ -616,12 +616,12 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 		}
 
 		if ref.IsStretchCluster() {
-			// StretchCluster + NodePool CRDs are only installed by the
+			// StretchCluster + RedpandaBrokerPool CRDs are only installed by the
 			// multicluster operator. Refuse to dereference a stretch
 			// ClusterRef in single-cluster mode rather than 404'ing on
 			// the CRDs.
 			if !r.multicluster {
-				return console.PartialRenderValues{}, fmt.Errorf("ClusterSource.ClusterRef.Kind=%q requires the multicluster operator (StretchCluster/NodePool CRDs are not installed in single-cluster mode)", redpandav1alpha2.StretchClusterRefKind)
+				return console.PartialRenderValues{}, fmt.Errorf("ClusterSource.ClusterRef.Kind=%q requires the multicluster operator (StretchCluster/RedpandaBrokerPool CRDs are not installed in single-cluster mode)", redpandav1alpha2.StretchClusterRefKind)
 			}
 
 			var sc redpandav1alpha2.StretchCluster
@@ -630,22 +630,21 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 			}
 
 			// Per-K8s-cluster fields (TLS, listener ports, ClusterDomain)
-			// live on NodePool specs after the field-move refactor. The
-			// reconciler pins one local NodePool via the source-pool
-			// annotation (see maybeSelectStretchSourcePool); fetch that
-			// pool here so the rendered config stays stable across
-			// reconciles.
+			// live on RedpandaBrokerPool specs. The reconciler pins one
+			// local broker pool via the source-pool annotation (see
+			// maybeSelectStretchSourcePool); fetch that pool here so the
+			// rendered config stays stable across reconciles.
 			poolName := r.console.Annotations[stretchSourcePoolAnnotation]
 			if poolName == "" {
 				return console.PartialRenderValues{}, fmt.Errorf("stretch source pool annotation %q is not set; reconciler should have populated it", stretchSourcePoolAnnotation)
 			}
-			pool, err := kube.Get[redpandav1alpha2.NodePool](ctx, r.ctl, kube.ObjectKey{Namespace: r.console.Namespace, Name: poolName})
+			pool, err := kube.Get[redpandav1alpha2.RedpandaBrokerPool](ctx, r.ctl, kube.ObjectKey{Namespace: r.console.Namespace, Name: poolName})
 			if err != nil {
 				return console.PartialRenderValues{}, err
 			}
 			defaultedClusterSpec := *sc.Spec.DeepCopy()
 			defaultedClusterSpec.MergeDefaults()
-			poolSpec := pool.Spec.EmbeddedNodePoolSpec.DeepCopy()
+			poolSpec := pool.Spec.EmbeddedBrokerPoolSpec.DeepCopy()
 			poolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
 
 			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc, poolSpec)

@@ -34,7 +34,7 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 	return out, nil
 }
 
-func loadBalancerServicesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) ([]*corev1.Service, error) {
+func loadBalancerServicesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*corev1.Service, error) {
 	ext := state.PoolSpec(pool).External
 	if ext == nil || !ext.IsEnabled() {
 		return nil, nil

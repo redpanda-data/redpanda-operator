@@ -32,32 +32,33 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// defaultedPoolSpec fetches a NodePool belonging to the StretchCluster from
-// the given Kubernetes client, applies cluster and pool defaults, and returns
-// its EmbeddedNodePoolSpec. Per-K8s-cluster fields (TLS, Listeners, ports) live
-// on the NodePool spec, so building API clients requires the merged pool view.
-func (c *Factory) defaultedPoolSpec(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client) (*redpandav1alpha2.EmbeddedNodePoolSpec, error) {
+// defaultedPoolSpec fetches a RedpandaBrokerPool belonging to the
+// StretchCluster from the given Kubernetes client, applies cluster and pool
+// defaults, and returns its EmbeddedBrokerPoolSpec. Per-K8s-cluster fields
+// (TLS, Listeners, ports) live on the RedpandaBrokerPool spec, so building
+// API clients requires the merged pool view.
+func (c *Factory) defaultedPoolSpec(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client) (*redpandav1alpha2.EmbeddedBrokerPoolSpec, error) {
 	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
 	defer listCancel()
 
-	var nodePoolList redpandav1alpha2.NodePoolList
-	if err := k8sClient.List(listCtx, &nodePoolList, client.InNamespace(sc.Namespace)); err != nil {
-		return nil, errors.Wrap(err, "listing NodePools")
+	var brokerPoolList redpandav1alpha2.RedpandaBrokerPoolList
+	if err := k8sClient.List(listCtx, &brokerPoolList, client.InNamespace(sc.Namespace)); err != nil {
+		return nil, errors.Wrap(err, "listing RedpandaBrokerPools")
 	}
 
 	defaultedClusterSpec := *sc.Spec.DeepCopy()
 	defaultedClusterSpec.MergeDefaults()
-	for i := range nodePoolList.Items {
-		pool := &nodePoolList.Items[i]
+	for i := range brokerPoolList.Items {
+		pool := &brokerPoolList.Items[i]
 		ref := pool.Spec.ClusterRef
 		if !ref.IsStretchCluster() || ref.Name != sc.Name {
 			continue
 		}
-		poolSpec := pool.Spec.EmbeddedNodePoolSpec.DeepCopy()
+		poolSpec := pool.Spec.EmbeddedBrokerPoolSpec.DeepCopy()
 		poolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
 		return poolSpec, nil
 	}
-	return nil, fmt.Errorf("no NodePools found for StretchCluster %s/%s", sc.Namespace, sc.Name)
+	return nil, fmt.Errorf("no RedpandaBrokerPools found for StretchCluster %s/%s", sc.Namespace, sc.Name)
 }
 
 // redpandaAdminForStretchCluster builds an admin API client for a StretchCluster
@@ -71,7 +72,7 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 
 	poolSpec, err := c.defaultedPoolSpec(ctx, sc, k8sClient)
 	if err != nil {
-		return nil, errors.Wrap(err, "resolving NodePool spec")
+		return nil, errors.Wrap(err, "resolving RedpandaBrokerPool spec")
 	}
 
 	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.AdminPort())
@@ -113,7 +114,7 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 
 	poolSpec, err := c.defaultedPoolSpec(ctx, sc, k8sClient)
 	if err != nil {
-		return nil, errors.Wrap(err, "resolving NodePool spec")
+		return nil, errors.Wrap(err, "resolving RedpandaBrokerPool spec")
 	}
 
 	brokers, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.KafkaPort())
@@ -165,7 +166,7 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 
 	poolSpec, err := c.defaultedPoolSpec(ctx, sc, k8sClient)
 	if err != nil {
-		return nil, errors.Wrap(err, "resolving NodePool spec")
+		return nil, errors.Wrap(err, "resolving RedpandaBrokerPool spec")
 	}
 
 	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.SchemaRegistryPort())
@@ -212,9 +213,9 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 	return sr.NewClient(srOpts...)
 }
 
-// stretchClusterEndpoints lists NodePools referencing the given StretchCluster
-// across all clusters known to the manager, and builds per-pod endpoint addresses
-// for the given port.
+// stretchClusterEndpoints lists RedpandaBrokerPools referencing the given
+// StretchCluster across all clusters known to the manager, and builds per-pod
+// endpoint addresses for the given port.
 func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alpha2.StretchCluster, port int32) ([]string, error) {
 	var endpoints []string
 
@@ -235,8 +236,8 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 		}
 
 		listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
-		var nodePoolList redpandav1alpha2.NodePoolList
-		err = k8sClient.List(listCtx, &nodePoolList, client.InNamespace(sc.Namespace))
+		var brokerPoolList redpandav1alpha2.RedpandaBrokerPoolList
+		err = k8sClient.List(listCtx, &brokerPoolList, client.InNamespace(sc.Namespace))
 		listCancel()
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
@@ -245,11 +246,11 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 				// reconcile and let the next round pick them up.
 				continue
 			}
-			return nil, errors.Wrapf(err, "listing NodePools in cluster %s", clusterName)
+			return nil, errors.Wrapf(err, "listing RedpandaBrokerPools in cluster %s", clusterName)
 		}
 
-		for i := range nodePoolList.Items {
-			pool := &nodePoolList.Items[i]
+		for i := range brokerPoolList.Items {
+			pool := &brokerPoolList.Items[i]
 			ref := pool.Spec.ClusterRef
 			if !ref.IsStretchCluster() || ref.Name != sc.Name {
 				continue
@@ -266,7 +267,7 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 
 // stretchClusterListenerTLSConfig builds a *tls.Config for a listener if TLS is
 // enabled, reading the CA certificate from the shared root CA secret.
-func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.EmbeddedNodePoolSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
+func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.EmbeddedBrokerPoolSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
 	tlsEnabled := false
 	if listener != nil {
 		tlsEnabled = listener.IsTLSEnabled(spec.TLS)

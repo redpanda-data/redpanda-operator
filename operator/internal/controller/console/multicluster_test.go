@@ -147,17 +147,17 @@ func (s *MulticlusterConsoleSuite) assertConsoleReconciles(t *testing.T, ctx con
 		ObjectMeta: metav1.ObjectMeta{Name: stretchName, Namespace: namespace},
 	}))
 
-	// TLS lives on the NodePool spec after the field-move refactor. A
-	// representative pool with TLS disabled lets the converter resolve
-	// per-cluster URLs over plaintext.
-	require.NoError(t, cl.Create(ctx, &redpandav1alpha2.NodePool{
+	// TLS lives on the RedpandaBrokerPool spec. A representative pool with
+	// TLS disabled lets the converter resolve per-cluster URLs over
+	// plaintext.
+	require.NoError(t, cl.Create(ctx, &redpandav1alpha2.RedpandaBrokerPool{
 		ObjectMeta: metav1.ObjectMeta{Name: stretchName + "-pool", Namespace: namespace},
-		Spec: redpandav1alpha2.NodePoolSpec{
+		Spec: redpandav1alpha2.RedpandaBrokerPoolSpec{
 			ClusterRef: redpandav1alpha2.ClusterRef{
 				Name: stretchName,
 				Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
 			},
-			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(false)},
 			},
 		},

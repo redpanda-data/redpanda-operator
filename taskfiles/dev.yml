@@ -81,3 +81,79 @@ tasks:
     - task: :test:acceptance
       vars:
         CLI_ARGS: '{{.CLI_ARGS}} -v -count=1 -acceptance-setup-only -acceptance-setup-nodepools=2'
+
+  setup-monitoring:
+    desc: |
+      Deploy Prometheus + Grafana to the host k3s cluster and a Prometheus
+      agent inside each vCluster (auto-discovered via the `app=vcluster`
+      pod label). The vCluster agents scrape their local operator pod's
+      /metrics and remote_write samples to the host Prometheus. Grafana
+      is exposed at host NodePort 30030 (admin/admin); Prometheus at
+      NodePort 30090.
+      Requires that `task dev:setup-multicluster-dev-env` has already run.
+    vars:
+      # ROOT_DIR resolves to the directory of the root Taskfile.yml (the
+      # repo root). TASKFILE_DIR would resolve to taskfiles/ which is
+      # wrong here — dev-env-monitoring/ lives at the repo root.
+      MONITORING_DIR: '{{.ROOT_DIR}}/dev-env-monitoring'
+    cmds:
+      - 'echo "--- Installing kube-prometheus-stack on host k3s (k3d-harpoon)"'
+      - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null 2>&1 || true
+      - helm repo update prometheus-community >/dev/null
+      - |
+        kubectl --context k3d-harpoon create namespace monitoring --dry-run=client -o yaml | \
+          kubectl --context k3d-harpoon apply -f -
+      - |
+        helm --kube-context k3d-harpoon upgrade --install monitoring \
+          prometheus-community/kube-prometheus-stack \
+          --namespace monitoring \
+          --values {{.MONITORING_DIR}}/host-values.yaml \
+          --wait --timeout 5m
+      - 'echo "--- Discovering host node IP for vCluster remote_write target"'
+      - |
+        HOST_IP=$(kubectl --context k3d-harpoon get node -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+        echo "host IP: $HOST_IP"
+        # Auto-discover vCluster namespaces by looking for pods labelled
+        # app=vcluster on the host cluster — vCluster's chart sets this
+        # label on its statefulset, so each vCluster's namespace appears
+        # once. The suffix in vc-<random>-N is regenerated on every
+        # setup-multicluster-dev-env run, so hardcoding names breaks
+        # after a reset.
+        VCLUSTER_NAMESPACES=$(kubectl --context k3d-harpoon get pods --all-namespaces -l app=vcluster -o=jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | sort -u)
+        if [ -z "$VCLUSTER_NAMESPACES" ]; then
+          echo "ERROR: no vClusters found on k3d-harpoon (no pods with label app=vcluster). Run task dev:setup-multicluster-dev-env first."
+          exit 1
+        fi
+        echo "discovered vClusters: $(echo $VCLUSTER_NAMESPACES | tr '\n' ' ')"
+        for NS in $VCLUSTER_NAMESPACES; do
+          echo "--- Connecting to vCluster $NS"
+          KUBECONFIG_FILE=$(mktemp)
+          ( cd / && vcluster connect -n "$NS" "$NS" --silent --print 2>/dev/null ) | \
+            awk '/^apiVersion:/{found=1} found && !/^Forwarding/{print} /^Forwarding/{exit}' > "$KUBECONFIG_FILE"
+          # vcluster --background-proxy (the default in v0.31) spawns a
+          # docker container that holds the port-forward, but vcluster
+          # connect prints the kubeconfig before the container has bound
+          # its port. kubectl would race and get "connection refused".
+          # Wait for the port to be live before continuing.
+          PORT=$(awk '/server: https:/ {sub(/.*:/, "", $2); print $2; exit}' "$KUBECONFIG_FILE")
+          if [ -z "$PORT" ]; then
+            echo "ERROR: could not parse vcluster API port from kubeconfig for $NS"
+            cat "$KUBECONFIG_FILE"
+            rm -f "$KUBECONFIG_FILE"
+            exit 1
+          fi
+          for _ in $(seq 1 30); do
+            if (echo >/dev/tcp/127.0.0.1/"$PORT") 2>/dev/null; then break; fi
+            sleep 1
+          done
+          echo "--- Deploying Prometheus agent in $NS"
+          sed -e "s|\${VCLUSTER_NAME}|$NS|g" -e "s|\${HOST_IP}|$HOST_IP|g" \
+            {{.MONITORING_DIR}}/vcluster-prometheus.yaml.template | \
+            kubectl --kubeconfig "$KUBECONFIG_FILE" apply -f -
+          rm -f "$KUBECONFIG_FILE"
+        done
+      - 'echo ""'
+      - 'echo "Grafana:    http://<host-ip>:30030  (admin/admin)"'
+      - 'echo "Prometheus: http://<host-ip>:30090"'
+      - 'echo ""'
+      - 'echo "Sample query: operator_multicluster_raft_state"'

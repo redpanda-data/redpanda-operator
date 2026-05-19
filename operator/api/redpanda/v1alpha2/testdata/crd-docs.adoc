@@ -16,6 +16,7 @@
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-group[$$Group$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpool[$$RedpandaBrokerPool$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlink[$$ShadowLink$$]
@@ -446,6 +447,169 @@ password will be read from. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerperpodserviceoverride"]
+==== BrokerPerPodServiceOverride
+
+
+
+BrokerPerPodServiceOverride defines overrides for a per-pod Service using
+apply-configuration types. Only fields that are set will be merged
+into the generated Service.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerperpodservices[$$BrokerPerPodServices$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enabled controls whether this per-pod Service is created. Defaults to true. + |  | 
+| *`labels`* __object (keys:string, values:string)__ |  |  | 
+| *`annotations`* __object (keys:string, values:string)__ |  |  | 
+| *`spec`* __xref:{anchor_prefix}-k8s-io-client-go-applyconfigurations-core-v1-servicespecapplyconfiguration[$$ServiceSpecApplyConfiguration$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerperpodservices"]
+==== BrokerPerPodServices
+
+
+
+BrokerPerPodServices configures overrides for per-pod ClusterIP Services.
+Local overrides apply to Services for pods in the same K8s cluster as the
+broker pool; Remote overrides apply to Services created for pods in other
+clusters.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolservices[$$BrokerPoolServices$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`local`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerperpodserviceoverride[$$BrokerPerPodServiceOverride$$]__ | Local overrides are applied to per-pod Services for pods in the local cluster. + |  | 
+| *`remote`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerperpodserviceoverride[$$BrokerPerPodServiceOverride$$]__ | Remote overrides are applied to per-pod Services for pods in remote clusters. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolconfigurator"]
+==== BrokerPoolConfigurator
+
+
+
+BrokerPoolConfigurator mirrors PoolConfigurator on NodePool. Duplicated so
+RedpandaBrokerPool can evolve independently from NodePool.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolinitcontainers[$$BrokerPoolInitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`additionalCLIArgs`* __string array__ | Chart default: [] + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolfsvalidator"]
+==== BrokerPoolFSValidator
+
+
+
+BrokerPoolFSValidator mirrors PoolFSValidator on NodePool.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolinitcontainers[$$BrokerPoolInitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Chart default: false + |  | 
+| *`expectedFS`* __string__ | Chart default: xfs + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolinitcontainers"]
+==== BrokerPoolInitContainers
+
+
+
+BrokerPoolInitContainers mirrors PoolInitContainers on NodePool.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`fsValidator`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolfsvalidator[$$BrokerPoolFSValidator$$]__ |  |  | 
+| *`setDataDirOwnership`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolsetdatadirownership[$$BrokerPoolSetDataDirOwnership$$]__ |  |  | 
+| *`configurator`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolconfigurator[$$BrokerPoolConfigurator$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolservices"]
+==== BrokerPoolServices
+
+
+
+BrokerPoolServices configures overrides for Services created by the operator
+for this broker pool.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`perPod`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerperpodservices[$$BrokerPerPodServices$$]__ | PerPod configures overrides for per-pod ClusterIP Services. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolsetdatadirownership"]
+==== BrokerPoolSetDataDirOwnership
+
+
+
+BrokerPoolSetDataDirOwnership mirrors PoolSetDataDirOwnership on NodePool.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolinitcontainers[$$BrokerPoolInitContainers$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Chart default: false + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-budget"]
 ==== Budget
 
@@ -590,6 +754,7 @@ ClusterRef represents a reference to a cluster that is being targeted.
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -1120,6 +1285,125 @@ on remote Kubernetes clusters.
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec"]
+==== EmbeddedBrokerPoolSpec
+
+
+
+EmbeddedBrokerPoolSpec carries the per-pool configuration. It mirrors the
+shape NodePool's EmbeddedNodePoolSpec used to have for the StretchCluster
+path, with the per-K8s-cluster fields (TLS, Listeners, ClusterDomain,
+External, RBAC, ServiceAccount, Monitoring) attached and optional overrides
+for the cluster-wide defaultables (Storage, Resources, ImagePullSecrets).
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | Chart default: {} + |  | 
+| *`replicas`* __integer__ | Chart default: 3 + |  | 
+| *`additionalRedpandaCmdFlags`* __string array__ | Chart default: [] + |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | Chart default: +
+labels: {} +
+annotations: {} +
+spec: +
+securityContext: {} +
+affinity: +
+podAntiAffinity: +
+requiredDuringSchedulingIgnoredDuringExecution: +
+- topologyKey: kubernetes.io/hostname +
+labelSelector: +
+matchLabels: +
+"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
+"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
+"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' +
+terminationGracePeriodSeconds: 90 +
+nodeSelector: {} +
+priorityClassName: "" +
+tolerations: [] +
+topologySpreadConstraints: +
+- maxSkew: 1 +
+topologyKey: topology.kubernetes.io/zone +
+whenUnsatisfiable: ScheduleAnyway +
+labelSelector: +
+matchLabels: +
+"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
+"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
+"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' + |  | 
+| *`services`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolservices[$$BrokerPoolServices$$]__ | Services configures overrides for Services created by the operator. + |  | 
+| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolinitcontainers[$$BrokerPoolInitContainers$$]__ |  |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
+repository: docker.redpanda.com/redpandadata/redpanda +
+tag: {{.redpandaVersion}} + |  | 
+| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
+repository: docker.redpanda.com/redpandadata/redpanda-operator +
+tag: {{.operatorVersion}} + |  | 
+| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | Chart default: +
+repository: busybox +
+tag: latest + |  | 
+| *`clusterDomain`* __string__ | ClusterDomain customizes the K8s cluster's DNS suffix used to generate +
+internal pod domains (e.g. "cluster.local"). Defaults to "cluster.local". + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | TLS configures TLS settings for listeners on this broker pool's pods. +
+Secret references resolve in the K8s cluster where this pool runs. + |  | 
+| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | External configures external access (NodePort, LoadBalancer, advertised +
+addresses) for this broker pool's pods. + |  | 
+| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | RBAC configures Role Based Access Control resources created in the +
+K8s cluster where this broker pool runs. + |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | ServiceAccount configures the K8s ServiceAccount used by pods in this +
+broker pool. Cloud workload-identity annotations belong here. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Monitoring configures the ServiceMonitor created in the K8s cluster +
+where this broker pool runs. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | ImagePullSecrets overrides StretchCluster.Spec.ImagePullSecrets for +
+this broker pool. Useful for per-cluster registry mirrors. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolstatus"]
+==== EmbeddedBrokerPoolStatus
+
+
+
+EmbeddedBrokerPoolStatus is the per-pool status sub-structure also surfaced
+inside StretchClusterStatus.NodePools.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolstatus[$$RedpandaBrokerPoolStatus$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name is the name of the pool. + |  | 
+| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
+the broker pool. This differs from DesiredReplicas during +
+a scaling operation, but should be the same once the cluster +
+has quiesced. + |  | 
+| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
+run for the cluster. It combines the desired replicas across +
+all broker pools. + |  | 
+| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
+match their broker pool definitions. If OutOfDateReplicas is not 0 +
+it should mean that the operator will soon roll this many pods. + |  | 
+| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
+their broker pool definitions. + |  | 
+| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
+as part of a scaling down operation. + |  | 
+| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
+currently passing. + |  | 
+| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
+state. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise"]
 ==== Enterprise
 
@@ -1175,6 +1459,8 @@ External defines external connectivity settings in the Helm values.
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -1581,6 +1867,8 @@ InitContainerImage configures the init container image used to perform initial s
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
 ****
 
@@ -2073,6 +2361,8 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -2324,8 +2614,10 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postinstalljob[$$PostInstallJob$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postupgradejob[$$PostUpgradeJob$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
 ****
 
@@ -2495,6 +2787,8 @@ RBAC configures role-based access control (RBAC).
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -2663,6 +2957,167 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 | *`tlsCa`* __string__ |  |  | 
 | *`tlsCert`* __string__ |  |  | 
 | *`tlsKey`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpool"]
+==== RedpandaBrokerPool
+
+
+
+RedpandaBrokerPool is the per-K8s-cluster pool type used by StretchCluster.
+It is the multicluster successor to NodePool: each pool carries the
+per-K8s-cluster configuration (TLS, listeners, ClusterDomain, external
+access, RBAC, ServiceAccount, monitoring) that previously lived on the
+federated StretchClusterSpec.
+
+NodePool stays in place for the single-cluster Redpanda CR path; the
+two types intentionally do not share an embedded spec so that future
+schema changes to one don't ripple into the other.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `RedpandaBrokerPool` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]__ |  |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolstatus[$$RedpandaBrokerPoolStatus$$]__ |  | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Bound] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Deployed] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Quiesced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Stable]] } | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec"]
+==== RedpandaBrokerPoolSpec
+
+
+
+RedpandaBrokerPoolSpec contains the broker pool spec.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpool[$$RedpandaBrokerPool$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | Chart default: {} + |  | 
+| *`replicas`* __integer__ | Chart default: 3 + |  | 
+| *`additionalRedpandaCmdFlags`* __string array__ | Chart default: [] + |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | Chart default: +
+labels: {} +
+annotations: {} +
+spec: +
+securityContext: {} +
+affinity: +
+podAntiAffinity: +
+requiredDuringSchedulingIgnoredDuringExecution: +
+- topologyKey: kubernetes.io/hostname +
+labelSelector: +
+matchLabels: +
+"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
+"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
+"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' +
+terminationGracePeriodSeconds: 90 +
+nodeSelector: {} +
+priorityClassName: "" +
+tolerations: [] +
+topologySpreadConstraints: +
+- maxSkew: 1 +
+topologyKey: topology.kubernetes.io/zone +
+whenUnsatisfiable: ScheduleAnyway +
+labelSelector: +
+matchLabels: +
+"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
+"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
+"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' + |  | 
+| *`services`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolservices[$$BrokerPoolServices$$]__ | Services configures overrides for Services created by the operator. + |  | 
+| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolinitcontainers[$$BrokerPoolInitContainers$$]__ |  |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
+repository: docker.redpanda.com/redpandadata/redpanda +
+tag: {{.redpandaVersion}} + |  | 
+| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
+repository: docker.redpanda.com/redpandadata/redpanda-operator +
+tag: {{.operatorVersion}} + |  | 
+| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | Chart default: +
+repository: busybox +
+tag: latest + |  | 
+| *`clusterDomain`* __string__ | ClusterDomain customizes the K8s cluster's DNS suffix used to generate +
+internal pod domains (e.g. "cluster.local"). Defaults to "cluster.local". + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | TLS configures TLS settings for listeners on this broker pool's pods. +
+Secret references resolve in the K8s cluster where this pool runs. + |  | 
+| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | External configures external access (NodePort, LoadBalancer, advertised +
+addresses) for this broker pool's pods. + |  | 
+| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | RBAC configures Role Based Access Control resources created in the +
+K8s cluster where this broker pool runs. + |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | ServiceAccount configures the K8s ServiceAccount used by pods in this +
+broker pool. Cloud workload-identity annotations belong here. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Monitoring configures the ServiceMonitor created in the K8s cluster +
+where this broker pool runs. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | ImagePullSecrets overrides StretchCluster.Spec.ImagePullSecrets for +
+this broker pool. Useful for per-cluster registry mirrors. + |  | 
+| *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolstatus"]
+==== RedpandaBrokerPoolStatus
+
+
+
+RedpandaBrokerPoolStatus defines the observed state of a broker pool.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpool[$$RedpandaBrokerPool$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name is the name of the pool. + |  | 
+| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
+the broker pool. This differs from DesiredReplicas during +
+a scaling operation, but should be the same once the cluster +
+has quiesced. + |  | 
+| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
+run for the cluster. It combines the desired replicas across +
+all broker pools. + |  | 
+| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
+match their broker pool definitions. If OutOfDateReplicas is not 0 +
+it should mean that the operator will soon roll this many pods. + |  | 
+| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
+their broker pool definitions. + |  | 
+| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
+as part of a scaling down operation. + |  | 
+| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
+currently passing. + |  | 
+| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
+state. + |  | 
+| *`deployedGeneration`* __integer__ | DeployedGeneration represents the generation of the RedpandaBrokerPool +
+CRD that is currently deployed as a StatefulSet. + |  | 
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the broker pool. + |  | Optional: \{} +
+
 |===
 
 
@@ -2843,7 +3298,9 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]
@@ -3693,6 +4150,8 @@ ServiceAccount configures Service Accounts.
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -4333,6 +4792,8 @@ TLS configures TLS in the Helm values. See https://docs.redpanda.com/current/man
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpoolspec[$$RedpandaBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
