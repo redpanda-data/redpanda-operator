@@ -21,6 +21,11 @@ func Notes(dot *helmette.Dot) []string {
 	commands := []string{
 		`1. Get the application URL by running these commands:`,
 	}
+	if values.Gateway.Enabled {
+		for _, hostname := range values.Gateway.Hostnames {
+			commands = append(commands, fmt.Sprintf("http://%s%s", hostname, values.Gateway.Path))
+		}
+	}
 	if values.Ingress.Enabled {
 		scheme := "http"
 		if len(values.Ingress.TLS) > 0 {
@@ -31,7 +36,13 @@ func Notes(dot *helmette.Dot) []string {
 				commands = append(commands, fmt.Sprintf("%s://%s%s", scheme, host.Host, path.Path))
 			}
 		}
-	} else if helmette.Contains("NodePort", string(values.Service.Type)) {
+	}
+
+	if len(commands) > 1 {
+		return commands
+	}
+
+	if helmette.Contains("NodePort", string(values.Service.Type)) {
 		commands = append(
 			commands,
 			fmt.Sprintf(`  export NODE_PORT=$(kubectl get --namespace %s -o jsonpath="{.spec.ports[0].nodePort}" services %s)`, dot.Release.Namespace, Fullname(dot)),

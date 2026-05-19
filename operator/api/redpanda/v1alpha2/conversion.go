@@ -279,6 +279,7 @@ var (
 	conv_runtime_RawExtension_To_ServiceAccountConfig = convertRuntimeRawExtension[*ServiceAccountConfig]
 	conv_runtime_RawExtension_To_Service              = convertRuntimeRawExtension[*ServiceConfig]
 	conv_runtime_RawExtension_To_Ingress              = convertRuntimeRawExtension[*IngressConfig]
+	conv_runtime_RawExtension_To_Gateway              = convertRuntimeRawExtension[*GatewayConfig]
 	conv_runtime_RawExtension_To_Autoscaling          = convertRuntimeRawExtension[*AutoScaling]
 	conv_runtime_RawExtension_To_SecretMounts         = convertRuntimeRawExtension[SecretMount]
 	conv_runtime_RawExtension_To_Secret               = convertRuntimeRawExtension[SecretConfig]

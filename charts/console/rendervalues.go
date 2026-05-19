@@ -15,6 +15,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 type RenderValues struct {
@@ -33,6 +34,7 @@ type RenderValues struct {
 	SecurityContext              corev1.SecurityContext            `json:"securityContext" partial:"builtin"`
 	Service                      ServiceConfig                     `json:"service"`
 	Ingress                      IngressConfig                     `json:"ingress"`
+	Gateway                      GatewayConfig                     `json:"gateway"`
 	Resources                    corev1.ResourceRequirements       `json:"resources"`
 	Autoscaling                  AutoScaling                       `json:"autoscaling"`
 	NodeSelector                 map[string]string                 `json:"nodeSelector"`
@@ -101,6 +103,21 @@ type IngressHost struct {
 type IngressPath struct {
 	Path     string                 `json:"path"`
 	PathType *networkingv1.PathType `json:"pathType"`
+}
+
+type GatewayConfig struct {
+	Enabled     bool                     `json:"enabled"`
+	Annotations map[string]string        `json:"annotations"`
+	ParentRefs  []GatewayParentReference `json:"parentRefs"`
+	Hostnames   []string                 `json:"hostnames"`
+	Path        string                   `json:"path"`
+	PathType    *gatewayv1.PathMatchType `json:"pathType,omitempty"`
+}
+
+type GatewayParentReference struct {
+	Name        string                 `json:"name"`
+	Namespace   *string                `json:"namespace,omitempty"`
+	SectionName *gatewayv1.SectionName `json:"sectionName,omitempty"`
 }
 
 type AutoScaling struct {
