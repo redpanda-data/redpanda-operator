@@ -378,7 +378,9 @@
     - '*.audit-logging.audit-logging'
     - '*.audit-logging.svc.cluster.local'
     - '*.audit-logging.svc'
-    - '*.audit-logging'
+    - audit-logging-pool-a-0.audit-logging
+    - audit-logging-pool-a-1.audit-logging
+    - audit-logging-pool-a-2.audit-logging
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -416,7 +418,9 @@
     - '*.audit-logging.audit-logging'
     - '*.audit-logging.svc.cluster.local'
     - '*.audit-logging.svc'
-    - '*.audit-logging'
+    - audit-logging-pool-a-0.audit-logging
+    - audit-logging-pool-a-1.audit-logging
+    - audit-logging-pool-a-2.audit-logging
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -1177,7 +1181,9 @@
     - '*.common-labels.common-labels'
     - '*.common-labels.svc.cluster.local'
     - '*.common-labels.svc'
-    - '*.common-labels'
+    - common-labels-pool-a-0.common-labels
+    - common-labels-pool-a-1.common-labels
+    - common-labels-pool-a-2.common-labels
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -1217,7 +1223,9 @@
     - '*.common-labels.common-labels'
     - '*.common-labels.svc.cluster.local'
     - '*.common-labels.svc'
-    - '*.common-labels'
+    - common-labels-pool-a-0.common-labels
+    - common-labels-pool-a-1.common-labels
+    - common-labels-pool-a-2.common-labels
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -1978,7 +1986,9 @@
     - '*.custom-cluster-domain.custom-cluster-domain'
     - '*.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain.svc'
-    - '*.custom-cluster-domain'
+    - custom-cluster-domain-pool-a-0.custom-cluster-domain
+    - custom-cluster-domain-pool-a-1.custom-cluster-domain
+    - custom-cluster-domain-pool-a-2.custom-cluster-domain
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2016,7 +2026,9 @@
     - '*.custom-cluster-domain.custom-cluster-domain'
     - '*.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain.svc'
-    - '*.custom-cluster-domain'
+    - custom-cluster-domain-pool-a-0.custom-cluster-domain
+    - custom-cluster-domain-pool-a-1.custom-cluster-domain
+    - custom-cluster-domain-pool-a-2.custom-cluster-domain
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2760,7 +2772,9 @@
     - '*.custom-config.custom-config'
     - '*.custom-config.svc.cluster.local'
     - '*.custom-config.svc'
-    - '*.custom-config'
+    - custom-config-pool-a-0.custom-config
+    - custom-config-pool-a-1.custom-config
+    - custom-config-pool-a-2.custom-config
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2798,7 +2812,9 @@
     - '*.custom-config.custom-config'
     - '*.custom-config.svc.cluster.local'
     - '*.custom-config.svc'
-    - '*.custom-config'
+    - custom-config-pool-a-0.custom-config
+    - custom-config-pool-a-1.custom-config
+    - custom-config-pool-a-2.custom-config
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -3541,7 +3557,9 @@
     - '*.custom-image.custom-image'
     - '*.custom-image.svc.cluster.local'
     - '*.custom-image.svc'
-    - '*.custom-image'
+    - custom-image-pool-a-0.custom-image
+    - custom-image-pool-a-1.custom-image
+    - custom-image-pool-a-2.custom-image
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -3579,7 +3597,9 @@
     - '*.custom-image.custom-image'
     - '*.custom-image.svc.cluster.local'
     - '*.custom-image.svc'
-    - '*.custom-image'
+    - custom-image-pool-a-0.custom-image
+    - custom-image-pool-a-1.custom-image
+    - custom-image-pool-a-2.custom-image
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -4322,7 +4342,9 @@
     - '*.custom-resources.custom-resources'
     - '*.custom-resources.svc.cluster.local'
     - '*.custom-resources.svc'
-    - '*.custom-resources'
+    - custom-resources-pool-a-0.custom-resources
+    - custom-resources-pool-a-1.custom-resources
+    - custom-resources-pool-a-2.custom-resources
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -4360,7 +4382,9 @@
     - '*.custom-resources.custom-resources'
     - '*.custom-resources.svc.cluster.local'
     - '*.custom-resources.svc'
-    - '*.custom-resources'
+    - custom-resources-pool-a-0.custom-resources
+    - custom-resources-pool-a-1.custom-resources
+    - custom-resources-pool-a-2.custom-resources
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -5103,7 +5127,9 @@
     - '*.custom-resources-explicit.custom-resources-explicit'
     - '*.custom-resources-explicit.svc.cluster.local'
     - '*.custom-resources-explicit.svc'
-    - '*.custom-resources-explicit'
+    - custom-resources-explicit-pool-a-0.custom-resources-explicit
+    - custom-resources-explicit-pool-a-1.custom-resources-explicit
+    - custom-resources-explicit-pool-a-2.custom-resources-explicit
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -5141,7 +5167,9 @@
     - '*.custom-resources-explicit.custom-resources-explicit'
     - '*.custom-resources-explicit.svc.cluster.local'
     - '*.custom-resources-explicit.svc'
-    - '*.custom-resources-explicit'
+    - custom-resources-explicit-pool-a-0.custom-resources-explicit
+    - custom-resources-explicit-pool-a-1.custom-resources-explicit
+    - custom-resources-explicit-pool-a-2.custom-resources-explicit
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -5884,7 +5912,9 @@
     - '*.enterprise.enterprise'
     - '*.enterprise.svc.cluster.local'
     - '*.enterprise.svc'
-    - '*.enterprise'
+    - enterprise-pool-a-0.enterprise
+    - enterprise-pool-a-1.enterprise
+    - enterprise-pool-a-2.enterprise
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -5922,7 +5952,9 @@
     - '*.enterprise.enterprise'
     - '*.enterprise.svc.cluster.local'
     - '*.enterprise.svc'
-    - '*.enterprise'
+    - enterprise-pool-a-0.enterprise
+    - enterprise-pool-a-1.enterprise
+    - enterprise-pool-a-2.enterprise
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -6583,7 +6615,9 @@
     - '*.external-loadbalancer.external-loadbalancer'
     - '*.external-loadbalancer.svc.cluster.local'
     - '*.external-loadbalancer.svc'
-    - '*.external-loadbalancer'
+    - external-loadbalancer-pool-a-0.external-loadbalancer
+    - external-loadbalancer-pool-a-1.external-loadbalancer
+    - external-loadbalancer-pool-a-2.external-loadbalancer
     - example.com
     - '*.example.com'
     duration: 43800h0m0s
@@ -7439,7 +7473,9 @@
     - '*.external-nodeport.external-nodeport'
     - '*.external-nodeport.svc.cluster.local'
     - '*.external-nodeport.svc'
-    - '*.external-nodeport'
+    - external-nodeport-pool-a-0.external-nodeport
+    - external-nodeport-pool-a-1.external-nodeport
+    - external-nodeport-pool-a-2.external-nodeport
     - nodes.example.com
     - '*.nodes.example.com'
     duration: 43800h0m0s
@@ -7479,7 +7515,9 @@
     - '*.external-nodeport.external-nodeport'
     - '*.external-nodeport.svc.cluster.local'
     - '*.external-nodeport.svc'
-    - '*.external-nodeport'
+    - external-nodeport-pool-a-0.external-nodeport
+    - external-nodeport-pool-a-1.external-nodeport
+    - external-nodeport-pool-a-2.external-nodeport
     - nodes.example.com
     - '*.nodes.example.com'
     duration: 43800h0m0s
@@ -8166,7 +8204,9 @@
     - '*.external-tls.external-tls'
     - '*.external-tls.svc.cluster.local'
     - '*.external-tls.svc'
-    - '*.external-tls'
+    - external-tls-pool-a-0.external-tls
+    - external-tls-pool-a-1.external-tls
+    - external-tls-pool-a-2.external-tls
     - example.com
     - '*.example.com'
     duration: 43800h0m0s
@@ -9024,7 +9064,8 @@
     - '*.flat-network.flat-network'
     - '*.flat-network.svc.cluster.local'
     - '*.flat-network.svc'
-    - '*.flat-network'
+    - flat-network-pool-a-0.flat-network
+    - flat-network-pool-a-1.flat-network
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -9062,7 +9103,8 @@
     - '*.flat-network.flat-network'
     - '*.flat-network.svc.cluster.local'
     - '*.flat-network.svc'
-    - '*.flat-network'
+    - flat-network-pool-a-0.flat-network
+    - flat-network-pool-a-1.flat-network
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -9483,6 +9525,968 @@
       kubernetes.io/service-name: flat-network-pool-a-1
     name: flat-network-pool-a-1-cross-cluster
     namespace: flat-network
+  ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+  - name: http
+    port: 8082
+    protocol: TCP
+  - name: kafka
+    port: 9093
+    protocol: TCP
+  - name: rpc
+    port: 33145
+    protocol: TCP
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+-- flat-network-tls --
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-external
+    namespace: flat-network-tls
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: policy/v1
+  kind: PodDisruptionBudget
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls
+    namespace: flat-network-tls
+  spec:
+    maxUnavailable: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/cluster-name: test
+        app.kubernetes.io/instance: flat-network-tls
+        app.kubernetes.io/name: redpanda
+        redpanda.com/poddisruptionbudget: flat-network-tls
+  status:
+    currentHealthy: 0
+    desiredHealthy: 0
+    disruptionsAllowed: 0
+    expectedPods: 0
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls
+    namespace: flat-network-tls
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: flat-network-tls
+    namespace: flat-network-tls
+  spec:
+    clusterIP: None
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/name: redpanda
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: flat-network-tls-pool-a-0.flat-network-tls
+          port: 9093
+        - address: flat-network-tls-pool-a-1.flat-network-tls
+          port: 9093
+        - address: flat-network-tls-pool-a-2.flat-network-tls
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: flat-network-tls-pool-a-0.default
+            port: 33145
+        - host:
+            address: flat-network-tls-pool-a-1.default
+            port: 33145
+        - host:
+            address: flat-network-tls-pool-a-2.default
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - flat-network-tls-pool-a-0.flat-network-tls:9644
+          - flat-network-tls-pool-a-1.flat-network-tls:9644
+          - flat-network-tls-pool-a-2.flat-network-tls:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - flat-network-tls-pool-a-0.flat-network-tls:9093
+          - flat-network-tls-pool-a-1.flat-network-tls:9093
+          - flat-network-tls-pool-a-2.flat-network-tls:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - flat-network-tls-pool-a-0.flat-network-tls:8081
+          - flat-network-tls-pool-a-1.flat-network-tls:8081
+          - flat-network-tls-pool-a-2.flat-network-tls:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: flat-network-tls-pool-a-0.flat-network-tls
+          port: 9093
+        - address: flat-network-tls-pool-a-1.flat-network-tls
+          port: 9093
+        - address: flat-network-tls-pool-a-2.flat-network-tls
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-pool-a
+    namespace: flat-network-tls
+- apiVersion: v1
+  data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-rpk
+    namespace: flat-network-tls
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-default-root-issuer
+    namespace: flat-network-tls
+  spec:
+    ca:
+      secretName: flat-network-tls-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-external-root-issuer
+    namespace: flat-network-tls
+  spec:
+    ca:
+      secretName: flat-network-tls-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-default-cert
+    namespace: flat-network-tls
+  spec:
+    dnsNames:
+    - flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc.cluster.local
+    - flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc
+    - flat-network-tls-cluster.flat-network-tls.flat-network-tls
+    - '*.flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc.cluster.local'
+    - '*.flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc'
+    - '*.flat-network-tls-cluster.flat-network-tls.flat-network-tls'
+    - flat-network-tls.flat-network-tls.svc.cluster.local
+    - flat-network-tls.flat-network-tls.svc
+    - flat-network-tls.flat-network-tls
+    - '*.flat-network-tls.flat-network-tls.svc.cluster.local'
+    - '*.flat-network-tls.flat-network-tls.svc'
+    - '*.flat-network-tls.flat-network-tls'
+    - '*.flat-network-tls.svc.cluster.local'
+    - '*.flat-network-tls.svc'
+    - flat-network-tls-pool-a-0.flat-network-tls
+    - flat-network-tls-pool-a-1.flat-network-tls
+    - flat-network-tls-pool-a-2.flat-network-tls
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: flat-network-tls-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: flat-network-tls-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-external-cert
+    namespace: flat-network-tls
+  spec:
+    dnsNames:
+    - flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc.cluster.local
+    - flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc
+    - flat-network-tls-cluster.flat-network-tls.flat-network-tls
+    - '*.flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc.cluster.local'
+    - '*.flat-network-tls-cluster.flat-network-tls.flat-network-tls.svc'
+    - '*.flat-network-tls-cluster.flat-network-tls.flat-network-tls'
+    - flat-network-tls.flat-network-tls.svc.cluster.local
+    - flat-network-tls.flat-network-tls.svc
+    - flat-network-tls.flat-network-tls
+    - '*.flat-network-tls.flat-network-tls.svc.cluster.local'
+    - '*.flat-network-tls.flat-network-tls.svc'
+    - '*.flat-network-tls.flat-network-tls'
+    - '*.flat-network-tls.svc.cluster.local'
+    - '*.flat-network-tls.svc'
+    - flat-network-tls-pool-a-0.flat-network-tls
+    - flat-network-tls-pool-a-1.flat-network-tls
+    - flat-network-tls-pool-a-2.flat-network-tls
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: flat-network-tls-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: flat-network-tls-external-cert
+  status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-sidecar
+    namespace: flat-network-tls
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-flat-network-tls-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-sidecar
+    namespace: flat-network-tls
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: flat-network-tls-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: flat-network-tls
+    namespace: flat-network-tls
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-flat-network-tls-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: flat-network-tls-flat-network-tls-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: flat-network-tls
+    namespace: flat-network-tls
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-sts-lifecycle
+    namespace: flat-network-tls
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.flat-network-tls.flat-network-tls.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      preStopHook
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-pool-a-configurator
+    namespace: flat-network-tls
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"flat-network-tls-pool-a-${POD_ORDINAL}.flat-network-tls\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
+
+      LISTENER="{\"address\":\"flat-network-tls-pool-a-${POD_ORDINAL}.flat-network-tls\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: flat-network-tls-pool-a-0
+    namespace: flat-network-tls
+  spec:
+    clusterIP: None
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: flat-network-tls-pool-a-1
+    namespace: flat-network-tls
+  spec:
+    clusterIP: None
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: flat-network-tls-pool-a-2
+    namespace: flat-network-tls
+  spec:
+    clusterIP: None
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Endpoints
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-pool-a-0
+    namespace: flat-network-tls
+  subsets:
+  - addresses:
+    - ip: 10.0.0.1
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+    - name: http
+      port: 8082
+      protocol: TCP
+    - name: kafka
+      port: 9093
+      protocol: TCP
+    - name: rpc
+      port: 33145
+      protocol: TCP
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+- addressType: IPv4
+  apiVersion: discovery.k8s.io/v1
+  endpoints:
+  - addresses:
+    - 10.0.0.1
+    conditions:
+      ready: true
+  kind: EndpointSlice
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      kubernetes.io/service-name: flat-network-tls-pool-a-0
+    name: flat-network-tls-pool-a-0-cross-cluster
+    namespace: flat-network-tls
+  ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+  - name: http
+    port: 8082
+    protocol: TCP
+  - name: kafka
+    port: 9093
+    protocol: TCP
+  - name: rpc
+    port: 33145
+    protocol: TCP
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+- apiVersion: v1
+  kind: Endpoints
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-pool-a-1
+    namespace: flat-network-tls
+  subsets:
+  - addresses:
+    - ip: 10.0.0.2
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+    - name: http
+      port: 8082
+      protocol: TCP
+    - name: kafka
+      port: 9093
+      protocol: TCP
+    - name: rpc
+      port: 33145
+      protocol: TCP
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+- addressType: IPv4
+  apiVersion: discovery.k8s.io/v1
+  endpoints:
+  - addresses:
+    - 10.0.0.2
+    conditions:
+      ready: true
+  kind: EndpointSlice
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      kubernetes.io/service-name: flat-network-tls-pool-a-1
+    name: flat-network-tls-pool-a-1-cross-cluster
+    namespace: flat-network-tls
+  ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+  - name: http
+    port: 8082
+    protocol: TCP
+  - name: kafka
+    port: 9093
+    protocol: TCP
+  - name: rpc
+    port: 33145
+    protocol: TCP
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+- apiVersion: v1
+  kind: Endpoints
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: flat-network-tls-pool-a-2
+    namespace: flat-network-tls
+  subsets:
+  - addresses:
+    - ip: 10.0.0.3
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+    - name: http
+      port: 8082
+      protocol: TCP
+    - name: kafka
+      port: 9093
+      protocol: TCP
+    - name: rpc
+      port: 33145
+      protocol: TCP
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+- addressType: IPv4
+  apiVersion: discovery.k8s.io/v1
+  endpoints:
+  - addresses:
+    - 10.0.0.3
+    conditions:
+      ready: true
+  kind: EndpointSlice
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: flat-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      kubernetes.io/service-name: flat-network-tls-pool-a-2
+    name: flat-network-tls-pool-a-2-cross-cluster
+    namespace: flat-network-tls
   ports:
   - name: admin
     port: 9644
@@ -10111,7 +11115,11 @@
     - '*.full-featured.full-featured'
     - '*.full-featured.svc.cluster.local'
     - '*.full-featured.svc'
-    - '*.full-featured'
+    - full-featured-pool-cold-0.full-featured
+    - full-featured-pool-cold-1.full-featured
+    - full-featured-pool-hot-0.full-featured
+    - full-featured-pool-hot-1.full-featured
+    - full-featured-pool-hot-2.full-featured
     - prod.example.com
     - '*.prod.example.com'
     duration: 43800h0m0s
@@ -11328,7 +12336,9 @@
     - '*.init-containers.init-containers'
     - '*.init-containers.svc.cluster.local'
     - '*.init-containers.svc'
-    - '*.init-containers'
+    - init-containers-pool-a-0.init-containers
+    - init-containers-pool-a-1.init-containers
+    - init-containers-pool-a-2.init-containers
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -11366,7 +12376,9 @@
     - '*.init-containers.init-containers'
     - '*.init-containers.svc.cluster.local'
     - '*.init-containers.svc'
-    - '*.init-containers'
+    - init-containers-pool-a-0.init-containers
+    - init-containers-pool-a-1.init-containers
+    - init-containers-pool-a-2.init-containers
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -12151,11 +13163,14 @@
     - '*.mcs-network.mcs-network'
     - '*.mcs-network.svc.cluster.local'
     - '*.mcs-network.svc'
-    - '*.mcs-network'
+    - mcs-network-pool-a-0.mcs-network
+    - mcs-network-pool-a-1.mcs-network
     - mcs-network-cluster.mcs-network.mcs-network.svc.clusterset.local
     - '*.mcs-network-cluster.mcs-network.mcs-network.svc.clusterset.local'
     - mcs-network.mcs-network.svc.clusterset.local
     - '*.mcs-network.mcs-network.svc.clusterset.local'
+    - mcs-network-pool-a-0.mcs-network.svc.clusterset.local
+    - mcs-network-pool-a-1.mcs-network.svc.clusterset.local
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -12193,11 +13208,14 @@
     - '*.mcs-network.mcs-network'
     - '*.mcs-network.svc.cluster.local'
     - '*.mcs-network.svc'
-    - '*.mcs-network'
+    - mcs-network-pool-a-0.mcs-network
+    - mcs-network-pool-a-1.mcs-network
     - mcs-network-cluster.mcs-network.mcs-network.svc.clusterset.local
     - '*.mcs-network-cluster.mcs-network.mcs-network.svc.clusterset.local'
     - mcs-network.mcs-network.svc.clusterset.local
     - '*.mcs-network.mcs-network.svc.clusterset.local'
+    - mcs-network-pool-a-0.mcs-network.svc.clusterset.local
+    - mcs-network-pool-a-1.mcs-network.svc.clusterset.local
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -12540,6 +13558,844 @@
       app.kubernetes.io/name: redpanda
     name: mcs-network-pool-a-1
     namespace: mcs-network
+  spec: {}
+  status: {}
+-- mcs-network-tls --
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-external
+    namespace: mcs-network-tls
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
+  status:
+    loadBalancer: {}
+- apiVersion: policy/v1
+  kind: PodDisruptionBudget
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls
+    namespace: mcs-network-tls
+  spec:
+    maxUnavailable: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/cluster-name: test
+        app.kubernetes.io/instance: mcs-network-tls
+        app.kubernetes.io/name: redpanda
+        redpanda.com/poddisruptionbudget: mcs-network-tls
+  status:
+    currentHealthy: 0
+    desiredHealthy: 0
+    disruptionsAllowed: 0
+    expectedPods: 0
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls
+    namespace: mcs-network-tls
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: mcs-network-tls
+    namespace: mcs-network-tls
+  spec:
+    clusterIP: None
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/name: redpanda
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  data:
+    .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+    bootstrap.yaml.fixups: '[]'
+    redpanda.yaml: |-
+      config_file: /etc/redpanda/redpanda.yaml
+      pandaproxy:
+        pandaproxy_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8082
+        - address: 0.0.0.0
+          name: default
+          port: 8083
+        pandaproxy_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      pandaproxy_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: mcs-network-tls-pool-a-0.mcs-network-tls.svc.clusterset.local
+          port: 9093
+        - address: mcs-network-tls-pool-a-1.mcs-network-tls.svc.clusterset.local
+          port: 9093
+        - address: mcs-network-tls-pool-a-2.mcs-network-tls.svc.clusterset.local
+          port: 9093
+      redpanda:
+        admin:
+        - address: 0.0.0.0
+          name: internal
+          port: 9644
+        - address: 0.0.0.0
+          name: default
+          port: 9645
+        admin_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        crash_loop_limit: 5
+        empty_seed_starts_cluster: false
+        kafka_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 9093
+        - address: 0.0.0.0
+          name: default
+          port: 9094
+        kafka_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+        rpc_server:
+          address: 0.0.0.0
+          port: 33145
+        rpc_server_tls:
+          cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        seed_servers:
+        - host:
+            address: mcs-network-tls-pool-a-0.default.svc.clusterset.local
+            port: 33145
+        - host:
+            address: mcs-network-tls-pool-a-1.default.svc.clusterset.local
+            port: 33145
+        - host:
+            address: mcs-network-tls-pool-a-2.default.svc.clusterset.local
+            port: 33145
+      rpk:
+        additional_start_flags:
+        - --default-log-level=info
+        - --memory=2048M
+        - --reserve-memory=205M
+        - --smp=1
+        admin_api:
+          addresses:
+          - mcs-network-tls-pool-a-0.mcs-network-tls.svc.clusterset.local:9644
+          - mcs-network-tls-pool-a-1.mcs-network-tls.svc.clusterset.local:9644
+          - mcs-network-tls-pool-a-2.mcs-network-tls.svc.clusterset.local:9644
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        enable_memory_locking: false
+        kafka_api:
+          brokers:
+          - mcs-network-tls-pool-a-0.mcs-network-tls.svc.clusterset.local:9093
+          - mcs-network-tls-pool-a-1.mcs-network-tls.svc.clusterset.local:9093
+          - mcs-network-tls-pool-a-2.mcs-network-tls.svc.clusterset.local:9093
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        overprovisioned: false
+        schema_registry:
+          addresses:
+          - mcs-network-tls-pool-a-0.mcs-network-tls.svc.clusterset.local:8081
+          - mcs-network-tls-pool-a-1.mcs-network-tls.svc.clusterset.local:8081
+          - mcs-network-tls-pool-a-2.mcs-network-tls.svc.clusterset.local:8081
+          tls:
+            ca_file: /etc/tls/certs/default/ca.crt
+        tune_aio_events: true
+      schema_registry:
+        schema_registry_api:
+        - address: 0.0.0.0
+          name: internal
+          port: 8081
+        - address: 0.0.0.0
+          name: default
+          port: 8084
+        schema_registry_api_tls:
+        - cert_file: /etc/tls/certs/default/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/default/tls.key
+          name: internal
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        - cert_file: /etc/tls/certs/external/tls.crt
+          enabled: true
+          key_file: /etc/tls/certs/external/tls.key
+          name: default
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/external/ca.crt
+      schema_registry_client:
+        broker_tls:
+          enabled: true
+          require_client_auth: false
+          truststore_file: /etc/tls/certs/default/ca.crt
+        brokers:
+        - address: mcs-network-tls-pool-a-0.mcs-network-tls.svc.clusterset.local
+          port: 9093
+        - address: mcs-network-tls-pool-a-1.mcs-network-tls.svc.clusterset.local
+          port: 9093
+        - address: mcs-network-tls-pool-a-2.mcs-network-tls.svc.clusterset.local
+          port: 9093
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-pool-a
+    namespace: mcs-network-tls
+- apiVersion: v1
+  data:
+    profile: |-
+      admin_api:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+      kafka_api:
+        brokers: []
+        tls:
+          ca_file: ca.crt
+      name: default
+      schema_registry:
+        addresses: []
+        tls:
+          ca_file: ca.crt
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-rpk
+    namespace: mcs-network-tls
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-default-root-issuer
+    namespace: mcs-network-tls
+  spec:
+    ca:
+      secretName: mcs-network-tls-default-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Issuer
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-external-root-issuer
+    namespace: mcs-network-tls
+  spec:
+    ca:
+      secretName: mcs-network-tls-external-root-certificate
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-default-cert
+    namespace: mcs-network-tls
+  spec:
+    dnsNames:
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.cluster.local
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.cluster.local'
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc'
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls'
+    - mcs-network-tls.mcs-network-tls.svc.cluster.local
+    - mcs-network-tls.mcs-network-tls.svc
+    - mcs-network-tls.mcs-network-tls
+    - '*.mcs-network-tls.mcs-network-tls.svc.cluster.local'
+    - '*.mcs-network-tls.mcs-network-tls.svc'
+    - '*.mcs-network-tls.mcs-network-tls'
+    - '*.mcs-network-tls.svc.cluster.local'
+    - '*.mcs-network-tls.svc'
+    - mcs-network-tls-pool-a-0.mcs-network-tls
+    - mcs-network-tls-pool-a-1.mcs-network-tls
+    - mcs-network-tls-pool-a-2.mcs-network-tls
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.clusterset.local
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.clusterset.local'
+    - mcs-network-tls.mcs-network-tls.svc.clusterset.local
+    - '*.mcs-network-tls.mcs-network-tls.svc.clusterset.local'
+    - mcs-network-tls-pool-a-0.mcs-network-tls.svc.clusterset.local
+    - mcs-network-tls-pool-a-1.mcs-network-tls.svc.clusterset.local
+    - mcs-network-tls-pool-a-2.mcs-network-tls.svc.clusterset.local
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: mcs-network-tls-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: mcs-network-tls-default-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-external-cert
+    namespace: mcs-network-tls
+  spec:
+    dnsNames:
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.cluster.local
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.cluster.local'
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc'
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls'
+    - mcs-network-tls.mcs-network-tls.svc.cluster.local
+    - mcs-network-tls.mcs-network-tls.svc
+    - mcs-network-tls.mcs-network-tls
+    - '*.mcs-network-tls.mcs-network-tls.svc.cluster.local'
+    - '*.mcs-network-tls.mcs-network-tls.svc'
+    - '*.mcs-network-tls.mcs-network-tls'
+    - '*.mcs-network-tls.svc.cluster.local'
+    - '*.mcs-network-tls.svc'
+    - mcs-network-tls-pool-a-0.mcs-network-tls
+    - mcs-network-tls-pool-a-1.mcs-network-tls
+    - mcs-network-tls-pool-a-2.mcs-network-tls
+    - mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.clusterset.local
+    - '*.mcs-network-tls-cluster.mcs-network-tls.mcs-network-tls.svc.clusterset.local'
+    - mcs-network-tls.mcs-network-tls.svc.clusterset.local
+    - '*.mcs-network-tls.mcs-network-tls.svc.clusterset.local'
+    - mcs-network-tls-pool-a-0.mcs-network-tls.svc.clusterset.local
+    - mcs-network-tls-pool-a-1.mcs-network-tls.svc.clusterset.local
+    - mcs-network-tls-pool-a-2.mcs-network-tls.svc.clusterset.local
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: mcs-network-tls-external-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: mcs-network-tls-external-cert
+  status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-sidecar
+    namespace: mcs-network-tls
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-mcs-network-tls-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-sidecar
+    namespace: mcs-network-tls
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: mcs-network-tls-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: mcs-network-tls
+    namespace: mcs-network-tls
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-mcs-network-tls-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: mcs-network-tls-mcs-network-tls-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: mcs-network-tls
+    namespace: mcs-network-tls
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-sts-lifecycle
+    namespace: mcs-network-tls
+  stringData:
+    common.sh: |-
+      #!/usr/bin/env bash
+
+      # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+      CURL_URL="https://${SERVICE_NAME}.mcs-network-tls.mcs-network-tls.svc.cluster.local:9644"
+
+      # commands used throughout
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+      CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+    postStart.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      postStartHook () {
+        set -x
+
+        touch /tmp/postStartHookStarted
+
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Clearing maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        # a 400 here would mean not in maintenance mode
+        until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+            status=$(${CURL_MAINTENANCE_DELETE_CMD})
+            sleep 0.5
+        done
+
+        touch /tmp/postStartHookFinished
+      }
+
+      postStartHook
+      true
+    preStop.sh: |-
+      #!/usr/bin/env bash
+      # This code should be similar if not exactly the same as that found in the panda-operator, see
+      # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+      touch /tmp/preStopHookStarted
+
+      # path below should match the path defined on the statefulset
+      source /var/lifecycle/common.sh
+
+      set -x
+
+      preStopHook () {
+        until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+            sleep 0.5
+        done
+
+        echo "Setting maintenance mode on node ${NODE_ID}"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        until [ "${status:-}" = '"200"' ]; do
+            status=$(${CURL_MAINTENANCE_PUT_CMD})
+            sleep 0.5
+        done
+
+        until [ "${finished:-}" = "true" ] || [ "${draining:-}" = "false" ]; do
+            res=$(${CURL_MAINTENANCE_GET_CMD})
+            finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+            draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+            sleep 0.5
+        done
+
+        touch /tmp/preStopHookFinished
+      }
+      preStopHook
+      true
+  type: Opaque
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-pool-a-configurator
+    namespace: mcs-network-tls
+  stringData:
+    configurator.sh: |-
+      set -xe
+      SERVICE_NAME=$1
+      KUBERNETES_NODE_NAME=$2
+      POD_ORDINAL=${SERVICE_NAME##*-}
+
+      CONFIG=/etc/redpanda/redpanda.yaml
+
+      # Setup config files
+      cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.mcs-network-tls.svc.clusterset.local\",\"name\":\"internal\",\"port\":9093}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":31092}"
+      rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}.mcs-network-tls.svc.clusterset.local\",\"name\":\"internal\",\"port\":8082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+      LISTENER="{\"address\":\"${SERVICE_NAME}\",\"name\":\"default\",\"port\":30082}"
+      rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "$LISTENER"
+  type: Opaque
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: mcs-network-tls-pool-a-0
+    namespace: mcs-network-tls
+  spec:
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/name: redpanda
+      apps.kubernetes.io/pod-index: "0"
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: mcs-network-tls-pool-a-1
+    namespace: mcs-network-tls
+  spec:
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/name: redpanda
+      apps.kubernetes.io/pod-index: "1"
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "false"
+    name: mcs-network-tls-pool-a-2
+    namespace: mcs-network-tls
+  spec:
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: admin
+      port: 9644
+      protocol: TCP
+      targetPort: 9644
+    - name: http
+      port: 8082
+      protocol: TCP
+      targetPort: 8082
+    - name: kafka
+      port: 9093
+      protocol: TCP
+      targetPort: 9093
+    - name: rpc
+      port: 33145
+      protocol: TCP
+      targetPort: 33145
+    - name: schemaregistry
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/name: redpanda
+      apps.kubernetes.io/pod-index: "2"
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: multicluster.x-k8s.io/v1alpha1
+  kind: ServiceExport
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-pool-a-0
+    namespace: mcs-network-tls
+  spec: {}
+  status: {}
+- apiVersion: multicluster.x-k8s.io/v1alpha1
+  kind: ServiceExport
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-pool-a-1
+    namespace: mcs-network-tls
+  spec: {}
+  status: {}
+- apiVersion: multicluster.x-k8s.io/v1alpha1
+  kind: ServiceExport
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: mcs-network-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: mcs-network-tls-pool-a-2
+    namespace: mcs-network-tls
   spec: {}
   status: {}
 -- memory-locking --
@@ -12922,7 +14778,9 @@
     - '*.memory-locking.memory-locking'
     - '*.memory-locking.svc.cluster.local'
     - '*.memory-locking.svc'
-    - '*.memory-locking'
+    - memory-locking-pool-a-0.memory-locking
+    - memory-locking-pool-a-1.memory-locking
+    - memory-locking-pool-a-2.memory-locking
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -12960,7 +14818,9 @@
     - '*.memory-locking.memory-locking'
     - '*.memory-locking.svc.cluster.local'
     - '*.memory-locking.svc'
-    - '*.memory-locking'
+    - memory-locking-pool-a-0.memory-locking
+    - memory-locking-pool-a-1.memory-locking
+    - memory-locking-pool-a-2.memory-locking
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -13703,7 +15563,9 @@
     - '*.minimal.minimal'
     - '*.minimal.svc.cluster.local'
     - '*.minimal.svc'
-    - '*.minimal'
+    - minimal-pool-a-0.minimal
+    - minimal-pool-a-1.minimal
+    - minimal-pool-a-2.minimal
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -13741,7 +15603,9 @@
     - '*.minimal.minimal'
     - '*.minimal.svc.cluster.local'
     - '*.minimal.svc'
-    - '*.minimal'
+    - minimal-pool-a-0.minimal
+    - minimal-pool-a-1.minimal
+    - minimal-pool-a-2.minimal
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -14510,7 +16374,9 @@
     - '*.monitoring.monitoring'
     - '*.monitoring.svc.cluster.local'
     - '*.monitoring.svc'
-    - '*.monitoring'
+    - monitoring-pool-a-0.monitoring
+    - monitoring-pool-a-1.monitoring
+    - monitoring-pool-a-2.monitoring
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -14548,7 +16414,9 @@
     - '*.monitoring.monitoring'
     - '*.monitoring.svc.cluster.local'
     - '*.monitoring.svc'
-    - '*.monitoring'
+    - monitoring-pool-a-0.monitoring
+    - monitoring-pool-a-1.monitoring
+    - monitoring-pool-a-2.monitoring
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -15506,7 +17374,11 @@
     - '*.multi-pool.multi-pool'
     - '*.multi-pool.svc.cluster.local'
     - '*.multi-pool.svc'
-    - '*.multi-pool'
+    - multi-pool-pool-a-0.multi-pool
+    - multi-pool-pool-a-1.multi-pool
+    - multi-pool-pool-a-2.multi-pool
+    - multi-pool-pool-b-0.multi-pool
+    - multi-pool-pool-b-1.multi-pool
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -15544,7 +17416,11 @@
     - '*.multi-pool.multi-pool'
     - '*.multi-pool.svc.cluster.local'
     - '*.multi-pool.svc'
-    - '*.multi-pool'
+    - multi-pool-pool-a-0.multi-pool
+    - multi-pool-pool-a-1.multi-pool
+    - multi-pool-pool-a-2.multi-pool
+    - multi-pool-pool-b-0.multi-pool
+    - multi-pool-pool-b-1.multi-pool
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -16394,7 +18270,7 @@
     - '*.per-pod-service-overrides.per-pod-service-overrides'
     - '*.per-pod-service-overrides.svc.cluster.local'
     - '*.per-pod-service-overrides.svc'
-    - '*.per-pod-service-overrides'
+    - per-pod-service-overrides-pool-a-0.per-pod-service-overrides
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -16432,7 +18308,7 @@
     - '*.per-pod-service-overrides.per-pod-service-overrides'
     - '*.per-pod-service-overrides.svc.cluster.local'
     - '*.per-pod-service-overrides.svc'
-    - '*.per-pod-service-overrides'
+    - per-pod-service-overrides-pool-a-0.per-pod-service-overrides
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -17069,7 +18945,7 @@
     - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled'
     - '*.per-pod-service-remote-disabled.svc.cluster.local'
     - '*.per-pod-service-remote-disabled.svc'
-    - '*.per-pod-service-remote-disabled'
+    - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -17107,7 +18983,7 @@
     - '*.per-pod-service-remote-disabled.per-pod-service-remote-disabled'
     - '*.per-pod-service-remote-disabled.svc.cluster.local'
     - '*.per-pod-service-remote-disabled.svc'
-    - '*.per-pod-service-remote-disabled'
+    - per-pod-service-remote-disabled-pool-a-0.per-pod-service-remote-disabled
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -17761,7 +19637,9 @@
     - '*.rack-awareness.rack-awareness'
     - '*.rack-awareness.svc.cluster.local'
     - '*.rack-awareness.svc'
-    - '*.rack-awareness'
+    - rack-awareness-pool-a-0.rack-awareness
+    - rack-awareness-pool-a-1.rack-awareness
+    - rack-awareness-pool-a-2.rack-awareness
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -17799,7 +19677,9 @@
     - '*.rack-awareness.rack-awareness'
     - '*.rack-awareness.svc.cluster.local'
     - '*.rack-awareness.svc'
-    - '*.rack-awareness'
+    - rack-awareness-pool-a-0.rack-awareness
+    - rack-awareness-pool-a-1.rack-awareness
+    - rack-awareness-pool-a-2.rack-awareness
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -18589,7 +20469,9 @@
     - '*.sasl-scram256.sasl-scram256'
     - '*.sasl-scram256.svc.cluster.local'
     - '*.sasl-scram256.svc'
-    - '*.sasl-scram256'
+    - sasl-scram256-pool-a-0.sasl-scram256
+    - sasl-scram256-pool-a-1.sasl-scram256
+    - sasl-scram256-pool-a-2.sasl-scram256
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -18627,7 +20509,9 @@
     - '*.sasl-scram256.sasl-scram256'
     - '*.sasl-scram256.svc.cluster.local'
     - '*.sasl-scram256.svc'
-    - '*.sasl-scram256'
+    - sasl-scram256-pool-a-0.sasl-scram256
+    - sasl-scram256-pool-a-1.sasl-scram256
+    - sasl-scram256-pool-a-2.sasl-scram256
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -19389,7 +21273,9 @@
     - '*.sasl-scram512-with-tls.sasl-scram512-with-tls'
     - '*.sasl-scram512-with-tls.svc.cluster.local'
     - '*.sasl-scram512-with-tls.svc'
-    - '*.sasl-scram512-with-tls'
+    - sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls
+    - sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls
+    - sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -19427,7 +21313,9 @@
     - '*.sasl-scram512-with-tls.sasl-scram512-with-tls'
     - '*.sasl-scram512-with-tls.svc.cluster.local'
     - '*.sasl-scram512-with-tls.svc'
-    - '*.sasl-scram512-with-tls'
+    - sasl-scram512-with-tls-pool-a-0.sasl-scram512-with-tls
+    - sasl-scram512-with-tls-pool-a-1.sasl-scram512-with-tls
+    - sasl-scram512-with-tls-pool-a-2.sasl-scram512-with-tls
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -20165,7 +22053,7 @@
     - '*.single-replica.single-replica'
     - '*.single-replica.svc.cluster.local'
     - '*.single-replica.svc'
-    - '*.single-replica'
+    - single-replica-pool-a-0.single-replica
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -20203,7 +22091,7 @@
     - '*.single-replica.single-replica'
     - '*.single-replica.svc.cluster.local'
     - '*.single-replica.svc'
-    - '*.single-replica'
+    - single-replica-pool-a-0.single-replica
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -20857,7 +22745,9 @@
     - '*.storage-hostpath.storage-hostpath'
     - '*.storage-hostpath.svc.cluster.local'
     - '*.storage-hostpath.svc'
-    - '*.storage-hostpath'
+    - storage-hostpath-pool-a-0.storage-hostpath
+    - storage-hostpath-pool-a-1.storage-hostpath
+    - storage-hostpath-pool-a-2.storage-hostpath
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -20895,7 +22785,9 @@
     - '*.storage-hostpath.storage-hostpath'
     - '*.storage-hostpath.svc.cluster.local'
     - '*.storage-hostpath.svc'
-    - '*.storage-hostpath'
+    - storage-hostpath-pool-a-0.storage-hostpath
+    - storage-hostpath-pool-a-1.storage-hostpath
+    - storage-hostpath-pool-a-2.storage-hostpath
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -21638,7 +23530,9 @@
     - '*.storage-pv-custom.storage-pv-custom'
     - '*.storage-pv-custom.svc.cluster.local'
     - '*.storage-pv-custom.svc'
-    - '*.storage-pv-custom'
+    - storage-pv-custom-pool-a-0.storage-pv-custom
+    - storage-pv-custom-pool-a-1.storage-pv-custom
+    - storage-pv-custom-pool-a-2.storage-pv-custom
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -21676,7 +23570,9 @@
     - '*.storage-pv-custom.storage-pv-custom'
     - '*.storage-pv-custom.svc.cluster.local'
     - '*.storage-pv-custom.svc'
-    - '*.storage-pv-custom'
+    - storage-pv-custom-pool-a-0.storage-pv-custom
+    - storage-pv-custom-pool-a-1.storage-pv-custom
+    - storage-pv-custom-pool-a-2.storage-pv-custom
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -22419,7 +24315,9 @@
     - '*.tiered-storage-emptydir.tiered-storage-emptydir'
     - '*.tiered-storage-emptydir.svc.cluster.local'
     - '*.tiered-storage-emptydir.svc'
-    - '*.tiered-storage-emptydir'
+    - tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir
+    - tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir
+    - tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -22457,7 +24355,9 @@
     - '*.tiered-storage-emptydir.tiered-storage-emptydir'
     - '*.tiered-storage-emptydir.svc.cluster.local'
     - '*.tiered-storage-emptydir.svc'
-    - '*.tiered-storage-emptydir'
+    - tiered-storage-emptydir-pool-a-0.tiered-storage-emptydir
+    - tiered-storage-emptydir-pool-a-1.tiered-storage-emptydir
+    - tiered-storage-emptydir-pool-a-2.tiered-storage-emptydir
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -23200,7 +25100,9 @@
     - '*.tiered-storage-hostpath.tiered-storage-hostpath'
     - '*.tiered-storage-hostpath.svc.cluster.local'
     - '*.tiered-storage-hostpath.svc'
-    - '*.tiered-storage-hostpath'
+    - tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath
+    - tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath
+    - tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -23238,7 +25140,9 @@
     - '*.tiered-storage-hostpath.tiered-storage-hostpath'
     - '*.tiered-storage-hostpath.svc.cluster.local'
     - '*.tiered-storage-hostpath.svc'
-    - '*.tiered-storage-hostpath'
+    - tiered-storage-hostpath-pool-a-0.tiered-storage-hostpath
+    - tiered-storage-hostpath-pool-a-1.tiered-storage-hostpath
+    - tiered-storage-hostpath-pool-a-2.tiered-storage-hostpath
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -23981,7 +25885,9 @@
     - '*.tiered-storage-pv.tiered-storage-pv'
     - '*.tiered-storage-pv.svc.cluster.local'
     - '*.tiered-storage-pv.svc'
-    - '*.tiered-storage-pv'
+    - tiered-storage-pv-pool-a-0.tiered-storage-pv
+    - tiered-storage-pv-pool-a-1.tiered-storage-pv
+    - tiered-storage-pv-pool-a-2.tiered-storage-pv
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -24019,7 +25925,9 @@
     - '*.tiered-storage-pv.tiered-storage-pv'
     - '*.tiered-storage-pv.svc.cluster.local'
     - '*.tiered-storage-pv.svc'
-    - '*.tiered-storage-pv'
+    - tiered-storage-pv-pool-a-0.tiered-storage-pv
+    - tiered-storage-pv-pool-a-1.tiered-storage-pv
+    - tiered-storage-pv-pool-a-2.tiered-storage-pv
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -24769,7 +26677,9 @@
     - '*.tls-issuer-ref.tls-issuer-ref'
     - '*.tls-issuer-ref.svc.cluster.local'
     - '*.tls-issuer-ref.svc'
-    - '*.tls-issuer-ref'
+    - tls-issuer-ref-pool-a-0.tls-issuer-ref
+    - tls-issuer-ref-pool-a-1.tls-issuer-ref
+    - tls-issuer-ref-pool-a-2.tls-issuer-ref
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -25529,7 +27439,9 @@
     - '*.tls-issuer-ref-mtls.tls-issuer-ref-mtls'
     - '*.tls-issuer-ref-mtls.svc.cluster.local'
     - '*.tls-issuer-ref-mtls.svc'
-    - '*.tls-issuer-ref-mtls'
+    - tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls
+    - tls-issuer-ref-mtls-pool-a-1.tls-issuer-ref-mtls
+    - tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -26305,7 +28217,9 @@
     - '*.tls-mtls.tls-mtls'
     - '*.tls-mtls.svc.cluster.local'
     - '*.tls-mtls.svc'
-    - '*.tls-mtls'
+    - tls-mtls-pool-a-0.tls-mtls
+    - tls-mtls-pool-a-1.tls-mtls
+    - tls-mtls-pool-a-2.tls-mtls
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -26343,7 +28257,9 @@
     - '*.tls-mtls.tls-mtls'
     - '*.tls-mtls.svc.cluster.local'
     - '*.tls-mtls.svc'
-    - '*.tls-mtls'
+    - tls-mtls-pool-a-0.tls-mtls
+    - tls-mtls-pool-a-1.tls-mtls
+    - tls-mtls-pool-a-2.tls-mtls
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -27109,7 +29025,9 @@
     - '*.tls-self-signed.tls-self-signed'
     - '*.tls-self-signed.svc.cluster.local'
     - '*.tls-self-signed.svc'
-    - '*.tls-self-signed'
+    - tls-self-signed-pool-a-0.tls-self-signed
+    - tls-self-signed-pool-a-1.tls-self-signed
+    - tls-self-signed-pool-a-2.tls-self-signed
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -27147,7 +29065,9 @@
     - '*.tls-self-signed.tls-self-signed'
     - '*.tls-self-signed.svc.cluster.local'
     - '*.tls-self-signed.svc'
-    - '*.tls-self-signed'
+    - tls-self-signed-pool-a-0.tls-self-signed
+    - tls-self-signed-pool-a-1.tls-self-signed
+    - tls-self-signed-pool-a-2.tls-self-signed
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
