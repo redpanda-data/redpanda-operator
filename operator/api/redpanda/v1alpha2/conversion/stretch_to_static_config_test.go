@@ -24,6 +24,7 @@ import (
 func TestConvertStretchClusterToStaticConfig_NilInput(t *testing.T) {
 	require.Nil(t, ConvertStretchClusterToStaticConfig(nil, nil))
 	require.Nil(t, ConvertStretchClusterToStaticConfig(&redpandav1alpha2.StretchCluster{}, nil))
+	require.Nil(t, ConvertStretchClusterToStaticConfig(nil, &redpandav1alpha2.NodePool{}))
 }
 
 func TestConvertStretchClusterToStaticConfig(t *testing.T) {
@@ -223,13 +224,13 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 			poolSpec := &redpandav1alpha2.EmbeddedNodePoolSpec{}
 			tc.mutate(sc, poolSpec)
 
-			// Default the pool the same way callers (e.g. console controller,
-			// stretch client factory) do before invoking the converter.
-			defaultedClusterSpec := *sc.Spec.DeepCopy()
-			defaultedClusterSpec.MergeDefaults()
-			poolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
+			pool := &redpandav1alpha2.NodePool{
+				Spec: redpandav1alpha2.NodePoolSpec{
+					EmbeddedNodePoolSpec: *poolSpec,
+				},
+			}
 
-			cfg := ConvertStretchClusterToStaticConfig(sc, poolSpec)
+			cfg := ConvertStretchClusterToStaticConfig(sc, pool)
 			require.NotNil(t, cfg)
 			require.NotNil(t, cfg.Kafka)
 			require.NotNil(t, cfg.Admin)
@@ -245,4 +246,80 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+// IssuerRef-backed certificates are issued by cert-manager from a Certificate
+// the operator renders against the per-pool fullname `<cluster>-<pool>`, so
+// the leaf-cert Secret cert-manager creates is
+// `<cluster>-<pool>-<certName>-cert`. Console must therefore reference that
+// Secret name. Before this fix the converter passed `sc.Name` as the fullname
+// and Console pointed at `<cluster>-<certName>-cert`, which doesn't exist.
+func TestConvertStretchClusterToStaticConfig_IssuerRefUsesPoolFullname(t *testing.T) {
+	const (
+		scName   = "redpanda"
+		scNs     = "redpanda-ns"
+		poolName = "pool-east"
+	)
+
+	sc := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: scName, Namespace: scNs},
+	}
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: poolName, Namespace: scNs},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+				TLS: &redpandav1alpha2.TLS{
+					Enabled: ptr.To(true),
+					Certs: map[string]*redpandav1alpha2.Certificate{
+						redpandav1alpha2.DefaultCertName: {
+							Enabled:   ptr.To(true),
+							IssuerRef: &redpandav1alpha2.IssuerRef{Name: ptr.To("user-issuer")},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cfg := ConvertStretchClusterToStaticConfig(sc, pool)
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.Kafka.TLS)
+	require.Equal(t,
+		scName+"-"+poolName+"-default-cert",
+		cfg.Kafka.TLS.CaCert.SecretKeyRef.Name,
+		"IssuerRef leaf Secret name must match what cert-manager actually creates from the per-pool Certificate, otherwise Console TLS breaks",
+	)
+	require.Equal(t, "ca.crt", cfg.Kafka.TLS.CaCert.SecretKeyRef.Key)
+}
+
+// Operator-managed certs (no SecretRef, no IssuerRef) use the shared
+// root-CA Secret, which is cluster-scoped — it must NOT pick up the pool
+// suffix even when the pool has a non-empty name.
+func TestConvertStretchClusterToStaticConfig_OperatorManagedCertStaysClusterScoped(t *testing.T) {
+	const (
+		scName   = "redpanda"
+		scNs     = "redpanda-ns"
+		poolName = "pool-east"
+	)
+
+	sc := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: scName, Namespace: scNs},
+	}
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: poolName, Namespace: scNs},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
+			},
+		},
+	}
+
+	cfg := ConvertStretchClusterToStaticConfig(sc, pool)
+	require.NotNil(t, cfg)
+	require.NotNil(t, cfg.Kafka.TLS)
+	require.Equal(t,
+		scName+"-default-root-certificate",
+		cfg.Kafka.TLS.CaCert.SecretKeyRef.Name,
+		"the shared root-CA Secret lives at cluster scope and must not be qualified with the pool suffix",
+	)
 }

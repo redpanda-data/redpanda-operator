@@ -643,12 +643,8 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 			if err != nil {
 				return console.PartialRenderValues{}, err
 			}
-			defaultedClusterSpec := *sc.Spec.DeepCopy()
-			defaultedClusterSpec.MergeDefaults()
-			poolSpec := pool.Spec.EmbeddedNodePoolSpec.DeepCopy()
-			poolSpec.MergeDefaultsFrom(&defaultedClusterSpec)
 
-			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc, poolSpec)
+			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc, pool)
 			return console.StaticConfigurationSourceToPartialRenderValues(cfg), nil
 		}
 
