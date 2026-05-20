@@ -50,9 +50,6 @@ type StretchClusterSpec struct {
 	// Defines an Enterprise license.
 	Enterprise *Enterprise `json:"enterprise,omitempty"`
 
-	// Defines rack awareness settings.
-	RackAwareness *RackAwareness `json:"rackAwareness,omitempty"`
-
 	// Defines authentication settings for listeners.
 	Auth *Auth `json:"auth,omitempty"`
 

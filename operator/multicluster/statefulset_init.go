@@ -117,7 +117,7 @@ func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1al
 		corev1.VolumeMount{Name: fmt.Sprintf(`%.51s-configurator`, state.poolFullname(pool)), MountPath: "/etc/secrets/configurator/scripts/"},
 	)
 
-	if state.Spec().RackAwareness.IsEnabled() {
+	if state.PoolSpec(pool).RackAwareness.IsEnabled() {
 		volMounts = append(volMounts, corev1.VolumeMount{
 			Name:      serviceAccountVolumeName,
 			MountPath: defaultAPITokenMountPath,

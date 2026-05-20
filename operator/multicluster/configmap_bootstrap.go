@@ -52,7 +52,7 @@ func bootstrapContents(state *RenderState, pool *redpandav1alpha2.NodePool) boot
 	if state.Spec().Auth.IsSASLEnabled() {
 		bootstrap["superusers"] = []string{defaultBootstrapUsername}
 	}
-	bootstrap["enable_rack_awareness"] = state.Spec().RackAwareness.IsEnabled()
+	bootstrap["enable_rack_awareness"] = state.PoolSpec(pool).RackAwareness.IsEnabled()
 	bootstrap["audit_enabled"] = state.Spec().IsAuditLoggingEnabled()
 
 	// storage_min_free_bytes: min(5GiB, 5% of PV size).

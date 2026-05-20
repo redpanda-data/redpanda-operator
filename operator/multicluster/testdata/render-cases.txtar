@@ -533,10 +533,6 @@ kind: StretchCluster
 metadata:
   name: cluster
   namespace: default
-spec:
-  rackAwareness:
-    enabled: true
-    nodeAnnotation: topology.kubernetes.io/zone
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -549,6 +545,9 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+  rackAwareness:
+    enabled: true
+    nodeAnnotation: topology.kubernetes.io/zone
 -- audit-logging --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
@@ -979,8 +978,6 @@ metadata:
 spec:
   commonLabels:
     team: data-platform
-  rackAwareness:
-    enabled: true
   auth:
     sasl:
       enabled: true
@@ -1096,6 +1093,8 @@ spec:
   initContainers:
     fsValidator:
       enabled: true
+  rackAwareness:
+    enabled: true
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -1110,6 +1109,8 @@ spec:
   replicas: 2
   additionalSelectorLabels:
     tier: cold
+  rackAwareness:
+    enabled: true
 -- flat-network --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster

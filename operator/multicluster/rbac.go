@@ -140,7 +140,7 @@ func clusterRolesForPool(state *RenderState, pool *redpandav1alpha2.NodePool) []
 		},
 	})
 
-	if state.Spec().RackAwareness.IsEnabled() {
+	if state.PoolSpec(pool).RackAwareness.IsEnabled() {
 		out = append(out, &rbacv1.ClusterRole{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",

@@ -22,7 +22,6 @@ type StretchClusterSpecApplyConfiguration struct {
 	Image            *RedpandaImageApplyConfiguration    `json:"image,omitempty"`
 	ImagePullSecrets []v1.LocalObjectReference           `json:"imagePullSecrets,omitempty"`
 	Enterprise       *EnterpriseApplyConfiguration       `json:"enterprise,omitempty"`
-	RackAwareness    *RackAwarenessApplyConfiguration    `json:"rackAwareness,omitempty"`
 	Auth             *AuthApplyConfiguration             `json:"auth,omitempty"`
 	Logging          *StretchLoggingApplyConfiguration   `json:"logging,omitempty"`
 	AuditLogging     *AuditLoggingApplyConfiguration     `json:"auditLogging,omitempty"`
@@ -76,14 +75,6 @@ func (b *StretchClusterSpecApplyConfiguration) WithImagePullSecrets(values ...v1
 // If called multiple times, the Enterprise field is set to the value of the last call.
 func (b *StretchClusterSpecApplyConfiguration) WithEnterprise(value *EnterpriseApplyConfiguration) *StretchClusterSpecApplyConfiguration {
 	b.Enterprise = value
-	return b
-}
-
-// WithRackAwareness sets the RackAwareness field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RackAwareness field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithRackAwareness(value *RackAwarenessApplyConfiguration) *StretchClusterSpecApplyConfiguration {
-	b.RackAwareness = value
 	return b
 }
 

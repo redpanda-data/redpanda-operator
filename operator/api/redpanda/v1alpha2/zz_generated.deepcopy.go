@@ -1432,6 +1432,11 @@ func (in *EmbeddedNodePoolSpec) DeepCopyInto(out *EmbeddedNodePoolSpec) {
 		*out = new(Monitoring)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.RackAwareness != nil {
+		in, out := &in.RackAwareness, &out.RackAwareness
+		*out = new(RackAwareness)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Storage != nil {
 		in, out := &in.Storage, &out.Storage
 		*out = new(StretchStorage)
@@ -5850,11 +5855,6 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 	if in.Enterprise != nil {
 		in, out := &in.Enterprise, &out.Enterprise
 		*out = new(Enterprise)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.RackAwareness != nil {
-		in, out := &in.RackAwareness, &out.RackAwareness
-		*out = new(RackAwareness)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Auth != nil {

@@ -409,20 +409,6 @@ spec:
                     - mcs
                     type: string
                 type: object
-              rackAwareness:
-                description: Defines rack awareness settings.
-                properties:
-                  enabled:
-                    description: Specifies whether rack awareness is enabled. When
-                      enabled, Kubernetes failure zones are treated as racks. Redpanda
-                      maps each rack to a failure zone and places partition replicas
-                      across them. Requires `rbac.enabled` set to `true`.
-                    type: boolean
-                  nodeAnnotation:
-                    description: Specifies the key in Node labels or annotations to
-                      use to denote failure zones.
-                    type: string
-                type: object
               resources:
                 description: |-
                   Defines container resource settings. Acts as a default for all NodePools;

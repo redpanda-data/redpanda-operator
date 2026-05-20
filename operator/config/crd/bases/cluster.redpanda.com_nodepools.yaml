@@ -9369,6 +9369,25 @@ spec:
                         type: object
                     type: object
                 type: object
+              rackAwareness:
+                description: |-
+                  RackAwareness configures rack awareness for the brokers in this
+                  NodePool. The node-annotation key that identifies a rack varies by
+                  cloud provider (and by on-prem topology), so the setting lives on
+                  the NodePool — each member K8s cluster picks the annotation that
+                  matches its underlying nodes.
+                properties:
+                  enabled:
+                    description: Specifies whether rack awareness is enabled. When
+                      enabled, Kubernetes failure zones are treated as racks. Redpanda
+                      maps each rack to a failure zone and places partition replicas
+                      across them. Requires `rbac.enabled` set to `true`.
+                    type: boolean
+                  nodeAnnotation:
+                    description: Specifies the key in Node labels or annotations to
+                      use to denote failure zones.
+                    type: string
+                type: object
               rbac:
                 description: |-
                   RBAC configures Role Based Access Control resources created in the

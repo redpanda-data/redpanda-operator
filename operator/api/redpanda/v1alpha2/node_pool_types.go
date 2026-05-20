@@ -210,6 +210,13 @@ type EmbeddedNodePoolSpec struct {
 	// where this NodePool runs.
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 
+	// RackAwareness configures rack awareness for the brokers in this
+	// NodePool. The node-annotation key that identifies a rack varies by
+	// cloud provider (and by on-prem topology), so the setting lives on
+	// the NodePool — each member K8s cluster picks the annotation that
+	// matches its underlying nodes.
+	RackAwareness *RackAwareness `json:"rackAwareness,omitempty"`
+
 	// Fields below override defaults inherited from the parent StretchCluster.
 	// When set, the NodePool value replaces the StretchCluster value entirely
 	// (no deep merge). When nil, the StretchCluster value applies.

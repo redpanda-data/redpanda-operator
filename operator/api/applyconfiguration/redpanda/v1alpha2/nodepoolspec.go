@@ -164,6 +164,14 @@ func (b *NodePoolSpecApplyConfiguration) WithMonitoring(value *MonitoringApplyCo
 	return b
 }
 
+// WithRackAwareness sets the RackAwareness field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RackAwareness field is set to the value of the last call.
+func (b *NodePoolSpecApplyConfiguration) WithRackAwareness(value *RackAwarenessApplyConfiguration) *NodePoolSpecApplyConfiguration {
+	b.EmbeddedNodePoolSpecApplyConfiguration.RackAwareness = value
+	return b
+}
+
 // WithStorage sets the Storage field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Storage field is set to the value of the last call.

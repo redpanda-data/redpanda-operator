@@ -34,6 +34,7 @@ type EmbeddedNodePoolSpecApplyConfiguration struct {
 	RBAC                       *RBACApplyConfiguration               `json:"rbac,omitempty"`
 	ServiceAccount             *ServiceAccountApplyConfiguration     `json:"serviceAccount,omitempty"`
 	Monitoring                 *MonitoringApplyConfiguration         `json:"monitoring,omitempty"`
+	RackAwareness              *RackAwarenessApplyConfiguration      `json:"rackAwareness,omitempty"`
 	Storage                    *StretchStorageApplyConfiguration     `json:"storage,omitempty"`
 	Resources                  *StretchResourcesApplyConfiguration   `json:"resources,omitempty"`
 	ImagePullSecrets           []v1.LocalObjectReference             `json:"imagePullSecrets,omitempty"`
@@ -179,6 +180,14 @@ func (b *EmbeddedNodePoolSpecApplyConfiguration) WithServiceAccount(value *Servi
 // If called multiple times, the Monitoring field is set to the value of the last call.
 func (b *EmbeddedNodePoolSpecApplyConfiguration) WithMonitoring(value *MonitoringApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
 	b.Monitoring = value
+	return b
+}
+
+// WithRackAwareness sets the RackAwareness field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RackAwareness field is set to the value of the last call.
+func (b *EmbeddedNodePoolSpecApplyConfiguration) WithRackAwareness(value *RackAwarenessApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
+	b.RackAwareness = value
 	return b
 }
 
