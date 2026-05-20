@@ -52,7 +52,6 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 	ports := perPodServicePorts(poolSpec)
 
 	name := PerPodServiceName(state.poolFullname(pool), ordinal)
-	annotations := map[string]string{}
 
 	// In flat network mode, ALL per-pod Services are rendered as headless
 	// without selectors. The controller manages EndpointSlices with actual
@@ -74,7 +73,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 			Name:        name,
 			Namespace:   state.namespace,
 			Labels:      labels,
-			Annotations: annotations,
+			Annotations: map[string]string{},
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,

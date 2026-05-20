@@ -91,9 +91,10 @@ func serviceInternal(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      state.ServiceName(),
-			Namespace: state.namespace,
-			Labels:    labels,
+			Name:        state.ServiceName(),
+			Namespace:   state.namespace,
+			Labels:      labels,
+			Annotations: state.Spec().InternalServiceAnnotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,

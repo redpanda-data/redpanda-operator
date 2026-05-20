@@ -18,18 +18,19 @@ import (
 // StretchClusterSpecApplyConfiguration represents a declarative configuration of the StretchClusterSpec type for use
 // with apply.
 type StretchClusterSpecApplyConfiguration struct {
-	CommonLabels     map[string]string                      `json:"commonLabels,omitempty"`
-	Image            *RedpandaImageApplyConfiguration       `json:"image,omitempty"`
-	ImagePullSecrets []v1.LocalObjectReference              `json:"imagePullSecrets,omitempty"`
-	Enterprise       *EnterpriseApplyConfiguration          `json:"enterprise,omitempty"`
-	Auth             *AuthApplyConfiguration                `json:"auth,omitempty"`
-	Logging          *StretchLoggingApplyConfiguration      `json:"logging,omitempty"`
-	AuditLogging     *StretchAuditLoggingApplyConfiguration `json:"auditLogging,omitempty"`
-	Resources        *StretchResourcesApplyConfiguration    `json:"resources,omitempty"`
-	Storage          *StretchStorageApplyConfiguration      `json:"storage,omitempty"`
-	Tuning           *StretchTuningApplyConfiguration       `json:"tuning,omitempty"`
-	Config           *ConfigApplyConfiguration              `json:"config,omitempty"`
-	Networking       *NetworkingApplyConfiguration          `json:"networking,omitempty"`
+	CommonLabels               map[string]string                      `json:"commonLabels,omitempty"`
+	InternalServiceAnnotations map[string]string                      `json:"internalServiceAnnotations,omitempty"`
+	Image                      *RedpandaImageApplyConfiguration       `json:"image,omitempty"`
+	ImagePullSecrets           []v1.LocalObjectReference              `json:"imagePullSecrets,omitempty"`
+	Enterprise                 *EnterpriseApplyConfiguration          `json:"enterprise,omitempty"`
+	Auth                       *AuthApplyConfiguration                `json:"auth,omitempty"`
+	Logging                    *StretchLoggingApplyConfiguration      `json:"logging,omitempty"`
+	AuditLogging               *StretchAuditLoggingApplyConfiguration `json:"auditLogging,omitempty"`
+	Resources                  *StretchResourcesApplyConfiguration    `json:"resources,omitempty"`
+	Storage                    *StretchStorageApplyConfiguration      `json:"storage,omitempty"`
+	Tuning                     *StretchTuningApplyConfiguration       `json:"tuning,omitempty"`
+	Config                     *ConfigApplyConfiguration              `json:"config,omitempty"`
+	Networking                 *NetworkingApplyConfiguration          `json:"networking,omitempty"`
 }
 
 // StretchClusterSpecApplyConfiguration constructs a declarative configuration of the StretchClusterSpec type for use with
@@ -48,6 +49,20 @@ func (b *StretchClusterSpecApplyConfiguration) WithCommonLabels(entries map[stri
 	}
 	for k, v := range entries {
 		b.CommonLabels[k] = v
+	}
+	return b
+}
+
+// WithInternalServiceAnnotations puts the entries into the InternalServiceAnnotations field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the InternalServiceAnnotations field,
+// overwriting an existing map entries in InternalServiceAnnotations field with the same key.
+func (b *StretchClusterSpecApplyConfiguration) WithInternalServiceAnnotations(entries map[string]string) *StretchClusterSpecApplyConfiguration {
+	if b.InternalServiceAnnotations == nil && len(entries) > 0 {
+		b.InternalServiceAnnotations = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.InternalServiceAnnotations[k] = v
 	}
 	return b
 }

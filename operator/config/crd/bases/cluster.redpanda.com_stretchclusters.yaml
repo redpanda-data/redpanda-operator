@@ -376,6 +376,18 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              internalServiceAnnotations:
+                additionalProperties:
+                  type: string
+                description: |-
+                  InternalServiceAnnotations is applied to the headless ClusterIP
+                  Service rendered for each member K8s cluster. The headless Service is
+                  cluster-wide (one per K8s cluster, not per NodePool), so its
+                  annotations live on StretchCluster.spec rather than on individual
+                  pools. Typical use: annotations consumed by other operators or
+                  controllers in the same cluster (DNS controllers, service-mesh
+                  sidecars, etc.) that need to attach to the headless Service.
+                type: object
               logging:
                 description: Defines the log level settings.
                 properties:

@@ -5902,6 +5902,13 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.InternalServiceAnnotations != nil {
+		in, out := &in.InternalServiceAnnotations, &out.InternalServiceAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Image != nil {
 		in, out := &in.Image, &out.Image
 		*out = new(RedpandaImage)
