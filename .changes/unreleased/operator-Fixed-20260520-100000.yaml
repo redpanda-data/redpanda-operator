@@ -1,0 +1,11 @@
+project: operator
+kind: Fixed
+body: |
+  Tightened the rolling restart gate so a single reconcile never deletes more than
+  one broker pod. The "pod has no matching broker in cluster view" branch used to
+  delete and continue, which meant a transient admin-API blip or address-format
+  mismatch could classify every pod as orphan and tear them all down in one pass —
+  now we delete one and requeue. The brokerMap parser also now strips a "host:port"
+  suffix and keys by both the first DNS label and the raw host, so a freshly-restarted
+  broker advertising "pod.svc:33145" is recognized instead of being misclassified.
+time: 2026-05-20T10:00:00.000000-07:00
