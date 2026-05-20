@@ -37,6 +37,7 @@ type EmbeddedNodePoolSpecApplyConfiguration struct {
 	Storage                    *StretchStorageApplyConfiguration     `json:"storage,omitempty"`
 	Resources                  *StretchResourcesApplyConfiguration   `json:"resources,omitempty"`
 	ImagePullSecrets           []v1.LocalObjectReference             `json:"imagePullSecrets,omitempty"`
+	Logging                    *StretchLoggingApplyConfiguration     `json:"logging,omitempty"`
 }
 
 // EmbeddedNodePoolSpecApplyConfiguration constructs a declarative configuration of the EmbeddedNodePoolSpec type for use with
@@ -204,5 +205,13 @@ func (b *EmbeddedNodePoolSpecApplyConfiguration) WithImagePullSecrets(values ...
 	for i := range values {
 		b.ImagePullSecrets = append(b.ImagePullSecrets, values[i])
 	}
+	return b
+}
+
+// WithLogging sets the Logging field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Logging field is set to the value of the last call.
+func (b *EmbeddedNodePoolSpecApplyConfiguration) WithLogging(value *StretchLoggingApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
+	b.Logging = value
 	return b
 }

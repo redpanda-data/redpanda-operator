@@ -225,6 +225,11 @@ type EmbeddedNodePoolSpec struct {
 	// ImagePullSecrets overrides StretchCluster.Spec.ImagePullSecrets for
 	// this NodePool. Useful for per-cluster registry mirrors.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// Logging overrides StretchCluster.Spec.Logging for this NodePool.
+	// Useful during incidents where only a subset of brokers in one
+	// region needs an elevated log level for investigation.
+	Logging *StretchLogging `json:"logging,omitempty"`
 }
 
 // NodePoolServices configures overrides for Services created by the operator

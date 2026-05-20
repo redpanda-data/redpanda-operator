@@ -1122,6 +1122,23 @@ spec:
                         type: object
                     type: object
                 type: object
+              logging:
+                description: |-
+                  Logging overrides StretchCluster.Spec.Logging for this NodePool.
+                  Useful during incidents where only a subset of brokers in one
+                  region needs an elevated log level for investigation.
+                properties:
+                  logLevel:
+                    description: Specifies the log level.
+                    type: string
+                  usageStats:
+                    description: Defines settings for usage statistics reporting.
+                    properties:
+                      enabled:
+                        description: Specifies whether usage statistics are enabled.
+                        type: boolean
+                    type: object
+                type: object
               monitoring:
                 description: |-
                   Monitoring configures the ServiceMonitor created in the K8s cluster

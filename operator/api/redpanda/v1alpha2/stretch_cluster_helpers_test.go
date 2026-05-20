@@ -1536,6 +1536,57 @@ func TestNodePool(t *testing.T) {
 	})
 }
 
+// TestEmbeddedNodePoolSpec_MergeDefaultsFrom_LoggingInheritance covers the
+// Logging override added per Rafał's review feedback: during an incident, an
+// operator may need to crank up the log level on one region's brokers
+// without touching the rest of the cluster. Cluster-wide Logging acts as a
+// default; per-pool Logging wins when set.
+func TestEmbeddedNodePoolSpec_MergeDefaultsFrom_LoggingInheritance(t *testing.T) {
+	t.Run("inherits cluster Logging when pool has none", func(t *testing.T) {
+		cluster := &redpandav1alpha2.StretchClusterSpec{
+			Logging: &redpandav1alpha2.StretchLogging{LogLevel: ptr.To("debug")},
+		}
+		cluster.MergeDefaults()
+
+		pool := &redpandav1alpha2.EmbeddedNodePoolSpec{}
+		pool.MergeDefaultsFrom(cluster)
+
+		require.NotNil(t, pool.Logging)
+		require.NotNil(t, pool.Logging.LogLevel)
+		assert.Equal(t, "debug", *pool.Logging.LogLevel)
+	})
+
+	t.Run("per-pool Logging wins over cluster value", func(t *testing.T) {
+		cluster := &redpandav1alpha2.StretchClusterSpec{
+			Logging: &redpandav1alpha2.StretchLogging{LogLevel: ptr.To("info")},
+		}
+		cluster.MergeDefaults()
+
+		pool := &redpandav1alpha2.EmbeddedNodePoolSpec{
+			Logging: &redpandav1alpha2.StretchLogging{LogLevel: ptr.To("trace")},
+		}
+		pool.MergeDefaultsFrom(cluster)
+
+		require.NotNil(t, pool.Logging)
+		require.NotNil(t, pool.Logging.LogLevel)
+		assert.Equal(t, "trace", *pool.Logging.LogLevel)
+	})
+
+	t.Run("inherits the cluster's defaulted Logging when neither side set anything", func(t *testing.T) {
+		cluster := &redpandav1alpha2.StretchClusterSpec{}
+		cluster.MergeDefaults()
+		require.NotNil(t, cluster.Logging, "MergeDefaults should populate a Logging block at the cluster level")
+
+		pool := &redpandav1alpha2.EmbeddedNodePoolSpec{}
+		pool.MergeDefaultsFrom(cluster)
+
+		// Pool ends up with the cluster's defaulted Logging block —
+		// inheritFromCluster runs after the cluster's own defaulting, so
+		// the pool sees whatever the cluster sees.
+		assert.Equal(t, cluster.Logging, pool.Logging)
+	})
+}
+
 func TestInitContainerFlags(t *testing.T) {
 	t.Run("FsValidator", func(t *testing.T) {
 		t.Run("IsEnabled", func(t *testing.T) {

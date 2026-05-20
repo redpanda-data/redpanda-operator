@@ -1309,6 +1309,9 @@ func (s *EmbeddedNodePoolSpec) inheritFromCluster(cluster *StretchClusterSpec) {
 	if len(s.ImagePullSecrets) == 0 && len(cluster.ImagePullSecrets) > 0 {
 		s.ImagePullSecrets = append([]corev1.LocalObjectReference(nil), cluster.ImagePullSecrets...)
 	}
+	if s.Logging == nil && cluster.Logging != nil {
+		s.Logging = cluster.Logging.DeepCopy()
+	}
 }
 
 func (s *StretchClusterSpec) mergeDefaultStorage() { fillStretchStorageDefaults(&s.Storage) }

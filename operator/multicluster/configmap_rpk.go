@@ -132,8 +132,11 @@ func kafkaClientConfig(state *RenderState, pool *redpandav1alpha2.NodePool, clie
 func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.NodePool) []string {
 	var flags []string
 
-	// Add logging level.
-	if log := state.Spec().Logging; log != nil && log.LogLevel != nil {
+	// Add logging level. Read from the (already-defaulted) pool spec so
+	// per-pool overrides win. inheritFromCluster copies the cluster value
+	// into the pool when the pool didn't set its own, so this also covers
+	// the cluster-wide default case.
+	if log := state.PoolSpec(pool).Logging; log != nil && log.LogLevel != nil {
 		flags = append(flags, fmt.Sprintf("--default-log-level=%s", *log.LogLevel))
 	}
 
