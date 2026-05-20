@@ -18,18 +18,18 @@ import (
 // StretchClusterSpecApplyConfiguration represents a declarative configuration of the StretchClusterSpec type for use
 // with apply.
 type StretchClusterSpecApplyConfiguration struct {
-	CommonLabels     map[string]string                   `json:"commonLabels,omitempty"`
-	Image            *RedpandaImageApplyConfiguration    `json:"image,omitempty"`
-	ImagePullSecrets []v1.LocalObjectReference           `json:"imagePullSecrets,omitempty"`
-	Enterprise       *EnterpriseApplyConfiguration       `json:"enterprise,omitempty"`
-	Auth             *AuthApplyConfiguration             `json:"auth,omitempty"`
-	Logging          *StretchLoggingApplyConfiguration   `json:"logging,omitempty"`
-	AuditLogging     *AuditLoggingApplyConfiguration     `json:"auditLogging,omitempty"`
-	Resources        *StretchResourcesApplyConfiguration `json:"resources,omitempty"`
-	Storage          *StretchStorageApplyConfiguration   `json:"storage,omitempty"`
-	Tuning           *StretchTuningApplyConfiguration    `json:"tuning,omitempty"`
-	Config           *ConfigApplyConfiguration           `json:"config,omitempty"`
-	Networking       *NetworkingApplyConfiguration       `json:"networking,omitempty"`
+	CommonLabels     map[string]string                      `json:"commonLabels,omitempty"`
+	Image            *RedpandaImageApplyConfiguration       `json:"image,omitempty"`
+	ImagePullSecrets []v1.LocalObjectReference              `json:"imagePullSecrets,omitempty"`
+	Enterprise       *EnterpriseApplyConfiguration          `json:"enterprise,omitempty"`
+	Auth             *AuthApplyConfiguration                `json:"auth,omitempty"`
+	Logging          *StretchLoggingApplyConfiguration      `json:"logging,omitempty"`
+	AuditLogging     *StretchAuditLoggingApplyConfiguration `json:"auditLogging,omitempty"`
+	Resources        *StretchResourcesApplyConfiguration    `json:"resources,omitempty"`
+	Storage          *StretchStorageApplyConfiguration      `json:"storage,omitempty"`
+	Tuning           *StretchTuningApplyConfiguration       `json:"tuning,omitempty"`
+	Config           *ConfigApplyConfiguration              `json:"config,omitempty"`
+	Networking       *NetworkingApplyConfiguration          `json:"networking,omitempty"`
 }
 
 // StretchClusterSpecApplyConfiguration constructs a declarative configuration of the StretchClusterSpec type for use with
@@ -97,7 +97,7 @@ func (b *StretchClusterSpecApplyConfiguration) WithLogging(value *StretchLogging
 // WithAuditLogging sets the AuditLogging field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the AuditLogging field is set to the value of the last call.
-func (b *StretchClusterSpecApplyConfiguration) WithAuditLogging(value *AuditLoggingApplyConfiguration) *StretchClusterSpecApplyConfiguration {
+func (b *StretchClusterSpecApplyConfiguration) WithAuditLogging(value *StretchAuditLoggingApplyConfiguration) *StretchClusterSpecApplyConfiguration {
 	b.AuditLogging = value
 	return b
 }

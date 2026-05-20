@@ -1095,7 +1095,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("all conditions met", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.3.1")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(true)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(true)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)}},
 			}
 			assert.True(t, spec.IsAuditLoggingEnabled())
@@ -1104,7 +1104,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("version too old", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.2.0")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(true)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(true)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)}},
 			}
 			assert.False(t, spec.IsAuditLoggingEnabled())
@@ -1113,7 +1113,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("audit logging disabled", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.3.1")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(false)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(false)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)}},
 			}
 			assert.False(t, spec.IsAuditLoggingEnabled())
@@ -1122,7 +1122,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("SASL disabled", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.3.1")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(true)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(true)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(false)}},
 			}
 			assert.False(t, spec.IsAuditLoggingEnabled())

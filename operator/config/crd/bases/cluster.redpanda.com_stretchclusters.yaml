@@ -54,49 +54,43 @@ spec:
                 description: Defines audit logging settings.
                 properties:
                   clientMaxBufferSize:
-                    description: Defines the number of bytes (in bytes) allocated
-                      by the internal audit client for audit messages.
+                    description: Number of bytes allocated by the internal audit client
+                      for audit messages.
                     type: integer
                   enabled:
-                    description: Specifies whether to enable audit logging or not
+                    description: Specifies whether to enable audit logging or not.
                     type: boolean
                   enabledEventTypes:
-                    description: Event types that should be captured by audit logs
+                    description: Event types that should be captured by audit logs.
                     items:
                       type: string
                     type: array
                   excludedPrincipals:
-                    description: List of principals to exclude from auditing
+                    description: List of principals to exclude from auditing.
                     items:
                       type: string
                     type: array
                   excludedTopics:
-                    description: List of topics to exclude from auditing
+                    description: List of topics to exclude from auditing.
                     items:
                       type: string
                     type: array
-                  listener:
-                    description: Kafka external listener name, note that it must have
-                      `authenticationMethod` set to sasl
-                    type: string
                   partitions:
                     description: Integer value defining the number of partitions used
-                      by a newly created audit topic
+                      by a newly created audit topic.
                     type: integer
                   queueDrainIntervalMs:
-                    description: In ms, frequency in which per shard audit logs are
-                      batched to client for write to audit log.
+                    description: Frequency in milliseconds at which per-shard audit
+                      logs are batched and written.
                     type: integer
                   queueMaxBufferSizePerShard:
-                    description: Defines the maximum amount of memory used (in bytes)
-                      by the audit buffer in each shard
+                    description: Maximum amount of memory (in bytes) used by the audit
+                      buffer in each shard.
                     type: integer
                   replicationFactor:
                     description: |-
-                      Defines the replication factor for a newly created audit log topic. This configuration applies
-                      only to the audit log topic and may be different from the cluster or other topic configurations.
-                      This cannot be altered for existing audit log topics. Setting this value is optional. If a value is not provided,
-                      Redpanda will use the `internal_topic_replication_factor` cluster config value. Default is `null`
+                      Replication factor for a newly created audit log topic. Defaults to
+                      `internal_topic_replication_factor` when nil.
                     type: integer
                 type: object
               auth:

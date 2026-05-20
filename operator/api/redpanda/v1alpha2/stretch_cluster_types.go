@@ -57,7 +57,7 @@ type StretchClusterSpec struct {
 	Logging *StretchLogging `json:"logging,omitempty"`
 
 	// Defines audit logging settings.
-	AuditLogging *AuditLogging `json:"auditLogging,omitempty"`
+	AuditLogging *StretchAuditLogging `json:"auditLogging,omitempty"`
 
 	// Defines container resource settings. Acts as a default for all NodePools;
 	// may be overridden per-NodePool via NodePool.Spec.Resources.
@@ -237,6 +237,35 @@ type StretchTieredConfig struct {
 	CloudStorageUploadCtrlMinShares         *int    `json:"cloud_storage_upload_ctrl_min_shares,omitempty"`
 	CloudStorageUploadCtrlPCoeff            *int    `json:"cloud_storage_upload_ctrl_p_coeff,omitempty"`
 	CloudStorageUploadCtrlUpdateIntervalMs  *int    `json:"cloud_storage_upload_ctrl_update_interval_ms,omitempty"`
+}
+
+// StretchAuditLogging configures audit logging for a stretch cluster.
+//
+// Forked from AuditLogging: the upstream Listener field referenced a Kafka
+// external listener by name, but stretch-cluster listeners now live on each
+// NodePool, so a cluster-scoped Listener pointer is meaningless. The
+// internal `audit` listener handles audit log delivery; users no longer
+// need to (or can) point at a named external listener.
+type StretchAuditLogging struct {
+	// Specifies whether to enable audit logging or not.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Integer value defining the number of partitions used by a newly created audit topic.
+	Partitions *int `json:"partitions,omitempty"`
+	// Event types that should be captured by audit logs.
+	EnabledEventTypes []string `json:"enabledEventTypes,omitempty"`
+	// List of topics to exclude from auditing.
+	ExcludedTopics []string `json:"excludedTopics,omitempty"`
+	// List of principals to exclude from auditing.
+	ExcludedPrincipals []string `json:"excludedPrincipals,omitempty"`
+	// Number of bytes allocated by the internal audit client for audit messages.
+	ClientMaxBufferSize *int `json:"clientMaxBufferSize,omitempty"`
+	// Frequency in milliseconds at which per-shard audit logs are batched and written.
+	QueueDrainIntervalMs *int `json:"queueDrainIntervalMs,omitempty"`
+	// Maximum amount of memory (in bytes) used by the audit buffer in each shard.
+	QueueMaxBufferSizePerShard *int `json:"queueMaxBufferSizePerShard,omitempty"`
+	// Replication factor for a newly created audit log topic. Defaults to
+	// `internal_topic_replication_factor` when nil.
+	ReplicationFactor *int `json:"replicationFactor,omitempty"`
 }
 
 // StretchLogging defines log level settings for stretch clusters.
