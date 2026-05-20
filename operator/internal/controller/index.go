@@ -141,6 +141,42 @@ func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr multicluster
 	})
 }
 
+// EnqueueStretchClusterReferencesFromNodePool returns an EventHandlerFunc
+// suitable for `builder.Watches(&NodePool{}, ...)`. Given a NodePool event,
+// it looks up every object indexed against the StretchCluster that NodePool
+// points at and enqueues each one. It reuses the same index registered via
+// RegisterStretchClusterSourceIndex under `name`, so a single index serves
+// both the StretchCluster watch and the NodePool watch.
+//
+// Used by the Console controller so that updates to a stretch cluster's
+// pool — which Console reads per-K8s-cluster TLS/listener/clusterDomain
+// from via the pinned-pool annotation — re-trigger a render. Without this,
+// Console's rendered config can stay stale indefinitely.
+func EnqueueStretchClusterReferencesFromNodePool[T client.Object, U clientList[T]](mgr multicluster.Manager, name, clusterName string, l U) mchandler.EventHandlerFunc {
+	return mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+		pool, ok := o.(*redpandav1alpha2.NodePool)
+		if !ok {
+			return nil
+		}
+		if !pool.Spec.ClusterRef.IsStretchCluster() {
+			return nil
+		}
+		cluster, err := mgr.GetCluster(ctx, clusterName)
+		if err != nil {
+			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation: cannot fetch cluster", name), "cluster", clusterName, "error", err)
+			return nil
+		}
+		list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
+		scKey := types.NamespacedName{Namespace: pool.Namespace, Name: pool.Spec.ClusterRef.Name}
+		requests, err := sourceClusters(ctx, cluster.GetClient(), list, name, scKey)
+		if err != nil {
+			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation: index lookup failed", name), "error", err)
+			return nil
+		}
+		return requests
+	})
+}
+
 func FromSourceCluster[T client.Object, U clientList[T]](ctx context.Context, c client.Client, name string, cluster *redpandav1alpha2.Redpanda, l U) ([]T, error) {
 	list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
 	err := c.List(ctx, list, &client.ListOptions{

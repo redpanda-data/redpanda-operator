@@ -186,13 +186,26 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 	}
 
 	// Re-enqueue Console CRs that reference a StretchCluster. Redpanda CRs
-	// are not deployed in multicluster mode, so no Redpanda watch is needed.
+	// are not deployed in multicluster mode, so no Redpanda watch is
+	// needed.
+	//
+	// We additionally watch NodePool because Console's rendered config
+	// reads per-K8s-cluster TLS, listener ports, and clusterDomain from
+	// the pinned source NodePool (via stretchSourcePoolAnnotation). A
+	// StretchCluster-only watch would let those fields update silently
+	// and Console would never re-render. The NodePool handler reuses the
+	// same `console_stretch` index registered just above — both kinds of
+	// events translate to the same set of Consoles that reference the
+	// StretchCluster the pool belongs to.
 	for _, clusterName := range mgr.GetClusterNames() {
 		stretchHandler, err := controller.RegisterStretchClusterSourceIndex(ctx, mgr, "console_stretch", clusterName, &redpandav1alpha2.Console{}, &redpandav1alpha2.ConsoleList{})
 		if err != nil {
 			return err
 		}
 		builder.Watches(&redpandav1alpha2.StretchCluster{}, stretchHandler, controller.WatchOptions(clusterName)...)
+
+		poolHandler := controller.EnqueueStretchClusterReferencesFromNodePool(mgr, "console_stretch", clusterName, &redpandav1alpha2.ConsoleList{})
+		builder.Watches(&redpandav1alpha2.NodePool{}, poolHandler, controller.WatchOptions(clusterName)...)
 	}
 
 	return builder.Complete(c)
