@@ -742,15 +742,13 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 
 	sc := state.cluster.StretchCluster
 
-	// CA bootstrap covers only the operator's well-known cert names which
-	// every NodePool inherits via mergeDefaultTLS. Any custom cert names a
-	// user puts on a NodePool are expected to come with a SecretRef or
-	// IssuerRef (BYO), so they don't need a bootstrapped CA. Keeping this
-	// list static here means CA sync doesn't depend on NodePools existing.
-	managedCerts := []string{
-		redpandav1alpha2.DefaultCertName,
-		redpandav1alpha2.ExternalCertName,
-	}
+	// Derive the managed-cert set from the same defaulted NodePool specs
+	// that drive Issuer rendering, so cert-manager always has the CA Secret
+	// it needs to issue leaf certs (and we don't create CA Secrets for
+	// cert names that only use SecretRef/IssuerRef). Falls back to the
+	// well-known {default, external} when no NodePools exist yet so the CA
+	// can be pre-bootstrapped before the first pool lands.
+	managedCerts := rendermulticluster.ManagedCertNamesForBootstrap(sc, state.cluster.GetAllNodePools())
 
 	clusterNames := r.Manager.GetClusterNames()
 

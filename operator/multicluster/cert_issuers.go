@@ -86,6 +86,46 @@ func CASecretName(stretchClusterName, certName string) string {
 	return fmt.Sprintf("%s-%s-root-certificate", stretchClusterName, certName)
 }
 
+// ManagedCertNamesForBootstrap returns the union of cert names that require
+// operator-managed CA bootstrapping across the given NodePools, after
+// applying StretchCluster defaults. The result is the input to syncCA: it
+// must agree with the cert names that certIssuers will eventually render
+// Issuers for, otherwise either a CA Secret is missing (cert-manager can't
+// issue) or a CA Secret is created for a cert name no pool actually needs
+// (wasted Secret).
+//
+// When no pools exist yet, the well-known operator-managed names
+// {default, external} are returned so the CA can be bootstrapped ahead of
+// pool creation; once any pool is added, the union is derived from that
+// pool's defaulted TLS configuration alone.
+//
+// Pools/clusters are deep-copied internally before defaulting, so the
+// caller's objects are not mutated.
+func ManagedCertNamesForBootstrap(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.NodePool) []string {
+	if cluster == nil || len(pools) == 0 {
+		return []string{redpandav1alpha2.DefaultCertName, redpandav1alpha2.ExternalCertName}
+	}
+
+	clusterCopy := cluster.DeepCopy()
+	clusterCopy.Spec.MergeDefaults()
+
+	seen := map[string]bool{}
+	for _, p := range pools {
+		pc := p.DeepCopy()
+		pc.Spec.MergeDefaultsFrom(&clusterCopy.Spec)
+		for _, name := range BootstrappedCertNames(&pc.Spec.EmbeddedNodePoolSpec) {
+			seen[name] = true
+		}
+	}
+
+	names := make([]string, 0, len(seen))
+	for name := range seen {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
 // certIssuers returns all cert-manager CA Issuers for the given RenderState.
 // Issuers stay per-cluster (one per cert name across all pools) because they
 // reference the shared root-CA Secret synced across member clusters. The set
