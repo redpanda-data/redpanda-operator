@@ -1112,6 +1112,46 @@ func TestNodePool(t *testing.T) {
 			expected:  metav1.ConditionFalse,
 			setFn:     func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonTerminalError, "reason") },
 		},
+		"ExternalAccessReady/Available": {
+			condition: NodePoolExternalAccessReady,
+			reason:    string(NodePoolExternalAccessReadyReasonAvailable),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *NodePoolStatus) {
+				status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonAvailable, "reason")
+			},
+		},
+		"ExternalAccessReady/Disabled": {
+			condition: NodePoolExternalAccessReady,
+			reason:    string(NodePoolExternalAccessReadyReasonDisabled),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *NodePoolStatus) {
+				status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonDisabled, "reason")
+			},
+		},
+		"ExternalAccessReady/NodePortConflict": {
+			condition: NodePoolExternalAccessReady,
+			reason:    string(NodePoolExternalAccessReadyReasonNodePortConflict),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *NodePoolStatus) {
+				status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonNodePortConflict, "reason")
+			},
+		},
+		"ExternalAccessReady/Error": {
+			condition: NodePoolExternalAccessReady,
+			reason:    string(NodePoolExternalAccessReadyReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *NodePoolStatus) {
+				status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonError, "reason")
+			},
+		},
+		"ExternalAccessReady/TerminalError": {
+			condition: NodePoolExternalAccessReady,
+			reason:    string(NodePoolExternalAccessReadyReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *NodePoolStatus) {
+				status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonTerminalError, "reason")
+			},
+		},
 	} {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
@@ -1150,6 +1190,9 @@ func TestNodePool(t *testing.T) {
 			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetDeployed(NodePoolDeployedReasonDeployed, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonAvailable, "reason")
 			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
 		})
 	}
@@ -1163,12 +1206,27 @@ func TestNodePool(t *testing.T) {
 			setTransientErrFn: func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonError, "reason") },
 			setConditionReasons: []setNodePoolFunc{
 				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
+				func(status *NodePoolStatus) {
+					status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonAvailable, "reason")
+				},
 			},
 		},
 		"Transient Error: Error, Condition: Deployed": {
 			setTransientErrFn: func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonError, "reason") },
 			setConditionReasons: []setNodePoolFunc{
 				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+				func(status *NodePoolStatus) {
+					status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonAvailable, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: ExternalAccessReady": {
+			setTransientErrFn: func(status *NodePoolStatus) {
+				status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonError, "reason")
+			},
+			setConditionReasons: []setNodePoolFunc{
+				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
 			},
 		},
 	} {
@@ -1193,6 +1251,9 @@ func TestNodePool(t *testing.T) {
 	for name, setFn := range map[string]setNodePoolFunc{
 		"Terminal Error: TerminalError, Condition: Bound":    func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonTerminalError, "reason") },
 		"Terminal Error: TerminalError, Condition: Deployed": func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: ExternalAccessReady": func(status *NodePoolStatus) {
+			status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonTerminalError, "reason")
+		},
 	} {
 		setFn := setFn
 		t.Run(name, func(t *testing.T) {
@@ -1223,6 +1284,9 @@ func TestNodePool(t *testing.T) {
 			trueConditions: []setNodePoolFunc{
 				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
 				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
+				func(status *NodePoolStatus) {
+					status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonAvailable, "reason")
+				},
 			},
 		},
 		"Rollup Conditions: Stable, False Condition: Bound": {
@@ -1232,6 +1296,9 @@ func TestNodePool(t *testing.T) {
 			falseCondition: func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonTerminalError, "reason") },
 			trueConditions: []setNodePoolFunc{
 				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
+				func(status *NodePoolStatus) {
+					status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonAvailable, "reason")
+				},
 			},
 		},
 		"Rollup Conditions: Stable, False Condition: Deployed": {
@@ -1241,6 +1308,21 @@ func TestNodePool(t *testing.T) {
 			falseCondition: func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonTerminalError, "reason") },
 			trueConditions: []setNodePoolFunc{
 				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+				func(status *NodePoolStatus) {
+					status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonAvailable, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: ExternalAccessReady": {
+			condition:   NodePoolStable,
+			trueReason:  string(NodePoolStableReasonStable),
+			falseReason: string(NodePoolStableReasonUnstable),
+			falseCondition: func(status *NodePoolStatus) {
+				status.SetExternalAccessReady(NodePoolExternalAccessReadyReasonTerminalError, "reason")
+			},
+			trueConditions: []setNodePoolFunc{
+				func(status *NodePoolStatus) { status.SetBound(NodePoolBoundReasonBound, "reason") },
+				func(status *NodePoolStatus) { status.SetDeployed(NodePoolDeployedReasonDeployed, "reason") },
 			},
 		},
 	} {

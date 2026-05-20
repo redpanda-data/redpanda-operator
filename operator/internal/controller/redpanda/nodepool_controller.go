@@ -11,6 +11,7 @@ package redpanda
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 	"time"
@@ -26,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
@@ -38,6 +40,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -57,6 +60,17 @@ type NodePoolReconciler struct {
 func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 	mgr.GetLogger().WithName("SetupWithMultiClusterManager").Info("registering NodePool controller", "knownClusters", createCanonicalClusterNameList(mgr))
 	return mcbuilder.ControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			// Mirrors SetupMulticlusterController: the multicluster
+			// runtime currently doesn't hand the global option off to
+			// controller registration cleanly, so booting more than one
+			// manager in-process (e.g. the integration test env with
+			// three raft peers) hits "controller with name X already
+			// exists". Disabling name validation here matches the
+			// StretchCluster reconciler's setup and is safe in
+			// production where there is only one manager per process.
+			SkipNameValidation: ptr.To(true),
+		}).
 		For(
 			&redpandav1alpha2.NodePool{},
 			mcbuilder.WithEngageWithLocalCluster(true),
@@ -308,6 +322,10 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		status.SetBound(statuses.NodePoolBoundReasonBound)
 	}
 
+	if err := r.setExternalAccessReady(ctx, k8sClient, pool, &status); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if status.UpdateConditions(pool) ||
 		!reflect.DeepEqual(originalPoolStatus, pool.Status.EmbeddedNodePoolStatus) ||
 		(pool.Status.DeployedGeneration != originalPoolGeneration) {
@@ -315,6 +333,90 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// setExternalAccessReady writes the ExternalAccessReady condition based on
+// this pool's external configuration and any cross-pool nodePort conflicts
+// with sibling pools in the same Kubernetes cluster.
+//
+// Reasons:
+//   - Disabled: this pool has external access turned off (or no external
+//     Service requested), so there is nothing to provision.
+//   - NodePortConflict: this pool is stretch-cluster-backed and another
+//     local sibling pool already claims one of the requested nodePort
+//     numbers. The lexically-first pool wins; subsequent pools surface
+//     this condition until the user disambiguates with explicit
+//     external.advertisedPorts overrides.
+//   - Available: external access is configured and no conflict was
+//     detected. Single-cluster pools also get Available here — the v1
+//     chart renderer only produces one external Service per Redpanda
+//     cluster, so cross-pool nodePort conflicts in that path are not
+//     possible.
+func (r *NodePoolReconciler) setExternalAccessReady(
+	ctx context.Context,
+	k8sClient client.Client,
+	pool *redpandav1alpha2.NodePool,
+	status *statuses.NodePoolStatus,
+) error {
+	ext := pool.Spec.External
+	extWanted := ext != nil && ext.IsEnabled() && (ext.Service == nil || ext.Service.IsEnabled())
+	if !extWanted {
+		status.SetExternalAccessReady(statuses.NodePoolExternalAccessReadyReasonDisabled)
+		return nil
+	}
+
+	if !pool.Spec.ClusterRef.IsStretchCluster() {
+		status.SetExternalAccessReady(statuses.NodePoolExternalAccessReadyReasonAvailable)
+		return nil
+	}
+
+	var siblings redpandav1alpha2.NodePoolList
+	if err := k8sClient.List(ctx, &siblings, client.InNamespace(pool.Namespace)); err != nil {
+		return err
+	}
+	var localPools []*redpandav1alpha2.NodePool
+	for i := range siblings.Items {
+		sp := &siblings.Items[i]
+		if !sp.Spec.ClusterRef.IsStretchCluster() {
+			continue
+		}
+		if sp.Spec.ClusterRef.Name != pool.Spec.ClusterRef.Name {
+			continue
+		}
+		localPools = append(localPools, sp)
+	}
+
+	// Fall through with sc=nil when the parent is briefly missing — the
+	// pool is technically unbound (Bound=False covers that), and we want
+	// ExternalAccessReady to still transition off the default
+	// "NotReconciled" reason so consumers see a real verdict. With nil
+	// cluster DetectExternalNodePortConflicts can't apply cluster
+	// defaults, but the per-pool listener/external defaults still kick in
+	// from MergeDefaultsFrom(zero-value) so collision detection runs the
+	// same way it would once the parent reappears.
+	var sc *redpandav1alpha2.StretchCluster
+	var fetched redpandav1alpha2.StretchCluster
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: pool.Namespace}, &fetched); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+	} else {
+		sc = &fetched
+	}
+
+	conflicts := rendermulticluster.DetectExternalNodePortConflicts(sc, localPools)
+	for _, c := range conflicts {
+		if c.Pool != pool.Name {
+			continue
+		}
+		status.SetExternalAccessReady(
+			statuses.NodePoolExternalAccessReadyReasonNodePortConflict,
+			fmt.Sprintf("conflicts with NodePool %q on nodePort(s) %v; override external.advertisedPorts on one of the pools to disambiguate", c.ConflictsWith, c.Ports),
+		)
+		return nil
+	}
+	status.SetExternalAccessReady(statuses.NodePoolExternalAccessReadyReasonAvailable)
+	return nil
 }
 
 func (r *NodePoolReconciler) getRedpandaCluster(

@@ -9531,51 +9531,6 @@
     type: NodePort
   status:
     loadBalancer: {}
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-hot-external
-    namespace: full-featured
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 0
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 0
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 0
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 0
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda-pool-hot
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -15165,50 +15120,6 @@
     selector:
       app.kubernetes.io/cluster-name: test
       app.kubernetes.io/component: redpanda-pool-a
-      app.kubernetes.io/instance: multi-pool
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-pool-b-external
-    namespace: multi-pool
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 0
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 0
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 0
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 0
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda-pool-b
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/name: redpanda
     sessionAffinity: None

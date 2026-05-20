@@ -100,7 +100,14 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		WatchAllNamespaces: true,
 		InstallCertManager: true,
 		SetupFn: func(mgr multicluster.Manager) error {
-			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil, 0)
+			if err := redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil, 0); err != nil {
+				return err
+			}
+			// Production cmd/multicluster registers both reconcilers
+			// (cmd/multicluster/multicluster.go); the NodePool reconciler
+			// is where per-pool status conditions like
+			// ExternalAccessReady are written.
+			return redpanda.SetupWithMultiClusterManager(mgr)
 		},
 	})
 }
@@ -417,6 +424,170 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 	// Verify the CA in the leaf cert matches the user-provided CA.
 	require.True(t, bytes.Equal(ca.Bytes(), leafCACerts[0]),
 		"ca.crt in leaf cert does not match the user-provided CA")
+}
+
+// TestExternalNodePortConflict verifies the ExternalAccessReady condition
+// fires correctly when two local NodePools both request the default
+// external NodePort numbers. Each NodePort is a cluster-wide allocation,
+// so the API server rejects the second Service — to avoid the resulting
+// reconcile-error loop the renderer skips the conflicting Service and the
+// NodePoolReconciler surfaces the situation as ExternalAccessReady=False
+// with reason NodePortConflict on the losing pool. The winning pool
+// (lexically first) gets ExternalAccessReady=True/Available.
+//
+// We only need to exercise the local-K8s-cluster side of the conflict —
+// NodePort allocation is per K8s cluster, so two pools in different
+// member clusters cannot collide. The pools live in cluster 0 only;
+// cluster 1 and cluster 2 see neither pool and the condition logic
+// short-circuits there.
+func (s *MulticlusterControllerSuite) TestExternalNodePortConflict() {
+	t, ctx, cancel, ns := s.setup()
+	defer cancel()
+
+	const (
+		scName    = "tls-nodeport-conflict"
+		poolAName = "alpha"
+		poolBName = "beta"
+	)
+
+	// One StretchCluster across all member clusters — the reconciler binds
+	// each NodePool to it.
+	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: scName,
+		},
+	})
+
+	// Both NodePools live in cluster 0 only. Each requests default external
+	// NodePort access; the defaulted advertisedPorts are identical, so the
+	// second pool to be considered by DetectExternalNodePortConflicts will
+	// lose. "alpha" < "beta" lexically — alpha wins.
+	makePool := func(name string) *redpandav1alpha2.NodePool {
+		return &redpandav1alpha2.NodePool{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: ns.Name,
+			},
+			Spec: redpandav1alpha2.NodePoolSpec{
+				ClusterRef: redpandav1alpha2.ClusterRef{
+					Name:  scName,
+					Group: ptr.To("cluster.redpanda.com"),
+					Kind:  ptr.To(redpandav1alpha2.StretchClusterRefKind),
+				},
+				EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+					External: &redpandav1alpha2.External{
+						Enabled: ptr.To(true),
+						Type:    ptr.To("NodePort"),
+					},
+				},
+			},
+		}
+	}
+
+	gvkPool := redpandav1alpha2.SchemeGroupVersion.WithKind("NodePool")
+	for _, p := range []*redpandav1alpha2.NodePool{makePool(poolAName), makePool(poolBName)} {
+		p.GetObjectKind().SetGroupVersionKind(gvkPool)
+		require.NoError(t,
+			s.mc.Envs[0].Client().Patch(ctx, p, client.Apply, client.ForceOwnership, client.FieldOwner("tests")), //nolint:staticcheck // mirrors testenv.ApplyAll
+			"applying pool %q to cluster 0", p.Name,
+		)
+	}
+
+	// The NodePool reconciler runs against cluster 0; it'll list siblings,
+	// detect that alpha wins each defaulted nodePort, and write
+	// ExternalAccessReady on both pools. Wait for both to settle.
+	require.Eventually(t, func() bool {
+		var alpha, beta redpandav1alpha2.NodePool
+		if err := s.mc.Envs[0].Client().Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: poolAName}, &alpha); err != nil {
+			t.Logf("[TestExternalNodePortConflict] Get alpha: %v", err)
+			return false
+		}
+		if err := s.mc.Envs[0].Client().Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: poolBName}, &beta); err != nil {
+			t.Logf("[TestExternalNodePortConflict] Get beta: %v", err)
+			return false
+		}
+		alphaCond := apimeta.FindStatusCondition(alpha.Status.Conditions, statuses.NodePoolExternalAccessReady)
+		betaCond := apimeta.FindStatusCondition(beta.Status.Conditions, statuses.NodePoolExternalAccessReady)
+		t.Logf("[TestExternalNodePortConflict] alpha finalizers=%v conditions=%+v", alpha.Finalizers, alpha.Status.Conditions)
+		t.Logf("[TestExternalNodePortConflict] beta finalizers=%v conditions=%+v", beta.Finalizers, beta.Status.Conditions)
+		if alphaCond == nil || betaCond == nil {
+			return false
+		}
+		// "NotReconciled" is the default reason populated by the
+		// kubebuilder default annotation on the NodePool CRD; the
+		// reconciler overwrites it after its first pass. Wait until both
+		// pools have moved past that initial state.
+		return alphaCond.Reason != "NotReconciled" &&
+			betaCond.Reason != "NotReconciled"
+	}, 2*time.Minute, 2*time.Second, "ExternalAccessReady never appeared on both pools")
+
+	var alpha, beta redpandav1alpha2.NodePool
+	require.NoError(t, s.mc.Envs[0].Client().Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: poolAName}, &alpha))
+	require.NoError(t, s.mc.Envs[0].Client().Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: poolBName}, &beta))
+
+	alphaCond := apimeta.FindStatusCondition(alpha.Status.Conditions, statuses.NodePoolExternalAccessReady)
+	require.NotNil(t, alphaCond, "alpha must have ExternalAccessReady condition")
+	require.Equal(t, metav1.ConditionTrue, alphaCond.Status,
+		"alpha wins the lexical sort, so its Service is rendered and ExternalAccessReady is True")
+	require.Equal(t, string(statuses.NodePoolExternalAccessReadyReasonAvailable), alphaCond.Reason)
+
+	betaCond := apimeta.FindStatusCondition(beta.Status.Conditions, statuses.NodePoolExternalAccessReady)
+	require.NotNil(t, betaCond, "beta must have ExternalAccessReady condition")
+	require.Equal(t, metav1.ConditionFalse, betaCond.Status,
+		"beta loses the lexical sort, so its Service is skipped and ExternalAccessReady is False")
+	require.Equal(t, string(statuses.NodePoolExternalAccessReadyReasonNodePortConflict), betaCond.Reason)
+	require.Contains(t, betaCond.Message, poolAName,
+		"the surfaced message must name the pool that won the port so users know what to override")
+
+	// Repair: bump beta to non-defaulted advertisedPorts and confirm the
+	// condition flips back to Available.
+	require.NoError(t, s.mc.Envs[0].Client().Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: poolBName}, &beta))
+	beta.Spec.Listeners = &redpandav1alpha2.StretchListeners{
+		Admin: &redpandav1alpha2.StretchAPIListener{
+			External: map[string]*redpandav1alpha2.StretchExternalListener{
+				"default": {
+					StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(9645))},
+					AdvertisedPorts: []int32{40644},
+				},
+			},
+		},
+		Kafka: &redpandav1alpha2.StretchAPIListener{
+			External: map[string]*redpandav1alpha2.StretchExternalListener{
+				"default": {
+					StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(9094))},
+					AdvertisedPorts: []int32{40092},
+				},
+			},
+		},
+		HTTP: &redpandav1alpha2.StretchAPIListener{
+			External: map[string]*redpandav1alpha2.StretchExternalListener{
+				"default": {
+					StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(8084))},
+					AdvertisedPorts: []int32{40082},
+				},
+			},
+		},
+		SchemaRegistry: &redpandav1alpha2.StretchAPIListener{
+			External: map[string]*redpandav1alpha2.StretchExternalListener{
+				"default": {
+					StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(8085))},
+					AdvertisedPorts: []int32{40081},
+				},
+			},
+		},
+	}
+	require.NoError(t, s.mc.Envs[0].Client().Update(ctx, &beta))
+
+	require.Eventually(t, func() bool {
+		var b redpandav1alpha2.NodePool
+		if err := s.mc.Envs[0].Client().Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: poolBName}, &b); err != nil {
+			return false
+		}
+		cond := apimeta.FindStatusCondition(b.Status.Conditions, statuses.NodePoolExternalAccessReady)
+		return cond != nil &&
+			cond.Status == metav1.ConditionTrue &&
+			cond.Reason == string(statuses.NodePoolExternalAccessReadyReasonAvailable)
+	}, 1*time.Minute, 1*time.Second, "ExternalAccessReady never flipped to Available after disambiguating advertisedPorts")
 }
 
 // TestUserProvidedCA verifies Option 3: the user pre-creates a CA secret with

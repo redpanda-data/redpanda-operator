@@ -10520,6 +10520,11 @@ spec:
                 message: Waiting for controller
                 reason: NotReconciled
                 status: Unknown
+                type: ExternalAccessReady
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
                 type: Stable
             description: NodePoolStatus defines the observed state of any node pools
               tied to this cluster

@@ -503,8 +503,41 @@
           description: >
             This reason is used with the "Quiesced" condition when it evaluates to False because
             the operator has not finished reconciling the node pool at its current generation.
+    - name: ExternalAccessReady
+      description: >
+        This condition indicates whether external access for this node pool
+        can be provisioned. It is set to False with reason "NodePortConflict"
+        when the requested external NodePort Service would collide with
+        another local pool's external Service in the same Kubernetes cluster
+        (because nodePorts must be unique cluster-wide and per-pool external
+        configuration defaults to the same nodePort numbers). The
+        multicluster operator skips Service creation for the conflicting
+        pool until the user disambiguates by setting per-pool
+        `external.advertisedPorts` overrides.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a
+        node pool.
+      reasons:
+        - name: Available
+          message: External access provisioned
+          description: >
+            This reason is used with the "ExternalAccessReady" condition when it evaluates to True because
+            the node pool's external Service has been rendered without conflict.
+        - name: Disabled
+          message: External access disabled
+          description: >
+            This reason is used with the "ExternalAccessReady" condition when it evaluates to True because
+            external access is not configured for this node pool, so there is nothing to provision.
+        - name: NodePortConflict
+          message: External NodePort Service conflicts with another local pool
+          description: >
+            This reason is used with the "ExternalAccessReady" condition when it evaluates to False because
+            another node pool in the same Kubernetes cluster already claims one or more of the requested
+            NodePort numbers. Override `external.advertisedPorts` on this or the conflicting pool to use
+            distinct ports.
     - name: Stable
-      rollup: [ Bound, Deployed, Quiesced ]
+      rollup: [ Bound, Deployed, Quiesced, ExternalAccessReady ]
       description: >
         This condition is used as a roll-up status for any sort of automation such as
         terraform.

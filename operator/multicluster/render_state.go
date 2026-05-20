@@ -62,6 +62,26 @@ type RenderState struct {
 	bootstrapUserSecret  *corev1.Secret
 	statefulSetPodLabels map[string]string
 	statefulSetSelector  map[string]string
+
+	// externalNodePortConflicts is populated by nodePortService during
+	// rendering: each entry describes a local NodePool whose external
+	// Service was skipped because its requested NodePort numbers already
+	// belong to another local pool's Service. The reconciler reads this to
+	// surface ExternalAccessReady=False on each affected pool.
+	externalNodePortConflicts []ExternalNodePortConflict
+}
+
+// ExternalNodePortConflict records that one local NodePool's external
+// NodePort Service could not be rendered because another local pool in the
+// same Kubernetes cluster already claims the same nodePort numbers.
+type ExternalNodePortConflict struct {
+	// Pool is the name of the NodePool whose external Service was skipped.
+	Pool string
+	// ConflictsWith is the name of the NodePool that owns the conflicting
+	// nodePorts (the lexically-first pool wins).
+	ConflictsWith string
+	// Ports lists the colliding nodePort numbers.
+	Ports []int32
 }
 
 // WithContext stores the reconciliation context so render helpers can emit
@@ -183,6 +203,14 @@ func NewRenderState(
 func (r *RenderState) WithPodEndpoints(endpoints []PodEndpoint) *RenderState {
 	r.podEndpoints = endpoints
 	return r
+}
+
+// ExternalNodePortConflicts returns the list of local NodePools whose
+// external NodePort Service could not be rendered because another local
+// pool already claimed the same nodePort numbers. Populated during
+// rendering; safe to read post-render.
+func (r *RenderState) ExternalNodePortConflicts() []ExternalNodePortConflict {
+	return r.externalNodePortConflicts
 }
 
 // tplData returns the template context data for Go template expansion.

@@ -164,6 +164,20 @@ type NodePoolDeployedCondition string
 // be set by a controller when it subsequently reconciles a node pool.
 type NodePoolQuiescedCondition string
 
+// NodePoolExternalAccessReadyCondition - This condition indicates whether
+// external access for this node pool can be provisioned. It is set to False
+// with reason "NodePortConflict" when the requested external NodePort Service
+// would collide with another local pool's external Service in the same
+// Kubernetes cluster (because nodePorts must be unique cluster-wide and
+// per-pool external configuration defaults to the same nodePort numbers). The
+// multicluster operator skips Service creation for the conflicting pool until
+// the user disambiguates by setting per-pool `external.advertisedPorts`
+// overrides.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a node pool.
+type NodePoolExternalAccessReadyCondition string
+
 // NodePoolStableCondition - This condition is used as a roll-up status for any
 // sort of automation such as terraform.
 //
@@ -637,6 +651,43 @@ const (
 	// "Quiesced" condition when it evaluates to False because the operator has not
 	// finished reconciling the node pool at its current generation.
 	NodePoolQuiescedReasonStillReconciling NodePoolQuiescedCondition = "StillReconciling"
+
+	// NodePoolExternalAccessReady - This condition indicates whether external
+	// access for this node pool can be provisioned. It is set to False with reason
+	// "NodePortConflict" when the requested external NodePort Service would collide
+	// with another local pool's external Service in the same Kubernetes cluster
+	// (because nodePorts must be unique cluster-wide and per-pool external
+	// configuration defaults to the same nodePort numbers). The multicluster
+	// operator skips Service creation for the conflicting pool until the user
+	// disambiguates by setting per-pool `external.advertisedPorts` overrides.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a node pool.
+	NodePoolExternalAccessReady = "ExternalAccessReady"
+	// NodePoolExternalAccessReadyReasonAvailable - This reason is used with the
+	// "ExternalAccessReady" condition when it evaluates to True because the node
+	// pool's external Service has been rendered without conflict.
+	NodePoolExternalAccessReadyReasonAvailable NodePoolExternalAccessReadyCondition = "Available"
+	// NodePoolExternalAccessReadyReasonDisabled - This reason is used with the
+	// "ExternalAccessReady" condition when it evaluates to True because external
+	// access is not configured for this node pool, so there is nothing to
+	// provision.
+	NodePoolExternalAccessReadyReasonDisabled NodePoolExternalAccessReadyCondition = "Disabled"
+	// NodePoolExternalAccessReadyReasonNodePortConflict - This reason is used with
+	// the "ExternalAccessReady" condition when it evaluates to False because
+	// another node pool in the same Kubernetes cluster already claims one or more
+	// of the requested NodePort numbers. Override `external.advertisedPorts` on
+	// this or the conflicting pool to use distinct ports.
+	NodePoolExternalAccessReadyReasonNodePortConflict NodePoolExternalAccessReadyCondition = "NodePortConflict"
+	// NodePoolExternalAccessReadyReasonError - This reason is used when a node pool
+	// has only been partially reconciled and we have early returned due to a
+	// retryable error occurring prior to applying the desired node pool state.
+	NodePoolExternalAccessReadyReasonError NodePoolExternalAccessReadyCondition = "Error"
+	// NodePoolExternalAccessReadyReasonTerminalError - This reason is used when a
+	// node pool has only been partially reconciled and we have early returned due
+	// to a known terminal error occurring prior to applying the desired node pool
+	// state.
+	NodePoolExternalAccessReadyReasonTerminalError NodePoolExternalAccessReadyCondition = "TerminalError"
 
 	// NodePoolStable - This condition is used as a roll-up status for any sort of
 	// automation such as terraform.
@@ -1592,12 +1643,14 @@ func (s *StretchClusterStatus) getStable(conditions []metav1.Condition) metav1.C
 
 // NodePoolStatus - Defines the observed status conditions of a node pool.
 type NodePoolStatus struct {
-	conditions               []metav1.Condition
-	hasTerminalError         bool
-	isBoundSet               bool
-	isBoundTransientError    bool
-	isDeployedSet            bool
-	isDeployedTransientError bool
+	conditions                          []metav1.Condition
+	hasTerminalError                    bool
+	isBoundSet                          bool
+	isBoundTransientError               bool
+	isDeployedSet                       bool
+	isDeployedTransientError            bool
+	isExternalAccessReadySet            bool
+	isExternalAccessReadyTransientError bool
 }
 
 // NewNodePool() returns a new NodePoolStatus
@@ -1786,9 +1839,68 @@ func (s *NodePoolStatus) SetDeployed(reason NodePoolDeployedCondition, messages 
 	})
 }
 
+// SetExternalAccessReadyFromCurrent sets the underlying condition based on an existing object.
+func (s *NodePoolStatus) SetExternalAccessReadyFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), NodePoolExternalAccessReady)
+	if condition == nil {
+		return
+	}
+
+	s.SetExternalAccessReady(NodePoolExternalAccessReadyCondition(condition.Reason), condition.Message)
+}
+
+// SetExternalAccessReady sets the underlying condition to the given reason.
+func (s *NodePoolStatus) SetExternalAccessReady(reason NodePoolExternalAccessReadyCondition, messages ...string) {
+	if s.isExternalAccessReadySet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isExternalAccessReadySet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case NodePoolExternalAccessReadyReasonAvailable:
+		if message == "" {
+			message = "External access provisioned"
+		}
+		status = metav1.ConditionTrue
+	case NodePoolExternalAccessReadyReasonDisabled:
+		if message == "" {
+			message = "External access disabled"
+		}
+		status = metav1.ConditionFalse
+	case NodePoolExternalAccessReadyReasonNodePortConflict:
+		if message == "" {
+			message = "External NodePort Service conflicts with another local pool"
+		}
+		status = metav1.ConditionFalse
+	case NodePoolExternalAccessReadyReasonError:
+		s.isExternalAccessReadyTransientError = true
+		status = metav1.ConditionFalse
+	case NodePoolExternalAccessReadyReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    NodePoolExternalAccessReady,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
 func (s *NodePoolStatus) getQuiesced() metav1.Condition {
-	transientErrorConditionsSet := s.isBoundTransientError || s.isDeployedTransientError
-	allConditionsSet := s.isBoundSet && s.isDeployedSet
+	transientErrorConditionsSet := s.isBoundTransientError || s.isDeployedTransientError || s.isExternalAccessReadyTransientError
+	allConditionsSet := s.isBoundSet && s.isDeployedSet && s.isExternalAccessReadySet
 
 	if (allConditionsSet || s.hasTerminalError) && !transientErrorConditionsSet {
 		return metav1.Condition{
@@ -1809,7 +1921,7 @@ func (s *NodePoolStatus) getQuiesced() metav1.Condition {
 
 func (s *NodePoolStatus) getStable(conditions []metav1.Condition) metav1.Condition {
 	allConditionsFoundAndTrue := true
-	for _, condition := range []string{NodePoolBound, NodePoolDeployed, NodePoolQuiesced} {
+	for _, condition := range []string{NodePoolBound, NodePoolDeployed, NodePoolQuiesced, NodePoolExternalAccessReady} {
 		conditionFoundAndTrue := false
 		for _, setCondition := range conditions {
 			if setCondition.Type == condition {
