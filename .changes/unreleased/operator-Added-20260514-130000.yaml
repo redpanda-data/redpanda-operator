@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: Added `scrapeInterval` and `labels` fields to the operator Helm chart's `monitoring` configuration. `scrapeInterval` sets the scrape interval on the ServiceMonitor endpoint (defaults to empty, preserving the Prometheus global default). `labels` adds custom labels to the ServiceMonitor metadata.
-time: 2026-05-14T13:00:00.000000-04:00
