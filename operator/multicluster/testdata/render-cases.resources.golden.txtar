@@ -1967,19 +1967,19 @@
     namespace: custom-cluster-domain
   spec:
     dnsNames:
-    - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.cluster.local
+    - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.custom.local
     - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc
     - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain
-    - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.cluster.local'
+    - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc'
     - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain'
-    - custom-cluster-domain.custom-cluster-domain.svc.cluster.local
+    - custom-cluster-domain.custom-cluster-domain.svc.custom.local
     - custom-cluster-domain.custom-cluster-domain.svc
     - custom-cluster-domain.custom-cluster-domain
-    - '*.custom-cluster-domain.custom-cluster-domain.svc.cluster.local'
+    - '*.custom-cluster-domain.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain.custom-cluster-domain.svc'
     - '*.custom-cluster-domain.custom-cluster-domain'
-    - '*.custom-cluster-domain.svc.cluster.local'
+    - '*.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain.svc'
     - '*.custom-cluster-domain'
     duration: 43800h0m0s
@@ -2005,19 +2005,19 @@
     namespace: custom-cluster-domain
   spec:
     dnsNames:
-    - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.cluster.local
+    - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.custom.local
     - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc
     - custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain
-    - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.cluster.local'
+    - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain.svc'
     - '*.custom-cluster-domain-cluster.custom-cluster-domain.custom-cluster-domain'
-    - custom-cluster-domain.custom-cluster-domain.svc.cluster.local
+    - custom-cluster-domain.custom-cluster-domain.svc.custom.local
     - custom-cluster-domain.custom-cluster-domain.svc
     - custom-cluster-domain.custom-cluster-domain
-    - '*.custom-cluster-domain.custom-cluster-domain.svc.cluster.local'
+    - '*.custom-cluster-domain.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain.custom-cluster-domain.svc'
     - '*.custom-cluster-domain.custom-cluster-domain'
-    - '*.custom-cluster-domain.svc.cluster.local'
+    - '*.custom-cluster-domain.svc.custom.local'
     - '*.custom-cluster-domain.svc'
     - '*.custom-cluster-domain'
     duration: 43800h0m0s
@@ -2138,7 +2138,7 @@
       #!/usr/bin/env bash
 
       # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
-      CURL_URL="https://${SERVICE_NAME}.custom-cluster-domain.custom-cluster-domain.svc.cluster.local:9644"
+      CURL_URL="https://${SERVICE_NAME}.custom-cluster-domain.custom-cluster-domain.svc.custom.local:9644"
 
       # commands used throughout
       CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
@@ -6294,50 +6294,6 @@
   status:
     loadBalancer: {}
 -- external-loadbalancer --
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-loadbalancer
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-pool-a-external
-    namespace: external-loadbalancer
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 0
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 0
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 0
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 0
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda-pool-a
-      app.kubernetes.io/instance: external-loadbalancer
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -6430,7 +6386,7 @@
           port: 8082
         - address: 0.0.0.0
           name: default
-          port: 8083
+          port: 30082
         pandaproxy_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -6438,12 +6394,6 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
-          enabled: true
-          key_file: /etc/tls/certs/external/tls.key
-          name: default
-          require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
       pandaproxy_client:
         broker_tls:
           enabled: true
@@ -6463,7 +6413,7 @@
           port: 9644
         - address: 0.0.0.0
           name: default
-          port: 9645
+          port: 30644
         admin_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -6471,12 +6421,6 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
-          enabled: true
-          key_file: /etc/tls/certs/external/tls.key
-          name: default
-          require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
         empty_seed_starts_cluster: false
         kafka_api:
@@ -6485,7 +6429,7 @@
           port: 9093
         - address: 0.0.0.0
           name: default
-          port: 9094
+          port: 30092
         kafka_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -6493,12 +6437,6 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
-          enabled: true
-          key_file: /etc/tls/certs/external/tls.key
-          name: default
-          require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
         rpc_server:
           address: 0.0.0.0
           port: 33145
@@ -6555,7 +6493,7 @@
           port: 8081
         - address: 0.0.0.0
           name: default
-          port: 8084
+          port: 30081
         schema_registry_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -6563,12 +6501,6 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
-          enabled: true
-          key_file: /etc/tls/certs/external/tls.key
-          name: default
-          require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
       schema_registry_client:
         broker_tls:
           enabled: true
@@ -6633,21 +6565,6 @@
       secretName: external-loadbalancer-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-loadbalancer
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-external-root-issuer
-    namespace: external-loadbalancer
-  spec:
-    ca:
-      secretName: external-loadbalancer-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
     labels:
@@ -6675,6 +6592,8 @@
     - '*.external-loadbalancer.svc.cluster.local'
     - '*.external-loadbalancer.svc'
     - '*.external-loadbalancer'
+    - example.com
+    - '*.example.com'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -6684,44 +6603,6 @@
       algorithm: ECDSA
       size: 256
     secretName: external-loadbalancer-pool-a-default-cert
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-loadbalancer
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-loadbalancer-pool-a-external-cert
-    namespace: external-loadbalancer
-  spec:
-    dnsNames:
-    - external-loadbalancer-cluster.external-loadbalancer.external-loadbalancer.svc.cluster.local
-    - external-loadbalancer-cluster.external-loadbalancer.external-loadbalancer.svc
-    - external-loadbalancer-cluster.external-loadbalancer.external-loadbalancer
-    - '*.external-loadbalancer-cluster.external-loadbalancer.external-loadbalancer.svc.cluster.local'
-    - '*.external-loadbalancer-cluster.external-loadbalancer.external-loadbalancer.svc'
-    - '*.external-loadbalancer-cluster.external-loadbalancer.external-loadbalancer'
-    - external-loadbalancer.external-loadbalancer.svc.cluster.local
-    - external-loadbalancer.external-loadbalancer.svc
-    - external-loadbalancer.external-loadbalancer
-    - '*.external-loadbalancer.external-loadbalancer.svc.cluster.local'
-    - '*.external-loadbalancer.external-loadbalancer.svc'
-    - '*.external-loadbalancer.external-loadbalancer'
-    - '*.external-loadbalancer.svc.cluster.local'
-    - '*.external-loadbalancer.svc'
-    - '*.external-loadbalancer'
-    duration: 43800h0m0s
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: external-loadbalancer-external-root-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: external-loadbalancer-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -6815,6 +6696,132 @@
   - kind: ServiceAccount
     name: external-loadbalancer-pool-a
     namespace: external-loadbalancer
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
+    name: lb-external-loadbalancer-pool-a-0
+    namespace: external-loadbalancer
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: external-loadbalancer-pool-a-0
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
+    name: lb-external-loadbalancer-pool-a-1
+    namespace: external-loadbalancer
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: external-loadbalancer-pool-a-1
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
+    name: lb-external-loadbalancer-pool-a-2
+    namespace: external-loadbalancer
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: external-loadbalancer
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: external-loadbalancer-pool-a-2
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -7092,12 +7099,12 @@
     ports:
     - name: admin-default
       nodePort: 31644
-      port: 9645
+      port: 31644
       protocol: TCP
       targetPort: 0
     - name: kafka-default
       nodePort: 31092
-      port: 9094
+      port: 31092
       protocol: TCP
       targetPort: 0
     - name: http-default
@@ -7245,7 +7252,7 @@
           port: 9644
         - address: 0.0.0.0
           name: default
-          port: 9645
+          port: 31644
         admin_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -7253,12 +7260,6 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
-          enabled: true
-          key_file: /etc/tls/certs/external/tls.key
-          name: default
-          require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
         empty_seed_starts_cluster: false
         kafka_api:
@@ -7267,7 +7268,7 @@
           port: 9093
         - address: 0.0.0.0
           name: default
-          port: 9094
+          port: 31092
         kafka_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -7275,12 +7276,6 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
-          enabled: true
-          key_file: /etc/tls/certs/external/tls.key
-          name: default
-          require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
         rpc_server:
           address: 0.0.0.0
           port: 33145
@@ -7457,6 +7452,8 @@
     - '*.external-nodeport.svc.cluster.local'
     - '*.external-nodeport.svc'
     - '*.external-nodeport'
+    - nodes.example.com
+    - '*.nodes.example.com'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -7495,6 +7492,8 @@
     - '*.external-nodeport.svc.cluster.local'
     - '*.external-nodeport.svc'
     - '*.external-nodeport'
+    - nodes.example.com
+    - '*.nodes.example.com'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -7858,50 +7857,6 @@
   status:
     loadBalancer: {}
 -- external-tls --
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-tls
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-tls-pool-a-external
-    namespace: external-tls
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 0
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 0
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 0
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 0
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda-pool-a
-      app.kubernetes.io/instance: external-tls
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -7994,7 +7949,7 @@
           port: 8082
         - address: 0.0.0.0
           name: default
-          port: 8083
+          port: 30082
         pandaproxy_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -8002,12 +7957,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
       pandaproxy_client:
         broker_tls:
           enabled: true
@@ -8027,7 +7982,7 @@
           port: 9644
         - address: 0.0.0.0
           name: default
-          port: 9645
+          port: 30644
         admin_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -8035,12 +7990,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
         crash_loop_limit: 5
         empty_seed_starts_cluster: false
         kafka_api:
@@ -8049,7 +8004,7 @@
           port: 9093
         - address: 0.0.0.0
           name: default
-          port: 9094
+          port: 30092
         kafka_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -8057,12 +8012,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
         rpc_server:
           address: 0.0.0.0
           port: 33145
@@ -8119,7 +8074,7 @@
           port: 8081
         - address: 0.0.0.0
           name: default
-          port: 8084
+          port: 30081
         schema_registry_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -8127,12 +8082,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
       schema_registry_client:
         broker_tls:
           enabled: true
@@ -8197,21 +8152,6 @@
       secretName: external-tls-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-tls
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-tls-external-root-issuer
-    namespace: external-tls
-  spec:
-    ca:
-      secretName: external-tls-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
     labels:
@@ -8239,6 +8179,8 @@
     - '*.external-tls.svc.cluster.local'
     - '*.external-tls.svc'
     - '*.external-tls'
+    - example.com
+    - '*.example.com'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -8248,44 +8190,6 @@
       algorithm: ECDSA
       size: 256
     secretName: external-tls-pool-a-default-cert
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: external-tls
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: external-tls-pool-a-external-cert
-    namespace: external-tls
-  spec:
-    dnsNames:
-    - external-tls-cluster.external-tls.external-tls.svc.cluster.local
-    - external-tls-cluster.external-tls.external-tls.svc
-    - external-tls-cluster.external-tls.external-tls
-    - '*.external-tls-cluster.external-tls.external-tls.svc.cluster.local'
-    - '*.external-tls-cluster.external-tls.external-tls.svc'
-    - '*.external-tls-cluster.external-tls.external-tls'
-    - external-tls.external-tls.svc.cluster.local
-    - external-tls.external-tls.svc
-    - external-tls.external-tls
-    - '*.external-tls.external-tls.svc.cluster.local'
-    - '*.external-tls.external-tls.svc'
-    - '*.external-tls.external-tls'
-    - '*.external-tls.svc.cluster.local'
-    - '*.external-tls.svc'
-    - '*.external-tls'
-    duration: 43800h0m0s
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: external-tls-external-root-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: external-tls-pool-a-external-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -8379,6 +8283,132 @@
   - kind: ServiceAccount
     name: external-tls-pool-a
     namespace: external-tls
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
+    name: lb-external-tls-pool-a-0
+    namespace: external-tls
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: external-tls-pool-a-0
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
+    name: lb-external-tls-pool-a-1
+    namespace: external-tls
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: external-tls-pool-a-1
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
+    name: lb-external-tls-pool-a-2
+    namespace: external-tls
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: external-tls
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: external-tls-pool-a-2
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -9486,51 +9516,6 @@
     port: 8081
     protocol: TCP
 -- full-featured --
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-external
-    namespace: full-featured
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 0
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 0
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 0
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 0
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda-pool-cold
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -9591,7 +9576,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured
     namespace: full-featured
@@ -9626,6 +9611,62 @@
     type: ClusterIP
   status:
     loadBalancer: {}
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold
+    namespace: full-featured
+  spec:
+    endpoints:
+    - path: /public_metrics
+      port: admin
+      scheme: HTTPS
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+    namespaceSelector: {}
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: redpanda-pool-cold
+        app.kubernetes.io/instance: full-featured
+        app.kubernetes.io/name: redpanda
+        monitoring.redpanda.com/enabled: "true"
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot
+    namespace: full-featured
+  spec:
+    endpoints:
+    - path: /public_metrics
+      port: admin
+      scheme: HTTPS
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+    namespaceSelector: {}
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: redpanda-pool-hot
+        app.kubernetes.io/instance: full-featured
+        app.kubernetes.io/name: redpanda
+        monitoring.redpanda.com/enabled: "true"
 - apiVersion: v1
   data:
     .bootstrap.json.in: '{"audit_enabled":"true","cloud_storage_bucket":"\"prod-tiered\"","cloud_storage_cache_size":"21474836480","cloud_storage_credentials_source":"\"aws_instance_metadata\"","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"true","cloud_storage_region":"\"us-east-1\"","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"true","enable_sasl":"true","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"true","log_segment_size":"134217728","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"5368709120","superusers":"[\"kubernetes-controller\"]"}'
@@ -9657,7 +9698,7 @@
         - address: 0.0.0.0
           authentication_method: http_basic
           name: default
-          port: 8083
+          port: 30082
         pandaproxy_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -9665,12 +9706,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
       pandaproxy_client:
         broker_tls:
           enabled: true
@@ -9694,7 +9735,7 @@
           port: 9644
         - address: 0.0.0.0
           name: default
-          port: 9645
+          port: 30644
         admin_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -9702,12 +9743,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
         crash_loop_limit: 5
         empty_seed_starts_cluster: false
         kafka_api:
@@ -9718,7 +9759,7 @@
         - address: 0.0.0.0
           authentication_method: sasl
           name: default
-          port: 9094
+          port: 30092
         kafka_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -9726,12 +9767,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
         rpc_server:
           address: 0.0.0.0
           port: 33145
@@ -9800,7 +9841,7 @@
           port: 8081
         - address: 0.0.0.0
           name: default
-          port: 8084
+          port: 30081
         schema_registry_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -9808,12 +9849,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
       schema_registry_client:
         broker_tls:
           enabled: true
@@ -9899,7 +9940,7 @@
         - address: 0.0.0.0
           authentication_method: http_basic
           name: default
-          port: 8083
+          port: 30082
         pandaproxy_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -9907,12 +9948,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
       pandaproxy_client:
         broker_tls:
           enabled: true
@@ -9936,7 +9977,7 @@
           port: 9644
         - address: 0.0.0.0
           name: default
-          port: 9645
+          port: 30644
         admin_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -9944,12 +9985,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
         crash_loop_limit: 5
         empty_seed_starts_cluster: false
         kafka_api:
@@ -9960,7 +10001,7 @@
         - address: 0.0.0.0
           authentication_method: sasl
           name: default
-          port: 9094
+          port: 30092
         kafka_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -9968,12 +10009,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
         rpc_server:
           address: 0.0.0.0
           port: 33145
@@ -10043,7 +10084,7 @@
           port: 8081
         - address: 0.0.0.0
           name: default
-          port: 8084
+          port: 30081
         schema_registry_api_tls:
         - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
@@ -10051,12 +10092,12 @@
           name: internal
           require_client_auth: false
           truststore_file: /etc/tls/certs/default/ca.crt
-        - cert_file: /etc/tls/certs/external/tls.crt
+        - cert_file: /etc/tls/certs/default/tls.crt
           enabled: true
-          key_file: /etc/tls/certs/external/tls.key
+          key_file: /etc/tls/certs/default/tls.key
           name: default
           require_client_auth: false
-          truststore_file: /etc/tls/certs/external/ca.crt
+          truststore_file: /etc/tls/certs/default/ca.crt
       schema_registry_client:
         broker_tls:
           enabled: true
@@ -10128,22 +10169,6 @@
       secretName: full-featured-default-root-certificate
   status: {}
 - apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-external-root-issuer
-    namespace: full-featured
-  spec:
-    ca:
-      secretName: full-featured-external-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
   kind: Certificate
   metadata:
     labels:
@@ -10172,6 +10197,8 @@
     - '*.full-featured.svc.cluster.local'
     - '*.full-featured.svc'
     - '*.full-featured'
+    - prod.example.com
+    - '*.prod.example.com'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -10181,45 +10208,6 @@
       algorithm: ECDSA
       size: 256
     secretName: full-featured-pool-cold-default-cert
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-external-cert
-    namespace: full-featured
-  spec:
-    dnsNames:
-    - full-featured-cluster.full-featured.full-featured.svc.cluster.local
-    - full-featured-cluster.full-featured.full-featured.svc
-    - full-featured-cluster.full-featured.full-featured
-    - '*.full-featured-cluster.full-featured.full-featured.svc.cluster.local'
-    - '*.full-featured-cluster.full-featured.full-featured.svc'
-    - '*.full-featured-cluster.full-featured.full-featured'
-    - full-featured.full-featured.svc.cluster.local
-    - full-featured.full-featured.svc
-    - full-featured.full-featured
-    - '*.full-featured.full-featured.svc.cluster.local'
-    - '*.full-featured.full-featured.svc'
-    - '*.full-featured.full-featured'
-    - '*.full-featured.svc.cluster.local'
-    - '*.full-featured.svc'
-    - '*.full-featured'
-    duration: 43800h0m0s
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: full-featured-external-root-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: full-featured-pool-cold-external-cert
   status: {}
 - apiVersion: cert-manager.io/v1
   kind: Certificate
@@ -10250,6 +10238,8 @@
     - '*.full-featured.svc.cluster.local'
     - '*.full-featured.svc'
     - '*.full-featured'
+    - prod.example.com
+    - '*.prod.example.com'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -10260,8 +10250,8 @@
       size: 256
     secretName: full-featured-pool-hot-default-cert
   status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Certificate
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
   metadata:
     labels:
       app.kubernetes.io/cluster-name: test
@@ -10270,37 +10260,311 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-pool-hot-external-cert
+    name: full-featured-pool-cold-sidecar
+    namespace: full-featured
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-sidecar
+    namespace: full-featured
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-full-featured-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-full-featured-rack-awareness
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-rack-awareness
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - get
+    - list
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-sidecar
+    namespace: full-featured
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: full-featured-pool-cold-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-cold
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-sidecar
+    namespace: full-featured
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: full-featured-pool-hot-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-hot
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-full-featured-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-pool-cold-full-featured-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-cold
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-full-featured-rack-awareness
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-pool-cold-full-featured-rack-awareness
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-cold
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-pool-hot-full-featured-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-hot
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot-full-featured-rack-awareness
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-pool-hot-full-featured-rack-awareness
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-hot
+    namespace: full-featured
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
+      team: data-platform
+    name: lb-full-featured-pool-cold-0
     namespace: full-featured
   spec:
-    dnsNames:
-    - full-featured-cluster.full-featured.full-featured.svc.cluster.local
-    - full-featured-cluster.full-featured.full-featured.svc
-    - full-featured-cluster.full-featured.full-featured
-    - '*.full-featured-cluster.full-featured.full-featured.svc.cluster.local'
-    - '*.full-featured-cluster.full-featured.full-featured.svc'
-    - '*.full-featured-cluster.full-featured.full-featured'
-    - full-featured.full-featured.svc.cluster.local
-    - full-featured.full-featured.svc
-    - full-featured.full-featured
-    - '*.full-featured.full-featured.svc.cluster.local'
-    - '*.full-featured.full-featured.svc'
-    - '*.full-featured.full-featured'
-    - '*.full-featured.svc.cluster.local'
-    - '*.full-featured.svc'
-    - '*.full-featured'
-    duration: 43800h0m0s
-    issuerRef:
-      group: cert-manager.io
-      kind: Issuer
-      name: full-featured-external-root-issuer
-    privateKey:
-      algorithm: ECDSA
-      size: 256
-    secretName: full-featured-pool-hot-external-cert
-  status: {}
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-cold
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: full-featured-pool-cold-0
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
   metadata:
     labels:
       app.kubernetes.io/cluster-name: test
@@ -10308,40 +10572,42 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
       team: data-platform
-    name: full-featured-pool-cold-sidecar
+    name: lb-full-featured-pool-cold-1
     namespace: full-featured
-  rules:
-  - apiGroups:
-    - coordination.k8s.io
-    resources:
-    - leases
-    verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-cold
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: full-featured-pool-cold-1
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
   metadata:
     labels:
       app.kubernetes.io/cluster-name: test
@@ -10349,40 +10615,42 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
       team: data-platform
-    name: full-featured-pool-hot-sidecar
+    name: lb-full-featured-pool-hot-0
     namespace: full-featured
-  rules:
-  - apiGroups:
-    - coordination.k8s.io
-    resources:
-    - leases
-    verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-hot
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: full-featured-pool-hot-0
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
   metadata:
     labels:
       app.kubernetes.io/cluster-name: test
@@ -10390,91 +10658,42 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
       team: data-platform
-    name: full-featured-pool-cold-full-featured-metrics-reader
-  rules:
-  - nonResourceURLs:
-    - /metrics
-    verbs:
-    - get
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-full-featured-rack-awareness
-  rules:
-  - apiGroups:
-    - ""
-    resources:
-    - nodes
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-hot-full-featured-metrics-reader
-  rules:
-  - nonResourceURLs:
-    - /metrics
-    verbs:
-    - get
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-hot-full-featured-rack-awareness
-  rules:
-  - apiGroups:
-    - ""
-    resources:
-    - nodes
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-sidecar
+    name: lb-full-featured-pool-hot-1
     namespace: full-featured
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: full-featured-pool-cold-sidecar
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-cold
-    namespace: full-featured
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-hot
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/name: redpanda
+      statefulset.kubernetes.io/pod-name: full-featured-pool-hot-1
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
   metadata:
     labels:
       app.kubernetes.io/cluster-name: test
@@ -10482,93 +10701,40 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
+      repdanda.com/type: loadbalancer
       team: data-platform
-    name: full-featured-pool-hot-sidecar
+    name: lb-full-featured-pool-hot-2
     namespace: full-featured
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: full-featured-pool-hot-sidecar
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-hot
-    namespace: full-featured
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      port: 30644
+      protocol: TCP
+      targetPort: 0
+    - name: kafka-default
+      port: 30092
+      protocol: TCP
+      targetPort: 0
+    - name: http-default
+      port: 30082
+      protocol: TCP
+      targetPort: 0
+    - name: schema-default
+      port: 30081
+      protocol: TCP
+      targetPort: 0
+    publishNotReadyAddresses: true
+    selector:
       app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/component: redpanda-pool-hot
       app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-full-featured-metrics-reader
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: full-featured-pool-cold-full-featured-metrics-reader
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-cold
-    namespace: full-featured
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-full-featured-rack-awareness
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: full-featured-pool-cold-full-featured-rack-awareness
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-cold
-    namespace: full-featured
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-hot-full-featured-metrics-reader
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: full-featured-pool-hot-full-featured-metrics-reader
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-hot
-    namespace: full-featured
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-hot-full-featured-rack-awareness
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: full-featured-pool-hot-full-featured-rack-awareness
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-hot
-    namespace: full-featured
+      statefulset.kubernetes.io/pod-name: full-featured-pool-hot-2
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
 - apiVersion: v1
   kind: Secret
   metadata:
@@ -10913,7 +11079,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-cold-0
     namespace: full-featured
@@ -10960,7 +11126,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-cold-1
     namespace: full-featured
@@ -11007,7 +11173,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-hot-0
     namespace: full-featured
@@ -11054,7 +11220,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-hot-1
     namespace: full-featured
@@ -11101,7 +11267,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-hot-2
     namespace: full-featured
@@ -14389,7 +14555,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring
     namespace: monitoring
   spec:
@@ -14423,6 +14589,33 @@
     type: ClusterIP
   status:
     loadBalancer: {}
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: monitoring
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: monitoring-pool-a
+    namespace: monitoring
+  spec:
+    endpoints:
+    - path: /public_metrics
+      port: admin
+      scheme: HTTPS
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+    namespaceSelector: {}
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: redpanda-pool-a
+        app.kubernetes.io/instance: monitoring
+        app.kubernetes.io/name: redpanda
+        monitoring.redpanda.com/enabled: "true"
 - apiVersion: v1
   data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
@@ -14955,7 +15148,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring-pool-a-0
     namespace: monitoring
   spec:
@@ -15000,7 +15193,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring-pool-a-1
     namespace: monitoring
   spec:
@@ -15045,7 +15238,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring-pool-a-2
     namespace: monitoring
   spec:
@@ -25193,21 +25386,6 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-default-root-issuer
-    namespace: tls-issuer-ref
-  spec:
-    ca:
-      secretName: tls-issuer-ref-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-issuer-ref
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: tls-issuer-ref-external-root-issuer
     namespace: tls-issuer-ref
   spec:
@@ -25226,27 +25404,11 @@
     name: tls-issuer-ref-pool-a-default-cert
     namespace: tls-issuer-ref
   spec:
-    dnsNames:
-    - tls-issuer-ref-cluster.tls-issuer-ref.tls-issuer-ref.svc.cluster.local
-    - tls-issuer-ref-cluster.tls-issuer-ref.tls-issuer-ref.svc
-    - tls-issuer-ref-cluster.tls-issuer-ref.tls-issuer-ref
-    - '*.tls-issuer-ref-cluster.tls-issuer-ref.tls-issuer-ref.svc.cluster.local'
-    - '*.tls-issuer-ref-cluster.tls-issuer-ref.tls-issuer-ref.svc'
-    - '*.tls-issuer-ref-cluster.tls-issuer-ref.tls-issuer-ref'
-    - tls-issuer-ref.tls-issuer-ref.svc.cluster.local
-    - tls-issuer-ref.tls-issuer-ref.svc
-    - tls-issuer-ref.tls-issuer-ref
-    - '*.tls-issuer-ref.tls-issuer-ref.svc.cluster.local'
-    - '*.tls-issuer-ref.tls-issuer-ref.svc'
-    - '*.tls-issuer-ref.tls-issuer-ref'
-    - '*.tls-issuer-ref.svc.cluster.local'
-    - '*.tls-issuer-ref.svc'
-    - '*.tls-issuer-ref'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
-      kind: Issuer
-      name: tls-issuer-ref-default-root-issuer
+      kind: ClusterIssuer
+      name: my-ca-issuer
     privateKey:
       algorithm: ECDSA
       size: 256
@@ -25785,7 +25947,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -25795,8 +25957,10 @@
           truststore_file: /etc/tls/certs/external/ca.crt
       pandaproxy_client:
         broker_tls:
+          cert_file: /etc/tls/certs/default-client/tls.crt
           enabled: true
-          require_client_auth: false
+          key_file: /etc/tls/certs/default-client/tls.key
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
         - address: tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls
@@ -25818,7 +25982,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -25840,7 +26004,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -25880,6 +26044,8 @@
           - tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
+            cert_file: /etc/tls/certs/default-client/tls.crt
+            key_file: /etc/tls/certs/default-client/tls.key
         enable_memory_locking: false
         kafka_api:
           brokers:
@@ -25888,6 +26054,8 @@
           - tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
+            cert_file: /etc/tls/certs/default-client/tls.crt
+            key_file: /etc/tls/certs/default-client/tls.key
         overprovisioned: false
         schema_registry:
           addresses:
@@ -25896,6 +26064,8 @@
           - tls-issuer-ref-mtls-pool-a-2.tls-issuer-ref-mtls:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
+            cert_file: /etc/tls/certs/default-client/tls.crt
+            key_file: /etc/tls/certs/default-client/tls.key
         tune_aio_events: true
       schema_registry:
         schema_registry_api:
@@ -25910,7 +26080,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -25920,8 +26090,10 @@
           truststore_file: /etc/tls/certs/external/ca.crt
       schema_registry_client:
         broker_tls:
+          cert_file: /etc/tls/certs/default-client/tls.crt
           enabled: true
-          require_client_auth: false
+          key_file: /etc/tls/certs/default-client/tls.key
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
         - address: tls-issuer-ref-mtls-pool-a-0.tls-issuer-ref-mtls
@@ -25975,21 +26147,6 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: tls-issuer-ref-mtls-default-root-issuer
-    namespace: tls-issuer-ref-mtls
-  spec:
-    ca:
-      secretName: tls-issuer-ref-mtls-default-root-certificate
-  status: {}
-- apiVersion: cert-manager.io/v1
-  kind: Issuer
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: tls-issuer-ref-mtls
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: tls-issuer-ref-mtls-external-root-issuer
     namespace: tls-issuer-ref-mtls
   spec:
@@ -26008,27 +26165,11 @@
     name: tls-issuer-ref-mtls-pool-a-default-cert
     namespace: tls-issuer-ref-mtls
   spec:
-    dnsNames:
-    - tls-issuer-ref-mtls-cluster.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local
-    - tls-issuer-ref-mtls-cluster.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc
-    - tls-issuer-ref-mtls-cluster.tls-issuer-ref-mtls.tls-issuer-ref-mtls
-    - '*.tls-issuer-ref-mtls-cluster.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local'
-    - '*.tls-issuer-ref-mtls-cluster.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc'
-    - '*.tls-issuer-ref-mtls-cluster.tls-issuer-ref-mtls.tls-issuer-ref-mtls'
-    - tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local
-    - tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc
-    - tls-issuer-ref-mtls.tls-issuer-ref-mtls
-    - '*.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local'
-    - '*.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc'
-    - '*.tls-issuer-ref-mtls.tls-issuer-ref-mtls'
-    - '*.tls-issuer-ref-mtls.svc.cluster.local'
-    - '*.tls-issuer-ref-mtls.svc'
-    - '*.tls-issuer-ref-mtls'
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
-      kind: Issuer
-      name: tls-issuer-ref-mtls-default-root-issuer
+      kind: ClusterIssuer
+      name: my-ca-issuer
     privateKey:
       algorithm: ECDSA
       size: 256
@@ -26071,6 +26212,29 @@
       algorithm: ECDSA
       size: 256
     secretName: tls-issuer-ref-mtls-pool-a-external-cert
+  status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-issuer-ref-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-issuer-ref-mtls-pool-a-default-client
+    namespace: tls-issuer-ref-mtls
+  spec:
+    commonName: tls-issuer-ref-mtls-pool-a--default-client
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: ClusterIssuer
+      name: my-ca-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: tls-issuer-ref-mtls-pool-a-default-client-cert
   status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
@@ -26183,11 +26347,11 @@
       CURL_URL="https://${SERVICE_NAME}.tls-issuer-ref-mtls.tls-issuer-ref-mtls.svc.cluster.local:9644"
 
       # commands used throughout
-      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/node_config"
 
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
-      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/maintenance"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -26206,7 +26370,7 @@
         done
 
         echo "Clearing maintenance mode on node ${NODE_ID}"
-        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
         # a 400 here would mean not in maintenance mode
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
@@ -26236,7 +26400,7 @@
         done
 
         echo "Setting maintenance mode on node ${NODE_ID}"
-        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
         until [ "${status:-}" = '"200"' ]; do
             status=$(${CURL_MAINTENANCE_PUT_CMD})
             sleep 0.5
@@ -26567,7 +26731,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -26577,8 +26741,10 @@
           truststore_file: /etc/tls/certs/external/ca.crt
       pandaproxy_client:
         broker_tls:
+          cert_file: /etc/tls/certs/default-client/tls.crt
           enabled: true
-          require_client_auth: false
+          key_file: /etc/tls/certs/default-client/tls.key
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
         - address: tls-mtls-pool-a-0.tls-mtls
@@ -26600,7 +26766,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -26622,7 +26788,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -26662,6 +26828,8 @@
           - tls-mtls-pool-a-2.tls-mtls:9644
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
+            cert_file: /etc/tls/certs/default-client/tls.crt
+            key_file: /etc/tls/certs/default-client/tls.key
         enable_memory_locking: false
         kafka_api:
           brokers:
@@ -26670,6 +26838,8 @@
           - tls-mtls-pool-a-2.tls-mtls:9093
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
+            cert_file: /etc/tls/certs/default-client/tls.crt
+            key_file: /etc/tls/certs/default-client/tls.key
         overprovisioned: false
         schema_registry:
           addresses:
@@ -26678,6 +26848,8 @@
           - tls-mtls-pool-a-2.tls-mtls:8081
           tls:
             ca_file: /etc/tls/certs/default/ca.crt
+            cert_file: /etc/tls/certs/default-client/tls.crt
+            key_file: /etc/tls/certs/default-client/tls.key
         tune_aio_events: true
       schema_registry:
         schema_registry_api:
@@ -26692,7 +26864,7 @@
           enabled: true
           key_file: /etc/tls/certs/default/tls.key
           name: internal
-          require_client_auth: false
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         - cert_file: /etc/tls/certs/external/tls.crt
           enabled: true
@@ -26702,8 +26874,10 @@
           truststore_file: /etc/tls/certs/external/ca.crt
       schema_registry_client:
         broker_tls:
+          cert_file: /etc/tls/certs/default-client/tls.crt
           enabled: true
-          require_client_auth: false
+          key_file: /etc/tls/certs/default-client/tls.key
+          require_client_auth: true
           truststore_file: /etc/tls/certs/default/ca.crt
         brokers:
         - address: tls-mtls-pool-a-0.tls-mtls
@@ -26854,6 +27028,29 @@
       size: 256
     secretName: tls-mtls-pool-a-external-cert
   status: {}
+- apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: tls-mtls
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: tls-mtls-pool-a-default-client
+    namespace: tls-mtls
+  spec:
+    commonName: tls-mtls-pool-a--default-client
+    duration: 43800h0m0s
+    issuerRef:
+      group: cert-manager.io
+      kind: Issuer
+      name: tls-mtls-default-root-issuer
+    privateKey:
+      algorithm: ECDSA
+      size: 256
+    secretName: tls-mtls-pool-a-default-client-cert
+  status: {}
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
@@ -26965,11 +27162,11 @@
       CURL_URL="https://${SERVICE_NAME}.tls-mtls.tls-mtls.svc.cluster.local:9644"
 
       # commands used throughout
-      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+      CURL_NODE_ID_CMD="curl --silent --fail --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/node_config"
 
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
-      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/maintenance"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -26988,7 +27185,7 @@
         done
 
         echo "Clearing maintenance mode on node ${NODE_ID}"
-        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
         # a 400 here would mean not in maintenance mode
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
@@ -27018,7 +27215,7 @@
         done
 
         echo "Setting maintenance mode on node ${NODE_ID}"
-        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
         until [ "${status:-}" = '"200"' ]; do
             status=$(${CURL_MAINTENANCE_PUT_CMD})
             sleep 0.5

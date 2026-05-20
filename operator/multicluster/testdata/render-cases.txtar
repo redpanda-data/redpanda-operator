@@ -104,7 +104,18 @@ kind: StretchCluster
 metadata:
   name: cluster
   namespace: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
 spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
   tls:
     enabled: true
     certs:
@@ -132,6 +143,12 @@ spec:
       port: 33145
       tls:
         cert: default
+-- tls-mtls --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -144,13 +161,6 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
--- tls-mtls --
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: StretchCluster
-metadata:
-  name: cluster
-  namespace: default
-spec:
   tls:
     enabled: true
     certs:
@@ -179,18 +189,6 @@ spec:
       port: 33145
       tls:
         cert: default
----
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: NodePool
-metadata:
-  name: pool-a
-  namespace: default
-spec:
-  clusterRef:
-    group: cluster.redpanda.com/v1alpha2
-    kind: StretchCluster
-    name: cluster
-  replicas: 3
 -- sasl-scram256 --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
@@ -227,6 +225,18 @@ spec:
       enabled: true
       mechanism: SCRAM-SHA-512
       secretRef: users-secret
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
   tls:
     enabled: true
     certs:
@@ -253,6 +263,12 @@ spec:
       port: 33145
       tls:
         cert: default
+-- external-loadbalancer --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -265,13 +281,6 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
--- external-loadbalancer --
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: StretchCluster
-metadata:
-  name: cluster
-  namespace: default
-spec:
   external:
     enabled: true
     type: LoadBalancer
@@ -303,6 +312,12 @@ spec:
         default:
           enabled: true
           port: 30081
+-- external-nodeport --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -315,13 +330,6 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
--- external-nodeport --
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: StretchCluster
-metadata:
-  name: cluster
-  namespace: default
-spec:
   external:
     enabled: true
     type: NodePort
@@ -339,6 +347,12 @@ spec:
         default:
           enabled: true
           port: 31644
+-- external-tls --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -351,24 +365,17 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
--- external-tls --
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: StretchCluster
-metadata:
-  name: cluster
-  namespace: default
-spec:
+  tls:
+    enabled: true
+    certs:
+      default:
+        caEnabled: true
   external:
     enabled: true
     type: LoadBalancer
     domain: example.com
     service:
       enabled: true
-  tls:
-    enabled: true
-    certs:
-      default:
-        caEnabled: true
   listeners:
     kafka:
       port: 9093
@@ -414,6 +421,12 @@ spec:
       port: 33145
       tls:
         cert: default
+-- tls-issuer-ref --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -426,13 +439,6 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
--- tls-issuer-ref --
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: StretchCluster
-metadata:
-  name: cluster
-  namespace: default
-spec:
   tls:
     enabled: true
     certs:
@@ -464,6 +470,12 @@ spec:
       port: 33145
       tls:
         cert: default
+-- tls-issuer-ref-mtls --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -476,13 +488,6 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
--- tls-issuer-ref-mtls --
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: StretchCluster
-metadata:
-  name: cluster
-  namespace: default
-spec:
   tls:
     enabled: true
     certs:
@@ -515,18 +520,6 @@ spec:
       port: 33145
       tls:
         cert: default
----
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: NodePool
-metadata:
-  name: pool-a
-  namespace: default
-spec:
-  clusterRef:
-    group: cluster.redpanda.com/v1alpha2
-    kind: StretchCluster
-    name: cluster
-  replicas: 3
 -- rack-awareness --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
@@ -575,9 +568,6 @@ kind: StretchCluster
 metadata:
   name: cluster
   namespace: default
-spec:
-  monitoring:
-    enabled: true
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -590,6 +580,8 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+  monitoring:
+    enabled: true
 -- storage-hostpath --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
@@ -865,8 +857,6 @@ kind: StretchCluster
 metadata:
   name: cluster
   namespace: default
-spec:
-  clusterDomain: custom.local
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -879,6 +869,7 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+  clusterDomain: custom.local
 -- common-labels --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
@@ -983,6 +974,60 @@ spec:
       enabled: true
       mechanism: SCRAM-SHA-512
       secretRef: users-secret
+  auditLogging:
+    enabled: true
+  storage:
+    persistentVolume:
+      enabled: true
+      size: 100Gi
+      storageClass: fast-ssd
+    tiered:
+      mountType: persistentVolume
+      persistentVolume:
+        storageClass: gp3
+      config:
+        cloud_storage_enabled: true
+        cloud_storage_region: us-east-1
+        cloud_storage_bucket: prod-tiered
+        cloud_storage_credentials_source: aws_instance_metadata
+        cloud_storage_cache_size: 20Gi
+  resources:
+    cpu:
+      cores: '8'
+    memory:
+      container:
+        max: 16Gi
+      redpanda:
+        memory: 12Gi
+  enterprise:
+    licenseSecretRef:
+      name: redpanda-license
+      key: license.key
+  config:
+    cluster:
+      default_topic_replications: 3
+      log_segment_size: 134217728
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-hot
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+  additionalRedpandaCmdFlags:
+    - --idle-poll-time-us=0
+  additionalSelectorLabels:
+    tier: hot
+  initContainers:
+    fsValidator:
+      enabled: true
+  rackAwareness:
+    enabled: true
   tls:
     enabled: true
     certs:
@@ -1041,60 +1086,6 @@ spec:
         cert: default
   monitoring:
     enabled: true
-  auditLogging:
-    enabled: true
-  storage:
-    persistentVolume:
-      enabled: true
-      size: 100Gi
-      storageClass: fast-ssd
-    tiered:
-      mountType: persistentVolume
-      persistentVolume:
-        storageClass: gp3
-      config:
-        cloud_storage_enabled: true
-        cloud_storage_region: us-east-1
-        cloud_storage_bucket: prod-tiered
-        cloud_storage_credentials_source: aws_instance_metadata
-        cloud_storage_cache_size: 20Gi
-  resources:
-    cpu:
-      cores: "8"
-    memory:
-      container:
-        max: 16Gi
-      redpanda:
-        memory: 12Gi
-  enterprise:
-    licenseSecretRef:
-      name: redpanda-license
-      key: license.key
-  config:
-    cluster:
-      default_topic_replications: 3
-      log_segment_size: 134217728
----
-apiVersion: cluster.redpanda.com/v1alpha2
-kind: NodePool
-metadata:
-  name: pool-hot
-  namespace: default
-spec:
-  clusterRef:
-    group: cluster.redpanda.com/v1alpha2
-    kind: StretchCluster
-    name: cluster
-  replicas: 3
-  additionalRedpandaCmdFlags:
-    - "--idle-poll-time-us=0"
-  additionalSelectorLabels:
-    tier: hot
-  initContainers:
-    fsValidator:
-      enabled: true
-  rackAwareness:
-    enabled: true
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: NodePool
@@ -1110,6 +1101,64 @@ spec:
   additionalSelectorLabels:
     tier: cold
   rackAwareness:
+    enabled: true
+  tls:
+    enabled: true
+    certs:
+      default:
+        caEnabled: true
+  external:
+    enabled: true
+    type: LoadBalancer
+    domain: prod.example.com
+    service:
+      enabled: true
+  listeners:
+    kafka:
+      port: 9093
+      tls:
+        cert: default
+      external:
+        default:
+          enabled: true
+          port: 30092
+          tls:
+            cert: default
+    admin:
+      port: 9644
+      tls:
+        cert: default
+      external:
+        default:
+          enabled: true
+          port: 30644
+          tls:
+            cert: default
+    http:
+      port: 8082
+      tls:
+        cert: default
+      external:
+        default:
+          enabled: true
+          port: 30082
+          tls:
+            cert: default
+    schemaRegistry:
+      port: 8081
+      tls:
+        cert: default
+      external:
+        default:
+          enabled: true
+          port: 30081
+          tls:
+            cert: default
+    rpc:
+      port: 33145
+      tls:
+        cert: default
+  monitoring:
     enabled: true
 -- flat-network --
 apiVersion: cluster.redpanda.com/v1alpha2
