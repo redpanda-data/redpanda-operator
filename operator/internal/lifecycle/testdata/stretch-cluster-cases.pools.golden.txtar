@@ -66,9 +66,9 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.3
+            value: v26.1.4
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.3
+            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.4
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.6
           lifecycle:
             postStart:
@@ -428,7 +428,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.3
+            value: v26.1.4
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.6
@@ -791,9 +791,9 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.3
+            value: v26.1.4
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.3
+            value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.4
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.6
           lifecycle:
             postStart:
@@ -1153,7 +1153,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.1.3
+            value: v26.1.4
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           image: docker.redpanda.com/redpandadata/redpanda:v26.1.6
