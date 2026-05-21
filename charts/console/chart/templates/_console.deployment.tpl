@@ -64,7 +64,7 @@
 {{- $_is_returning := false -}}
 {{- $tag := $state.Values.image.tag -}}
 {{- if (eq $tag "") -}}
-{{- $tag = "v3.7.0" -}}
+{{- $tag = "v3.7.3" -}}
 {{- end -}}
 {{- $image := (printf "%s:%s" $state.Values.image.repository $tag) -}}
 {{- if (not (empty $state.Values.image.registry)) -}}

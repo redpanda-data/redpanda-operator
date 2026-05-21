@@ -30,8 +30,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -449,8 +449,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -566,8 +566,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -677,8 +677,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -706,15 +706,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -1471,8 +1471,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -1777,8 +1777,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -1898,8 +1898,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -2011,8 +2011,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -2040,15 +2040,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -2577,8 +2577,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -2955,8 +2955,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -3072,8 +3072,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -3183,8 +3183,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -3212,15 +3212,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -3976,8 +3976,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -4321,8 +4321,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -4438,8 +4438,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -4549,8 +4549,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -4588,15 +4588,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -5183,8 +5183,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -5605,8 +5605,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -5722,8 +5722,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -5833,8 +5833,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -5872,15 +5872,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -6699,8 +6699,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -7124,8 +7124,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -7282,8 +7282,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -7393,8 +7393,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -7422,15 +7422,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -8189,8 +8189,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -8660,8 +8660,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -8777,8 +8777,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -8918,8 +8918,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -8947,15 +8947,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -9834,8 +9834,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -10253,8 +10253,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -10370,8 +10370,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -10481,8 +10481,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -10510,15 +10510,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -11274,8 +11274,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -11693,8 +11693,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -11810,8 +11810,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -11921,8 +11921,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -11950,15 +11950,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -12718,8 +12718,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -13185,8 +13185,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -13302,8 +13302,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -13413,8 +13413,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -13452,15 +13452,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -14279,8 +14279,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -14698,8 +14698,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -14815,8 +14815,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -14926,8 +14926,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -14955,15 +14955,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -15628,8 +15628,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -16047,8 +16047,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -16164,8 +16164,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -16370,8 +16370,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -16399,15 +16399,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -17072,8 +17072,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -17414,8 +17414,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -17531,8 +17531,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -17642,8 +17642,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -17671,15 +17671,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -18229,8 +18229,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -18648,8 +18648,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -18765,8 +18765,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -18876,8 +18876,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -18905,15 +18905,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -19699,8 +19699,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -20118,8 +20118,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -20235,8 +20235,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -20346,8 +20346,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -20375,15 +20375,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -21139,8 +21139,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -21558,8 +21558,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -21675,8 +21675,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -21786,8 +21786,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -21815,15 +21815,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -22582,8 +22582,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -23001,8 +23001,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -23118,8 +23118,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -23229,8 +23229,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -23258,15 +23258,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -24026,8 +24026,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -24204,8 +24204,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -24478,8 +24478,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -24595,8 +24595,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -24706,8 +24706,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -24745,7 +24745,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -25535,8 +25535,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -25713,8 +25713,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -25987,8 +25987,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -26104,8 +26104,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -26215,8 +26215,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -26254,7 +26254,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -27044,8 +27044,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -27222,8 +27222,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -27496,8 +27496,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -27613,8 +27613,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -27724,8 +27724,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -27763,7 +27763,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -28554,8 +28554,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -28973,8 +28973,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -29090,8 +29090,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -29201,8 +29201,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -29230,7 +29230,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -30013,8 +30013,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -30191,8 +30191,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -30465,8 +30465,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -30582,8 +30582,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -30693,8 +30693,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -30732,7 +30732,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -31540,8 +31540,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -31718,8 +31718,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -31992,8 +31992,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -32109,8 +32109,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -32220,8 +32220,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -32259,7 +32259,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -33067,8 +33067,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -33245,8 +33245,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -33519,8 +33519,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -33636,8 +33636,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -33747,8 +33747,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -33786,7 +33786,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -34596,8 +34596,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -35015,8 +35015,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -35132,8 +35132,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -35243,8 +35243,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -35272,7 +35272,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -36074,8 +36074,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -36252,8 +36252,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -36526,8 +36526,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -36643,8 +36643,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -36754,8 +36754,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -36793,7 +36793,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -37601,8 +37601,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -37779,8 +37779,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -38053,8 +38053,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -38170,8 +38170,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -38281,8 +38281,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -38320,7 +38320,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -39128,8 +39128,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -39306,8 +39306,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -39580,8 +39580,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -39697,8 +39697,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -39808,8 +39808,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -39847,7 +39847,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -40657,8 +40657,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -41076,8 +41076,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -41193,8 +41193,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -41304,8 +41304,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -41333,7 +41333,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
           value: console-unstable:master-8a51854
         - name: REDPANDA_METRICS_K8S_VERSION
@@ -42135,8 +42135,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -42554,8 +42554,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -42671,8 +42671,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -42782,8 +42782,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -42811,15 +42811,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -43575,8 +43575,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -43994,8 +43994,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -44111,8 +44111,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -44222,8 +44222,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -44251,15 +44251,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -45016,8 +45016,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -45435,8 +45435,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -45552,8 +45552,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -45663,8 +45663,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -45692,15 +45692,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -46456,8 +46456,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -46935,8 +46935,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -47052,8 +47052,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -47183,8 +47183,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -47212,15 +47212,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -47984,8 +47984,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -48403,8 +48403,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -48520,8 +48520,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -48631,8 +48631,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -48660,15 +48660,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -49430,8 +49430,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -49903,8 +49903,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -50020,8 +50020,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -50131,8 +50131,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -50160,15 +50160,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -50965,8 +50965,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -51384,8 +51384,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -51501,8 +51501,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -51612,8 +51612,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -51641,15 +51641,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -52409,8 +52409,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -52828,8 +52828,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -52945,8 +52945,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -53057,8 +53057,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -53086,15 +53086,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -53881,8 +53881,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -54300,8 +54300,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -54417,8 +54417,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -54528,8 +54528,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -54557,15 +54557,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -55356,8 +55356,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -55775,8 +55775,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -55892,8 +55892,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -56003,8 +56003,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -56032,15 +56032,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -58187,8 +58187,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -58606,8 +58606,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -58723,8 +58723,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -58834,8 +58834,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -58863,15 +58863,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -59491,8 +59491,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -59702,8 +59702,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -59999,8 +59999,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -60116,8 +60116,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -60227,8 +60227,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -60276,15 +60276,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -61111,8 +61111,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -61289,8 +61289,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -61563,8 +61563,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -61680,8 +61680,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -61791,8 +61791,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -61830,15 +61830,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -62602,8 +62602,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -63021,8 +63021,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -63138,8 +63138,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -63249,8 +63249,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -63283,15 +63283,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -64052,8 +64052,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -64471,8 +64471,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -64588,8 +64588,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -64699,8 +64699,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -64728,15 +64728,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -64802,8 +64802,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -65209,8 +65209,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -65547,8 +65547,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -65966,8 +65966,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -66083,8 +66083,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -66194,8 +66194,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -66223,15 +66223,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -68378,8 +68378,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -68797,8 +68797,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -68914,8 +68914,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -69025,8 +69025,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -69054,15 +69054,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -69825,8 +69825,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -70291,8 +70291,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -70408,8 +70408,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -70519,8 +70519,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -70558,15 +70558,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -71409,8 +71409,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -71828,8 +71828,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -71945,8 +71945,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -72056,8 +72056,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -72085,15 +72085,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -72849,8 +72849,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -73027,8 +73027,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -73301,8 +73301,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -73418,8 +73418,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -73529,8 +73529,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -73568,15 +73568,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -74340,8 +74340,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -74765,8 +74765,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -74923,8 +74923,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -75034,8 +75034,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -75063,15 +75063,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -75842,8 +75842,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -76261,8 +76261,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -76378,8 +76378,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -76489,8 +76489,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -76518,15 +76518,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -77282,8 +77282,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -77460,8 +77460,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -77734,8 +77734,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -77851,8 +77851,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -77962,8 +77962,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -78001,15 +78001,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -78773,8 +78773,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -79198,8 +79198,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -79356,8 +79356,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -79467,8 +79467,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -79496,15 +79496,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -80263,8 +80263,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -80682,8 +80682,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -80799,8 +80799,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -80910,8 +80910,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -80939,15 +80939,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -81703,8 +81703,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -81881,8 +81881,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -82155,8 +82155,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -82272,8 +82272,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -82383,8 +82383,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -82422,15 +82422,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -83194,8 +83194,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -83619,8 +83619,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -83777,8 +83777,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -83888,8 +83888,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -83917,15 +83917,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -84684,8 +84684,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -85103,8 +85103,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -85220,8 +85220,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -85331,8 +85331,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -85360,15 +85360,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -86124,8 +86124,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -86302,8 +86302,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -86576,8 +86576,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -86693,8 +86693,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -86804,8 +86804,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -86843,15 +86843,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -87615,8 +87615,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -88040,8 +88040,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -88198,8 +88198,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -88309,8 +88309,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -88338,15 +88338,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -89105,8 +89105,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -89524,8 +89524,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -89641,8 +89641,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -89752,8 +89752,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -89781,15 +89781,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -90545,8 +90545,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -90723,8 +90723,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -90997,8 +90997,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -91114,8 +91114,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -91225,8 +91225,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -91264,15 +91264,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -92036,8 +92036,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -92461,8 +92461,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -92619,8 +92619,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -92730,8 +92730,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -92759,15 +92759,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -93526,8 +93526,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -93945,8 +93945,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -94062,8 +94062,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -94173,8 +94173,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -94202,15 +94202,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -94966,8 +94966,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -95144,8 +95144,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -95418,8 +95418,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -95535,8 +95535,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -95646,8 +95646,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -95685,15 +95685,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -96457,8 +96457,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -96882,8 +96882,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -97040,8 +97040,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -97151,8 +97151,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -97180,15 +97180,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -97947,8 +97947,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -98366,8 +98366,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -98483,8 +98483,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -98594,8 +98594,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -98623,15 +98623,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -99201,8 +99201,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -99620,8 +99620,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -99737,8 +99737,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -99848,8 +99848,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -99877,15 +99877,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -100455,8 +100455,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -100875,8 +100875,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -100992,8 +100992,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -101103,8 +101103,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -101132,15 +101132,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -101940,8 +101940,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -102413,8 +102413,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -102530,8 +102530,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -102641,8 +102641,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -102670,15 +102670,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -103500,8 +103500,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -103919,8 +103919,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -104036,8 +104036,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -104245,8 +104245,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -104274,15 +104274,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -105042,8 +105042,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -105461,8 +105461,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -105578,8 +105578,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -105787,8 +105787,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -105816,15 +105816,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -106584,8 +106584,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -107065,8 +107065,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -107182,8 +107182,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -107313,8 +107313,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -107342,15 +107342,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -108161,8 +108161,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -108591,8 +108591,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -108708,8 +108708,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -108819,8 +108819,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -108848,15 +108848,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -109778,8 +109778,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -110197,8 +110197,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -110314,8 +110314,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -110425,8 +110425,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -110454,15 +110454,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -111218,8 +111218,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -111637,8 +111637,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -111754,8 +111754,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -111865,8 +111865,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -111894,15 +111894,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -112658,8 +112658,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -113077,8 +113077,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -113194,8 +113194,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -113305,8 +113305,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -113334,15 +113334,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -113973,8 +113973,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -113989,8 +113989,8 @@ spec:
       app.kubernetes.io/instance: redpanda
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: console
-      app.kubernetes.io/version: v3.7.0
-      helm.sh/chart: console-3.7.0
+      app.kubernetes.io/version: v3.7.3
+      helm.sh/chart: console-3.7.1
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: batch/v1
@@ -114125,8 +114125,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -114544,8 +114544,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -114661,8 +114661,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -114772,8 +114772,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -114801,15 +114801,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -115594,8 +115594,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -115996,8 +115996,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -116113,8 +116113,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -116224,8 +116224,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -116253,15 +116253,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -117042,8 +117042,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -117459,8 +117459,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -117576,8 +117576,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -117740,8 +117740,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -117792,15 +117792,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -118314,8 +118314,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -118641,8 +118641,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -119060,8 +119060,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -119177,8 +119177,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -119288,8 +119288,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -119317,15 +119317,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -120081,8 +120081,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -120259,8 +120259,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -120533,8 +120533,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -120650,8 +120650,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -120761,8 +120761,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -120800,15 +120800,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -121572,8 +121572,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -121997,8 +121997,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -122155,8 +122155,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -122266,8 +122266,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -122295,15 +122295,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -123062,8 +123062,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -123481,8 +123481,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -123598,8 +123598,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -123709,8 +123709,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -123738,15 +123738,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -124502,8 +124502,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -124680,8 +124680,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 stringData:
@@ -124954,8 +124954,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -125071,8 +125071,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -125182,8 +125182,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -125221,15 +125221,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -125993,8 +125993,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -126418,8 +126418,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -126576,8 +126576,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -126687,8 +126687,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -126716,15 +126716,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -127483,8 +127483,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -127902,8 +127902,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -128019,8 +128019,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -128130,8 +128130,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -128159,15 +128159,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -128620,8 +128620,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -128958,8 +128958,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -129399,8 +129399,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -129516,8 +129516,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -129725,8 +129725,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -129754,15 +129754,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -130350,8 +130350,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -130769,8 +130769,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 ---
@@ -130886,8 +130886,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -130997,8 +130997,8 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: console
-    app.kubernetes.io/version: v3.7.0
-    helm.sh/chart: console-3.7.0
+    app.kubernetes.io/version: v3.7.3
+    helm.sh/chart: console-3.7.1
   name: redpanda-console
   namespace: default
 spec:
@@ -131026,15 +131026,15 @@ spec:
         - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
           value: helm
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
-          value: 3.7.0
+          value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0-gke
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
