@@ -1,0 +1,15 @@
+project: operator
+kind: Added
+body: |
+  Adopted Redpanda 25.1+'s per-broker pre-restart probe (ENG-222) as the primary
+  rolling-restart gate. The operator now consults /v1/broker/pre_restart_probe
+  for the specific broker it's about to roll, and proceeds only when the broker
+  reports no acks=1 data-loss risk, no produce/consume unavailability, and no
+  acks=-1 produce rejection. RF=1 offline is treated as acceptable risk. On
+  clusters older than 25.1 the helper detects 404 and falls back to the
+  cluster-wide IsHealthy heuristic so behavior on pre-25.1 brokers is unchanged.
+  The sidecar readiness probe (Prober.IsClusterBrokerHealthy) consults the same
+  per-broker probe first before falling back to the legacy
+  cluster-overview-with-relaxed-fallback path. Requires common-go/rpadmin
+  v0.2.7+, which exposes PreRestartProbe/PostRestartProbe.
+time: 2026-05-21T10:00:00.000000-07:00

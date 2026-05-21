@@ -11,7 +11,9 @@ package probes
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -20,6 +22,12 @@ import (
 
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
+
+// ErrPreRestartProbeUnsupported is returned by IsBrokerSafeToRestart when the
+// broker doesn't expose the /v1/broker/pre_restart_probe endpoint — typically
+// Redpanda < 25.1. Callers should fall back to the cluster-wide health check
+// when they receive this sentinel.
+var ErrPreRestartProbeUnsupported = errors.New("broker pre-restart probe endpoint not available (Redpanda < 25.1)")
 
 type Option func(*Prober)
 
@@ -58,13 +66,89 @@ func NewProber(factory internalclient.ClientFactory, configPath string, options 
 	return prober
 }
 
+// IsBrokerSafeToRestart asks the broker whether restarting it right now is
+// expected to affect partitions, via the per-broker /v1/broker/pre_restart_probe
+// endpoint (Redpanda 25.1+). A broker is considered safe to restart when none
+// of the dangerous risk categories are populated:
+//
+//   - acks1_data_loss                 (acks=1 producers may lose data)
+//   - unavailable                     (produce+consume reject)
+//   - full_acks_produce_unavailable   (acks=-1 produce reject)
+//
+// rf1_offline is treated as acceptable risk: an RF=1 topic already has no
+// redundancy, and bringing those partitions offline for the duration of the
+// restart is the user's stated tolerance.
+//
+// On clusters older than 25.1 the endpoint returns 404; this function then
+// returns ErrPreRestartProbeUnsupported so the caller can fall back to the
+// cluster-wide health overview.
+func (p *Prober) IsBrokerSafeToRestart(ctx context.Context, brokerURL string) (bool, error) {
+	client, _, err := p.getClient(ctx, brokerURL)
+	if err != nil {
+		return false, fmt.Errorf("initializing client to check broker restart safety: %w", err)
+	}
+	defer client.Close()
+
+	result, err := client.PreRestartProbe(ctx, 0)
+	if err != nil {
+		var httpErr *rpadmin.HTTPResponseError
+		if errors.As(err, &httpErr) && httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusNotFound {
+			return false, ErrPreRestartProbeUnsupported
+		}
+		return false, fmt.Errorf("fetching broker pre-restart probe: %w", err)
+	}
+
+	if n := len(result.Risks.Acks1DataLoss); n > 0 {
+		p.logger.Info("broker not safe to restart: would risk acks=1 data loss", "partitions", n)
+		return false, nil
+	}
+	if n := len(result.Risks.Unavailable); n > 0 {
+		p.logger.Info("broker not safe to restart: partitions would become unavailable", "partitions", n)
+		return false, nil
+	}
+	if n := len(result.Risks.FullAcksProduceUnavailable); n > 0 {
+		p.logger.Info("broker not safe to restart: acks=-1 produce would be rejected", "partitions", n)
+		return false, nil
+	}
+	// rf1_offline is acceptable — log for visibility but don't block.
+	if n := len(result.Risks.RF1Offline); n > 0 {
+		p.logger.V(1).Info("broker restart will briefly offline RF=1 partitions", "partitions", n)
+	}
+	return true, nil
+}
+
 // IsClusterBrokerHealthy checks that a cluster broker is up and ready to serve requests
 // but additionally serves as a gate for StatefulSet rolling restarts. It's a relaxed form
 // of our previous readiness probe which only looked at the `IsHealthy` return value from
 // the cluster health overview endpoint. This had the unfortunate effect of marking all brokers
 // as "unready" when a single broker was marked as a downed node due to being a reflection of
 // the overall cluster health rather than an individual broker's health.
+//
+// On Redpanda 25.1+ the per-broker pre-restart probe is consulted first
+// (via IsBrokerSafeToRestart) — its per-broker counterfactual is a strictly
+// stricter signal than the cluster-wide IsHealthy boolean for "is it safe to
+// restart this broker now." When the endpoint isn't present (older clusters)
+// or returns false for non-restart-related reasons, this function falls back
+// to the cluster-health-overview-with-relaxed-fallback path below.
 func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (bool, error) {
+	// Primary gate (Redpanda 25.1+): ask the broker whether restarting it
+	// would risk acks=1 data loss / partition unavailability / acks=-1
+	// produce rejection. This is per-broker; it does not get conflated
+	// with cluster-wide health blips elsewhere in the cluster.
+	if safe, err := p.IsBrokerSafeToRestart(ctx, brokerURL); err == nil {
+		if safe {
+			return true, nil
+		}
+		// The per-broker probe answered "not safe" — trust that and don't
+		// fall back to the cluster-wide check, which would give the
+		// broker a green light just because the cluster overview looks
+		// healthy in aggregate.
+		return false, nil
+	} else if !errors.Is(err, ErrPreRestartProbeUnsupported) {
+		return false, err
+	}
+	// Older Redpanda (<25.1) — fall through to the legacy path below.
+
 	client, brokerID, err := p.getClient(ctx, brokerURL)
 	if err != nil {
 		return false, fmt.Errorf("initializing client to check broker health: %w", err)
