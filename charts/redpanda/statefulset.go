@@ -627,11 +627,27 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 // - It attaches a maximum time limit by wrapping the command with `timeout -v <timeout>`
 // - It redirect stderr to stdout so all logs from cmd get the same treatment.
 // - It prepends the "lifecycle-hook $(hook) $(date)" to al lines emitted by the hook for easy identification.
-// - It tees the output to fd 1 of pid 1 so it shows up in kubectl logs
-// - It terminates the entire command with "true" so it never fails which would cause the Pod to get killed.
+// - It tees the output to fd 1 of pid 1 so it shows up in kubectl logs.
+// - When the wrapped command exceeds the time budget, it emits a clearly-marked
+//   TIMEOUT line — `timeout`'s own message can be sparse, and the trailing
+//   `true` below previously made the failure invisible to anyone scanning pod
+//   logs for a reason the broker shut down ungracefully. PIPESTATUS[0] is
+//   read for timeout's exit code (124 = SIGTERM sent, 137 = SIGKILL).
+// - It still terminates the entire command with "true" so non-zero exits
+//   don't poison container lifecycle on transient hook issues. The TIMEOUT
+//   marker above is the diagnostic signal operators grep for.
 func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
 	wrapped := helmette.Join(" ", cmd)
-	return []string{"bash", "-c", fmt.Sprintf("timeout -v %d %s 2>&1 | sed \"s/^/lifecycle-hook %s $(date): /\" | tee /proc/1/fd/1; true", timeoutSeconds, wrapped, hook)}
+	script := fmt.Sprintf(
+		`timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1`+"\n"+
+			`ec=${PIPESTATUS[0]}`+"\n"+
+			`if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then`+"\n"+
+			`  echo "lifecycle-hook %s $(date): TIMEOUT after %ds — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1`+"\n"+
+			`fi`+"\n"+
+			`true`,
+		timeoutSeconds, wrapped, hook, hook, timeoutSeconds,
+	)
+	return []string{"bash", "-c", script}
 }
 
 func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Container {
