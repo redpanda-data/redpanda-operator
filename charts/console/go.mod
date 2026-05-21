@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/charts/console/v3
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/cloudhut/common v0.11.0
@@ -9,7 +9,7 @@ require (
 	github.com/itchyny/gojq v0.12.17
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/redpanda-data/common-go/kube v0.0.0-20260225221458-fec06b917c9a
-	github.com/redpanda-data/console/backend v0.0.0-20260330203659-9db13eb40ef4
+	github.com/redpanda-data/console/backend v0.0.0-20260520103351-4e507df78905
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
@@ -240,7 +240,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
-	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa // indirect
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
