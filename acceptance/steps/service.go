@@ -12,7 +12,6 @@ package steps
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +38,7 @@ func checkServiceWithPort(ctx context.Context, t framework.TestingT, serviceName
 
 		t.Logf(`Did not find port named %q`, portName)
 		return false
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Service %q never contained port named %q with value %d`, key.String(), portName, port)
 	}))
 	t.Logf("Found port named %q on service %q with value %d!", portName, serviceName, port)

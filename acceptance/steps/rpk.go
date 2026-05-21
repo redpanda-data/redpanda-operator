@@ -84,7 +84,7 @@ func runScriptInClusterCheckOutput(ctx context.Context, t framework.TestingT, co
 		}
 
 		return true
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Never succeeded in executing %q with output %q`, command, expected)
 	}))
 }

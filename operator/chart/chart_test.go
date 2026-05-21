@@ -10,6 +10,7 @@
 package operator
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -77,6 +78,23 @@ func TestIntegrationChart(t *testing.T) {
 		return upToDate && ready, nil
 	}
 
+	// stableCtx gives each ApplyAll(And)Wait call a fresh 10-minute budget
+	// regardless of how much of the suite's `go test -timeout 60m` remains.
+	// On v25.2.x runners three Redpanda CRs in a vcluster routinely take
+	// 5-7 minutes EACH to reach Stable (image pull, PVC binding, operator
+	// reconcile under contention) and WaitFor iterates the objects in
+	// series — so a tight inherited deadline made this test deterministically
+	// flake when scheduled late in the suite. Same flake class as the
+	// rest of this PR addresses for acceptance/steps/ Eventually loops;
+	// see clusterReadyTimeout there for the constant pattern.
+	const chartCRStableTimeout = 10 * time.Minute
+	stableCtx := func(t *testing.T) context.Context {
+		t.Helper()
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), chartCRStableTimeout)
+		t.Cleanup(cancel)
+		return ctx
+	}
+
 	t.Run("default", func(t *testing.T) {
 		t.Parallel()
 
@@ -129,7 +147,7 @@ func TestIntegrationChart(t *testing.T) {
 		// the operator is installed in) and observe that they eventually
 		// become stable.
 		require.NoError(t, kube.ApplyAllAndWait(
-			t.Context(),
+			stableCtx(t),
 			ctl,
 			isStable,
 			testRP("rp-1", release.Namespace),
@@ -189,10 +207,10 @@ func TestIntegrationChart(t *testing.T) {
 			}))
 
 		// Assert that we can create a redpanda CR that becomes stable in the namespace specified by --namespace.
-		require.NoError(t, kube.ApplyAndWait(t.Context(), ctl, testRP("rp-1", release.Namespace), isStable))
+		require.NoError(t, kube.ApplyAndWait(stableCtx(t), ctl, testRP("rp-1", release.Namespace), isStable))
 
 		// redpanda CR's created in other namespaces will not be reconciled.
-		require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl,
+		require.NoError(t, kube.ApplyAllAndWait(stableCtx(t), ctl,
 			func(rp *redpandav1alpha2.Redpanda, err error) (bool, error) {
 				if err != nil {
 					return false, err
