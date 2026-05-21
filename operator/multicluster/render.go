@@ -47,12 +47,12 @@ func Types() []kube.Object {
 	}
 }
 
-// RenderNodePools renders all node pool StatefulSets.
-func RenderNodePools(state *RenderState) ([]*appsv1.StatefulSet, error) {
+// RenderBrokerPools renders all node pool StatefulSets.
+func RenderBrokerPools(state *RenderState) ([]*appsv1.StatefulSet, error) {
 	return statefulSets(state)
 }
 
-// RenderResources renders non-nodepool resources.
+// RenderResources renders non-brokerpool resources.
 func RenderResources(state *RenderState) ([]kube.Object, error) {
 	pdb := podDisruptionBudget(state)
 

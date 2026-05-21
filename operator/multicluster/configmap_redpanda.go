@@ -23,7 +23,7 @@ import (
 // rpk config) is emitted — this is the version baked into the ConfigMap that pods
 // mount. When false, a minimal config without seed servers is generated for the
 // checksum annotation, so that replica count changes don't trigger rolling restarts.
-func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpandav1alpha2.NodePool) (string, error) {
+func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpandav1alpha2.RedpandaBrokerPool) (string, error) {
 	redpanda := map[string]any{
 		"empty_seed_starts_cluster": false,
 		"crash_loop_limit":          5,

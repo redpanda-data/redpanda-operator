@@ -88,7 +88,6 @@ type MulticlusterReconciler struct {
 	Manager         multicluster.Manager
 	LifecycleClient *lifecycle.ResourceClient[lifecycle.StretchClusterWithPools, *lifecycle.StretchClusterWithPools]
 	ClientFactory   internalclient.ClientFactory
-	UseNodePools    bool
 
 	// ReconcileTimeout is a defense-in-depth ceiling on the wall time of a
 	// single reconcile pass — the primary mechanism is per-call timeouts
@@ -200,7 +199,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	defer state.cleanup()
 
 	// Update the per-member broker count gauges from the freshly-fetched
-	// NodePool state. Recording here rather than later means the dashboard
+	// RedpandaBrokerPool state. Recording here rather than later means the dashboard
 	// reflects what's deployed even on reconcile paths that abort early
 	// (deletion, finalizer-only updates, etc.).
 	r.recordBrokerCountMetrics(state)
@@ -472,13 +471,13 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 
 	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames())
 
-	// grab NodePools from all connected clusters
-	nodePools, nodePoolsObserved, err := r.LifecycleClient.FetchExistingNodePoolsFromAllClusters(ctx, sccluster)
+	// grab BrokerPools from all connected clusters
+	brokerPools, brokerPoolsObserved, err := r.LifecycleClient.FetchExistingNodePoolsFromAllClusters(ctx, sccluster)
 	if err != nil {
 		logger.Error(err, "fetching nodepools")
 		return nil, err
 	}
-	sccluster.NodePools = nodePools
+	sccluster.BrokerPools = brokerPools
 
 	// grab our existing and desired pool resources
 	// so that we can immediately calculate cluster status
@@ -489,7 +488,7 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	if restartOnConfigChange {
 		injectedConfigVersion = sc.Status.ConfigVersion
 	}
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, nodePoolsObserved)
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, brokerPoolsObserved)
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return nil, err
@@ -531,7 +530,7 @@ func (r *MulticlusterReconciler) recordBrokerCountMetrics(state *stretchClusterR
 	sc := state.cluster.StretchCluster
 	for _, clusterName := range r.Manager.GetClusterNames() {
 		var desired, ready int32
-		for _, pool := range state.cluster.GetNodePoolsForCluster(clusterName) {
+		for _, pool := range state.cluster.GetBrokerPoolsForCluster(clusterName) {
 			if pool == nil {
 				continue
 			}

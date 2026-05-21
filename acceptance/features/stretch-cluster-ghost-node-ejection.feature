@@ -38,7 +38,7 @@ Feature: StretchCluster ghost node ejection
           health_monitor_tick_interval: 5000
           node_status_interval: 5000
     """
-    And I apply a NodePool Kubernetes manifest to "ghost":
+    And I apply a RedpandaBrokerPool Kubernetes manifest to "ghost":
     """
     spec:
       clusterRef:
@@ -58,7 +58,7 @@ Feature: StretchCluster ghost node ejection
             enabled: false
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
-    And I expect all 3 NodePools in "ghost" to be eventually bound and deployed
+    And I expect all 3 RedpandaBrokerPools in "ghost" to be eventually bound and deployed
     # Verify the cluster starts healthy with all 3 nodes.
     When I execute "rpk cluster health" command in the statefulset container in each cluster
     Then the cluster health output should show 3 nodes across all clusters in "ghost"

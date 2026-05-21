@@ -1267,3 +1267,253 @@ func TestNodePool(t *testing.T) {
 		})
 	}
 }
+
+type setRedpandaBrokerPoolFunc func(status *RedpandaBrokerPoolStatus)
+
+func TestRedpandaBrokerPool(t *testing.T) {
+	// regular condition tests
+	for name, tt := range map[string]struct {
+		condition string
+		reason    string
+		expected  metav1.ConditionStatus
+		setFn     setRedpandaBrokerPoolFunc
+	}{
+		"Bound/Bound": {
+			condition: RedpandaBrokerPoolBound,
+			reason:    string(RedpandaBrokerPoolBoundReasonBound),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *RedpandaBrokerPoolStatus) { status.SetBound(RedpandaBrokerPoolBoundReasonBound, "reason") },
+		},
+		"Bound/NotBound": {
+			condition: RedpandaBrokerPoolBound,
+			reason:    string(RedpandaBrokerPoolBoundReasonNotBound),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetBound(RedpandaBrokerPoolBoundReasonNotBound, "reason")
+			},
+		},
+		"Bound/Error": {
+			condition: RedpandaBrokerPoolBound,
+			reason:    string(RedpandaBrokerPoolBoundReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *RedpandaBrokerPoolStatus) { status.SetBound(RedpandaBrokerPoolBoundReasonError, "reason") },
+		},
+		"Bound/TerminalError": {
+			condition: RedpandaBrokerPoolBound,
+			reason:    string(RedpandaBrokerPoolBoundReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetBound(RedpandaBrokerPoolBoundReasonTerminalError, "reason")
+			},
+		},
+		"Deployed/Deployed": {
+			condition: RedpandaBrokerPoolDeployed,
+			reason:    string(RedpandaBrokerPoolDeployedReasonDeployed),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonDeployed, "reason")
+			},
+		},
+		"Deployed/Scaling": {
+			condition: RedpandaBrokerPoolDeployed,
+			reason:    string(RedpandaBrokerPoolDeployedReasonScaling),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonScaling, "reason")
+			},
+		},
+		"Deployed/NotDeployed": {
+			condition: RedpandaBrokerPoolDeployed,
+			reason:    string(RedpandaBrokerPoolDeployedReasonNotDeployed),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonNotDeployed, "reason")
+			},
+		},
+		"Deployed/Error": {
+			condition: RedpandaBrokerPoolDeployed,
+			reason:    string(RedpandaBrokerPoolDeployedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonError, "reason")
+			},
+		},
+		"Deployed/TerminalError": {
+			condition: RedpandaBrokerPoolDeployed,
+			reason:    string(RedpandaBrokerPoolDeployedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonTerminalError, "reason")
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewRedpandaBrokerPool()
+
+			assertNoCondition(t, tt.condition, status.getConditions(0))
+			tt.setFn(status)
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.getConditions(0))
+		})
+	}
+
+	// final conditions tests
+	for name, conditionReason := range map[string]struct {
+		condition   string
+		trueReason  string
+		falseReason string
+	}{
+		"Quiesced": {
+			condition:   RedpandaBrokerPoolQuiesced,
+			trueReason:  string(RedpandaBrokerPoolQuiescedReasonQuiesced),
+			falseReason: string(RedpandaBrokerPoolQuiescedReasonStillReconciling),
+		},
+	} {
+		conditionReason := conditionReason
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewRedpandaBrokerPool()
+
+			// attempt to set all conditions one by one until they are all set
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetBound(RedpandaBrokerPoolBoundReasonBound, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetDeployed(RedpandaBrokerPoolDeployedReasonDeployed, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
+		})
+	}
+
+	// transient error tests
+	for name, tt := range map[string]struct {
+		setTransientErrFn   setRedpandaBrokerPoolFunc
+		setConditionReasons []setRedpandaBrokerPoolFunc
+	}{
+		"Transient Error: Error, Condition: Bound": {
+			setTransientErrFn: func(status *RedpandaBrokerPoolStatus) { status.SetBound(RedpandaBrokerPoolBoundReasonError, "reason") },
+			setConditionReasons: []setRedpandaBrokerPoolFunc{
+				func(status *RedpandaBrokerPoolStatus) {
+					status.SetDeployed(RedpandaBrokerPoolDeployedReasonDeployed, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: Deployed": {
+			setTransientErrFn: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonError, "reason")
+			},
+			setConditionReasons: []setRedpandaBrokerPoolFunc{
+				func(status *RedpandaBrokerPoolStatus) { status.SetBound(RedpandaBrokerPoolBoundReasonBound, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewRedpandaBrokerPool()
+
+			assertConditionStatusReason(t, RedpandaBrokerPoolQuiesced, metav1.ConditionFalse, string(RedpandaBrokerPoolQuiescedReasonStillReconciling), status.getConditions(0))
+
+			tt.setTransientErrFn(status)
+			for _, setFn := range tt.setConditionReasons {
+				setFn(status)
+			}
+
+			assertConditionStatusReason(t, RedpandaBrokerPoolQuiesced, metav1.ConditionFalse, string(RedpandaBrokerPoolQuiescedReasonStillReconciling), status.getConditions(0))
+		})
+	}
+
+	// terminal error tests
+	for name, setFn := range map[string]setRedpandaBrokerPoolFunc{
+		"Terminal Error: TerminalError, Condition: Bound": func(status *RedpandaBrokerPoolStatus) {
+			status.SetBound(RedpandaBrokerPoolBoundReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: Deployed": func(status *RedpandaBrokerPoolStatus) {
+			status.SetDeployed(RedpandaBrokerPoolDeployedReasonTerminalError, "reason")
+		},
+	} {
+		setFn := setFn
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewRedpandaBrokerPool()
+
+			assertConditionStatusReason(t, RedpandaBrokerPoolQuiesced, metav1.ConditionFalse, string(RedpandaBrokerPoolQuiescedReasonStillReconciling), status.getConditions(0))
+
+			setFn(status)
+
+			assertConditionStatusReason(t, RedpandaBrokerPoolQuiesced, metav1.ConditionTrue, string(RedpandaBrokerPoolQuiescedReasonQuiesced), status.getConditions(0))
+		})
+	}
+
+	// rollup conditions tests
+	for name, tt := range map[string]struct {
+		condition      string
+		trueReason     string
+		falseReason    string
+		falseCondition setRedpandaBrokerPoolFunc
+		trueConditions []setRedpandaBrokerPoolFunc
+	}{
+		"Rollup Conditions: Stable, All True": {
+			condition:   RedpandaBrokerPoolStable,
+			trueReason:  string(RedpandaBrokerPoolStableReasonStable),
+			falseReason: string(RedpandaBrokerPoolStableReasonUnstable),
+			trueConditions: []setRedpandaBrokerPoolFunc{
+				func(status *RedpandaBrokerPoolStatus) { status.SetBound(RedpandaBrokerPoolBoundReasonBound, "reason") },
+				func(status *RedpandaBrokerPoolStatus) {
+					status.SetDeployed(RedpandaBrokerPoolDeployedReasonDeployed, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: Bound": {
+			condition:   RedpandaBrokerPoolStable,
+			trueReason:  string(RedpandaBrokerPoolStableReasonStable),
+			falseReason: string(RedpandaBrokerPoolStableReasonUnstable),
+			falseCondition: func(status *RedpandaBrokerPoolStatus) {
+				status.SetBound(RedpandaBrokerPoolBoundReasonTerminalError, "reason")
+			},
+			trueConditions: []setRedpandaBrokerPoolFunc{
+				func(status *RedpandaBrokerPoolStatus) {
+					status.SetDeployed(RedpandaBrokerPoolDeployedReasonDeployed, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: Deployed": {
+			condition:   RedpandaBrokerPoolStable,
+			trueReason:  string(RedpandaBrokerPoolStableReasonStable),
+			falseReason: string(RedpandaBrokerPoolStableReasonUnstable),
+			falseCondition: func(status *RedpandaBrokerPoolStatus) {
+				status.SetDeployed(RedpandaBrokerPoolDeployedReasonTerminalError, "reason")
+			},
+			trueConditions: []setRedpandaBrokerPoolFunc{
+				func(status *RedpandaBrokerPoolStatus) { status.SetBound(RedpandaBrokerPoolBoundReasonBound, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewRedpandaBrokerPool()
+
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+
+			if tt.falseCondition != nil {
+				tt.falseCondition(status)
+			}
+			for _, setFn := range tt.trueConditions {
+				setFn(status)
+			}
+
+			if tt.falseCondition != nil {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+			} else {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.getConditions(0))
+			}
+		})
+	}
+}

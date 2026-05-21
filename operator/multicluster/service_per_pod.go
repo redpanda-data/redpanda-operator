@@ -43,7 +43,7 @@ func perPodServices(state *RenderState) ([]*corev1.Service, error) {
 	return services, nil
 }
 
-func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32, _ bool, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
+func perPodService(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, ordinal int32, _ bool, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
 	spec := state.Spec()
 
 	labels := state.commonLabels()
@@ -54,7 +54,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 	name := PerPodServiceName(state.poolFullname(pool), ordinal)
 	annotations := make(map[string]string)
 	if spec.Service != nil && spec.Service.Internal != nil {
-		// TODO: consider a special field for per pod service annotation, either in nodepool or stretchcluster spec.
+		// TODO: consider a special field for per pod service annotation, either in brokerpool or stretchcluster spec.
 		annotations = spec.Service.Internal.Annotations
 	}
 
@@ -108,7 +108,7 @@ func perPodService(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal 
 
 // perPodServiceOverride returns the applicable override for a per-pod Service,
 // based on whether the pool is local or remote.
-func perPodServiceOverride(pool *redpandav1alpha2.NodePool, isLocal bool) *redpandav1alpha2.PerPodServiceOverride {
+func perPodServiceOverride(pool *redpandav1alpha2.RedpandaBrokerPool, isLocal bool) *redpandav1alpha2.PerPodServiceOverride {
 	if pool.Spec.Services == nil || pool.Spec.Services.PerPod == nil {
 		return nil
 	}
@@ -172,7 +172,7 @@ func perPodServicePorts(spec *redpandav1alpha2.StretchClusterSpec) []corev1.Serv
 	return ports
 }
 
-func perPodServiceSelector(state *RenderState, pool *redpandav1alpha2.NodePool, ordinal int32) map[string]string {
+func perPodServiceSelector(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, ordinal int32) map[string]string {
 	selector := statefulSetPodLabelsSelector(state, pool)
 	// make sure this service only selects one pod
 	selector["apps.kubernetes.io/pod-index"] = strconv.Itoa(int(ordinal))
