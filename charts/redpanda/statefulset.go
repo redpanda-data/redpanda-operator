@@ -624,18 +624,18 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 }
 
 // wrapLifecycleHook wraps the given command in an attempt to make it more friendly for Kubernetes' lifecycle hooks.
-// - It attaches a maximum time limit by wrapping the command with `timeout -v <timeout>`
-// - It redirect stderr to stdout so all logs from cmd get the same treatment.
-// - It prepends the "lifecycle-hook $(hook) $(date)" to al lines emitted by the hook for easy identification.
-// - It tees the output to fd 1 of pid 1 so it shows up in kubectl logs.
-// - When the wrapped command exceeds the time budget, it emits a clearly-marked
-//   TIMEOUT line — `timeout`'s own message can be sparse, and the trailing
-//   `true` below previously made the failure invisible to anyone scanning pod
-//   logs for a reason the broker shut down ungracefully. PIPESTATUS[0] is
-//   read for timeout's exit code (124 = SIGTERM sent, 137 = SIGKILL).
-// - It still terminates the entire command with "true" so non-zero exits
-//   don't poison container lifecycle on transient hook issues. The TIMEOUT
-//   marker above is the diagnostic signal operators grep for.
+//   - It attaches a maximum time limit by wrapping the command with `timeout -v <timeout>`
+//   - It redirect stderr to stdout so all logs from cmd get the same treatment.
+//   - It prepends the "lifecycle-hook $(hook) $(date)" to al lines emitted by the hook for easy identification.
+//   - It tees the output to fd 1 of pid 1 so it shows up in kubectl logs.
+//   - When the wrapped command exceeds the time budget, it emits a clearly-marked
+//     TIMEOUT line — `timeout`'s own message can be sparse, and the trailing
+//     `true` below previously made the failure invisible to anyone scanning pod
+//     logs for a reason the broker shut down ungracefully. PIPESTATUS[0] is
+//     read for timeout's exit code (124 = SIGTERM sent, 137 = SIGKILL).
+//   - It still terminates the entire command with "true" so non-zero exits
+//     don't poison container lifecycle on transient hook issues. The TIMEOUT
+//     marker above is the diagnostic signal operators grep for.
 func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
 	wrapped := helmette.Join(" ", cmd)
 	script := fmt.Sprintf(
