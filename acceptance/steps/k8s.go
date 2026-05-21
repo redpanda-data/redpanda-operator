@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +41,7 @@ func podWillEventuallyBeInPhase(ctx context.Context, t framework.TestingT, podNa
 		require.NoError(c, t.Get(ctx, t.ResourceKey(podName), &pod))
 
 		require.Equal(c, corev1.PodPhase(phase), pod.Status.Phase)
-	}, 5*time.Minute, 5*time.Second)
+	}, clusterReadyTimeout, clusterReadyPoll)
 }
 
 func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName, clusterName string) {
@@ -78,7 +77,7 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 
 		t.Logf(`Checking object contains cluster owner reference? (actual: %s/%s -> %s) (expected: %s/%s -> %s)`, actual.Kind, actual.APIVersion, actual.Name, expected.Kind, expected.APIVersion, expected.Name)
 		return matches
-	}, 5*time.Minute, 5*time.Second, "", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "", delayLog(func() string {
 		return fmt.Sprintf(`Object %q never contained owner reference for cluster %q, final OwnerReference: %+v`, resourceName, clusterName, o.GetOwnerReferences())
 	}))
 
@@ -225,5 +224,5 @@ func execInPod(
 		}))
 
 		assert.Equal(collect, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
-	}, 5*time.Minute, 5*time.Second)
+	}, clusterReadyTimeout, clusterReadyPoll)
 }

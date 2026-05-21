@@ -27,6 +27,20 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
+// clusterReadyTimeout caps how long we wait for a cluster to reach a Ready /
+// Stable / Healthy condition during acceptance tests. v25.2.x runners have
+// shown sub-5-minute starts in the happy path but routine 5-7 minute starts
+// under load (image pull, PVC binding, operator reconcile under contention),
+// which used to be indistinguishable from a real stuck-cluster failure with
+// the previous 5-minute literal. Centralizing the constant also makes future
+// tuning a one-line change.
+const clusterReadyTimeout = 10 * time.Minute
+
+// clusterReadyPoll is the polling interval for cluster-ready Eventually
+// loops. Keeping it short keeps per-failure log resolution useful when a
+// cluster does genuinely fail to come up.
+const clusterReadyPoll = 5 * time.Second
+
 func checkClusterAvailability(ctx context.Context, t framework.TestingT, version, clusterName string) {
 	if getVersion(t, version) == "vectorized" {
 		checkV1ClusterAvailability(ctx, t, clusterName)
@@ -52,7 +66,7 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 
 		t.Logf(`Checking cluster resource conditions contains "OperatorQuiescent"? %v`, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "OperatorQuiescent", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q is ready!", clusterName)
@@ -91,7 +105,7 @@ func checkV2ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 
 		t.Logf(`Checking cluster resource conditions contains "Ready"? %v`, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "Ready", final Conditions: %+v`, key.String(), cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q is ready!", clusterName)
@@ -110,7 +124,7 @@ func redpandaClusterIsHealthy(ctx context.Context, t framework.TestingT, cluster
 
 		t.Logf("Cluster health: %v", health.IsHealthy)
 		return health.IsHealthy
-	}, 5*time.Minute, 5*time.Second, `Cluster %q never become healthy: %+v`, cluster, health)
+	}, clusterReadyTimeout, clusterReadyPoll, `Cluster %q never become healthy: %+v`, cluster, health)
 }
 
 func checkClusterUnhealthy(ctx context.Context, t framework.TestingT, clusterName string) {
@@ -137,7 +151,7 @@ func checkClusterHealthCondition(ctx context.Context, t framework.TestingT, clus
 
 		t.Logf(`Checking cluster conditions contains Healthy reason %q? %v`, reason, hasCondition)
 		return hasCondition
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason %q, final Conditions: %+v`, key.String(), reason, cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q contains Healthy reason %q!", clusterName, reason)
@@ -217,7 +231,7 @@ func checkClusterNodeCount(ctx context.Context, t framework.TestingT, clusterNam
 		t.Logf("Checking cluster %q has %d total nodes? %v (%d)", clusterName, nodeCount, matchesCount, actualNodeCount)
 
 		return matchesCount
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never had a matching node count, node Count: %d`, key.String(), actualNodeCount)
 	}))
 	t.Logf("Cluster %q has %d nodes!", clusterName, nodeCount)
@@ -259,7 +273,7 @@ func checkClusterStableWithCount(ctx context.Context, t framework.TestingT, clus
 		t.Logf("Checking cluster %q has %d total nodes? %v (%d)", clusterName, nodeCount, matchesCount, actualNodeCount)
 
 		return hasCondition && matchesCount
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained the condition reason "Ready" with a matching node count, node Count: %d, final Conditions: %+v`, key.String(), actualNodeCount, cluster.Status.Conditions)
 	}))
 	t.Logf("Cluster %q is stable with %d nodes!", clusterName, nodeCount)

@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
@@ -54,7 +53,7 @@ func checkClusterHasSyncError(ctx context.Context, t framework.TestingT, cluster
 		}
 
 		return false
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		return fmt.Sprintf(`Cluster %q never contained an error on the condition reason "ResourcesSynced" with a matching error string: %q, final Conditions: %+v`, key.String(), errorString, cluster.Status.Conditions)
 	}))
 }
@@ -96,7 +95,7 @@ func fieldManagerCheck(ctx context.Context, t framework.TestingT, presence bool,
 			t.Logf(`Found field manager %q in resource %q`, manager, key.String())
 		}
 		return presence
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+	}, clusterReadyTimeout, clusterReadyPoll, "%s", delayLog(func() string {
 		finalManagers := []string{}
 		for _, entry := range cluster.GetManagedFields() {
 			finalManagers = append(finalManagers, entry.Manager)
