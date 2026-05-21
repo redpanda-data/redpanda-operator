@@ -370,8 +370,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $wrapped := (join " " $cmd) -}}
+{{- $script := (printf (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" (printf "%s%s" `timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1` "\n") `ec=${PIPESTATUS[0]}`) "\n") `if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then`) "\n") `  echo "lifecycle-hook %s $(date): TIMEOUT after %ds — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1`) "\n") `fi`) "\n") `true`) $timeoutSeconds $wrapped $hook $hook $timeoutSeconds) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list "bash" "-c" (printf "timeout -v %d %s 2>&1 | sed \"s/^/lifecycle-hook %s $(date): /\" | tee /proc/1/fd/1; true" $timeoutSeconds $wrapped $hook))) | toJson -}}
+{{- (dict "r" (list "bash" "-c" $script)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

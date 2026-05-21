@@ -1,0 +1,15 @@
+project: charts/redpanda
+kind: Fixed
+body: |
+  Made StatefulSet lifecycle-hook timeouts visible in pod logs. The wrapper
+  previously ended every hook with `; true`, which swallowed timeout exit codes
+  (124 SIGTERM-on-timeout, 137 SIGKILL-on-timeout) and made the failure
+  indistinguishable from a clean run. When a hook is killed by `timeout`, the
+  wrapper now emits a clearly-marked line containing "TIMEOUT after Ns" with
+  the hook name (`pre-stop` or `post-start`) and exit code, so an operator
+  scanning pod logs after an ungraceful broker shutdown can immediately see
+  that the maintenance-mode drain (preStop) or the maintenance-mode clear
+  (postStart) didn't complete in its budget. The trailing `true` is retained
+  so non-zero exits don't poison container lifecycle on transient hook
+  issues — the TIMEOUT marker is the diagnostic signal.
+time: 2026-05-21T13:00:00.000000-07:00

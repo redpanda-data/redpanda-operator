@@ -852,15 +852,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -2178,15 +2188,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -3358,15 +3378,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -4735,15 +4765,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -6029,15 +6069,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -7568,15 +7618,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -9093,15 +9153,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -10656,15 +10726,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -12096,15 +12176,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -13609,15 +13699,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -15101,15 +15201,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -16545,15 +16655,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -17807,15 +17927,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -19051,15 +19181,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -20521,15 +20661,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -21961,15 +22111,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -23404,15 +23564,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -24897,15 +25067,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -26406,15 +26586,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -27915,15 +28105,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -29376,15 +29576,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -30884,15 +31094,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -32411,15 +32631,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -33938,15 +34168,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -35418,15 +35658,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -36945,15 +37195,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -38472,15 +38732,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -39999,15 +40269,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -41479,15 +41759,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -42957,15 +43247,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -44398,15 +44698,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -45838,15 +46148,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -47358,15 +47678,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -48812,15 +49142,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -50306,15 +50646,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -51787,15 +52137,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -53234,15 +53594,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -54712,15 +55082,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -56178,15 +56558,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -57412,15 +57802,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -59009,15 +59409,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -60439,15 +60849,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -61982,15 +62402,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -63429,15 +63859,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -64901,15 +65341,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -66369,15 +66819,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -67709,15 +68169,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 60 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 60 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 60s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 60 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 60 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 60s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -69207,15 +69677,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -70715,15 +71195,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -72231,15 +72721,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -73720,15 +74220,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -75209,15 +75719,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -76664,15 +77184,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -78153,15 +78683,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -79642,15 +80182,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -81085,15 +81635,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -82574,15 +83134,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -84063,15 +84633,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -85506,15 +86086,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -86995,15 +87585,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -88484,15 +89084,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -89927,15 +90537,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -91416,15 +92036,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -92905,15 +93535,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -94348,15 +94988,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -95837,15 +96487,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -97326,15 +97986,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -98769,15 +99439,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -100023,15 +100703,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -101278,15 +101968,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -102816,15 +103516,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -104420,15 +105130,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -105962,15 +106682,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -107498,15 +108228,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -109006,15 +109746,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -110600,15 +111350,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -112040,15 +112800,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -113480,15 +114250,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -114947,15 +115727,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -116399,15 +117189,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -117949,15 +118749,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -119463,15 +120273,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -120952,15 +121772,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -122441,15 +123271,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -123884,15 +124724,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -125373,15 +126223,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -126862,15 +127722,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -128312,15 +129182,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -129907,15 +130787,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
@@ -131172,15 +132062,25 @@ spec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
-                post-start $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
           preStop:
             exec:
               command:
               - bash
               - -c
-              - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
-                pre-stop $(date): /" | tee /proc/1/fd/1; true'
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
         livenessProbe:
           failureThreshold: 3
           initialDelaySeconds: 10
