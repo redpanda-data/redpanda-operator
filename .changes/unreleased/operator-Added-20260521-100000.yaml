@@ -13,7 +13,5 @@ body: |
   cluster-overview-with-relaxed-fallback path. The rolling-restart loop also
   consults the matching post-restart probe (/v1/broker/post_restart_probe,
   load_reclaimed_pc) to verify each broker has finished its post-restart
-  replica recovery before the next pod is rolled — completing the RFC's
-  "wait for post-restart probe" step. Both probes require common-go/rpadmin
-  v0.2.7+.
+  replica recovery before the next pod is rolled.
 time: 2026-05-21T10:00:00.000000-07:00

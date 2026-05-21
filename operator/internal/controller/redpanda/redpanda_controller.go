@@ -582,7 +582,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	// 404 for every broker; brokersStillRecovering then returns
 	// (false, nil) so behavior on older clusters is unchanged.
 	if len(rollSet) > 0 {
-		recovering, err := brokersStillRecovering(ctx, state.admin, brokerMap, probes.DefaultPostRestartCaughtUpPercent, logger)
+		recovering, err := brokersStillRecovering(ctx, state.admin, brokerMap, logger)
 		if err != nil {
 			// Probe error is not fatal — the K8s-Ready gate above and
 			// the per-broker pre-restart probe below still protect us.
@@ -1082,9 +1082,17 @@ func brokerCaughtUp(ctx context.Context, admin *rpadmin.AdminAPI, brokerID, thre
 }
 
 // brokersStillRecovering returns true when any broker in brokerMap reports
-// load_reclaimed_pc < threshold via the post-restart probe. The roll loop
-// uses this to wait for a just-restarted broker to finish replaying its
-// in-sync replicas before proceeding to the next pod.
+// load_reclaimed_pc < probes.DefaultPostRestartCaughtUpPercent via the
+// post-restart probe. The roll loop uses this to wait for a just-restarted
+// broker to finish replaying its in-sync replicas before proceeding to the
+// next pod.
+//
+// The threshold is hardcoded to the package default rather than plumbed
+// through as a parameter because every caller wants the strictest reading
+// — there's no operator-level use case yet for accepting partial recovery
+// at this gate. If we ever expose tunable rolling-restart tolerance via the
+// CR we'll lift this back into a parameter. (For tests of the threshold
+// arithmetic itself, see brokerCaughtUp, which still accepts it.)
 //
 // Implementation note: we query every broker in the map rather than
 // tracking which specific pods were "recently rolled," because the probe
@@ -1092,11 +1100,7 @@ func brokerCaughtUp(ctx context.Context, admin *rpadmin.AdminAPI, brokerID, thre
 // running for hours and is fully caught up returns 100 every time. The
 // extra cost is one admin call per broker per reconcile, gated on
 // len(rollSet) > 0 so steady-state clusters don't pay it.
-//
-// A single 404 anywhere is treated as "endpoint unsupported on this
-// cluster" — once we determine the endpoint isn't there we don't keep
-// probing it for the remaining brokers in the same pass.
-func brokersStillRecovering(ctx context.Context, admin *rpadmin.AdminAPI, brokerMap map[string]int, threshold int, logger logr.Logger) (bool, error) {
+func brokersStillRecovering(ctx context.Context, admin *rpadmin.AdminAPI, brokerMap map[string]int, logger logr.Logger) (bool, error) {
 	// Deduplicate broker IDs — brokerMap intentionally double-keys (by
 	// first DNS label and raw host) so iterating values directly would
 	// query each broker twice.
@@ -1107,7 +1111,7 @@ func brokersStillRecovering(ctx context.Context, admin *rpadmin.AdminAPI, broker
 		}
 		seen[brokerID] = struct{}{}
 
-		caughtUp, err := brokerCaughtUp(ctx, admin, brokerID, threshold, logger, podName)
+		caughtUp, err := brokerCaughtUp(ctx, admin, brokerID, probes.DefaultPostRestartCaughtUpPercent, logger, podName)
 		if err != nil {
 			return false, err
 		}

@@ -433,7 +433,7 @@ func TestIntegrationBrokersStillRecovering(t *testing.T) {
 		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
 			"broker-1": 1,
 			"broker-2": 2,
-		}, 100, logger)
+		}, logger)
 		require.NoError(t, err)
 		assert.True(t, stillRecovering, "broker-2 at 50% should block")
 	})
@@ -450,7 +450,7 @@ func TestIntegrationBrokersStillRecovering(t *testing.T) {
 		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
 			"broker-1": 11,
 			"broker-2": 12,
-		}, 100, logger)
+		}, logger)
 		require.NoError(t, err)
 		assert.False(t, stillRecovering)
 	})
@@ -467,7 +467,7 @@ func TestIntegrationBrokersStillRecovering(t *testing.T) {
 		_, err = brokersStillRecovering(ctx, client, map[string]int{
 			"broker-1":                           21,
 			"broker-1.svc.namespace.svc.cluster": 21,
-		}, 100, logger)
+		}, logger)
 		require.NoError(t, err)
 		assert.Equal(t, 1, one.hits, "broker should be queried exactly once despite two map entries")
 	})
@@ -490,7 +490,7 @@ func TestIntegrationBrokersStillRecovering(t *testing.T) {
 		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
 			"broker-1": 31,
 			"broker-2": 32,
-		}, 100, logger)
+		}, logger)
 		require.NoError(t, err)
 		assert.False(t, stillRecovering, "404 → caught-up fallback, no broker blocks")
 	})
