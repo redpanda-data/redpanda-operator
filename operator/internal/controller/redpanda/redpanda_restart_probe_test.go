@@ -302,3 +302,196 @@ func TestIntegrationBrokerSafeToRestart(t *testing.T) {
 		})
 	}
 }
+
+// TestIntegrationBrokerCaughtUp pins the operator-side interpretation of the
+// /v1/broker/post_restart_probe contract — the "wait for post-restart probe"
+// step in the rolling-restart RFC. The probe returns load_reclaimed_pc (0..100)
+// representing the fraction of in-sync replicas this broker has reclaimed
+// since its last restart. The next roll is blocked until every broker in the
+// cluster reports >= threshold (100 by default).
+func TestIntegrationBrokerCaughtUp(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in -short mode")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	logger := testr.New(t)
+
+	for name, tc := range map[string]struct {
+		// loadPercent is the load_reclaimed_pc the stub returns.
+		// -1 means "respond with 404" (older Redpanda),
+		// 999 means "respond with 500" (admin failure).
+		loadPercent  int
+		threshold    int
+		wantCaughtUp bool
+		wantErr      bool
+	}{
+		"fully caught up at default threshold": {
+			loadPercent: 100, threshold: 100, wantCaughtUp: true,
+		},
+		"99% not caught up at default strict threshold": {
+			loadPercent: 99, threshold: 100, wantCaughtUp: false,
+		},
+		"99% caught up at relaxed threshold (95)": {
+			loadPercent: 99, threshold: 95, wantCaughtUp: true,
+		},
+		"0% (just restarted) not caught up": {
+			loadPercent: 0, threshold: 100, wantCaughtUp: false,
+		},
+		"404 falls back to caught up (pre-25.1 broker)": {
+			loadPercent: -1, threshold: 100, wantCaughtUp: true,
+		},
+		"500 propagates as error": {
+			loadPercent: 999, threshold: 100, wantErr: true,
+		},
+	} {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
+			fakeID := 5000 + int(time.Now().UnixNano()&0xffff)
+			loadPercent := tc.loadPercent
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/v1/node_config", func(w http.ResponseWriter, _ *http.Request) {
+				_ = json.NewEncoder(w).Encode(map[string]any{"node_id": fakeID})
+			})
+			mux.HandleFunc("/v1/broker/post_restart_probe", func(w http.ResponseWriter, _ *http.Request) {
+				switch loadPercent {
+				case -1:
+					http.Error(w, "not found", http.StatusNotFound)
+				case 999:
+					http.Error(w, "boom", http.StatusInternalServerError)
+				default:
+					w.Header().Set("Content-Type", "application/json")
+					_ = json.NewEncoder(w).Encode(rpadmin.PostRestartCheckResult{LoadReclaimedPercent: loadPercent})
+				}
+			})
+			stub := httptest.NewServer(mux)
+			defer stub.Close()
+
+			stubClient, err := rpadmin.NewAdminAPI([]string{stub.URL}, new(rpadmin.NopAuth), nil)
+			require.NoError(t, err)
+			defer stubClient.Close()
+
+			caughtUp, err := brokerCaughtUp(ctx, stubClient, fakeID, tc.threshold, logger, "test-pod")
+			if tc.wantErr {
+				require.Error(t, err)
+				assert.False(t, caughtUp)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantCaughtUp, caughtUp)
+		})
+	}
+}
+
+// TestIntegrationBrokersStillRecovering verifies the outer gate's behavior
+// across a brokerMap: it returns "still recovering" when any broker is
+// below threshold, it deduplicates by broker ID (brokerMap double-keys), and
+// 404 is treated as "endpoint absent on this cluster, not recovering."
+func TestIntegrationBrokersStillRecovering(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in -short mode")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	logger := testr.New(t)
+
+	type brokerStub struct {
+		id          int
+		loadPercent int
+		url         string
+		server      *httptest.Server
+		hits        int
+	}
+
+	makeBrokerStub := func(t *testing.T, id, loadPercent int) *brokerStub {
+		t.Helper()
+		bs := &brokerStub{id: id, loadPercent: loadPercent}
+		mux := http.NewServeMux()
+		mux.HandleFunc("/v1/node_config", func(w http.ResponseWriter, _ *http.Request) {
+			_ = json.NewEncoder(w).Encode(map[string]any{"node_id": bs.id})
+		})
+		mux.HandleFunc("/v1/broker/post_restart_probe", func(w http.ResponseWriter, _ *http.Request) {
+			bs.hits++
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(rpadmin.PostRestartCheckResult{LoadReclaimedPercent: bs.loadPercent})
+		})
+		bs.server = httptest.NewServer(mux)
+		bs.url = bs.server.URL
+		return bs
+	}
+
+	t.Run("any broker below threshold blocks", func(t *testing.T) {
+		caughtUp := makeBrokerStub(t, 1, 100)
+		defer caughtUp.server.Close()
+		recovering := makeBrokerStub(t, 2, 50)
+		defer recovering.server.Close()
+		client, err := rpadmin.NewAdminAPI([]string{caughtUp.url, recovering.url}, new(rpadmin.NopAuth), nil)
+		require.NoError(t, err)
+		defer client.Close()
+
+		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
+			"broker-1": 1,
+			"broker-2": 2,
+		}, 100, logger)
+		require.NoError(t, err)
+		assert.True(t, stillRecovering, "broker-2 at 50% should block")
+	})
+
+	t.Run("all brokers caught up returns false", func(t *testing.T) {
+		one := makeBrokerStub(t, 11, 100)
+		defer one.server.Close()
+		two := makeBrokerStub(t, 12, 100)
+		defer two.server.Close()
+		client, err := rpadmin.NewAdminAPI([]string{one.url, two.url}, new(rpadmin.NopAuth), nil)
+		require.NoError(t, err)
+		defer client.Close()
+
+		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
+			"broker-1": 11,
+			"broker-2": 12,
+		}, 100, logger)
+		require.NoError(t, err)
+		assert.False(t, stillRecovering)
+	})
+
+	t.Run("dedupes by broker ID across map entries", func(t *testing.T) {
+		// brokerMap intentionally has two entries per broker (first DNS
+		// label and raw host). The helper must not query each broker twice.
+		one := makeBrokerStub(t, 21, 100)
+		defer one.server.Close()
+		client, err := rpadmin.NewAdminAPI([]string{one.url}, new(rpadmin.NopAuth), nil)
+		require.NoError(t, err)
+		defer client.Close()
+
+		_, err = brokersStillRecovering(ctx, client, map[string]int{
+			"broker-1":                           21,
+			"broker-1.svc.namespace.svc.cluster": 21,
+		}, 100, logger)
+		require.NoError(t, err)
+		assert.Equal(t, 1, one.hits, "broker should be queried exactly once despite two map entries")
+	})
+
+	t.Run("404 on a broker is treated as endpoint absent (not recovering)", func(t *testing.T) {
+		notFound := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/v1/node_config" {
+				_ = json.NewEncoder(w).Encode(map[string]any{"node_id": 31})
+				return
+			}
+			http.Error(w, "not found", http.StatusNotFound)
+		}))
+		defer notFound.Close()
+		caughtUp := makeBrokerStub(t, 32, 100)
+		defer caughtUp.server.Close()
+		client, err := rpadmin.NewAdminAPI([]string{notFound.URL, caughtUp.url}, new(rpadmin.NopAuth), nil)
+		require.NoError(t, err)
+		defer client.Close()
+
+		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
+			"broker-1": 31,
+			"broker-2": 32,
+		}, 100, logger)
+		require.NoError(t, err)
+		assert.False(t, stillRecovering, "404 → caught-up fallback, no broker blocks")
+	})
+}

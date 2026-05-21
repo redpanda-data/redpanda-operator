@@ -29,6 +29,21 @@ import (
 // when they receive this sentinel.
 var ErrPreRestartProbeUnsupported = errors.New("broker pre-restart probe endpoint not available (Redpanda < 25.1)")
 
+// ErrPostRestartProbeUnsupported is the analogous sentinel for the
+// post-restart probe at /v1/broker/post_restart_probe. Both endpoints landed
+// together in Redpanda 25.1, but they're queried independently — keeping a
+// separate sentinel lets callers treat the two endpoints as independently-
+// negotiable feature gates if a cluster ever ships one without the other.
+var ErrPostRestartProbeUnsupported = errors.New("broker post-restart probe endpoint not available (Redpanda < 25.1)")
+
+// DefaultPostRestartCaughtUpPercent is the default threshold for "this
+// broker has finished its post-restart recovery": LoadReclaimedPercent must
+// be at least this high for the broker to be considered caught up. 100 means
+// every in-sync replica this broker hosts has been recovered to current
+// state — the strictest interpretation of the RFC's "wait for post-restart
+// probe" step.
+const DefaultPostRestartCaughtUpPercent = 100
+
 type Option func(*Prober)
 
 func WithLogger(logger logr.Logger) Option {
@@ -113,6 +128,39 @@ func (p *Prober) IsBrokerSafeToRestart(ctx context.Context, brokerURL string) (b
 	// rf1_offline is acceptable — log for visibility but don't block.
 	if n := len(result.Risks.RF1Offline); n > 0 {
 		p.logger.V(1).Info("broker restart will briefly offline RF=1 partitions", "partitions", n)
+	}
+	return true, nil
+}
+
+// IsBrokerCaughtUp asks the broker whether it has finished its post-restart
+// recovery via /v1/broker/post_restart_probe (Redpanda 25.1+). A broker is
+// considered caught up when LoadReclaimedPercent is at least threshold; pass
+// DefaultPostRestartCaughtUpPercent (100) for the strictest reading. The
+// caller scopes this client to a specific broker via ForHost.
+//
+// On clusters older than 25.1 the endpoint returns 404; this function then
+// returns ErrPostRestartProbeUnsupported so the caller can fall back to
+// whatever pod-state signal it had previously.
+func (p *Prober) IsBrokerCaughtUp(ctx context.Context, brokerURL string, threshold int) (bool, error) {
+	client, _, err := p.getClient(ctx, brokerURL)
+	if err != nil {
+		return false, fmt.Errorf("initializing client to check post-restart recovery: %w", err)
+	}
+	defer client.Close()
+
+	result, err := client.PostRestartProbe(ctx, 0)
+	if err != nil {
+		var httpErr *rpadmin.HTTPResponseError
+		if errors.As(err, &httpErr) && httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusNotFound {
+			return false, ErrPostRestartProbeUnsupported
+		}
+		return false, fmt.Errorf("fetching broker post-restart probe: %w", err)
+	}
+
+	if result.LoadReclaimedPercent < threshold {
+		p.logger.Info("broker still post-restart recovering",
+			"load_reclaimed_pc", result.LoadReclaimedPercent, "threshold", threshold)
+		return false, nil
 	}
 	return true, nil
 }

@@ -47,6 +47,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
@@ -572,6 +573,26 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 
+	// Second gate, Redpanda 25.1+: even when the prior pod is K8s-Ready, the
+	// broker inside it may still be replaying partition state from its
+	// peers. /v1/broker/post_restart_probe (load_reclaimed_pc) lets us wait
+	// for the broker to confirm it has reached the in-sync fraction we
+	// expect before we roll the next one. This is the ENG-222 RFC's "wait
+	// for post-restart probe" step. On Redpanda <25.1 the endpoint returns
+	// 404 for every broker; brokersStillRecovering then returns
+	// (false, nil) so behavior on older clusters is unchanged.
+	if len(rollSet) > 0 {
+		recovering, err := brokersStillRecovering(ctx, state.admin, brokerMap, probes.DefaultPostRestartCaughtUpPercent, logger)
+		if err != nil {
+			// Probe error is not fatal — the K8s-Ready gate above and
+			// the per-broker pre-restart probe below still protect us.
+			logger.V(log.DebugLevel).Info("post-restart probe check failed, proceeding without it", "error", err)
+		} else if recovering {
+			logger.V(log.DebugLevel).Info("a broker is still post-restart recovering, deferring rolling restart")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+	}
+
 	rolled := false
 	for _, pod := range rollSet {
 		shouldRoll, continueExecution := false, false
@@ -1013,6 +1034,88 @@ func brokerSafeToRestart(ctx context.Context, admin *rpadmin.AdminAPI, brokerID 
 		logger.V(log.TraceLevel).Info("broker restart will briefly offline RF=1 partitions (acceptable)", "pod", podName, "partitions", n)
 	}
 	return true, nil
+}
+
+// brokerCaughtUp consults the broker's post-restart probe (Redpanda 25.1+ —
+// /v1/broker/post_restart_probe) to decide whether the broker has finished
+// replaying partition state since its last restart. Returns true when
+// LoadReclaimedPercent >= threshold (DefaultPostRestartCaughtUpPercent gives
+// the strictest 100% reading).
+//
+// On 404 the function returns (true, nil): the endpoint is absent on
+// pre-25.1 brokers, and we've never previously gated on this signal, so the
+// safe behavior is to act as though the broker is caught up (the
+// HasRecentlyReplacedPods K8s-Ready gate is still in place above).
+//
+// All other errors propagate so the caller can decide whether to skip or
+// retry — the controller treats them as non-fatal at the gate (see usage
+// in reconcileDecommission) because the K8s-Ready gate and the per-broker
+// pre-restart probe still cover the dangerous failure modes.
+func brokerCaughtUp(ctx context.Context, admin *rpadmin.AdminAPI, brokerID, threshold int, logger logr.Logger, podName string) (bool, error) {
+	brokerURL, err := admin.BrokerIDToURL(ctx, brokerID)
+	if err != nil {
+		return false, fmt.Errorf("resolving broker %d URL: %w", brokerID, err)
+	}
+	scoped, err := admin.ForHost(brokerURL)
+	if err != nil {
+		return false, fmt.Errorf("scoping admin client to broker %d (%s): %w", brokerID, brokerURL, err)
+	}
+	defer scoped.Close()
+
+	result, err := scoped.PostRestartProbe(ctx, 0)
+	if err != nil {
+		var httpErr *rpadmin.HTTPResponseError
+		if errors.As(err, &httpErr) && httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusNotFound {
+			logger.V(log.DebugLevel).Info("post-restart probe unsupported on broker, treating as caught up", "pod", podName, "brokerID", brokerID)
+			return true, nil
+		}
+		return false, fmt.Errorf("fetching post-restart probe for broker %d: %w", brokerID, err)
+	}
+
+	if result.LoadReclaimedPercent < threshold {
+		logger.V(log.DebugLevel).Info("broker still post-restart recovering",
+			"pod", podName, "brokerID", brokerID,
+			"load_reclaimed_pc", result.LoadReclaimedPercent, "threshold", threshold)
+		return false, nil
+	}
+	return true, nil
+}
+
+// brokersStillRecovering returns true when any broker in brokerMap reports
+// load_reclaimed_pc < threshold via the post-restart probe. The roll loop
+// uses this to wait for a just-restarted broker to finish replaying its
+// in-sync replicas before proceeding to the next pod.
+//
+// Implementation note: we query every broker in the map rather than
+// tracking which specific pods were "recently rolled," because the probe
+// answer is per-broker and consistent regardless — a broker that has been
+// running for hours and is fully caught up returns 100 every time. The
+// extra cost is one admin call per broker per reconcile, gated on
+// len(rollSet) > 0 so steady-state clusters don't pay it.
+//
+// A single 404 anywhere is treated as "endpoint unsupported on this
+// cluster" — once we determine the endpoint isn't there we don't keep
+// probing it for the remaining brokers in the same pass.
+func brokersStillRecovering(ctx context.Context, admin *rpadmin.AdminAPI, brokerMap map[string]int, threshold int, logger logr.Logger) (bool, error) {
+	// Deduplicate broker IDs — brokerMap intentionally double-keys (by
+	// first DNS label and raw host) so iterating values directly would
+	// query each broker twice.
+	seen := map[int]struct{}{}
+	for podName, brokerID := range brokerMap {
+		if _, dup := seen[brokerID]; dup {
+			continue
+		}
+		seen[brokerID] = struct{}{}
+
+		caughtUp, err := brokerCaughtUp(ctx, admin, brokerID, threshold, logger, podName)
+		if err != nil {
+			return false, err
+		}
+		if !caughtUp {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI) (_ rpadmin.ClusterHealthOverview, err error) {
