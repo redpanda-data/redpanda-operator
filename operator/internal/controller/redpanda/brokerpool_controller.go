@@ -25,85 +25,96 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-// nodepool resources
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools/finalizers,verbs=update
+// brokerpool resources
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandabrokerpools,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandabrokerpools/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandabrokerpools/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
-// NodePoolReconciler reconciles a NodePool object. This reconciler in particular should only update status
-// fields and finalizers on the NodePool objects, rendering of NodePools takes place within the RedpandaReconciler.
-type NodePoolReconciler struct {
+// BrokerPoolReconciler reconciles a RedpandaBrokerPool object. This reconciler in particular should only update status
+// fields and finalizers on the RedpandaBrokerPool objects, rendering of RedpandaBrokerPools takes place within the StretchClusterReconciler.
+type BrokerPoolReconciler struct {
 	Manager multicluster.Manager
 }
 
-func createCanonicalClusterNameList(mgr multicluster.Manager) []string {
-	var canonicalClusterList []string
-	for _, clusterName := range mgr.GetClusterNames() {
-		canonicalClusterList = append(canonicalClusterList, lifecycle.CanonicalClusterName(clusterName, mgr.GetLocalClusterName))
-	}
-	return canonicalClusterList
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
-	builder := mcbuilder.ControllerManagedBy(mgr).
+func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
+	name := "BrokerPool"
+	mgr.GetLogger().WithName("SetupWithMultiClusterManager").Info(
+		"registering "+name+" controller",
+		"knownClusters", createCanonicalClusterNameList(mgr),
+	)
+	return mcbuilder.ControllerManagedBy(mgr).
 		For(
-			&redpandav1alpha2.NodePool{},
+			&redpandav1alpha2.RedpandaBrokerPool{},
 			mcbuilder.WithEngageWithLocalCluster(true),
 			mcbuilder.WithEngageWithProviderClusters(true),
 		).
-		Watches(&appsv1.StatefulSet{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-			labels := o.GetLabels()
-			if labels == nil {
-				return nil
-			}
-
-			namespace := labels[lifecycle.DefaultNamespaceLabel]
-			name := labels[redpanda.NodePoolLabelName]
-
-			if namespace == "" || name == "" {
-				return nil
-			}
-
-			return []reconcile.Request{{
-				NamespacedName: types.NamespacedName{
-					Namespace: namespace,
-					Name:      name,
-				},
-			}}
-		}))
-	for _, clusterName := range mgr.GetClusterNames() {
-		enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", clusterName, &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
-		if err != nil {
-			return err
-		}
-
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueNodePoolFromCluster, controller.WatchOptions(clusterName)...)
-	}
-
-	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "NodePool", periodicRequeue)))
+		Watches(&redpandav1alpha2.StretchCluster{}, func(_ string, _ cluster.Cluster) mchandler.EventHandler {
+			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
+				l := log.FromContext(ctx).WithName("BrokerPoolReconciler.StretchClusterWatch").V(log.TraceLevel)
+				l.Info("StretchCluster event received", "stretchCluster", client.ObjectKeyFromObject(object).String(), "knownClusters", createCanonicalClusterNameList(mgr))
+				var reqs []mcreconcile.Request
+				for _, clusterName := range mgr.GetClusterNames() {
+					k8sCluster, err := mgr.GetCluster(ctx, clusterName)
+					if err != nil {
+						l.Error(err, "cannot get cluster", "cluster", clusterName)
+						continue
+					}
+					k8sClient := k8sCluster.GetClient()
+					var brokerPools redpandav1alpha2.RedpandaBrokerPoolList
+					err = k8sClient.List(ctx, &brokerPools, client.InNamespace(object.GetNamespace()))
+					if err != nil {
+						l.Error(err, "cannot list RedpandaBrokerPools", "cluster", clusterName)
+						continue
+					}
+					l.Info("listed RedpandaBrokerPools", "cluster", lifecycle.CanonicalClusterName(clusterName, mgr.GetLocalClusterName), "count", len(brokerPools.Items))
+					for _, pool := range brokerPools.Items {
+						l.Info("checking RedpandaBrokerPool", "cluster", clusterName, "brokerPool", pool.Name, "clusterRefName", pool.Spec.ClusterRef.Name, "isStretchCluster", pool.Spec.ClusterRef.IsStretchCluster())
+						if pool.Spec.ClusterRef.IsStretchCluster() && pool.Spec.ClusterRef.Name == object.GetName() {
+							reqs = append(reqs, mcreconcile.Request{
+								Request: reconcile.Request{
+									NamespacedName: types.NamespacedName{
+										Namespace: pool.Namespace,
+										Name:      pool.Name,
+									},
+								},
+								ClusterName: clusterName,
+							})
+						}
+					}
+				}
+				l.Info("enqueuing RedpandaBrokerPools reconcile requests", "requests", reqs)
+				return reqs
+			})
+		}).
+		Complete(
+			observability.Wrap[mcreconcile.Request](
+				&BrokerPoolReconciler{Manager: mgr},
+				name,
+				periodicRequeue,
+			),
+		)
 }
 
-// Reconcile reconciles NodePool objects
-func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (result ctrl.Result, err error) {
-	l := log.FromContext(ctx).WithName("NodePoolReconciler.Reconcile").WithValues("object", req.NamespacedName.String(), "cluster", req.ClusterName)
+// Reconcile reconciles RedpandaBrokerPool objects
+func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (result ctrl.Result, err error) {
+	l := log.FromContext(ctx).WithName("RedpandaBrokerPoolReconciler.Reconcile").WithValues("object", req.NamespacedName.String(), "cluster", req.ClusterName)
 	l.V(log.DebugLevel).Info("Starting reconcile loop")
 	start := time.Now()
 	defer func() {
@@ -118,7 +129,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 
 	k8sClient := k8sCluster.GetClient()
 
-	pool := &redpandav1alpha2.NodePool{}
+	pool := &redpandav1alpha2.RedpandaBrokerPool{}
 
 	if err := k8sClient.Get(ctx, req.NamespacedName, pool); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -172,7 +183,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		return ctrl.Result{}, nil
 	}
 
-	// Update our NodePool with our finalizer and any default Annotation FFs.
+	// Update our RedpandaBrokerPool with our finalizer and any default Annotation FFs.
 	// If any changes are made, persist the changes and immediately requeue to
 	// prevent any cache / resource version synchronization issues.
 	if controllerutil.AddFinalizer(pool, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, pool) {
@@ -184,11 +195,11 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
 	}
 
-	var status statuses.NodePoolStatus
+	var status statuses.RedpandaBrokerPoolStatus
 	var statefulSets appsv1.StatefulSetList
 	if err := k8sClient.List(ctx, &statefulSets, client.MatchingLabels{
-		lifecycle.DefaultNamespaceLabel: pool.Namespace,
-		redpanda.NodePoolLabelName:      pool.Name,
+		lifecycle.DefaultNamespaceLabel:          pool.Namespace,
+		multiclusterRenderer.BrokerPoolLabelName: pool.Name,
 	}); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -199,17 +210,17 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	}
 
 	if sts == nil {
-		status.SetDeployed(statuses.NodePoolDeployedReasonNotDeployed)
+		status.SetDeployed(statuses.RedpandaBrokerPoolDeployedReasonNotDeployed)
 	}
 
 	originalPoolGeneration := pool.Status.DeployedGeneration
-	originalPoolStatus := pool.Status.EmbeddedNodePoolStatus
-	pool.Status.EmbeddedNodePoolStatus = redpandav1alpha2.EmbeddedNodePoolStatus{}
+	originalPoolStatus := pool.Status.EmbeddedBrokerPoolStatus
+	pool.Status.EmbeddedBrokerPoolStatus = redpandav1alpha2.EmbeddedBrokerPoolStatus{}
 
 	if sts != nil {
 		stsLabels := sts.GetLabels()
 		if stsLabels != nil {
-			generationString := stsLabels[redpanda.NodePoolLabelGeneration]
+			generationString := stsLabels[multiclusterRenderer.BrokerPoolLabelGeneration]
 			if generationString != "" {
 				// if we have a parsing error, just skip the generation propagation
 				if generation, err := strconv.ParseInt(generationString, 10, 0); err == nil {
@@ -225,12 +236,12 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		}
 
 		if desiredReplicas == sts.Status.Replicas {
-			status.SetDeployed(statuses.NodePoolDeployedReasonDeployed)
+			status.SetDeployed(statuses.RedpandaBrokerPoolDeployedReasonDeployed)
 		} else {
-			status.SetDeployed(statuses.NodePoolDeployedReasonScaling)
+			status.SetDeployed(statuses.RedpandaBrokerPoolDeployedReasonScaling)
 		}
 
-		pool.Status.EmbeddedNodePoolStatus = redpandav1alpha2.EmbeddedNodePoolStatus{
+		pool.Status.EmbeddedBrokerPoolStatus = redpandav1alpha2.EmbeddedBrokerPoolStatus{
 			Name:              pool.Name,
 			Replicas:          sts.Status.Replicas,
 			DesiredReplicas:   desiredReplicas,
@@ -244,16 +255,16 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 
 	if err := r.getRedpandaCluster(ctx, req, pool, k8sClient); err != nil {
 		if apierrors.IsNotFound(err) {
-			status.SetBound(statuses.NodePoolBoundReasonNotBound)
+			status.SetBound(statuses.RedpandaBrokerPoolBoundReasonNotBound)
 		} else {
 			return ctrl.Result{}, err
 		}
 	} else {
-		status.SetBound(statuses.NodePoolBoundReasonBound)
+		status.SetBound(statuses.RedpandaBrokerPoolBoundReasonBound)
 	}
 
 	if status.UpdateConditions(pool) ||
-		!reflect.DeepEqual(originalPoolStatus, pool.Status.EmbeddedNodePoolStatus) ||
+		!reflect.DeepEqual(originalPoolStatus, pool.Status.EmbeddedBrokerPoolStatus) ||
 		(pool.Status.DeployedGeneration != originalPoolGeneration) {
 		return ignoreConflict(k8sClient.Status().Update(ctx, pool))
 	}
@@ -261,16 +272,11 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	return ctrl.Result{}, nil
 }
 
-func (r *NodePoolReconciler) getRedpandaCluster(
+func (r *BrokerPoolReconciler) getRedpandaCluster(
 	ctx context.Context,
 	req mcreconcile.Request,
-	pool *redpandav1alpha2.NodePool,
+	pool *redpandav1alpha2.RedpandaBrokerPool,
 	k8sClient client.Client,
 ) error {
-	switch {
-	case pool.Spec.ClusterRef.IsStretchCluster():
-		return k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, &redpandav1alpha2.StretchCluster{})
-	default:
-		return k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, &redpandav1alpha2.Redpanda{})
-	}
+	return k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, &redpandav1alpha2.StretchCluster{})
 }

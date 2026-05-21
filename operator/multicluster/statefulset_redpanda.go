@@ -56,7 +56,7 @@ func statefulSetRedpandaEnv() []corev1.EnvVar {
 	}
 }
 
-func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
+func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
 	addressDomain := state.namespace
 	if state.Spec().Networking.IsMCS() {
 		addressDomain = state.namespace + ".svc.clusterset.local"
@@ -233,7 +233,7 @@ func redpandaContainerPorts(l *redpandav1alpha2.StretchListeners, spec *redpanda
 
 // metricsEnvironmentVariables returns the REDPANDA_METRICS_K8S_* env vars for
 // the Redpanda container if metrics reporting is enabled.
-func metricsEnvironmentVariables(state *RenderState, pool *redpandav1alpha2.NodePool) []corev1.EnvVar {
+func metricsEnvironmentVariables(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.EnvVar {
 	if !state.Spec().IsMetricsReporterEnabled() {
 		return nil
 	}

@@ -888,9 +888,9 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 // deletion. Callers must gate any "no desired counterpart → drain"
 // decision on the observed set so a transient fetch failure on a
 // partitioned peer can't be misread as user intent to remove all pools.
-func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context.Context, cluster U) ([]*NodePoolInCluster, map[string]bool, error) {
+func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context.Context, cluster U) ([]*BrokerPoolInCluster, map[string]bool, error) {
 	logger := log.FromContext(ctx)
-	var nodePools []*NodePoolInCluster
+	var nodePools []*BrokerPoolInCluster
 	observed := map[string]bool{}
 	for _, clusterName := range r.clusterList(cluster) {
 		canonicalName := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
@@ -907,7 +907,7 @@ func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context
 			return nil, nil, err
 		}
 		listCtx, listCancel := context.WithTimeout(ctx, CallTimeoutFor(clusterName))
-		allNodePools, err := kube.List[redpandav1alpha2.NodePoolList](listCtx, ctl, cluster.GetNamespace())
+		allNodePools, err := kube.List[redpandav1alpha2.RedpandaBrokerPoolList](listCtx, ctl, cluster.GetNamespace())
 		listCancel()
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
@@ -920,9 +920,9 @@ func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context
 		for _, pool := range allNodePools.Items {
 			clusterRef := pool.Spec.ClusterRef
 			if clusterRef.IsStretchCluster() && clusterRef.Name == cluster.GetName() {
-				nodePools = append(nodePools, &NodePoolInCluster{
-					cluster:  canonicalName,
-					nodePool: pool.DeepCopy(),
+				nodePools = append(nodePools, &BrokerPoolInCluster{
+					cluster:    canonicalName,
+					brokerPool: pool.DeepCopy(),
 				})
 			}
 		}

@@ -22,18 +22,18 @@ import (
 )
 
 // NodePoolRenderer represents a node pool multiclusterRenderer for stretch clusters.
-type StretchNodePoolRenderer struct {
+type StretchBrokerPoolRenderer struct {
 	mgr           multicluster.Manager
 	sideCarImage  Image
 	redpandaImage Image
 	cloudSecrets  CloudSecretsFlags
 }
 
-var _ NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchNodePoolRenderer)(nil)
+var _ NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchBrokerPoolRenderer)(nil)
 
-// NewStretchNodePoolRenderer returns a StretchNodePoolRenderer.
-func NewStretchNodePoolRenderer(mgr multicluster.Manager, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *StretchNodePoolRenderer {
-	return &StretchNodePoolRenderer{
+// NewStretchBrokerPoolRenderer returns a StretchNodePoolRenderer.
+func NewStretchBrokerPoolRenderer(mgr multicluster.Manager, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *StretchBrokerPoolRenderer {
+	return &StretchBrokerPoolRenderer{
 		mgr:           mgr,
 		sideCarImage:  sideCarImage,
 		redpandaImage: redpandaImage,
@@ -42,7 +42,7 @@ func NewStretchNodePoolRenderer(mgr multicluster.Manager, redpandaImage, sideCar
 }
 
 // Render returns a list of StatefulSets for the given stretch cluster.
-func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchClusterWithPools, clusterName string) ([]*appsv1.StatefulSet, error) {
+func (m *StretchBrokerPoolRenderer) Render(ctx context.Context, cluster *StretchClusterWithPools, clusterName string) ([]*appsv1.StatefulSet, error) {
 	cl, err := m.mgr.GetCluster(ctx, clusterName)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -55,12 +55,12 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 	// Apply operator-level default images to pools that don't specify their own.
 	applyDefaultImage := defaultImage(m.redpandaImage)
 	applyDefaultSidecar := defaultImage(m.sideCarImage)
-	inCluster := cluster.GetNodePoolsForCluster(canonicalName)
+	inCluster := cluster.GetBrokerPoolsForCluster(canonicalName)
 	for _, pool := range inCluster {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
 	}
-	allPools := cluster.GetAllNodePools()
+	allPools := cluster.GetAllBrokerPools()
 	for _, pool := range allPools {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
@@ -76,11 +76,11 @@ func (m *StretchNodePoolRenderer) Render(ctx context.Context, cluster *StretchCl
 		return nil, errors.WithStack(err)
 	}
 
-	return multiclusterRenderer.RenderNodePools(state)
+	return multiclusterRenderer.RenderBrokerPools(state)
 }
 
 // IsNodePool returns whether or not the object passed to it should be considered a node pool.
-func (m *StretchNodePoolRenderer) IsNodePool(object client.Object) bool {
+func (m *StretchBrokerPoolRenderer) IsNodePool(object client.Object) bool {
 	return isNodePool(object)
 }
 
