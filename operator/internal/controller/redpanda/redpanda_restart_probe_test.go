@@ -186,4 +186,119 @@ func TestIntegrationBrokerSafeToRestart(t *testing.T) {
 		var httpErr *rpadmin.HTTPResponseError
 		assert.True(t, errors.As(err, &httpErr) || err != nil)
 	})
+
+	// The next block of subtests pins the operator-side interpretation
+	// of each failure mode the RFC enumerates
+	// ("Rolling restart safety probes" design doc). Reproducing the
+	// actual cluster states (in-sync / offline / recovering replicas
+	// across multiple brokers) inside a single testcontainer is not
+	// practical; Redpanda core's own integration suite covers the
+	// probe's risk-calculation server-side. What we verify here is that
+	// for each documented case the operator's helper makes the right
+	// roll/don't-roll decision given the JSON the probe is contractually
+	// expected to return.
+	//
+	// Cases follow the RFC's numbering:
+	//   1. in-sync 2, offline 1   → leaderless on restart → unavailable
+	//   2. in-sync 2, recovering 1 → acks=-1 produce unavailable on
+	//                                in-sync restart
+	//   3. in-sync 1, offline 1, recovering 1 → acks=1 data loss
+	//   4. in-sync 1, recovering 2 → acks=1 data loss
+	for name, tc := range map[string]struct {
+		risks    rpadmin.RestartRisks
+		wantSafe bool
+		// purpose just documents which RFC clause the entry pins, so a
+		// reader who breaks a subtest can map back to the design doc.
+		purpose string
+	}{
+		"RFC case 1: in-sync 2, offline 1 — restarting online replica makes partition leaderless": {
+			risks: rpadmin.RestartRisks{
+				Unavailable: []string{"kafka/topic-rf3/0"},
+			},
+			wantSafe: false,
+			purpose:  "blocks on `unavailable` — both produce and consume reject",
+		},
+		"RFC case 2: in-sync 2, recovering 1 — restarting in-sync replica blocks acks=-1 produce": {
+			risks: rpadmin.RestartRisks{
+				FullAcksProduceUnavailable: []string{"kafka/topic-rf3/0"},
+			},
+			wantSafe: false,
+			purpose:  "blocks on `full_acks_produce_unavailable` — only one in-sync replica survives, can't form acks=-1 quorum",
+		},
+		"RFC case 2 (recovering-replica path): restarting THE recovering replica is safe": {
+			// "Restarting the recovering replica won't make much
+			// difference (other than completion of the recovery process
+			// being delayed), so can be considered safe."
+			risks:    rpadmin.RestartRisks{},
+			wantSafe: true,
+			purpose:  "probe returns no risks when the broker being restarted is itself the recovering replica",
+		},
+		"RFC case 3: in-sync 1, offline 1, recovering 1 — restarting in-sync risks acks=1 data loss": {
+			// The probe typically populates BOTH categories here: the
+			// partition will be leaderless AND acks=1 producers may lose
+			// data when the offline broker rejoins and elects with the
+			// recovering replica. The operator must block on either.
+			risks: rpadmin.RestartRisks{
+				Unavailable:   []string{"kafka/topic-rf3/0"},
+				Acks1DataLoss: []string{"kafka/topic-rf3/0"},
+			},
+			wantSafe: false,
+			purpose:  "blocks even when both `unavailable` and `acks1_data_loss` are populated",
+		},
+		"RFC case 4: in-sync 1, recovering 2 — restarting in-sync causes acks=1 data loss": {
+			risks: rpadmin.RestartRisks{
+				Acks1DataLoss: []string{"kafka/topic-rf3/0", "kafka/topic-rf3/1"},
+			},
+			wantSafe: false,
+			purpose:  "blocks on `acks1_data_loss` — recovering replicas elect among themselves, log tail is lost",
+		},
+		"RF=1 partitions are acceptable risk (RFC: 'restarting a node hosting them obviously results in availability loss, so they will require special handling')": {
+			risks: rpadmin.RestartRisks{
+				RF1Offline: []string{"kafka/rf1-topic/0", "kafka/rf1-topic/1"},
+			},
+			wantSafe: true,
+			purpose:  "rf1_offline alone does not block — RF=1 has no redundancy by user choice",
+		},
+		"RF=1 acceptable but other category populated → still blocked": {
+			risks: rpadmin.RestartRisks{
+				RF1Offline:                 []string{"kafka/rf1-topic/0"},
+				FullAcksProduceUnavailable: []string{"kafka/topic-rf3/0"},
+			},
+			wantSafe: false,
+			purpose:  "rf1_offline being acceptable does not override a dangerous category",
+		},
+		"all categories empty → safe": {
+			risks:    rpadmin.RestartRisks{},
+			wantSafe: true,
+			purpose:  "fresh / steady-state cluster — the happy path",
+		},
+	} {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
+			t.Logf("RFC mapping: %s", tc.purpose)
+			fakeID := brokerID + 1000 + int(time.Now().UnixNano()&0xffff)
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/v1/node_config", func(w http.ResponseWriter, _ *http.Request) {
+				_ = json.NewEncoder(w).Encode(map[string]any{"node_id": fakeID})
+			})
+			mux.HandleFunc("/v1/broker/pre_restart_probe", func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(rpadmin.PreRestartCheckResult{Risks: tc.risks})
+			})
+			stub := httptest.NewServer(mux)
+			defer stub.Close()
+
+			stubClient, err := rpadmin.NewAdminAPI([]string{stub.URL}, new(rpadmin.NopAuth), nil)
+			require.NoError(t, err)
+			defer stubClient.Close()
+
+			// clusterIsHealthy is the legacy fallback used only on 404;
+			// for these cases the probe answers so the fallback value
+			// must not influence the result.
+			safe, err := brokerSafeToRestart(ctx, stubClient, fakeID, true, logger, "rfc-case-pod")
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantSafe, safe, "RFC mapping: %s", tc.purpose)
+		})
+	}
 }
