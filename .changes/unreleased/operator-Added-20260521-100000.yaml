@@ -8,10 +8,11 @@ body: |
   acks=-1 produce rejection. RF=1 offline is treated as acceptable risk. On
   clusters older than 25.1 the helper detects 404 and falls back to the
   cluster-wide IsHealthy heuristic so behavior on pre-25.1 brokers is unchanged.
-  The sidecar readiness probe (Prober.IsClusterBrokerHealthy) consults the same
-  per-broker probe first before falling back to the legacy
-  cluster-overview-with-relaxed-fallback path. The rolling-restart loop also
-  consults the matching post-restart probe (/v1/broker/post_restart_probe,
-  load_reclaimed_pc) to verify each broker has finished its post-restart
-  replica recovery before the next pod is rolled.
+  The rolling-restart loop also consults the matching post-restart probe
+  (/v1/broker/post_restart_probe, load_reclaimed_pc) to verify each broker has
+  finished its post-restart replica recovery before the next pod is rolled.
+  The sidecar readiness probe (Prober.IsClusterBrokerHealthy) is intentionally
+  NOT switched to the per-broker probe — the pre-restart probe answers
+  "would restarting me cause risks?" which is stricter than "am I serving?"
+  and would keep pods NotReady through cluster bootstrap.
 time: 2026-05-21T10:00:00.000000-07:00

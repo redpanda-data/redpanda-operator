@@ -165,38 +165,22 @@ func (p *Prober) IsBrokerCaughtUp(ctx context.Context, brokerURL string, thresho
 	return true, nil
 }
 
-// IsClusterBrokerHealthy checks that a cluster broker is up and ready to serve requests
-// but additionally serves as a gate for StatefulSet rolling restarts. It's a relaxed form
-// of our previous readiness probe which only looked at the `IsHealthy` return value from
-// the cluster health overview endpoint. This had the unfortunate effect of marking all brokers
-// as "unready" when a single broker was marked as a downed node due to being a reflection of
-// the overall cluster health rather than an individual broker's health.
+// IsClusterBrokerHealthy checks that a cluster broker is up and ready to serve requests.
+// It's a relaxed form of our previous readiness probe which only looked at the `IsHealthy`
+// return value from the cluster health overview endpoint. This had the unfortunate effect
+// of marking all brokers as "unready" when a single broker was marked as a downed node due
+// to being a reflection of the overall cluster health rather than an individual broker's
+// health.
 //
-// On Redpanda 25.1+ the per-broker pre-restart probe is consulted first
-// (via IsBrokerSafeToRestart) — its per-broker counterfactual is a strictly
-// stricter signal than the cluster-wide IsHealthy boolean for "is it safe to
-// restart this broker now." When the endpoint isn't present (older clusters)
-// or returns false for non-restart-related reasons, this function falls back
-// to the cluster-health-overview-with-relaxed-fallback path below.
+// NOTE: this function intentionally does NOT consult /v1/broker/pre_restart_probe.
+// The pre-restart probe answers "would restarting me cause partition risks?" — a
+// strictly stricter signal than "am I serving traffic?". During cluster bootstrap
+// (internal-topic creation, partition leader election) the probe transiently reports
+// risks even though the broker is happily serving Kafka traffic. Wiring it here would
+// keep pods NotReady through bootstrap and stall helm installs (#1547 first attempt).
+// PreRestartProbe is the right signal for the operator's rolling-restart roll gate —
+// see brokerSafeToRestart in operator/internal/controller/redpanda/redpanda_controller.go.
 func (p *Prober) IsClusterBrokerHealthy(ctx context.Context, brokerURL string) (bool, error) {
-	// Primary gate (Redpanda 25.1+): ask the broker whether restarting it
-	// would risk acks=1 data loss / partition unavailability / acks=-1
-	// produce rejection. This is per-broker; it does not get conflated
-	// with cluster-wide health blips elsewhere in the cluster.
-	if safe, err := p.IsBrokerSafeToRestart(ctx, brokerURL); err == nil {
-		if safe {
-			return true, nil
-		}
-		// The per-broker probe answered "not safe" — trust that and don't
-		// fall back to the cluster-wide check, which would give the
-		// broker a green light just because the cluster overview looks
-		// healthy in aggregate.
-		return false, nil
-	} else if !errors.Is(err, ErrPreRestartProbeUnsupported) {
-		return false, err
-	}
-	// Older Redpanda (<25.1) — fall through to the legacy path below.
-
 	client, brokerID, err := p.getClient(ctx, brokerURL)
 	if err != nil {
 		return false, fmt.Errorf("initializing client to check broker health: %w", err)
