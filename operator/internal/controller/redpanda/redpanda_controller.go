@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"strings"
@@ -514,6 +515,13 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
 	}
 
+	// brokerMap keys brokers by the first DNS label of their internal RPC
+	// address (pod name when InternalRPCAddress is the per-pod FQDN).
+	// InternalRPCAddress can also come back as "host:port" (advertised RPC
+	// port suffix) or — in rarer misconfigurations — as a bare IP. Strip
+	// the port if present, then key by both the first label (pod-name
+	// lookup) and the raw host, so the roll loop below doesn't silently
+	// misclassify a registered broker as orphan.
 	brokerMap := map[string]int{}
 	for _, brokerID := range health.AllNodes {
 		broker, err := state.admin.Broker(ctx, brokerID)
@@ -521,8 +529,12 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			return ctrl.Result{}, errors.Wrap(err, "fetching broker")
 		}
 
-		brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
-		brokerMap[brokerTokens[0]] = brokerID
+		host := broker.InternalRPCAddress
+		if h, _, splitErr := net.SplitHostPort(broker.InternalRPCAddress); splitErr == nil {
+			host = h
+		}
+		brokerMap[strings.SplitN(host, ".", 2)[0]] = brokerID
+		brokerMap[host] = brokerID
 	}
 
 	// next scale down any over-provisioned pools, patching them to use the new spec
@@ -567,10 +579,15 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		brokerID, inBrokerMap := brokerMap[pod.GetName()]
 		switch {
 		case !inBrokerMap:
-			// we don't actually have this broker in the cluster
-			// anymore, which means it's always safe to delete
-			// the pod and continue with the next operations
-			shouldRoll, continueExecution = true, true
+			// The pod has no matching broker in our cluster view. That's
+			// usually safe to delete (orphan, ghost broker, mis-named
+			// replica), but treating *every* unmapped pod that way in a
+			// single reconcile would tear them all down at once if the
+			// mismatch is transient — slow admin API on a just-restarted
+			// broker, advertised-address format the parser missed, etc.
+			// Delete this one and requeue so we re-evaluate against a
+			// fresh view before touching the next pod.
+			shouldRoll, continueExecution = true, false
 		default:
 			// Per-broker restart-safety probe (Redpanda 25.1+):
 			// /v1/broker/pre_restart_probe answers a per-broker
