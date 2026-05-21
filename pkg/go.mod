@@ -41,7 +41,7 @@ require (
 	k8s.io/cli-runtime v0.35.1
 	k8s.io/client-go v0.35.1
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
-	pgregory.net/rapid v1.1.0
+	pgregory.net/rapid v1.2.0
 	sigs.k8s.io/controller-runtime v0.23.1
 	sigs.k8s.io/multicluster-runtime v0.23.1
 	sigs.k8s.io/yaml v1.6.0
@@ -111,6 +111,7 @@ require (
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
+	github.com/creack/pty v1.1.24 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
@@ -234,6 +235,7 @@ require (
 	github.com/spf13/afero v1.14.0 // indirect
 	github.com/spf13/cast v1.9.2 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
+	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
