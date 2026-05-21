@@ -12,6 +12,7 @@ package steps
 import (
 	"context"
 	"regexp"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -21,17 +22,42 @@ import (
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 )
 
+// operatorReadyTimeout caps how long we wait for the operator Deployment to
+// reach 1/1 Ready during acceptance tests. On v25.2.x k3d runners the helm
+// install hook returns before the operator pod is Ready, and image pull +
+// scheduling under contention can take well over a minute. The previous
+// implementation only waited for the Deployment object's ResourceVersion to
+// settle (which it does immediately at AvailableReplicas=0) and then
+// asserted readiness once, producing flaky 10s timeouts in metrics
+// scenarios.
+const operatorReadyTimeout = 2 * time.Minute
+
+// operatorReadyPoll is the polling interval for the operator-ready loop.
+// Short enough to keep failure logs useful when the operator is genuinely
+// stuck.
+const operatorReadyPoll = 2 * time.Second
+
 func operatorIsRunning(ctx context.Context, t framework.TestingT) {
+	key := t.ResourceKey("redpanda-operator")
 	var dep appsv1.Deployment
-	require.NoError(t, t.Get(ctx, t.ResourceKey("redpanda-operator"), &dep))
 
-	// make sure the resource is stable
-	checkStableResource(ctx, t, &dep)
-
-	require.Equal(t, dep.Status.AvailableReplicas, int32(1))
-	require.Equal(t, dep.Status.Replicas, int32(1))
-	require.Equal(t, dep.Status.ReadyReplicas, int32(1))
-	require.Equal(t, dep.Status.UnavailableReplicas, int32(0))
+	t.Logf("Waiting for operator deployment %q to become Ready", key.String())
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, key, &dep); err != nil {
+			t.Logf("Failed to get operator deployment %q: %v", key.String(), err)
+			return false
+		}
+		ready := dep.Status.AvailableReplicas == 1 &&
+			dep.Status.Replicas == 1 &&
+			dep.Status.ReadyReplicas == 1 &&
+			dep.Status.UnavailableReplicas == 0
+		if !ready {
+			t.Logf("Operator deployment %q not yet Ready: replicas=%d available=%d ready=%d unavailable=%d",
+				key.String(), dep.Status.Replicas, dep.Status.AvailableReplicas, dep.Status.ReadyReplicas, dep.Status.UnavailableReplicas)
+		}
+		return ready
+	}, operatorReadyTimeout, operatorReadyPoll, "Operator deployment %q never became Ready", key.String())
+	t.Logf("Operator deployment %q is Ready", key.String())
 }
 
 func requestMetricsEndpointPlainHTTP(ctx context.Context, statusCode string) {
