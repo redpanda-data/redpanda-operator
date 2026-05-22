@@ -92,10 +92,10 @@ const (
 	labelBrokerKey  = "cluster.redpanda.com/broker"
 	labelMonitorKey = "monitoring.redpanda.com/enabled"
 
-	// BrokerPoolLabelName is the label key for identifying which broker pool a pod belongs to.
-	BrokerPoolLabelName = "cluster.redpanda.com/brokerpool-name"
-	// BrokerPoolLabelGeneration is the label key for tracking broker pool generation.
-	BrokerPoolLabelGeneration = "cluster.redpanda.com/brokerpool-generation"
+	// nodePoolLabelName is the label key for identifying which node pool a pod belongs to.
+	nodePoolLabelName = "cluster.redpanda.com/nodepool-name"
+	// nodePoolLabelGeneration is the label key for tracking node pool generation.
+	nodePoolLabelGeneration = "cluster.redpanda.com/nodepool-generation"
 )
 
 // Well-known label values.

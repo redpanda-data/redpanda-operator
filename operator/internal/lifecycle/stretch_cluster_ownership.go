@@ -84,7 +84,7 @@ func (m *StretchClusterOwnershipResolver) ResolveOwnerReference(ctx context.Cont
 	if owner.GetUID() != sc.GetUID() {
 		// this means that owner got assigned incorrectly to StretchCluster from a different k8s cluster.
 		// We need to fix it, so every resource owner is a StretchCluster from the same cluster as the resource itself.
-		newOwner := NewStretchClusterWithPools(sc.DeepCopy(), owner.clusters, owner.BrokerPools...)
+		newOwner := NewStretchClusterWithPools(sc.DeepCopy(), owner.clusters, owner.NodePools...)
 		newOwner.Kind = "StretchCluster"
 		newOwner.APIVersion = redpandav1alpha2.GroupVersion.String()
 		// Preserve the cross-cluster pod endpoint view computed by the

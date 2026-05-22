@@ -18,7 +18,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func statefulSetContainerSidecar(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
+func statefulSetContainerSidecar(state *RenderState, pool *redpandav1alpha2.NodePool) corev1.Container {
 	image := pool.SidecarImage()
 
 	args := []string{

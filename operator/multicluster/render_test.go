@@ -44,10 +44,10 @@ func TestRender(t *testing.T) {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	decoder := serializer.NewCodecFactory(scheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
 
-	decode := func(t *testing.T, data []byte) (*redpandav1alpha2.StretchCluster, []*redpandav1alpha2.RedpandaBrokerPool) {
+	decode := func(t *testing.T, data []byte) (*redpandav1alpha2.StretchCluster, []*redpandav1alpha2.NodePool) {
 		t.Helper()
 		var cluster *redpandav1alpha2.StretchCluster
-		var pools []*redpandav1alpha2.RedpandaBrokerPool
+		var pools []*redpandav1alpha2.NodePool
 		for _, doc := range strings.Split(string(data), "---") {
 			doc = strings.TrimSpace(doc)
 			if doc == "" {
@@ -59,7 +59,7 @@ func TestRender(t *testing.T) {
 			case *redpandav1alpha2.StretchCluster:
 				require.Nil(t, cluster, "multiple StretchClusters in test case")
 				cluster = o
-			case *redpandav1alpha2.RedpandaBrokerPool:
+			case *redpandav1alpha2.NodePool:
 				pools = append(pools, o)
 			default:
 				t.Fatalf("unexpected type in test case: %s", gvk)
@@ -133,7 +133,7 @@ func TestRender(t *testing.T) {
 			}
 
 			// Render node pools (StatefulSets).
-			sets, err := RenderBrokerPools(state)
+			sets, err := RenderNodePools(state)
 			require.NoError(t, err)
 
 			poolBytes, err := yaml.Marshal(sets)
@@ -152,10 +152,10 @@ func TestRender(t *testing.T) {
 }
 
 func TestPerPodServiceOverrides_LocalVsRemote(t *testing.T) {
-	localPool := &redpandav1alpha2.RedpandaBrokerPool{
+	localPool := &redpandav1alpha2.NodePool{
 		ObjectMeta: metav1.ObjectMeta{Name: "local-pool"},
-		Spec: redpandav1alpha2.BrokerPoolSpec{
-			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 				Replicas: ptr.To(int32(1)),
 				Services: &redpandav1alpha2.NodePoolServices{
 					PerPod: &redpandav1alpha2.PerPodServices{
@@ -171,10 +171,10 @@ func TestPerPodServiceOverrides_LocalVsRemote(t *testing.T) {
 			},
 		},
 	}
-	remotePool := &redpandav1alpha2.RedpandaBrokerPool{
+	remotePool := &redpandav1alpha2.NodePool{
 		ObjectMeta: metav1.ObjectMeta{Name: "remote-pool"},
-		Spec: redpandav1alpha2.BrokerPoolSpec{
-			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 				Replicas: ptr.To(int32(1)),
 				Services: &redpandav1alpha2.NodePoolServices{
 					PerPod: &redpandav1alpha2.PerPodServices{
@@ -196,8 +196,8 @@ func TestPerPodServiceOverrides_LocalVsRemote(t *testing.T) {
 	}
 
 	// localPool is in-cluster, remotePool is not.
-	inClusterPools := []*redpandav1alpha2.RedpandaBrokerPool{localPool}
-	allPools := []*redpandav1alpha2.RedpandaBrokerPool{localPool, remotePool}
+	inClusterPools := []*redpandav1alpha2.NodePool{localPool}
+	allPools := []*redpandav1alpha2.NodePool{localPool, remotePool}
 
 	state, err := NewRenderState(nil, cluster, inClusterPools, allPools, "test-cluster")
 	require.NoError(t, err)
@@ -232,10 +232,10 @@ func TestPerPodServiceOverrides_LocalVsRemote(t *testing.T) {
 }
 
 func TestPerPodServiceOverrides_RemoteDisabled(t *testing.T) {
-	localPool := &redpandav1alpha2.RedpandaBrokerPool{
+	localPool := &redpandav1alpha2.NodePool{
 		ObjectMeta: metav1.ObjectMeta{Name: "local-pool"},
-		Spec: redpandav1alpha2.BrokerPoolSpec{
-			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 				Replicas: ptr.To(int32(1)),
 				Services: &redpandav1alpha2.NodePoolServices{
 					PerPod: &redpandav1alpha2.PerPodServices{
@@ -247,10 +247,10 @@ func TestPerPodServiceOverrides_RemoteDisabled(t *testing.T) {
 			},
 		},
 	}
-	remotePool := &redpandav1alpha2.RedpandaBrokerPool{
+	remotePool := &redpandav1alpha2.NodePool{
 		ObjectMeta: metav1.ObjectMeta{Name: "remote-pool"},
-		Spec: redpandav1alpha2.BrokerPoolSpec{
-			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 				Replicas: ptr.To(int32(1)),
 				Services: &redpandav1alpha2.NodePoolServices{
 					PerPod: &redpandav1alpha2.PerPodServices{
@@ -267,8 +267,8 @@ func TestPerPodServiceOverrides_RemoteDisabled(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 	}
 
-	inClusterPools := []*redpandav1alpha2.RedpandaBrokerPool{localPool}
-	allPools := []*redpandav1alpha2.RedpandaBrokerPool{localPool, remotePool}
+	inClusterPools := []*redpandav1alpha2.NodePool{localPool}
+	allPools := []*redpandav1alpha2.NodePool{localPool, remotePool}
 
 	state, err := NewRenderState(nil, cluster, inClusterPools, allPools, "test-cluster")
 	require.NoError(t, err)

@@ -43,8 +43,8 @@ type PodEndpoint struct {
 
 type RenderState struct {
 	cluster        *redpandav1alpha2.StretchCluster
-	inClusterPools []*redpandav1alpha2.RedpandaBrokerPool
-	pools          []*redpandav1alpha2.RedpandaBrokerPool
+	inClusterPools []*redpandav1alpha2.NodePool
+	pools          []*redpandav1alpha2.NodePool
 	podEndpoints   []PodEndpoint
 	clusterName    string
 	releaseName    string
@@ -80,7 +80,7 @@ func (r *RenderState) Context() context.Context {
 	return r.ctx
 }
 
-func seedServersFromBrokerPools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.RedpandaBrokerPool) []string {
+func seedServersFromNodePools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.NodePool) []string {
 	// In MCS mode, use the clusterset.local domain so DNS resolves via the
 	// MCS controller across cluster boundaries.
 	addressFmt := "%s.%s:%d"
@@ -99,26 +99,26 @@ func seedServersFromBrokerPools(cluster *redpandav1alpha2.StretchCluster, pools 
 	return seedServers
 }
 
-// NewRenderState constructs a RenderState from a StretchCluster, its BrokerPools,
+// NewRenderState constructs a RenderState from a StretchCluster, its NodePools,
 // and a cluster name. It uses the provided config for K8s lookups.
 // The cluster and pools are deep-copied so that merging defaults does not
 // mutate the caller's objects.
 func NewRenderState(
 	config *kube.RESTConfig,
 	cluster *redpandav1alpha2.StretchCluster,
-	// inClusterPool is a list of BrokerPools in given cluster
-	inClusterPool []*redpandav1alpha2.RedpandaBrokerPool,
-	// pools is a list of BrokerPools in all K8S clusters
-	pools []*redpandav1alpha2.RedpandaBrokerPool,
+	// inClusterPool is a list of NodePools in given cluster
+	inClusterPool []*redpandav1alpha2.NodePool,
+	// pools is a list of NodePools in all K8S clusters
+	pools []*redpandav1alpha2.NodePool,
 	clusterName string,
 ) (*RenderState, error) {
 	// Deep-copy to avoid mutating the caller's CRD objects.
 	cluster = cluster.DeepCopy()
-	copiedInClusterPools := make([]*redpandav1alpha2.RedpandaBrokerPool, len(inClusterPool))
+	copiedInClusterPools := make([]*redpandav1alpha2.NodePool, len(inClusterPool))
 	for i, p := range inClusterPool {
 		copiedInClusterPools[i] = p.DeepCopy()
 	}
-	copiedPools := make([]*redpandav1alpha2.RedpandaBrokerPool, len(pools))
+	copiedPools := make([]*redpandav1alpha2.NodePool, len(pools))
 	for i, p := range pools {
 		copiedPools[i] = p.DeepCopy()
 	}
@@ -156,7 +156,7 @@ func NewRenderState(
 		releaseName:    releaseName,
 		namespace:      cluster.Namespace,
 		client:         ctl,
-		seedServers:    seedServersFromBrokerPools(cluster, copiedPools),
+		seedServers:    seedServersFromNodePools(cluster, copiedPools),
 	}
 
 	if err := state.fetchBootstrapUser(); err != nil {
@@ -199,18 +199,18 @@ func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
 	return &r.cluster.Spec
 }
 
-// Pools returns the list of BrokerPools across K8S clusters. Exported for test/debugging access.
-func (r *RenderState) Pools() []*redpandav1alpha2.RedpandaBrokerPool {
+// Pools returns the list of NodePools across K8S clusters. Exported for test/debugging access.
+func (r *RenderState) Pools() []*redpandav1alpha2.NodePool {
 	return r.pools
 }
 
-// InClusterPools returns the list of BrokerPools from single K8S cluster. Exported for test/debugging access.
-func (r *RenderState) InClusterPools() []*redpandav1alpha2.RedpandaBrokerPool {
+// InClusterPools returns the list of NodePools from single K8S cluster. Exported for test/debugging access.
+func (r *RenderState) InClusterPools() []*redpandav1alpha2.NodePool {
 	return r.inClusterPools
 }
 
 // isLocalPool returns true if the given pool is in the local cluster.
-func (r *RenderState) isLocalPool(pool *redpandav1alpha2.RedpandaBrokerPool) bool {
+func (r *RenderState) isLocalPool(pool *redpandav1alpha2.NodePool) bool {
 	for _, p := range r.inClusterPools {
 		if p.Name == pool.Name {
 			return true
@@ -245,7 +245,7 @@ func (r *RenderState) clusterPodLabelsSelector() map[string]string {
 	}
 }
 
-func (r *RenderState) poolFullname(pool *redpandav1alpha2.RedpandaBrokerPool) string {
+func (r *RenderState) poolFullname(pool *redpandav1alpha2.NodePool) string {
 	return fmt.Sprintf("%s%s", r.fullname(), pool.Suffix())
 }
 

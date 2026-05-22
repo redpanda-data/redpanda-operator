@@ -133,11 +133,6 @@ func StretchCluster() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("stretchclusters.cluster.redpanda.com"))
 }
 
-// RedpandaBrokerPool returns the RedpandaBrokerPool CustomResourceDefinition.
-func RedpandaBrokerPool() *apiextensionsv1.CustomResourceDefinition {
-	return mustT(ByName("redpandabrokerpools.cluster.redpanda.com"))
-}
-
 // VectorizedCluster returns the Cluster CustomResourceDefinition.
 func VectorizedCluster() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("clusters.redpanda.vectorized.io"))

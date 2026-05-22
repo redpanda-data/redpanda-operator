@@ -188,7 +188,7 @@ func createSentinelTopicInStretchCluster(ctx context.Context, t framework.Testin
 	})
 }
 
-func upgradeBrokerPoolsToImage(ctx context.Context, t framework.TestingT, clusterName, image string) context.Context {
+func upgradeNodePoolsToImage(ctx context.Context, t framework.TestingT, clusterName, image string) context.Context {
 	nodes := getNodes(ctx, clusterName)
 
 	// Record current pod UIDs so we can detect when rolling restarts finish.
@@ -210,7 +210,7 @@ func upgradeBrokerPoolsToImage(ctx context.Context, t framework.TestingT, cluste
 
 	// Patch every NodePool with the new image.
 	for _, node := range nodes {
-		var pools redpandav1alpha2.RedpandaBrokerPoolList
+		var pools redpandav1alpha2.NodePoolList
 		require.NoError(t, node.List(ctx, &pools, client.InNamespace("default")))
 
 		for i := range pools.Items {
@@ -218,7 +218,7 @@ func upgradeBrokerPoolsToImage(ctx context.Context, t framework.TestingT, cluste
 			poolKey := client.ObjectKeyFromObject(pool)
 
 			require.Eventually(t, func() bool {
-				var latest redpandav1alpha2.RedpandaBrokerPool
+				var latest redpandav1alpha2.NodePool
 				if err := node.Get(ctx, poolKey, &latest); err != nil {
 					t.Logf("error fetching NodePool %s in %s: %v", pool.Name, node.Name(), err)
 					return false
@@ -228,13 +228,13 @@ func upgradeBrokerPoolsToImage(ctx context.Context, t framework.TestingT, cluste
 					Tag:        ptr.To(tag),
 				}
 				if err := node.Update(ctx, &latest); err != nil {
-					t.Logf("conflict updating RedpandaBrokerPool %s in %s, retrying: %v", pool.Name, node.Name(), err)
+					t.Logf("conflict updating NodePool %s in %s, retrying: %v", pool.Name, node.Name(), err)
 					return false
 				}
 				return true
-			}, 30*time.Second, 2*time.Second, "failed to update RedpandaBrokerPool %s in %s", pool.Name, node.Name())
+			}, 30*time.Second, 2*time.Second, "failed to update NodePool %s in %s", pool.Name, node.Name())
 
-			t.Logf("updated RedpandaBrokerPool %s in %s to image %s", pool.Name, node.Name(), image)
+			t.Logf("updated NodePool %s in %s to image %s", pool.Name, node.Name(), image)
 		}
 	}
 
@@ -288,11 +288,11 @@ func upgradeCompletesWithAtMostOneUnavailable(ctx context.Context, t framework.T
 			t.Logf("new max unavailable: %d (ready %d/%d)", maxUnavailable, readyCount, totalPods)
 		}
 
-		// Check completion: all RedpandaBrokerPools Deployed=True and all pods replaced.
+		// Check completion: all NodePools Deployed=True and all pods replaced.
 		allDeployed := true
 		allReplaced := len(initialUIDs) > 0 // only check if we have UIDs to compare
 		for _, node := range nodes {
-			var pools redpandav1alpha2.RedpandaBrokerPoolList
+			var pools redpandav1alpha2.NodePoolList
 			if err := node.List(ctx, &pools, client.InNamespace("default")); err != nil {
 				return false
 			}
