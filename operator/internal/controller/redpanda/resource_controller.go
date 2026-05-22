@@ -41,6 +41,12 @@ type ResourceRequest[T client.Object] struct {
 	factory internalclient.ClientFactory
 	logger  logr.Logger
 	object  T
+	// clusterName identifies which peer Kubernetes API the object lives on.
+	// Layered-CR reconcilers must pass this to factory.*ForCluster methods
+	// so the underlying clusterRef lookup targets the right cluster;
+	// otherwise multicluster reconciliation falls back to the local cluster
+	// and misses peer-resident Redpanda/StretchCluster CRs.
+	clusterName string
 }
 
 type ResourceReconciler[T client.Object] interface {
@@ -105,9 +111,10 @@ func (r *ResourceController[T, U]) Reconcile(ctx context.Context, req mcreconcil
 	}
 
 	request := ResourceRequest[U]{
-		factory: r.ClientFactory,
-		logger:  l,
-		object:  object,
+		factory:     r.ClientFactory,
+		logger:      l,
+		object:      object,
+		clusterName: req.ClusterName,
 	}
 
 	if !object.GetDeletionTimestamp().IsZero() {

@@ -20,10 +20,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -171,12 +174,12 @@ func (r *UserReconciler) DeleteResource(ctx context.Context, request ResourceReq
 
 func (r *UserReconciler) userAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) (*users.Client, *acls.Syncer, bool, error) {
 	user := request.object
-	usersClient, err := request.factory.Users(ctx, user, r.extraOptions...)
+	usersClient, err := request.factory.UsersForCluster(ctx, user, request.clusterName, r.extraOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	syncer, err := request.factory.ACLs(ctx, user, r.extraOptions...)
+	syncer, err := request.factory.ACLsForCluster(ctx, user, request.clusterName, r.extraOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -243,6 +246,51 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 	// Every 5 minutes try and check to make sure no manual modifications
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
+	return builder.Complete(ctrl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+}
+
+// SetupUserControllerForMulticluster registers the User reconciler against a
+// multicluster manager wired up by the multicluster operator subcommand. It
+// only watches StretchCluster cluster refs — Redpanda CRs are not deployed in
+// multicluster mode. Per-cluster password-secret indexes are still installed
+// so external Secret rotations (e.g. ESO) trigger immediate reconciliation.
+func SetupUserControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			SkipNameValidation: ptr.To(true),
+		}).
+		For(&redpandav1alpha2.User{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
+		Owns(&corev1.Secret{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+
+	for _, clusterName := range mgr.GetClusterNames() {
+		enqueueStretch, err := controller.RegisterStretchClusterSourceIndex(ctx, mgr, "user_stretch", clusterName, &redpandav1alpha2.User{}, &redpandav1alpha2.UserList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.WatchOptions(clusterName)...)
+
+		cluster, err := mgr.GetCluster(ctx, clusterName)
+		if err != nil {
+			return err
+		}
+		if err := cluster.GetFieldIndexer().IndexField(ctx, &redpandav1alpha2.User{}, userPasswordSecretIndex, func(o client.Object) []string {
+			user, ok := o.(*redpandav1alpha2.User)
+			if !ok {
+				return nil
+			}
+			if name := user.GetPasswordSecretName(); user.ShouldSyncCredentials() && name != "" {
+				return []string{types.NamespacedName{Namespace: user.Namespace, Name: name}.String()}
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+
+		builder.Watches(&corev1.Secret{}, enqueueUsersForSecret(mgr, clusterName), controller.WatchOptions(clusterName)...)
+	}
+
+	ctrl := NewResourceController(mgr, factory, &UserReconciler{}, "UserReconciler")
+
 	return builder.Complete(ctrl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }
 

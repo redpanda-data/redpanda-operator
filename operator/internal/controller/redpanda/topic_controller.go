@@ -27,9 +27,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
@@ -102,7 +104,7 @@ func (r *TopicReconciler) Reconcile(ctx context.Context, req mcreconcile.Request
 	}
 
 	l.Info("reconciling topic")
-	topic, result, err := r.reconcile(ctx, r.getRecorder(cluster), topic, l)
+	topic, result, err := r.reconcile(ctx, r.getRecorder(cluster), topic, req.ClusterName, l)
 
 	l.Info("updating topic status")
 	// Update status after reconciliation.
@@ -170,7 +172,36 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
 }
 
-func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
+// SetupTopicControllerForMulticluster registers the Topic reconciler against a
+// multicluster manager and configures it to re-enqueue Topic CRs whose
+// spec.cluster.clusterRef points at a StretchCluster. Mirrors the
+// SetupWithMulticlusterManager pattern used by the Console controller —
+// Redpanda CRs are not deployed in multicluster mode, so the only cluster ref
+// kind worth watching here is StretchCluster.
+func SetupTopicControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+	r := &TopicReconciler{
+		Manager: mgr,
+		Factory: factory,
+	}
+
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			SkipNameValidation: ptr.To(true),
+		}).
+		For(&redpandav1alpha2.Topic{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+
+	for _, clusterName := range mgr.GetClusterNames() {
+		enqueueStretch, err := controller.RegisterStretchClusterSourceIndex(ctx, mgr, "topic_stretch", clusterName, &redpandav1alpha2.Topic{}, &redpandav1alpha2.TopicList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.WatchOptions(clusterName)...)
+	}
+
+	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
+}
+
+func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, clusterName string, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
 	l = l.WithName("reconcile")
 
 	interval := metav1.Duration{Duration: time.Second * 3}
@@ -184,7 +215,7 @@ func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRe
 		l.V(log.TraceLevel).Info("bump observed generation", "observed generation", topic.Generation)
 	}
 
-	kafkaClient, err := r.createKafkaClient(ctx, topic, l)
+	kafkaClient, err := r.createKafkaClient(ctx, topic, clusterName, l)
 	if err != nil {
 		// If topic is being deleted, allow finalizer removal when we can't
 		// establish a connection. This prevents namespaces from getting stuck
@@ -603,8 +634,8 @@ func generateConf(
 	return setConf, specialSetConf, deleteConf
 }
 
-func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *redpandav1alpha2.Topic, l logr.Logger) (*kgo.Client, error) {
-	kafkaClient, err := r.Factory.KafkaClient(log.IntoContext(ctx, l.WithName("kafkaClient")), topic)
+func (r *TopicReconciler) createKafkaClient(ctx context.Context, topic *redpandav1alpha2.Topic, clusterName string, l logr.Logger) (*kgo.Client, error) {
+	kafkaClient, err := r.Factory.KafkaClientForCluster(log.IntoContext(ctx, l.WithName("kafkaClient")), topic, clusterName)
 	if err != nil {
 		return nil, fmt.Errorf("creating franz-go kafka client: %w", err)
 	}

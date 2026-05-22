@@ -404,6 +404,58 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 	}
 }
 
+// checkMulticlusterCondition asserts that the given object eventually has the
+// requested status condition with the requested status across every node in the
+// multicluster. Used by happy-path layered-CR scenarios (Topic, User, …) where
+// each CR type carries its own ready condition (`Ready`, `Synced`, …).
+func checkMulticlusterCondition(ctx context.Context, t framework.TestingT, clusterName, name, namespace, groupVersionKind, conditionType, conditionStatusStr string) {
+	nn := types.NamespacedName{Namespace: namespace, Name: name}
+	nodes := getNodes(ctx, clusterName)
+
+	want := metav1.ConditionStatus(conditionStatusStr)
+
+	nodes.CheckAll(ctx, nn, groupVersionKind, func(o client.Object) bool {
+		conds := extractConditions(o)
+		cond := apimeta.FindStatusCondition(conds, conditionType)
+		if cond == nil {
+			t.Logf("condition %q not yet present on %s/%s", conditionType, o.GetNamespace(), o.GetName())
+			return false
+		}
+		if cond.Status != want {
+			t.Logf("condition %q on %s/%s has status %q (want %q): %s",
+				conditionType, o.GetNamespace(), o.GetName(), cond.Status, want, cond.Message)
+			return false
+		}
+		return true
+	})
+}
+
+// extractConditions pulls the .status.conditions slice out of any of our CRs
+// without reflecting per-type. Each layered CR exposes its conditions via the
+// same generated struct path; we type-switch over the kinds the feature file
+// touches and fall back to reflection for anything else.
+func extractConditions(o client.Object) []metav1.Condition {
+	switch v := o.(type) {
+	case *redpandav1alpha2.Topic:
+		return v.Status.Conditions
+	case *redpandav1alpha2.User:
+		return v.Status.Conditions
+	case *redpandav1alpha2.RedpandaRole:
+		return v.Status.Conditions
+	case *redpandav1alpha2.Group:
+		return v.Status.Conditions
+	case *redpandav1alpha2.Schema:
+		return v.Status.Conditions
+	case *redpandav1alpha2.ShadowLink:
+		return v.Status.Conditions
+	case *redpandav1alpha2.StretchCluster:
+		return v.Status.Conditions
+	case *redpandav1alpha2.NodePool:
+		return v.Status.Conditions
+	}
+	return nil
+}
+
 func createNetworkedVClusterOperators(ctx context.Context, t framework.TestingT, clusterName string, clusters int32) context.Context {
 	namespace := metav1.NamespaceDefault
 	redpandaLicense := os.Getenv(LicenseEnvVar)
