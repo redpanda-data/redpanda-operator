@@ -267,10 +267,5 @@ func (r *NodePoolReconciler) getRedpandaCluster(
 	pool *redpandav1alpha2.NodePool,
 	k8sClient client.Client,
 ) error {
-	switch {
-	case pool.Spec.ClusterRef.IsStretchCluster():
-		return k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, &redpandav1alpha2.StretchCluster{})
-	default:
-		return k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, &redpandav1alpha2.Redpanda{})
-	}
+	return k8sClient.Get(ctx, types.NamespacedName{Name: pool.Spec.ClusterRef.Name, Namespace: req.Namespace}, &redpandav1alpha2.Redpanda{})
 }
