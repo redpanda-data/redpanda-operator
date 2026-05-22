@@ -346,10 +346,6 @@ type rpkExecResult struct {
 }
 
 func stashNodes(ctx context.Context, name string, nodes vclusterNodes) context.Context {
-	// make sure nodes are sorted
-	slices.SortFunc(nodes, func(a, b *vclusterNode) int {
-		return strings.Compare(a.Name(), b.Name())
-	})
 	ctx = context.WithValue(ctx, multiclusterKey(name), nodes)
 	return context.WithValue(ctx, lastMulticlusterNameKey{}, name)
 }
