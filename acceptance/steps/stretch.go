@@ -144,10 +144,10 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 		// Dump RedpandaBrokerPools.
 		var poolList redpandav1alpha2.RedpandaBrokerPoolList
 		if err := node.List(diagCtx, &poolList); err != nil {
-			t.Logf("[multicluster-diagnostics] failed to list NodePools: %v", err)
+			t.Logf("[multicluster-diagnostics] failed to list RedpandaBrokerPools: %v", err)
 		} else {
 			for _, pool := range poolList.Items {
-				t.Logf("[multicluster-diagnostics] NodePool %s/%s: replicas=%d, conditions=%d",
+				t.Logf("[multicluster-diagnostics] RedpandaBrokerPool %s/%s: replicas=%d, conditions=%d",
 					pool.Namespace, pool.Name, ptr.Deref(pool.Spec.Replicas, 0), len(pool.Status.Conditions))
 			}
 		}

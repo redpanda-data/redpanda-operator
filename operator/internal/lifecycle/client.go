@@ -76,6 +76,7 @@ func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr multicluster.Ma
 		nodePoolRenderer:       nodePoolRenderer,
 		simpleResourceRenderer: simpleResourceRenderer,
 		traceLogging:           true,
+		useBrokerPoolCRD:       true,
 	}
 }
 
@@ -91,6 +92,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesF
 		nodePoolRenderer:       nodePoolRenderer,
 		simpleResourceRenderer: simpleResourceRenderer,
 		traceLogging:           true,
+		useBrokerPoolCRD:       false,
 	}
 }
 
@@ -100,6 +102,7 @@ type ResourceClient[T any, U Cluster[T]] struct {
 	manager                multicluster.Manager
 	logger                 logr.Logger
 	traceLogging           bool
+	useBrokerPoolCRD       bool
 	ownershipResolver      OwnershipResolver[T, U]
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
@@ -128,10 +131,10 @@ func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
 	return []string{mcmanager.LocalCluster}
 }
 
-// DeleteStatefulSetForNodePool deletes a StatefulSet for a specific node pool, routing to the correct cluster.
+// DeleteStatefulSetForBrokerPool deletes a StatefulSet for a specific node pool, routing to the correct cluster.
 // For remote peer clusters, if the cluster is unreachable the operation is skipped — the
 // cluster's own operator will clean up when it reconnects.
-func (r *ResourceClient[T, U]) DeleteStatefulSetForNodePool(ctx context.Context, set *MulticlusterStatefulSet) error {
+func (r *ResourceClient[T, U]) DeleteStatefulSetForBrokerPool(ctx context.Context, set *MulticlusterStatefulSet) error {
 	logger := log.FromContext(ctx)
 	if set.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(set.clusterName) {
 		logger.Info("remote cluster unreachable (probe) in DeleteStatefulSetForNodePool, skipping", "cluster", set.canonicalClusterName)
@@ -168,19 +171,19 @@ func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterP
 	return ctl.Delete(ctx, pod.Pod)
 }
 
-// PatchNodePoolSet updates a StatefulSet for a specific node pool.
+// PatchBrokerPoolSet updates a StatefulSet for a specific node pool.
 // For remote peer clusters, if the cluster is unreachable the operation is skipped — the
 // cluster's own operator will apply the patch when it reconnects.
-func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, set *MulticlusterStatefulSet) error {
+func (r *ResourceClient[T, U]) PatchPoolSet(ctx context.Context, owner U, set *MulticlusterStatefulSet) error {
 	logger := log.FromContext(ctx)
 	if set.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(set.clusterName) {
-		logger.Info("remote cluster unreachable (probe) in PatchNodePoolSet, skipping", "cluster", set.canonicalClusterName)
+		logger.Info("remote cluster unreachable (probe) in PatchPoolSet, skipping", "cluster", set.canonicalClusterName)
 		return nil
 	}
 	ctl, err := r.ctl(ctx, set.clusterName)
 	if err != nil {
 		if set.clusterName != mcmanager.LocalCluster {
-			logger.Info("remote cluster unreachable in PatchNodePoolSet, skipping", "cluster", set.canonicalClusterName, "error", err)
+			logger.Info("remote cluster unreachable in PatchPoolSet, skipping", "cluster", set.canonicalClusterName, "error", err)
 			return nil
 		}
 		return err
@@ -192,7 +195,7 @@ func (r *ResourceClient[T, U]) PatchNodePoolSet(ctx context.Context, owner U, se
 	owner, err = r.ownershipResolver.ResolveOwnerReference(ctx, owner, set.clusterName, ctl)
 	if err != nil {
 		if set.clusterName != mcmanager.LocalCluster {
-			logger.Info("could not resolve owner reference on remote cluster in PatchNodePoolSet, skipping", "cluster", set.canonicalClusterName, "error", err)
+			logger.Info("could not resolve owner reference on remote cluster in PatchPoolSet, skipping", "cluster", set.canonicalClusterName, "error", err)
 			return nil
 		}
 		return err
@@ -455,7 +458,7 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 // this combined observation so a partial-visibility reconcile can never
 // trigger an unintended decommission.
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool) (*PoolTracker, error) {
-	pools := NewPoolTracker(cluster.GetGeneration())
+	pools := NewPoolTracker(cluster.GetGeneration(), r.useBrokerPoolCRD)
 	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
 		canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
@@ -878,30 +881,30 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	return existing, nil
 }
 
-// FetchExistingNodePoolsFromAllClusters returns the union of NodePools
+// FetchExistingBrokerPoolsFromAllClusters returns the union of BrokerPools
 // referencing the given cluster across every engaged cluster, plus the set of
 // cluster names whose List actually succeeded (vs. being probe-skipped or
 // failing the call). The observed set is load-bearing for downstream
-// scale-down safety: when a cluster's NodePool list wasn't observed, the
+// scale-down safety: when a cluster's BrokerPool list wasn't observed, the
 // renderer downstream can produce a desiredCount=0 for that cluster purely
-// because we never saw its NodePools — indistinguishable from a real
+// because we never saw its BrokerPools — indistinguishable from a real
 // deletion. Callers must gate any "no desired counterpart → drain"
 // decision on the observed set so a transient fetch failure on a
 // partitioned peer can't be misread as user intent to remove all pools.
-func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context.Context, cluster U) ([]*BrokerPoolInCluster, map[string]bool, error) {
+func (r *ResourceClient[T, U]) FetchExistingBrokerPoolsFromAllClusters(ctx context.Context, cluster U) ([]*BrokerPoolInCluster, map[string]bool, error) {
 	logger := log.FromContext(ctx)
 	var nodePools []*BrokerPoolInCluster
 	observed := map[string]bool{}
 	for _, clusterName := range r.clusterList(cluster) {
 		canonicalName := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
-			logger.Info("remote cluster unreachable (probe) in FetchExistingNodePoolsFromAllClusters, skipping", "cluster", canonicalName)
+			logger.Info("remote cluster unreachable (probe) in FetchExistingBrokerPoolsFromAllClusters, skipping", "cluster", canonicalName)
 			continue
 		}
 		ctl, err := r.ctl(ctx, clusterName)
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
-				logger.Info("remote cluster unreachable in FetchExistingNodePoolsFromAllClusters, skipping", "cluster", canonicalName, "error", err)
+				logger.Info("remote cluster unreachable in FetchExistingBrokerPoolsFromAllClusters, skipping", "cluster", canonicalName, "error", err)
 				continue
 			}
 			return nil, nil, err
@@ -911,7 +914,7 @@ func (r *ResourceClient[T, U]) FetchExistingNodePoolsFromAllClusters(ctx context
 		listCancel()
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
-				logger.Info("could not list NodePools on remote cluster, skipping", "cluster", canonicalName, "error", err)
+				logger.Info("could not list BrokerPools on remote cluster, skipping", "cluster", canonicalName, "error", err)
 				continue
 			}
 			return nil, nil, err

@@ -105,7 +105,7 @@ func init() {
 
 	// Rolling restart scenario steps
 	framework.RegisterStep(`^I create a sentinel topic in the stretch cluster of "([^"]*)"$`, createSentinelTopicInStretchCluster)
-	framework.RegisterStep(`^I upgrade the NodePools in "([^"]*)" to use image "([^"]*)"$`, upgradeNodePoolsToImage)
+	framework.RegisterStep(`^I upgrade the RedpandaBrokerPools in "([^"]*)" to use image "([^"]*)"$`, upgradeBrokerPoolsToImage)
 	framework.RegisterStep(`^the upgrade of "([^"]*)" completes with at most 1 pod unavailable at a time$`, upgradeCompletesWithAtMostOneUnavailable)
 	framework.RegisterStep(`^the sentinel data is still readable in "([^"]*)"$`, sentinelDataIsReadable)
 

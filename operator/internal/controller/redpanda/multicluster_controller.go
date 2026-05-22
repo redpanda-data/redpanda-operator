@@ -270,7 +270,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		}
 	}
 
-	// Phase 2: sync Kubernetes resources (simple resources + node pools).
+	// Phase 2: sync Kubernetes resources (simple resources + broker pools).
 	// EndpointSlice sync runs between resource creation and pool readiness
 	// checks so that pods can discover each other before becoming ready.
 	resourceReconcilers := []stretchClusterReconciliationFn{
@@ -470,9 +470,9 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	sccluster := lifecycle.NewStretchClusterWithPools(sc, r.Manager.GetClusterNames())
 
 	// grab BrokerPools from all connected clusters
-	brokerPools, brokerPoolsObserved, err := r.LifecycleClient.FetchExistingNodePoolsFromAllClusters(ctx, sccluster)
+	brokerPools, brokerPoolsObserved, err := r.LifecycleClient.FetchExistingBrokerPoolsFromAllClusters(ctx, sccluster)
 	if err != nil {
-		logger.Error(err, "fetching nodepools")
+		logger.Error(err, "fetching brokerpools")
 		return nil, err
 	}
 	sccluster.BrokerPools = brokerPools
@@ -515,13 +515,13 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	}, nil
 }
 
-// recordBrokerCountMetrics walks every member cluster's NodePools and emits
+// recordBrokerCountMetrics walks every member cluster's BrokerPools and emits
 // the per-member `brokers` / `brokers_ready` gauges. Done as a side effect
 // of fetchInitialState rather than inside the lifecycle package because
 // the metric label set (stretchcluster, member) is observability-specific
 // and the lifecycle types don't otherwise need to know about it.
 //
-// Members with no NodePools still emit zero values so dashboards can show
+// Members with no BrokerPools still emit zero values so dashboards can show
 // "this peer is configured but has no pools yet" instead of an absent
 // series.
 func (r *MulticlusterReconciler) recordBrokerCountMetrics(state *stretchClusterReconciliationState) {
@@ -909,13 +909,13 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 
-	logger.V(log.TraceLevel).Info("ready to scale and apply node pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
+	logger.V(log.TraceLevel).Info("ready to scale and apply broker pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
 
 	// first create any pools that don't currently exists
 	for _, set := range state.pools.ToCreate() {
 		logger.V(log.TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
-		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "creating statefulset")
 		}
 	}
@@ -924,7 +924,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	for _, set := range state.pools.ToScaleUp() {
 		logger.V(log.TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
-		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "scaling up statefulset")
 		}
 	}
@@ -933,7 +933,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	// here we can just wholesale patch everything
 	for _, set := range state.pools.RequiresUpdate() {
 		logger.V(log.TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "updating statefulset")
 		}
 	}
@@ -1064,7 +1064,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// so we can attempt to delete them all in one pass
 	for _, set := range state.pools.ToDelete() {
 		logger.V(log.TraceLevel).Info("deleting StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String(), "cluster", set.GetCanonicalClusterName())
-		if err := r.LifecycleClient.DeleteStatefulSetForNodePool(ctx, set); err != nil {
+		if err := r.LifecycleClient.DeleteStatefulSetForBrokerPool(ctx, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting statefulset")
 		}
 	}
@@ -1072,7 +1072,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	if state.pools.AllZero() {
 		// When there is no desired node pool the cluster is tearing down, so
 		// no pods needs to be roll over.
-		logger.V(log.TraceLevel).Info("no desired node pool found")
+		logger.V(log.TraceLevel).Info("no desired broker pool found")
 		return reconcile.Result{}, nil
 	}
 
@@ -1445,7 +1445,7 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 	logger.V(log.TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// now patch the statefulset to remove the pod
-	if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
+	if err := r.LifecycleClient.PatchPoolSet(ctx, cluster, set.StatefulSet); err != nil {
 		return false, errors.Wrap(err, "scaling down statefulset")
 	}
 	// we only do a statefulset at a time, waiting for them to
