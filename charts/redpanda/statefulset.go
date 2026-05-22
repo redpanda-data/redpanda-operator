@@ -949,10 +949,11 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: StatefulSetPodLabelsSelector(state, pool),
 			},
-			ServiceName:         ServiceName(state),
-			Replicas:            ptr.To(pool.Statefulset.Replicas),
-			UpdateStrategy:      pool.Statefulset.UpdateStrategy,
-			PodManagementPolicy: "Parallel",
+			ServiceName:                          ServiceName(state),
+			Replicas:                             ptr.To(pool.Statefulset.Replicas),
+			UpdateStrategy:                       pool.Statefulset.UpdateStrategy,
+			PersistentVolumeClaimRetentionPolicy: pool.Statefulset.PersistentVolumeClaimRetentionPolicy,
+			PodManagementPolicy:                  "Parallel",
 			Template: StrategicMergePatch(
 				StructuredTpl(state, pool.Statefulset.PodTemplate),
 				StrategicMergePatch(

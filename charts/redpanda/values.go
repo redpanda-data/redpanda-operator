@@ -769,12 +769,13 @@ func (n Pool) Suffix() string {
 }
 
 type Statefulset struct {
-	AdditionalSelectorLabels   map[string]string                `json:"additionalSelectorLabels" jsonschema:"required"`
-	Replicas                   int32                            `json:"replicas" jsonschema:"required"`
-	UpdateStrategy             appsv1.StatefulSetUpdateStrategy `json:"updateStrategy" jsonschema:"required"`
-	AdditionalRedpandaCmdFlags []string                         `json:"additionalRedpandaCmdFlags"`
-	PodTemplate                PodTemplate                      `json:"podTemplate" jsonschema:"required"`
-	Budget                     struct {
+	AdditionalSelectorLabels             map[string]string                                       `json:"additionalSelectorLabels" jsonschema:"required"`
+	Replicas                             int32                                                   `json:"replicas" jsonschema:"required"`
+	UpdateStrategy                       appsv1.StatefulSetUpdateStrategy                        `json:"updateStrategy" jsonschema:"required"`
+	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+	AdditionalRedpandaCmdFlags           []string                                                `json:"additionalRedpandaCmdFlags"`
+	PodTemplate                          PodTemplate                                             `json:"podTemplate" jsonschema:"required"`
+	Budget                               struct {
 		MaxUnavailable int32 `json:"maxUnavailable" jsonschema:"required"`
 	} `json:"budget" jsonschema:"required"`
 	PodAntiAffinity struct {

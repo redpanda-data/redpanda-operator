@@ -305,6 +305,9 @@ values:
         expectedFS: xfs
       setDataDirOwnership:
         enabled: false
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podAntiAffinity:
       custom: {}
       topologyKey: kubernetes.io/hostname
@@ -454,6 +457,9 @@ pools:
         expectedFS: xfs
       setDataDirOwnership:
         enabled: true
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podAntiAffinity:
       custom: {}
       topologyKey: kubernetes.io/hostname
@@ -900,6 +906,9 @@ values:
         expectedFS: xfs
       setDataDirOwnership:
         enabled: false
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podAntiAffinity:
       custom: {}
       topologyKey: kubernetes.io/hostname
@@ -1271,6 +1280,9 @@ values:
         expectedFS: xfs
       setDataDirOwnership:
         enabled: false
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podAntiAffinity:
       custom: {}
       topologyKey: kubernetes.io/hostname
@@ -1416,6 +1428,9 @@ pools:
         expectedFS: xfs
       setDataDirOwnership:
         enabled: false
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podAntiAffinity:
       custom: {}
       topologyKey: kubernetes.io/hostname
@@ -1496,6 +1511,9 @@ pools:
         expectedFS: xfs
       setDataDirOwnership:
         enabled: false
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podAntiAffinity:
       custom: {}
       topologyKey: kubernetes.io/hostname
@@ -1863,6 +1881,9 @@ values:
         expectedFS: xfs
       setDataDirOwnership:
         enabled: false
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podAntiAffinity:
       custom: {}
       topologyKey: kubernetes.io/hostname

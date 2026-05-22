@@ -154,9 +154,10 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.S
 			Selector: &metav1.LabelSelector{
 				MatchLabels: statefulSetPodLabelsSelector(state, pool),
 			},
-			ServiceName:         state.Spec().GetServiceName(state.fullname()),
-			Replicas:            ptr.To(pool.GetReplicas()),
-			PodManagementPolicy: appsv1.ParallelPodManagement,
+			ServiceName:                          state.Spec().GetServiceName(state.fullname()),
+			Replicas:                             ptr.To(pool.GetReplicas()),
+			PodManagementPolicy:                  appsv1.ParallelPodManagement,
+			PersistentVolumeClaimRetentionPolicy: pool.Spec.PersistentVolumeClaimRetentionPolicy.DeepCopy(),
 			// OnDelete lets the operator control rollout ordering (e.g.
 			// maintenance mode drain → restart → clear maintenance) rather
 			// than letting the StatefulSet controller do a blind rolling update.

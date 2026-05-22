@@ -11,6 +11,10 @@
 
 package v1alpha2
 
+import (
+	v1 "k8s.io/api/apps/v1"
+)
+
 // NodePoolSpecApplyConfiguration represents a declarative configuration of the NodePoolSpec type for use
 // with apply.
 type NodePoolSpecApplyConfiguration struct {
@@ -101,6 +105,14 @@ func (b *NodePoolSpecApplyConfiguration) WithSidecarImage(value *RedpandaImageAp
 // If called multiple times, the InitContainerImage field is set to the value of the last call.
 func (b *NodePoolSpecApplyConfiguration) WithInitContainerImage(value *InitContainerImageApplyConfiguration) *NodePoolSpecApplyConfiguration {
 	b.EmbeddedNodePoolSpecApplyConfiguration.InitContainerImage = value
+	return b
+}
+
+// WithPersistentVolumeClaimRetentionPolicy sets the PersistentVolumeClaimRetentionPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PersistentVolumeClaimRetentionPolicy field is set to the value of the last call.
+func (b *NodePoolSpecApplyConfiguration) WithPersistentVolumeClaimRetentionPolicy(value v1.StatefulSetPersistentVolumeClaimRetentionPolicy) *NodePoolSpecApplyConfiguration {
+	b.EmbeddedNodePoolSpecApplyConfiguration.PersistentVolumeClaimRetentionPolicy = &value
 	return b
 }
 

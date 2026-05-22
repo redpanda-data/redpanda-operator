@@ -785,6 +785,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -2110,6 +2113,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 1
   selector:
@@ -3291,6 +3297,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 1
   selector:
@@ -4657,6 +4666,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 1
   selector:
@@ -5951,6 +5963,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 1
   selector:
@@ -7501,6 +7516,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -9026,6 +9044,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -10589,6 +10610,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -12029,6 +12053,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -13531,6 +13558,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -15034,6 +15064,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -16478,6 +16511,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -17740,6 +17776,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -18984,6 +19023,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -20454,6 +20496,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -21894,6 +21939,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -23337,6 +23385,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -24830,6 +24881,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -26339,6 +26393,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -27848,6 +27905,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -29309,6 +29369,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -30817,6 +30880,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -32344,6 +32410,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -33871,6 +33940,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -35351,6 +35423,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -36878,6 +36953,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -38405,6 +38483,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -39932,6 +40013,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -41412,6 +41496,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -42890,6 +42977,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -44330,6 +44420,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -45771,6 +45864,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -47291,6 +47387,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 4
   selector:
@@ -48739,6 +48838,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -50239,6 +50341,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -51720,6 +51825,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -53165,6 +53273,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -54636,6 +54747,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -56111,6 +56225,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -57355,6 +57472,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -58942,6 +59062,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -60361,6 +60484,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -61915,6 +62041,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -63362,6 +63491,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -64834,6 +64966,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -66302,6 +66437,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -67629,6 +67767,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -69140,6 +69281,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -70637,6 +70781,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -72164,6 +72311,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -73653,6 +73803,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -75142,6 +75295,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -76597,6 +76753,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -78086,6 +78245,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -79575,6 +79737,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -81018,6 +81183,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -82507,6 +82675,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -83996,6 +84167,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -85439,6 +85613,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -86928,6 +87105,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -88417,6 +88597,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -89860,6 +90043,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -91349,6 +91535,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -92838,6 +93027,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -94281,6 +94473,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -95770,6 +95965,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -97259,6 +97457,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -98702,6 +98903,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -99956,6 +100160,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -101211,6 +101418,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -102749,6 +102959,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -104353,6 +104566,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -105895,6 +106111,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -107431,6 +107650,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -108939,6 +109161,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -110533,6 +110758,9 @@ metadata:
   name: also-not-redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -111973,6 +112201,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -113413,6 +113644,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -114880,6 +115114,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -116332,6 +116569,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -117871,6 +118111,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -119396,6 +119639,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -120885,6 +121131,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -122374,6 +122623,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -123817,6 +124069,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -125306,6 +125561,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -126795,6 +127053,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -128245,6 +128506,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -129840,6 +130104,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
@@ -131105,6 +131372,9 @@ metadata:
   name: redpanda
   namespace: default
 spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   podManagementPolicy: Parallel
   replicas: 3
   selector:
