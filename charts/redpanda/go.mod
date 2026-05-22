@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/charts/redpanda/v25
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/cert-manager/cert-manager v1.19.3
@@ -21,7 +21,7 @@ require (
 	github.com/twmb/franz-go/pkg/sr v1.7.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	go.uber.org/zap v1.27.1
-	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
 	golang.org/x/mod v0.35.0
 	golang.org/x/tools v0.44.0
 	k8s.io/api v0.35.1
@@ -212,7 +212,7 @@ require (
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260109170727-1dd9f5d22ee1 // indirect
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
-	github.com/redpanda-data/console/backend v0.0.0-20260330203659-9db13eb40ef4 // indirect
+	github.com/redpanda-data/console/backend v0.0.0-20260520103351-4e507df78905 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect

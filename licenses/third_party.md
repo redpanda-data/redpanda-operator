@@ -269,7 +269,7 @@ run `task generate:third-party-licenses-list`
 | go.yaml.in/yaml/v2 | [Apache-2.0](https://github.com/yaml/go-yaml/blob/v2.4.3/LICENSE) |
 | go.yaml.in/yaml/v3 | [MIT](https://github.com/yaml/go-yaml/blob/v3.0.4/LICENSE) |
 | golang.org/x/crypto | [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.51.0:LICENSE) |
-| golang.org/x/exp | [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/3dfff04d:LICENSE) |
+| golang.org/x/exp | [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/746e56fc:LICENSE) |
 | golang.org/x/mod/semver | [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.35.0:LICENSE) |
 | golang.org/x/net | [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.54.0:LICENSE) |
 | golang.org/x/oauth2 | [BSD-3-Clause](https://cs.opensource.google/go/x/oauth2/+/v0.35.0:LICENSE) |
