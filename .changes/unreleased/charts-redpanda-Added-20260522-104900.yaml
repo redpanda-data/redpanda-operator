@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Added
+body: Added `statefulset.persistentVolumeClaimRetentionPolicy` to expose the StatefulSet's `PersistentVolumeClaimRetentionPolicy`. Defaults to `whenDeleted: Retain` / `whenScaled: Retain` (matching the Kubernetes default). Set `whenScaled: Delete` to delete a broker's PVC when it is removed via scale-down, and `whenDeleted: Delete` to delete all PVCs when the StatefulSet is deleted.
+time: 2026-05-22T10:49:00.000000-04:00
