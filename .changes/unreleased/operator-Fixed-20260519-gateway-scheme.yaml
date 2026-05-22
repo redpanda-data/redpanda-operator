@@ -1,0 +1,11 @@
+project: operator
+kind: Fixed
+body: |
+  Fixed a scheme-registration gap that caused the controller-runtime cache
+  to error with `no kind "TLSRouteList" / "ListOptions" is registered for
+  version "gateway.networking.k8s.io/v1alpha2"` on every reconcile pass
+  whenever a Redpanda CR rendered TLSRoute objects via the chart's
+  Gateway API support. The chart's `Types()` now uses the upstream
+  `gatewayv1alpha2.TLSRoute` and the operator scheme registers the full
+  v1alpha2 package, so List/Watch resolves correctly.
+time: 2026-05-19T17:50:00.000000+00:00

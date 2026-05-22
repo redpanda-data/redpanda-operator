@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	mcsv1alpha1 "sigs.k8s.io/mcs-api/pkg/apis/v1alpha1"
 
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
@@ -35,6 +36,15 @@ var (
 		certmanagerv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		monitoringv1.AddToScheme,
+		// Gateway API v1alpha2 (TLSRoute + TLSRouteList + the v1alpha2
+		// ListOptions). Required by the controller-runtime cache to
+		// List/Watch TLSRoute objects rendered by the redpanda chart. The
+		// earlier shape — only registering the chart's lightweight TLSRoute
+		// kind below via AddKnownTypeWithName — left ListOptions missing,
+		// so any reconcile pass that called List on TLSRoute failed with
+		// `no kind "ListOptions" is registered for version
+		// "gateway.networking.k8s.io/v1alpha2"`.
+		gatewayv1alpha2.Install,
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
 	}
