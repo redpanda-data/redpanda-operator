@@ -233,10 +233,21 @@ metadata:
 
 func (v vclusterNodes) ApplyBrokerpoolsWithDifferentNamePerCluster(ctx context.Context, manifest *godog.DocString) {
 	t := framework.T(ctx)
-	for _, node := range v {
+	for i, node := range v {
 		fullManifest := brokerpoolManifest(nameMap[node.logicalName], manifest)
 		t.Logf("applying manifest to %q", node.Name())
 		require.NoError(t, node.KubectlApply(ctx, fullManifest))
+		if i == 0 {
+			// we need to wait until first BrokerPool gets into ready state and then create next ones,
+			// otherwise the setup is prone to race condition with seed server mismatch error,
+			// and this makes entire test suite flaky
+			require.Eventually(t, func() bool {
+				if err := waitForStatefulSetReadyInTheNode(ctx, node); err != nil {
+					return false
+				}
+				return true
+			}, 10*time.Minute, 10*time.Second, "expected ready statefulset in %s cluster", node.Name())
+		}
 	}
 }
 
@@ -335,6 +346,10 @@ type rpkExecResult struct {
 }
 
 func stashNodes(ctx context.Context, name string, nodes vclusterNodes) context.Context {
+	// make sure nodes are sorted
+	slices.SortFunc(nodes, func(a, b *vclusterNode) int {
+		return strings.Compare(a.Name(), b.Name())
+	})
 	ctx = context.WithValue(ctx, multiclusterKey(name), nodes)
 	return context.WithValue(ctx, lastMulticlusterNameKey{}, name)
 }
@@ -833,20 +848,29 @@ func expectStatefulsetsReady(ctx context.Context, t framework.TestingT, stsCount
 	require.Eventually(t, func() bool {
 		totalReady := int32(0)
 		for _, node := range nodes {
-			var stsList appsv1.StatefulSetList
-			if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{redpandaLabel: redpandaLabelValue}); err != nil {
-				t.Logf("error listing statefulsets in %s: %v", node.Name(), err)
+			if err := waitForStatefulSetReadyInTheNode(ctx, node); err != nil {
 				return false
 			}
-			for _, sts := range stsList.Items {
-				if sts.Spec.Replicas != nil && sts.Status.ReadyReplicas == *sts.Spec.Replicas && *sts.Spec.Replicas > 0 {
-					totalReady++
-				}
-			}
+			totalReady++
 		}
 		t.Logf("ready statefulsets: %d/%d", totalReady, stsCount)
 		return totalReady >= stsCount
 	}, 10*time.Minute, 10*time.Second, "expected %d ready statefulsets across %d clusters", stsCount, clusterCount)
+}
+
+func waitForStatefulSetReadyInTheNode(ctx context.Context, node *vclusterNode) error {
+	var stsList appsv1.StatefulSetList
+	if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{redpandaLabel: redpandaLabelValue}); err != nil {
+		return fmt.Errorf("error listing statefulsets in %s: %v", node.Name(), err)
+	}
+	for _, sts := range stsList.Items {
+		if sts.Spec.Replicas != nil && sts.Status.ReadyReplicas == *sts.Spec.Replicas && *sts.Spec.Replicas > 0 {
+			continue
+		} else {
+			return fmt.Errorf("statefulset %s not ready yet", sts.GetName())
+		}
+	}
+	return nil
 }
 
 func expectBrokerPoolsBoundAndDeployed(ctx context.Context, t framework.TestingT, expectedCount int32, clusterName string) {
