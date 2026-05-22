@@ -23,7 +23,7 @@ Feature: Stretch Cluster Regional Outage
       rbac:
         enabled: true
     """
-    And I apply a NodePool Kubernetes manifest to "outage":
+    And I apply a RedpandaBrokerPool Kubernetes manifest to "outage":
     """
     spec:
       clusterRef:
@@ -43,7 +43,7 @@ Feature: Stretch Cluster Regional Outage
             enabled: false
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
-    And I expect all 3 NodePools in "outage" to be eventually bound and deployed
+    And I expect all 3 RedpandaBrokerPools in "outage" to be eventually bound and deployed
 
     # Simulate a regional outage by taking one vcluster fully offline.
     When I take the "vc-2" region of "outage" offline
@@ -95,4 +95,4 @@ Feature: Stretch Cluster Regional Outage
     """
     Then all regions of "outage" should eventually report SpecSynced as "Synced"
     And the "vc-2" region of "outage" should reflect the updated StretchCluster spec
-    And I expect all 3 NodePools in "outage" to be eventually bound and deployed
+    And I expect all 3 RedpandaBrokerPools in "outage" to be eventually bound and deployed

@@ -21,7 +21,7 @@ import (
 )
 
 // rpkNodeConfig generates the rpk section of the redpanda.yaml template.
-func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]any {
+func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	flags := redpandaAdditionalStartFlags(state, pool)
 
 	l := state.Spec().Listeners
@@ -129,7 +129,7 @@ func kafkaClientConfig(state *RenderState, clientType string) map[string]any {
 }
 
 // redpandaAdditionalStartFlags returns the additional_start_flags for rpk.
-func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.NodePool) []string {
+func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []string {
 	var flags []string
 
 	// Add logging level.

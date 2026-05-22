@@ -33,7 +33,7 @@ func configMaps(state *RenderState) ([]*corev1.ConfigMap, error) {
 }
 
 // redpandaConfigMap returns the ConfigMap for a specific pool.
-func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.NodePool) (*corev1.ConfigMap, error) {
+func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (*corev1.ConfigMap, error) {
 	bootstrap := bootstrapContents(state)
 	redpanda, err := redpandaConfigFile(state, true, pool)
 	if err != nil {

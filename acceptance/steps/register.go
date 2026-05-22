@@ -105,7 +105,7 @@ func init() {
 
 	// Rolling restart scenario steps
 	framework.RegisterStep(`^I create a sentinel topic in the stretch cluster of "([^"]*)"$`, createSentinelTopicInStretchCluster)
-	framework.RegisterStep(`^I upgrade the NodePools in "([^"]*)" to use image "([^"]*)"$`, upgradeNodePoolsToImage)
+	framework.RegisterStep(`^I upgrade the RedpandaBrokerPools in "([^"]*)" to use image "([^"]*)"$`, upgradeBrokerPoolsToImage)
 	framework.RegisterStep(`^the upgrade of "([^"]*)" completes with at most 1 pod unavailable at a time$`, upgradeCompletesWithAtMostOneUnavailable)
 	framework.RegisterStep(`^the sentinel data is still readable in "([^"]*)"$`, sentinelDataIsReadable)
 
@@ -113,9 +113,9 @@ func init() {
 	framework.RegisterStep(`^I create a multicluster operator named "([^"]*)" with (\d+) nodes$`, createNetworkedVClusterOperators)
 	framework.RegisterStep(`^I apply a multicluster Kubernetes manifest to "([^"]*)":$`, iApplyKuberneteMulticlusterManifest)
 	framework.RegisterStep(`^in "([^"]*)" the Kubernetes object "([^"]*)" in namespace "([^"]*)" of type "([^"]*)" should have finalizer "([^"]*)"$`, checkMulticlusterFinalizers)
-	framework.RegisterStep(`^I apply a NodePool Kubernetes manifest to "([^"]*)":$`, applyNodePoolWithStretchCluster)
+	framework.RegisterStep(`^I apply a RedpandaBrokerPool Kubernetes manifest to "([^"]*)":$`, applyBrokerPoolWithStretchCluster)
 	framework.RegisterStep(`^I expect (\d+) statefulsets in (\d+) kubernetes cluster to be created and eventually ready$`, expectStatefulsetsReady)
-	framework.RegisterStep(`^I expect all (\d+) NodePools in "([^"]*)" to be eventually bound and deployed$`, expectNodePoolsBoundAndDeployed)
+	framework.RegisterStep(`^I expect all (\d+) RedpandaBrokerPools in "([^"]*)" to be eventually bound and deployed$`, expectBrokerPoolsBoundAndDeployed)
 	framework.RegisterStep(`^I execute "([^"]*)" command in the statefulset container in each cluster$`, executeCommandInStatefulsetContainers)
 	framework.RegisterStep(`^I expect them to return the same Redpanda broker list$`, expectSameBrokerList)
 

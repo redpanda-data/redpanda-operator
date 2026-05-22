@@ -421,7 +421,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 	for _, set := range state.pools.ToCreate() {
 		logger.V(log.TraceLevel).Info("creating StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
-		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "creating statefulset")
 		}
 	}
@@ -430,7 +430,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 	for _, set := range state.pools.ToScaleUp() {
 		logger.V(log.TraceLevel).Info("scaling up StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
 
-		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "scaling up statefulset")
 		}
 	}
@@ -439,7 +439,7 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 	// here we can just wholesale patch everything
 	for _, set := range state.pools.RequiresUpdate() {
 		logger.V(log.TraceLevel).Info("updating out-of-date StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
-		if err := r.LifecycleClient.PatchNodePoolSet(ctx, state.cluster, set); err != nil {
+		if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "updating statefulset")
 		}
 	}
@@ -961,7 +961,7 @@ func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.Admin
 	logger.V(log.TraceLevel).Info("scaling down StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// now patch the statefulset to remove the pod
-	if err := r.LifecycleClient.PatchNodePoolSet(ctx, cluster, set.StatefulSet); err != nil {
+	if err := r.LifecycleClient.PatchPoolSet(ctx, cluster, set.StatefulSet); err != nil {
 		return false, errors.Wrap(err, "scaling down statefulset")
 	}
 	// we only do a statefulset at a time, waiting for them to

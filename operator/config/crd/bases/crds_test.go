@@ -19,18 +19,19 @@ import (
 
 func TestCRDS(t *testing.T) {
 	names := map[string]struct{}{
-		"clusters.redpanda.vectorized.io":      {},
-		"consoles.cluster.redpanda.com":        {},
-		"consoles.redpanda.vectorized.io":      {},
-		"groups.cluster.redpanda.com":          {},
-		"nodepools.cluster.redpanda.com":       {},
-		"redpandas.cluster.redpanda.com":       {},
-		"redpandaroles.cluster.redpanda.com":   {},
-		"schemas.cluster.redpanda.com":         {},
-		"shadowlinks.cluster.redpanda.com":     {},
-		"stretchclusters.cluster.redpanda.com": {},
-		"topics.cluster.redpanda.com":          {},
-		"users.cluster.redpanda.com":           {},
+		"clusters.redpanda.vectorized.io":          {},
+		"consoles.cluster.redpanda.com":            {},
+		"consoles.redpanda.vectorized.io":          {},
+		"groups.cluster.redpanda.com":              {},
+		"nodepools.cluster.redpanda.com":           {},
+		"redpandas.cluster.redpanda.com":           {},
+		"redpandabrokerpools.cluster.redpanda.com": {},
+		"redpandaroles.cluster.redpanda.com":       {},
+		"schemas.cluster.redpanda.com":             {},
+		"shadowlinks.cluster.redpanda.com":         {},
+		"stretchclusters.cluster.redpanda.com":     {},
+		"topics.cluster.redpanda.com":              {},
+		"users.cluster.redpanda.com":               {},
 	}
 
 	foundNames := map[string]struct{}{}
@@ -44,6 +45,7 @@ func TestCRDS(t *testing.T) {
 	require.Equal(t, "groups.cluster.redpanda.com", crds.Group().Name)
 	require.Equal(t, "nodepools.cluster.redpanda.com", crds.NodePool().Name)
 	require.Equal(t, "redpandas.cluster.redpanda.com", crds.Redpanda().Name)
+	require.Equal(t, "redpandabrokerpools.cluster.redpanda.com", crds.RedpandaBrokerPool().Name)
 	require.Equal(t, "redpandaroles.cluster.redpanda.com", crds.Role().Name)
 	require.Equal(t, "schemas.cluster.redpanda.com", crds.Schema().Name)
 	require.Equal(t, "shadowlinks.cluster.redpanda.com", crds.ShadowLink().Name)

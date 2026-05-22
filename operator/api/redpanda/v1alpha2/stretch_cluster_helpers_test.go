@@ -1483,15 +1483,15 @@ func TestStretchClusterSpec(t *testing.T) {
 	})
 }
 
-func TestNodePool(t *testing.T) {
+func TestBrokerPool(t *testing.T) {
 	t.Run("GetReplicas", func(t *testing.T) {
 		tests := []struct {
 			name     string
-			pool     *redpandav1alpha2.NodePool
+			pool     *redpandav1alpha2.RedpandaBrokerPool
 			expected int32
 		}{
-			{"default", &redpandav1alpha2.NodePool{}, 1},
-			{"custom", &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{Replicas: ptr.To(int32(3))}}}, 3},
+			{"default", &redpandav1alpha2.RedpandaBrokerPool{}, 1},
+			{"custom", &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{Replicas: ptr.To(int32(3))}}}, 3},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -1502,11 +1502,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("Suffix", func(t *testing.T) {
 		t.Run("unnamed pool", func(t *testing.T) {
-			assert.Equal(t, "", (&redpandav1alpha2.NodePool{}).Suffix())
+			assert.Equal(t, "", (&redpandav1alpha2.RedpandaBrokerPool{}).Suffix())
 		})
 
 		t.Run("named pool", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{}
+			pool := &redpandav1alpha2.RedpandaBrokerPool{}
 			pool.Name = "fast"
 			assert.Equal(t, "-fast", pool.Suffix())
 		})
@@ -1514,11 +1514,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("RedpandaImage", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
-			assert.Equal(t, redpandav1alpha2.DefaultRedpandaRepository+":"+redpandav1alpha2.DefaultRedpandaImageTag, (&redpandav1alpha2.NodePool{}).RedpandaImage())
+			assert.Equal(t, redpandav1alpha2.DefaultRedpandaRepository+":"+redpandav1alpha2.DefaultRedpandaImageTag, (&redpandav1alpha2.RedpandaBrokerPool{}).RedpandaImage())
 		})
 
 		t.Run("custom", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			pool := &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				Image: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("custom/repo"), Tag: ptr.To("v1.0")},
 			}}}
 			assert.Equal(t, "custom/repo:v1.0", pool.RedpandaImage())
@@ -1527,11 +1527,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("SidecarImage", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
-			assert.Equal(t, redpandav1alpha2.DefaultSidecarRepository+":"+redpandav1alpha2.DefaultOperatorImageTag, (&redpandav1alpha2.NodePool{}).SidecarImage())
+			assert.Equal(t, redpandav1alpha2.DefaultSidecarRepository+":"+redpandav1alpha2.DefaultOperatorImageTag, (&redpandav1alpha2.RedpandaBrokerPool{}).SidecarImage())
 		})
 
 		t.Run("custom", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			pool := &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				SidecarImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("custom/sidecar"), Tag: ptr.To("v2.0")},
 			}}}
 			assert.Equal(t, "custom/sidecar:v2.0", pool.SidecarImage())
@@ -1540,11 +1540,11 @@ func TestNodePool(t *testing.T) {
 
 	t.Run("InitImage", func(t *testing.T) {
 		t.Run("default", func(t *testing.T) {
-			assert.Equal(t, redpandav1alpha2.DefaultInitContainerRepository+":"+redpandav1alpha2.DefaultInitContainerImageTag, (&redpandav1alpha2.NodePool{}).InitImage())
+			assert.Equal(t, redpandav1alpha2.DefaultInitContainerRepository+":"+redpandav1alpha2.DefaultInitContainerImageTag, (&redpandav1alpha2.RedpandaBrokerPool{}).InitImage())
 		})
 
 		t.Run("custom", func(t *testing.T) {
-			pool := &redpandav1alpha2.NodePool{Spec: redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			pool := &redpandav1alpha2.RedpandaBrokerPool{Spec: redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 				InitContainerImage: &redpandav1alpha2.InitContainerImage{Repository: ptr.To("custom/init"), Tag: ptr.To("v3.0")},
 			}}}
 			assert.Equal(t, "custom/init:v3.0", pool.InitImage())

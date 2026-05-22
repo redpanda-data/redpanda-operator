@@ -499,7 +499,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 			require.ElementsMatch(t, pools, tracker.DesiredStatefulSets())
 
 			for _, pool := range tt.nodePools {
-				require.NoError(t, instances.resourceClient.PatchNodePoolSet(ctx, cluster, pool))
+				require.NoError(t, instances.resourceClient.PatchPoolSet(ctx, cluster, pool))
 				require.NoError(t, instances.checkObject(ctx, t, pool.StatefulSet))
 			}
 
