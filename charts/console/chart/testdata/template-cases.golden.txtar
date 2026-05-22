@@ -134,11 +134,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -360,11 +360,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -580,11 +580,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -812,11 +812,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1028486626
@@ -1027,11 +1027,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -1255,7 +1255,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom:
@@ -1263,7 +1263,7 @@ spec:
           secretRef:
             name: ha
         - prefix: i2E2Jvnc
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -1601,11 +1601,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -2239,7 +2239,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom:
@@ -2250,7 +2250,7 @@ spec:
         - configMapRef:
             name: 4xZZ
           prefix: Djbp99U
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1105213631
@@ -2420,11 +2420,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1421249778
@@ -2626,11 +2626,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: -1420734522
@@ -3466,12 +3466,12 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom:
         - prefix: RyT9JuZ
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 666524470
@@ -3804,11 +3804,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -7328,11 +7328,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 2110243128
@@ -8311,11 +8311,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 1372450161
@@ -20486,11 +20486,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -20680,11 +20680,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -20883,13 +20883,13 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom:
         - secretRef:
             name: my-client-secret-oidc
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -21093,11 +21093,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -21946,11 +21946,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -22139,11 +22139,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -22341,11 +22341,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -22566,11 +22566,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: redpandadata/console:v3.7.0
+        image: redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -22759,11 +22759,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23188,11 +23188,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23401,11 +23401,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -23596,11 +23596,11 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 3.7.1
         - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
-          value: redpandadata/console:v3.7.0
+          value: redpandadata/console:v3.7.3
         - name: REDPANDA_METRICS_K8S_VERSION
           value: v1.99.0
         envFrom: []
-        image: docker.redpanda.com/redpandadata/console:v3.7.0
+        image: docker.redpanda.com/redpandadata/console:v3.7.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3

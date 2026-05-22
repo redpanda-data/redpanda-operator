@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/gen
 
-go 1.26.1
+go 1.26.3
 
 replace (
 	// As gen schema generates a schema for a chart via reflect, we
@@ -218,7 +218,7 @@ require (
 	github.com/redpanda-data/common-go/net v0.1.1-0.20240429123545-4da3d2b371f7 // indirect
 	github.com/redpanda-data/common-go/rpadmin v0.2.4 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
-	github.com/redpanda-data/console/backend v0.0.0-20260330203659-9db13eb40ef4 // indirect
+	github.com/redpanda-data/console/backend v0.0.0-20260520103351-4e507df78905 // indirect
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a // indirect
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -266,7 +266,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
-	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa // indirect
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
