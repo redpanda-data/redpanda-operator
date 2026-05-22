@@ -1278,7 +1278,8 @@
     - '*.compat-test.compat-test'
     - '*.compat-test.svc.cluster.local'
     - '*.compat-test.svc'
-    - '*.compat-test'
+    - compat-test-basic-a-0.compat-test
+    - compat-test-basic-b-0.compat-test
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -1318,7 +1319,8 @@
     - '*.compat-test.compat-test'
     - '*.compat-test.svc.cluster.local'
     - '*.compat-test.svc'
-    - '*.compat-test'
+    - compat-test-basic-a-0.compat-test
+    - compat-test-basic-b-0.compat-test
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2068,7 +2070,7 @@
     - '*.flat-network-test.flat-network-test'
     - '*.flat-network-test.svc.cluster.local'
     - '*.flat-network-test.svc'
-    - '*.flat-network-test'
+    - flat-network-test-pool-a-0.flat-network-test
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2108,7 +2110,7 @@
     - '*.flat-network-test.flat-network-test'
     - '*.flat-network-test.svc.cluster.local'
     - '*.flat-network-test.svc'
-    - '*.flat-network-test'
+    - flat-network-test-pool-a-0.flat-network-test
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2837,11 +2839,12 @@
     - '*.mcs-network-test.mcs-network-test'
     - '*.mcs-network-test.svc.cluster.local'
     - '*.mcs-network-test.svc'
-    - '*.mcs-network-test'
+    - mcs-network-test-pool-a-0.mcs-network-test
     - mcs-network-test-cluster.mcs-network-test.mcs-network-test.svc.clusterset.local
     - '*.mcs-network-test-cluster.mcs-network-test.mcs-network-test.svc.clusterset.local'
     - mcs-network-test.mcs-network-test.svc.clusterset.local
     - '*.mcs-network-test.mcs-network-test.svc.clusterset.local'
+    - mcs-network-test-pool-a-0.mcs-network-test.svc.clusterset.local
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -2881,11 +2884,12 @@
     - '*.mcs-network-test.mcs-network-test'
     - '*.mcs-network-test.svc.cluster.local'
     - '*.mcs-network-test.svc'
-    - '*.mcs-network-test'
+    - mcs-network-test-pool-a-0.mcs-network-test
     - mcs-network-test-cluster.mcs-network-test.mcs-network-test.svc.clusterset.local
     - '*.mcs-network-test-cluster.mcs-network-test.mcs-network-test.svc.clusterset.local'
     - mcs-network-test.mcs-network-test.svc.clusterset.local
     - '*.mcs-network-test.mcs-network-test.svc.clusterset.local'
+    - mcs-network-test-pool-a-0.mcs-network-test.svc.clusterset.local
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -3742,7 +3746,8 @@
     - '*.nodepool-basic-test.nodepool-basic-test'
     - '*.nodepool-basic-test.svc.cluster.local'
     - '*.nodepool-basic-test.svc'
-    - '*.nodepool-basic-test'
+    - nodepool-basic-test-basic-a-0.nodepool-basic-test
+    - nodepool-basic-test-basic-b-0.nodepool-basic-test
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io
@@ -3782,7 +3787,8 @@
     - '*.nodepool-basic-test.nodepool-basic-test'
     - '*.nodepool-basic-test.svc.cluster.local'
     - '*.nodepool-basic-test.svc'
-    - '*.nodepool-basic-test'
+    - nodepool-basic-test-basic-a-0.nodepool-basic-test
+    - nodepool-basic-test-basic-b-0.nodepool-basic-test
     duration: 43800h0m0s
     issuerRef:
       group: cert-manager.io

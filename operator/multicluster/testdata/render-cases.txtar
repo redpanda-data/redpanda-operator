@@ -1152,3 +1152,65 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 2
+-- flat-network-tls --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec:
+  networking:
+    crossClusterMode: flat
+  tls:
+    enabled: true
+    certs:
+      default:
+        caEnabled: true
+  listeners:
+    rpc:
+      port: 33145
+      tls:
+        cert: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+-- mcs-network-tls --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec:
+  networking:
+    crossClusterMode: mcs
+  tls:
+    enabled: true
+    certs:
+      default:
+        caEnabled: true
+  listeners:
+    rpc:
+      port: 33145
+      tls:
+        cert: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: NodePool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3

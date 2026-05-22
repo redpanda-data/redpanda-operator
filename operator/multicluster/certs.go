@@ -62,13 +62,29 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				fmt.Sprintf("*.%s.%s.svc", service, ns),
 				fmt.Sprintf("*.%s.%s", service, ns),
 				// Per-pod service names are standalone services in the namespace,
-				// not subdomains of the headless service. Add a namespace-wide
-				// wildcard so TLS verification passes for addresses like
-				// "pool-0-0.sc-factory:9644".
+				// not subdomains of the headless service. Namespace-wide
+				// wildcards cover the FQDN and 3-label forms of those services.
+				// The 2-label form `<pod>.<ns>` is covered by the explicit
+				// per-broker SANs below — a `*.<ns>` wildcard would be on a
+				// single-label parent (RFC 6125 §6.4.3) which OpenSSL ≥3.0
+				// rejects with "hostname mismatch", so emitting one would
+				// add noise without buying anything.
 				fmt.Sprintf("*.%s.svc.%s", ns, domain),
 				fmt.Sprintf("*.%s.svc", ns),
-				fmt.Sprintf("*.%s", ns),
 			)
+			// In flat & MCS modes the operator writes 2-label hostnames
+			// (`<pod>.<ns>`) into seed_servers / advertised_rpc_api, which
+			// only a single-label-parent wildcard could match — and that's
+			// the RFC violation noted above. Enumerate one well-formed SAN
+			// per broker so the RPC handshake doesn't fail under strict
+			// hostname verification and the cluster can actually reach
+			// quorum (see #1499).
+			for _, pool := range state.Pools() {
+				for i := int32(0); i < pool.GetReplicas(); i++ {
+					podName := PerPodServiceName(state.poolFullname(pool), i)
+					names = append(names, fmt.Sprintf("%s.%s", podName, ns))
+				}
+			}
 		}
 
 		// In MCS mode, add clusterset.local SANs for cross-cluster DNS.
@@ -79,6 +95,17 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				fmt.Sprintf("%s.%s.svc.clusterset.local", service, ns),
 				fmt.Sprintf("*.%s.%s.svc.clusterset.local", service, ns),
 			)
+			// Per-broker explicit SANs for the clusterset.local advertised
+			// hostnames (see #1499). The wildcards above match the headless
+			// service hierarchy, not the per-pod hostnames the operator
+			// publishes via seed_servers / advertised_rpc_api in MCS mode
+			// (`<pod>.<ns>.svc.clusterset.local`).
+			for _, pool := range state.Pools() {
+				for i := int32(0); i < pool.GetReplicas(); i++ {
+					podName := PerPodServiceName(state.poolFullname(pool), i)
+					names = append(names, fmt.Sprintf("%s.%s.svc.clusterset.local", podName, ns))
+				}
+			}
 		}
 
 		if ext := state.Spec().External; ext != nil && ext.Domain != nil {

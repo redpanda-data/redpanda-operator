@@ -29,6 +29,7 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
@@ -1539,6 +1541,28 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		&redpandav1alpha2.StretchCluster{},
 		mcbuilder.WithEngageWithLocalCluster(true),
 		mcbuilder.WithEngageWithProviderClusters(true)).
+		Watches(&redpandav1alpha2.NodePool{}, func(clusterName string, _ cluster.Cluster) mchandler.EventHandler {
+			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
+				l := log.FromContext(ctx).WithName("MulticlusterReconciler.NodePoolWatch").V(log.TraceLevel)
+				np, ok := object.(*redpandav1alpha2.NodePool)
+				if !ok {
+					return nil
+				}
+				if !np.Spec.ClusterRef.IsStretchCluster() {
+					return nil
+				}
+				l.V(log.TraceLevel).Info("NodePool event received", "nodePool", client.ObjectKeyFromObject(np).String(), "clusterRef", np.Spec.ClusterRef.Name)
+				return []mcreconcile.Request{{
+					Request: reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Namespace: np.Namespace,
+							Name:      np.Spec.ClusterRef.Name,
+						},
+					},
+					ClusterName: clusterName,
+				}}
+			})
+		}).
 		Complete(
 			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
 				Manager:          mgr,
