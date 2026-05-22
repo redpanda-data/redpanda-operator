@@ -55,13 +55,13 @@ var suites = []TestSuite{
 	},
 	{
 		Name:     "multicluster",
-		Required: false,
+		Required: true,
 		Timeout:  time.Hour,
 		Retry:    ptr.To(3),
 	},
 	{
 		Name:     "acceptance-multicluster",
-		Required: false,
+		Required: true,
 		Timeout:  time.Hour,
 		Retry:    ptr.To(3),
 	},
