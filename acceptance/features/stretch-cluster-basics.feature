@@ -50,7 +50,7 @@ Feature: Multicluster Operator
             cert: issuer-managed
     """
     Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
-    And I apply a RedpandaBrokerPool Kubernetes manifest to "multicluster":
+    And I apply a NodePool Kubernetes manifest to "multicluster":
     """
     spec:
       clusterRef:
@@ -70,7 +70,7 @@ Feature: Multicluster Operator
             enabled: false
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
-    And I expect all 3 RedpandaBrokerPools in "multicluster" to be eventually bound and deployed
+    And I expect all 3 NodePools in "multicluster" to be eventually bound and deployed
     When I execute "rpk redpanda admin brokers list" command in the statefulset container in each cluster
     And I expect them to return the same Redpanda broker list
     # rpk topic list exercises the Kafka listener which uses the "user-provided"

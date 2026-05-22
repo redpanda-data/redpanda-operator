@@ -183,7 +183,7 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 	return sr.NewClient(srOpts...)
 }
 
-// stretchClusterEndpoints lists BrokerPools referencing the given StretchCluster
+// stretchClusterEndpoints lists NodePools referencing the given StretchCluster
 // across all clusters known to the manager, and builds per-pod endpoint addresses
 // for the given port.
 func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alpha2.StretchCluster, port int32) ([]string, error) {
@@ -206,8 +206,8 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 		}
 
 		listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
-		var brokerPoolList redpandav1alpha2.RedpandaBrokerPoolList
-		err = k8sClient.List(listCtx, &brokerPoolList, client.InNamespace(sc.Namespace))
+		var nodePoolList redpandav1alpha2.NodePoolList
+		err = k8sClient.List(listCtx, &nodePoolList, client.InNamespace(sc.Namespace))
 		listCancel()
 		if err != nil {
 			if clusterName != mcmanager.LocalCluster {
@@ -216,11 +216,11 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 				// reconcile and let the next round pick them up.
 				continue
 			}
-			return nil, errors.Wrapf(err, "listing RedpandaBrokerPools in cluster %s", clusterName)
+			return nil, errors.Wrapf(err, "listing NodePools in cluster %s", clusterName)
 		}
 
-		for i := range brokerPoolList.Items {
-			pool := &brokerPoolList.Items[i]
+		for i := range nodePoolList.Items {
+			pool := &nodePoolList.Items[i]
 			ref := pool.Spec.ClusterRef
 			if !ref.IsStretchCluster() || ref.Name != sc.Name {
 				continue

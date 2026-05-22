@@ -116,17 +116,17 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 	s.factory = internalclient.NewFactory(mgr, nil).WithDialer(s.mc.DialContext)
 }
 
-// applyBrokerPools creates one BrokerPool per cluster referencing the given StretchCluster.
-func (s *StretchClusterFactorySuite) applyBrokerPools(t *testing.T, ctx context.Context, scName, ns, poolPrefix string) {
+// applyNodePools creates one NodePool per cluster referencing the given StretchCluster.
+func (s *StretchClusterFactorySuite) applyNodePools(t *testing.T, ctx context.Context, scName, ns, poolPrefix string) {
 	t.Helper()
 	for i, env := range s.mc.Envs {
-		pool := &redpandav1alpha2.RedpandaBrokerPool{
+		pool := &redpandav1alpha2.NodePool{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-%d", poolPrefix, i),
 				Namespace: ns,
 			},
-			Spec: redpandav1alpha2.BrokerPoolSpec{
-				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+			Spec: redpandav1alpha2.NodePoolSpec{
+				EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
 					Replicas: ptr.To(int32(1)),
 				},
 				ClusterRef: redpandav1alpha2.ClusterRef{
@@ -196,7 +196,7 @@ func (s *StretchClusterFactorySuite) TestFactoryClients() {
 	}
 	s.mc.ApplyAll(t, ctx, sc)
 
-	s.applyBrokerPools(t, ctx, nn.Name, ns, "pool")
+	s.applyNodePools(t, ctx, nn.Name, ns, "pool")
 	s.waitForFinalizer(t, ctx, nn)
 	s.waitForBrokerReady(t, ctx, nn)
 
@@ -311,7 +311,7 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	}
 	s.mc.ApplyAll(t, ctx, sc)
 
-	s.applyBrokerPools(t, ctx, nn.Name, ns, "cfg-pool")
+	s.applyNodePools(t, ctx, nn.Name, ns, "cfg-pool")
 	s.waitForFinalizer(t, ctx, nn)
 	s.waitForBrokerReady(t, ctx, nn)
 
@@ -397,8 +397,8 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 }
 
 // TestResourceCleanup verifies that owned resources are properly cleaned up
-// after BrokerPool and StretchCluster deletion. It creates a StretchCluster with
-// 3 BrokerPools, waits for the cluster to become healthy, then runs sequential
+// after NodePool and StretchCluster deletion. It creates a StretchCluster with
+// 3 NodePools, waits for the cluster to become healthy, then runs sequential
 // subtests that exercise different deletion scenarios.
 func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 	t := s.T()
@@ -432,7 +432,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 	}
 	s.mc.ApplyAll(t, ctx, sc)
 
-	s.applyBrokerPools(t, ctx, nn.Name, ns, "cleanup-pool")
+	s.applyNodePools(t, ctx, nn.Name, ns, "cleanup-pool")
 	s.waitForFinalizer(t, ctx, nn)
 
 	// Wait for all 3 brokers to become ready.
@@ -450,7 +450,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 
 	// Verify that owned resources exist before we start deleting.
 	stsCounts := s.countOwnedResourcesAcrossClusters(t, ctx, &appsv1.StatefulSetList{}, ownerLabels)
-	require.Equal(t, 3, stsCounts, "expected 3 StatefulSets (one per BrokerPool) before cleanup")
+	require.Equal(t, 3, stsCounts, "expected 3 StatefulSets (one per NodePool) before cleanup")
 
 	svcCounts := s.countOwnedResourcesAcrossClusters(t, ctx, &corev1.ServiceList{}, ownerLabels, client.InNamespace(ns))
 	require.Greater(t, svcCounts, 0, "expected Services to exist before cleanup")
@@ -458,10 +458,10 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 	cmCounts := s.countOwnedResourcesAcrossClusters(t, ctx, &corev1.ConfigMapList{}, ownerLabels, client.InNamespace(ns))
 	require.Greater(t, cmCounts, 0, "expected ConfigMaps to exist before cleanup")
 
-	t.Run("SingleBrokerPoolDeletion", func(t *testing.T) {
-		// Delete the BrokerPool from cluster 2 only.
+	t.Run("SingleNodePoolDeletion", func(t *testing.T) {
+		// Delete the NodePool from cluster 2 only.
 		poolToDelete := "cleanup-pool-2"
-		pool := &redpandav1alpha2.RedpandaBrokerPool{
+		pool := &redpandav1alpha2.NodePool{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      poolToDelete,
 				Namespace: ns,
@@ -475,7 +475,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 			count := s.countOwnedResourcesAcrossClusters(t, ctx, &appsv1.StatefulSetList{}, ownerLabels)
 			t.Logf("StatefulSet count: %d (want 2)", count)
 			return count == 2
-		}, 5*time.Minute, 5*time.Second, "StatefulSet for deleted BrokerPool was not cleaned up")
+		}, 5*time.Minute, 5*time.Second, "StatefulSet for deleted NodePool was not cleaned up")
 
 		// The other two pools should remain healthy.
 		require.Eventually(t, func() bool {
@@ -489,7 +489,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 			}
 			t.Logf("ready brokers: %d (want >= 2)", readyCount)
 			return readyCount >= 2
-		}, 3*time.Minute, 5*time.Second, "remaining pools did not stay healthy after single BrokerPool deletion")
+		}, 3*time.Minute, 5*time.Second, "remaining pools did not stay healthy after single NodePool deletion")
 
 		// Per-pod Services for the deleted pool's broker should be cleaned up.
 		// The syncer GC removes Services that are no longer rendered.
@@ -507,7 +507,7 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 				}
 			}
 			return true
-		}, 3*time.Minute, 5*time.Second, "per-pod Service for deleted BrokerPool was not cleaned up")
+		}, 3*time.Minute, 5*time.Second, "per-pod Service for deleted NodePool was not cleaned up")
 	})
 
 	t.Run("PartialStretchClusterDeletion", func(t *testing.T) {
@@ -565,8 +565,8 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 	})
 
 	t.Run("FullDeletion", func(t *testing.T) {
-		// Delete all remaining BrokerPools across all clusters.
-		s.mc.DeleteAll(t, ctx, ns, &redpandav1alpha2.RedpandaBrokerPool{})
+		// Delete all remaining NodePools across all clusters.
+		s.mc.DeleteAll(t, ctx, ns, &redpandav1alpha2.NodePool{})
 		// Delete the StretchCluster from all clusters.
 		s.mc.DeleteAll(t, ctx, ns, &redpandav1alpha2.StretchCluster{})
 

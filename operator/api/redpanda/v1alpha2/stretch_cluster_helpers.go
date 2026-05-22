@@ -1195,13 +1195,13 @@ func (s *StretchClusterSpec) AdminAPIURLs(fullname, namespace string) string {
 }
 
 // GetReplicas returns the replica count for a node pool, defaulting to 1.
-func (n *RedpandaBrokerPool) GetReplicas() int32 {
+func (n *NodePool) GetReplicas() int32 {
 	return ptr.Deref(n.Spec.Replicas, 1)
 }
 
 // Suffix returns the suffix for this pool's resource names.
 // Returns "-<name>" if the pool has a name, or "" otherwise.
-func (n *RedpandaBrokerPool) Suffix() string {
+func (n *NodePool) Suffix() string {
 	if n.Name != "" {
 		return fmt.Sprintf("-%s", n.Name)
 	}
@@ -1214,7 +1214,7 @@ func imageRef(repo *string, defaultRepo string, tag *string, defaultTag string) 
 }
 
 // RedpandaImage returns the full image reference (repository:tag).
-func (n *RedpandaBrokerPool) RedpandaImage() string {
+func (n *NodePool) RedpandaImage() string {
 	if n.Spec.Image != nil {
 		return imageRef(n.Spec.Image.Repository, DefaultRedpandaRepository, n.Spec.Image.Tag, DefaultRedpandaImageTag)
 	}
@@ -1222,7 +1222,7 @@ func (n *RedpandaBrokerPool) RedpandaImage() string {
 }
 
 // SidecarImage returns the full image reference for the sidecar (repository:tag).
-func (n *RedpandaBrokerPool) SidecarImage() string {
+func (n *NodePool) SidecarImage() string {
 	if n.Spec.SidecarImage != nil {
 		return imageRef(n.Spec.SidecarImage.Repository, DefaultSidecarRepository, n.Spec.SidecarImage.Tag, DefaultOperatorImageTag)
 	}
@@ -1230,7 +1230,7 @@ func (n *RedpandaBrokerPool) SidecarImage() string {
 }
 
 // InitImage returns the full image reference for the init container (repository:tag).
-func (n *RedpandaBrokerPool) InitImage() string {
+func (n *NodePool) InitImage() string {
 	if n.Spec.InitContainerImage != nil {
 		return imageRef(n.Spec.InitContainerImage.Repository, DefaultInitContainerRepository, n.Spec.InitContainerImage.Tag, DefaultInitContainerImageTag)
 	}

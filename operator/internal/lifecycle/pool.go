@@ -126,22 +126,16 @@ type PoolTracker struct {
 	// probe-state flip mid-reconcile) on a partitioned peer would be
 	// indistinguishable from a real NodePool deletion and would trigger
 	// an unintended decommission.
-	observedClusters       map[string]bool
-	poolGenerationLabelKey string
+	observedClusters map[string]bool
 }
 
 // NewPoolTracker creates a new PoolTracker with the given cluster generation.
-func NewPoolTracker(generation int64, useBrokerPool bool) *PoolTracker {
-	poolGenerationLabelKey := nodePoolGenerationLabel
-	if useBrokerPool {
-		poolGenerationLabelKey = BrokerPoolGenerationLabel
-	}
+func NewPoolTracker(generation int64) *PoolTracker {
 	return &PoolTracker{
-		poolGenerationLabelKey: poolGenerationLabelKey,
-		latestGeneration:       generation,
-		existingPools:          make(map[ClusterNamespacedName]*poolWithOrdinals),
-		desiredPools:           make(map[ClusterNamespacedName]*poolWithOrdinals),
-		observedClusters:       make(map[string]bool),
+		latestGeneration: generation,
+		existingPools:    make(map[ClusterNamespacedName]*poolWithOrdinals),
+		desiredPools:     make(map[ClusterNamespacedName]*poolWithOrdinals),
+		observedClusters: make(map[string]bool),
 	}
 }
 
@@ -332,7 +326,7 @@ func (p *PoolTracker) RequiresUpdate() []*MulticlusterStatefulSet {
 
 		outOfDateGeneration := labels[generationLabel] != generation
 		outOfDateConfigVersion := labels[configVersionLabel] != desired.set.Labels[configVersionLabel]
-		outOfDateNodePool := labels[p.poolGenerationLabelKey] != desired.set.Labels[p.poolGenerationLabelKey]
+		outOfDateNodePool := labels[nodePoolGenerationLabel] != desired.set.Labels[nodePoolGenerationLabel]
 		if outOfDateGeneration || outOfDateConfigVersion || outOfDateNodePool {
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)

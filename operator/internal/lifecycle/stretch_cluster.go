@@ -14,23 +14,23 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-// StretchClusterWithPools serves as an intermediate structure to merge a Cluster with its BrokerPools in v2
+// StretchClusterWithPools serves as an intermediate structure to merge a Cluster with its NodePools in v2
 type StretchClusterWithPools struct {
 	*redpandav1alpha2.StretchCluster
-	BrokerPools  []*BrokerPoolInCluster
+	NodePools    []*NodePoolInCluster
 	PodEndpoints []PodEndpoint
 	clusters     []string
 }
 
-type BrokerPoolInCluster struct {
-	cluster    string
-	brokerPool *redpandav1alpha2.RedpandaBrokerPool
+type NodePoolInCluster struct {
+	cluster  string
+	nodePool *redpandav1alpha2.NodePool
 }
 
-func NewStretchClusterWithPools(cluster *redpandav1alpha2.StretchCluster, clusters []string, pools ...*BrokerPoolInCluster) *StretchClusterWithPools {
+func NewStretchClusterWithPools(cluster *redpandav1alpha2.StretchCluster, clusters []string, pools ...*NodePoolInCluster) *StretchClusterWithPools {
 	return &StretchClusterWithPools{
 		StretchCluster: cluster,
-		BrokerPools:    pools,
+		NodePools:      pools,
 		clusters:       clusters,
 	}
 }
@@ -39,20 +39,20 @@ func (s *StretchClusterWithPools) GetClusters() []string {
 	return s.clusters
 }
 
-func (s *StretchClusterWithPools) GetBrokerPoolsForCluster(clusterName string) []*redpandav1alpha2.RedpandaBrokerPool {
-	var result []*redpandav1alpha2.RedpandaBrokerPool
-	for _, brokerPool := range s.BrokerPools {
-		if brokerPool.cluster == clusterName {
-			result = append(result, brokerPool.brokerPool)
+func (s *StretchClusterWithPools) GetNodePoolsForCluster(clusterName string) []*redpandav1alpha2.NodePool {
+	var result []*redpandav1alpha2.NodePool
+	for _, nodePool := range s.NodePools {
+		if nodePool.cluster == clusterName {
+			result = append(result, nodePool.nodePool)
 		}
 	}
 	return result
 }
 
-func (s *StretchClusterWithPools) GetAllBrokerPools() []*redpandav1alpha2.RedpandaBrokerPool {
-	var result []*redpandav1alpha2.RedpandaBrokerPool
-	for _, brokerPool := range s.BrokerPools {
-		result = append(result, brokerPool.brokerPool)
+func (s *StretchClusterWithPools) GetAllNodePools() []*redpandav1alpha2.NodePool {
+	var result []*redpandav1alpha2.NodePool
+	for _, nodePool := range s.NodePools {
+		result = append(result, nodePool.nodePool)
 	}
 	return result
 }
@@ -70,7 +70,7 @@ func StretchClusterResourceManagers(redpandaImage, sidecarImage Image, cloudSecr
 		NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools],
 		SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools],
 	) {
-		return NewStretchClusterOwnershipResolver(), NewStretchClusterStatusUpdater(), NewStretchBrokerPoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewStretchClusterSimpleResourceRenderer(mgr, redpandaImage, sidecarImage)
+		return NewStretchClusterOwnershipResolver(), NewStretchClusterStatusUpdater(), NewStretchNodePoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewStretchClusterSimpleResourceRenderer(mgr, redpandaImage, sidecarImage)
 	}
 }
 

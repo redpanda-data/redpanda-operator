@@ -8,8 +8,8 @@
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: audit-logging-pool-a
     namespace: audit-logging
   spec:
@@ -382,8 +382,8 @@
       app.kubernetes.io/instance: common-labels
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
       env: staging
       team: platform
     name: common-labels-pool-a
@@ -760,8 +760,8 @@
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: custom-cluster-domain-pool-a
     namespace: custom-cluster-domain
   spec:
@@ -1134,8 +1134,8 @@
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: custom-config-pool-a
     namespace: custom-config
   spec:
@@ -1508,8 +1508,8 @@
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: custom-image-pool-a
     namespace: custom-image
   spec:
@@ -1884,8 +1884,8 @@
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: custom-resources-pool-a
     namespace: custom-resources
   spec:
@@ -2258,8 +2258,8 @@
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: custom-resources-explicit-pool-a
     namespace: custom-resources-explicit
   spec:
@@ -2635,8 +2635,8 @@
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: enterprise-pool-a
     namespace: enterprise
   spec:
@@ -3009,8 +3009,8 @@
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: external-loadbalancer-pool-a
     namespace: external-loadbalancer
   spec:
@@ -3371,8 +3371,8 @@
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: external-nodeport-pool-a
     namespace: external-nodeport
   spec:
@@ -3745,8 +3745,8 @@
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: external-tls-pool-a
     namespace: external-tls
   spec:
@@ -4107,8 +4107,8 @@
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: flat-network-pool-a
     namespace: flat-network
   spec:
@@ -4481,8 +4481,8 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-cold
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-cold
       team: data-platform
     name: full-featured-pool-cold
     namespace: full-featured
@@ -4915,8 +4915,8 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-hot
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-hot
       team: data-platform
     name: full-featured-pool-hot
     namespace: full-featured
@@ -5373,8 +5373,8 @@
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: init-containers-pool-a
     namespace: init-containers
   spec:
@@ -5786,8 +5786,8 @@
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: mcs-network-pool-a
     namespace: mcs-network
   spec:
@@ -6160,8 +6160,8 @@
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: memory-locking-pool-a
     namespace: memory-locking
   spec:
@@ -6534,8 +6534,8 @@
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: minimal-pool-a
     namespace: minimal
   spec:
@@ -6908,8 +6908,8 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: monitoring-pool-a
     namespace: monitoring
   spec:
@@ -7282,8 +7282,8 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: multi-pool-pool-a
     namespace: multi-pool
   spec:
@@ -7655,8 +7655,8 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-b
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-b
     name: multi-pool-pool-b
     namespace: multi-pool
   spec:
@@ -8033,8 +8033,8 @@
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: per-pod-service-overrides-pool-a
     namespace: per-pod-service-overrides
   spec:
@@ -8407,8 +8407,8 @@
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: per-pod-service-remote-disabled-pool-a
     namespace: per-pod-service-remote-disabled
   spec:
@@ -8781,8 +8781,8 @@
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: rack-awareness-pool-a
     namespace: rack-awareness
   spec:
@@ -9158,8 +9158,8 @@
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: sasl-scram256-pool-a
     namespace: sasl-scram256
   spec:
@@ -9558,8 +9558,8 @@
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: sasl-scram512-with-tls-pool-a
     namespace: sasl-scram512-with-tls
   spec:
@@ -9958,8 +9958,8 @@
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: single-replica-pool-a
     namespace: single-replica
   spec:
@@ -10332,8 +10332,8 @@
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: storage-hostpath-pool-a
     namespace: storage-hostpath
   spec:
@@ -10692,8 +10692,8 @@
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: storage-pv-custom-pool-a
     namespace: storage-pv-custom
   spec:
@@ -11067,8 +11067,8 @@
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: tiered-storage-emptydir-pool-a
     namespace: tiered-storage-emptydir
   spec:
@@ -11466,8 +11466,8 @@
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: tiered-storage-hostpath-pool-a
     namespace: tiered-storage-hostpath
   spec:
@@ -11865,8 +11865,8 @@
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: tiered-storage-pv-pool-a
     namespace: tiered-storage-pv
   spec:
@@ -12275,8 +12275,8 @@
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: tls-issuer-ref-pool-a
     namespace: tls-issuer-ref
   spec:
@@ -12649,8 +12649,8 @@
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: tls-issuer-ref-mtls-pool-a
     namespace: tls-issuer-ref-mtls
   spec:
@@ -13036,8 +13036,8 @@
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: tls-mtls-pool-a
     namespace: tls-mtls
   spec:
@@ -13423,8 +13423,8 @@
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/brokerpool-generation: "0"
-      cluster.redpanda.com/brokerpool-name: pool-a
+      cluster.redpanda.com/nodepool-generation: "0"
+      cluster.redpanda.com/nodepool-name: pool-a
     name: tls-self-signed-pool-a
     namespace: tls-self-signed
   spec:
