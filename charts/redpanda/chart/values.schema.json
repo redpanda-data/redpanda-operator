@@ -22281,6 +22281,9 @@
     "tuning": {
       "additionalProperties": false,
       "properties": {
+        "apply_host_tuners": {
+          "type": "boolean"
+        },
         "ballast_file_path": {
           "type": "string"
         },

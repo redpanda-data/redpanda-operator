@@ -1,0 +1,18 @@
+project: charts/redpanda
+kind: Added
+body: |-
+    `tuning.apply_host_tuners` (default `false`) gates a chroot-based tuning
+    init container that gives `rpk redpanda tune all` real access to the
+    host's `/sys`, `/proc`, NICs and block devices. When enabled, tuners
+    that previously failed inside the pod sandbox — `disk_irq`,
+    `disk_scheduler`, `disk_nomerges`, `net`, `fstrim` — actually apply.
+
+    Opt-in only; the default tuning container is unchanged. Enabling
+    `apply_host_tuners` requires the same security posture as
+    `tune_aio_events` (privileged container, hostPath volumes); on
+    OpenShift bind a SCC that allows hostPath + privileged (the built-in
+    `privileged` SCC works), and on PSA clusters label the namespace
+    `privileged`.
+
+    Closes K8S-101; productionizes the chroot pattern from CORE-13685.
+time: 2026-05-12T20:00:00.000000-07:00

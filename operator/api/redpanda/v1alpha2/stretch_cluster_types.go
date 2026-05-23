@@ -186,6 +186,10 @@ type StretchTuning struct {
 	TuneClockSource *bool `json:"tune_clocksource,omitempty"`
 	// Specifies the vendor, VM type, and storage device type that Redpanda runs on, in the format <vendor>:<vm>:<storage>.
 	WellKnownIo *string `json:"well_known_io,omitempty"`
+	// ApplyHostTuners enables a chroot-based tuning init container that
+	// gives `rpk redpanda tune all` access to the host's /sys, /proc,
+	// NICs and block devices. See `Tuning.ApplyHostTuners`.
+	ApplyHostTuners *bool `json:"apply_host_tuners,omitempty"`
 }
 
 // StretchStorage configures storage for stretch clusters.

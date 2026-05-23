@@ -914,6 +914,14 @@ type Tuning struct {
 	TuneClockSource *bool `json:"tune_clocksource,omitempty"`
 	// Specifies the vendor, VM type, and storage device type that Redpanda runs on, in the format <vendor>:<vm>:<storage>. This hints to Redpanda which configuration values it should use for the Redpanda IO scheduler.
 	WellKnownIo *string `json:"well_known_io,omitempty"`
+	// ApplyHostTuners enables a chroot-based tuning init container that
+	// gives `rpk redpanda tune all` access to the host's /sys, /proc,
+	// NICs and block devices so tuners like disk_irq, disk_scheduler,
+	// disk_nomerges and net actually apply. Requires `tune_aio_events`.
+	// Opt-in: defaults to false. Enabling requires a privileged SCC/PSA
+	// on the namespace and MUST be combined with one-pod-per-node
+	// anti-affinity to avoid kernel-parameter races.
+	ApplyHostTuners *bool `json:"apply_host_tuners,omitempty"`
 }
 
 func (t *Tuning) GetResources() *corev1.ResourceRequirements {
