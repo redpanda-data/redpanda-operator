@@ -4481,8 +4481,8 @@
       app.kubernetes.io/instance: flat-network-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/nodepool-generation: "0"
-      cluster.redpanda.com/nodepool-name: pool-a
+      cluster.redpanda.com/brokerpool-generation: "0"
+      cluster.redpanda.com/brokerpool-name: pool-a
     name: flat-network-tls-pool-a
     namespace: flat-network-tls
   spec:
@@ -6534,8 +6534,8 @@
       app.kubernetes.io/instance: mcs-network-tls
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/nodepool-generation: "0"
-      cluster.redpanda.com/nodepool-name: pool-a
+      cluster.redpanda.com/brokerpool-generation: "0"
+      cluster.redpanda.com/brokerpool-name: pool-a
     name: mcs-network-tls-pool-a
     namespace: mcs-network-tls
   spec:

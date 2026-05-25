@@ -1540,17 +1540,17 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		&redpandav1alpha2.StretchCluster{},
 		mcbuilder.WithEngageWithLocalCluster(true),
 		mcbuilder.WithEngageWithProviderClusters(true)).
-		Watches(&redpandav1alpha2.NodePool{}, func(clusterName string, _ cluster.Cluster) mchandler.EventHandler {
+		Watches(&redpandav1alpha2.RedpandaBrokerPool{}, func(clusterName string, _ cluster.Cluster) mchandler.EventHandler {
 			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
-				l := log.FromContext(ctx).WithName("MulticlusterReconciler.NodePoolWatch").V(log.TraceLevel)
-				np, ok := object.(*redpandav1alpha2.NodePool)
+				l := log.FromContext(ctx).WithName("MulticlusterReconciler.RedpandaBrokerPoolWatch").V(log.TraceLevel)
+				np, ok := object.(*redpandav1alpha2.RedpandaBrokerPool)
 				if !ok {
 					return nil
 				}
 				if !np.Spec.ClusterRef.IsStretchCluster() {
 					return nil
 				}
-				l.V(log.TraceLevel).Info("NodePool event received", "nodePool", client.ObjectKeyFromObject(np).String(), "clusterRef", np.Spec.ClusterRef.Name)
+				l.V(log.TraceLevel).Info("RedpandaBrokerPool event received", "brokerPool", client.ObjectKeyFromObject(np).String(), "clusterRef", np.Spec.ClusterRef.Name)
 				return []mcreconcile.Request{{
 					Request: reconcile.Request{
 						NamespacedName: types.NamespacedName{

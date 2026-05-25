@@ -1173,7 +1173,7 @@ spec:
         cert: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
-kind: NodePool
+kind: RedpandaBrokerPool
 metadata:
   name: pool-a
   namespace: default
@@ -1204,7 +1204,7 @@ spec:
         cert: default
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
-kind: NodePool
+kind: RedpandaBrokerPool
 metadata:
   name: pool-a
   namespace: default
