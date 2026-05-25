@@ -171,12 +171,13 @@ type PartialPostInstallJob struct {
 }
 
 type PartialStatefulset struct {
-	AdditionalSelectorLabels   map[string]string                 "json:\"additionalSelectorLabels,omitempty\" jsonschema:\"required\""
-	Replicas                   *int32                            "json:\"replicas,omitempty\" jsonschema:\"required\""
-	UpdateStrategy             *appsv1.StatefulSetUpdateStrategy "json:\"updateStrategy,omitempty\" jsonschema:\"required\""
-	AdditionalRedpandaCmdFlags []string                          "json:\"additionalRedpandaCmdFlags,omitempty\""
-	PodTemplate                *PartialPodTemplate               "json:\"podTemplate,omitempty\" jsonschema:\"required\""
-	Budget                     *struct {
+	AdditionalSelectorLabels             map[string]string                                       "json:\"additionalSelectorLabels,omitempty\" jsonschema:\"required\""
+	Replicas                             *int32                                                  "json:\"replicas,omitempty\" jsonschema:\"required\""
+	UpdateStrategy                       *appsv1.StatefulSetUpdateStrategy                       "json:\"updateStrategy,omitempty\" jsonschema:\"required\""
+	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy "json:\"persistentVolumeClaimRetentionPolicy,omitempty\""
+	AdditionalRedpandaCmdFlags           []string                                                "json:\"additionalRedpandaCmdFlags,omitempty\""
+	PodTemplate                          *PartialPodTemplate                                     "json:\"podTemplate,omitempty\" jsonschema:\"required\""
+	Budget                               *struct {
 		MaxUnavailable *int32 "json:\"maxUnavailable,omitempty\" jsonschema:\"required\""
 	} "json:\"budget,omitempty\" jsonschema:\"required\""
 	PodAntiAffinity *struct {

@@ -580,6 +580,15 @@ statefulset:
   replicas: 3
   updateStrategy:
     type: RollingUpdate
+  # -- Controls the lifecycle of PersistentVolumeClaims created from the StatefulSet's
+  # volume claim templates. Defaults match the Kubernetes default (`Retain` for both fields):
+  # PVCs are kept when brokers are scaled down or when the StatefulSet is deleted. Set
+  # `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via scale-down,
+  # and `whenDeleted: Delete` to delete all PVCs when the StatefulSet itself is deleted.
+  # Valid values: `Retain`, `Delete`.
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   budget:
     maxUnavailable: 1
   # -- Additional labels to be added to statefulset label selector.

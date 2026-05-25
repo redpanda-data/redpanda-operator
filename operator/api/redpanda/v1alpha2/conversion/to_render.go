@@ -184,6 +184,9 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 	if spec.Annotations != nil {
 		values.Statefulset.PodTemplate.Annotations = spec.Annotations
 	}
+	if spec.PersistentVolumeClaimRetentionPolicy != nil {
+		values.Statefulset.PersistentVolumeClaimRetentionPolicy = spec.PersistentVolumeClaimRetentionPolicy.DeepCopy()
+	}
 	if spec.NodeSelector != nil {
 		values.Statefulset.PodTemplate.Spec.NodeSelector = spec.NodeSelector
 	}
@@ -360,6 +363,12 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 		`app.kubernetes.io/component`: fmt.Sprintf(`{{ include "redpanda.name" . }}-%s-statefulset`, pool.Name),
 		`app.kubernetes.io/instance`:  `{{ .Release.Name }}`,
 		`app.kubernetes.io/name`:      `{{ include "redpanda.name" . }}`,
+	}
+	// Inherit cluster-level PVC retention policy as the pool default. A NodePool whose
+	// own EmbeddedNodePoolSpec.PersistentVolumeClaimRetentionPolicy is set will override
+	// this via the convertJSON merge below.
+	if clusterValues.Statefulset.PersistentVolumeClaimRetentionPolicy != nil {
+		defaultSet.PersistentVolumeClaimRetentionPolicy = clusterValues.Statefulset.PersistentVolumeClaimRetentionPolicy.DeepCopy()
 	}
 
 	// next we default our images

@@ -16,6 +16,9 @@
     name: basic-test
     namespace: basic-test
   spec:
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podManagementPolicy: Parallel
     replicas: 3
     selector:
@@ -392,6 +395,9 @@
     name: compat-test
     namespace: compat-test
   spec:
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podManagementPolicy: Parallel
     replicas: 0
     selector:
@@ -748,6 +754,9 @@
     name: compat-test-pool
     namespace: compat-test
   spec:
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podManagementPolicy: Parallel
     replicas: 9
     selector:
@@ -1204,6 +1213,9 @@
     name: console-disabled
     namespace: console-disabled
   spec:
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podManagementPolicy: Parallel
     replicas: 3
     selector:
@@ -1580,6 +1592,9 @@
     name: nodepool-basic-test
     namespace: nodepool-basic-test
   spec:
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podManagementPolicy: Parallel
     replicas: 3
     selector:
@@ -1957,6 +1972,9 @@
     name: nodepool-basic-test-basic-a
     namespace: nodepool-basic-test
   spec:
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podManagementPolicy: Parallel
     replicas: 1
     selector:
@@ -2333,6 +2351,9 @@
     name: nodepool-basic-test-basic-b
     namespace: nodepool-basic-test
   spec:
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
     podManagementPolicy: Parallel
     replicas: 1
     selector:

@@ -14,6 +14,7 @@ import (
 	"maps"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -797,6 +798,14 @@ type Statefulset struct {
 	UpdateStrategy *UpdateStrategy `json:"updateStrategy,omitempty"`
 	// Specifies the termination grace period in seconds to control the time delay before forcefully terminating a Pod.
 	TerminationGracePeriodSeconds *int `json:"terminationGracePeriodSeconds,omitempty"`
+	// PersistentVolumeClaimRetentionPolicy controls the lifecycle of PersistentVolumeClaims
+	// created from the StatefulSet's volume claim templates. Setting `whenScaled: Delete`
+	// causes a broker's PVC to be deleted by the StatefulSet controller when the broker is
+	// decommissioned via scale-down; `whenDeleted: Delete` causes all PVCs to be deleted
+	// when the StatefulSet is deleted. When unset, the Kubernetes default (`Retain` for
+	// both fields) applies. This value is the cluster-level default for all NodePools;
+	// individual NodePools may override it via their own `persistentVolumeClaimRetentionPolicy`.
+	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 }
 
 // PodTemplate will pass label and annotation to Statefulset Pod template.

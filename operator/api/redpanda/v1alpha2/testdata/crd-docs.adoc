@@ -4269,6 +4269,13 @@ into this StatefulSet's PodTemplate. + |  |
 | *`topologySpreadConstraints`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topologyspreadconstraints[$$TopologySpreadConstraints$$] array__ | Defines topology spread constraints to control how Pods are spread across different topology domains. + |  | 
 | *`updateStrategy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-updatestrategy[$$UpdateStrategy$$]__ | Defines the update strategy for the StatefulSet to manage how updates are rolled out to the Pods. + |  | 
 | *`terminationGracePeriodSeconds`* __integer__ | Specifies the termination grace period in seconds to control the time delay before forcefully terminating a Pod. + |  | 
+| *`persistentVolumeClaimRetentionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps[$$StatefulSetPersistentVolumeClaimRetentionPolicy$$]__ | PersistentVolumeClaimRetentionPolicy controls the lifecycle of PersistentVolumeClaims +
+created from the StatefulSet's volume claim templates. Setting `whenScaled: Delete` +
+causes a broker's PVC to be deleted by the StatefulSet controller when the broker is +
+decommissioned via scale-down; `whenDeleted: Delete` causes all PVCs to be deleted +
+when the StatefulSet is deleted. When unset, the Kubernetes default (`Retain` for +
+both fields) applies. This value is the cluster-level default for all NodePools; +
+individual NodePools may override it via their own `persistentVolumeClaimRetentionPolicy`. + |  | 
 |===
 
 

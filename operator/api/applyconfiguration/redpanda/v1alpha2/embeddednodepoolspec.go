@@ -11,18 +11,23 @@
 
 package v1alpha2
 
+import (
+	v1 "k8s.io/api/apps/v1"
+)
+
 // EmbeddedNodePoolSpecApplyConfiguration represents a declarative configuration of the EmbeddedNodePoolSpec type for use
 // with apply.
 type EmbeddedNodePoolSpecApplyConfiguration struct {
-	AdditionalSelectorLabels   map[string]string                     `json:"additionalSelectorLabels,omitempty"`
-	Replicas                   *int32                                `json:"replicas,omitempty"`
-	AdditionalRedpandaCmdFlags []string                              `json:"additionalRedpandaCmdFlags,omitempty"`
-	PodTemplate                *PodTemplateApplyConfiguration        `json:"podTemplate,omitempty"`
-	Services                   *NodePoolServicesApplyConfiguration   `json:"services,omitempty"`
-	InitContainers             *PoolInitContainersApplyConfiguration `json:"initContainers,omitempty"`
-	Image                      *RedpandaImageApplyConfiguration      `json:"image,omitempty"`
-	SidecarImage               *RedpandaImageApplyConfiguration      `json:"sidecarImage,omitempty"`
-	InitContainerImage         *InitContainerImageApplyConfiguration `json:"initContainerImage,omitempty"`
+	AdditionalSelectorLabels             map[string]string                                   `json:"additionalSelectorLabels,omitempty"`
+	Replicas                             *int32                                              `json:"replicas,omitempty"`
+	AdditionalRedpandaCmdFlags           []string                                            `json:"additionalRedpandaCmdFlags,omitempty"`
+	PodTemplate                          *PodTemplateApplyConfiguration                      `json:"podTemplate,omitempty"`
+	Services                             *NodePoolServicesApplyConfiguration                 `json:"services,omitempty"`
+	InitContainers                       *PoolInitContainersApplyConfiguration               `json:"initContainers,omitempty"`
+	Image                                *RedpandaImageApplyConfiguration                    `json:"image,omitempty"`
+	SidecarImage                         *RedpandaImageApplyConfiguration                    `json:"sidecarImage,omitempty"`
+	InitContainerImage                   *InitContainerImageApplyConfiguration               `json:"initContainerImage,omitempty"`
+	PersistentVolumeClaimRetentionPolicy *v1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 }
 
 // EmbeddedNodePoolSpecApplyConfiguration constructs a declarative configuration of the EmbeddedNodePoolSpec type for use with
@@ -108,5 +113,13 @@ func (b *EmbeddedNodePoolSpecApplyConfiguration) WithSidecarImage(value *Redpand
 // If called multiple times, the InitContainerImage field is set to the value of the last call.
 func (b *EmbeddedNodePoolSpecApplyConfiguration) WithInitContainerImage(value *InitContainerImageApplyConfiguration) *EmbeddedNodePoolSpecApplyConfiguration {
 	b.InitContainerImage = value
+	return b
+}
+
+// WithPersistentVolumeClaimRetentionPolicy sets the PersistentVolumeClaimRetentionPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PersistentVolumeClaimRetentionPolicy field is set to the value of the last call.
+func (b *EmbeddedNodePoolSpecApplyConfiguration) WithPersistentVolumeClaimRetentionPolicy(value v1.StatefulSetPersistentVolumeClaimRetentionPolicy) *EmbeddedNodePoolSpecApplyConfiguration {
+	b.PersistentVolumeClaimRetentionPolicy = &value
 	return b
 }

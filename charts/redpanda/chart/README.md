@@ -751,6 +751,16 @@ In environments where root is not allowed, you cannot change the ownership of fi
 
 **Default:** `false`
 
+### [statefulset.persistentVolumeClaimRetentionPolicy](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.persistentVolumeClaimRetentionPolicy)
+
+Controls the lifecycle of PersistentVolumeClaims created from the StatefulSet's volume claim templates. Defaults match the Kubernetes default (`Retain` for both fields): PVCs are kept when brokers are scaled down or when the StatefulSet is deleted. Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via scale-down, and `whenDeleted: Delete` to delete all PVCs when the StatefulSet itself is deleted. Valid values: `Retain`, `Delete`.
+
+**Default:**
+
+```
+{"whenDeleted":"Retain","whenScaled":"Retain"}
+```
+
 ### [statefulset.podAntiAffinity.custom](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.podAntiAffinity.custom)
 
 Change `podAntiAffinity.type` to `custom` and provide your own podAntiAffinity rules here.

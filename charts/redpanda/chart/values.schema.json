@@ -16371,6 +16371,18 @@
           },
           "type": "object"
         },
+        "persistentVolumeClaimRetentionPolicy": {
+          "additionalProperties": false,
+          "properties": {
+            "whenDeleted": {
+              "type": "string"
+            },
+            "whenScaled": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
         "podAntiAffinity": {
           "additionalProperties": false,
           "properties": {
