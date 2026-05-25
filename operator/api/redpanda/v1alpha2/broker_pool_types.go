@@ -10,6 +10,7 @@
 package v1alpha2
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -102,6 +103,15 @@ type EmbeddedBrokerPoolSpec struct {
 	//     repository: busybox
 	//     tag: latest
 	InitContainerImage *InitContainerImage `json:"initContainerImage,omitempty"`
+	// PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for
+	// PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces
+	// any value inherited from the parent Redpanda CRD's
+	// `statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level
+	// value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used.
+	// Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via
+	// scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's
+	// StatefulSet is deleted.
+	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
 }
 
 // BrokerPoolStatus defines the observed state of any node pools tied to this cluster

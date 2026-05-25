@@ -11,6 +11,10 @@
 
 package v1alpha2
 
+import (
+	v1 "k8s.io/api/apps/v1"
+)
+
 // BrokerPoolSpecApplyConfiguration represents a declarative configuration of the BrokerPoolSpec type for use
 // with apply.
 type BrokerPoolSpecApplyConfiguration struct {
@@ -101,6 +105,14 @@ func (b *BrokerPoolSpecApplyConfiguration) WithSidecarImage(value *RedpandaImage
 // If called multiple times, the InitContainerImage field is set to the value of the last call.
 func (b *BrokerPoolSpecApplyConfiguration) WithInitContainerImage(value *InitContainerImageApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
 	b.EmbeddedBrokerPoolSpecApplyConfiguration.InitContainerImage = value
+	return b
+}
+
+// WithPersistentVolumeClaimRetentionPolicy sets the PersistentVolumeClaimRetentionPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PersistentVolumeClaimRetentionPolicy field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithPersistentVolumeClaimRetentionPolicy(value v1.StatefulSetPersistentVolumeClaimRetentionPolicy) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.PersistentVolumeClaimRetentionPolicy = &value
 	return b
 }
 
