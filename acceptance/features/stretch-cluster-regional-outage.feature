@@ -44,6 +44,14 @@ Feature: Stretch Cluster Regional Outage
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
     And I expect all 3 RedpandaBrokerPools in "outage" to be eventually bound and deployed
+    # Verify the cluster has actually formed (all 3 brokers in raft membership)
+    # before simulating the outage. `Deployed=True` only means the StatefulSet
+    # has spawned a pod — it doesn't wait for the broker process to join raft.
+    # Without this gate the test races: taking vc-2 offline before
+    # cluster-third-0 joins means it never appears in the broker list, and the
+    # downstream "report broker as unavailable" assertion can never satisfy.
+    When I execute "rpk cluster health" command in the statefulset container in each cluster
+    Then the cluster health output should show 3 nodes across all clusters in "outage"
 
     # Simulate a regional outage by taking one vcluster fully offline.
     When I take the "vc-2" region of "outage" offline
