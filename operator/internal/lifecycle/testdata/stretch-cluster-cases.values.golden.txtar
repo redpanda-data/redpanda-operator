@@ -356,7 +356,7 @@ values:
 -- compat-test --
 inClusterPools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-a
   spec:
@@ -367,7 +367,7 @@ inClusterPools:
     replicas: 1
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-b
   spec:
@@ -382,7 +382,7 @@ inClusterPools:
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-a
   spec:
@@ -393,7 +393,7 @@ pools:
     replicas: 1
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-b
   spec:
@@ -494,7 +494,7 @@ spec:
 -- flat-network-test --
 inClusterPools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: pool-a
   spec:
@@ -506,7 +506,7 @@ inClusterPools:
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: pool-a
   spec:
@@ -606,7 +606,7 @@ spec:
 -- mcs-network-test --
 inClusterPools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: pool-a
   spec:
@@ -618,7 +618,7 @@ inClusterPools:
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: pool-a
   spec:
@@ -718,7 +718,7 @@ spec:
 -- nodepool-basic-test --
 inClusterPools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-a
   spec:
@@ -729,7 +729,7 @@ inClusterPools:
     replicas: 1
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-b
   spec:
@@ -744,7 +744,7 @@ inClusterPools:
   status: {}
 pools:
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-a
   spec:
@@ -755,7 +755,7 @@ pools:
     replicas: 1
   status: {}
 - apiVersion: cluster.redpanda.com/v1alpha2
-  kind: NodePool
+  kind: RedpandaBrokerPool
   metadata:
     name: basic-b
   spec:

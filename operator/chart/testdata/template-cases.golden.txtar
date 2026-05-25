@@ -356,6 +356,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -386,6 +387,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -400,6 +402,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -1161,6 +1164,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -1191,6 +1195,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -1205,6 +1210,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -1753,6 +1759,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -1783,6 +1790,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -1797,6 +1805,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -2585,6 +2594,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -2615,6 +2625,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -2629,6 +2640,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -3197,6 +3209,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -3227,6 +3240,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -3241,6 +3255,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -4015,6 +4030,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -4045,6 +4061,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -4059,6 +4076,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -4771,6 +4789,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -4801,6 +4820,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -4815,6 +4835,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -5792,6 +5813,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -5822,6 +5844,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -5836,6 +5859,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -6489,6 +6513,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -6519,6 +6544,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -6533,6 +6559,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -7308,6 +7335,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -7338,6 +7366,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -7352,6 +7381,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -7904,6 +7934,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -7934,6 +7965,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -7948,6 +7980,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -8761,6 +8794,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -8791,6 +8825,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -8805,6 +8840,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -9445,6 +9481,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -9475,6 +9512,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -9489,6 +9527,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -10348,6 +10387,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -10378,6 +10418,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -10392,6 +10433,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -11065,6 +11107,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -11095,6 +11138,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -11109,6 +11153,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -11901,6 +11946,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -11931,6 +11977,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -11945,6 +11992,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -12500,6 +12548,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -12530,6 +12579,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -12544,6 +12594,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -13324,6 +13375,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -13354,6 +13406,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -13368,6 +13421,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -13925,6 +13979,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -13955,6 +14010,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -13969,6 +14025,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -14782,6 +14839,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -14812,6 +14870,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -14826,6 +14885,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -15381,6 +15441,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -15411,6 +15472,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -15425,6 +15487,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -16044,6 +16107,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -16074,6 +16138,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -16088,6 +16153,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -16657,6 +16723,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -16687,6 +16754,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -16701,6 +16769,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -17488,6 +17557,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -17518,6 +17588,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -17532,6 +17603,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -18263,6 +18335,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -18293,6 +18366,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -18307,6 +18381,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -19301,6 +19376,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -19331,6 +19407,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -19345,6 +19422,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -19909,6 +19987,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -19939,6 +20018,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -19953,6 +20033,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -20618,6 +20699,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -20648,6 +20730,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -20662,6 +20745,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -21205,6 +21289,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -21235,6 +21320,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -21249,6 +21335,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -22038,6 +22125,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -22068,6 +22156,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -22082,6 +22171,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -22645,6 +22735,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -22675,6 +22766,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -22689,6 +22781,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -23470,6 +23563,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -23500,6 +23594,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -23514,6 +23609,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -24436,6 +24532,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -24466,6 +24563,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -24480,6 +24578,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -25479,6 +25578,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -25509,6 +25609,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -25523,6 +25624,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -26087,6 +26189,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -26117,6 +26220,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -26131,6 +26235,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -26951,6 +27056,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -26981,6 +27087,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -26995,6 +27102,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -27708,6 +27816,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -27738,6 +27847,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -27752,6 +27862,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -28689,6 +28800,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -28719,6 +28831,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -28733,6 +28846,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -29658,6 +29772,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -29688,6 +29803,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -29702,6 +29818,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -30638,6 +30755,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -30668,6 +30786,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -30682,6 +30801,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -31397,6 +31517,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -31427,6 +31548,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -31441,6 +31563,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -32618,6 +32741,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -32648,6 +32772,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -32662,6 +32787,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -33225,6 +33351,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -33255,6 +33382,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -33269,6 +33397,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -34062,6 +34191,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -34092,6 +34222,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -34106,6 +34237,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -34836,6 +34968,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -34866,6 +34999,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -34880,6 +35014,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -35982,6 +36117,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -36012,6 +36148,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -36026,6 +36163,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -36933,6 +37071,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -36963,6 +37102,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -36977,6 +37117,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -37961,6 +38102,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -37991,6 +38133,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -38005,6 +38148,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -38979,6 +39123,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -39009,6 +39154,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -39023,6 +39169,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -40032,6 +40179,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -40062,6 +40210,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -40076,6 +40225,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -40650,6 +40800,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -40680,6 +40831,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -40694,6 +40846,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -41689,6 +41842,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -41719,6 +41873,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -41733,6 +41888,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -42456,6 +42612,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -42486,6 +42643,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -42500,6 +42658,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -43522,6 +43681,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -43552,6 +43712,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -43566,6 +43727,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -44811,6 +44973,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -44841,6 +45004,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -44855,6 +45019,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -46034,6 +46199,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -46064,6 +46230,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -46078,6 +46245,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -46752,6 +46920,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -46782,6 +46951,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -46796,6 +46966,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -47611,6 +47782,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -47641,6 +47813,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -47655,6 +47828,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -48372,6 +48546,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -48402,6 +48577,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -48416,6 +48592,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -49663,6 +49840,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -49693,6 +49871,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -49707,6 +49886,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -51984,6 +52164,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -52014,6 +52195,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -52028,6 +52210,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -53379,6 +53562,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -53409,6 +53593,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -53423,6 +53608,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -54942,6 +55128,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -54972,6 +55159,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -54986,6 +55174,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -56073,6 +56262,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -56103,6 +56293,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -56117,6 +56308,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -58362,6 +58554,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -58392,6 +58585,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -58406,6 +58600,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -59732,6 +59927,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -59762,6 +59958,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -59776,6 +59973,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -60449,6 +60647,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -60479,6 +60678,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -60493,6 +60693,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -61856,6 +62057,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -61886,6 +62088,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -61900,6 +62103,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -63237,6 +63441,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -63267,6 +63472,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -63281,6 +63487,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -64362,6 +64569,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -64392,6 +64600,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -64406,6 +64615,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -65827,6 +66037,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -65857,6 +66068,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -65871,6 +66083,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -67189,6 +67402,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -67219,6 +67433,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -67233,6 +67448,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -67927,6 +68143,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -67957,6 +68174,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -67971,6 +68189,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -69103,6 +69322,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -69133,6 +69353,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -69147,6 +69368,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -70009,6 +70231,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -70039,6 +70262,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -70053,6 +70277,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -71426,6 +71651,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -71456,6 +71682,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -71470,6 +71697,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -72143,6 +72371,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -72173,6 +72402,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -72187,6 +72417,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -73462,6 +73693,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -73492,6 +73724,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -73506,6 +73739,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -74182,6 +74416,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -74212,6 +74447,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -74226,6 +74462,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -75030,6 +75267,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -75060,6 +75298,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -75074,6 +75313,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -75713,6 +75953,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -75743,6 +75984,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -75757,6 +75999,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -76561,6 +76804,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -76591,6 +76835,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -76605,6 +76850,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -77243,6 +77489,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -77273,6 +77520,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -77287,6 +77535,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -78047,6 +78296,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -78077,6 +78327,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -78091,6 +78342,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -78639,6 +78891,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -78669,6 +78922,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -78683,6 +78937,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -79460,6 +79715,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -79490,6 +79746,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -79504,6 +79761,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -80052,6 +80310,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -80082,6 +80341,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -80096,6 +80356,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -80856,6 +81117,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -80886,6 +81148,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -80900,6 +81163,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -81448,6 +81712,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -81478,6 +81743,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -81492,6 +81758,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -82252,6 +82519,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -82282,6 +82550,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -82296,6 +82565,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -82844,6 +83114,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -82874,6 +83145,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -82888,6 +83160,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -83656,6 +83929,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -83686,6 +83960,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -83700,6 +83975,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -84248,6 +84524,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -84278,6 +84555,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -84292,6 +84570,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -85060,6 +85339,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -85090,6 +85370,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -85104,6 +85385,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -85652,6 +85934,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -85682,6 +85965,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -85696,6 +85980,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -86490,6 +86775,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -86520,6 +86806,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -86534,6 +86821,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -87082,6 +87370,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -87112,6 +87401,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -87126,6 +87416,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -88010,6 +88301,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -88040,6 +88332,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -88054,6 +88347,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -88602,6 +88896,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -88632,6 +88927,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -88646,6 +88942,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -89442,6 +89739,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -89472,6 +89770,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -89486,6 +89785,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -90034,6 +90334,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -90064,6 +90365,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -90078,6 +90380,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -90874,6 +91177,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -90904,6 +91208,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -90918,6 +91223,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -91466,6 +91772,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -91496,6 +91803,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -91510,6 +91818,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -92305,6 +92614,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -92335,6 +92645,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -92349,6 +92660,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -92907,6 +93219,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -92937,6 +93250,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -92951,6 +93265,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -93811,6 +94126,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -93841,6 +94157,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -93855,6 +94172,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -94504,6 +94822,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -94534,6 +94853,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -94548,6 +94868,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -95463,6 +95784,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -95493,6 +95815,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -95507,6 +95830,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -96156,6 +96480,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -96186,6 +96511,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -96200,6 +96526,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -97109,6 +97436,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -97139,6 +97467,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -97153,6 +97482,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -97802,6 +98132,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -97832,6 +98163,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -97846,6 +98178,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -98688,6 +99021,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -98718,6 +99052,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -98732,6 +99067,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -99381,6 +99717,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -99411,6 +99748,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -99425,6 +99763,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -100259,6 +100598,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -100289,6 +100629,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -100303,6 +100644,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -100942,6 +101284,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -100972,6 +101315,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -100986,6 +101330,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -101877,6 +102222,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -101907,6 +102253,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -101921,6 +102268,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -102469,6 +102817,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -102499,6 +102848,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -102513,6 +102863,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status
@@ -103280,6 +103631,7 @@ rules:
   resources:
   - consoles
   - nodepools
+  - redpandabrokerpools
   - redpandas
   verbs:
   - create
@@ -103310,6 +103662,7 @@ rules:
   resources:
   - groups/finalizers
   - nodepools/finalizers
+  - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
   - schemas/finalizers
@@ -103324,6 +103677,7 @@ rules:
   resources:
   - groups/status
   - nodepools/status
+  - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
   - schemas/status

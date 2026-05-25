@@ -18,7 +18,7 @@ Feature: Stretch Cluster Rolling Restart
       rbac:
         enabled: true
     """
-    And I apply a NodePool Kubernetes manifest to "rolling":
+    And I apply a RedpandaBrokerPool Kubernetes manifest to "rolling":
     """
     spec:
       clusterRef:
@@ -38,8 +38,8 @@ Feature: Stretch Cluster Rolling Restart
             enabled: false
     """
     And I expect 3 statefulsets in 3 kubernetes cluster to be created and eventually ready
-    And I expect all 3 NodePools in "rolling" to be eventually bound and deployed
+    And I expect all 3 RedpandaBrokerPools in "rolling" to be eventually bound and deployed
     And I create a sentinel topic in the stretch cluster of "rolling"
-    When I upgrade the NodePools in "rolling" to use image "redpandadata/redpanda:v25.2.11"
+    When I upgrade the RedpandaBrokerPools in "rolling" to use image "redpandadata/redpanda:v25.2.11"
     Then the upgrade of "rolling" completes with at most 1 pod unavailable at a time
     And the sentinel data is still readable in "rolling"

@@ -11,6 +11,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -164,20 +166,51 @@ func createSentinelTopicInStretchCluster(ctx context.Context, t framework.Testin
 
 	admin := kadm.NewClient(cl)
 
-	topicCtx, topicCancel := context.WithTimeout(ctx, 60*time.Second)
-	defer topicCancel()
+	// CreateTopics often fires before every broker is fully through TLS
+	// startup — the BrokerPool `Deployed=True` condition only signals that
+	// StatefulSet replicas match desired, not that brokers accept Kafka
+	// connections. First requests can fail with `EOF` mid-TLS-handshake
+	// while the broker is still loading its config or certs. Retry the
+	// whole RPC until the cluster is actually serving; tolerate
+	// `TopicAlreadyExists` so an in-flight success that loses its
+	// response on a tore-down connection doesn't trip the next attempt.
+	require.Eventually(t, func() bool {
+		attemptCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
 
-	resp, err := admin.CreateTopics(topicCtx, 3, 3, nil, sentinelTopicName)
-	require.NoError(t, err)
-	for _, r := range resp {
-		require.NoError(t, r.Err, "creating topic %q", sentinelTopicName)
-	}
+		resp, err := admin.CreateTopics(attemptCtx, 3, 3, nil, sentinelTopicName)
+		if err != nil {
+			t.Logf("creating sentinel topic %q: %v", sentinelTopicName, err)
+			return false
+		}
+		for _, r := range resp {
+			if r.Err == nil || errors.Is(r.Err, kerr.TopicAlreadyExists) {
+				continue
+			}
+			t.Logf("creating topic %q: %v", sentinelTopicName, r.Err)
+			return false
+		}
+		return true
+	}, 5*time.Minute, 5*time.Second, "creating sentinel topic %q", sentinelTopicName)
 	t.Logf("created sentinel topic %q (3 partitions, 3 replicas)", sentinelTopicName)
 
 	messages := []string{"sentinel-msg-1", "sentinel-msg-2", "sentinel-msg-3"}
 	for _, msg := range messages {
-		result := cl.ProduceSync(topicCtx, &kgo.Record{Topic: sentinelTopicName, Value: []byte(msg)})
-		require.NoError(t, result.FirstErr(), "producing sentinel message %q", msg)
+		// franz-go's producer retries internally but only after the client
+		// has discovered live brokers; right after CreateTopics the leader
+		// election for the new partitions can still be pending. Wrap the
+		// produce in Eventually so a transient leader-not-available or
+		// connection error doesn't immediately fail the test.
+		require.Eventually(t, func() bool {
+			produceCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+			defer cancel()
+			result := cl.ProduceSync(produceCtx, &kgo.Record{Topic: sentinelTopicName, Value: []byte(msg)})
+			if err := result.FirstErr(); err != nil {
+				t.Logf("producing sentinel message %q: %v", msg, err)
+				return false
+			}
+			return true
+		}, 2*time.Minute, 5*time.Second, "producing sentinel message %q", msg)
 	}
 	t.Logf("produced %d sentinel messages to %q", len(messages), sentinelTopicName)
 
@@ -188,7 +221,7 @@ func createSentinelTopicInStretchCluster(ctx context.Context, t framework.Testin
 	})
 }
 
-func upgradeNodePoolsToImage(ctx context.Context, t framework.TestingT, clusterName, image string) context.Context {
+func upgradeBrokerPoolsToImage(ctx context.Context, t framework.TestingT, clusterName, image string) context.Context {
 	nodes := getNodes(ctx, clusterName)
 
 	// Record current pod UIDs so we can detect when rolling restarts finish.
@@ -210,7 +243,7 @@ func upgradeNodePoolsToImage(ctx context.Context, t framework.TestingT, clusterN
 
 	// Patch every NodePool with the new image.
 	for _, node := range nodes {
-		var pools redpandav1alpha2.NodePoolList
+		var pools redpandav1alpha2.RedpandaBrokerPoolList
 		require.NoError(t, node.List(ctx, &pools, client.InNamespace("default")))
 
 		for i := range pools.Items {
@@ -218,7 +251,7 @@ func upgradeNodePoolsToImage(ctx context.Context, t framework.TestingT, clusterN
 			poolKey := client.ObjectKeyFromObject(pool)
 
 			require.Eventually(t, func() bool {
-				var latest redpandav1alpha2.NodePool
+				var latest redpandav1alpha2.RedpandaBrokerPool
 				if err := node.Get(ctx, poolKey, &latest); err != nil {
 					t.Logf("error fetching NodePool %s in %s: %v", pool.Name, node.Name(), err)
 					return false
@@ -228,13 +261,13 @@ func upgradeNodePoolsToImage(ctx context.Context, t framework.TestingT, clusterN
 					Tag:        ptr.To(tag),
 				}
 				if err := node.Update(ctx, &latest); err != nil {
-					t.Logf("conflict updating NodePool %s in %s, retrying: %v", pool.Name, node.Name(), err)
+					t.Logf("conflict updating RedpandaBrokerPool %s in %s, retrying: %v", pool.Name, node.Name(), err)
 					return false
 				}
 				return true
-			}, 30*time.Second, 2*time.Second, "failed to update NodePool %s in %s", pool.Name, node.Name())
+			}, 30*time.Second, 2*time.Second, "failed to update RedpandaBrokerPool %s in %s", pool.Name, node.Name())
 
-			t.Logf("updated NodePool %s in %s to image %s", pool.Name, node.Name(), image)
+			t.Logf("updated RedpandaBrokerPool %s in %s to image %s", pool.Name, node.Name(), image)
 		}
 	}
 
@@ -288,11 +321,11 @@ func upgradeCompletesWithAtMostOneUnavailable(ctx context.Context, t framework.T
 			t.Logf("new max unavailable: %d (ready %d/%d)", maxUnavailable, readyCount, totalPods)
 		}
 
-		// Check completion: all NodePools Deployed=True and all pods replaced.
+		// Check completion: all RedpandaBrokerPools Deployed=True and all pods replaced.
 		allDeployed := true
 		allReplaced := len(initialUIDs) > 0 // only check if we have UIDs to compare
 		for _, node := range nodes {
-			var pools redpandav1alpha2.NodePoolList
+			var pools redpandav1alpha2.RedpandaBrokerPoolList
 			if err := node.List(ctx, &pools, client.InNamespace("default")); err != nil {
 				return false
 			}

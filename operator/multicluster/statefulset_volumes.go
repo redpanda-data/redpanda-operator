@@ -89,7 +89,7 @@ func (r *RenderState) commonVolumes() []corev1.Volume {
 }
 
 // statefulSetVolumes returns the Volumes for the Redpanda StatefulSet.
-func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.NodePool) []corev1.Volume {
+func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.Volume {
 	fullname := state.fullname()
 	poolFullname := state.poolFullname(pool)
 	volumes := state.commonVolumes()

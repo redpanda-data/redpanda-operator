@@ -126,7 +126,7 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0)
+			tracker := NewPoolTracker(0, false)
 			tracker.addExisting(tt.existingPools...)
 			require.Equal(t, tt.canScale, tracker.CheckScale(t.Context()))
 		})
@@ -252,7 +252,7 @@ func TestPoolTrackerToCreate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0)
+			tracker := NewPoolTracker(0, false)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -398,7 +398,7 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0)
+			tracker := NewPoolTracker(0, false)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -650,7 +650,7 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(tt.generation)
+			tracker := NewPoolTracker(tt.generation, false)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -799,7 +799,7 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(1)
+			tracker := NewPoolTracker(1, false)
 			tracker.addExisting(tt.existingPools...)
 			tracker.addDesired(tt.desiredPools...)
 			tracker.MarkClusterObserved(mcmanager.LocalCluster)
@@ -935,7 +935,7 @@ func TestPoolTrackerToDelete(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0)
+			tracker := NewPoolTracker(0, false)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -1123,7 +1123,7 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0)
+			tracker := NewPoolTracker(0, false)
 			tracker.addExisting(tt.existingPools...)
 
 			actual := objectNames(tracker.PodsToRoll())

@@ -125,7 +125,10 @@ func discoverControllerRegionName(ctx context.Context, t framework.TestingT, nod
 			Command:   []string{"/bin/bash", "-c", command},
 			Stdout:    &out,
 		})
-		require.NoError(t, err, "executing %q in %s: %s", command, node.Name(), out.String())
+		// rpk cluster health exits 10 when unhealthy but still prints the report we parse.
+		if err != nil && !strings.Contains(err.Error(), "exit code 10") {
+			require.NoError(t, err, "executing %q in %s: %s", command, node.Name(), out.String())
+		}
 		return out.String()
 	}
 
@@ -239,22 +242,65 @@ func parseHealthNodeIDs(output string) ([]int, error) {
 	return nil, fmt.Errorf("no 'All nodes:' line found in output")
 }
 
-// expectClusterHealthNodeCount asserts that every `rpk cluster health` result
-// stashed in ctx (via executeCommandInStatefulsetContainers) reports the
-// expected number of node IDs in its "All nodes" line.
+// expectClusterHealthNodeCount waits until every region's `rpk cluster
+// health` reports expectedNodes in "All nodes" for requiredConsecutive
+// polls in a row — a single matching snapshot isn't enough because a
+// freshly joined broker can flip back to "Nodes down" before downstream
+// steps run their own one-shot check.
 func expectClusterHealthNodeCount(ctx context.Context, t framework.TestingT, expectedNodes int32, clusterName string) {
-	_ = clusterName // accepted for step symmetry, results are from last exec
-	results := ctx.Value(rpkResultsKey{}).([]rpkExecResult)
-	require.NotEmpty(t, results, "no execution results found")
+	const requiredConsecutive = 3
 
-	for _, result := range results {
-		ids, err := parseHealthNodeIDs(result.rawOutput)
-		require.NoError(t, err, "failed to parse output from %s:\n%s", result.clusterName, result.rawOutput)
-		t.Logf("cluster %s has nodes: %v", result.clusterName, ids)
-		require.Equal(t, int(expectedNodes), len(ids),
-			"expected %d nodes in cluster %s but got %d: %v",
-			expectedNodes, result.clusterName, len(ids), ids)
+	nodes := getNodes(ctx, clusterName)
+	require.NotEmpty(t, nodes, "no nodes for cluster %s", clusterName)
+
+	type nodeExec struct {
+		node *vclusterNode
+		ctl  *kube.Ctl
 	}
+	configs := make([]nodeExec, 0, len(nodes))
+	for _, n := range nodes {
+		pfCfg, err := n.PortForwardedRESTConfig(ctx)
+		require.NoError(t, err, "creating port-forwarded config for %s", n.Name())
+		ctl, err := kube.FromRESTConfig(pfCfg)
+		require.NoError(t, err, "creating kube ctl for %s", n.Name())
+		configs = append(configs, nodeExec{node: n, ctl: ctl})
+	}
+
+	consecutive := 0
+	require.Eventually(t, func() bool {
+		for _, cfg := range configs {
+			pod := findRedpandaPod(ctx, t, cfg.node)
+			if pod == nil {
+				consecutive = 0
+				return false
+			}
+			var out bytes.Buffer
+			err := cfg.ctl.Exec(ctx, pod, kube.ExecOptions{
+				Container: "redpanda",
+				Command:   []string{"/bin/bash", "-c", "rpk cluster health"},
+				Stdout:    &out,
+			})
+			output := out.String()
+			// rpk exits 10 on Healthy=false but still emits the report — treat as transient.
+			if err != nil && !strings.Contains(err.Error(), "exit code 10") {
+				t.Logf("rpk cluster health in %s: %v", cfg.node.Name(), err)
+				consecutive = 0
+				return false
+			}
+			ids, parseErr := parseHealthNodeIDs(output)
+			if parseErr != nil || len(ids) != int(expectedNodes) {
+				t.Logf("cluster %s reports %v (want %d nodes)", cfg.node.Name(), ids, expectedNodes)
+				consecutive = 0
+				return false
+			}
+		}
+		consecutive++
+		t.Logf("all %d regions report %d nodes (%d/%d consecutive)",
+			len(configs), expectedNodes, consecutive, requiredConsecutive)
+		return consecutive >= requiredConsecutive
+	}, 5*time.Minute, 3*time.Second,
+		"cluster %s never reached %d stable consecutive polls reporting %d nodes",
+		clusterName, requiredConsecutive, expectedNodes)
 }
 
 // expectEventualNodeCountInRemainingClusters polls `rpk cluster health` on

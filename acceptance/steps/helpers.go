@@ -41,6 +41,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -419,13 +420,23 @@ func setupMulticlusterManager(ctx context.Context, nodes []*vclusterNode) (multi
 	// Wait for all informer caches to sync so that cached-client List/Get
 	// calls don't block on first access. Sync each cluster individually
 	// since the multicluster Manager doesn't expose a global GetCache.
+	//
+	// mgr.Start engages clusters asynchronously, so GetCluster can briefly
+	// return "cluster not found" for a name that GetClusterNames already
+	// reports. Poll until each cluster is registered before treating it as
+	// fatal — Elected only signals leader election, not engagement.
 	syncCtx, syncCancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer syncCancel()
 	for _, name := range mgr.GetClusterNames() {
-		cl, err := mgr.GetCluster(syncCtx, name)
-		if err != nil {
-			t.Fatalf("getting cluster %s for cache sync: %v", name, err)
-		}
+		var cl cluster.Cluster
+		require.Eventually(t, func() bool {
+			c, err := mgr.GetCluster(syncCtx, name)
+			if err != nil {
+				return false
+			}
+			cl = c
+			return true
+		}, 60*time.Second, 1*time.Second, "cluster %s never registered with multicluster manager", name)
 		if !cl.GetCache().WaitForCacheSync(syncCtx) {
 			t.Fatalf("cache for cluster %s did not sync within 2m", name)
 		}

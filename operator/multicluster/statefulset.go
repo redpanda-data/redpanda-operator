@@ -39,11 +39,11 @@ func statefulSets(state *RenderState) ([]*appsv1.StatefulSet, error) {
 }
 
 // statefulSet returns the StatefulSet for the given pool.
-func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.StatefulSet, error) {
+func statefulSet(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (*appsv1.StatefulSet, error) {
 	poolLabels := map[string]string{}
 	if pool.Name != "" {
-		poolLabels[nodePoolLabelName] = pool.Name
-		poolLabels[nodePoolLabelGeneration] = fmt.Sprintf("%d", pool.Generation)
+		poolLabels[BrokerPoolLabelName] = pool.Name
+		poolLabels[BrokerPoolLabelGeneration] = fmt.Sprintf("%d", pool.Generation)
 	}
 
 	labels := state.commonLabels()
@@ -182,7 +182,7 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.NodePool) (*appsv1.S
 }
 
 // statefulSetPodLabelsSelector returns the label selector for the Redpanda StatefulSet.
-func statefulSetPodLabelsSelector(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]string {
+func statefulSetPodLabelsSelector(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]string {
 	// StatefulSet selectors are immutable after creation. For the default
 	// (unnamed) pool, reuse whatever selector was deployed — even if it
 	// doesn't match the current label computation — to avoid API rejections.
@@ -212,7 +212,7 @@ func statefulSetPodLabelsSelector(state *RenderState, pool *redpandav1alpha2.Nod
 }
 
 // statefulSetPodLabels returns the labels for the Redpanda PodTemplate.
-func statefulSetPodLabels(state *RenderState, pool *redpandav1alpha2.NodePool) map[string]string {
+func statefulSetPodLabels(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]string {
 	if state.statefulSetPodLabels != nil && pool.Name == "" {
 		return state.statefulSetPodLabels
 	}
@@ -231,7 +231,7 @@ func statefulSetPodLabels(state *RenderState, pool *redpandav1alpha2.NodePool) m
 }
 
 // statefulSetContainers returns the containers for the StatefulSet.
-func statefulSetContainers(state *RenderState, pool *redpandav1alpha2.NodePool) []corev1.Container {
+func statefulSetContainers(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.Container {
 	var containers []corev1.Container
 	containers = append(containers, statefulSetContainerRedpanda(state, pool))
 	containers = append(containers, statefulSetContainerSidecar(state, pool))
@@ -240,7 +240,7 @@ func statefulSetContainers(state *RenderState, pool *redpandav1alpha2.NodePool) 
 
 // statefulSetChecksumAnnotation computes a SHA256 checksum of the rendered config
 // to trigger rolling restarts when the configuration changes.
-func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.NodePool) (string, error) {
+func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (string, error) {
 	var dependencies []any
 	// NB: Seed servers are excluded to avoid a rolling restart when only
 	// replicas are changed.
