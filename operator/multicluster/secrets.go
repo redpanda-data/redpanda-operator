@@ -21,32 +21,66 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// secrets returns all Secrets for the given RenderState.
+// secrets returns all Secrets for the given RenderState. Object order matches
+// the pre-split legacy emission as closely as possible: cluster SASL/Users
+// first, then per-pool (lifecycle + configurator + fs-validator), then
+// bootstrap user.
 func secrets(state *RenderState) ([]*corev1.Secret, error) {
-	var secrets []*corev1.Secret
-	secrets = append(secrets, secretSTSLifecycle(state))
+	var out []*corev1.Secret
 	saslUsers, err := secretSASLUsers(state)
 	if err != nil {
 		return nil, err
 	}
 	if saslUsers != nil {
-		secrets = append(secrets, saslUsers)
+		out = append(out, saslUsers)
 	}
 	for _, pool := range state.inClusterPools {
-		secrets = append(secrets, secretConfigurator(state, pool))
-		if fsValidator := secretFSValidator(state, pool); fsValidator != nil {
-			secrets = append(secrets, fsValidator)
-		}
+		out = append(out, poolSecrets(state, pool)...)
 	}
 	if bootstrapUser := secretBootstrapUser(state); bootstrapUser != nil {
-		secrets = append(secrets, bootstrapUser)
+		out = append(out, bootstrapUser)
 	}
-	return secrets, nil
+	return out, nil
 }
 
-// secretSTSLifecycle returns the lifecycle scripts Secret for the StatefulSet.
-func secretSTSLifecycle(state *RenderState) *corev1.Secret {
-	p := scriptParamsForLifecycle(state)
+// clusterSecrets returns the Secrets whose name and content are scoped to
+// the StretchCluster as a whole (SASL user list, bootstrap user). Lifecycle
+// scripts have moved to poolSecrets because their content (admin URL, TLS
+// flags) is derived from the pool's spec.
+func clusterSecrets(state *RenderState) ([]*corev1.Secret, error) {
+	var out []*corev1.Secret
+	saslUsers, err := secretSASLUsers(state)
+	if err != nil {
+		return nil, err
+	}
+	if saslUsers != nil {
+		out = append(out, saslUsers)
+	}
+	if bootstrapUser := secretBootstrapUser(state); bootstrapUser != nil {
+		out = append(out, bootstrapUser)
+	}
+	return out, nil
+}
+
+// poolSecrets returns the Secrets emitted for a single local BrokerPool
+// (lifecycle scripts, configurator script, optional fs-validator). Caller
+// iterates state.InClusterPools().
+func poolSecrets(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []*corev1.Secret {
+	out := []*corev1.Secret{
+		secretSTSLifecycle(state, pool),
+		secretConfigurator(state, pool),
+	}
+	if fsValidator := secretFSValidator(state, pool); fsValidator != nil {
+		out = append(out, fsValidator)
+	}
+	return out
+}
+
+// secretSTSLifecycle returns the lifecycle scripts Secret for a pool's
+// StatefulSet. Named <cluster>-<pool>-sts-lifecycle; content (postStart,
+// preStop scripts) reads admin URL / TLS flags from the pool's spec.
+func secretSTSLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Secret {
+	p := scriptParamsForLifecycle(state, pool)
 
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -54,7 +88,7 @@ func secretSTSLifecycle(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-sts-lifecycle", state.fullname()),
+			Name:      fmt.Sprintf("%s-sts-lifecycle", state.poolFullname(pool)),
 			Namespace: state.namespace,
 			Labels:    state.commonLabels(),
 		},

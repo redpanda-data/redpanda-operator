@@ -90,10 +90,28 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		}
 		state.WithPodEndpoints(renderEndpoints)
 	}
-
-	resources, err := multiclusterRenderer.RenderResources(state)
+	resources, err := multiclusterRenderer.RenderClusterResources(state)
 	if err != nil {
 		return nil, errors.WithStack(err)
+	}
+	// Iterate state.InClusterPools() / state.Pools() rather than calling
+	// cluster.GetBrokerPoolsForCluster / GetAllBrokerPools again. Both routes
+	// produce defaulted copies, but the state-owned slices are the canonical
+	// view the per-pool renderers were constructed against, and reusing them
+	// keeps a single deep copy in flight per Render call.
+	for _, pool := range state.InClusterPools() {
+		inPoolResources, err := multiclusterRenderer.RenderInClusterPoolResources(state, pool)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		resources = append(resources, inPoolResources...)
+	}
+	for _, pool := range state.Pools() {
+		eachPoolResources, err := multiclusterRenderer.RenderEachPoolResources(state, pool)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		resources = append(resources, eachPoolResources...)
 	}
 
 	return resources, nil
@@ -111,7 +129,7 @@ func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *Str
 		for i := int32(0); i < pool.brokerPool.GetReplicas(); i++ {
 			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.brokerPool.Suffix()
 			name := multiclusterRenderer.PerPodServiceName(poolFullname, i)
-			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.brokerPool.GetNamespace(), cluster.Spec.AdminPort()))
+			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.brokerPool.GetNamespace(), pool.brokerPool.Spec.AdminPort()))
 		}
 	}
 	return adminAPIEndpoints

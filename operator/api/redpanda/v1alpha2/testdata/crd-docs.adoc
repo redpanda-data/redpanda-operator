@@ -467,54 +467,22 @@ override the defaults.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | Chart default: {} + |  | 
-| *`replicas`* __integer__ | Chart default: 3 + |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ | Chart default: [] + |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | Chart default: +
-labels: {} +
-annotations: {} +
-spec: +
-securityContext: {} +
-affinity: +
-podAntiAffinity: +
-requiredDuringSchedulingIgnoredDuringExecution: +
-- topologyKey: kubernetes.io/hostname +
-labelSelector: +
-matchLabels: +
-"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
-"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
-"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' +
-terminationGracePeriodSeconds: 90 +
-nodeSelector: {} +
-priorityClassName: "" +
-tolerations: [] +
-topologySpreadConstraints: +
-- maxSkew: 1 +
-topologyKey: topology.kubernetes.io/zone +
-whenUnsatisfiable: ScheduleAnyway +
-labelSelector: +
-matchLabels: +
-"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
-"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
-"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' + |  | 
+| *`additionalSelectorLabels`* __object (keys:string, values:string)__ |  |  | 
+| *`replicas`* __integer__ |  |  | 
+| *`additionalRedpandaCmdFlags`* __string array__ |  |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ |  |  | 
 | *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ |  |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
-repository: docker.redpanda.com/redpandadata/redpanda +
-tag: {{.redpandaVersion}} + |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
-repository: docker.redpanda.com/redpandadata/redpanda-operator +
-tag: {{.operatorVersion}} + |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | Chart default: +
-repository: busybox +
-tag: latest + |  | 
-| *`persistentVolumeClaimRetentionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps[$$StatefulSetPersistentVolumeClaimRetentionPolicy$$]__ | PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for +
-PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces +
-any value inherited from the parent Redpanda CRD's +
-`statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level +
-value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used. +
-Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via +
-scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's +
-StatefulSet is deleted. + |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ |  |  | 
+| *`clusterDomain`* __string__ | Customizes the Kubernetes cluster domain. This domain is used to generate the internal domains of the StatefulSet Pods. The default is the `cluster.local` domain. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | Defines TLS settings for listeners. + |  | 
+| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | Defines external access settings. + |  | 
+| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | Defines Role Based Access Control (RBAC) settings. + |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | Defines Service account settings. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Defines settings for monitoring Redpanda. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
+| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | Defines rack awareness settings. + |  | 
 | *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ |  |  | 
 |===
 
@@ -1254,54 +1222,22 @@ on remote Kubernetes clusters.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | Chart default: {} + |  | 
-| *`replicas`* __integer__ | Chart default: 3 + |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ | Chart default: [] + |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | Chart default: +
-labels: {} +
-annotations: {} +
-spec: +
-securityContext: {} +
-affinity: +
-podAntiAffinity: +
-requiredDuringSchedulingIgnoredDuringExecution: +
-- topologyKey: kubernetes.io/hostname +
-labelSelector: +
-matchLabels: +
-"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
-"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
-"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' +
-terminationGracePeriodSeconds: 90 +
-nodeSelector: {} +
-priorityClassName: "" +
-tolerations: [] +
-topologySpreadConstraints: +
-- maxSkew: 1 +
-topologyKey: topology.kubernetes.io/zone +
-whenUnsatisfiable: ScheduleAnyway +
-labelSelector: +
-matchLabels: +
-"app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset' +
-"app.kubernetes.io/instance":  '{{ .Release.Name }}' +
-"app.kubernetes.io/name":      '{{ include "redpanda.name" . }}' + |  | 
+| *`additionalSelectorLabels`* __object (keys:string, values:string)__ |  |  | 
+| *`replicas`* __integer__ |  |  | 
+| *`additionalRedpandaCmdFlags`* __string array__ |  |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ |  |  | 
 | *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ |  |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
-repository: docker.redpanda.com/redpandadata/redpanda +
-tag: {{.redpandaVersion}} + |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Default: +
-repository: docker.redpanda.com/redpandadata/redpanda-operator +
-tag: {{.operatorVersion}} + |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | Chart default: +
-repository: busybox +
-tag: latest + |  | 
-| *`persistentVolumeClaimRetentionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps[$$StatefulSetPersistentVolumeClaimRetentionPolicy$$]__ | PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for +
-PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces +
-any value inherited from the parent Redpanda CRD's +
-`statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level +
-value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used. +
-Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via +
-scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's +
-StatefulSet is deleted. + |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
+| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ |  |  | 
+| *`clusterDomain`* __string__ | Customizes the Kubernetes cluster domain. This domain is used to generate the internal domains of the StatefulSet Pods. The default is the `cluster.local` domain. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | Defines TLS settings for listeners. + |  | 
+| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | Defines external access settings. + |  | 
+| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | Defines Role Based Access Control (RBAC) settings. + |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | Defines Service account settings. + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Defines settings for monitoring Redpanda. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
+| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | Defines rack awareness settings. + |  | 
 |===
 
 
@@ -1399,6 +1335,8 @@ External defines external connectivity settings in the Helm values.
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -2299,6 +2237,8 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -2745,6 +2685,8 @@ RBAC configures role-based access control (RBAC).
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -2821,6 +2763,8 @@ RackAwareness configures rack awareness in the Helm values. See https://docs.red
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -3979,6 +3923,8 @@ ServiceAccount configures Service Accounts.
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 
@@ -4626,6 +4572,8 @@ TLS configures TLS in the Helm values. See https://docs.redpanda.com/current/man
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
 

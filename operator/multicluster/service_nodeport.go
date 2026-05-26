@@ -14,11 +14,27 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// nodePortService returns a NodePort Service for external access.
-func nodePortService(state *RenderState) *corev1.Service {
-	ext := state.Spec().External
+// nodePortService returns NodePort Services across every local pool with
+// External enabled and Type=NodePort. Wrapper used by RenderResources.
+func nodePortService(state *RenderState) []*corev1.Service {
+	var out []*corev1.Service
+	for _, pool := range state.inClusterPools {
+		if svc := nodePortServiceForPool(state, pool); svc != nil {
+			out = append(out, svc)
+		}
+	}
+	return out
+}
+
+// nodePortServiceForPool returns a NodePort Service for a single local pool,
+// named <cluster>-<pool>-external. External configuration (enabled, type,
+// annotations) and listener port set come from the pool's spec.
+func nodePortServiceForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Service {
+	ext := pool.Spec.External
 	if ext == nil || !ext.IsEnabled() {
 		return nil
 	}
@@ -29,7 +45,7 @@ func nodePortService(state *RenderState) *corev1.Service {
 		return nil
 	}
 
-	ports := externalServicePorts(state.Spec().Listeners, true)
+	ports := externalServicePorts(pool.Spec.Listeners, true)
 	if len(ports) == 0 {
 		return nil
 	}
@@ -45,7 +61,7 @@ func nodePortService(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-external", state.Spec().GetServiceName(state.fullname())),
+			Name:        fmt.Sprintf("%s-external", state.poolFullname(pool)),
 			Namespace:   state.namespace,
 			Labels:      state.commonLabels(),
 			Annotations: annotations,

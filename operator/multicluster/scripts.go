@@ -86,36 +86,37 @@ func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.R
 	return fmt.Sprintf("%s-${POD_ORDINAL}.%s", state.poolFullname(pool), state.namespace)
 }
 
-// scriptParamsForLifecycle returns script params for lifecycle hooks which
-// don't need pool-specific fields like InternalAdvertiseAddress.
-func scriptParamsForLifecycle(state *RenderState) ScriptParams {
+// scriptParamsForLifecycle returns script params for lifecycle hooks for the
+// given pool. The lifecycle scripts are mounted per-pool so admin URL / TLS
+// flags / protocol come from this pool's TLS/Listeners/ClusterDomain.
+func scriptParamsForLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
 	return ScriptParams{
-		AdminCurlFlags:    state.adminTLSCurlFlags(),
-		CurlURL:           state.Spec().AdminInternalURL(state.fullname(), state.namespace),
+		AdminCurlFlags:    poolAdminTLSCurlFlags(pool),
+		CurlURL:           pool.Spec.AdminInternalURL(state.fullname(), state.namespace),
 		TotalReplicas:     state.totalReplicas(),
-		AdminHTTPProtocol: state.Spec().AdminInternalHTTPProtocol(),
-		AdminAPIURLs:      state.Spec().AdminAPIURLs(state.fullname(), state.namespace),
+		AdminHTTPProtocol: pool.Spec.AdminInternalHTTPProtocol(),
+		AdminAPIURLs:      pool.Spec.AdminAPIURLs(state.fullname(), state.namespace),
 	}
 }
 
 func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
 	p := ScriptParams{
-		AdminCurlFlags:              state.adminTLSCurlFlags(),
-		CurlURL:                     state.Spec().AdminInternalURL(state.fullname(), state.namespace),
+		AdminCurlFlags:              poolAdminTLSCurlFlags(pool),
+		CurlURL:                     pool.Spec.AdminInternalURL(state.fullname(), state.namespace),
 		TotalReplicas:               state.totalReplicas(),
 		InternalAdvertiseAddress:    scriptInternalAdvertiseAddress(state, pool),
-		KafkaPort:                   state.Spec().KafkaPort(),
-		HTTPPort:                    state.Spec().HTTPPort(),
+		KafkaPort:                   pool.Spec.KafkaPort(),
+		HTTPPort:                    pool.Spec.HTTPPort(),
 		RedpandaAtLeast22_3:         state.Spec().Image.AtLeast("22.3.0"),
-		RackAwarenessEnabled:        state.Spec().RackAwareness.IsEnabled(),
-		RackAwarenessNodeAnnotation: state.Spec().RackAwareness.GetNodeAnnotation(),
-		AdminHTTPProtocol:           state.Spec().AdminInternalHTTPProtocol(),
-		AdminAPIURLs:                state.Spec().AdminAPIURLs(state.fullname(), state.namespace),
-		RPCPort:                     state.Spec().RPCPort(),
+		RackAwarenessEnabled:        pool.Spec.RackAwareness.IsEnabled(),
+		RackAwarenessNodeAnnotation: pool.Spec.RackAwareness.GetNodeAnnotation(),
+		AdminHTTPProtocol:           pool.Spec.AdminInternalHTTPProtocol(),
+		AdminAPIURLs:                pool.Spec.AdminAPIURLs(state.fullname(), state.namespace),
+		RPCPort:                     pool.Spec.RPCPort(),
 	}
 
 	// Collect external Kafka listeners.
-	if l := state.Spec().Listeners; l != nil && l.Kafka != nil {
+	if l := pool.Spec.Listeners; l != nil && l.Kafka != nil {
 		forEachEnabledExternal(l.Kafka.External, func(name string, ext *redpandav1alpha2.StretchExternalListener) {
 			p.ExternalKafkaListeners = append(p.ExternalKafkaListeners, ExternalAdvertisedListener{
 				Name: name,
@@ -125,7 +126,7 @@ func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 	}
 
 	// Collect external HTTP/pandaproxy listeners.
-	if l := state.Spec().Listeners; l != nil && l.HTTP != nil {
+	if l := pool.Spec.Listeners; l != nil && l.HTTP != nil {
 		forEachEnabledExternal(l.HTTP.External, func(name string, ext *redpandav1alpha2.StretchExternalListener) {
 			p.ExternalHTTPListeners = append(p.ExternalHTTPListeners, ExternalAdvertisedListener{
 				Name: name,
@@ -408,20 +409,22 @@ func livenessProbeScript(p ScriptParams) string {
 	)
 }
 
-func (r *RenderState) adminTLSCurlFlags() string {
-	if !r.Spec().IsAdminTLSEnabled() {
+// poolAdminTLSCurlFlags returns curl flags for the pool's admin listener TLS.
+// Reads TLS and Listeners from the pool's spec.
+func poolAdminTLSCurlFlags(pool *redpandav1alpha2.RedpandaBrokerPool) string {
+	if !pool.Spec.IsAdminTLSEnabled() {
 		return ""
 	}
 
-	certName := r.Spec().Listeners.AdminCertName()
+	certName := pool.Spec.Listeners.AdminCertName()
 	if certName == "" {
 		return ""
 	}
 
-	if r.Spec().Listeners.CertRequiresClientAuth(certName) {
+	if pool.Spec.Listeners.CertRequiresClientAuth(certName) {
 		path := certClientMountPoint(certName)
 		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
 	}
 
-	return fmt.Sprintf("--cacert %s", r.Spec().TLS.CertServerCAPath(certName))
+	return fmt.Sprintf("--cacert %s", pool.Spec.TLS.CertServerCAPath(certName))
 }

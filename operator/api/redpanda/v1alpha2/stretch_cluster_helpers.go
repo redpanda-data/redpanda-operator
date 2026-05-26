@@ -811,82 +811,82 @@ func (sc *StretchCluster) BootstrapUserSecretName() string {
 // --- StretchClusterSpec convenience methods ---
 
 // IsAdminTLSEnabled returns whether TLS is enabled on the admin listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsAdminTLSEnabled() bool {
-	if s == nil {
-		return false
-	}
-	return s.listeners().Admin.IsTLSEnabled(s.TLS)
-}
-
-// IsKafkaTLSEnabled returns whether TLS is enabled on the Kafka listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsKafkaTLSEnabled() bool {
-	if s == nil {
-		return false
-	}
-	return s.listeners().Kafka.IsTLSEnabled(s.TLS)
-}
-
-// IsHTTPTLSEnabled returns whether TLS is enabled on the HTTP listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsHTTPTLSEnabled() bool {
-	if s == nil {
-		return false
-	}
-	return s.listeners().HTTP.IsTLSEnabled(s.TLS)
-}
-
-// IsSchemaRegistryTLSEnabled returns whether TLS is enabled on the Schema Registry listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsSchemaRegistryTLSEnabled() bool {
-	if s == nil {
-		return false
-	}
-	return s.listeners().SchemaRegistry.IsTLSEnabled(s.TLS)
-}
-
-// IsRPCTLSEnabled returns whether TLS is enabled on the RPC listener. Safe to call on nil receiver.
-func (s *StretchClusterSpec) IsRPCTLSEnabled() bool {
-	if s == nil {
-		return false
-	}
-	return s.listeners().RPC.IsTLSEnabled(s.TLS)
-}
-
-// listeners returns a non-nil StretchListeners, defaulting to an empty value.
-func (s *StretchClusterSpec) listeners() StretchListeners {
-	if s.Listeners == nil {
-		return StretchListeners{}
-	}
-	return *s.Listeners
-}
-
-// GetClusterDomain returns the cluster domain, defaulting to "cluster.local". Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetClusterDomain() string {
-	if s != nil && s.ClusterDomain != nil {
-		return *s.ClusterDomain
-	}
-	return DefaultClusterDomain
-}
-
-// GetServiceName returns the headless service name, falling back to fullname. Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetServiceName(fullname string) string {
-	if s != nil && s.Service != nil && s.Service.Name != nil && *s.Service.Name != "" {
-		return *s.Service.Name
-	}
-	return fullname
-}
-
-// InternalDomain returns the fully qualified internal DNS domain for the headless service.
-// Safe to call on nil receiver.
-func (s *StretchClusterSpec) InternalDomain(fullname, namespace string) string {
-	return fmt.Sprintf("%s.%s.svc.%s", s.GetServiceName(fullname), namespace, s.GetClusterDomain())
-}
-
-// GetServiceAccountName returns the effective service account name for the spec. Safe to call on nil receiver.
-func (s *StretchClusterSpec) GetServiceAccountName(fullname string) string {
-	if s == nil {
-		return fullname
-	}
-	return s.ServiceAccount.GetServiceAccountName(fullname)
-}
+//func (s *StretchClusterSpec) IsAdminTLSEnabled() bool {
+//	if s == nil {
+//		return false
+//	}
+//	return s.listeners().Admin.IsTLSEnabled(s.TLS)
+//}
+//
+//// IsKafkaTLSEnabled returns whether TLS is enabled on the Kafka listener. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) IsKafkaTLSEnabled() bool {
+//	if s == nil {
+//		return false
+//	}
+//	return s.listeners().Kafka.IsTLSEnabled(s.TLS)
+//}
+//
+//// IsHTTPTLSEnabled returns whether TLS is enabled on the HTTP listener. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) IsHTTPTLSEnabled() bool {
+//	if s == nil {
+//		return false
+//	}
+//	return s.listeners().HTTP.IsTLSEnabled(s.TLS)
+//}
+//
+//// IsSchemaRegistryTLSEnabled returns whether TLS is enabled on the Schema Registry listener. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) IsSchemaRegistryTLSEnabled() bool {
+//	if s == nil {
+//		return false
+//	}
+//	return s.listeners().SchemaRegistry.IsTLSEnabled(s.TLS)
+//}
+//
+//// IsRPCTLSEnabled returns whether TLS is enabled on the RPC listener. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) IsRPCTLSEnabled() bool {
+//	if s == nil {
+//		return false
+//	}
+//	return s.listeners().RPC.IsTLSEnabled(s.TLS)
+//}
+//
+//// listeners returns a non-nil StretchListeners, defaulting to an empty value.
+//func (s *StretchClusterSpec) listeners() StretchListeners {
+//	if s.Listeners == nil {
+//		return StretchListeners{}
+//	}
+//	return *s.Listeners
+//}
+//
+//// GetClusterDomain returns the cluster domain, defaulting to "cluster.local". Safe to call on nil receiver.
+//func (s *StretchClusterSpec) GetClusterDomain() string {
+//	if s != nil && s.ClusterDomain != nil {
+//		return *s.ClusterDomain
+//	}
+//	return DefaultClusterDomain
+//}
+//
+//// GetServiceName returns the headless service name, falling back to fullname. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) GetServiceName(fullname string) string {
+//	if s != nil && s.Service != nil && s.Service.Name != nil && *s.Service.Name != "" {
+//		return *s.Service.Name
+//	}
+//	return fullname
+//}
+//
+//// InternalDomain returns the fully qualified internal DNS domain for the headless service.
+//// Safe to call on nil receiver.
+//func (s *StretchClusterSpec) InternalDomain(fullname, namespace string) string {
+//	return fmt.Sprintf("%s.%s.svc.%s", s.GetServiceName(fullname), namespace, s.GetClusterDomain())
+//}
+//
+//// GetServiceAccountName returns the effective service account name for the spec. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) GetServiceAccountName(fullname string) string {
+//	if s == nil {
+//		return fullname
+//	}
+//	return s.ServiceAccount.GetServiceAccountName(fullname)
+//}
 
 // GetResourceRequirements returns the Kubernetes resource requirements from the spec.
 // Supports both new-style (Limits/Requests) and legacy (CPU.Cores + Memory.Container.Max) modes.
@@ -921,23 +921,23 @@ func (s *StretchClusterSpec) GetResourceRequirements() corev1.ResourceRequiremen
 
 // InUseServerCerts returns the cert names for all listeners with TLS enabled.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) InUseServerCerts() []string {
-	if s == nil || !s.TLS.IsEnabled() {
-		return nil
-	}
-	return s.Listeners.CollectCerts(func(*StretchListenerTLS) bool { return true })
-}
-
-// InUseClientCerts returns the cert names for listeners requiring client auth (mTLS).
-// Safe to call on nil receiver.
-func (s *StretchClusterSpec) InUseClientCerts() []string {
-	if s == nil || !s.TLS.IsEnabled() {
-		return nil
-	}
-	return s.Listeners.CollectCerts(func(tls *StretchListenerTLS) bool {
-		return tls.RequiresClientAuth()
-	})
-}
+//func (s *StretchClusterSpec) InUseServerCerts() []string {
+//	if s == nil || !s.TLS.IsEnabled() {
+//		return nil
+//	}
+//	return s.Listeners.CollectCerts(func(*StretchListenerTLS) bool { return true })
+//}
+//
+//// InUseClientCerts returns the cert names for listeners requiring client auth (mTLS).
+//// Safe to call on nil receiver.
+//func (s *StretchClusterSpec) InUseClientCerts() []string {
+//	if s == nil || !s.TLS.IsEnabled() {
+//		return nil
+//	}
+//	return s.Listeners.CollectCerts(func(tls *StretchListenerTLS) bool {
+//		return tls.RequiresClientAuth()
+//	})
+//}
 
 // --- Tiered Storage helpers ---
 
@@ -1129,70 +1129,70 @@ func (s *StretchClusterSpec) GetTieredStorageCacheSize() *resource.Quantity {
 // --- NodePool helpers ---
 
 // AdminPort returns the admin API port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminPort() int32 {
-	if s != nil && s.Listeners != nil && s.Listeners.Admin != nil {
-		return s.Listeners.Admin.GetPort(DefaultAdminPort)
-	}
-	return DefaultAdminPort
-}
-
-// KafkaPort returns the Kafka API port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) KafkaPort() int32 {
-	if s != nil && s.Listeners != nil && s.Listeners.Kafka != nil {
-		return s.Listeners.Kafka.GetPort(DefaultKafkaPort)
-	}
-	return DefaultKafkaPort
-}
-
-// HTTPPort returns the HTTP Proxy port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) HTTPPort() int32 {
-	if s != nil && s.Listeners != nil && s.Listeners.HTTP != nil {
-		return s.Listeners.HTTP.GetPort(DefaultHTTPPort)
-	}
-	return DefaultHTTPPort
-}
-
-// RPCPort returns the RPC port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) RPCPort() int32 {
-	if s != nil && s.Listeners != nil && s.Listeners.RPC != nil && s.Listeners.RPC.Port != nil {
-		return int32(*s.Listeners.RPC.Port)
-	}
-	return DefaultRPCPort
-}
-
-// SchemaRegistryPort returns the Schema Registry port. Safe to call on nil receiver.
-func (s *StretchClusterSpec) SchemaRegistryPort() int32 {
-	if s != nil && s.Listeners != nil && s.Listeners.SchemaRegistry != nil {
-		return s.Listeners.SchemaRegistry.GetPort(DefaultSchemaRegistryPort)
-	}
-	return DefaultSchemaRegistryPort
-}
+//func (s *StretchClusterSpec) AdminPort() int32 {
+//	if s != nil && s.Listeners != nil && s.Listeners.Admin != nil {
+//		return s.Listeners.Admin.GetPort(DefaultAdminPort)
+//	}
+//	return DefaultAdminPort
+//}
+//
+//// KafkaPort returns the Kafka API port. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) KafkaPort() int32 {
+//	if s != nil && s.Listeners != nil && s.Listeners.Kafka != nil {
+//		return s.Listeners.Kafka.GetPort(DefaultKafkaPort)
+//	}
+//	return DefaultKafkaPort
+//}
+//
+//// HTTPPort returns the HTTP Proxy port. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) HTTPPort() int32 {
+//	if s != nil && s.Listeners != nil && s.Listeners.HTTP != nil {
+//		return s.Listeners.HTTP.GetPort(DefaultHTTPPort)
+//	}
+//	return DefaultHTTPPort
+//}
+//
+//// RPCPort returns the RPC port. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) RPCPort() int32 {
+//	if s != nil && s.Listeners != nil && s.Listeners.RPC != nil && s.Listeners.RPC.Port != nil {
+//		return int32(*s.Listeners.RPC.Port)
+//	}
+//	return DefaultRPCPort
+//}
+//
+//// SchemaRegistryPort returns the Schema Registry port. Safe to call on nil receiver.
+//func (s *StretchClusterSpec) SchemaRegistryPort() int32 {
+//	if s != nil && s.Listeners != nil && s.Listeners.SchemaRegistry != nil {
+//		return s.Listeners.SchemaRegistry.GetPort(DefaultSchemaRegistryPort)
+//	}
+//	return DefaultSchemaRegistryPort
+//}
 
 // AdminInternalHTTPProtocol returns "https" if admin TLS is enabled, "http" otherwise.
 // Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminInternalHTTPProtocol() string {
-	if s.IsAdminTLSEnabled() {
-		return "https"
-	}
-	return "http"
-}
-
-// AdminInternalURL returns the internal admin API URL template.
-// Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminInternalURL(fullname, namespace string) string {
-	return fmt.Sprintf("%s://%s.%s:%d",
-		s.AdminInternalHTTPProtocol(),
-		"${SERVICE_NAME}",
-		strings.TrimSuffix(s.InternalDomain(fullname, namespace), "."),
-		s.AdminPort(),
-	)
-}
-
-// AdminAPIURLs returns the admin API URL for probes.
-// Safe to call on nil receiver.
-func (s *StretchClusterSpec) AdminAPIURLs(fullname, namespace string) string {
-	return fmt.Sprintf("${SERVICE_NAME}.%s:%d", s.InternalDomain(fullname, namespace), s.AdminPort())
-}
+//func (s *StretchClusterSpec) AdminInternalHTTPProtocol() string {
+//	if s.IsAdminTLSEnabled() {
+//		return "https"
+//	}
+//	return "http"
+//}
+//
+//// AdminInternalURL returns the internal admin API URL template.
+//// Safe to call on nil receiver.
+//func (s *StretchClusterSpec) AdminInternalURL(fullname, namespace string) string {
+//	return fmt.Sprintf("%s://%s.%s:%d",
+//		s.AdminInternalHTTPProtocol(),
+//		"${SERVICE_NAME}",
+//		strings.TrimSuffix(s.InternalDomain(fullname, namespace), "."),
+//		s.AdminPort(),
+//	)
+//}
+//
+//// AdminAPIURLs returns the admin API URL for probes.
+//// Safe to call on nil receiver.
+//func (s *StretchClusterSpec) AdminAPIURLs(fullname, namespace string) string {
+//	return fmt.Sprintf("${SERVICE_NAME}.%s:%d", s.InternalDomain(fullname, namespace), s.AdminPort())
+//}
 
 // GetReplicas returns the replica count for a node pool, defaulting to 1.
 func (n *RedpandaBrokerPool) GetReplicas() int32 {
@@ -1237,6 +1237,273 @@ func (n *RedpandaBrokerPool) InitImage() string {
 	return imageRef(nil, DefaultInitContainerRepository, nil, DefaultInitContainerImageTag)
 }
 
+// listeners returns a non-nil StretchListeners, defaulting to an empty value.
+func (n *BrokerPoolSpec) listeners() StretchListeners {
+	if n.Listeners == nil {
+		return StretchListeners{}
+	}
+	return *n.Listeners
+}
+
+// IsAdminTLSEnabled returns whether TLS is enabled on the admin listener. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) IsAdminTLSEnabled() bool {
+	if n == nil {
+		return false
+	}
+	return n.listeners().Admin.IsTLSEnabled(n.TLS)
+}
+
+// IsKafkaTLSEnabled returns whether TLS is enabled on the Kafka listener. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) IsKafkaTLSEnabled() bool {
+	if n == nil {
+		return false
+	}
+	return n.listeners().Kafka.IsTLSEnabled(n.TLS)
+}
+
+// IsHTTPTLSEnabled returns whether TLS is enabled on the HTTP listener. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) IsHTTPTLSEnabled() bool {
+	if n == nil {
+		return false
+	}
+	return n.listeners().HTTP.IsTLSEnabled(n.TLS)
+}
+
+// IsSchemaRegistryTLSEnabled returns whether TLS is enabled on the Schema Registry listener. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) IsSchemaRegistryTLSEnabled() bool {
+	if n == nil {
+		return false
+	}
+	return n.listeners().SchemaRegistry.IsTLSEnabled(n.TLS)
+}
+
+// IsRPCTLSEnabled returns whether TLS is enabled on the RPC listener. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) IsRPCTLSEnabled() bool {
+	if n == nil {
+		return false
+	}
+	return n.listeners().RPC.IsTLSEnabled(n.TLS)
+}
+
+// GetClusterDomain returns the cluster domain for this pool, defaulting to "cluster.local". Safe to call on nil receiver.
+func (n *BrokerPoolSpec) GetClusterDomain() string {
+	if n != nil && n.ClusterDomain != nil {
+		return *n.ClusterDomain
+	}
+	return DefaultClusterDomain
+}
+
+// InternalDomain returns the fully qualified internal DNS domain for the headless service,
+// using this pool's ClusterDomain. The headless Service itself is cluster-wide (one per
+// StretchCluster) so the service-name segment is the cluster fullname. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) InternalDomain(fullname, namespace string) string {
+	return fmt.Sprintf("%s.%s.svc.%s", fullname, namespace, n.GetClusterDomain())
+}
+
+// GetServiceAccountName returns the effective service account name for this pool's resources.
+// Safe to call on nil receiver.
+func (n *BrokerPoolSpec) GetServiceAccountName(fullname string) string {
+	if n == nil {
+		return fullname
+	}
+	return n.ServiceAccount.GetServiceAccountName(fullname)
+}
+
+// InUseServerCerts returns the cert names for all listeners with TLS enabled on this pool.
+// Safe to call on nil receiver.
+func (n *BrokerPoolSpec) InUseServerCerts() []string {
+	if n == nil || !n.TLS.IsEnabled() {
+		return nil
+	}
+	return n.Listeners.CollectCerts(func(*StretchListenerTLS) bool { return true })
+}
+
+// InUseClientCerts returns the cert names for this pool's listeners requiring client auth (mTLS).
+// Safe to call on nil receiver.
+func (n *BrokerPoolSpec) InUseClientCerts() []string {
+	if n == nil || !n.TLS.IsEnabled() {
+		return nil
+	}
+	return n.Listeners.CollectCerts(func(tls *StretchListenerTLS) bool {
+		return tls.RequiresClientAuth()
+	})
+}
+
+// AdminPort returns this pool's admin API port. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) AdminPort() int32 {
+	if n != nil && n.Listeners != nil && n.Listeners.Admin != nil {
+		return n.Listeners.Admin.GetPort(DefaultAdminPort)
+	}
+	return DefaultAdminPort
+}
+
+// KafkaPort returns this pool's Kafka API port. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) KafkaPort() int32 {
+	if n != nil && n.Listeners != nil && n.Listeners.Kafka != nil {
+		return n.Listeners.Kafka.GetPort(DefaultKafkaPort)
+	}
+	return DefaultKafkaPort
+}
+
+// HTTPPort returns this pool's HTTP Proxy port. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) HTTPPort() int32 {
+	if n != nil && n.Listeners != nil && n.Listeners.HTTP != nil {
+		return n.Listeners.HTTP.GetPort(DefaultHTTPPort)
+	}
+	return DefaultHTTPPort
+}
+
+// RPCPort returns this pool's RPC port. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) RPCPort() int32 {
+	if n != nil && n.Listeners != nil && n.Listeners.RPC != nil && n.Listeners.RPC.Port != nil {
+		return int32(*n.Listeners.RPC.Port)
+	}
+	return DefaultRPCPort
+}
+
+// SchemaRegistryPort returns this pool's Schema Registry port. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) SchemaRegistryPort() int32 {
+	if n != nil && n.Listeners != nil && n.Listeners.SchemaRegistry != nil {
+		return n.Listeners.SchemaRegistry.GetPort(DefaultSchemaRegistryPort)
+	}
+	return DefaultSchemaRegistryPort
+}
+
+// AdminInternalHTTPProtocol returns "https" if admin TLS is enabled on this pool, "http" otherwise.
+// Safe to call on nil receiver.
+func (n *BrokerPoolSpec) AdminInternalHTTPProtocol() string {
+	if n.IsAdminTLSEnabled() {
+		return "https"
+	}
+	return "http"
+}
+
+// AdminInternalURL returns the internal admin API URL template for this pool.
+// Safe to call on nil receiver.
+func (n *BrokerPoolSpec) AdminInternalURL(fullname, namespace string) string {
+	return fmt.Sprintf("%s://%s.%s:%d",
+		n.AdminInternalHTTPProtocol(),
+		"${SERVICE_NAME}",
+		strings.TrimSuffix(n.InternalDomain(fullname, namespace), "."),
+		n.AdminPort(),
+	)
+}
+
+// AdminAPIURLs returns the admin API URL for probes for this pool.
+// Safe to call on nil receiver.
+func (n *BrokerPoolSpec) AdminAPIURLs(fullname, namespace string) string {
+	return fmt.Sprintf("${SERVICE_NAME}.%s:%d", n.InternalDomain(fullname, namespace), n.AdminPort())
+}
+
+// MergeDefaults populates this pool's nil fields with Helm-equivalent defaults.
+// Mirror of StretchClusterSpec.MergeDefaults for fields that now live on the pool.
+func (n *BrokerPoolSpec) MergeDefaults() {
+	n.mergeDefaultTLS()
+	n.mergeDefaultExternal()
+	n.mergeDefaultListeners()
+	n.mergeDefaultServiceAccount()
+	n.mergeDefaultRBAC()
+}
+
+func (n *BrokerPoolSpec) mergeDefaultServiceAccount() {
+	if n.ServiceAccount == nil {
+		n.ServiceAccount = &ServiceAccount{
+			Create: ptr.To(true),
+		}
+	}
+}
+
+func (n *BrokerPoolSpec) mergeDefaultRBAC() {
+	if n.RBAC == nil {
+		n.RBAC = &RBAC{
+			Enabled: ptr.To(true),
+		}
+	}
+}
+
+func (n *BrokerPoolSpec) mergeDefaultTLS() {
+	if n.TLS == nil {
+		n.TLS = &TLS{}
+	}
+	if n.TLS.Enabled == nil {
+		n.TLS.Enabled = ptr.To(true)
+	}
+	if n.TLS.Certs == nil {
+		n.TLS.Certs = make(map[string]*Certificate)
+	}
+	if n.TLS.Certs["default"] == nil {
+		n.TLS.Certs["default"] = &Certificate{
+			CAEnabled: ptr.To(true),
+		}
+	}
+	if n.TLS.Certs["external"] == nil {
+		n.TLS.Certs["external"] = &Certificate{
+			CAEnabled: ptr.To(true),
+		}
+	}
+}
+
+func (n *BrokerPoolSpec) mergeDefaultExternal() {
+	if n.External == nil {
+		n.External = &External{}
+	}
+	if n.External.Enabled == nil {
+		n.External.Enabled = ptr.To(true)
+	}
+	if n.External.Type == nil {
+		n.External.Type = ptr.To("NodePort")
+	}
+	if n.External.Service == nil {
+		n.External.Service = &ExternalService{
+			Enabled: ptr.To(true),
+		}
+	} else if n.External.Service.Enabled == nil {
+		n.External.Service.Enabled = ptr.To(true)
+	}
+}
+
+func (n *BrokerPoolSpec) mergeDefaultListeners() {
+	if n.Listeners == nil {
+		n.Listeners = &StretchListeners{}
+	}
+	n.mergeDefaultAdminListener()
+	n.mergeDefaultKafkaListener()
+	n.mergeDefaultHTTPListener()
+	n.mergeDefaultSchemaRegistryListener()
+	n.mergeDefaultRPCListener()
+}
+
+func (n *BrokerPoolSpec) mergeDefaultAdminListener() {
+	mergeDefaultAPIListener(&n.Listeners.Admin, DefaultAdminPort, DefaultExternalAdminPort, DefaultExternalAdminAdvertisedPort)
+}
+
+func (n *BrokerPoolSpec) mergeDefaultKafkaListener() {
+	mergeDefaultAPIListener(&n.Listeners.Kafka, DefaultKafkaPort, DefaultExternalKafkaPort, DefaultExternalKafkaAdvertisedPort)
+}
+
+func (n *BrokerPoolSpec) mergeDefaultHTTPListener() {
+	mergeDefaultAPIListener(&n.Listeners.HTTP, DefaultHTTPPort, DefaultExternalHTTPPort, DefaultExternalHTTPAdvertisedPort)
+}
+
+func (n *BrokerPoolSpec) mergeDefaultSchemaRegistryListener() {
+	mergeDefaultAPIListener(&n.Listeners.SchemaRegistry, DefaultSchemaRegistryPort, DefaultExternalSchemaRegistryPort, DefaultExternalSchemaRegistryAdvertisedPort)
+}
+
+func (n *BrokerPoolSpec) mergeDefaultRPCListener() {
+	if n.Listeners.RPC == nil {
+		n.Listeners.RPC = &StretchRPC{}
+	}
+	if n.Listeners.RPC.Port == nil {
+		n.Listeners.RPC.Port = ptr.To(int(DefaultRPCPort))
+	}
+	if n.Listeners.RPC.TLS == nil {
+		n.Listeners.RPC.TLS = &StretchListenerTLS{
+			Cert:              ptr.To("default"),
+			RequireClientAuth: ptr.To(false),
+		}
+	}
+}
+
 // --- Defaults merging ---
 //
 // MergeDefaults fills in Helm-equivalent default values for fields that are nil
@@ -1247,11 +1514,11 @@ func (n *RedpandaBrokerPool) InitImage() string {
 // Helm chart's values.yaml. It is intended to be called on a deep-copied spec
 // so that the original CRD object is not mutated.
 func (s *StretchClusterSpec) MergeDefaults() {
-	s.mergeDefaultTLS()
-	s.mergeDefaultExternal()
-	s.mergeDefaultListeners()
-	s.mergeDefaultServiceAccount()
-	s.mergeDefaultRBAC()
+	//s.mergeDefaultTLS()
+	//s.mergeDefaultExternal()
+	//s.mergeDefaultListeners()
+	//s.mergeDefaultServiceAccount()
+	//s.mergeDefaultRBAC()
 	s.mergeDefaultStorage()
 	s.mergeDefaultTuning()
 	s.mergeDefaultResources()
@@ -1423,73 +1690,73 @@ func (s *StretchClusterSpec) GetEnableMemoryLocking() bool {
 	return ptr.Deref(s.Resources.Memory.EnableMemoryLocking, false)
 }
 
-func (s *StretchClusterSpec) mergeDefaultServiceAccount() {
-	if s.ServiceAccount == nil {
-		s.ServiceAccount = &ServiceAccount{
-			Create: ptr.To(true),
-		}
-	}
-}
-
-func (s *StretchClusterSpec) mergeDefaultRBAC() {
-	if s.RBAC == nil {
-		s.RBAC = &RBAC{
-			Enabled: ptr.To(true),
-		}
-	}
-}
-
-func (s *StretchClusterSpec) mergeDefaultTLS() {
-	if s.TLS == nil {
-		s.TLS = &TLS{}
-	}
-	if s.TLS.Enabled == nil {
-		s.TLS.Enabled = ptr.To(true)
-	}
-	if s.TLS.Certs == nil {
-		s.TLS.Certs = make(map[string]*Certificate)
-	}
-	if s.TLS.Certs["default"] == nil {
-		s.TLS.Certs["default"] = &Certificate{
-			CAEnabled: ptr.To(true),
-		}
-	}
-	if s.TLS.Certs["external"] == nil {
-		s.TLS.Certs["external"] = &Certificate{
-			CAEnabled: ptr.To(true),
-		}
-	}
-}
-
-func (s *StretchClusterSpec) mergeDefaultExternal() {
-	if s.External == nil {
-		s.External = &External{}
-	}
-	if s.External.Enabled == nil {
-		s.External.Enabled = ptr.To(true)
-	}
-	if s.External.Type == nil {
-		s.External.Type = ptr.To("NodePort")
-	}
-	if s.External.Service == nil {
-		s.External.Service = &ExternalService{
-			Enabled: ptr.To(true),
-		}
-	} else if s.External.Service.Enabled == nil {
-		s.External.Service.Enabled = ptr.To(true)
-	}
-}
-
-func (s *StretchClusterSpec) mergeDefaultListeners() {
-	if s.Listeners == nil {
-		s.Listeners = &StretchListeners{}
-	}
-	s.mergeDefaultAdminListener()
-	s.mergeDefaultKafkaListener()
-	s.mergeDefaultHTTPListener()
-	s.mergeDefaultSchemaRegistryListener()
-	s.mergeDefaultRPCListener()
-}
+//func (s *StretchClusterSpec) mergeDefaultServiceAccount() {
+//	if s.ServiceAccount == nil {
+//		s.ServiceAccount = &ServiceAccount{
+//			Create: ptr.To(true),
+//		}
+//	}
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultRBAC() {
+//	if s.RBAC == nil {
+//		s.RBAC = &RBAC{
+//			Enabled: ptr.To(true),
+//		}
+//	}
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultTLS() {
+//	if s.TLS == nil {
+//		s.TLS = &TLS{}
+//	}
+//	if s.TLS.Enabled == nil {
+//		s.TLS.Enabled = ptr.To(true)
+//	}
+//	if s.TLS.Certs == nil {
+//		s.TLS.Certs = make(map[string]*Certificate)
+//	}
+//	if s.TLS.Certs["default"] == nil {
+//		s.TLS.Certs["default"] = &Certificate{
+//			CAEnabled: ptr.To(true),
+//		}
+//	}
+//	if s.TLS.Certs["external"] == nil {
+//		s.TLS.Certs["external"] = &Certificate{
+//			CAEnabled: ptr.To(true),
+//		}
+//	}
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultExternal() {
+//	if s.External == nil {
+//		s.External = &External{}
+//	}
+//	if s.External.Enabled == nil {
+//		s.External.Enabled = ptr.To(true)
+//	}
+//	if s.External.Type == nil {
+//		s.External.Type = ptr.To("NodePort")
+//	}
+//	if s.External.Service == nil {
+//		s.External.Service = &ExternalService{
+//			Enabled: ptr.To(true),
+//		}
+//	} else if s.External.Service.Enabled == nil {
+//		s.External.Service.Enabled = ptr.To(true)
+//	}
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultListeners() {
+//	if s.Listeners == nil {
+//		s.Listeners = &StretchListeners{}
+//	}
+//	s.mergeDefaultAdminListener()
+//	s.mergeDefaultKafkaListener()
+//	s.mergeDefaultHTTPListener()
+//	s.mergeDefaultSchemaRegistryListener()
+//	s.mergeDefaultRPCListener()
+//}
 
 // mergeDefaultAPIListener ensures an API listener has default port, TLS, and external listeners.
 func mergeDefaultAPIListener(listener **StretchAPIListener, defaultPort, extPort, extAdvertisedPort int32) {
@@ -1509,36 +1776,36 @@ func mergeDefaultAPIListener(listener **StretchAPIListener, defaultPort, extPort
 	mergeDefaultExternalListener(l.External, extPort, extAdvertisedPort, &l.External)
 }
 
-func (s *StretchClusterSpec) mergeDefaultAdminListener() {
-	mergeDefaultAPIListener(&s.Listeners.Admin, DefaultAdminPort, DefaultExternalAdminPort, DefaultExternalAdminAdvertisedPort)
-}
-
-func (s *StretchClusterSpec) mergeDefaultKafkaListener() {
-	mergeDefaultAPIListener(&s.Listeners.Kafka, DefaultKafkaPort, DefaultExternalKafkaPort, DefaultExternalKafkaAdvertisedPort)
-}
-
-func (s *StretchClusterSpec) mergeDefaultHTTPListener() {
-	mergeDefaultAPIListener(&s.Listeners.HTTP, DefaultHTTPPort, DefaultExternalHTTPPort, DefaultExternalHTTPAdvertisedPort)
-}
-
-func (s *StretchClusterSpec) mergeDefaultSchemaRegistryListener() {
-	mergeDefaultAPIListener(&s.Listeners.SchemaRegistry, DefaultSchemaRegistryPort, DefaultExternalSchemaRegistryPort, DefaultExternalSchemaRegistryAdvertisedPort)
-}
-
-func (s *StretchClusterSpec) mergeDefaultRPCListener() {
-	if s.Listeners.RPC == nil {
-		s.Listeners.RPC = &StretchRPC{}
-	}
-	if s.Listeners.RPC.Port == nil {
-		s.Listeners.RPC.Port = ptr.To(int(DefaultRPCPort))
-	}
-	if s.Listeners.RPC.TLS == nil {
-		s.Listeners.RPC.TLS = &StretchListenerTLS{
-			Cert:              ptr.To("default"),
-			RequireClientAuth: ptr.To(false),
-		}
-	}
-}
+//func (s *StretchClusterSpec) mergeDefaultAdminListener() {
+//	mergeDefaultAPIListener(&s.Listeners.Admin, DefaultAdminPort, DefaultExternalAdminPort, DefaultExternalAdminAdvertisedPort)
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultKafkaListener() {
+//	mergeDefaultAPIListener(&s.Listeners.Kafka, DefaultKafkaPort, DefaultExternalKafkaPort, DefaultExternalKafkaAdvertisedPort)
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultHTTPListener() {
+//	mergeDefaultAPIListener(&s.Listeners.HTTP, DefaultHTTPPort, DefaultExternalHTTPPort, DefaultExternalHTTPAdvertisedPort)
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultSchemaRegistryListener() {
+//	mergeDefaultAPIListener(&s.Listeners.SchemaRegistry, DefaultSchemaRegistryPort, DefaultExternalSchemaRegistryPort, DefaultExternalSchemaRegistryAdvertisedPort)
+//}
+//
+//func (s *StretchClusterSpec) mergeDefaultRPCListener() {
+//	if s.Listeners.RPC == nil {
+//		s.Listeners.RPC = &StretchRPC{}
+//	}
+//	if s.Listeners.RPC.Port == nil {
+//		s.Listeners.RPC.Port = ptr.To(int(DefaultRPCPort))
+//	}
+//	if s.Listeners.RPC.TLS == nil {
+//		s.Listeners.RPC.TLS = &StretchListenerTLS{
+//			Cert:              ptr.To("default"),
+//			RequireClientAuth: ptr.To(false),
+//		}
+//	}
+//}
 
 func mergeDefaultExternalListener(existing map[string]*StretchExternalListener, port int32, advertisedPort int32, target *map[string]*StretchExternalListener) {
 	name := "default"

@@ -26,15 +26,13 @@ func configMaps(state *RenderState) ([]*corev1.ConfigMap, error) {
 		}
 		cms = append(cms, cm)
 	}
-	if cm := rpkProfileConfigMap(state); cm != nil {
-		cms = append(cms, cm)
-	}
+	cms = append(cms, rpkProfileConfigMap(state)...)
 	return cms, nil
 }
 
 // redpandaConfigMap returns the ConfigMap for a specific pool.
 func redpandaConfigMap(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) (*corev1.ConfigMap, error) {
-	bootstrap := bootstrapContents(state)
+	bootstrap := bootstrapContents(state, pool)
 	redpanda, err := redpandaConfigFile(state, true, pool)
 	if err != nil {
 		return nil, err

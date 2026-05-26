@@ -10,12 +10,37 @@
 package client
 
 import (
+	"fmt"
+
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 )
+
+// NoRepresentativePoolError is returned by Factory client builders for a
+// StretchCluster when no RedpandaBrokerPool referencing the StretchCluster
+// was found in the local k8s cluster. Listener and TLS config live on each
+// pool to support heterogeneous pools, so without at least one pool the
+// Factory cannot derive ports / TLS settings. Reconcilers should treat this
+// as a transient "not ready yet" signal and requeue, rather than a terminal
+// failure.
+type NoRepresentativePoolError struct {
+	Namespace string
+	Name      string
+}
+
+func (e *NoRepresentativePoolError) Error() string {
+	return fmt.Sprintf("no RedpandaBrokerPool referencing StretchCluster %s/%s found in this cluster", e.Namespace, e.Name)
+}
+
+// IsNoRepresentativePoolError reports whether err (or any error it wraps) is
+// a NoRepresentativePoolError.
+func IsNoRepresentativePoolError(err error) bool {
+	var target *NoRepresentativePoolError
+	return errors.As(err, &target)
+}
 
 var (
 	configurationErrors = []error{

@@ -13,12 +13,14 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// pandaProxyConfig generates the pandaproxy section of the redpanda.yaml template.
-func pandaProxyConfig(state *RenderState) map[string]any {
+// pandaProxyConfig generates the pandaproxy section of the redpanda.yaml template
+// for the given pool. Listener ports/TLS come from the pool; SASL toggle stays
+// cluster-wide via Auth.
+func pandaProxyConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	cfg := map[string]any{}
 
 	var http *redpandav1alpha2.StretchAPIListener
-	if l := state.Spec().Listeners; l != nil {
+	if l := pool.Spec.Listeners; l != nil {
 		http = l.HTTP
 	}
 
@@ -27,8 +29,8 @@ func pandaProxyConfig(state *RenderState) map[string]any {
 		authMethod = "http_basic"
 	}
 
-	configureAPIListener(cfg, state, http, "pandaproxy_api", "pandaproxy_api_tls",
-		state.Spec().HTTPPort(), redpandav1alpha2.DefaultExternalHTTPPort, authMethod)
+	configureAPIListener(cfg, state, pool, http, "pandaproxy_api", "pandaproxy_api_tls",
+		pool.Spec.HTTPPort(), redpandav1alpha2.DefaultExternalHTTPPort, authMethod)
 
 	return cfg
 }

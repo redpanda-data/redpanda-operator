@@ -37,7 +37,7 @@ type bootstrapResult struct {
 //  4. ClusterConfig — user-specified cluster-level config overrides
 //  5. TunableConfig — user-specified tunable config overrides
 //  6. ExtraClusterConfiguration — escape hatch for arbitrary key/value pairs
-func bootstrapContents(state *RenderState) bootstrapResult {
+func bootstrapContents(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) bootstrapResult {
 	fixups := []clusterconfiguration.Fixup{}
 	var envVars []corev1.EnvVar
 
@@ -52,7 +52,7 @@ func bootstrapContents(state *RenderState) bootstrapResult {
 	if state.Spec().Auth.IsSASLEnabled() {
 		bootstrap["superusers"] = []string{defaultBootstrapUsername}
 	}
-	bootstrap["enable_rack_awareness"] = state.Spec().RackAwareness.IsEnabled()
+	bootstrap["enable_rack_awareness"] = pool.Spec.RackAwareness.IsEnabled()
 	bootstrap["audit_enabled"] = state.Spec().IsAuditLoggingEnabled()
 
 	// storage_min_free_bytes: min(5GiB, 5% of PV size).

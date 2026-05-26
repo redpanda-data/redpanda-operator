@@ -16,8 +16,8 @@ package v1alpha2
 import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
-	"k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -394,7 +394,7 @@ func (in *BootstrapUser) DeepCopyInto(out *BootstrapUser) {
 	}
 	if in.SecretKeyRef != nil {
 		in, out := &in.SecretKeyRef, &out.SecretKeyRef
-		*out = new(corev1.SecretKeySelector)
+		*out = new(v1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Mechanism != nil {
@@ -789,12 +789,12 @@ func (in *ConfigWatcher) DeepCopyInto(out *ConfigWatcher) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -858,7 +858,7 @@ func (in *Configurator) DeepCopyInto(out *Configurator) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.AdditionalCLIArgs != nil {
@@ -1077,7 +1077,7 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
-		*out = make([]corev1.LocalObjectReference, len(*in))
+		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	if in.AutomountServiceAccountToken != nil {
@@ -1120,12 +1120,12 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 	}
 	if in.PodSecurityContext != nil {
 		in, out := &in.PodSecurityContext, &out.PodSecurityContext
-		*out = new(corev1.PodSecurityContext)
+		*out = new(v1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Service != nil {
@@ -1140,7 +1140,7 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Autoscaling != nil {
@@ -1157,19 +1157,19 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]corev1.Toleration, len(*in))
+		*out = make([]v1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
-		*out = new(corev1.Affinity)
+		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.TopologySpreadConstraints != nil {
 		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
-		*out = make([]corev1.TopologySpreadConstraint, len(*in))
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -1186,42 +1186,42 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 	}
 	if in.ExtraEnv != nil {
 		in, out := &in.ExtraEnv, &out.ExtraEnv
-		*out = make([]corev1.EnvVar, len(*in))
+		*out = make([]v1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.ExtraEnvFrom != nil {
 		in, out := &in.ExtraEnvFrom, &out.ExtraEnvFrom
-		*out = make([]corev1.EnvFromSource, len(*in))
+		*out = make([]v1.EnvFromSource, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.ExtraVolumes != nil {
 		in, out := &in.ExtraVolumes, &out.ExtraVolumes
-		*out = make([]corev1.Volume, len(*in))
+		*out = make([]v1.Volume, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.ExtraVolumeMounts != nil {
 		in, out := &in.ExtraVolumeMounts, &out.ExtraVolumeMounts
-		*out = make([]corev1.VolumeMount, len(*in))
+		*out = make([]v1.VolumeMount, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.ExtraContainers != nil {
 		in, out := &in.ExtraContainers, &out.ExtraContainers
-		*out = make([]corev1.Container, len(*in))
+		*out = make([]v1.Container, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.ExtraContainerPorts != nil {
 		in, out := &in.ExtraContainerPorts, &out.ExtraContainerPorts
-		*out = make([]corev1.ContainerPort, len(*in))
+		*out = make([]v1.ContainerPort, len(*in))
 		copy(*out, *in)
 	}
 	if in.SecretMounts != nil {
@@ -1234,7 +1234,7 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 	in.Secret.DeepCopyInto(&out.Secret)
 	if in.LicenseSecretRef != nil {
 		in, out := &in.LicenseSecretRef, &out.LicenseSecretRef
-		*out = new(corev1.SecretKeySelector)
+		*out = new(v1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.LivenessProbe != nil {
@@ -1252,7 +1252,7 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 	}
 	if in.Strategy != nil {
 		in, out := &in.Strategy, &out.Strategy
-		*out = new(v1.DeploymentStrategy)
+		*out = new(appsv1.DeploymentStrategy)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Warnings != nil {
@@ -1437,10 +1437,65 @@ func (in *EmbeddedBrokerPoolSpec) DeepCopyInto(out *EmbeddedBrokerPoolSpec) {
 		*out = new(InitContainerImage)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.PersistentVolumeClaimRetentionPolicy != nil {
-		in, out := &in.PersistentVolumeClaimRetentionPolicy, &out.PersistentVolumeClaimRetentionPolicy
-		*out = new(v1.StatefulSetPersistentVolumeClaimRetentionPolicy)
+	if in.ClusterDomain != nil {
+		in, out := &in.ClusterDomain, &out.ClusterDomain
+		*out = new(string)
 		**out = **in
+	}
+	if in.TLS != nil {
+		in, out := &in.TLS, &out.TLS
+		*out = new(TLS)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.External != nil {
+		in, out := &in.External, &out.External
+		*out = new(External)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Listeners != nil {
+		in, out := &in.Listeners, &out.Listeners
+		*out = new(StretchListeners)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.RBAC != nil {
+		in, out := &in.RBAC, &out.RBAC
+		*out = new(RBAC)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ServiceAccount != nil {
+		in, out := &in.ServiceAccount, &out.ServiceAccount
+		*out = new(ServiceAccount)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Monitoring != nil {
+		in, out := &in.Monitoring, &out.Monitoring
+		*out = new(Monitoring)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Storage != nil {
+		in, out := &in.Storage, &out.Storage
+		*out = new(StretchStorage)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(StretchResources)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
+	}
+	if in.RackAwareness != nil {
+		in, out := &in.RackAwareness, &out.RackAwareness
+		*out = new(RackAwareness)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Logging != nil {
+		in, out := &in.Logging, &out.Logging
+		*out = new(StretchLogging)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
@@ -1519,7 +1574,7 @@ func (in *EmbeddedNodePoolSpec) DeepCopyInto(out *EmbeddedNodePoolSpec) {
 	}
 	if in.PersistentVolumeClaimRetentionPolicy != nil {
 		in, out := &in.PersistentVolumeClaimRetentionPolicy, &out.PersistentVolumeClaimRetentionPolicy
-		*out = new(v1.StatefulSetPersistentVolumeClaimRetentionPolicy)
+		*out = new(appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy)
 		**out = **in
 	}
 }
@@ -1762,7 +1817,7 @@ func (in *FsValidator) DeepCopyInto(out *FsValidator) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -1957,7 +2012,7 @@ func (in *Image) DeepCopyInto(out *Image) {
 	}
 	if in.PullPolicy != nil {
 		in, out := &in.PullPolicy, &out.PullPolicy
-		*out = new(corev1.PullPolicy)
+		*out = new(v1.PullPolicy)
 		**out = **in
 	}
 	if in.Tag != nil {
@@ -2930,7 +2985,7 @@ func (in *PasswordSource) DeepCopyInto(out *PasswordSource) {
 	*out = *in
 	if in.SecretKeyRef != nil {
 		in, out := &in.SecretKeyRef, &out.SecretKeyRef
-		*out = new(corev1.SecretKeySelector)
+		*out = new(v1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -3147,7 +3202,7 @@ func (in *PostInstallJob) DeepCopyInto(out *PostInstallJob) {
 	*out = *in
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Annotations != nil {
@@ -3171,12 +3226,12 @@ func (in *PostInstallJob) DeepCopyInto(out *PostInstallJob) {
 	}
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
-		*out = new(corev1.Affinity)
+		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PodTemplate != nil {
@@ -3219,21 +3274,21 @@ func (in *PostUpgradeJob) DeepCopyInto(out *PostUpgradeJob) {
 	}
 	if in.ExtraEnv != nil {
 		in, out := &in.ExtraEnv, &out.ExtraEnv
-		*out = make([]corev1.EnvVar, len(*in))
+		*out = make([]v1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.ExtraEnvFrom != nil {
 		in, out := &in.ExtraEnvFrom, &out.ExtraEnvFrom
-		*out = make([]corev1.EnvFromSource, len(*in))
+		*out = make([]v1.EnvFromSource, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.BackoffLimit != nil {
@@ -3243,12 +3298,12 @@ func (in *PostUpgradeJob) DeepCopyInto(out *PostUpgradeJob) {
 	}
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
-		*out = new(corev1.Affinity)
+		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PodTemplate != nil {
@@ -3340,12 +3395,12 @@ func (in *RPControllers) DeepCopyInto(out *RPControllers) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Image != nil {
@@ -3610,7 +3665,7 @@ func (in *RedpandaClusterSpec) DeepCopyInto(out *RedpandaClusterSpec) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]corev1.Toleration, len(*in))
+		*out = make([]v1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -3622,7 +3677,7 @@ func (in *RedpandaClusterSpec) DeepCopyInto(out *RedpandaClusterSpec) {
 	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
-		*out = make([]corev1.LocalObjectReference, len(*in))
+		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	if in.Enterprise != nil {
@@ -3737,7 +3792,7 @@ func (in *RedpandaClusterSpec) DeepCopyInto(out *RedpandaClusterSpec) {
 	}
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
-		*out = new(corev1.Affinity)
+		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.DeprecatedLicenseKey != nil {
@@ -3814,7 +3869,7 @@ func (in *RedpandaConnectors) DeepCopyInto(out *RedpandaConnectors) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]corev1.Toleration, len(*in))
+		*out = make([]v1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -3826,7 +3881,7 @@ func (in *RedpandaConnectors) DeepCopyInto(out *RedpandaConnectors) {
 	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
-		*out = make([]corev1.LocalObjectReference, len(*in))
+		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	if in.Auth != nil {
@@ -4101,7 +4156,7 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 	}
 	if in.LicenseSecretRef != nil {
 		in, out := &in.LicenseSecretRef, &out.LicenseSecretRef
-		*out = new(corev1.SecretKeySelector)
+		*out = new(v1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.AutomountServiceAccountToken != nil {
@@ -4450,10 +4505,10 @@ func (in *Resources) DeepCopyInto(out *Resources) {
 	*out = *in
 	if in.Limits != nil {
 		in, out := &in.Limits, &out.Limits
-		*out = new(map[corev1.ResourceName]resource.Quantity)
+		*out = new(map[v1.ResourceName]resource.Quantity)
 		if **in != nil {
 			in, out := *in, *out
-			*out = make(map[corev1.ResourceName]resource.Quantity, len(*in))
+			*out = make(map[v1.ResourceName]resource.Quantity, len(*in))
 			for key, val := range *in {
 				(*out)[key] = val.DeepCopy()
 			}
@@ -4461,10 +4516,10 @@ func (in *Resources) DeepCopyInto(out *Resources) {
 	}
 	if in.Requests != nil {
 		in, out := &in.Requests, &out.Requests
-		*out = new(map[corev1.ResourceName]resource.Quantity)
+		*out = new(map[v1.ResourceName]resource.Quantity)
 		if **in != nil {
 			in, out := *in, *out
-			*out = make(map[corev1.ResourceName]resource.Quantity, len(*in))
+			*out = make(map[v1.ResourceName]resource.Quantity, len(*in))
 			for key, val := range *in {
 				(*out)[key] = val.DeepCopy()
 			}
@@ -5145,7 +5200,7 @@ func (in *ServiceConfig) DeepCopyInto(out *ServiceConfig) {
 	*out = *in
 	if in.Type != nil {
 		in, out := &in.Type, &out.Type
-		*out = new(corev1.ServiceType)
+		*out = new(v1.ServiceType)
 		**out = **in
 	}
 	if in.Port != nil {
@@ -5219,7 +5274,7 @@ func (in *SetDataDirOwnership) DeepCopyInto(out *SetDataDirOwnership) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -5244,7 +5299,7 @@ func (in *SetTieredStorageCacheDirOwnership) DeepCopyInto(out *SetTieredStorageC
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -5542,12 +5597,12 @@ func (in *SideCarObj) DeepCopyInto(out *SideCarObj) {
 	*out = *in
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -5577,12 +5632,12 @@ func (in *SideCars) DeepCopyInto(out *SideCars) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Args != nil {
@@ -5722,7 +5777,7 @@ func (in *Statefulset) DeepCopyInto(out *Statefulset) {
 	}
 	if in.PodAffinity != nil {
 		in, out := &in.PodAffinity, &out.PodAffinity
-		*out = new(corev1.PodAffinity)
+		*out = new(v1.PodAffinity)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PodAntiAffinity != nil {
@@ -5747,7 +5802,7 @@ func (in *Statefulset) DeepCopyInto(out *Statefulset) {
 	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(corev1.SecurityContext)
+		*out = new(v1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SideCars != nil {
@@ -5767,7 +5822,7 @@ func (in *Statefulset) DeepCopyInto(out *Statefulset) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]corev1.Toleration, len(*in))
+		*out = make([]v1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -5795,7 +5850,7 @@ func (in *Statefulset) DeepCopyInto(out *Statefulset) {
 	}
 	if in.PersistentVolumeClaimRetentionPolicy != nil {
 		in, out := &in.PersistentVolumeClaimRetentionPolicy, &out.PersistentVolumeClaimRetentionPolicy
-		*out = new(v1.StatefulSetPersistentVolumeClaimRetentionPolicy)
+		*out = new(appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy)
 		**out = **in
 	}
 }
@@ -5903,6 +5958,66 @@ func (in *StretchAPIListener) DeepCopy() *StretchAPIListener {
 }
 
 // DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
+func (in *StretchAuditLogging) DeepCopyInto(out *StretchAuditLogging) {
+	*out = *in
+	if in.Enabled != nil {
+		in, out := &in.Enabled, &out.Enabled
+		*out = new(bool)
+		**out = **in
+	}
+	if in.Partitions != nil {
+		in, out := &in.Partitions, &out.Partitions
+		*out = new(int)
+		**out = **in
+	}
+	if in.EnabledEventTypes != nil {
+		in, out := &in.EnabledEventTypes, &out.EnabledEventTypes
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ExcludedTopics != nil {
+		in, out := &in.ExcludedTopics, &out.ExcludedTopics
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ExcludedPrincipals != nil {
+		in, out := &in.ExcludedPrincipals, &out.ExcludedPrincipals
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ClientMaxBufferSize != nil {
+		in, out := &in.ClientMaxBufferSize, &out.ClientMaxBufferSize
+		*out = new(int)
+		**out = **in
+	}
+	if in.QueueDrainIntervalMs != nil {
+		in, out := &in.QueueDrainIntervalMs, &out.QueueDrainIntervalMs
+		*out = new(int)
+		**out = **in
+	}
+	if in.QueueMaxBufferSizePerShard != nil {
+		in, out := &in.QueueMaxBufferSizePerShard, &out.QueueMaxBufferSizePerShard
+		*out = new(int)
+		**out = **in
+	}
+	if in.ReplicationFactor != nil {
+		in, out := &in.ReplicationFactor, &out.ReplicationFactor
+		*out = new(int)
+		**out = **in
+	}
+}
+
+// DeepCopy is an autogenerated deepcopy function, copying the receiver, creating a new StretchAuditLogging.
+func (in *StretchAuditLogging) DeepCopy() *StretchAuditLogging {
+	if in == nil {
+		return nil
+	}
+	out := new(StretchAuditLogging)
+	in.DeepCopyInto(out)
+	return out
+}
+
+// DeepCopyInto is an autogenerated deepcopy function, copying the receiver, writing into out. in must be non-nil.
 func (in *StretchCluster) DeepCopyInto(out *StretchCluster) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
@@ -5971,11 +6086,6 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.ClusterDomain != nil {
-		in, out := &in.ClusterDomain, &out.ClusterDomain
-		*out = new(string)
-		**out = **in
-	}
 	if in.Image != nil {
 		in, out := &in.Image, &out.Image
 		*out = new(RedpandaImage)
@@ -5983,7 +6093,7 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
-		*out = make([]corev1.LocalObjectReference, len(*in))
+		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	if in.Enterprise != nil {
@@ -5991,24 +6101,9 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 		*out = new(Enterprise)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.RackAwareness != nil {
-		in, out := &in.RackAwareness, &out.RackAwareness
-		*out = new(RackAwareness)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Auth != nil {
 		in, out := &in.Auth, &out.Auth
 		*out = new(Auth)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.TLS != nil {
-		in, out := &in.TLS, &out.TLS
-		*out = new(TLS)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.External != nil {
-		in, out := &in.External, &out.External
-		*out = new(External)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Logging != nil {
@@ -6018,17 +6113,12 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 	}
 	if in.AuditLogging != nil {
 		in, out := &in.AuditLogging, &out.AuditLogging
-		*out = new(AuditLogging)
+		*out = new(StretchAuditLogging)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = new(StretchResources)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Service != nil {
-		in, out := &in.Service, &out.Service
-		*out = new(Service)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Storage != nil {
@@ -6041,35 +6131,22 @@ func (in *StretchClusterSpec) DeepCopyInto(out *StretchClusterSpec) {
 		*out = new(StretchTuning)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Listeners != nil {
-		in, out := &in.Listeners, &out.Listeners
-		*out = new(StretchListeners)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Config != nil {
 		in, out := &in.Config, &out.Config
 		*out = new(Config)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.RBAC != nil {
-		in, out := &in.RBAC, &out.RBAC
-		*out = new(RBAC)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.ServiceAccount != nil {
-		in, out := &in.ServiceAccount, &out.ServiceAccount
-		*out = new(ServiceAccount)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Monitoring != nil {
-		in, out := &in.Monitoring, &out.Monitoring
-		*out = new(Monitoring)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Networking != nil {
 		in, out := &in.Networking, &out.Networking
 		*out = new(Networking)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.InternalServiceAnnotations != nil {
+		in, out := &in.InternalServiceAnnotations, &out.InternalServiceAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 }
 
@@ -6316,14 +6393,14 @@ func (in *StretchResources) DeepCopyInto(out *StretchResources) {
 	*out = *in
 	if in.Limits != nil {
 		in, out := &in.Limits, &out.Limits
-		*out = make(corev1.ResourceList, len(*in))
+		*out = make(v1.ResourceList, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val.DeepCopy()
 		}
 	}
 	if in.Requests != nil {
 		in, out := &in.Requests, &out.Requests
-		*out = make(corev1.ResourceList, len(*in))
+		*out = make(v1.ResourceList, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val.DeepCopy()
 		}
@@ -7085,12 +7162,12 @@ func (in *TrustStore) DeepCopyInto(out *TrustStore) {
 	*out = *in
 	if in.ConfigMapKeyRef != nil {
 		in, out := &in.ConfigMapKeyRef, &out.ConfigMapKeyRef
-		*out = new(corev1.ConfigMapKeySelector)
+		*out = new(v1.ConfigMapKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecretKeyRef != nil {
 		in, out := &in.SecretKeyRef, &out.SecretKeyRef
-		*out = new(corev1.SecretKeySelector)
+		*out = new(v1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -7115,7 +7192,7 @@ func (in *Tuning) DeepCopyInto(out *Tuning) {
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
-		*out = new(corev1.ResourceRequirements)
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.BallastFilePath != nil {
@@ -7434,12 +7511,12 @@ func (in *ValueSource) DeepCopyInto(out *ValueSource) {
 	}
 	if in.ConfigMapKeyRef != nil {
 		in, out := &in.ConfigMapKeyRef, &out.ConfigMapKeyRef
-		*out = new(corev1.ConfigMapKeySelector)
+		*out = new(v1.ConfigMapKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.SecretKeyRef != nil {
 		in, out := &in.SecretKeyRef, &out.SecretKeyRef
-		*out = new(corev1.SecretKeySelector)
+		*out = new(v1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.ExternalSecretRefSelector != nil {

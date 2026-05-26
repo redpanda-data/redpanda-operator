@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
 	corev1 "k8s.io/api/core/v1"
@@ -147,8 +148,61 @@ func TestRender(t *testing.T) {
 			resourceBytes, err := yaml.Marshal(resources)
 			require.NoError(t, err)
 			goldenResources.AssertGolden(t, testutil.YAML, file.Name, resourceBytes)
+
+			// Parity: the union of the three new bucket entry points must
+			// emit the same set of objects (by GVK + namespace + name) as
+			// the umbrella RenderResources, modulo ordering. Locks the
+			// bucket assignment — if a future change moves a resource out
+			// of one bucket without adding it to another (or vice versa),
+			// this fires.
+			assertBucketParity(t, state, resources)
 		})
 	}
+}
+
+// assertBucketParity verifies that the three new bucket entry points
+// (RenderClusterResources + RenderInClusterPoolResources over inClusterPools
+// + RenderEachPoolResources over Pools) produce the same multiset of objects
+// as the umbrella RenderResources.
+func assertBucketParity(t *testing.T, state *RenderState, want []kube.Object) {
+	t.Helper()
+
+	clusterObjs, err := RenderClusterResources(state)
+	require.NoError(t, err)
+
+	var poolObjs []kube.Object
+	for _, p := range state.InClusterPools() {
+		objs, err := RenderInClusterPoolResources(state, p)
+		require.NoError(t, err)
+		poolObjs = append(poolObjs, objs...)
+	}
+
+	var eachObjs []kube.Object
+	for _, p := range state.Pools() {
+		objs, err := RenderEachPoolResources(state, p)
+		require.NoError(t, err)
+		eachObjs = append(eachObjs, objs...)
+	}
+
+	got := append([]kube.Object(nil), clusterObjs...)
+	got = append(got, poolObjs...)
+	got = append(got, eachObjs...)
+
+	wantKeys := objectKeys(want)
+	gotKeys := objectKeys(got)
+	require.ElementsMatch(t, wantKeys, gotKeys,
+		"bucket union does not match RenderResources output")
+}
+
+// objectKeys derives "<kind>/<ns>/<name>" identifiers used to compare object
+// sets order-insensitively.
+func objectKeys(objs []kube.Object) []string {
+	keys := make([]string, 0, len(objs))
+	for _, o := range objs {
+		gvk := o.GetObjectKind().GroupVersionKind()
+		keys = append(keys, fmt.Sprintf("%s/%s/%s", gvk.Kind, o.GetNamespace(), o.GetName()))
+	}
+	return keys
 }
 
 func TestPerPodServiceOverrides_LocalVsRemote(t *testing.T) {

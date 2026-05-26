@@ -272,7 +272,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-configurator
+            name: compat-test-basic-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -302,7 +302,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: compat-test
+        serviceAccountName: compat-test-basic-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -318,21 +318,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: compat-test-default-cert
+            secretName: compat-test-basic-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: compat-test-external-cert
+            secretName: compat-test-basic-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: compat-test-sts-lifecycle
+            secretName: compat-test-basic-a-sts-lifecycle
         - configMap:
             name: compat-test-basic-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: compat-test-configurator
+        - name: compat-test-basic-a-configurator
           secret:
             defaultMode: 509
             secretName: compat-test-basic-a-configurator
@@ -647,7 +647,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-configurator
+            name: compat-test-basic-b-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -677,7 +677,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: compat-test
+        serviceAccountName: compat-test-basic-b
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -693,21 +693,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: compat-test-default-cert
+            secretName: compat-test-basic-b-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: compat-test-external-cert
+            secretName: compat-test-basic-b-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: compat-test-sts-lifecycle
+            secretName: compat-test-basic-b-sts-lifecycle
         - configMap:
             name: compat-test-basic-b
           name: base-config
         - emptyDir: {}
           name: config
-        - name: compat-test-configurator
+        - name: compat-test-basic-b-configurator
           secret:
             defaultMode: 509
             secretName: compat-test-basic-b-configurator
@@ -1023,7 +1023,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: flat-network-test-configurator
+            name: flat-network-test-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1053,7 +1053,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: flat-network-test
+        serviceAccountName: flat-network-test-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -1069,21 +1069,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: flat-network-test-default-cert
+            secretName: flat-network-test-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: flat-network-test-external-cert
+            secretName: flat-network-test-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: flat-network-test-sts-lifecycle
+            secretName: flat-network-test-pool-a-sts-lifecycle
         - configMap:
             name: flat-network-test-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: flat-network-test-configurator
+        - name: flat-network-test-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: flat-network-test-pool-a-configurator
@@ -1399,7 +1399,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: mcs-network-test-configurator
+            name: mcs-network-test-pool-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1429,7 +1429,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: mcs-network-test
+        serviceAccountName: mcs-network-test-pool-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -1445,21 +1445,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: mcs-network-test-default-cert
+            secretName: mcs-network-test-pool-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: mcs-network-test-external-cert
+            secretName: mcs-network-test-pool-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: mcs-network-test-sts-lifecycle
+            secretName: mcs-network-test-pool-a-sts-lifecycle
         - configMap:
             name: mcs-network-test-pool-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: mcs-network-test-configurator
+        - name: mcs-network-test-pool-a-configurator
           secret:
             defaultMode: 509
             secretName: mcs-network-test-pool-a-configurator
@@ -1775,7 +1775,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-configurator
+            name: nodepool-basic-test-basic-a-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1805,7 +1805,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: nodepool-basic-test
+        serviceAccountName: nodepool-basic-test-basic-a
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -1821,21 +1821,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: nodepool-basic-test-default-cert
+            secretName: nodepool-basic-test-basic-a-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: nodepool-basic-test-external-cert
+            secretName: nodepool-basic-test-basic-a-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: nodepool-basic-test-sts-lifecycle
+            secretName: nodepool-basic-test-basic-a-sts-lifecycle
         - configMap:
             name: nodepool-basic-test-basic-a
           name: base-config
         - emptyDir: {}
           name: config
-        - name: nodepool-basic-test-configurator
+        - name: nodepool-basic-test-basic-a-configurator
           secret:
             defaultMode: 509
             secretName: nodepool-basic-test-basic-a-configurator
@@ -2150,7 +2150,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-configurator
+            name: nodepool-basic-test-basic-b-configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2180,7 +2180,7 @@
           fsGroup: 101
           fsGroupChangePolicy: OnRootMismatch
           runAsUser: 101
-        serviceAccountName: nodepool-basic-test
+        serviceAccountName: nodepool-basic-test-basic-b
         terminationGracePeriodSeconds: 90
         topologySpreadConstraints:
         - labelSelector:
@@ -2196,21 +2196,21 @@
         - name: redpanda-default-cert
           secret:
             defaultMode: 288
-            secretName: nodepool-basic-test-default-cert
+            secretName: nodepool-basic-test-basic-b-default-cert
         - name: redpanda-external-cert
           secret:
             defaultMode: 288
-            secretName: nodepool-basic-test-external-cert
+            secretName: nodepool-basic-test-basic-b-external-cert
         - name: lifecycle-scripts
           secret:
             defaultMode: 509
-            secretName: nodepool-basic-test-sts-lifecycle
+            secretName: nodepool-basic-test-basic-b-sts-lifecycle
         - configMap:
             name: nodepool-basic-test-basic-b
           name: base-config
         - emptyDir: {}
           name: config
-        - name: nodepool-basic-test-configurator
+        - name: nodepool-basic-test-basic-b-configurator
           secret:
             defaultMode: 509
             secretName: nodepool-basic-test-basic-b-configurator

@@ -30,11 +30,12 @@ package v1alpha2
 import (
 	"testing"
 
-	"github.com/redpanda-data/common-go/rp-controller-utils/deprecations"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/redpanda-data/common-go/rp-controller-utils/deprecations"
 )
 
 func TestDeprecatedFieldWarnings(t *testing.T) {

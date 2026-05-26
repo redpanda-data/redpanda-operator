@@ -22,40 +22,54 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/kube/servicetemplate"
 )
 
-// perPodServices returns per-pod ClusterIP Services for stable DNS resolution.
+// perPodServices returns per-pod ClusterIP Services for stable DNS resolution
+// across every pool in every region.
 // Each pod in each pool gets its own service, named "{pool-name}-{ordinal}".
 func perPodServices(state *RenderState) ([]*corev1.Service, error) {
 	var services []*corev1.Service
 	for _, pool := range state.pools {
-		isLocal := state.isLocalPool(pool)
-		override := perPodServiceOverride(pool, isLocal)
-		if !override.IsEnabled() {
-			continue
+		svcs, err := perPodServicesForPool(state, pool)
+		if err != nil {
+			return nil, err
 		}
-		for i := int32(0); i < pool.GetReplicas(); i++ {
-			svc, err := perPodService(state, pool, i, isLocal, override)
-			if err != nil {
-				return nil, err
-			}
-			services = append(services, svc)
+		services = append(services, svcs...)
+	}
+	return services, nil
+}
+
+// perPodServicesForPool returns the per-pod ClusterIP Services for a single
+// BrokerPool (local or remote). Caller iterates state.Pools().
+func perPodServicesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*corev1.Service, error) {
+	isLocal := state.isLocalPool(pool)
+	override := perPodServiceOverride(pool, isLocal)
+	if !override.IsEnabled() {
+		return nil, nil
+	}
+	var services []*corev1.Service
+	for i := int32(0); i < pool.GetReplicas(); i++ {
+		svc, err := perPodService(state, pool, i, isLocal, override)
+		if err != nil {
+			return nil, err
 		}
+		services = append(services, svc)
 	}
 	return services, nil
 }
 
 func perPodService(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, ordinal int32, _ bool, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
 	spec := state.Spec()
+	poolSpec := &pool.Spec
 
 	labels := state.commonLabels()
-	labels[labelMonitorKey] = fmt.Sprintf("%t", spec.Monitoring.IsEnabled())
+	labels[labelMonitorKey] = fmt.Sprintf("%t", poolSpec.Monitoring.IsEnabled())
 
-	ports := perPodServicePorts(spec)
+	ports := perPodServicePorts(poolSpec)
 
 	name := PerPodServiceName(state.poolFullname(pool), ordinal)
 	annotations := make(map[string]string)
-	if spec.Service != nil && spec.Service.Internal != nil {
-		// TODO: consider a special field for per pod service annotation, either in brokerpool or stretchcluster spec.
-		annotations = spec.Service.Internal.Annotations
+	// Internal-service annotations are cluster-wide (the headless Service spans pools).
+	if anns := spec.InternalServiceAnnotations; len(anns) > 0 {
+		annotations = anns
 	}
 
 	// In flat network mode, ALL per-pod Services are rendered as headless
@@ -122,7 +136,7 @@ func PerPodServiceName(poolFullname string, ordinal int32) string {
 	return fmt.Sprintf("%s-%d", poolFullname, ordinal)
 }
 
-func perPodServicePorts(spec *redpandav1alpha2.StretchClusterSpec) []corev1.ServicePort {
+func perPodServicePorts(spec *redpandav1alpha2.BrokerPoolSpec) []corev1.ServicePort {
 	var ports []corev1.ServicePort
 
 	adminPort := spec.AdminPort()

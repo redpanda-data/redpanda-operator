@@ -25,10 +25,6 @@ Feature: StretchCluster ghost node ejection
       name: cluster
       namespace: default
     spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
       config:
         cluster:
           partition_autobalancing_mode: continuous
@@ -41,6 +37,10 @@ Feature: StretchCluster ghost node ejection
     And I apply a RedpandaBrokerPool Kubernetes manifest to "ghost":
     """
     spec:
+      external:
+        enabled: false
+      rbac:
+        enabled: true
       clusterRef:
         group: cluster.redpanda.com
         kind: StretchCluster

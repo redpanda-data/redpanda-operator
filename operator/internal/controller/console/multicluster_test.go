@@ -145,8 +145,22 @@ func (s *MulticlusterConsoleSuite) assertConsoleReconciles(t *testing.T, ctx con
 
 	require.NoError(t, cl.Create(ctx, &redpandav1alpha2.StretchCluster{
 		ObjectMeta: metav1.ObjectMeta{Name: stretchName, Namespace: namespace},
-		Spec: redpandav1alpha2.StretchClusterSpec{
-			TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(false)},
+	}))
+
+	// TLS/listener config lives on RedpandaBrokerPool. Disable TLS on a
+	// minimal pool so Console's clusterFragment produces plaintext URLs
+	// (the test env doesn't have the cert secrets that TLS-on would
+	// require).
+	require.NoError(t, cl.Create(ctx, &redpandav1alpha2.RedpandaBrokerPool{
+		ObjectMeta: metav1.ObjectMeta{Name: stretchName + "-default", Namespace: namespace},
+		Spec: redpandav1alpha2.BrokerPoolSpec{
+			ClusterRef: redpandav1alpha2.ClusterRef{
+				Name: stretchName,
+				Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+			},
+			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(false)},
+			},
 		},
 	}))
 

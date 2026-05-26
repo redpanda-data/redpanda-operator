@@ -69,7 +69,7 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) 
 		Spec: corev1.PodSpec{
 			ImagePullSecrets:              state.Spec().ImagePullSecrets,
 			AutomountServiceAccountToken:  ptr.To(false),
-			ServiceAccountName:            state.Spec().GetServiceAccountName(state.fullname()),
+			ServiceAccountName:            pool.Spec.GetServiceAccountName(state.poolFullname(pool)),
 			TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
 			SecurityContext: &corev1.PodSecurityContext{
 				FSGroup:             ptr.To(redpandaUserID),
@@ -154,10 +154,12 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) 
 			Selector: &metav1.LabelSelector{
 				MatchLabels: statefulSetPodLabelsSelector(state, pool),
 			},
-			ServiceName:                          state.Spec().GetServiceName(state.fullname()),
+			ServiceName:                          state.fullname(),
 			Replicas:                             ptr.To(pool.GetReplicas()),
 			PodManagementPolicy:                  appsv1.ParallelPodManagement,
-			PersistentVolumeClaimRetentionPolicy: pool.Spec.PersistentVolumeClaimRetentionPolicy.DeepCopy(),
+			// PersistentVolumeClaimRetentionPolicy is not yet exposed on
+			// BrokerPoolSpec; default behavior (retain) applies.
+			PersistentVolumeClaimRetentionPolicy: nil,
 			// OnDelete lets the operator control rollout ordering (e.g.
 			// maintenance mode drain → restart → clear maintenance) rather
 			// than letting the StatefulSet controller do a blind rolling update.
@@ -249,12 +251,12 @@ func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.Re
 		return "", err
 	}
 	dependencies = append(dependencies, redpanda)
-	if state.Spec().External.IsEnabled() {
-		dependencies = append(dependencies, ptr.Deref(state.Spec().External.Domain, ""))
-		if state.Spec().External.Addresses == nil || len(state.Spec().External.Addresses) == 0 {
+	if pool.Spec.External.IsEnabled() {
+		dependencies = append(dependencies, ptr.Deref(pool.Spec.External.Domain, ""))
+		if pool.Spec.External.Addresses == nil || len(pool.Spec.External.Addresses) == 0 {
 			dependencies = append(dependencies, "")
 		} else {
-			dependencies = append(dependencies, state.Spec().External.Addresses)
+			dependencies = append(dependencies, pool.Spec.External.Addresses)
 		}
 	}
 	data, _ := json.Marshal(dependencies)

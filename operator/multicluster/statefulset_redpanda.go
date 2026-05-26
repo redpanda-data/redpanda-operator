@@ -67,9 +67,9 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Red
 
 	p := scriptParamsFromState(state, pool)
 
-	l := state.Spec().Listeners
+	l := pool.Spec.Listeners
 
-	ports := redpandaContainerPorts(l, state.Spec())
+	ports := redpandaContainerPorts(l, pool)
 
 	// Get resource requirements from the spec.
 	resources := state.Spec().GetResourceRequirements()
@@ -132,7 +132,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Red
 			fmt.Sprintf(`--advertise-rpc-addr=%s:%d`, internalAdvertiseAddress, p.RPCPort),
 		},
 		Ports:        ports,
-		VolumeMounts: statefulSetVolumeMounts(state),
+		VolumeMounts: statefulSetVolumeMounts(state, pool),
 	}
 
 	return container
@@ -178,7 +178,9 @@ func bootstrapUserEnvVars(state *RenderState) []corev1.EnvVar {
 
 // redpandaContainerPorts returns the container ports for the Redpanda container,
 // including internal ports and any enabled external listener ports.
-func redpandaContainerPorts(l *redpandav1alpha2.StretchListeners, spec *redpandav1alpha2.StretchClusterSpec) []corev1.ContainerPort {
+func redpandaContainerPorts(l *redpandav1alpha2.StretchListeners, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.ContainerPort {
+	spec := &pool.Spec
+
 	var ports []corev1.ContainerPort
 
 	// Internal ports + their external listeners.

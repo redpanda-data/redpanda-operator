@@ -17,17 +17,26 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// serviceInternal returns the cluster-wide headless ClusterIP Service. This
+// is the cluster's DNS root: <cluster>.<ns>.svc.<domain> resolves to every
+// pod in every local pool, so it can't be per-pool. Listener ports and the
+// Monitoring label are read from the first local pool — when pools disagree,
+// the headless Service can only advertise one port set (representative-pool
+// model; heterogeneous per-pool ports require client-side per-pod DNS).
+// Annotations come from StretchCluster.spec.InternalServiceAnnotations.
 func serviceInternal(state *RenderState) *corev1.Service {
-	// This service is only used to create the DNS entries for each pod in
-	// the stateful set and allow the serviceMonitor to target the pods.
-	// This service should not be used by any client application.
+	if len(state.inClusterPools) == 0 {
+		return nil
+	}
+	rep := state.inClusterPools[0]
+
 	var ports []corev1.ServicePort
 
-	l := state.Spec().Listeners
+	l := rep.Spec.Listeners
 
 	// Admin listener.
 	if l == nil || l.Admin == nil || l.Admin.IsEnabled() {
-		adminPort := state.Spec().AdminPort()
+		adminPort := rep.Spec.AdminPort()
 		adminServicePort := corev1.ServicePort{
 			Name:       internalAdminAPIPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -42,7 +51,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// HTTP proxy listener.
 	if l != nil && l.HTTP != nil && l.HTTP.IsEnabled() {
-		httpPort := state.Spec().HTTPPort()
+		httpPort := rep.Spec.HTTPPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalPandaProxyPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -53,7 +62,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// Kafka listener.
 	if l == nil || l.Kafka == nil || l.Kafka.IsEnabled() {
-		kafkaPort := state.Spec().KafkaPort()
+		kafkaPort := rep.Spec.KafkaPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalKafkaPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -63,7 +72,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 	}
 
 	// RPC listener (always required for inter-broker communication).
-	rpcPort := state.Spec().RPCPort()
+	rpcPort := rep.Spec.RPCPort()
 	ports = append(ports, corev1.ServicePort{
 		Name:       internalRPCPortName,
 		Protocol:   corev1.ProtocolTCP,
@@ -73,7 +82,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 
 	// Schema Registry listener.
 	if l != nil && l.SchemaRegistry != nil && l.SchemaRegistry.IsEnabled() {
-		srPort := state.Spec().SchemaRegistryPort()
+		srPort := rep.Spec.SchemaRegistryPort()
 		ports = append(ports, corev1.ServicePort{
 			Name:       internalSchemaRegistryPortName,
 			Protocol:   corev1.ProtocolTCP,
@@ -82,13 +91,10 @@ func serviceInternal(state *RenderState) *corev1.Service {
 		})
 	}
 
-	annotations := map[string]string{}
-	if svc := state.Spec().Service; svc != nil && svc.Internal != nil {
-		annotations = svc.Internal.Annotations
-	}
+	annotations := state.Spec().InternalServiceAnnotations
 
 	labels := state.commonLabels()
-	labels[labelMonitorKey] = fmt.Sprintf("%t", state.Spec().Monitoring.IsEnabled())
+	labels[labelMonitorKey] = fmt.Sprintf("%t", rep.Spec.Monitoring.IsEnabled())
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -96,7 +102,7 @@ func serviceInternal(state *RenderState) *corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        state.Spec().GetServiceName(state.fullname()),
+			Name:        state.fullname(),
 			Namespace:   state.namespace,
 			Labels:      labels,
 			Annotations: annotations,

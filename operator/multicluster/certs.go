@@ -22,23 +22,46 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// certificates returns all cert-manager Certificates (server + client) for the given RenderState.
+// certificates returns all cert-manager Certificates across every local pool.
+// Wrapper used by the umbrella RenderResources.
 func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
-	fullname := state.fullname()
-	service := state.Spec().GetServiceName(state.fullname())
-	ns := state.namespace
-	// Trailing dots don't play nice with TLS/SNI.
-	domain := strings.TrimSuffix(state.Spec().GetClusterDomain(), ".")
+	var out []*certmanagerv1.Certificate
+	for _, pool := range state.inClusterPools {
+		c, err := certificatesForPool(state, pool)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, c...)
+	}
+	return out, nil
+}
 
-	tlsCfg := state.Spec().TLS
+// certificatesForPool returns the cert-manager Certificates (server + client)
+// for a single local pool. Each pool gets its own Certificates with content
+// derived from pool.Spec.{TLS,ClusterDomain,External} and per-broker SANs
+// drawn from the cross-region pool set so cross-cluster brokers can verify
+// each other under the same CA. Issuer references stay cluster-wide
+// (named with the cluster fullname); per-pool secrets are keyed by the
+// pool fullname so two pools using cert name "default" don't collide.
+func certificatesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*certmanagerv1.Certificate, error) {
+	poolSpec := &pool.Spec
+	tlsCfg := poolSpec.TLS
 	if tlsCfg == nil {
 		return nil, nil
 	}
 
+	fullname := state.fullname()
+	poolFullname := state.poolFullname(pool)
+	// Headless Service is cluster-wide and always named after the cluster.
+	service := fullname
+	ns := state.namespace
+	// Trailing dots don't play nice with TLS/SNI.
+	domain := strings.TrimSuffix(poolSpec.GetClusterDomain(), ".")
+
 	var certs []*certmanagerv1.Certificate
 
 	// Server certificates.
-	for _, name := range state.Spec().InUseServerCerts() {
+	for _, name := range poolSpec.InUseServerCerts() {
 		cert := tlsCfg.Certs[name]
 
 		// Don't generate server certs if a secret is provided.
@@ -79,15 +102,15 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 			// per broker so the RPC handshake doesn't fail under strict
 			// hostname verification and the cluster can actually reach
 			// quorum (see #1499).
-			for _, pool := range state.Pools() {
-				for i := int32(0); i < pool.GetReplicas(); i++ {
-					podName := PerPodServiceName(state.poolFullname(pool), i)
+			for _, p := range state.Pools() {
+				for i := int32(0); i < p.GetReplicas(); i++ {
+					podName := PerPodServiceName(state.poolFullname(p), i)
 					names = append(names, fmt.Sprintf("%s.%s", podName, ns))
 				}
 			}
 		}
 
-		// In MCS mode, add clusterset.local SANs for cross-cluster DNS.
+		// MCS networking is cluster-wide; add clusterset.local SANs.
 		if state.Spec().Networking.IsMCS() {
 			names = append(names,
 				fmt.Sprintf("%s-cluster.%s.%s.svc.clusterset.local", fullname, service, ns),
@@ -95,20 +118,15 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				fmt.Sprintf("%s.%s.svc.clusterset.local", service, ns),
 				fmt.Sprintf("*.%s.%s.svc.clusterset.local", service, ns),
 			)
-			// Per-broker explicit SANs for the clusterset.local advertised
-			// hostnames (see #1499). The wildcards above match the headless
-			// service hierarchy, not the per-pod hostnames the operator
-			// publishes via seed_servers / advertised_rpc_api in MCS mode
-			// (`<pod>.<ns>.svc.clusterset.local`).
-			for _, pool := range state.Pools() {
-				for i := int32(0); i < pool.GetReplicas(); i++ {
-					podName := PerPodServiceName(state.poolFullname(pool), i)
+			for _, p := range state.Pools() {
+				for i := int32(0); i < p.GetReplicas(); i++ {
+					podName := PerPodServiceName(state.poolFullname(p), i)
 					names = append(names, fmt.Sprintf("%s.%s.svc.clusterset.local", podName, ns))
 				}
 			}
 		}
 
-		if ext := state.Spec().External; ext != nil && ext.Domain != nil {
+		if ext := poolSpec.External; ext != nil && ext.Domain != nil {
 			expandedDomain, err := tplutil.Tpl(*ext.Domain, state.tplData())
 			if err != nil {
 				return nil, fmt.Errorf("expanding external domain template: %w", err)
@@ -123,7 +141,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-cert", fullname, name),
+				Name:      fmt.Sprintf("%s-%s-cert", poolFullname, name),
 				Labels:    state.commonLabels(),
 				Namespace: state.namespace,
 			},
@@ -132,7 +150,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
 				IssuerRef:  certIssuerRef(fullname, name, cert),
-				SecretName: state.Spec().TLS.CertServerSecretName(state.fullname(), name),
+				SecretName: tlsCfg.CertServerSecretName(poolFullname, name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
@@ -142,7 +160,7 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 	}
 
 	// Client certificates.
-	for _, name := range state.Spec().InUseClientCerts() {
+	for _, name := range poolSpec.InUseClientCerts() {
 		cert := tlsCfg.Certs[name]
 
 		if cert != nil {
@@ -160,15 +178,15 @@ func certificates(state *RenderState) ([]*certmanagerv1.Certificate, error) {
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-client", fullname, name),
+				Name:      fmt.Sprintf("%s-%s-client", poolFullname, name),
 				Namespace: state.namespace,
 				Labels:    state.commonLabels(),
 			},
 			Spec: certmanagerv1.CertificateSpec{
-				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),
+				CommonName: fmt.Sprintf("%s--%s-client", poolFullname, name),
 				Duration:   &metav1.Duration{Duration: certDuration(cert)},
 				IsCA:       false,
-				SecretName: state.Spec().TLS.CertClientSecretName(state.fullname(), name),
+				SecretName: tlsCfg.CertClientSecretName(poolFullname, name),
 				PrivateKey: &certmanagerv1.CertificatePrivateKey{
 					Algorithm: "ECDSA",
 					Size:      256,
